@@ -1416,23 +1416,64 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`;
             const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
-            await Promise.all(allTablesResults.map(async tablesResult => {
-                // const tableName = database ? `"${tablesResult["TABLE_CATALOG"]}"."sys"."foreign_keys"` : `"sys"."foreign_keys"`;
-                const dropForeignKeySql = `SELECT 'ALTER TABLE "${tablesResult["TABLE_CATALOG"]}"."' + OBJECT_SCHEMA_NAME("fk"."parent_object_id", DB_ID('${tablesResult["TABLE_CATALOG"]}')) + '"."' + OBJECT_NAME("fk"."parent_object_id", DB_ID('${tablesResult["TABLE_CATALOG"]}')) + '" ` +
-                    `DROP CONSTRAINT "' + "fk"."name" + '"' as "query" FROM "${tablesResult["TABLE_CATALOG"]}"."sys"."foreign_keys" AS "fk" ` +
-                    `WHERE "fk"."referenced_object_id" = OBJECT_ID('"${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"')`;
-                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
-                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => this.query(dropQuery)));
-            }));
-            await Promise.all(allTablesResults.map(tablesResult => {
-                if (tablesResult["TABLE_NAME"].startsWith("#")) {
-                    // don't try to drop temporary tables
-                    return;
-                }
 
-                const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
-                return this.query(dropTableSql);
-            }));
+            if (allTablesResults.length > 0) {
+                const tablesByCatalog: { [key: string]: { TABLE_NAME: string, TABLE_SCHEMA: string }[] } = allTablesResults.reduce(
+                    (c, { TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME }) => {
+                        c[TABLE_CATALOG] = c[TABLE_CATALOG] || [];
+                        c[TABLE_CATALOG].push({ TABLE_SCHEMA, TABLE_NAME });
+                        return c;
+                    },
+                    {}
+                )
+
+                const foreignKeysSql = Object.entries(tablesByCatalog).map(([ TABLE_CATALOG, tables ]) => {
+                    const conditions = tables.map(({ TABLE_SCHEMA, TABLE_NAME }) => {
+                        return `("fk"."referenced_object_id" = OBJECT_ID('"${TABLE_CATALOG}"."${TABLE_SCHEMA}"."${TABLE_NAME}"'))`
+                    }).join(" OR ")
+
+                    return `
+                        SELECT DISTINCT '${TABLE_CATALOG}' AS                                              "TABLE_CATALOG",
+                                        OBJECT_SCHEMA_NAME("fk"."parent_object_id",
+                                                           DB_ID('${TABLE_CATALOG}')) AS                   "TABLE_SCHEMA",
+                                        OBJECT_NAME("fk"."parent_object_id", DB_ID('${TABLE_CATALOG}')) AS "TABLE_NAME",
+                                        "fk"."name" AS                                                     "CONSTRAINT_NAME"
+                        FROM "${TABLE_CATALOG}"."sys"."foreign_keys" AS "fk"
+                        WHERE (${conditions})
+                    `;
+                }).join(" UNION ALL ");
+
+                const foreignKeys: { TABLE_CATALOG: string, TABLE_SCHEMA: string, TABLE_NAME: string, CONSTRAINT_NAME: string }[] = await this.query(
+                    foreignKeysSql);
+
+                await Promise.all(foreignKeys.map(async ({
+                    TABLE_CATALOG,
+                    TABLE_SCHEMA,
+                    TABLE_NAME,
+                    CONSTRAINT_NAME
+                }) => {
+                    // Disable the constraint first.
+                    await this.query(
+                        `ALTER TABLE "${TABLE_CATALOG}"."${TABLE_SCHEMA}"."${TABLE_NAME}" ` +
+                        `NOCHECK CONSTRAINT "${CONSTRAINT_NAME}"`
+                    );
+
+                    await this.query(
+                        `ALTER TABLE "${TABLE_CATALOG}"."${TABLE_SCHEMA}"."${TABLE_NAME}" ` +
+                        `DROP CONSTRAINT "${CONSTRAINT_NAME}" -- FROM CLEAR`
+                    );
+                }));
+
+                await Promise.all(allTablesResults.map(tablesResult => {
+                    if (tablesResult["TABLE_NAME"].startsWith("#")) {
+                        // don't try to drop temporary tables
+                        return;
+                    }
+
+                    const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
+                    return this.query(dropTableSql);
+                }));
+            }
 
             await this.commitTransaction();
 
@@ -1525,57 +1566,54 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         if (!tableNames) {
             const databasesSql = `
-                SELECT "name" FROM "master"."dbo"."sysdatabases"
+                SELECT DISTINCT
+                    "name"
+                FROM "master"."dbo"."sysdatabases"
                 WHERE "name" NOT IN ('master', 'model', 'msdb')
             `;
             const dbDatabases: { name: string }[] = await this.query(databasesSql);
 
             const tablesSql = dbDatabases.map(({ name }) => {
                 return `
-                    SELECT
+                    SELECT DISTINCT
                         "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"
                     FROM "${name}"."INFORMATION_SCHEMA"."TABLES"
                     WHERE
                       "TABLE_TYPE" = 'BASE TABLE'
                       AND
+                      "TABLE_CATALOG" = '${name}'
+                      AND
                       ISNULL(Objectproperty(Object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), 'IsMSShipped'), 0) = 0
                 `;
             }).join(" UNION ALL ");
+
             dbTables.push(...await this.query(tablesSql));
         } else {
-            const dbNames = tableNames
-                .filter(tablePath => tablePath.split(".").length === 3)
-                .map(tablePath => tablePath.split(".")[0]);
-            if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
-                dbNames.push(this.driver.database);
+            const tableNamesByCatalog = tableNames
+                .map(tableName => this.parseTableName(tableName, currentSchema))
+                .reduce((c, { database, ...other}) => {
+                    database = database || currentDatabase;
+                    c[database] = c[database] || []
+                    c[database].push(other);
+                    return c;
+                }, {} as { [key: string]: { schema: string, name: string }[] })
 
-            const tablesCondition = tableNames.map(tableName => {
-                let [database, schema, name] = tableName.split(".");
-                // if name is empty, it means that tableName have only schema name and table name or only table name
-                if (!name) {
-                    // if schema is empty, it means tableName have only name of a table. Otherwise it means that we have "schemaName"."tableName" string.
-                    if (!schema) {
-                        name = database;
-                        schema = this.driver.options.schema || currentSchema;
+            const tablesSql = Object.entries(tableNamesByCatalog).map(([ database, tables ]) => {
+                const tablesCondition = tables
+                    .map(({ schema, name }) => {
+                        return `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${name}')`;
+                    })
+                    .join(" OR ");
 
-                    } else {
-                        name = schema;
-                        schema = database;
-                    }
-                } else if (schema === "") {
-                    schema = this.driver.options.schema || currentSchema;
-                }
-
-
-                return `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${name}')`;
-            }).join(" OR ");
-
-            const tablesSql = dbNames.map(dbName => {
                 return `
-                    SELECT
+                    SELECT DISTINCT
                         "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"
-                    FROM "${dbName}"."INFORMATION_SCHEMA"."TABLES"
-                    WHERE "TABLE_TYPE" = 'BASE TABLE' AND ${tablesCondition}`;
+                    FROM "${database}"."INFORMATION_SCHEMA"."TABLES"
+                    WHERE
+                          "TABLE_TYPE" = 'BASE TABLE' AND
+                          "TABLE_CATALOG" = '${database}' AND
+                          ${tablesCondition}
+                `;
             }).join(" UNION ALL ");
 
             dbTables.push(...await this.query(tablesSql));
