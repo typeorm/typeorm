@@ -351,7 +351,6 @@ export class MigrationExecutor {
                 {
                     database: this.migrationsDatabase,
                     schema: this.migrationsSchema,
-                    path: this.migrationsTable,
                     name: this.migrationsTable,
                     columns: [
                         {

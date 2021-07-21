@@ -765,7 +765,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             {
                 database: database,
                 schema: schema,
-                path: typeormMetadataTable,
                 name: typeormMetadataTable,
                 columns: [
                     {

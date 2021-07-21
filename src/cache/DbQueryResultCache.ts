@@ -69,7 +69,6 @@ export class DbQueryResultCache implements QueryResultCache {
             {
                 database: this.queryResultCacheDatabase,
                 schema: this.queryResultCacheSchema,
-                path: this.queryResultCacheTable,
                 name: this.queryResultCacheTable,
                 columns: [
                     {

@@ -187,7 +187,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
             expect(table.database).to.be.equal("testDB");
             expect(table.schema).to.be.equal("questions");
-            expect(table.path).to.be.equal("testDB.questions.question");
+            expect(table.name).to.be.equal("testDB.questions.question");
         })));
 
         it("should correctly get the table primary keys when custom table schema used", () => Promise.all(connections.map(async connection => {

@@ -241,7 +241,6 @@ export abstract class BaseQueryRunner {
         if (foundTable) {
             foundTable.database = changedTable.database;
             foundTable.schema = changedTable.schema;
-            foundTable.path = changedTable.path;
             foundTable.name = changedTable.name;
             foundTable.columns = changedTable.columns;
             foundTable.indices = changedTable.indices;

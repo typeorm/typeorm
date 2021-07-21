@@ -483,7 +483,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
         const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
-        newTable.path = this.driver.buildTableName(newTableName, newTable.schema);
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
         // rename table
@@ -579,7 +578,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.executeQueries(upQueries, downQueries);
 
         // rename old table and replace it in cached tabled;
-        oldTable.path = newTable.path;
         oldTable.name = newTable.name;
         this.replaceCachedTable(oldTable, newTable);
     }
@@ -1550,7 +1548,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME");
             table.database = currentDatabase;
             table.schema = dbTable["SCHEMA_NAME"];
-            table.path = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["SCHEMA_NAME"])
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema);
 
             // create columns from the loaded columns

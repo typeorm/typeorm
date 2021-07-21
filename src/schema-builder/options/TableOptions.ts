@@ -30,11 +30,6 @@ export interface TableOptions {
     name: string;
 
     /**
-     * Table path.
-     */
-    path?: string;
-
-    /**
      * Table columns.
      */
     columns?: TableColumnOptions[];

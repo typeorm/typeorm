@@ -36,12 +36,6 @@ export class Table {
     name: string;
 
     /**
-     * Contains database name, schema name and table name.
-     * E.g. myDB.mySchema.myTable
-     */
-    path: string;
-
-    /**
      * Table columns.
      */
     columns: TableColumn[] = [];
@@ -93,8 +87,6 @@ export class Table {
 
             this.schema = options.schema;
 
-            this.path = options.path || options.name;
-
             this.name = options.name;
 
             if (options.columns)
@@ -141,7 +133,6 @@ export class Table {
         return new Table({
             schema: this.schema,
             database: this.database,
-            path: this.path,
             name: this.name,
             columns: this.columns.map(column => column.clone()),
             indices: this.indices.map(constraint => constraint.clone()),
@@ -334,7 +325,6 @@ export class Table {
         const options: TableOptions = {
             database: entityMetadata.database,
             schema: entityMetadata.schema,
-            path: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
             name: driver.buildTableName(entityMetadata.tableName, schema, database),
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
