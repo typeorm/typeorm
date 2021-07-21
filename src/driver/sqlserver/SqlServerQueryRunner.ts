@@ -1891,6 +1891,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 return new TableForeignKey({
                     name: dbForeignKey["FK_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: dbForeignKey["TABLE_CATALOG"],
+                    referencedSchema: dbForeignKey["REF_SCHEMA"],
                     referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REF_COLUMN"]),
                     onDelete: dbForeignKey["ON_DELETE"].replace("_", " "), // SqlServer returns NO_ACTION, instead of NO ACTION

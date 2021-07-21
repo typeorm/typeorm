@@ -1665,6 +1665,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 return new TableForeignKey({
                     name: dbForeignKey["constraint_name"],
                     columnNames: foreignKeys.map(dbFk => dbFk["column_name"]),
+                    referencedSchema: dbForeignKey["referenced_table_schema"],
                     referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
                     onDelete: dbForeignKey["on_delete"],

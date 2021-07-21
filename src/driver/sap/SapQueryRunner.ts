@@ -509,6 +509,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: newTable.database,
+                    referencedSchema: newTable.schema,
                     referencedTableName: newTable.name, // we use renamed table name
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
@@ -614,6 +616,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         return new TableForeignKey({
                             name: dbForeignKey["CONSTRAINT_NAME"],
                             columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                            referencedDatabase: table.database,
+                            referencedSchema: table.schema,
                             referencedTableName: table.name,
                             referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                             onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
@@ -953,6 +957,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     return new TableForeignKey({
                         name: dbForeignKey["CONSTRAINT_NAME"],
                         columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                        referencedDatabase: table.database,
+                        referencedSchema: table.schema,
                         referencedTableName: table.name,
                         referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                         onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
@@ -1090,6 +1096,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: table.database,
+                    referencedSchema: table.schema,
                     referencedTableName: table.name,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
@@ -1158,6 +1166,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: table.database,
+                    referencedSchema: table.schema,
                     referencedTableName: table.name,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
@@ -1673,6 +1683,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return new TableForeignKey({
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: table.database,
+                    referencedSchema: dbForeignKey["REFERENCED_SCHEMA_NAME"],
                     referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],

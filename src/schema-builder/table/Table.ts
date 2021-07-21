@@ -96,7 +96,11 @@ export class Table {
                 this.indices = options.indices.map(index => new TableIndex(index));
 
             if (options.foreignKeys)
-                this.foreignKeys = options.foreignKeys.map(foreignKey => new TableForeignKey(foreignKey));
+                this.foreignKeys = options.foreignKeys.map(foreignKey => new TableForeignKey({
+                    ...foreignKey,
+                    referencedDatabase: foreignKey?.referencedDatabase || options.database,
+                    referencedSchema: foreignKey?.referencedSchema || options.schema,
+                }));
 
             if (options.uniques)
                 this.uniques = options.uniques.map(unique => new TableUnique(unique));
