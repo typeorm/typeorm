@@ -333,7 +333,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = ${parsedTableName.schema} AND "table_name" = ${parsedTableName.tableName}`;
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
+        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -343,7 +348,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = ${parsedTableName.schema} AND "table_name" = ${parsedTableName.tableName} AND "column_name" = '${columnName}'`;
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
+        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}' AND "column_name" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -517,8 +527,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
-        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        const { schema: schemaName, tableName: oldTableName } = this.parseTableName(oldTable);
 
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
@@ -566,7 +576,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
-            const schema = this.extractSchema(newTable);
+            const { schema } = this.parseTableName(newTable);
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
@@ -760,7 +770,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
                 // rename column sequence
                 if (oldColumn.isGenerated === true && newColumn.generationStrategy === "increment") {
-                    const schema = this.extractSchema(table);
+                    const { schema } = this.parseTableName(table);
 
                     // building sequence name. Sequence without schema needed because it must be supplied in RENAME TO without
                     // schema name, but schema needed in ALTER SEQUENCE argument.
@@ -793,7 +803,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
-                    const schema = this.extractSchema(table);
+                    const { schema } = this.parseTableName(table);
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
@@ -2065,14 +2075,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
-     * Extracts schema name from given Table object or table name string.
-     */
-    protected extractSchema(target: Table|string): string|undefined {
-        const tableName = target instanceof Table ? target.name : target;
-        return tableName.indexOf(".") === -1 ? this.driver.options.schema : tableName.split(".")[0];
-    }
-
-    /**
      * Drops ENUM type from given schemas.
      */
     protected async dropEnumTypes(schemaNames: string): Promise<void> {
@@ -2088,11 +2090,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Checks if enum with the given name exist in the database.
      */
     protected async hasEnumType(table: Table, column: TableColumn): Promise<boolean> {
-        const schema = this.parseTableName(table).schema;
+        let { schema } = this.parseTableName(table);
+
+        if (!schema) {
+            schema = await this.getCurrentSchema();
+        }
+
         const enumName = this.buildEnumName(table, column, false, true);
         const sql = `SELECT "n"."nspname", "t"."typname" FROM "pg_type" "t" ` +
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" = ${schema} AND "t"."typname" = '${enumName}'`;
+            `WHERE "n"."nspname" = '${schema}' AND "t"."typname" = '${enumName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -2127,7 +2134,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        const schema = this.extractSchema(table);
+        const { schema } = this.parseTableName(table);
         return schema ? new Query(`DROP INDEX "${schema}"."${indexName}"`) : new Query(`DROP INDEX "${indexName}"`);
     }
 
@@ -2251,8 +2258,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds ENUM type name from given table and column.
      */
     protected buildEnumName(table: Table, column: TableColumn, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
-        const schema = table.name.indexOf(".") === -1 ? this.driver.options.schema : table.name.split(".")[0];
-        const tableName = table.name.indexOf(".") === -1 ? table.name : table.name.split(".")[1];
+        const { schema, tableName } = this.parseTableName(table);
         let enumName = column.enumName ? column.enumName : `${tableName}_${column.name.toLowerCase()}_enum`;
         if (schema && withSchema)
             enumName = `${schema}.${enumName}`
@@ -2264,12 +2270,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
-        const currentSchema = await this.getCurrentSchema()
-        let [schema, name] = table.name.split(".");
-        if (!name) {
-            name = schema;
-            schema = this.driver.options.schema || currentSchema;
+        let { schema, tableName: name } = this.parseTableName(table);
+
+        if (!schema) {
+            schema = await this.getCurrentSchema();
         }
+
         const result = await this.query(`SELECT "udt_schema", "udt_name" ` +
             `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`);
 
@@ -2322,13 +2328,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const tableName = target instanceof Table ? target.name : target;
         if (tableName.indexOf(".") === -1) {
             return {
-                schema: this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()",
-                tableName: `'${tableName}'`
+                schema: this.driver.options.schema,
+                tableName
             };
         } else {
             return {
-                schema: `'${tableName.split(".")[0]}'`,
-                tableName: `'${tableName.split(".")[1]}'`
+                schema: tableName.split(".")[0],
+                tableName: tableName.split(".")[1]
             };
         }
     }

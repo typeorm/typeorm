@@ -438,9 +438,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
-        newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
+        const { database } = this.parseTableName(oldTable);
+
+        newTable.name = database ? `${database}.${newTableName}` : newTableName;
 
         // rename table
         upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable)} TO ${this.escapePath(newTable)}`));
@@ -1293,20 +1294,23 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // Avoid data directory scan: TABLE_SCHEMA
             // Avoid database directory scan: TABLE_NAME
             // We only use `TABLE_SCHEMA` and `TABLE_NAME` which is `SKIP_OPEN_TABLE`
-            const tablesSql = tableNames.map(tableName => {
-                let [ database, name ] = tableName.split(".");
-                if (!name) {
-                    name = database;
-                    database = this.driver.database || currentDatabase;
-                }
-                return `
-                    SELECT \`TABLE_SCHEMA\`,
-                           \`TABLE_NAME\`
-                    FROM \`INFORMATION_SCHEMA\`.\`TABLES\`
-                    WHERE \`TABLE_SCHEMA\` = '${database}'
-                      AND \`TABLE_NAME\` = '${name}'
-                `;
-            }).join(" UNION ");
+            const tablesSql = tableNames
+                .filter(tableName => tableName)
+                .map(tableName => {
+                    let { database, tableName: name } = this.parseTableName(tableName);
+
+                    if (!database) {
+                        database = currentDatabase;
+                    }
+
+                    return `
+                        SELECT \`TABLE_SCHEMA\`,
+                               \`TABLE_NAME\`
+                        FROM \`INFORMATION_SCHEMA\`.\`TABLES\`
+                        WHERE \`TABLE_SCHEMA\` = '${database}'
+                          AND \`TABLE_NAME\` = '${name}'
+                    `;
+                }).join(" UNION ");
 
             dbTables.push(...await this.query(tablesSql));
         }

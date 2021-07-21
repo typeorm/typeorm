@@ -310,7 +310,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = ${parsedTableName.schema} AND "TABLE_NAME" = ${parsedTableName.tableName}`;
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
+        const sql = `SELECT * FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -320,6 +325,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
         const sql = `SELECT * FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = ${parsedTableName.schema} AND "TABLE_NAME" = ${parsedTableName.tableName} AND "COLUMN_NAME" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -480,8 +490,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
-        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        const { schema: schemaName, tableName: oldTableName } = this.parseTableName(oldTable);
 
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
@@ -590,6 +600,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const parsedTableName = this.parseTableName(table);
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
         const clonedTable = table.clone();
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
@@ -604,7 +619,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (primaryColumns.length > 0) {
                 // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
                 // To avoid this, we must drop all referential foreign keys and recreate them later
-                const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+                const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = '${parsedTableName.schema}' AND "REFERENCED_TABLE_NAME" = '${parsedTableName.tableName}'`;
                 const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
                 let referencedForeignKeys: TableForeignKey[] = [];
                 const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
@@ -933,6 +948,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     async dropColumn(tableOrName: Table|string, columnOrName: TableColumn|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const parsedTableName = this.parseTableName(table);
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
             throw new TypeORMError(`Column "${columnOrName}" was not found in table "${table.name}"`);
@@ -945,7 +965,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (column.isPrimary) {
             // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
             // To avoid this, we must drop all referential foreign keys and recreate them later
-            const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+            const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = '${parsedTableName.schema}' AND "REFERENCED_TABLE_NAME" = '${parsedTableName.tableName}'`;
             const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
             let referencedForeignKeys: TableForeignKey[] = [];
             const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
@@ -1077,6 +1097,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const parsedTableName = this.parseTableName(table);
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
         const clonedTable = table.clone();
         const columnNames = columns.map(column => column.name);
         const upQueries: Query[] = [];
@@ -1084,7 +1109,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
         // To avoid this, we must drop all referential foreign keys and recreate them later
-        const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+        const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = '${parsedTableName.schema}' AND "REFERENCED_TABLE_NAME" = '${parsedTableName.tableName}'`;
         const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
         let referencedForeignKeys: TableForeignKey[] = [];
         const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
@@ -1149,12 +1174,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const parsedTableName = this.parseTableName(table);
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
 
         // SAP HANA does not allow to drop PK's which is referenced by foreign keys.
         // To avoid this, we must drop all referential foreign keys and recreate them later
-        const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = ${parsedTableName.schema} AND "REFERENCED_TABLE_NAME" = ${parsedTableName.tableName}`;
+        const referencedForeignKeySql = `SELECT * FROM "SYS"."REFERENTIAL_CONSTRAINTS" WHERE "REFERENCED_SCHEMA_NAME" = '${parsedTableName.schema}' AND "REFERENCED_TABLE_NAME" = '${parsedTableName.tableName}'`;
         const dbForeignKeys: ObjectLiteral[] = await this.query(referencedForeignKeySql);
         let referencedForeignKeys: TableForeignKey[] = [];
         const referencedForeignKeyTableMapping: { tableName: string, fkName: string }[] = [];
@@ -1900,10 +1930,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
         const parsedTableName = this.parseTableName(table);
-        if (parsedTableName.schema === "current_schema") {
+
+        if (!parsedTableName.schema) {
             return new Query(`DROP INDEX "${indexName}"`);
         } else {
-            return new Query(`DROP INDEX "${parsedTableName.schema.replace(/'/g, "")}"."${indexName}"`);
+            return new Query(`DROP INDEX "${parsedTableName.schema}"."${indexName}"`);
         }
     }
 
@@ -1989,13 +2020,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const tableName = target instanceof Table ? target.name : target;
         if (tableName.indexOf(".") === -1) {
             return {
-                schema: this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema",
-                tableName: `'${tableName}'`
+                schema: this.driver.options.schema,
+                tableName: tableName
             };
         } else {
             return {
-                schema: `'${tableName.split(".")[0]}'`,
-                tableName: `'${tableName.split(".")[1]}'`
+                schema: tableName.split(".")[0],
+                tableName: tableName.split(".")[1]
             };
         }
     }

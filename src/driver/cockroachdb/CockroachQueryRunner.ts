@@ -344,7 +344,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = ${parsedTableName.schema} AND "table_name" = ${parsedTableName.tableName}`;
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
+        const sql = `SELECT * FROM "information_schema"."tables" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -354,7 +359,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = ${parsedTableName.schema} AND "table_name" = ${parsedTableName.tableName} AND "column_name" = '${columnName}'`;
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
+        const sql = `SELECT * FROM "information_schema"."columns" WHERE "table_schema" = '${parsedTableName.schema}' AND "table_name" = '${parsedTableName.tableName}' AND "column_name" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -519,8 +529,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const oldTableName = oldTable.name.indexOf(".") === -1 ? oldTable.name : oldTable.name.split(".")[1];
-        const schemaName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        const { schema: schemaName, tableName: oldTableName } = this.parseTableName(oldTable);
 
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
@@ -554,7 +564,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
-            const schema = this.extractSchema(newTable);
+            const { schema } = this.parseTableName(newTable);
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
@@ -757,7 +767,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
-                    const schema = this.extractSchema(table);
+                    const { schema } = this.parseTableName(table);
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
@@ -1781,14 +1791,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     /**
-     * Extracts schema name from given Table object or table name string.
-     */
-    protected extractSchema(target: Table|string): string|undefined {
-        const tableName = target instanceof Table ? target.name : target;
-        return tableName.indexOf(".") === -1 ? this.driver.options.schema : tableName.split(".")[0];
-    }
-
-    /**
      * Builds drop table sql.
      */
     protected dropTableSql(tableOrPath: Table|string): Query {
@@ -1989,13 +1991,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const tableName = target instanceof Table ? target.name : target;
         if (tableName.indexOf(".") === -1) {
             return {
-                schema: this.driver.options.schema ? `'${this.driver.options.schema}'` : "current_schema()",
-                tableName: `'${tableName}'`
+                schema: this.driver.options.schema,
+                tableName,
             };
         } else {
             return {
-                schema: `'${tableName.split(".")[0]}'`,
-                tableName: `'${tableName.split(".")[1]}'`
+                schema: tableName.split(".")[0],
+                tableName: tableName.split(".")[1],
             };
         }
     }

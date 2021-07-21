@@ -290,7 +290,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const { name: tableName } = this.parseTableName(tableOrName);
         const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -300,7 +300,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const { name: tableName } = this.parseTableName(tableOrName);
         const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -1697,4 +1697,29 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }).join(".");
     }
 
+    protected parseTableName(target: Table | View | string) {
+        const tableName = (target instanceof Table || target instanceof View) ? target.name : target;
+
+        const parts = tableName.split(".");
+
+        if (parts.length === 3) {
+            return {
+                database: parts[0],
+                schema: parts[1] === "" ? this.driver.options.schema : parts[1],
+                name: parts[2]
+            };
+        } else if (parts.length === 2) {
+            return {
+                database: this.driver.database,
+                schema: parts[0],
+                name: parts[1]
+            };
+        } else {
+            return {
+                database: this.driver.database,
+                schema: this.driver.options.schema,
+                name: tableName
+            };
+        }
+    }
 }

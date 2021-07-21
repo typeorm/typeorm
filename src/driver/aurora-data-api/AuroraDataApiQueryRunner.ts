@@ -389,9 +389,9 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
-        const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
 
-        newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
+        const { database } = this.parseTableName(oldTable);
+        newTable.name = database ? `${database}.${newTableName}` : newTableName;
 
         // rename table
         upQueries.push(new Query(`RENAME TABLE ${this.escapePath(oldTable)} TO ${this.escapePath(newTable)}`));
