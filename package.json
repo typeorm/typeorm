@@ -120,7 +120,7 @@
     "hdb-pool": "*",
     "ioredis": "*",
     "ioredis/cluster": "*",
-    "mongodb": "*",
+    "mongodb": "^3.6.0",
     "mssql": "*",
     "mysql2": "*",
     "oracledb": "*",
