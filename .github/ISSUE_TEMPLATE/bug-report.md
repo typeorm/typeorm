@@ -81,36 +81,36 @@ assignees: ''
 
 ### Relevant Database Driver(s)
 
-<!-- Copy/paste "✅" to your issue's relevant databases, left "❌" others: -->
+<!-- Copy/paste "✔️" to your issue's relevant databases, left "✖️" others: -->
 
-- ✅ all databases
-- ❌ `aurora-data-api`
-- ❌ `aurora-data-api-pg`
-- ❌ `better-sqlite3`
-- ❌ `cockroachdb`
-- ❌ `cordova`
-- ❌ `expo`
-- ❌ `mongodb`
-- ❌ `mysql`
-- ❌ `nativescript`
-- ❌ `oracle`
-- ❌ `postgres`
-- ❌ `react-native`
-- ❌ `sap`
-- ❌ `sqlite`
-- ❌ `sqlite-abstract`
-- ❌ `sqljs`
-- ❌ `sqlserver`
+- ✔️ all databases
+- ✖️ `aurora-data-api`
+- ✖️ `aurora-data-api-pg`
+- ✖️ `better-sqlite3`
+- ✖️ `cockroachdb`
+- ✖️ `cordova`
+- ✖️ `expo`
+- ✖️ `mongodb`
+- ✖️ `mysql`
+- ✖️ `nativescript`
+- ✖️ `oracle`
+- ✖️ `postgres`
+- ✖️ `react-native`
+- ✖️ `sap`
+- ✖️ `sqlite`
+- ✖️ `sqlite-abstract`
+- ✖️ `sqljs`
+- ✖️ `sqlserver`
 
 
 ### Are you willing to resolve this issue by submitting a Pull Request?
 
-<!-- Copy/paste "✅" to one of these options, left "❌" others: -->
+<!-- Copy/paste "✔️" to one of these options, left "✖️" others: -->
 
-- ❌ Yes, I have the time, and I know how to start.
-- ❌ Yes, I have the time, but I don't know how to start. I would need guidance.
-- ❌ No, I don’t have the time, but I can support (using donations) development.
-- ❌ No, I don’t have the time and I’m okay to wait for the community / maintainers to resolve this issue.
+- ✖️ Yes, I have the time, and I know how to start.
+- ✖️ Yes, I have the time, but I don't know how to start. I would need guidance.
+- ✖️ No, I don’t have the time, but I can support (using donations) development.
+- ✖️ No, I don’t have the time and I’m okay to wait for the community / maintainers to resolve this issue.
 
 
 <!--
