@@ -81,7 +81,7 @@ assignees: ''
 
 ### Relevant Database Driver(s)
 
-<!-- Copy/paste "✅" to your issue's relevant databases, left "✖️" others: -->
+<!-- Put "✅" (:white_check_mark:) to your issue's relevant databases, left "✖️" (:heavy_multiplication_x:) others: -->
 
 - ✅ all databases
 - ✖️ `aurora-data-api`
@@ -105,7 +105,7 @@ assignees: ''
 
 ### Are you willing to resolve this issue by submitting a Pull Request?
 
-<!-- Copy/paste "✅" to one of these options, left "✖️" others: -->
+<!-- Put "✅" (:white_check_mark:) to one of these options, left "✖️" (:heavy_multiplication_x:) others: -->
 
 - ✖️ Yes, I have the time, and I know how to start.
 - ✖️ Yes, I have the time, but I don't know how to start. I would need guidance.
