@@ -2244,15 +2244,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             case "tinyint":
                 return this.driver.mssql.TinyInt;
             case "char":
-                return this.driver.mssql.Char(...parameter.params);
             case "nchar":
                 return this.driver.mssql.NChar(...parameter.params);
             case "text":
-                return this.driver.mssql.Text;
             case "ntext":
                 return this.driver.mssql.Ntext;
             case "varchar":
-                return this.driver.mssql.VarChar(...parameter.params);
             case "nvarchar":
                 return this.driver.mssql.NVarChar(...parameter.params);
             case "xml":
