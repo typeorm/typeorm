@@ -81,9 +81,9 @@ assignees: ''
 
 ### Relevant Database Driver(s)
 
-<!-- Copy/paste "✔️" to your issue's relevant databases, left "✖️" others: -->
+<!-- Copy/paste "✅" to your issue's relevant databases, left "✖️" others: -->
 
-- ✔️ all databases
+- ✅ all databases
 - ✖️ `aurora-data-api`
 - ✖️ `aurora-data-api-pg`
 - ✖️ `better-sqlite3`
@@ -105,7 +105,7 @@ assignees: ''
 
 ### Are you willing to resolve this issue by submitting a Pull Request?
 
-<!-- Copy/paste "✔️" to one of these options, left "✖️" others: -->
+<!-- Copy/paste "✅" to one of these options, left "✖️" others: -->
 
 - ✖️ Yes, I have the time, and I know how to start.
 - ✖️ Yes, I have the time, but I don't know how to start. I would need guidance.
