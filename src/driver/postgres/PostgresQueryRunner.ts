@@ -1541,15 +1541,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables"`
             dbTables.push(...await this.query(tablesSql));
         } else {
-            const tablesCondition = tableNames.map(tableName => {
-                let [schema, name] = tableName.split(".");
-                if (!name) {
-                    name = schema;
-                    schema = this.driver.options.schema || currentSchema;
-                }
-                return `("table_schema" = '${schema}' AND "table_name" = '${name}')`;
+            const tablesCondition = tableNames
+                .map(tableName => this.parseTableName(tableName))
+                .map(({ schema, tableName }) => {
+                    return `("table_schema" = '${schema || currentSchema}' AND "table_name" = '${tableName}')`;
 
-            }).join(" OR ");
+                }).join(" OR ");
 
             const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables" WHERE ` + tablesCondition;
             dbTables.push(...await this.query(tablesSql));
@@ -2317,31 +2314,46 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Escapes given table or view path.
      */
-    protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        let tableName = target instanceof Table || target instanceof View ? target.name : target;
-        tableName = tableName.indexOf(".") === -1 && this.driver.options.schema ? `${this.driver.options.schema}.${tableName}` : tableName;
+    protected escapePath(target: Table|View|string): string {
+        const { schema, tableName } = this.parseTableName(target);
 
-        return tableName.split(".").map(i => {
-            return disableEscape ? i : `"${i}"`;
-        }).join(".");
+        if (schema) {
+            return `"${schema}"."${tableName}"`;
+        }
+
+        return `"${tableName}"`;
     }
 
     /**
      * Returns object with table schema and table name.
      */
-    protected parseTableName(target: Table|string) {
-        const tableName = target instanceof Table ? target.name : target;
-        if (tableName.indexOf(".") === -1) {
+    protected parseTableName(target: Table | View | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.driver.database;
+
+        // This really should be abstracted into the driver as well..
+        const driverSchema = this.driver.options.schema;
+
+        if (target instanceof Table) {
+            const parsed = this.parseTableName(target.name);
+
             return {
-                schema: this.driver.options.schema,
-                tableName
-            };
-        } else {
-            return {
-                schema: tableName.split(".")[0],
-                tableName: tableName.split(".")[1]
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
             };
         }
+
+        if (target instanceof View) {
+            return this.parseTableName(target.name);
+        }
+
+        const parts = target.split(".")
+
+        return {
+            database: driverDatabase,
+            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            tableName: parts.length > 1 ? parts[1] : parts[0],
+        };
     }
 
     /**

@@ -290,7 +290,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
-        const { name: tableName } = this.parseTableName(tableOrName);
+        const { tableName } = this.parseTableName(tableOrName);
         const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -300,7 +300,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
-        const { name: tableName } = this.parseTableName(tableOrName);
+        const { tableName } = this.parseTableName(tableOrName);
         const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -455,13 +455,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const downQueries: Query[] = [];
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         let newTable = oldTable.clone();
-        const dbName = oldTable.name.indexOf(".") === -1 ? undefined : oldTable.name.split(".")[0];
+
+        const { database: dbName, tableName: oldTableName } = this.parseTableName(oldTable);
 
         newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
         // rename table
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO ${this.escapePath(newTable)}`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO ${this.escapePath(oldTable)}`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable)} RENAME TO "${newTableName}"`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME TO "${oldTableName}"`));
 
         // rename primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -1688,37 +1689,57 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Escapes given table or view path.
      */
-    protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        let tableName = target instanceof Table || target instanceof View ? target.name : target;
-        tableName = tableName.indexOf(".") === -1 && this.driver.options.schema ? `${this.driver.options.schema}.${tableName}` : tableName;
+    protected escapePath(target: Table | View | string): string {
+        // Ignore database when escaping paths
+        const { schema, tableName } = this.parseTableName(target);
 
-        return tableName.split(".").map(i => {
-            return disableEscape ? i : `"${i}"`;
-        }).join(".");
+        if (schema) {
+            return `"${schema}"."${tableName}"`;
+        }
+
+        return `"${tableName}"`;
     }
 
-    protected parseTableName(target: Table | View | string) {
-        const tableName = (target instanceof Table || target instanceof View) ? target.name : target;
+    protected parseTableName(target: Table | View | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.driver.database;
 
-        const parts = tableName.split(".");
+        // This really should be abstracted into the driver as well..
+        const optionsSchema = this.driver.options.schema;
+        const driverSchema = typeof optionsSchema === 'string' ? optionsSchema : undefined;
+
+        if (target instanceof Table) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof View) {
+            return this.parseTableName(target.name);
+        }
+
+        const parts = target.split(".");
 
         if (parts.length === 3) {
             return {
-                database: parts[0],
-                schema: parts[1] === "" ? this.driver.options.schema : parts[1],
-                name: parts[2]
+                database: parts[0] || driverDatabase,
+                schema: parts[1] || driverSchema,
+                tableName: parts[2]
             };
         } else if (parts.length === 2) {
             return {
-                database: this.driver.database,
-                schema: parts[0],
-                name: parts[1]
+                database: driverDatabase,
+                schema: parts[0] || driverSchema,
+                tableName: parts[1]
             };
         } else {
             return {
-                database: this.driver.database,
-                schema: this.driver.options.schema,
-                name: tableName
+                database: driverDatabase,
+                schema: driverSchema,
+                tableName: target
             };
         }
     }

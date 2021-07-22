@@ -1639,11 +1639,30 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         return new Query(`ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${foreignKeyName}\``);
     }
 
-    protected parseTableName(target: Table|string) {
-        const tableName = target instanceof Table ? target.name : target;
+    protected parseTableName(target: Table | View | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.driver.database;
+        const driverSchema = undefined;
+
+        if (target instanceof Table) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof View) {
+            return this.parseTableName(target.name);
+        }
+
+        const parts = target.split(".")
+
         return {
-            database: tableName.indexOf(".") !== -1 ? tableName.split(".")[0] : this.driver.database,
-            tableName: tableName.indexOf(".") !== -1 ? tableName.split(".")[1] : tableName
+            database: (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+            schema: driverSchema,
+            tableName: parts.length > 1 ? parts[1] : parts[0]
         };
     }
 
@@ -1666,9 +1685,14 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     /**
      * Escapes given table or view path.
      */
-    protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        const tableName = target instanceof Table || target instanceof View ? target.name : target;
-        return tableName.split(".").map(i => disableEscape ? i : `\`${i}\``).join(".");
+    protected escapePath(target: Table|View|string): string {
+        const { database, tableName } = this.parseTableName(target);
+
+        if (database) {
+            return `\`${database}\`.\`${tableName}\``;
+        }
+
+        return `\`${tableName}\``;
     }
 
     /**
