@@ -186,7 +186,9 @@ TypeORM provides a lot of built-in operators that can be used to create more com
 import {Not} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Not("About #1")
+    where: {
+        title: Not("About #1")
+    }
 })
 ```
 
@@ -202,7 +204,9 @@ SELECT * FROM "post" WHERE "title" != 'About #1'
 import {LessThan} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: LessThan(10)
+    where: {
+        likes: LessThan(10)
+    }
 });
 ```
 
@@ -218,7 +222,9 @@ SELECT * FROM "post" WHERE "likes" < 10
 import {LessThanOrEqual} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: LessThanOrEqual(10)
+    where: {
+        likes: LessThanOrEqual(10)
+    }
 });
 ```
 
@@ -234,7 +240,9 @@ SELECT * FROM "post" WHERE "likes" <= 10
 import {MoreThan} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: MoreThan(10)
+    where: {
+        likes: MoreThan(10)
+    }
 });
 ```
 
@@ -250,7 +258,9 @@ SELECT * FROM "post" WHERE "likes" > 10
 import {MoreThanOrEqual} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: MoreThanOrEqual(10)
+    where: {
+        likes: MoreThanOrEqual(10)
+    }
 });
 ```
 
@@ -266,7 +276,9 @@ SELECT * FROM "post" WHERE "likes" >= 10
 import {Equal} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Equal("About #2")
+    where: {
+        title: Equal("About #2")
+    }
 });
 ```
 
@@ -282,7 +294,9 @@ SELECT * FROM "post" WHERE "title" = 'About #2'
 import {Like} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Like("%out #%")
+    where: {
+        title: Like("%out #%")
+    }
 });
 ```
 
@@ -298,7 +312,9 @@ SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 import {ILike} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: ILike("%out #%")
+    where: {
+        title: ILike("%out #%")
+    }
 });
 ```
 
@@ -314,7 +330,9 @@ SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
 import {Between} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Between(1, 10)
+    where: {
+        likes: Between(1, 10)
+    }
 });
 ```
 
@@ -330,7 +348,9 @@ SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
 import {In} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: In(["About #2", "About #3"])
+    where: {
+        title: In(["About #2", "About #3"])
+    }
 });
 ```
 
@@ -346,7 +366,9 @@ SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
 import {Any} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Any(["About #2", "About #3"])
+    where: {
+        title: Any(["About #2", "About #3"])
+    }
 });
 ```
 
@@ -362,7 +384,9 @@ SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
 import {IsNull} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: IsNull()
+    where: {
+        title: IsNull()
+    }
 });
 ```
 
@@ -378,7 +402,9 @@ SELECT * FROM "post" WHERE "title" IS NULL
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Raw("dislikes - 4")
+    where: {
+        likes: Raw("dislikes - 4")
+    }
 });
 ```
 
@@ -395,7 +421,9 @@ In the simplest case, a raw query is inserted immediately after the equal symbol
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    currentDate: Raw(alias =>`${alias} > NOW()`)
+    where: {
+        currentDate: Raw(alias =>`${alias} > NOW()`)
+    }
 });
 ```
 
@@ -411,7 +439,9 @@ If you need to provide user input, you should not include the user input directl
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    currentDate: Raw(alias =>`${alias} > :date`, { date: "2020-10-06" })
+    where: {
+        currentDate: Raw(alias =>`${alias} > :date`, { date: "2020-10-06" })
+    }
 });
 ```
 
@@ -427,7 +457,9 @@ If you need to provide user input that is an array, you can bind them as a list 
 import {Raw} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Raw(alias =>`${alias} IN (:...titles)`, { titles: ["Go To Statement Considered Harmful", "Structured Programming"] })
+    where: {
+        title: Raw(alias =>`${alias} IN (:...titles)`, { titles: ["Go To Statement Considered Harmful", "Structured Programming"] })
+    }
 });
 ```
 
@@ -445,8 +477,10 @@ Also you can combine these operators with `Not` operator:
 import {Not, MoreThan, Equal} from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Not(MoreThan(10)),
-    title: Not(Equal("About #2"))
+    where: {
+        likes: Not(MoreThan(10)),
+        title: Not(Equal("About #2"))
+    }
 });
 ```
 
