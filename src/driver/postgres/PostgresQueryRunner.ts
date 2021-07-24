@@ -1496,15 +1496,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             viewNames = [];
         }
 
+        const currentDatabase = await this.getCurrentDatabase();
         const currentSchema = await this.getCurrentSchema()
-        const viewsCondition = viewNames.length === 0 ? "1=1" : viewNames.map(viewName => {
-            let [schema, name] = viewName.split(".");
-            if (!name) {
-                name = schema;
-                schema = this.driver.options.schema || currentSchema;
-            }
-            return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
-        }).join(" OR ");
+        const viewsCondition = viewNames.length === 0 ? "1=1" : viewNames
+            .map(tableName => this.parseTableName(tableName))
+            .map(({ schema, tableName }) => {
+
+                if (!schema) {
+                    schema = this.driver.options.schema || currentSchema;
+                }
+
+                return `("t"."schema" = '${schema}' AND "t"."name" = '${tableName}')`;
+            }).join(" OR ");
 
         const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
             `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
@@ -1515,6 +1518,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         return dbViews.map((dbView: any) => {
             const view = new View();
             const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
+            view.database = currentDatabase;
+            view.schema = dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema);
             view.expression = dbView["value"];
             view.materialized = dbView["type"] === "MATERIALIZED_VIEW";
@@ -2026,12 +2031,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
-        const splittedName = view.name.split(".");
-        let schema = this.driver.options.schema || currentSchema;
-        let name = view.name;
-        if (splittedName.length === 2) {
-            schema = splittedName[0];
-            name = splittedName[1];
+
+        let { schema, tableName: name } = this.parseTableName(view);
+
+        if (!schema) {
+            schema = currentSchema;
         }
 
         const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
@@ -2058,12 +2062,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected async deleteViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
-        const splittedName = view.name.split(".");
-        let schema = this.driver.options.schema || currentSchema;
-        let name = view.name;
-        if (splittedName.length === 2) {
-            schema = splittedName[0];
-            name = splittedName[1];
+
+        let { schema, tableName: name } = this.parseTableName(view);
+
+        if (!schema) {
+            schema = currentSchema;
         }
 
         const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
@@ -2333,7 +2336,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // This really should be abstracted into the driver as well..
         const driverSchema = this.driver.options.schema;
 
-        if (target instanceof Table) {
+        if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
 
             return {
@@ -2341,10 +2344,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName
             };
-        }
-
-        if (target instanceof View) {
-            return this.parseTableName(target.name);
         }
 
         const parts = target.split(".")

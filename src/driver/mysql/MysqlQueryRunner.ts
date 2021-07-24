@@ -1230,11 +1230,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const currentDatabase = await this.getCurrentDatabase();
         const viewsCondition = viewNames.map(tableName => {
-            let [database, name] = tableName.split(".");
-            if (!name) {
-                name = database;
-                database = this.driver.database || currentDatabase;
+            let { database, tableName: name } = this.parseTableName(tableName)
+
+            if (!database) {
+                database = currentDatabase;
             }
+
             return `(\`t\`.\`schema\` = '${database}' AND \`t\`.\`name\` = '${name}')`;
         }).join(" OR ");
 
@@ -1244,6 +1245,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         return dbViews.map((dbView: any) => {
             const view = new View();
             const db = dbView["schema"] === currentDatabase ? undefined : dbView["schema"];
+            view.database = dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], undefined, db);
             view.expression = dbView["value"];
             return view;
@@ -1832,7 +1834,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const driverDatabase = this.driver.database;
         const driverSchema = undefined;
 
-        if (target instanceof Table) {
+        if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
 
             return {
@@ -1840,10 +1842,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName
             };
-        }
-
-        if (target instanceof View) {
-            return this.parseTableName(target.name);
         }
 
         const parts = target.split(".")

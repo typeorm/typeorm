@@ -1516,35 +1516,19 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const currentSchema = await this.getCurrentSchema();
         const currentDatabase = await this.getCurrentDatabase();
 
-        const extractTableSchemaAndName = (tableName: string): string[] => {
-            let [database, schema, name] = tableName.split(".");
-            // if name is empty, it means that tableName have only schema name and table name or only table name
-            if (!name) {
-                // if schema is empty, it means tableName have only name of a table. Otherwise it means that we have "schemaName"."tableName" string.
-                if (!schema) {
-                    name = database;
-                    schema = this.driver.options.schema || currentSchema;
-
-                } else {
-                    name = schema;
-                    schema = database;
-                }
-            } else if (schema === "") {
-                schema = this.driver.options.schema || currentSchema;
-            }
-
-            return [schema, name];
-        };
-
         const dbNames = viewPaths
-            .filter(viewPath => viewPath.split(".").length === 3)
-            .map(viewPath => viewPath.split(".")[0]);
+            .map(viewPath => this.parseTableName(viewPath).database)
+            .filter(database => database);
 
         if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
             dbNames.push(this.driver.database);
 
         const viewsCondition = viewPaths.map(viewPath => {
-            const [schema, name] = extractTableSchemaAndName(viewPath);
+            let { schema, tableName: name } = this.parseTableName(viewPath);
+
+            if (!schema) {
+                schema = currentSchema;
+            }
             return `("T"."SCHEMA" = '${schema}' AND "T"."NAME" = '${name}')`;
         }).join(" OR ");
 
@@ -1558,6 +1542,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const view = new View();
             const db = dbView["TABLE_CATALOG"] === currentDatabase ? undefined : dbView["TABLE_CATALOG"];
             const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
+            view.database = dbView["TABLE_CATALOG"];
+            view.schema = dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema, db);
             view.expression = dbView["value"];
             return view;
@@ -2197,7 +2183,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         // This really should be abstracted into the driver as well..
         const driverSchema = this.driver.options.schema;
 
-        if (target instanceof Table) {
+        if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
 
             return {
@@ -2205,10 +2191,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName,
             };
-        }
-
-        if (target instanceof View) {
-            return this.parseTableName(target.name);
         }
 
         const parts = target.split(".");

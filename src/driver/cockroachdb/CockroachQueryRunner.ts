@@ -1383,6 +1383,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             viewNames = [];
         }
 
+        const currentDatabase = await this.getCurrentDatabase();
         const currentSchema = await this.getCurrentSchema();
 
         const viewsCondition = viewNames.map(viewName => {
@@ -1397,6 +1398,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         return dbViews.map((dbView: any) => {
             const view = new View();
             const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
+            view.database = currentDatabase;
+            view.schema = dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema);
             view.expression = dbView["value"];
             return view;
@@ -1799,14 +1802,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
-        const splittedName = view.name.split(".");
-        let schema = this.driver.options.schema || currentSchema;
-        let name = view.name;
-        if (splittedName.length === 2) {
-            schema = splittedName[0];
-            name = splittedName[1];
+        const currentSchema = await this.getCurrentSchema();
+
+        let { schema, tableName: name } = this.parseTableName(view)
+
+        if (!schema) {
+            schema = currentSchema;
         }
 
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
@@ -1830,15 +1831,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        const currentSchemaQuery = await this.query(`SELECT * FROM current_schema()`);
-        const currentSchema = currentSchemaQuery[0]["current_schema"];
-        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const splittedName = viewName.split(".");
-        let schema = this.driver.options.schema || currentSchema;
-        let name = viewName;
-        if (splittedName.length === 2) {
-            schema = splittedName[0];
-            name = splittedName[1];
+        const currentSchema = await this.getCurrentSchema();
+
+        let { schema, tableName: name } = this.parseTableName(viewOrPath);
+
+        if (!schema) {
+            schema = currentSchema;
         }
 
         const qb = this.connection.createQueryBuilder();
@@ -1996,7 +1994,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         // This really should be abstracted into the driver as well..
         const driverSchema = this.driver.options.schema;
 
-        if (target instanceof Table) {
+        if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
 
             return {
@@ -2004,10 +2002,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName
             };
-        }
-
-        if (target instanceof View) {
-            return this.parseTableName(target.name);
         }
 
         const parts = target.split(".")

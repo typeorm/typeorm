@@ -1488,14 +1488,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             viewNames = [];
         }
 
+        const currentDatabase = await this.getCurrentDatabase();
         const currentSchema = await this.getCurrentSchema();
 
         const viewsCondition = viewNames.map(viewName => {
-            let [schema, name] = viewName.split(".");
-            if (!name) {
-                name = schema;
-                schema = this.driver.options.schema || currentSchema;
+            let { schema, tableName: name } = this.parseTableName(viewName);
+
+            if (!schema) {
+                schema = currentSchema;
             }
+
             return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
         }).join(" OR ");
 
@@ -1504,6 +1506,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         return dbViews.map((dbView: any) => {
             const view = new View();
             const schema = dbView["schema"] === currentSchema && !this.driver.options.schema ? undefined : dbView["schema"];
+            view.database = currentDatabase;
+            view.schema = dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema);
             view.expression = dbView["value"];
             return view;
@@ -1849,13 +1853,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema();
-        const splittedName = view.name.split(".");
-        let schema = this.driver.options.schema || currentSchema;
-        let name = view.name;
-        if (splittedName.length === 2) {
-            schema = splittedName[0];
-            name = splittedName[1];
+        let { schema, tableName: name } = this.parseTableName(view);
+
+        if (!schema) {
+            schema = await this.getCurrentSchema();
         }
 
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
@@ -1879,14 +1880,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema();
-        const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const splittedName = viewName.split(".");
-        let schema = this.driver.options.schema || currentSchema;
-        let name = viewName;
-        if (splittedName.length === 2) {
-            schema = splittedName[0];
-            name = splittedName[1];
+        let { schema, tableName: name } = this.parseTableName(viewOrPath);
+
+        if (!schema) {
+            schema = await this.getCurrentSchema();
         }
 
         const qb = this.connection.createQueryBuilder();
@@ -2023,7 +2020,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // This really should be abstracted into the driver as well..
         const driverSchema = this.driver.options.schema;
 
-        if (target instanceof Table) {
+        if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
 
             return {
@@ -2031,10 +2028,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName
             }
-        }
-
-        if (target instanceof View) {
-            return this.parseTableName(target.name);
         }
 
         const parts = target.split(".")

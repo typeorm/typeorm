@@ -1224,6 +1224,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             viewNames = [];
         }
 
+        const currentDatabase = await this.getCurrentDatabase();
+        const currentSchema = await this.getCurrentSchema();
+
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
         let query = `SELECT "T".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "T" ` +
             `INNER JOIN "USER_OBJECTS" "O" ON "O"."OBJECT_NAME" = "T"."name" AND "O"."OBJECT_TYPE" IN ( 'MATERIALIZED VIEW', 'VIEW' ) ` +
@@ -1232,8 +1235,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             query += ` AND "T"."name" IN (${viewNamesString})`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
+            const parsedName = this.parseTableName(dbView["name"]);
+
             const view = new View();
-            view.name = dbView["name"];
+            view.database = parsedName.database || dbView["database"] || currentDatabase;
+            view.schema = parsedName.schema || dbView["schema"] || currentSchema;
+            view.name = parsedName.tableName;
             view.expression = dbView["value"];
             view.materialized = dbView["type"] === "MATERIALIZED_VIEW";
             return view;
@@ -1720,7 +1727,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const optionsSchema = this.driver.options.schema;
         const driverSchema = typeof optionsSchema === 'string' ? optionsSchema : undefined;
 
-        if (target instanceof Table) {
+        if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
 
             return {
@@ -1728,10 +1735,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName
             };
-        }
-
-        if (target instanceof View) {
-            return this.parseTableName(target.name);
         }
 
         const parts = target.split(".");

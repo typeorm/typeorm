@@ -9,6 +9,17 @@ export interface ViewOptions {
     // Public Properties
     // -------------------------------------------------------------------------
 
+
+    /**
+     * Database name that this table resides in if it applies.
+     */
+    database?: string;
+
+    /**
+     * Schema name that this table resides in if it applies.
+     */
+    schema?: string;
+
     /**
      * View name.
      */
