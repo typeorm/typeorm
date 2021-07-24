@@ -652,7 +652,6 @@ export class ColumnMetadata {
             } else {
                 value = entity[this.propertyName];
             }
-            // console.log(this.propertyName, value)
         }
 
         if (transform && this.transformer)
