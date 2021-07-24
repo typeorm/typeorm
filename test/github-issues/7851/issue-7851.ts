@@ -6,7 +6,7 @@ import { User } from "./entity/user";
 import { Message } from "./entity/message";
 
 
-describe("github issues > #7851 Updating (using save method) a ManyToOne relation sets the object.relation_id to null", () => {
+describe.skip("github issues > #7851 Updating (using save method) a ManyToOne relation sets the object.relation_id to null", () => {
 
   let connections: Connection[];
   before(async () => {
