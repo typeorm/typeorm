@@ -1325,7 +1325,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // create columns from the loaded columns
             table.columns = dbColumns
-                .filter(dbColumn => dbColumn["TABLE_NAME"] === table.name)
+                .filter(
+                    dbColumn => (
+                        dbColumn["OWNER"] === dbTable["OWNER"] &&
+                        dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"]
+                    )
+                )
                 .map(dbColumn => {
                     const columnConstraints = dbConstraints.filter(
                         dbConstraint => (
@@ -1416,7 +1421,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
             table.checks = tableCheckConstraints.map(constraint => {
-                const checks = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                const checks = dbConstraints.filter(
+                    dbC => (
+                        dbC["TABLE_NAME"] === constraint["TABLE_NAME"] &&
+                        dbC["OWNER"] === constraint["OWNER"] &&
+                        dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]
+                    )
+                );
                 return new TableCheck({
                     name: constraint["CONSTRAINT_NAME"],
                     columnNames: checks.map(c => c["COLUMN_NAME"]),
@@ -1425,9 +1436,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             });
 
             // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-            const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
-                return dbForeignKey["TABLE_NAME"] === table.name;
-            }), dbForeignKey => dbForeignKey["CONSTRAINT_NAME"]);
+            const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => (
+                dbForeignKey["OWNER"] === dbTable["OWNER"] &&
+                dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"]
+            )), dbForeignKey => dbForeignKey["CONSTRAINT_NAME"]);
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => (
@@ -1439,6 +1451,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     name: dbForeignKey["CONSTRAINT_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
                     referencedDatabase: table.database,
+                    referencedSchema: dbForeignKey["OWNER"],
                     referencedTableName: dbForeignKey["REFERENCED_TABLE_NAME"],
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["ON_DELETE"],
