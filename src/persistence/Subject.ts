@@ -248,7 +248,7 @@ export class Subject {
                 // or value can be a null or direct relation id, e.g. post.question = 1
                 // if its a direction relation id then we just set it to the valueMap,
                 // however if its an object then we need to extract its relation id map and set it to the valueMap
-                if (value instanceof Object) {
+                if (value instanceof Object && !(value instanceof Buffer)) {
 
                     // get relation id, e.g. referenced column name and its value,
                     // for example: { id: 1 } which then will be set to relation, e.g. post.category = { id: 1 }

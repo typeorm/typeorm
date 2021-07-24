@@ -4,9 +4,7 @@ import { closeTestingConnections, createTestingConnections, reloadTestingDatabas
 import { User } from "./entity/user";
 import { UsersObject } from "./entity/usersObject";
 
-
-describe.skip("github issues > #7852 saving a ManyToMany relation tries to insert (DEFAULT, entity2.id) \
-instead of (entity1.id, entity2.id), when id is Buffer", () => {
+describe("github issues > #7852 saving a ManyToMany relation tries to insert (DEFAULT, entity2.id) instead of (entity1.id, entity2.id), when id is Buffer", () => {
 
   let connections: Connection[];
   before(async () => {
