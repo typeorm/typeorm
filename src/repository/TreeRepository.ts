@@ -2,6 +2,7 @@ import {Repository} from "./Repository";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Repository with additional functions to work with trees.
@@ -122,7 +123,6 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
-                    qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
                         return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE ${subQuery.getQuery()} || '%'`;
                     } else {
@@ -131,7 +131,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                 });
         }
 
-        throw new Error(`Supported only in tree entities`);
+        throw new TypeORMError(`Supported only in tree entities`);
     }
 
     /**
@@ -219,7 +219,6 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
-                    qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
                         return `${subQuery.getQuery()} LIKE ${alias}.${this.metadata.materializedPathColumn!.propertyPath} || '%'`;
 
@@ -229,7 +228,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                 });
         }
 
-        throw new Error(`Supported only in tree entities`);
+        throw new TypeORMError(`Supported only in tree entities`);
     }
 
     /**

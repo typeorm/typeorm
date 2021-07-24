@@ -9,6 +9,9 @@ import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
 import {ReplicationMode} from "../driver/types/ReplicationMode";
+import { TypeORMError } from "../error/TypeORMError";
+import { EntityMetadata } from "../metadata/EntityMetadata";
+import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
 
 export abstract class BaseQueryRunner {
 
@@ -91,15 +94,15 @@ export abstract class BaseQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    abstract query(query: string, parameters?: any[]): Promise<any>;
+    abstract query(query: string, parameters?: any[], useStructuredResult?: boolean): Promise<any>;
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
     // -------------------------------------------------------------------------
 
-    protected abstract loadTables(tablePaths: string[]): Promise<Table[]>;
+    protected abstract loadTables(tablePaths?: string[]): Promise<Table[]>;
 
-    protected abstract loadViews(tablePaths: string[]): Promise<View[]>;
+    protected abstract loadViews(tablePaths?: string[]): Promise<View[]>;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -116,7 +119,13 @@ export abstract class BaseQueryRunner {
     /**
      * Loads all tables (with given names) from the database.
      */
-    async getTables(tableNames: string[]): Promise<Table[]> {
+    async getTables(tableNames?: string[]): Promise<Table[]> {
+        if (!tableNames) {
+            // Don't cache in this case.
+            // This is the new case & isn't used anywhere else anyway.
+            return await this.loadTables(tableNames);
+        }
+
         this.loadedTables = await this.loadTables(tableNames);
         return this.loadedTables;
     }
@@ -132,7 +141,7 @@ export abstract class BaseQueryRunner {
     /**
      * Loads given view's data from the database.
      */
-    async getViews(viewPaths: string[]): Promise<View[]> {
+    async getViews(viewPaths?: string[]): Promise<View[]> {
         this.loadedViews = await this.loadViews(viewPaths);
         return this.loadedViews;
     }
@@ -206,7 +215,7 @@ export abstract class BaseQueryRunner {
             this.loadedViews.push(foundViews[0]);
             return foundViews[0];
         } else {
-            throw new Error(`View "${viewName}" does not exist.`);
+            throw new TypeORMError(`View "${viewName}" does not exist.`);
         }
     }
 
@@ -222,7 +231,7 @@ export abstract class BaseQueryRunner {
             this.loadedTables.push(foundTables[0]);
             return foundTables[0];
         } else {
-            throw new Error(`Table "${tableName}" does not exist.`);
+            throw new TypeORMError(`Table "${tableName}" does not exist.`);
         }
     }
 
@@ -232,6 +241,8 @@ export abstract class BaseQueryRunner {
     protected replaceCachedTable(table: Table, changedTable: Table): void {
         const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
         if (foundTable) {
+            foundTable.database = changedTable.database;
+            foundTable.schema = changedTable.schema;
             foundTable.name = changedTable.name;
             foundTable.columns = changedTable.columns;
             foundTable.indices = changedTable.indices;
@@ -241,6 +252,22 @@ export abstract class BaseQueryRunner {
             foundTable.justCreated = changedTable.justCreated;
             foundTable.engine = changedTable.engine;
         }
+    }
+
+    protected getTablePath(target: EntityMetadata | Table | TableForeignKey | string): string {
+        if (target instanceof Table) {
+            return target.name;
+        }
+
+        if (target instanceof TableForeignKey) {
+            return target.referencedTableName;
+        }
+
+        if (target instanceof EntityMetadata) {
+            return target.tablePath;
+        }
+
+        return target;
     }
 
     protected getTypeormMetadataTableName(): string {
@@ -303,8 +330,12 @@ export abstract class BaseQueryRunner {
         if (this.connection.hasMetadata(table.name)) {
             const metadata = this.connection.getMetadata(table.name);
             const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-            if (columnMetadata && columnMetadata.length)
-                return false;
+
+            if (columnMetadata) {
+                const columnMetadataLength = this.connection.driver.getColumnLength(columnMetadata);
+                if (columnMetadataLength)
+                    return false;
+            }
         }
 
         if (this.connection.driver.dataTypeDefaults

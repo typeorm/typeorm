@@ -19,6 +19,8 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
+import {DriverUtils} from "../DriverUtils";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -263,6 +265,8 @@ export class PostgresDriver implements Driver {
         // load postgres package
         this.loadDependencies();
 
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+
         // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
@@ -304,8 +308,9 @@ export class PostgresDriver implements Driver {
     async afterConnect(): Promise<void> {
         const extensionsMetadata = await this.checkMetadataForExtensions();
 
-        if (extensionsMetadata.hasExtensions) {
-            return new Promise<void>((ok, fail) => {
+        const installExtensions = this.options.installExtensions === undefined || this.options.installExtensions;
+        if (installExtensions && extensionsMetadata.hasExtensions) {
+                       return new Promise<void>((ok, fail) => {
                 this.master.connect(async (err: any, connection: any, release: Function) => {
                     await this.enableExtensions(extensionsMetadata, connection);
                     if (err) return fail(err);
@@ -616,36 +621,33 @@ export class PostgresDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const builtParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, builtParameters];
+            return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            let value: any;
-            let isArray = false;
-            if (key.substr(0, 4) === ":...") {
-                isArray = true;
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
             }
+
+            let value: any = parameters[key];
 
             if (isArray) {
                 return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "$" + builtParameters.length;
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
                 }).join(", ");
 
-            } else if (value instanceof Function) {
-                return value();
-
-            } else {
-                builtParameters.push(value);
-                return "$" + builtParameters.length;
             }
+
+            if (value instanceof Function) {
+                return value();
+            }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
+        return [sql, escapedParameters];
     }
 
     /**
@@ -657,10 +659,16 @@ export class PostgresDriver implements Driver {
 
     /**
      * Build full table name with schema name and table name.
-     * E.g. "mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        return schema ? `${schema}.${tableName}` : tableName;
+        let tablePath = [ tableName ];
+
+        if (schema) {
+            tablePath.unshift(schema);
+        }
+
+        return tablePath.join('.');
     }
 
     /**
@@ -731,11 +739,13 @@ export class PostgresDriver implements Driver {
 
         if (defaultValue === null) {
             return undefined;
+        }
 
-        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+        if (columnMetadata.isArray && Array.isArray(defaultValue)) {
             return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+        }
 
-        } else if (
+        if (
             (columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
             || typeof defaultValue === "number"
@@ -743,41 +753,47 @@ export class PostgresDriver implements Driver {
             && defaultValue !== undefined
         ) {
             return `'${defaultValue}'`;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
-
-        } else if (typeof defaultValue === "function") {
-            const value = defaultValue();
-            return this.normalizeDatetimeFunction(value)
-
-        } else if (typeof defaultValue === "object") {
-            return `'${JSON.stringify(defaultValue)}'`;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "true" : "false";
+        }
+
+        if (typeof defaultValue === "function") {
+            const value = defaultValue();
+
+            return this.normalizeDatetimeFunction(value)
+        }
+
+        if (typeof defaultValue === "object") {
+            return `'${JSON.stringify(defaultValue)}'`;
+        }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
      * Compares "default" value of the column.
      * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
      */
-    defaultEqual(columnMetadata: ColumnMetadata, tableColumn: TableColumn): boolean {
-      if (Array<ColumnType>("json", "jsonb").indexOf(columnMetadata.type) >= 0
-       && typeof columnMetadata.default !== "function"
-       && columnMetadata.default !== undefined) {
-        let columnDefault = columnMetadata.default;
-        if (typeof columnDefault !== "object") {
-          columnDefault = JSON.parse(columnMetadata.default);
+    private defaultEqual(columnMetadata: ColumnMetadata, tableColumn: TableColumn): boolean {
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string)
+            && !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            const tableColumnDefault = typeof tableColumn.default === "string" ?
+                JSON.parse(tableColumn.default.substring(1, tableColumn.default.length-1)) :
+                tableColumn.default;
+
+            return OrmUtils.deepCompare(columnMetadata.default, tableColumnDefault);
         }
-        let tableDefault = JSON.parse(tableColumn.default.substring(1, tableColumn.default.length-1));
-        return OrmUtils.deepCompare(columnDefault, tableDefault);
-      }
-      else {
+
         const columnDefault = this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata));
-        return (columnDefault === tableColumn.default);
-      }
+        return columnDefault === tableColumn.default;
     }
 
     /**
@@ -991,7 +1007,7 @@ export class PostgresDriver implements Driver {
             return PlatformTools.load("pg-query-stream");
 
         } catch (e) { // todo: better error for browser env
-            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
+            throw new TypeORMError(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
         }
     }
 
@@ -1084,6 +1100,7 @@ export class PostgresDriver implements Driver {
      */
     protected executeQuery(connection: any, query: string) {
         return new Promise((ok, fail) => {
+            this.connection.logger.logQuery(query);
             connection.query(query, (err: any, result: any) => {
                 if (err) return fail(err);
                 ok(result);

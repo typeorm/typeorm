@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../";
+import {getMetadataArgsStorage} from "../globals";
 import {EntityRepositoryMetadataArgs} from "../metadata-args/EntityRepositoryMetadataArgs";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 

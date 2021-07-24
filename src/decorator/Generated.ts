@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../";
+import {getMetadataArgsStorage} from "../globals";
 import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
 
 /**

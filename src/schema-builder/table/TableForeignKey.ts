@@ -1,5 +1,6 @@
 import {ForeignKeyMetadata} from "../../metadata/ForeignKeyMetadata";
 import {TableForeignKeyOptions} from "../options/TableForeignKeyOptions";
+import { Driver } from "../../driver/Driver";
 
 /**
  * Foreign key from the database stored in this class.
@@ -19,6 +20,16 @@ export class TableForeignKey {
      * Column names which included by this foreign key.
      */
     columnNames: string[] = [];
+
+    /**
+     * Database of Table referenced in the foreign key.
+     */
+    referencedDatabase?: string;
+
+    /**
+     * Database of Table referenced in the foreign key.
+     */
+    referencedSchema?: string;
 
     /**
      * Table referenced in the foreign key.
@@ -56,6 +67,8 @@ export class TableForeignKey {
         this.name = options.name;
         this.columnNames = options.columnNames;
         this.referencedColumnNames = options.referencedColumnNames;
+        this.referencedDatabase = options.referencedDatabase;
+        this.referencedSchema = options.referencedSchema;
         this.referencedTableName = options.referencedTableName;
         this.onDelete = options.onDelete;
         this.onUpdate = options.onUpdate;
@@ -74,6 +87,8 @@ export class TableForeignKey {
             name: this.name,
             columnNames: [...this.columnNames],
             referencedColumnNames: [...this.referencedColumnNames],
+            referencedDatabase: this.referencedDatabase,
+            referencedSchema: this.referencedSchema,
             referencedTableName: this.referencedTableName,
             onDelete: this.onDelete,
             onUpdate: this.onUpdate,
@@ -88,11 +103,13 @@ export class TableForeignKey {
     /**
      * Creates a new table foreign key from the given foreign key metadata.
      */
-    static create(metadata: ForeignKeyMetadata): TableForeignKey {
+    static create(metadata: ForeignKeyMetadata, driver: Driver): TableForeignKey {
         return new TableForeignKey(<TableForeignKeyOptions>{
             name: metadata.name,
             columnNames: metadata.columnNames,
             referencedColumnNames: metadata.referencedColumnNames,
+            referencedDatabase: metadata.referencedEntityMetadata.database,
+            referencedSchema: metadata.referencedEntityMetadata.schema,
             referencedTableName: metadata.referencedTablePath,
             onDelete: metadata.onDelete,
             onUpdate: metadata.onUpdate,

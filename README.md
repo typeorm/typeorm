@@ -878,6 +878,7 @@ createConnection(/*...*/).then(async connection => {
     photo.name = "Me and Bears";
     photo.description = "I am near polar bears";
     photo.filename = "photo-with-bears.jpg";
+    photo.views = 1;
     photo.isPublished = true;
 
     // create a photo metadata
@@ -1130,7 +1131,7 @@ It will also modify the `photo` table, adding a new `author` column and creating
 
 ### Creating a many-to-many relation
 
-Let's create a many-to-one / many-to-many relation.
+Let's create a many-to-many relation.
 Let's say a photo can be in many albums, and each album can contain many photos.
 Let's create an `Album` class:
 

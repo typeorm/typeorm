@@ -1,4 +1,4 @@
-import {createConnection} from "../index";
+import {createConnection} from "../globals";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";

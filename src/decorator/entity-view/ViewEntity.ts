@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 import {ViewEntityOptions} from "../options/ViewEntityOptions";
 

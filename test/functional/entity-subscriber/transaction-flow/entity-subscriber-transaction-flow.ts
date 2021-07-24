@@ -2,17 +2,17 @@ import {
     Connection,
     EntitySubscriberInterface,
     EventSubscriber,
-} from "../../../src";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+} from "../../../../src";
+import {closeTestingConnections, createTestingConnections} from "../../../utils/test-utils";
 import sinon from "sinon";
 import {expect} from "chai";
-import {SapDriver} from "../../../src/driver/sap/SapDriver";
-import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
-import {AuroraDataApiPostgresDriver} from "../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
-import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
-import {SqlServerDriver} from "../../../src/driver/sqlserver/SqlServerDriver";
+import {SapDriver} from "../../../../src/driver/sap/SapDriver";
+import {OracleDriver} from "../../../../src/driver/oracle/OracleDriver";
+import {AuroraDataApiPostgresDriver} from "../../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresDriver";
+import {AuroraDataApiDriver} from "../../../../src/driver/aurora-data-api/AuroraDataApiDriver";
+import {SqlServerDriver} from "../../../../src/driver/sqlserver/SqlServerDriver";
 
-describe("entity subscriber transaction flow", () => {
+describe("entity subscriber > transaction flow", () => {
 
     let beforeTransactionStart = sinon.spy();
     let afterTransactionStart = sinon.spy();

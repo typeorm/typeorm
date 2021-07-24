@@ -9,6 +9,7 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {EntityListenerMetadata} from "./EntityListenerMetadata";
 import {IndexMetadata} from "./IndexMetadata";
 import {UniqueMetadata} from "./UniqueMetadata";
+import { TypeORMError } from "../error";
 
 /**
  * Contains all information about entity's embedded property.
@@ -85,6 +86,12 @@ export class EmbeddedMetadata {
      * Nested embeddable in this embeddable (which has current embedded as parent embedded).
      */
     embeddeds: EmbeddedMetadata[] = [];
+
+    /**
+     * Indicates if the entity should be instantiated using the constructor
+     * or via allocating a new object via `Object.create()`.
+     */
+    isAlwaysUsingConstructor: boolean = true;
 
     /**
      * Indicates if this embedded is in array mode.
@@ -189,8 +196,12 @@ export class EmbeddedMetadata {
     /**
      * Creates a new embedded object.
      */
-    create(): any {
-        return new (this.type as any);
+    create(options?: { fromDeserializer?: boolean }): any {
+        if (!options?.fromDeserializer || this.isAlwaysUsingConstructor) {
+            return new (this.type as any);
+        } else {
+            return Object.create(this.type.prototype);
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -211,6 +222,11 @@ export class EmbeddedMetadata {
         this.uniquesFromTree = this.buildUniquesFromTree();
         this.relationIdsFromTree = this.buildRelationIdsFromTree();
         this.relationCountsFromTree = this.buildRelationCountsFromTree();
+
+        if (connection.options.entitySkipConstructor) {
+            this.isAlwaysUsingConstructor = !connection.options.entitySkipConstructor;
+        }
+
         return this;
     }
 
@@ -234,7 +250,7 @@ export class EmbeddedMetadata {
             return [this.customPrefix];
         }
 
-        throw new Error(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
+        throw new TypeORMError(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
     }
 
     protected buildPrefix(connection: Connection): string {

@@ -72,6 +72,10 @@ Learn more about [Naming strategies](./naming-strategy.md).
 
 * `entityPrefix` - Prefixes with the given string all tables (or collections) on this database connection.
 
+* `entitySkipConstructor` - Indicates if TypeORM should skip constructors when deserializing entities
+  from the database. Note that when you do not call the constructor both private properties and default
+  properties will not operate as expected.
+
 * `dropSchema` - Drops the schema each time connection is being established.
 Be careful with this option and don't use this in production - otherwise you'll lose all production data.
 This option is useful during debug and development.
@@ -185,6 +189,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
+* `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
@@ -202,6 +208,12 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 * `database` - Database name (capacitor-sqlite will add the suffix `SQLite.db`)
 
 * `driver` - The capacitor-sqlite instance. For example, `new SQLiteConnection(CapacitorSQLite)`.
+
+* `mode` - Set the mode for database encryption: "no-encryption" | "encryption" | "secret" | "newsecret"
+
+* `version` - Database version
+
+* `journalMode` - The SQLite journal mode (optional)
 
 ## `cordova` connection options
 
@@ -263,8 +275,6 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
  
 * `pool.priorityRange` - int between 1 and x - if set, borrowers can specify their relative priority in the queue if no
  resources are available. see example. (default `1`).
- 
-* `pool.autostart` - boolean, should the pool start creating resources etc once the constructor is called, (default `true`).
 
 * `pool.evictionRunIntervalMillis` - How often to run eviction checks. Default: `0` (does not run).
 

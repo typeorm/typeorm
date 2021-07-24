@@ -402,15 +402,15 @@ describe("repository > basic methods", () => {
 
         it("should execute the query natively and it should return the result", () => Promise.all(connections.map(async connection => {
             const repository = connection.getRepository(Blog);
-            const promises: Promise<Blog>[] = [];
+
             for (let i = 0; i < 5; i++) { // todo: should pass with 50 items. find the problem
                 const blog = new Blog();
                 blog.title = "hello blog";
                 blog.text = "hello blog #" + i;
                 blog.counter = i * 100;
-                promises.push(repository.save(blog));
+                await repository.save(blog);
             }
-            await Promise.all(promises);
+
             // such simple query should work on all platforms, isn't it? If no - make requests specifically to platforms
             const query = `SELECT MAX(${connection.driver.escape("blog")}.${connection.driver.escape("counter")}) as ${connection.driver.escape("max")} ` +
                 ` FROM ${connection.driver.escape("blog")} ${connection.driver.escape("blog")}`;

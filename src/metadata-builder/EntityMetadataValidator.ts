@@ -11,6 +11,7 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {NoConnectionOptionError} from "../error/NoConnectionOptionError";
 import {InitializedRelationError} from "../error/InitializedRelationError";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { TypeORMError } from "../error";
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -60,10 +61,10 @@ export class EntityMetadataValidator {
         // also validate if discriminator values are not empty and not repeated
         if (entityMetadata.inheritancePattern === "STI" || entityMetadata.tableType === "entity-child") {
             if (!entityMetadata.discriminatorColumn)
-                throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put discriminator column options?`);
+                throw new TypeORMError(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put discriminator column options?`);
 
             if (typeof entityMetadata.discriminatorValue === "undefined")
-                throw new Error(`Entity ${entityMetadata.name} has an undefined discriminator value. Discriminator value should be defined.`);
+                throw new TypeORMError(`Entity ${entityMetadata.name} has an undefined discriminator value. Discriminator value should be defined.`);
 
             const sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(metadata => {
                 return metadata !== entityMetadata
@@ -72,12 +73,12 @@ export class EntityMetadataValidator {
                     && metadata.inheritanceTree.some(parent => entityMetadata.inheritanceTree.indexOf(parent) !== -1);
             });
             if (sameDiscriminatorValueEntityMetadata)
-                throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
+                throw new TypeORMError(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
         }
 
         entityMetadata.relationCounts.forEach(relationCount => {
             if (relationCount.relation.isManyToOne || relationCount.relation.isOneToOne)
-                throw new Error(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
+                throw new TypeORMError(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
         });
 
         if (!(driver instanceof MongoDriver)) {
@@ -86,16 +87,16 @@ export class EntityMetadataValidator {
                 if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
                     throw new DataTypeNotSupportedError(column, normalizedColumn, driver.options.type);
                 if (column.length && driver.withLengthColumnTypes.indexOf(normalizedColumn) === -1)
-                    throw new Error(`Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`);
+                    throw new TypeORMError(`Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`);
                 if (column.type === "enum" && !column.enum && !column.enumName)
-                    throw new Error(`Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`);
+                    throw new TypeORMError(`Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`);
             });
         }
 
         if (driver instanceof MysqlDriver || driver instanceof AuroraDataApiDriver) {
             const generatedColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy !== "uuid");
             if (generatedColumns.length > 1)
-                throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
+                throw new TypeORMError(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
         }
 
         // for mysql we are able to not define a default selected database, instead all entities can have their database
@@ -110,7 +111,7 @@ export class EntityMetadataValidator {
         if (driver instanceof SqlServerDriver) {
             const charsetColumns = entityMetadata.columns.filter(column => column.charset);
             if (charsetColumns.length > 1)
-                throw new Error(`Character set specifying is not supported in Sql Server`);
+                throw new TypeORMError(`Character set specifying is not supported in Sql Server`);
         }
 
         // check if relations are all without initialized properties
@@ -160,7 +161,7 @@ export class EntityMetadataValidator {
 
                 // check if join column really has referenced column
                 if (relation.joinColumn && !relation.joinColumn.referencedColumn)
-                    throw new Error(`Join column does not have referenced column set`);
+                    throw new TypeORMError(`Join column does not have referenced column set`);
 
             }
 
@@ -182,7 +183,7 @@ export class EntityMetadataValidator {
             // todo: with message like: "Inverse side is specified only on one side of the relationship. Specify on other side too to prevent confusion".
             // todo: add validation if there two entities with the same target, and show error message with description of the problem (maybe file was renamed/moved but left in output directory)
             // todo: check if there are multiple columns on the same column applied.
-            // todo: check column type if is missing in relational databases (throw new Error(`Column type of ${type} cannot be determined.`);)
+            // todo: check column type if is missing in relational databases (throw new TypeORMError(`Column type of ${type} cannot be determined.`);)
             // todo: include driver-specific checks. for example in mongodb empty prefixes are not allowed
             // todo: if multiple columns with same name - throw exception, including cases when columns are in embeds with same prefixes or without prefix at all
             // todo: if multiple primary key used, at least one of them must be unique or @Index decorator must be set on entity
@@ -195,7 +196,7 @@ export class EntityMetadataValidator {
         entityMetadata.relations.forEach(relation => {
             const isCircularCascadeRemove = relation.isCascadeRemove && relation.inverseRelation && relation.inverseRelation!.isCascadeRemove;
             if (isCircularCascadeRemove)
-                throw new Error(`Relation ${entityMetadata.name}#${relation.propertyName} and ${relation.inverseRelation!.entityMetadata.name}#${relation.inverseRelation!.propertyName} both has cascade remove set. ` +
+                throw new TypeORMError(`Relation ${entityMetadata.name}#${relation.propertyName} and ${relation.inverseRelation!.entityMetadata.name}#${relation.inverseRelation!.propertyName} both has cascade remove set. ` +
                     `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`);
         }); // todo: maybe better just deny removal from one to one relation without join column?
 
@@ -235,7 +236,7 @@ export class EntityMetadataValidator {
         entityMetadatas.forEach(entityMetadata => {
             entityMetadata.eagerRelations.forEach(relation => {
                 if (relation.inverseRelation && relation.inverseRelation.isEager)
-                    throw new Error(`Circular eager relations are disallowed. ` +
+                    throw new TypeORMError(`Circular eager relations are disallowed. ` +
                         `${entityMetadata.targetName}#${relation.propertyPath} contains "eager: true", and its inverse side ` +
                         `${relation.inverseEntityMetadata.targetName}#${relation.inverseRelation.propertyPath} contains "eager: true" as well.` +
                         ` Remove "eager: true" from one side of the relation.`);

@@ -1,9 +1,10 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
-import {ColumnType} from "../../index";
+import {ColumnType} from "../types/ColumnTypes";
 import {ReadStream} from "../../platform/PlatformTools";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {QueryRunner} from "../../query-runner/QueryRunner";
@@ -24,6 +25,8 @@ import {MssqlParameter} from "./MssqlParameter";
 import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { TypeORMError } from "../../error";
+import { QueryLock } from "../../query-runner/QueryLock";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -40,17 +43,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     driver: SqlServerDriver;
 
     // -------------------------------------------------------------------------
-    // Protected Properties
+    // Private Properties
     // -------------------------------------------------------------------------
 
-    /**
-     * Last executed query in a transaction.
-     * This is needed because in transaction mode mssql cannot execute parallel queries,
-     * that's why we store last executed query promise to wait it when we execute next query.
-     *
-     * @see https://github.com/patriksimek/node-mssql/issues/491
-     */
-    protected queryResponsibilityChain: Promise<any>[] = [];
+    private lock: QueryLock = new QueryLock();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -194,84 +190,82 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        let waitingOkay: Function;
-        const waitingPromise = new Promise((ok) => waitingOkay = ok);
-        if (this.queryResponsibilityChain.length) {
-            const otherWaitingPromises = [...this.queryResponsibilityChain];
-            this.queryResponsibilityChain.push(waitingPromise);
-            await Promise.all(otherWaitingPromises);
-        }
+        const release = await this.lock.acquire();
 
-        const promise = new Promise(async (ok, fail) => {
-            try {
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
-                const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
-                if (parameters && parameters.length) {
-                    parameters.forEach((parameter, index) => {
-                        const parameterName = index.toString();
-                        if (parameter instanceof MssqlParameter) {
-                            const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
-                            if (mssqlParameter) {
-                                request.input(parameterName, mssqlParameter, parameter.value);
-                            } else {
-                                request.input(parameterName, parameter.value);
-                            }
+        try {
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
+            if (parameters && parameters.length) {
+                parameters.forEach((parameter, index) => {
+                    const parameterName = index.toString();
+                    if (parameter instanceof MssqlParameter) {
+                        const mssqlParameter = this.mssqlParameterToNativeParameter(parameter);
+                        if (mssqlParameter) {
+                            request.input(parameterName, mssqlParameter, parameter.value);
                         } else {
-                            request.input(parameterName, parameter);
+                            request.input(parameterName, parameter.value);
                         }
-                    });
-                }
-                const queryStartTime = +new Date();
-                request.query(query, (err: any, result: any) => {
+                    } else {
+                        request.input(parameterName, parameter);
+                    }
+                });
+            }
+            const queryStartTime = +new Date();
 
+            const raw = await new Promise<any>((ok, fail) => {
+                request.query(query, (err: any, raw: any) => {
                     // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                    const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+                    }
 
-                    const resolveChain = () => {
-                        if (promiseIndex !== -1)
-                            this.queryResponsibilityChain.splice(promiseIndex, 1);
-                        if (waitingPromiseIndex !== -1)
-                            this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
-                        waitingOkay();
-                    };
-
-                    let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-                    let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
                     if (err) {
-                        this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        resolveChain();
-                        return fail(new QueryFailedError(query, parameters, err));
+                        fail(new QueryFailedError(query, parameters, err))
                     }
 
-                    const queryType = query.slice(0, query.indexOf(" "));
-                    switch (queryType) {
-                        case "DELETE":
-                            // for DELETE query additionally return number of affected rows
-                            ok([result.recordset, result.rowsAffected[0]]);
-                            break;
-                        default:
-                            ok(result.recordset);
-                    }
-                    resolveChain();
+                    ok(raw);
                 });
+            });
 
-            } catch (err) {
-                fail(err);
+            const result = new QueryResult();
+
+            if (raw?.hasOwnProperty('recordset')) {
+                result.records = raw.recordset;
             }
-        });
-        // with this condition, Promise.all causes unexpected behavior.
-        // if (this.isTransactionActive)
-        this.queryResponsibilityChain.push(promise);
-        return promise;
+
+            if (raw?.hasOwnProperty('rowsAffected')) {
+                result.affected = raw.rowsAffected[0];
+            }
+
+            const queryType = query.slice(0, query.indexOf(" "));
+            switch (queryType) {
+                case "DELETE":
+                    // for DELETE query additionally return number of affected rows
+                    result.raw = [raw.recordset, raw.rowsAffected[0]];
+                    break;
+                default:
+                    result.raw = raw.recordset;
+            }
+
+            if (useStructuredResult) {
+                return result;
+            } else {
+                return result.raw;
+            }
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            throw err;
+        } finally {
+            release();
+        }
     }
 
     /**
@@ -281,59 +275,47 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        let waitingOkay: Function;
-        const waitingPromise = new Promise((ok) => waitingOkay = ok);
-        if (this.queryResponsibilityChain.length) {
-            const otherWaitingPromises = [...this.queryResponsibilityChain];
-            this.queryResponsibilityChain.push(waitingPromise);
-            await Promise.all(otherWaitingPromises);
+        const release = await this.lock.acquire();
+
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+        const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
+        request.stream = true;
+        if (parameters && parameters.length) {
+            parameters.forEach((parameter, index) => {
+                const parameterName = index.toString();
+                if (parameter instanceof MssqlParameter) {
+                    request.input(parameterName, this.mssqlParameterToNativeParameter(parameter), parameter.value);
+                } else {
+                    request.input(parameterName, parameter);
+                }
+            });
         }
 
-        const promise = new Promise<ReadStream>(async (ok, fail) => {
+        request.query(query);
 
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
-            const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
-            request.stream = true;
-            if (parameters && parameters.length) {
-                parameters.forEach((parameter, index) => {
-                    const parameterName = index.toString();
-                    if (parameter instanceof MssqlParameter) {
-                        request.input(parameterName, this.mssqlParameterToNativeParameter(parameter), parameter.value);
-                    } else {
-                        request.input(parameterName, parameter);
-                    }
-                });
-            }
-            request.query(query, (err: any, result: any) => {
+        // Any event should release the lock.
+        request.once("row", release);
+        request.once("rowsaffected", release);
+        request.once("done", release);
+        request.once("error", release);
 
-                const resolveChain = () => {
-                    if (promiseIndex !== -1)
-                        this.queryResponsibilityChain.splice(promiseIndex, 1);
-                    if (waitingPromiseIndex !== -1)
-                        this.queryResponsibilityChain.splice(waitingPromiseIndex, 1);
-                    waitingOkay();
-                };
-
-                let promiseIndex = this.queryResponsibilityChain.indexOf(promise);
-                let waitingPromiseIndex = this.queryResponsibilityChain.indexOf(waitingPromise);
-                if (err) {
-                    this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                    resolveChain();
-                    return fail(err);
-                }
-
-                ok(result.recordset);
-                resolveChain();
-            });
-            if (onEnd) request.on("done", onEnd);
-            if (onError) request.on("error", onError);
-            ok(request as ReadStream);
+        request.on("error", (err: any) => {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
         });
-        if (this.isTransactionActive)
-            this.queryResponsibilityChain.push(promise);
 
-        return promise;
+        if (onEnd) {
+            request.on("done", onEnd);
+        }
+
+        if (onError) {
+            request.on("error", onError);
+        }
+
+        // This can be done with request.getReadStream() in node-mssql 7.0.0
+        // Also, use `require` here to prevent importing it unless we actually need it.
+        const { PassThrough } = require("stream");
+        return request.pipe(new PassThrough({ objectMode: true }));
     }
 
     /**
@@ -393,8 +375,16 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.name}' AND "TABLE_SCHEMA" = ${schema}`;
+
+        if (!parsedTableName.database) {
+            parsedTableName.database = await this.getCurrentDatabase();
+        }
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = '${parsedTableName.schema}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -404,8 +394,16 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const parsedTableName = this.parseTableName(tableOrName);
-        const schema = parsedTableName.schema === "SCHEMA_NAME()" ? parsedTableName.schema : `'${parsedTableName.schema}'`;
-        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = '${parsedTableName.name}' AND "COLUMN_NAME" = '${columnName}' AND "TABLE_SCHEMA" = ${schema}`;
+
+        if (!parsedTableName.database) {
+            parsedTableName.database = await this.getCurrentDatabase();
+        }
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
+        const sql = `SELECT * FROM "${parsedTableName.database}"."INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = '${parsedTableName.tableName}' AND "TABLE_SCHEMA" = '${parsedTableName.schema}' AND "COLUMN_NAME" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -514,7 +512,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
+                    index.name = this.connection.namingStrategy.indexName(table, index.columnNames, index.where);
                 upQueries.push(this.createIndexSql(table, index));
                 downQueries.push(this.dropIndexSql(table, index));
             });
@@ -624,8 +622,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         // rename table
-        upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(oldTable, true)}", "${newTableName}"`));
-        downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}", "${oldTableName}"`));
+        upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(oldTable)}", "${newTableName}"`));
+        downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(newTable)}", "${oldTableName}"`));
 
         // rename primary key constraint
         if (newTable.primaryColumns.length > 0) {
@@ -635,8 +633,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const newPkName = this.connection.namingStrategy.primaryKeyName(newTable, columnNames);
 
             // rename primary constraint
-            upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${oldPkName}", "${newPkName}"`));
-            downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${newPkName}", "${oldPkName}"`));
+            upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(newTable)}.${oldPkName}", "${newPkName}"`));
+            downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(newTable)}.${newPkName}", "${oldPkName}"`));
         }
 
         // rename unique constraints
@@ -645,8 +643,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(newTable, unique.columnNames);
 
             // build queries
-            upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${unique.name}", "${newUniqueName}"`));
-            downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${newUniqueName}", "${unique.name}"`));
+            upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(newTable)}.${unique.name}", "${newUniqueName}"`));
+            downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(newTable)}.${newUniqueName}", "${unique.name}"`));
 
             // replace constraint name
             unique.name = newUniqueName;
@@ -658,8 +656,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
-            upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${index.name}", "${newIndexName}", "INDEX"`));
-            downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(newTable, true)}.${newIndexName}", "${index.name}", "INDEX"`));
+            upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(newTable)}.${index.name}", "${newIndexName}", "INDEX"`));
+            downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(newTable)}.${newIndexName}", "${index.name}", "INDEX"`));
 
             // replace constraint name
             index.name = newIndexName;
@@ -668,7 +666,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         // rename foreign key constraints
         newTable.foreignKeys.forEach(foreignKey => {
             // build new constraint name
-            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(newTable, foreignKey.columnNames, this.getTablePath(foreignKey), foreignKey.referencedColumnNames);
 
             // build queries
             upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, schemaName, dbName)}", "${newForeignKeyName}"`));
@@ -708,14 +706,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const primaryColumns = clonedTable.primaryColumns;
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
                 const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
             }
 
             primaryColumns.push(column);
-            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
             const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
@@ -731,7 +729,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         // create unique constraint
         if (column.isUnique) {
             const uniqueConstraint = new TableUnique({
-               name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
+               name: this.connection.namingStrategy.uniqueConstraintName(table, [column.name]),
                columnNames: [column.name]
             });
             clonedTable.uniques.push(uniqueConstraint);
@@ -741,7 +739,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // remove default constraint
         if (column.default !== null && column.default !== undefined) {
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
+            const defaultName = this.connection.namingStrategy.defaultConstraintName(table, column.name);
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
         }
 
@@ -767,7 +765,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const oldColumn = oldTableColumnOrName instanceof TableColumn ? oldTableColumnOrName : table.columns.find(c => c.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         let newColumn: TableColumn|undefined = undefined;
         if (newTableColumnOrName instanceof TableColumn) {
@@ -793,7 +791,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             ? oldTableColumnOrName
             : table.columns.find(column => column.name === oldTableColumnOrName);
         if (!oldColumn)
-            throw new Error(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
+            throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
         if ((newColumn.isGenerated !== oldColumn.isGenerated && newColumn.generationStrategy !== "uuid") || newColumn.type !== oldColumn.type || newColumn.length !== oldColumn.length) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
@@ -829,8 +827,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 }
 
                 // rename the column
-                upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(table, true)}.${oldColumn.name}", "${newColumn.name}"`));
-                downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(table, true)}.${newColumn.name}", "${oldColumn.name}"`));
+                upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(table)}.${oldColumn.name}", "${newColumn.name}"`));
+                downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(table)}.${newColumn.name}", "${oldColumn.name}"`));
 
                 if (oldColumn.isPrimary === true) {
                     const primaryColumns = clonedTable.primaryColumns;
@@ -847,8 +845,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     const newPkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
 
                     // rename primary constraint
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${oldPkName}", "${newPkName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newPkName}", "${oldPkName}"`));
+                    upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${oldPkName}", "${newPkName}"`));
+                    downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${newPkName}", "${oldPkName}"`));
                 }
 
                 // rename index constraints
@@ -859,8 +857,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${index.name}", "${newIndexName}", "INDEX"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newIndexName}", "${index.name}", "INDEX"`));
+                    upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${index.name}", "${newIndexName}", "INDEX"`));
+                    downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${newIndexName}", "${index.name}", "INDEX"`));
 
                     // replace constraint name
                     index.name = newIndexName;
@@ -871,7 +869,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     // build new constraint name
                     foreignKey.columnNames.splice(foreignKey.columnNames.indexOf(oldColumn.name), 1);
                     foreignKey.columnNames.push(newColumn.name);
-                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+                    const newForeignKeyName = this.connection.namingStrategy.foreignKeyName(clonedTable, foreignKey.columnNames, this.getTablePath(foreignKey), foreignKey.referencedColumnNames);
 
                     // build queries
                     upQueries.push(new Query(`EXEC sp_rename "${this.buildForeignKeyName(foreignKey.name!, schemaName, dbName)}", "${newForeignKeyName}"`));
@@ -889,8 +887,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     const newCheckName = this.connection.namingStrategy.checkConstraintName(clonedTable, check.expression!);
 
                     // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${check.name}", "${newCheckName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newCheckName}", "${check.name}"`));
+                    upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${check.name}", "${newCheckName}"`));
+                    downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${newCheckName}", "${check.name}"`));
 
                     // replace constraint name
                     check.name = newCheckName;
@@ -904,8 +902,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
 
                     // build queries
-                    upQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${unique.name}", "${newUniqueName}"`));
-                    downQueries.push(new Query(`EXEC sp_rename "${this.escapePath(clonedTable, true)}.${newUniqueName}", "${unique.name}"`));
+                    upQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${unique.name}", "${newUniqueName}"`));
+                    downQueries.push(new Query(`EXEC sp_rename "${this.getTablePath(clonedTable)}.${newUniqueName}", "${unique.name}"`));
 
                     // replace constraint name
                     unique.name = newUniqueName;
@@ -913,8 +911,8 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // rename default constraints
                 if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                    const oldDefaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
-                    const newDefaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
+                    const oldDefaultName = this.connection.namingStrategy.defaultConstraintName(table, oldColumn.name);
+                    const newDefaultName = this.connection.namingStrategy.defaultConstraintName(table, newColumn.name);
 
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${oldDefaultName}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${oldDefaultName}" DEFAULT ${oldColumn.default} FOR "${newColumn.name}"`));
@@ -945,7 +943,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                    const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
                     const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
@@ -956,7 +954,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                     // update column in table
                     const column = clonedTable.columns.find(column => column.name === newColumn.name);
                     column!.isPrimary = true;
-                    const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                    const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
                     const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
@@ -971,7 +969,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+                        const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
                         const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
                         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
                         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
@@ -982,7 +980,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueConstraint = new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [newColumn.name]),
+                        name: this.connection.namingStrategy.uniqueConstraintName(table, [newColumn.name]),
                         columnNames: [newColumn.name]
                     });
                     clonedTable.uniques.push(uniqueConstraint);
@@ -1003,13 +1001,13 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                 // (note) if there is a previous default, we need to drop its constraint first
                 if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, oldColumn.name);
+                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table, oldColumn.name);
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${oldColumn.default} FOR "${oldColumn.name}"`));
                 }
 
                 if (newColumn.default !== null && newColumn.default !== undefined) {
-                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, newColumn.name);
+                    const defaultName = this.connection.namingStrategy.defaultConstraintName(table, newColumn.name);
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${newColumn.default} FOR "${newColumn.name}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
                 }
@@ -1036,7 +1034,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const column = columnOrName instanceof TableColumn ? columnOrName : table.findColumnByName(columnOrName);
         if (!column)
-            throw new Error(`Column "${columnOrName}" was not found in table "${table.name}"`);
+            throw new TypeORMError(`Column "${columnOrName}" was not found in table "${table.name}"`);
 
         const clonedTable = table.clone();
         const upQueries: Query[] = [];
@@ -1044,7 +1042,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
+            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, clonedTable.primaryColumns.map(column => column.name));
             const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${pkName}"`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
@@ -1055,7 +1053,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(column => column.name));
+                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, clonedTable.primaryColumns.map(column => column.name));
                 const columnNames = clonedTable.primaryColumns.map(primaryColumn => `"${primaryColumn.name}"`).join(", ");
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(clonedTable)} DROP CONSTRAINT "${pkName}"`));
@@ -1088,7 +1086,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // drop default constraint
         if (column.default !== null && column.default !== undefined) {
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
+            const defaultName = this.connection.namingStrategy.defaultConstraintName(table, column.name);
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${defaultName}"`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${defaultName}" DEFAULT ${column.default} FOR "${column.name}"`));
         }
@@ -1144,7 +1142,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns;
         if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(column => column.name));
+            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
             const columnNamesString = primaryColumns.map(column => `"${column.name}"`).join(", ");
             upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`));
@@ -1155,7 +1153,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             .filter(column => columnNames.indexOf(column.name) !== -1)
             .forEach(column => column.isPrimary = true);
 
-        const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, columnNames);
+        const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, columnNames);
         const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
@@ -1185,7 +1183,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!uniqueConstraint.name)
-            uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(table.name, uniqueConstraint.columnNames);
+            uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(table, uniqueConstraint.columnNames);
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint);
         const down = this.dropUniqueConstraintSql(table, uniqueConstraint);
@@ -1208,7 +1206,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
         if (!uniqueConstraint)
-            throw new Error(`Supplied unique constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied unique constraint was not found in table ${table.name}`);
 
         const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
         const down = this.createUniqueConstraintSql(table, uniqueConstraint);
@@ -1232,7 +1230,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!checkConstraint.name)
-            checkConstraint.name = this.connection.namingStrategy.checkConstraintName(table.name, checkConstraint.expression!);
+            checkConstraint.name = this.connection.namingStrategy.checkConstraintName(table, checkConstraint.expression!);
 
         const up = this.createCheckConstraintSql(table, checkConstraint);
         const down = this.dropCheckConstraintSql(table, checkConstraint);
@@ -1255,7 +1253,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const checkConstraint = checkOrName instanceof TableCheck ? checkOrName : table.checks.find(c => c.name === checkOrName);
         if (!checkConstraint)
-            throw new Error(`Supplied check constraint was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied check constraint was not found in table ${table.name}`);
 
         const up = this.dropCheckConstraintSql(table, checkConstraint);
         const down = this.createCheckConstraintSql(table, checkConstraint);
@@ -1275,28 +1273,28 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Creates a new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new TypeORMError(`SqlServer does not support exclusion constraints.`);
     }
 
     /**
      * Creates a new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new TypeORMError(`SqlServer does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new TypeORMError(`SqlServer does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        throw new Error(`SqlServer does not support exclusion constraints.`);
+        throw new TypeORMError(`SqlServer does not support exclusion constraints.`);
     }
 
     /**
@@ -1307,11 +1305,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const metadata = this.connection.hasMetadata(table.name) ? this.connection.getMetadata(table.name) : undefined;
 
         if (metadata && metadata.treeParentRelation && metadata.treeParentRelation!.isTreeParent && metadata.foreignKeys.find(foreignKey => foreignKey.onDelete !== "NO ACTION"))
-            throw new Error("SqlServer does not support options in TreeParent.");
+            throw new TypeORMError("SqlServer does not support options in TreeParent.");
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table.name, foreignKey.columnNames, foreignKey.referencedTableName, foreignKey.referencedColumnNames);
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(table, foreignKey.columnNames, this.getTablePath(foreignKey), foreignKey.referencedColumnNames);
 
         const up = this.createForeignKeySql(table, foreignKey);
         const down = this.dropForeignKeySql(table, foreignKey);
@@ -1334,7 +1332,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const foreignKey = foreignKeyOrName instanceof TableForeignKey ? foreignKeyOrName : table.foreignKeys.find(fk => fk.name === foreignKeyOrName);
         if (!foreignKey)
-            throw new Error(`Supplied foreign key was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied foreign key was not found in table ${table.name}`);
 
         const up = this.dropForeignKeySql(table, foreignKey);
         const down = this.createForeignKeySql(table, foreignKey);
@@ -1358,7 +1356,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(table.name, index.columnNames, index.where);
+            index.name = this.connection.namingStrategy.indexName(table, index.columnNames, index.where);
 
         const up = this.createIndexSql(table, index);
         const down = this.dropIndexSql(table, index);
@@ -1381,7 +1379,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new Error(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
@@ -1432,23 +1430,64 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`;
             const allTablesResults: ObjectLiteral[] = await this.query(allTablesSql);
-            await Promise.all(allTablesResults.map(async tablesResult => {
-                // const tableName = database ? `"${tablesResult["TABLE_CATALOG"]}"."sys"."foreign_keys"` : `"sys"."foreign_keys"`;
-                const dropForeignKeySql = `SELECT 'ALTER TABLE "${tablesResult["TABLE_CATALOG"]}"."' + OBJECT_SCHEMA_NAME("fk"."parent_object_id", DB_ID('${tablesResult["TABLE_CATALOG"]}')) + '"."' + OBJECT_NAME("fk"."parent_object_id", DB_ID('${tablesResult["TABLE_CATALOG"]}')) + '" ` +
-                    `DROP CONSTRAINT "' + "fk"."name" + '"' as "query" FROM "${tablesResult["TABLE_CATALOG"]}"."sys"."foreign_keys" AS "fk" ` +
-                    `WHERE "fk"."referenced_object_id" = OBJECT_ID('"${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"')`;
-                const dropFkQueries: ObjectLiteral[] = await this.query(dropForeignKeySql);
-                return Promise.all(dropFkQueries.map(result => result["query"]).map(dropQuery => this.query(dropQuery)));
-            }));
-            await Promise.all(allTablesResults.map(tablesResult => {
-                if (tablesResult["TABLE_NAME"].startsWith("#")) {
-                    // don't try to drop temporary tables
-                    return;
-                }
 
-                const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
-                return this.query(dropTableSql);
-            }));
+            if (allTablesResults.length > 0) {
+                const tablesByCatalog: { [key: string]: { TABLE_NAME: string, TABLE_SCHEMA: string }[] } = allTablesResults.reduce(
+                    (c, { TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME }) => {
+                        c[TABLE_CATALOG] = c[TABLE_CATALOG] || [];
+                        c[TABLE_CATALOG].push({ TABLE_SCHEMA, TABLE_NAME });
+                        return c;
+                    },
+                    {}
+                )
+
+                const foreignKeysSql = Object.entries(tablesByCatalog).map(([ TABLE_CATALOG, tables ]) => {
+                    const conditions = tables.map(({ TABLE_SCHEMA, TABLE_NAME }) => {
+                        return `("fk"."referenced_object_id" = OBJECT_ID('"${TABLE_CATALOG}"."${TABLE_SCHEMA}"."${TABLE_NAME}"'))`
+                    }).join(" OR ")
+
+                    return `
+                        SELECT DISTINCT '${TABLE_CATALOG}' AS                                              "TABLE_CATALOG",
+                                        OBJECT_SCHEMA_NAME("fk"."parent_object_id",
+                                                           DB_ID('${TABLE_CATALOG}')) AS                   "TABLE_SCHEMA",
+                                        OBJECT_NAME("fk"."parent_object_id", DB_ID('${TABLE_CATALOG}')) AS "TABLE_NAME",
+                                        "fk"."name" AS                                                     "CONSTRAINT_NAME"
+                        FROM "${TABLE_CATALOG}"."sys"."foreign_keys" AS "fk"
+                        WHERE (${conditions})
+                    `;
+                }).join(" UNION ALL ");
+
+                const foreignKeys: { TABLE_CATALOG: string, TABLE_SCHEMA: string, TABLE_NAME: string, CONSTRAINT_NAME: string }[] = await this.query(
+                    foreignKeysSql);
+
+                await Promise.all(foreignKeys.map(async ({
+                    TABLE_CATALOG,
+                    TABLE_SCHEMA,
+                    TABLE_NAME,
+                    CONSTRAINT_NAME
+                }) => {
+                    // Disable the constraint first.
+                    await this.query(
+                        `ALTER TABLE "${TABLE_CATALOG}"."${TABLE_SCHEMA}"."${TABLE_NAME}" ` +
+                        `NOCHECK CONSTRAINT "${CONSTRAINT_NAME}"`
+                    );
+
+                    await this.query(
+                        `ALTER TABLE "${TABLE_CATALOG}"."${TABLE_SCHEMA}"."${TABLE_NAME}" ` +
+                        `DROP CONSTRAINT "${CONSTRAINT_NAME}" -- FROM CLEAR`
+                    );
+                }));
+
+                await Promise.all(allTablesResults.map(tablesResult => {
+                    if (tablesResult["TABLE_NAME"].startsWith("#")) {
+                        // don't try to drop temporary tables
+                        return;
+                    }
+
+                    const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`;
+                    return this.query(dropTableSql);
+                }));
+            }
 
             await this.commitTransaction();
 
@@ -1464,10 +1503,15 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected async loadViews(viewPaths: string[]): Promise<View[]> {
+    protected async loadViews(viewPaths?: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
-        if (!hasTable)
-            return Promise.resolve([]);
+        if (!hasTable) {
+            return [];
+        }
+
+        if (!viewPaths) {
+            viewPaths = [];
+        }
 
         const currentSchema = await this.getCurrentSchema();
         const currentDatabase = await this.getCurrentDatabase();
@@ -1523,118 +1567,159 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
-    protected async loadTables(tableNames: string[]): Promise<Table[]> {
-
+    protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
-        if (!tableNames || !tableNames.length)
+        if (tableNames && tableNames.length === 0) {
             return [];
+        }
 
-        const schemaNames: string[] = [];
         const currentSchema = await this.getCurrentSchema();
         const currentDatabase = await this.getCurrentDatabase();
 
-        const extractTableSchemaAndName = (tableName: string): string[] => {
-            let [database, schema, name] = tableName.split(".");
-            // if name is empty, it means that tableName have only schema name and table name or only table name
-            if (!name) {
-                // if schema is empty, it means tableName have only name of a table. Otherwise it means that we have "schemaName"."tableName" string.
-                if (!schema) {
-                    name = database;
-                    schema = this.driver.options.schema || currentSchema;
+        const dbTables: { TABLE_CATALOG: string, TABLE_SCHEMA: string, TABLE_NAME: string }[] = [];
 
-                } else {
-                    name = schema;
-                    schema = database;
-                }
-            } else if (schema === "") {
-                schema = this.driver.options.schema || currentSchema;
-            }
+        if (!tableNames) {
+            const databasesSql = `
+                SELECT DISTINCT
+                    "name"
+                FROM "master"."dbo"."sysdatabases"
+                WHERE "name" NOT IN ('master', 'model', 'msdb')
+            `;
+            const dbDatabases: { name: string }[] = await this.query(databasesSql);
 
-            return [schema, name];
-        };
+            const tablesSql = dbDatabases.map(({ name }) => {
+                return `
+                    SELECT DISTINCT
+                        "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"
+                    FROM "${name}"."INFORMATION_SCHEMA"."TABLES"
+                    WHERE
+                      "TABLE_TYPE" = 'BASE TABLE'
+                      AND
+                      "TABLE_CATALOG" = '${name}'
+                      AND
+                      ISNULL(Objectproperty(Object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), 'IsMSShipped'), 0) = 0
+                `;
+            }).join(" UNION ALL ");
 
-        tableNames.filter(tablePath => tablePath.indexOf(".") !== -1)
-            .forEach(tablePath => {
-                if (tablePath.split(".").length === 3) {
-                    if (tablePath.split(".")[1] !== "")
-                        schemaNames.push(tablePath.split(".")[1]);
-                } else {
-                    schemaNames.push(tablePath.split(".")[0]);
-                }
-            });
-        schemaNames.push(this.driver.options.schema || currentSchema);
+            dbTables.push(...await this.query(tablesSql));
+        } else {
+            const tableNamesByCatalog = tableNames
+                .map(tableName => this.parseTableName(tableName))
+                .reduce((c, { database, ...other}) => {
+                    database = database || currentDatabase;
+                    c[database] = c[database] || []
+                    c[database].push({
+                        schema: other.schema || currentSchema,
+                        tableName: other.tableName
+                    });
+                    return c;
+                }, {} as { [key: string]: { schema: string, tableName: string }[] })
 
-        const dbNames = tableNames
-            .filter(tablePath => tablePath.split(".").length === 3)
-            .map(tablePath => tablePath.split(".")[0]);
-        if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
-            dbNames.push(this.driver.database);
+            const tablesSql = Object.entries(tableNamesByCatalog).map(([ database, tables ]) => {
+                const tablesCondition = tables
+                    .map(({ schema, tableName }) => {
+                        return `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${tableName}')`;
+                    })
+                    .join(" OR ");
 
-        // load tables, columns, indices and foreign keys
-        const schemaNamesString = schemaNames.map(name => "'" + name + "'").join(", ");
+                return `
+                    SELECT DISTINCT
+                        "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"
+                    FROM "${database}"."INFORMATION_SCHEMA"."TABLES"
+                    WHERE
+                          "TABLE_TYPE" = 'BASE TABLE' AND
+                          "TABLE_CATALOG" = '${database}' AND
+                          ${tablesCondition}
+                `;
+            }).join(" UNION ALL ");
 
-        const tablesCondition = tableNames.map(tableName => {
-            const [schema, name] = extractTableSchemaAndName(tableName);
-            return `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${name}')`;
-        }).join(" OR ");
+            dbTables.push(...await this.query(tablesSql));
+        }
 
-        const tablesSql = dbNames.map(dbName => {
-            return `SELECT * FROM "${dbName}"."INFORMATION_SCHEMA"."TABLES" WHERE ` + tablesCondition;
+        // if tables were not found in the db, no need to proceed
+        if (dbTables.length === 0) {
+            return [];
+        }
+
+        const dbTablesByCatalog = dbTables.reduce((c, { TABLE_CATALOG, ...other }) => {
+            c[TABLE_CATALOG] = c[TABLE_CATALOG] || [];
+            c[TABLE_CATALOG].push(other);
+            return c;
+        }, {} as { [key: string ]: { TABLE_NAME: string, TABLE_SCHEMA: string }[] })
+
+        const columnsSql = Object.entries(dbTablesByCatalog).map(([ TABLE_CATALOG, tables ]) => {
+            const condition = tables.map(
+                ({ TABLE_SCHEMA, TABLE_NAME }) => `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}')`
+            ).join("OR");
+
+            return `SELECT * FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" WHERE (${condition})`;
         }).join(" UNION ALL ");
 
-        const columnsSql = dbNames.map(dbName => {
-            return `SELECT * FROM "${dbName}"."INFORMATION_SCHEMA"."COLUMNS" WHERE ` + tablesCondition;
-        }).join(" UNION ALL ");
+        const constraintsSql = Object.entries(dbTablesByCatalog).map(([ TABLE_CATALOG, tables ]) => {
+            const conditions = tables.map(({ TABLE_NAME, TABLE_SCHEMA }) =>
+                `("columnUsages"."TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "columnUsages"."TABLE_NAME" = '${TABLE_NAME}')`
+            ).join(" OR ")
 
-        const constraintsCondition = tableNames.map(tableName => {
-            const [schema, name] = extractTableSchemaAndName(tableName);
-            return `("columnUsages"."TABLE_SCHEMA" = '${schema}' AND "columnUsages"."TABLE_NAME" = '${name}' ` +
-             `AND "tableConstraints"."TABLE_SCHEMA" = '${schema}' AND "tableConstraints"."TABLE_NAME" = '${name}')`;
-        }).join(" OR ");
-
-        const constraintsSql = dbNames.map(dbName => {
             return `SELECT "columnUsages".*, "tableConstraints"."CONSTRAINT_TYPE", "chk"."definition" ` +
-                `FROM "${dbName}"."INFORMATION_SCHEMA"."CONSTRAINT_COLUMN_USAGE" "columnUsages" ` +
-                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" "tableConstraints" ON "tableConstraints"."CONSTRAINT_NAME" = "columnUsages"."CONSTRAINT_NAME" ` +
-                `LEFT JOIN "${dbName}"."sys"."check_constraints" "chk" ON "chk"."name" = "columnUsages"."CONSTRAINT_NAME" ` +
-                `WHERE (${constraintsCondition}) AND "tableConstraints"."CONSTRAINT_TYPE" IN ('PRIMARY KEY', 'UNIQUE', 'CHECK')`;
+                `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."CONSTRAINT_COLUMN_USAGE" "columnUsages" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."TABLE_CONSTRAINTS" "tableConstraints" ` +
+                `ON ` +
+                `"tableConstraints"."CONSTRAINT_NAME" = "columnUsages"."CONSTRAINT_NAME" AND ` +
+                `"tableConstraints"."TABLE_SCHEMA" = "columnUsages"."TABLE_SCHEMA" AND ` +
+                `"tableConstraints"."TABLE_NAME" = "columnUsages"."TABLE_NAME" ` +
+                `LEFT JOIN "${TABLE_CATALOG}"."sys"."check_constraints" "chk" ` +
+                `ON ` +
+                `"chk"."object_id" = OBJECT_ID("columnUsages"."TABLE_CATALOG" + '.' + "columnUsages"."TABLE_SCHEMA" + '.' + "columnUsages"."CONSTRAINT_NAME") ` +
+                `WHERE ` +
+                `(${conditions}) AND ` +
+                `"tableConstraints"."CONSTRAINT_TYPE" IN ('PRIMARY KEY', 'UNIQUE', 'CHECK')`;
         }).join(" UNION ALL ");
 
-        const foreignKeysSql = dbNames.map(dbName => {
-            return `SELECT "fk"."name" AS "FK_NAME", '${dbName}' AS "TABLE_CATALOG", "s1"."name" AS "TABLE_SCHEMA", "t1"."name" AS "TABLE_NAME", ` +
+        const foreignKeysSql = Object.entries(dbTablesByCatalog).map(([ TABLE_CATALOG, tables ]) => {
+            const conditions = tables.map(({ TABLE_NAME, TABLE_SCHEMA }) => `("s1"."name" = '${TABLE_SCHEMA}' AND "t1"."name" = '${TABLE_NAME}')`).join(" OR ");
+
+            return `SELECT "fk"."name" AS "FK_NAME", '${TABLE_CATALOG}' AS "TABLE_CATALOG", "s1"."name" AS "TABLE_SCHEMA", "t1"."name" AS "TABLE_NAME", ` +
                 `"col1"."name" AS "COLUMN_NAME", "s2"."name" AS "REF_SCHEMA", "t2"."name" AS "REF_TABLE", "col2"."name" AS "REF_COLUMN", ` +
                 `"fk"."delete_referential_action_desc" AS "ON_DELETE", "fk"."update_referential_action_desc" AS "ON_UPDATE" ` +
-                `FROM "${dbName}"."sys"."foreign_keys" "fk" ` +
-                `INNER JOIN "${dbName}"."sys"."foreign_key_columns" "fkc" ON "fkc"."constraint_object_id" = "fk"."object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."tables" "t1" ON "t1"."object_id" = "fk"."parent_object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."schemas" "s1" ON "s1"."schema_id" = "t1"."schema_id" ` +
-                `INNER JOIN "${dbName}"."sys"."tables" "t2" ON "t2"."object_id" = "fk"."referenced_object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."schemas" "s2" ON "s2"."schema_id" = "t2"."schema_id" ` +
-                `INNER JOIN "${dbName}"."sys"."columns" "col1" ON "col1"."column_id" = "fkc"."parent_column_id" AND "col1"."object_id" = "fk"."parent_object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."columns" "col2" ON "col2"."column_id" = "fkc"."referenced_column_id" AND "col2"."object_id" = "fk"."referenced_object_id"`;
+                `FROM "${TABLE_CATALOG}"."sys"."foreign_keys" "fk" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."foreign_key_columns" "fkc" ON "fkc"."constraint_object_id" = "fk"."object_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."tables" "t1" ON "t1"."object_id" = "fk"."parent_object_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."schemas" "s1" ON "s1"."schema_id" = "t1"."schema_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."tables" "t2" ON "t2"."object_id" = "fk"."referenced_object_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."schemas" "s2" ON "s2"."schema_id" = "t2"."schema_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."columns" "col1" ON "col1"."column_id" = "fkc"."parent_column_id" AND "col1"."object_id" = "fk"."parent_object_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."columns" "col2" ON "col2"."column_id" = "fkc"."referenced_column_id" AND "col2"."object_id" = "fk"."referenced_object_id" ` +
+                `WHERE (${conditions})`;
         }).join(" UNION ALL ");
 
-        const identityColumnsSql = dbNames.map(dbName => {
+        const identityColumnsSql = Object.entries(dbTablesByCatalog).map(([ TABLE_CATALOG, tables ]) => {
+            const conditions = tables.map(({ TABLE_NAME, TABLE_SCHEMA }) => `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}')`).join(" OR ");
+
             return `SELECT "TABLE_CATALOG", "TABLE_SCHEMA", "COLUMN_NAME", "TABLE_NAME" ` +
-                `FROM "${dbName}"."INFORMATION_SCHEMA"."COLUMNS" ` +
-                `WHERE COLUMNPROPERTY(object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), "COLUMN_NAME", 'IsIdentity') = 1 AND "TABLE_SCHEMA" IN (${schemaNamesString})`;
+                `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
+                `WHERE ` +
+                `EXISTS(SELECT 1 FROM "${TABLE_CATALOG}"."SYS"."COLUMNS" "S" WHERE OBJECT_ID("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME") = "S"."OBJECT_ID" AND "COLUMN_NAME" = "S"."NAME" AND "S"."is_identity" = 1) AND ` +
+                `(${conditions})`;
         }).join(" UNION ALL ");
 
         const dbCollationsSql = `SELECT "NAME", "COLLATION_NAME" FROM "sys"."databases"`;
 
-        const indicesSql = dbNames.map(dbName => {
-            return `SELECT '${dbName}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
+        const indicesSql = Object.entries(dbTablesByCatalog).map(([ TABLE_CATALOG, tables ]) => {
+            const conditions = tables.map(({ TABLE_NAME, TABLE_SCHEMA }) => `("s"."name" = '${TABLE_SCHEMA}' AND "t"."name" = '${TABLE_NAME}')`).join(" OR ")
+
+            return `SELECT '${TABLE_CATALOG}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
                 `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE", "ind"."filter_definition" as "CONDITION" ` +
-                `FROM "${dbName}"."sys"."indexes" "ind" ` +
-                `INNER JOIN "${dbName}"."sys"."index_columns" "ic" ON "ic"."object_id" = "ind"."object_id" AND "ic"."index_id" = "ind"."index_id" ` +
-                `INNER JOIN "${dbName}"."sys"."columns" "col" ON "col"."object_id" = "ic"."object_id" AND "col"."column_id" = "ic"."column_id" ` +
-                `INNER JOIN "${dbName}"."sys"."tables" "t" ON "t"."object_id" = "ind"."object_id" ` +
-                `INNER JOIN "${dbName}"."sys"."schemas" "s" ON "s"."schema_id" = "t"."schema_id" ` +
-                `WHERE "ind"."is_primary_key" = 0 AND "ind"."is_unique_constraint" = 0 AND "t"."is_ms_shipped" = 0`;
+                `FROM "${TABLE_CATALOG}"."sys"."indexes" "ind" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."index_columns" "ic" ON "ic"."object_id" = "ind"."object_id" AND "ic"."index_id" = "ind"."index_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."columns" "col" ON "col"."object_id" = "ic"."object_id" AND "col"."column_id" = "ic"."column_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."tables" "t" ON "t"."object_id" = "ind"."object_id" ` +
+                `INNER JOIN "${TABLE_CATALOG}"."sys"."schemas" "s" ON "s"."schema_id" = "t"."schema_id" ` +
+                `WHERE ` +
+                `"ind"."is_primary_key" = 0 AND "ind"."is_unique_constraint" = 0 AND "t"."is_ms_shipped" = 0 AND ` +
+                `(${conditions})`;
         }).join(" UNION ALL ");
 
         const [
-            dbTables,
             dbColumns,
             dbConstraints,
             dbForeignKeys,
@@ -1642,7 +1727,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             dbCollations,
             dbIndices
         ]: ObjectLiteral[][] = await Promise.all([
-            this.query(tablesSql),
             this.query(columnsSql),
             this.query(constraintsSql),
             this.query(foreignKeysSql),
@@ -1650,10 +1734,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             this.query(dbCollationsSql),
             this.query(indicesSql),
         ]);
-
-        // if tables were not found in the db, no need to proceed
-        if (!dbTables.length)
-            return [];
 
         // create table schemas for loaded tables
         return await Promise.all(dbTables.map(async dbTable => {
@@ -1666,34 +1746,47 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             };
 
             // We do not need to join schema and database names, when db or schema is by default.
-            // In this case we need local variable `tableFullName` for below comparision.
             const db = dbTable["TABLE_CATALOG"] === currentDatabase ? undefined : dbTable["TABLE_CATALOG"];
             const schema = getSchemaFromKey(dbTable, "TABLE_SCHEMA");
+            table.database = dbTable["TABLE_CATALOG"];
+            table.schema = dbTable["TABLE_SCHEMA"];
             table.name = this.driver.buildTableName(dbTable["TABLE_NAME"], schema, db);
-            const tableFullName = this.driver.buildTableName(dbTable["TABLE_NAME"], dbTable["TABLE_SCHEMA"], dbTable["TABLE_CATALOG"]);
+
             const defaultCollation = dbCollations.find(dbCollation => dbCollation["NAME"] === dbTable["TABLE_CATALOG"])!;
 
             // create columns from the loaded columns
             table.columns = dbColumns
-                .filter(dbColumn => this.driver.buildTableName(dbColumn["TABLE_NAME"], dbColumn["TABLE_SCHEMA"], dbColumn["TABLE_CATALOG"]) === tableFullName)
+                .filter(
+                    dbColumn => (
+                        dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbColumn["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"] &&
+                        dbColumn["TABLE_CATALOG"] === dbTable["TABLE_CATALOG"]
+                    )
+                )
                 .map(dbColumn => {
-                    const columnConstraints = dbConstraints.filter(dbConstraint => {
-                        return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
-                            && dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
-                    });
+                    const columnConstraints = dbConstraints.filter(dbConstraint => (
+                        dbConstraint["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
+                        dbConstraint["TABLE_SCHEMA"] === dbColumn["TABLE_SCHEMA"] &&
+                        dbConstraint["TABLE_CATALOG"] === dbColumn["TABLE_CATALOG"] &&
+                        dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
+                    ));
 
                     const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
                     const isConstraintComposite = uniqueConstraint
                         ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
                             && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
+                            && dbConstraint["TABLE_SCHEMA"] === dbColumn["TABLE_SCHEMA"]
+                            && dbConstraint["TABLE_CATALOG"] === dbColumn["TABLE_CATALOG"]
                             && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
                         : false;
 
                     const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY");
-                    const isGenerated = !!dbIdentityColumns.find(column => {
-                        return this.driver.buildTableName(column["TABLE_NAME"], column["TABLE_SCHEMA"], column["TABLE_CATALOG"]) === tableFullName
-                            && column["COLUMN_NAME"] === dbColumn["COLUMN_NAME"];
-                    });
+                    const isGenerated = !!dbIdentityColumns.find(column => (
+                        column["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
+                        column["TABLE_SCHEMA"] === dbColumn["TABLE_SCHEMA"] &&
+                        column["TABLE_CATALOG"] === dbColumn["TABLE_CATALOG"] &&
+                        column["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
+                    ));
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
@@ -1765,10 +1858,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 });
 
             // find unique constraints of table, group them by constraint name and build TableUnique.
-            const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
-                    && dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE";
-            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
+            const tableUniqueConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => (
+                dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                dbConstraint["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"] &&
+                dbConstraint["TABLE_CATALOG"] === dbTable["TABLE_CATALOG"] &&
+                dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
+            )), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
             table.uniques = tableUniqueConstraints.map(constraint => {
                 const uniques = dbConstraints.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
@@ -1779,10 +1874,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             });
 
             // find check constraints of table, group them by constraint name and build TableCheck.
-            const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => {
-                return this.driver.buildTableName(dbConstraint["TABLE_NAME"], dbConstraint["CONSTRAINT_SCHEMA"], dbConstraint["CONSTRAINT_CATALOG"]) === tableFullName
-                    && dbConstraint["CONSTRAINT_TYPE"] === "CHECK";
-            }), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
+            const tableCheckConstraints = OrmUtils.uniq(dbConstraints.filter(dbConstraint => (
+                dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                dbConstraint["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"] &&
+                dbConstraint["TABLE_CATALOG"] === dbTable["TABLE_CATALOG"] &&
+                dbConstraint["CONSTRAINT_TYPE"] === "CHECK"
+            )), dbConstraint => dbConstraint["CONSTRAINT_NAME"]);
 
             table.checks = tableCheckConstraints
                 .filter(constraint => !this.isEnumCheckConstraint(constraint["CONSTRAINT_NAME"]))
@@ -1793,24 +1890,28 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         columnNames: checks.map(c => c["COLUMN_NAME"]),
                         expression: constraint["definition"]
                     });
-            });
+                });
 
             // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-            const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
-                return this.driver.buildTableName(dbForeignKey["TABLE_NAME"], dbForeignKey["TABLE_SCHEMA"], dbForeignKey["TABLE_CATALOG"]) === tableFullName;
-            }), dbForeignKey => dbForeignKey["FK_NAME"]);
+            const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => (
+                dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                dbForeignKey["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"] &&
+                dbForeignKey["TABLE_CATALOG"] === dbTable["TABLE_CATALOG"]
+            )), dbForeignKey => dbForeignKey["FK_NAME"]);
 
             table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
                 const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["FK_NAME"] === dbForeignKey["FK_NAME"]);
 
                 // if referenced table located in currently used db and schema, we don't need to concat db and schema names to table name.
                 const db = dbForeignKey["TABLE_CATALOG"] === currentDatabase ? undefined : dbForeignKey["TABLE_CATALOG"];
-                const schema = getSchemaFromKey(dbTable, "REF_SCHEMA");
+                const schema = getSchemaFromKey(dbForeignKey, "REF_SCHEMA");
                 const referencedTableName = this.driver.buildTableName(dbForeignKey["REF_TABLE"], schema, db);
 
                 return new TableForeignKey({
                     name: dbForeignKey["FK_NAME"],
                     columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
+                    referencedDatabase: dbForeignKey["TABLE_CATALOG"],
+                    referencedSchema: dbForeignKey["REF_SCHEMA"],
                     referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REF_COLUMN"]),
                     onDelete: dbForeignKey["ON_DELETE"].replace("_", " "), // SqlServer returns NO_ACTION, instead of NO ACTION
@@ -1819,9 +1920,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             });
 
             // find index constraints of table, group them by constraint name and build TableIndex.
-            const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => {
-                return this.driver.buildTableName(dbIndex["TABLE_NAME"], dbIndex["TABLE_SCHEMA"], dbIndex["TABLE_CATALOG"]) === tableFullName;
-            }), dbIndex => dbIndex["INDEX_NAME"]);
+            const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => (
+                dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                dbIndex["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"] &&
+                dbIndex["TABLE_CATALOG"] === dbTable["TABLE_CATALOG"]
+            )), dbIndex => dbIndex["INDEX_NAME"]);
 
             table.indices = tableIndexConstraints.map(constraint => {
                 const indices = dbIndices.filter(index => {
@@ -1856,14 +1959,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 const isUniqueExist = table.uniques.some(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
                 if (!isUniqueExist)
                     table.uniques.push(new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(table.name, [column.name]),
+                        name: this.connection.namingStrategy.uniqueConstraintName(table, [column.name]),
                         columnNames: [column.name]
                     }));
             });
 
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques.map(unique => {
-                const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table.name, unique.columnNames);
+                const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table, unique.columnNames);
                 const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
             }).join(", ");
@@ -1873,7 +1976,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         if (table.checks.length > 0) {
             const checksSql = table.checks.map(check => {
-                const checkName = check.name ? check.name : this.connection.namingStrategy.checkConstraintName(table.name, check.expression!);
+                const checkName = check.name ? check.name : this.connection.namingStrategy.checkConstraintName(table, check.expression!);
                 return `CONSTRAINT "${checkName}" CHECK (${check.expression})`;
             }).join(", ");
 
@@ -1884,10 +1987,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
-                    fk.name = this.connection.namingStrategy.foreignKeyName(table.name, fk.columnNames, fk.referencedTableName, fk.referencedColumnNames);
+                    fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, this.getTablePath(fk), fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
-                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(fk.referencedTableName)} (${referencedColumnNames})`;
+                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(this.getTablePath(fk))} (${referencedColumnNames})`;
                 if (fk.onDelete)
                     constraint += ` ON DELETE ${fk.onDelete}`;
                 if (fk.onUpdate)
@@ -1901,7 +2004,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const primaryColumns = table.columns.filter(column => column.isPrimary);
         if (primaryColumns.length > 0) {
-            const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, primaryColumns.map(column => column.name));
+            const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table, primaryColumns.map(column => column.name));
             const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
             sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`;
         }
@@ -1920,21 +2023,30 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     protected createViewSql(view: View): Query {
+        const parsedName = this.parseTableName(view);
+
+        // Can't use `escapePath` here because `CREATE VIEW` does not accept database names.
+        const viewIdentifier = parsedName.schema ? `"${parsedName.schema}"."${parsedName.tableName}"` : `"${parsedName.tableName}"`;
+
         if (typeof view.expression === "string") {
-            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression}`);
+            return new Query(`CREATE VIEW ${viewIdentifier} AS ${view.expression}`);
         } else {
-            return new Query(`CREATE VIEW ${this.escapePath(view)} AS ${view.expression(this.connection).getQuery()}`);
+            return new Query(`CREATE VIEW ${viewIdentifier} AS ${view.expression(this.connection).getQuery()}`);
         }
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema();
-        const parsedTableName = this.parseTableName(view, currentSchema);
+        const parsedTableName = this.parseTableName(view);
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
+
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
         const [query, parameters] = this.connection.createQueryBuilder()
             .insert()
             .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", database: parsedTableName.database, schema: parsedTableName.schema, name: parsedTableName.name, value: expression })
+            .values({ type: "VIEW", database: parsedTableName.database, schema: parsedTableName.schema, name: parsedTableName.tableName, value: expression })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1951,8 +2063,11 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema();
-        const parsedTableName = this.parseTableName(viewOrPath, currentSchema);
+        const parsedTableName = this.parseTableName(viewOrPath);
+
+        if (!parsedTableName.schema) {
+            parsedTableName.schema = await this.getCurrentSchema();
+        }
 
         const qb = this.connection.createQueryBuilder();
         const [query, parameters] = qb.delete()
@@ -1960,7 +2075,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             .where(`${qb.escape("type")} = 'VIEW'`)
             .andWhere(`${qb.escape("database")} = :database`, { database: parsedTableName.database })
             .andWhere(`${qb.escape("schema")} = :schema`, { schema: parsedTableName.schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name: parsedTableName.name })
+            .andWhere(`${qb.escape("name")} = :name`, { name: parsedTableName.tableName })
             .getQueryAndParameters();
 
         return new Query(query, parameters);
@@ -1986,7 +2101,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Builds create primary key sql.
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
+        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table, columnNames);
         const columnNamesString = columnNames.map(columnName => `"${columnName}"`).join(", ");
         return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`);
     }
@@ -1996,7 +2111,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map(column => column.name);
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
+        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(table, columnNames);
         return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${primaryKeyName}"`);
     }
 
@@ -2038,7 +2153,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const columnNames = foreignKey.columnNames.map(column => `"` + column + `"`).join(", ");
         const referencedColumnNames = foreignKey.referencedColumnNames.map(column => `"` + column + `"`).join(",");
         let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${foreignKey.name}" FOREIGN KEY (${columnNames}) ` +
-            `REFERENCES ${this.escapePath(foreignKey.referencedTableName)}(${referencedColumnNames})`;
+            `REFERENCES ${this.escapePath(this.getTablePath(foreignKey))}(${referencedColumnNames})`;
         if (foreignKey.onDelete)
             sql += ` ON DELETE ${foreignKey.onDelete}`;
         if (foreignKey.onUpdate)
@@ -2058,46 +2173,63 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Escapes given table or View path.
      */
-    protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
-        let name = target instanceof Table || target instanceof View ? target.name : target;
-        if (this.driver.options.schema) {
-            if (name.indexOf(".") === -1) {
-                name = `${this.driver.options.schema}.${name}`;
-            } else if (name.split(".").length === 3) {
-                const splittedName = name.split(".");
-                const dbName = splittedName[0];
-                const tableName = splittedName[2];
-                name = `${dbName}.${this.driver.options.schema}.${tableName}`;
+    protected escapePath(target: Table|View|string): string {
+        const parsed = this.parseTableName(target);
+
+        if (parsed.database) {
+            if (parsed.schema) {
+                return `"${parsed.database}"."${parsed.schema}"."${parsed.tableName}"`;
             }
+
+            return `"${parsed.database}".."${parsed.tableName}"`;
         }
 
-        return name.split(".").map(i => {
-            // this condition need because when custom database name was specified and schema name was not, we got `dbName..tableName` string, and doesn't need to escape middle empty string
-            if (i === "")
-                return i;
-            return disableEscape ? i : `"${i}"`;
-        }).join(".");
+        if (parsed.schema) {
+            return `"${parsed.schema}"."${parsed.tableName}"`;
+        }
+
+        return `"${parsed.tableName}"`;
     }
 
-    protected parseTableName(target: Table|View|string, schema?: string) {
-        const tableName = (target instanceof Table || target instanceof View) ? target.name : target;
-        if (tableName.split(".").length === 3) {
+    protected parseTableName(target: Table|View|string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.driver.database;
+
+        // This really should be abstracted into the driver as well..
+        const driverSchema = this.driver.options.schema;
+
+        if (target instanceof Table) {
+            const parsed = this.parseTableName(target.name);
+
             return {
-                database: tableName.split(".")[0],
-                schema: tableName.split(".")[1] === "" ? schema || "SCHEMA_NAME()" : tableName.split(".")[1],
-                name: tableName.split(".")[2]
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName,
             };
-        } else if (tableName.split(".").length === 2) {
+        }
+
+        if (target instanceof View) {
+            return this.parseTableName(target.name);
+        }
+
+        const parts = target.split(".");
+
+        if (parts.length === 3) {
             return {
-                database: this.driver.database,
-                schema: tableName.split(".")[0],
-                name: tableName.split(".")[1]
+                database: parts[0] || driverDatabase,
+                schema: parts[1] || driverSchema,
+                tableName: parts[2]
+            };
+        } else if (parts.length === 2) {
+            return {
+                database: driverDatabase,
+                schema: parts[0],
+                tableName: parts[1]
             };
         } else {
             return {
-                database: this.driver.database,
-                schema: this.driver.options.schema ? this.driver.options.schema : schema || "SCHEMA_NAME()",
-                name: tableName
+                database: driverDatabase,
+                schema: driverSchema,
+                tableName: target
             };
         }
     }
@@ -2153,13 +2285,13 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         if (column.default !== undefined && column.default !== null && createDefault) {
             // we create named constraint to be able to delete this constraint when column been dropped
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
+            const defaultName = this.connection.namingStrategy.defaultConstraintName(table, column.name);
             c += ` CONSTRAINT "${defaultName}" DEFAULT ${column.default}`;
         }
 
         if (column.isGenerated && column.generationStrategy === "uuid" && !column.default) {
             // we create named constraint to be able to delete this constraint when column been dropped
-            const defaultName = this.connection.namingStrategy.defaultConstraintName(table.name, column.name);
+            const defaultName = this.connection.namingStrategy.defaultConstraintName(table, column.name);
             c += ` CONSTRAINT "${defaultName}" DEFAULT NEWSEQUENTIALID()`;
         }
         return c;

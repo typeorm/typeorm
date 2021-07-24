@@ -45,7 +45,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
               .insert()
               .into(User)
               .values(user2)
-              .orUpdate({ overwrite: ["is_updated"]})
+              .orUpdate(["is_updated"])
               .execute();
 
             let loadedUser = await UserRepository.find();
@@ -76,10 +76,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
             .insert()
             .into(User)
             .values(user2)
-            .orUpdate({
-              conflict_target: [ "first_name", "last_name" ],
-              overwrite: ["is_updated"],
-            })
+            .orUpdate([ "is_updated" ], [ "first_name", "last_name" ])
             .execute();
 
           let loadedUser = await UserRepository.find();

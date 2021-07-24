@@ -1,11 +1,11 @@
-import {ColumnOptions, getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {
     ColumnType,
     SimpleColumnType,
     SpatialColumnType,
     WithLengthColumnType,
     WithPrecisionColumnType,
-    WithWidthColumnType
+    WithWidthColumnType,
 } from "../../driver/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 import {ColumnCommonOptions} from "../options/ColumnCommonOptions";
@@ -19,6 +19,7 @@ import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
 import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
+import {ColumnOptions} from "../options/ColumnOptions";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this

@@ -19,6 +19,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -310,7 +311,7 @@ export class MysqlDriver implements Driver {
         // load mysql package
         this.loadDependencies();
 
-        this.database = this.options.replication ? this.options.replication.master.database : this.options.database;
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
 
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
@@ -399,22 +400,28 @@ export class MysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value: any;
-            if (key.substr(0, 4) === ":...") {
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
+            }
+
+            let value: any = parameters[key];
+
+            if (isArray) {
+                return value.map((v: any) => {
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
+                }).join(", ");
+
             }
 
             if (value instanceof Function) {
                 return value();
 
-            } else {
-                escapedParameters.push(value);
-                return "?";
             }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -428,10 +435,16 @@ export class MysqlDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return database ? `${database}.${tableName}` : tableName;
+        let tablePath = [ tableName ];
+
+        if (database) {
+            tablePath.unshift(database);
+        }
+
+        return tablePath.join('.');
     }
 
     /**
@@ -539,7 +552,7 @@ export class MysqlDriver implements Driver {
             return "tinyint";
 
         } else if (column.type === "uuid") {
-            return "varchar";
+            return "char";
 
         } else if (column.type === "json" && this.options.type === "mariadb") {
             /*
@@ -584,29 +597,38 @@ export class MysqlDriver implements Driver {
 
         if (defaultValue === null) {
             return undefined
+        }
 
-        } else if (
+        if (
             (columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
             || typeof defaultValue === "string")
             && defaultValue !== undefined) {
             return `'${defaultValue}'`;
+        }
 
-        } else if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
+        }
 
-        } else if (typeof defaultValue === "number") {
+        if (typeof defaultValue === "number") {
             return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
+        }
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
 
-        } else if (typeof defaultValue === "function") {
+        if (typeof defaultValue === "function") {
             const value = defaultValue();
             return this.normalizeDatetimeFunction(value)
-        } else {
-            return defaultValue;
         }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -623,13 +645,10 @@ export class MysqlDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
-        /**
-         * fix https://github.com/typeorm/typeorm/issues/1139
-         */
-        if (column.generationStrategy === "uuid")
-            return "36";
-
         switch (column.type) {
+            case "uuid":
+                return "36";
+
             case String:
             case "varchar":
             case "nvarchar":
@@ -685,7 +704,7 @@ export class MysqlDriver implements Driver {
                     err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
             } else {
-                fail(new Error(`Connection is not established with mysql database`));
+                fail(new TypeORMError(`Connection is not established with mysql database`));
             }
         });
     }
@@ -737,14 +756,9 @@ export class MysqlDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            let columnMetadataLength = columnMetadata.length;
-            if (!columnMetadataLength && columnMetadata.generationStrategy === "uuid") { // fixing #3374
-                columnMetadataLength = this.getColumnLength(columnMetadata);
-            }
-
             const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadataLength
+                || tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.width !== columnMetadata.width
                 || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
@@ -837,7 +851,7 @@ export class MysqlDriver implements Driver {
              * @see https://github.com/typeorm/typeorm/issues/1373
              */
             if (Object.keys(this.mysql).length === 0) {
-                throw new Error("'mysql' was found but it is empty. Falling back to 'mysql2'.");
+                throw new TypeORMError("'mysql' was found but it is empty. Falling back to 'mysql2'.");
             }
         } catch (e) {
             try {

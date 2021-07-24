@@ -4,6 +4,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {QueryExpressionMap} from "../QueryExpressionMap";
 import {SelectQueryBuilder} from "../SelectQueryBuilder";
 import {ObjectUtils} from "../../util/ObjectUtils";
+import { TypeORMError } from "../../error/TypeORMError";
 
 /**
  * Stores all join relation id attributes which will be used to build a JOIN query.
@@ -64,7 +65,7 @@ export class RelationIdAttribute {
      */
     get parentAlias(): string {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(`Given value must be a string representation of alias property`);
 
         return this.relationName.substr(0, this.relationName.indexOf("."));
     }
@@ -78,7 +79,7 @@ export class RelationIdAttribute {
      */
     get relationPropertyPath(): string {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(`Given value must be a string representation of alias property`);
 
         return this.relationName.substr(this.relationName.indexOf(".") + 1);
     }
@@ -90,12 +91,12 @@ export class RelationIdAttribute {
      */
     get relation(): RelationMetadata {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(`Given value must be a string representation of alias property`);
 
         const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
         const relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
         if (!relation)
-            throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
+            throw new TypeORMError(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
         return relation;
     }
 

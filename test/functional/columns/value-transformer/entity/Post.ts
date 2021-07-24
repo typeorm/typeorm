@@ -15,6 +15,38 @@ class TagTransformer implements ValueTransformer {
 
 }
 
+export class Complex {
+    x: number;
+    y: number;
+    circularReferenceToMySelf: {
+        complex: Complex
+    };
+
+    constructor(from: String) {
+        this.circularReferenceToMySelf = { complex: this };
+        const [x, y] = from.split(" ");
+        this.x = +x;
+        this.y = +y;
+    }
+
+    toString() {
+        return `${this.x} ${this.y}`;
+    }
+}
+
+class ComplexTransformer implements ValueTransformer {
+
+    to (value: Complex | null): string | null {
+        if (value == null) { return value; }
+        return value.toString();
+    }
+
+    from (value: string | null): Complex | null {
+        if (value == null) { return value; }
+        return new Complex(value);
+    }
+}
+
 @Entity()
 export class Post {
 
@@ -27,4 +59,6 @@ export class Post {
     @Column({ type: String, transformer: new TagTransformer() })
     tags: string[];
 
+    @Column({ type: String, transformer: new ComplexTransformer(), nullable: true })
+    complex: Complex | null;
 }

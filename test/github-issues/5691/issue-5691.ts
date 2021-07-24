@@ -21,7 +21,6 @@ describe("github issues > #5691 RelationId is too slow", () => {
         }
         await connection.getRepository(Shared).save(rootAllShared);
 
-        const savePromises: Array<Promise<unknown>> = [];
         for (let indexChild1 = 0; indexChild1 < allChild2.length; indexChild1 ++) {
             const rootChild1 = new Child1();
             rootChild1.root = root;
@@ -32,17 +31,16 @@ describe("github issues > #5691 RelationId is too slow", () => {
                 rootChild1Child2.root = root;
                 rootChild1Child2.child1 = rootChild1;
                 rootChild1Child2.child2 = child2;
-                savePromises.push(connection.getRepository(Shared).save(rootChild1Child2));
+                await connection.getRepository(Shared).save(rootChild1Child2);
             }
             for (const shared of rootAllShared) {
                 const rootChild1Shared = new Shared();
                 rootChild1Shared.root = root;
                 rootChild1Shared.child1 = rootChild1;
                 rootChild1Shared.shared = shared;
-                savePromises.push(connection.getRepository(Shared).save(rootChild1Shared));
+                await connection.getRepository(Shared).save(rootChild1Shared);
             }
         }
-        await Promise.all(savePromises);
     };
 
     let connections: Connection[];

@@ -12,7 +12,7 @@ export class View {
 
     /**
      * Contains database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     name: string;
 
