@@ -309,7 +309,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -324,7 +324,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -491,7 +491,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
 
-        const { schema: schemaName, tableName: oldTableName } = this.parseTableName(oldTable);
+        const { schema: schemaName, tableName: oldTableName } = this.driver.parseTableName(oldTable);
 
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
@@ -599,7 +599,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async addColumn(tableOrName: Table|string, column: TableColumn): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const parsedTableName = this.parseTableName(table);
+        const parsedTableName = this.driver.parseTableName(table);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -947,7 +947,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async dropColumn(tableOrName: Table|string, columnOrName: TableColumn|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const parsedTableName = this.parseTableName(table);
+        const parsedTableName = this.driver.parseTableName(table);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -1096,7 +1096,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async updatePrimaryKeys(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const parsedTableName = this.parseTableName(table);
+        const parsedTableName = this.driver.parseTableName(table);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -1173,7 +1173,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async dropPrimaryKey(tableOrName: Table|string): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const parsedTableName = this.parseTableName(table);
+        const parsedTableName = this.driver.parseTableName(table);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -1492,7 +1492,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const currentSchema = await this.getCurrentSchema();
 
         const viewsCondition = viewNames.map(viewName => {
-            let { schema, tableName: name } = this.parseTableName(viewName);
+            let { schema, tableName: name } = this.driver.parseTableName(viewName);
 
             if (!schema) {
                 schema = currentSchema;
@@ -1853,7 +1853,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        let { schema, tableName: name } = this.parseTableName(view);
+        let { schema, tableName: name } = this.driver.parseTableName(view);
 
         if (!schema) {
             schema = await this.getCurrentSchema();
@@ -1880,7 +1880,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        let { schema, tableName: name } = this.parseTableName(viewOrPath);
+        let { schema, tableName: name } = this.driver.parseTableName(viewOrPath);
 
         if (!schema) {
             schema = await this.getCurrentSchema();
@@ -1926,7 +1926,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        const parsedTableName = this.parseTableName(table);
+        const parsedTableName = this.driver.parseTableName(table);
 
         if (!parsedTableName.schema) {
             return new Query(`DROP INDEX "${indexName}"`);
@@ -2002,41 +2002,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string): string {
-        const { schema, tableName } = this.parseTableName(target);
+        const { schema, tableName } = this.driver.parseTableName(target);
 
         if (schema) {
             return `"${schema}"."${tableName}"`;
         }
 
         return `"${tableName}"`;
-    }
-
-    /**
-     * Returns object with table schema and table name.
-     */
-    protected parseTableName(target: Table | View | string): { database?: string, schema?: string, tableName: string } {
-        const driverDatabase = this.driver.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.driver.options.schema;
-
-        if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
-
-            return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
-                tableName: parsed.tableName
-            }
-        }
-
-        const parts = target.split(".")
-
-        return {
-            database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
-            tableName: parts.length > 1 ? parts[1] : parts[0]
-        };
     }
 
     /**

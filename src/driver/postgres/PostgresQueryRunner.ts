@@ -333,7 +333,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -348,7 +348,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -529,7 +529,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
 
-        const { schema: schemaName, tableName: oldTableName } = this.parseTableName(oldTable);
+        const { schema: schemaName, tableName: oldTableName } = this.driver.parseTableName(oldTable);
 
         newTable.name = schemaName ? `${schemaName}.${newTableName}` : newTableName;
 
@@ -580,7 +580,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
-            const { schema } = this.parseTableName(newTable);
+            const { schema } = this.driver.parseTableName(newTable);
             const newIndexName = this.connection.namingStrategy.indexName(newTable, index.columnNames, index.where);
 
             // build queries
@@ -806,7 +806,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     // build new constraint name
                     index.columnNames.splice(index.columnNames.indexOf(oldColumn.name), 1);
                     index.columnNames.push(newColumn.name);
-                    const { schema } = this.parseTableName(table);
+                    const { schema } = this.driver.parseTableName(table);
                     const newIndexName = this.connection.namingStrategy.indexName(clonedTable, index.columnNames, index.where);
 
                     // build queries
@@ -1504,7 +1504,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const currentDatabase = await this.getCurrentDatabase();
         const currentSchema = await this.getCurrentSchema()
         const viewsCondition = viewNames.length === 0 ? "1=1" : viewNames
-            .map(tableName => this.parseTableName(tableName))
+            .map(tableName => this.driver.parseTableName(tableName))
             .map(({ schema, tableName }) => {
 
                 if (!schema) {
@@ -1552,7 +1552,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             dbTables.push(...await this.query(tablesSql));
         } else {
             const tablesCondition = tableNames
-                .map(tableName => this.parseTableName(tableName))
+                .map(tableName => this.driver.parseTableName(tableName))
                 .map(({ schema, tableName }) => {
                     return `("table_schema" = '${schema || currentSchema}' AND "table_name" = '${tableName}')`;
 
@@ -2045,7 +2045,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
 
-        let { schema, tableName: name } = this.parseTableName(view);
+        let { schema, tableName: name } = this.driver.parseTableName(view);
 
         if (!schema) {
             schema = currentSchema;
@@ -2076,7 +2076,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected async deleteViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
 
-        let { schema, tableName: name } = this.parseTableName(view);
+        let { schema, tableName: name } = this.driver.parseTableName(view);
 
         if (!schema) {
             schema = currentSchema;
@@ -2110,7 +2110,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Checks if enum with the given name exist in the database.
      */
     protected async hasEnumType(table: Table, column: TableColumn): Promise<boolean> {
-        let { schema } = this.parseTableName(table);
+        let { schema } = this.driver.parseTableName(table);
 
         if (!schema) {
             schema = await this.getCurrentSchema();
@@ -2154,7 +2154,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        const { schema } = this.parseTableName(table);
+        const { schema } = this.driver.parseTableName(table);
         return schema ? new Query(`DROP INDEX "${schema}"."${indexName}"`) : new Query(`DROP INDEX "${indexName}"`);
     }
 
@@ -2252,7 +2252,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds sequence name from given table and column.
      */
     protected buildSequenceName(table: Table, columnOrName: TableColumn|string): string {
-        const { tableName } = this.parseTableName(table);
+        const { tableName } = this.driver.parseTableName(table);
 
         const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
 
@@ -2267,7 +2267,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected buildSequencePath(table: Table, columnOrName: TableColumn|string): string {
-        const { schema } = this.parseTableName(table);
+        const { schema } = this.driver.parseTableName(table);
 
         return schema ? `${schema}.${this.buildSequenceName(table, columnOrName)}` : this.buildSequenceName(table, columnOrName);
     }
@@ -2276,7 +2276,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Builds ENUM type name from given table and column.
      */
     protected buildEnumName(table: Table, column: TableColumn, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
-        const { schema, tableName } = this.parseTableName(table);
+        const { schema, tableName } = this.driver.parseTableName(table);
         let enumName = column.enumName ? column.enumName : `${tableName}_${column.name.toLowerCase()}_enum`;
         if (schema && withSchema)
             enumName = `${schema}.${enumName}`
@@ -2288,7 +2288,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
-        let { schema, tableName: name } = this.parseTableName(table);
+        let { schema, tableName: name } = this.driver.parseTableName(table);
 
         if (!schema) {
             schema = await this.getCurrentSchema();
@@ -2331,41 +2331,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string): string {
-        const { schema, tableName } = this.parseTableName(target);
+        const { schema, tableName } = this.driver.parseTableName(target);
 
         if (schema) {
             return `"${schema}"."${tableName}"`;
         }
 
         return `"${tableName}"`;
-    }
-
-    /**
-     * Returns object with table schema and table name.
-     */
-    protected parseTableName(target: Table | View | string): { database?: string, schema?: string, tableName: string } {
-        const driverDatabase = this.driver.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.driver.options.schema;
-
-        if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
-
-            return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
-                tableName: parsed.tableName
-            };
-        }
-
-        const parts = target.split(".")
-
-        return {
-            database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
-            tableName: parts.length > 1 ? parts[1] : parts[0],
-        };
     }
 
     /**

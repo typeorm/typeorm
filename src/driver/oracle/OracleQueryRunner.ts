@@ -290,7 +290,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
-        const { tableName } = this.parseTableName(tableOrName);
+        const { tableName } = this.driver.parseTableName(tableOrName);
         const sql = `SELECT "TABLE_NAME" FROM "USER_TABLES" WHERE "TABLE_NAME" = '${tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -300,7 +300,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
-        const { tableName } = this.parseTableName(tableOrName);
+        const { tableName } = this.driver.parseTableName(tableOrName);
         const sql = `SELECT "COLUMN_NAME" FROM "USER_TAB_COLS" WHERE "TABLE_NAME" = '${tableName}' AND "COLUMN_NAME" = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -456,7 +456,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         let newTable = oldTable.clone();
 
-        const { database: dbName, tableName: oldTableName } = this.parseTableName(oldTable);
+        const { database: dbName, tableName: oldTableName } = this.driver.parseTableName(oldTable);
 
         newTable.name = dbName ? `${dbName}.${newTableName}` : newTableName;
 
@@ -1235,7 +1235,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             query += ` AND "T"."name" IN (${viewNamesString})`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
-            const parsedName = this.parseTableName(dbView["name"]);
+            const parsedName = this.driver.parseTableName(dbView["name"]);
 
             const view = new View();
             view.database = parsedName.database || dbView["database"] || currentDatabase;
@@ -1711,52 +1711,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected escapePath(target: Table | View | string): string {
         // Ignore database when escaping paths
-        const { schema, tableName } = this.parseTableName(target);
+        const { schema, tableName } = this.driver.parseTableName(target);
 
         if (schema) {
             return `"${schema}"."${tableName}"`;
         }
 
         return `"${tableName}"`;
-    }
-
-    protected parseTableName(target: Table | View | string): { database?: string, schema?: string, tableName: string } {
-        const driverDatabase = this.driver.database;
-
-        // This really should be abstracted into the driver as well..
-        const optionsSchema = this.driver.options.schema;
-        const driverSchema = typeof optionsSchema === 'string' ? optionsSchema : undefined;
-
-        if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
-
-            return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
-                tableName: parsed.tableName
-            };
-        }
-
-        const parts = target.split(".");
-
-        if (parts.length === 3) {
-            return {
-                database: parts[0] || driverDatabase,
-                schema: parts[1] || driverSchema,
-                tableName: parts[2]
-            };
-        } else if (parts.length === 2) {
-            return {
-                database: driverDatabase,
-                schema: parts[0] || driverSchema,
-                tableName: parts[1]
-            };
-        } else {
-            return {
-                database: driverDatabase,
-                schema: driverSchema,
-                tableName: target
-            };
-        }
     }
 }

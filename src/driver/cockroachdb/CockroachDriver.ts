@@ -21,6 +21,9 @@ import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import { TypeORMError } from "../../error";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -431,6 +434,58 @@ export class CockroachDriver implements Driver {
 
         return tablePath.join('.');
     }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.database;
+
+        // This really should be abstracted into the driver as well..
+        const driverSchema = this.options.schema;
+
+        if (target instanceof Table || target instanceof View) {
+            // name is sometimes a path
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            // referencedTableName is sometimes a path
+            const parsed = this.parseTableName(target.referencedTableName);
+
+            return {
+                database: target.referencedDatabase || parsed.database || driverDatabase,
+                schema: target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof EntityMetadata) {
+            // EntityMetadata tableName is never a path
+
+            return {
+                database: target.database || driverDatabase,
+                schema: target.schema || driverSchema,
+                tableName: target.tableName
+            }
+
+        }
+
+        const parts = target.split(".")
+
+        return {
+            database: driverDatabase,
+            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            tableName: parts.length > 1 ? parts[1] : parts[0],
+        };
+    }
+
 
     /**
      * Creates a database type from a given column metadata.

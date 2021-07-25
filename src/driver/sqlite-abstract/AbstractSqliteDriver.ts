@@ -16,6 +16,9 @@ import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
 import { TypeORMError } from "../../error";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -410,6 +413,70 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
         return tableName;
+    }
+
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.database;
+
+        // This really should be abstracted into the driver as well..
+        const driverSchema = undefined
+
+        if (target instanceof Table || target instanceof View) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName,
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            const parsed = this.parseTableName(target.referencedTableName);
+
+            return {
+                database: target.referencedDatabase || parsed.database || driverDatabase,
+                schema: target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof EntityMetadata) {
+            // EntityMetadata tableName is never a path
+
+            return {
+                database: target.database || driverDatabase,
+                schema: target.schema || driverSchema,
+                tableName: target.tableName
+            }
+
+        }
+
+        const parts = target.split(".");
+
+        if (parts.length === 3) {
+            return {
+                database: parts[0] || driverDatabase,
+                schema: parts[1] || driverSchema,
+                tableName: parts[2]
+            };
+        } else if (parts.length === 2) {
+            return {
+                database: driverDatabase,
+                schema: parts[0],
+                tableName: parts[1]
+            };
+        } else {
+            return {
+                database: driverDatabase,
+                schema: driverSchema,
+                tableName: target
+            };
+        }
     }
 
     /**

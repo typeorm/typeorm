@@ -374,7 +374,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
 
         if (!parsedTableName.database) {
             parsedTableName.database = await this.getCurrentDatabase();
@@ -393,7 +393,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Checks if column exist in the table.
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
 
         if (!parsedTableName.database) {
             parsedTableName.database = await this.getCurrentDatabase();
@@ -1517,14 +1517,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         const currentDatabase = await this.getCurrentDatabase();
 
         const dbNames = viewPaths
-            .map(viewPath => this.parseTableName(viewPath).database)
+            .map(viewPath => this.driver.parseTableName(viewPath).database)
             .filter(database => database);
 
         if (this.driver.database && !dbNames.find(dbName => dbName === this.driver.database))
             dbNames.push(this.driver.database);
 
         const viewsCondition = viewPaths.map(viewPath => {
-            let { schema, tableName: name } = this.parseTableName(viewPath);
+            let { schema, tableName: name } = this.driver.parseTableName(viewPath);
 
             if (!schema) {
                 schema = currentSchema;
@@ -1590,7 +1590,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             dbTables.push(...await this.query(tablesSql));
         } else {
             const tableNamesByCatalog = tableNames
-                .map(tableName => this.parseTableName(tableName))
+                .map(tableName => this.driver.parseTableName(tableName))
                 .reduce((c, { database, ...other}) => {
                     database = database || currentDatabase;
                     c[database] = c[database] || []
@@ -2009,7 +2009,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     protected createViewSql(view: View): Query {
-        const parsedName = this.parseTableName(view);
+        const parsedName = this.driver.parseTableName(view);
 
         // Can't use `escapePath` here because `CREATE VIEW` does not accept database names.
         const viewIdentifier = parsedName.schema ? `"${parsedName.schema}"."${parsedName.tableName}"` : `"${parsedName.tableName}"`;
@@ -2022,7 +2022,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const parsedTableName = this.parseTableName(view);
+        const parsedTableName = this.driver.parseTableName(view);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -2049,7 +2049,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
-        const parsedTableName = this.parseTableName(viewOrPath);
+        const parsedTableName = this.driver.parseTableName(viewOrPath);
 
         if (!parsedTableName.schema) {
             parsedTableName.schema = await this.getCurrentSchema();
@@ -2160,7 +2160,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Escapes given table or View path.
      */
     protected escapePath(target: Table|View|string): string {
-        const parsed = this.parseTableName(target);
+        const parsed = this.driver.parseTableName(target);
 
         if (parsed.database) {
             if (parsed.schema) {
@@ -2175,45 +2175,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         return `"${parsed.tableName}"`;
-    }
-
-    protected parseTableName(target: Table|View|string): { database?: string, schema?: string, tableName: string } {
-        const driverDatabase = this.driver.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.driver.options.schema;
-
-        if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
-
-            return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
-                tableName: parsed.tableName,
-            };
-        }
-
-        const parts = target.split(".");
-
-        if (parts.length === 3) {
-            return {
-                database: parts[0] || driverDatabase,
-                schema: parts[1] || driverSchema,
-                tableName: parts[2]
-            };
-        } else if (parts.length === 2) {
-            return {
-                database: driverDatabase,
-                schema: parts[0],
-                tableName: parts[1]
-            };
-        } else {
-            return {
-                database: driverDatabase,
-                schema: driverSchema,
-                tableName: target
-            };
-        }
     }
 
     /**

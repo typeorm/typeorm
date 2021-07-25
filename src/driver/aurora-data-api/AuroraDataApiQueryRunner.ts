@@ -245,7 +245,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Checks if table with the given name exist in the database.
      */
     async hasTable(tableOrName: Table|string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
         const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
@@ -255,7 +255,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Checks if column with the given name exist in the given table.
      */
     async hasColumn(tableOrName: Table|string, column: TableColumn|string): Promise<boolean> {
-        const parsedTableName = this.parseTableName(tableOrName);
+        const parsedTableName = this.driver.parseTableName(tableOrName);
         const columnName = column instanceof TableColumn ? column.name : column;
         const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`;
         const result = await this.query(sql);
@@ -390,7 +390,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const oldTable = oldTableOrName instanceof Table ? oldTableOrName : await this.getCachedTable(oldTableOrName);
         const newTable = oldTable.clone();
 
-        const { database } = this.parseTableName(oldTable);
+        const { database } = this.driver.parseTableName(oldTable);
         newTable.name = database ? `${database}.${newTableName}` : newTableName;
 
         // rename table
@@ -1176,7 +1176,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
         const currentDatabase = await this.getCurrentDatabase();
         const viewsCondition = viewNames.map(tableName => {
-            let { database, tableName: name } = this.parseTableName(tableName)
+            let { database, tableName: name } = this.driver.parseTableName(tableName)
 
             if (!database) {
                 database = currentDatabase;
@@ -1641,29 +1641,6 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         return new Query(`ALTER TABLE ${this.escapePath(table)} DROP FOREIGN KEY \`${foreignKeyName}\``);
     }
 
-    protected parseTableName(target: Table | View | string): { database?: string, schema?: string, tableName: string } {
-        const driverDatabase = this.driver.database;
-        const driverSchema = undefined;
-
-        if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
-
-            return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
-                tableName: parsed.tableName
-            };
-        }
-
-        const parts = target.split(".")
-
-        return {
-            database: (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
-            schema: driverSchema,
-            tableName: parts.length > 1 ? parts[1] : parts[0]
-        };
-    }
-
     /**
      * Escapes a given comment so it's safe to include in a query.
      */
@@ -1684,7 +1661,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string): string {
-        const { database, tableName } = this.parseTableName(target);
+        const { database, tableName } = this.driver.parseTableName(target);
 
         if (database) {
             return `\`${database}\`.\`${tableName}\``;

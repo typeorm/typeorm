@@ -19,6 +19,9 @@ import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
 import { TypeORMError } from "../../error";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with MongoDB.
@@ -297,6 +300,33 @@ export class MongoDriver implements Driver {
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
         return tableName;
+    }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { tableName: string; schema?: string; database?: string } {
+        if (target instanceof EntityMetadata) {
+            return {
+                tableName: target.tableName
+            };
+        }
+
+        if (target instanceof Table || target instanceof View) {
+            return {
+                tableName: target.name
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            return {
+                tableName: target.referencedTableName
+            };
+        }
+
+        return {
+            tableName: target
+        };
     }
 
     /**
