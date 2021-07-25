@@ -61,7 +61,7 @@ assignees: ''
 
 <!-- Put "yes" instead of "no" to your issue's relevant databases -->
 
-| DB Type              | Reproducible  |
+| DB Type              | Relevant      |
 | ---                  | ---           |
 | `aurora-data-api`    | no            |
 | `aurora-data-api-pg` | no            |
