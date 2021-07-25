@@ -481,6 +481,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     if (columnIndex === 0) {
                         if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                             expression += " SELECT ";
+                        } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " SELECT ";
                         } else {
                             expression += "(";
                         }
@@ -594,12 +596,16 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         if (valueSetIndex === valueSets.length - 1) {
                             if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                                 expression += " FROM DUAL ";
+                            } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " FROM dummy ";
                             } else {
                                 expression += ")";
                             }
                         } else {
                             if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                                 expression += " FROM DUAL UNION ALL ";
+                            } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " FROM dummy UNION ALL ";
                             } else {
                                 expression += "), ";
                             }
