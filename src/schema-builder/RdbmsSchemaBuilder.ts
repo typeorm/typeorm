@@ -12,7 +12,6 @@ import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUtils} from "./util/TableUtils";
 import {TableColumnOptions} from "./options/TableColumnOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
@@ -35,15 +34,14 @@ import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver
  * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore
  */
 export class RdbmsSchemaBuilder implements SchemaBuilder {
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
     /**
      * Used to execute schema creation queries in a single connection.
      */
     protected queryRunner: QueryRunner;
+
+    private currentDatabase?: string;
+
+    private currentSchema?: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -61,6 +59,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     async build(): Promise<void> {
         this.queryRunner = this.connection.createQueryRunner();
+
+        // this.connection.driver.database || this.currentDatabase;
+        this.currentDatabase = this.connection.driver.database;
+        this.currentSchema = this.connection.driver.schema;
+
         // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
         // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
         const isUsingTransactions = (
@@ -186,16 +189,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createViews();
     }
 
-    private getTablePath(target: EntityMetadata | Table | TableForeignKey): string {
-        if (target instanceof Table) {
-            return target.name;
-        }
+    private getTablePath(target: EntityMetadata | Table | View | TableForeignKey | string): string {
+        const parsed = this.connection.driver.parseTableName(target);
 
-        if (target instanceof TableForeignKey) {
-            return target.referencedTableName;
-        }
-
-        return target.tablePath;
+        return this.connection.driver.buildTableName(
+            parsed.tableName,
+            parsed.schema || this.currentSchema,
+            parsed.database || this.currentDatabase
+        );
     }
 
     /**
@@ -389,18 +390,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Primary key only can be created in conclusion with auto generated column.
      */
     protected async createNewTables(): Promise<void> {
-        const currentSchema = await this.queryRunner.getCurrentSchema();
         for (const metadata of this.entityToSyncMetadatas) {
             // check if table does not exist yet
-            const existTable = this.queryRunner.loadedTables.find(table => {
-                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                let schema = metadata.schema || (this.connection.driver.options as any).schema;
-                // if schema is default db schema (e.g. "public" in PostgreSQL), skip it.
-                schema = schema === currentSchema ? undefined : schema;
-                const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
-
-                return table.name === fullTableName;
-            });
+            const existTable = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (existTable)
                 continue;
 
@@ -417,12 +409,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         for (const metadata of this.viewEntityToSyncMetadatas) {
             // check if view does not exist yet
             const existView = this.queryRunner.loadedViews.find(view => {
-                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
-                const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
                 const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
                 const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
-                return view.name === fullViewName && viewExpression === metadataExpression;
+                return this.getTablePath(view) === this.getTablePath(metadata) && viewExpression === metadataExpression;
             });
             if (existView)
                 continue;
@@ -440,12 +429,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         const droppedViews: Set<View> = new Set();
         for (const view of this.queryRunner.loadedViews) {
             const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
-                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
-                const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
                 const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
                 const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
-                return view.name === fullViewName && viewExpression === metadataExpression;
+                return this.getTablePath(view) === this.getTablePath(metadata) && viewExpression === metadataExpression;
             });
 
             if (existViewMetadata)
@@ -780,8 +766,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates typeorm service table for storing user defined Views.
      */
     protected async createTypeormMetadataTable() {
-        const { schema } = this.connection.driver.options as any;
-        const database = this.connection.driver.database;
+        const schema = this.currentSchema;
+        const database = this.currentDatabase;
         const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", schema, database);
 
         await this.queryRunner.createTable(new Table(
