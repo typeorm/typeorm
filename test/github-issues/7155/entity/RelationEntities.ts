@@ -1,6 +1,18 @@
 import { Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, Tree, TreeChildren, TreeParent } from "../../../../src";
 
 @Entity()
+export class Relation {
+    @PrimaryGeneratedColumn()
+    id: number;
+}
+
+@Entity()
+export class OtherRelation {
+    @PrimaryGeneratedColumn()
+    id: number;
+}
+
+@Entity()
 @Tree("closure-table")
 export class RelationClosure {
     @PrimaryGeneratedColumn()
@@ -61,16 +73,4 @@ export class RelationMaterialized {
     @OneToOne(() => OtherRelation, { cascade: true })
     @JoinColumn()
     otherRelation: OtherRelation;
-}
-
-@Entity()
-export class Relation {
-    @PrimaryGeneratedColumn()
-    id: number;
-}
-
-@Entity()
-export class OtherRelation {
-    @PrimaryGeneratedColumn()
-    id: number;
 }

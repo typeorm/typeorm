@@ -1,7 +1,8 @@
 import {Connection} from "../../../src";
 import {expect} from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Post, TargetPost, Comment} from "./entities";
+import { Post, TargetPost } from "./entities/Post";
+import { Comment } from "./entities/Comment";
 
 describe("github issues > #6399 Process extraAppendedAndWhereCondition for inherited entity", () => {
     let connections: Connection[];
