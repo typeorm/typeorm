@@ -10,6 +10,9 @@
     "email": "pleerock.me@gmail.com"
   },
   "main": "./index.js",
+  "engines": {
+    "node": ">= 12.9.0"
+  },
   "browser": {
     "./browser/driver/aurora-data-api/AuroraDataApiDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/cockroachdb/CockroachDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
