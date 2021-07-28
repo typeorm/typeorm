@@ -75,24 +75,24 @@ export const resultsTemplates: Record<string, any> = {
 
     mysql: {
         control: [
-            `CREATE TABLE \`test\`.\`post\` (\`id\` int NOT NULL AUTO_INCREMENT, \`title\` varchar(255) NOT NULL, \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`,
-            `CREATE TABLE \`test\`.\`username\` (\`username\` varchar(255) NOT NULL, \`email\` varchar(255) NOT NULL, \`something\` varchar(255) NOT NULL, PRIMARY KEY (\`username\`)) ENGINE=InnoDB`
+            `CREATE TABLE \\\`test\\\`.\\\`post\\\` (\\\`id\\\` int NOT NULL AUTO_INCREMENT, \\\`title\\\` varchar(255) NOT NULL, \\\`createdAt\\\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), PRIMARY KEY (\\\`id\\\`)) ENGINE=InnoDB`,
+            `CREATE TABLE \\\`test\\\`.\\\`username\\\` (\\\`username\\\` varchar(255) NOT NULL, \\\`email\\\` varchar(255) NOT NULL, \\\`something\\\` varchar(255) NOT NULL, PRIMARY KEY (\\\`username\\\`)) ENGINE=InnoDB`
         ],
         pretty: [
     `
-            CREATE TABLE \`test\`.\`post\` (
-                \`id\` int NOT NULL AUTO_INCREMENT,
-                \`title\` varchar(255) NOT NULL,
-                \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                PRIMARY KEY (\`id\`)
+            CREATE TABLE \\\`test\\\`.\\\`post\\\` (
+                \\\`id\\\` int NOT NULL AUTO_INCREMENT,
+                \\\`title\\\` varchar(255) NOT NULL,
+                \\\`createdAt\\\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                PRIMARY KEY (\\\`id\\\`)
             ) ENGINE = InnoDB
     `,
     `
-            CREATE TABLE \`test\`.\`username\` (
-                \`username\` varchar(255) NOT NULL,
-                \`email\` varchar(255) NOT NULL,
-                \`something\` varchar(255) NOT NULL,
-                PRIMARY KEY (\`username\`)
+            CREATE TABLE \\\`test\\\`.\\\`username\\\` (
+                \\\`username\\\` varchar(255) NOT NULL,
+                \\\`email\\\` varchar(255) NOT NULL,
+                \\\`something\\\` varchar(255) NOT NULL,
+                PRIMARY KEY (\\\`username\\\`)
             ) ENGINE = InnoDB
     `
         ]
