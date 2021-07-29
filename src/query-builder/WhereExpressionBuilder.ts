@@ -138,3 +138,10 @@ export interface WhereExpressionBuilder {
 
 
 }
+
+/**
+ * @deprecated Use `WhereExpressionBuilder` instead
+ */
+export interface WhereExpression extends WhereExpressionBuilder {
+
+}

@@ -122,6 +122,7 @@ export {UpdateQueryBuilder} from "./query-builder/UpdateQueryBuilder";
 export {RelationQueryBuilder} from "./query-builder/RelationQueryBuilder";
 export {Brackets} from "./query-builder/Brackets";
 export {WhereExpressionBuilder} from "./query-builder/WhereExpressionBuilder";
+export {WhereExpression} from "./query-builder/WhereExpressionBuilder";
 export {InsertResult} from "./query-builder/result/InsertResult";
 export {UpdateResult} from "./query-builder/result/UpdateResult";
 export {DeleteResult} from "./query-builder/result/DeleteResult";
