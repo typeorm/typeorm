@@ -130,7 +130,7 @@ export class MongoEntityManager extends EntityManager {
     async findByIds<Entity>(entityClassOrName: EntityTarget<Entity>, ids: any[], optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID || PlatformTools.load("mongodb").ObjectId;
         query["_id"] = {
             $in: ids.map(id => {
                 if (typeof id === "string") {
@@ -171,7 +171,7 @@ export class MongoEntityManager extends EntityManager {
     async findOne<Entity>(entityClassOrName: EntityTarget<Entity>,
                           optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOneOptions<Entity> | DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID || PlatformTools.load("mongodb").ObjectId;
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
         const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(findOneOptionsOrConditions) || {};
@@ -592,8 +592,8 @@ export class MongoEntityManager extends EntityManager {
             return undefined;
 
         if (FindOptionsUtils.isFindManyOptions<Entity>(optionsOrConditions))
-        // If where condition is passed as a string which contains sql we have to ignore
-        // as mongo is not a sql database
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
             return typeof optionsOrConditions.where === "string"
                 ? {}
                 : optionsOrConditions.where;
@@ -609,8 +609,8 @@ export class MongoEntityManager extends EntityManager {
             return undefined;
 
         if (FindOptionsUtils.isFindOneOptions<Entity>(optionsOrConditions))
-        // If where condition is passed as a string which contains sql we have to ignore
-        // as mongo is not a sql database
+            // If where condition is passed as a string which contains sql we have to ignore
+            // as mongo is not a sql database
             return typeof optionsOrConditions.where === "string"
                 ? {}
                 : optionsOrConditions.where;
@@ -651,7 +651,7 @@ export class MongoEntityManager extends EntityManager {
      * Ensures given id is an id for query.
      */
     protected convertMixedCriteria(metadata: EntityMetadata, idMap: any): ObjectLiteral {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID || PlatformTools.load("mongodb").ObjectId;
 
         // check first if it's ObjectId compatible:
         // string, number, Buffer, ObjectId or ObjectId-like
@@ -684,7 +684,7 @@ export class MongoEntityManager extends EntityManager {
      * Overrides cursor's toArray and next methods to convert results to entity automatically.
      */
     protected applyEntityTransformationToCursor<Entity>(metadata: EntityMetadata, cursor: Cursor<Entity> | AggregationCursor<Entity>) {
-        const ParentCursor = PlatformTools.load("mongodb").Cursor;
+        const ParentCursor = PlatformTools.load("mongodb").Cursor || PlatformTools.load("mongodb").FindCursor;
         const queryRunner = this.mongoQueryRunner;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {
@@ -751,3 +751,4 @@ export class MongoEntityManager extends EntityManager {
     }
 
 }
+
