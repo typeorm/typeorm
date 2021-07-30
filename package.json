@@ -71,7 +71,7 @@
     "@types/sinon": "^9.0.10",
     "@types/source-map-support": "^0.5.3",
     "@types/xml2js": "^0.4.8",
-    "@types/yargs": "^16.0.0",
+    "@types/yargs": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
     "better-sqlite3": "^7.1.2",
@@ -194,7 +194,7 @@
     "tslib": "^2.1.0",
     "xml2js": "^0.4.23",
     "yargonaut": "^1.1.4",
-    "yargs": "^16.2.0",
+    "yargs": "^17.0.1",
     "zen-observable-ts": "^1.0.0"
   },
   "lint-staged": {
