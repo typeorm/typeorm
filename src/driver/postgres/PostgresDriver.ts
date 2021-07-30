@@ -1101,7 +1101,8 @@ export class PostgresDriver implements Driver {
             database: credentials.database,
             port: credentials.port,
             ssl: credentials.ssl,
-            connectionTimeoutMillis: options.connectTimeoutMS
+            connectionTimeoutMillis: options.connectTimeoutMS,
+            application_name: options.applicationName
         }, options.extra || {});
 
         // create a connection pool
