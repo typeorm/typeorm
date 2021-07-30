@@ -191,6 +191,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
+* `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
