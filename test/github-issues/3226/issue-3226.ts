@@ -25,25 +25,21 @@ describe("github issues > #3226 Typeorm wrong generate field name for relations 
     it("should Post.authorId be empty and Post.info.authorId have user id", () =>
         Promise.all(
             connections.map(async connection => {
-                try {
-                    const userRepo = connection.getRepository(User);
-                    const postRepo = connection.getRepository(Post);
-                    const user = new User();
-                    user.name = "User Test";
+                const userRepo = connection.getRepository(User);
+                const postRepo = connection.getRepository(Post);
+                const user = new User();
+                user.name = "User Test";
 
-                    const savedUser = await userRepo.save(user);
+                const savedUser = await userRepo.save(user);
 
-                    const post = new Post();
-                    post.name = "Test post";
-                    post.info.author = savedUser;
+                const post = new Post();
+                post.name = "Test post";
+                post.info.author = savedUser;
 
-                    const savedPost = await postRepo.save(post);
+                const savedPost = await postRepo.save(post);
 
-                    expect(savedPost.authorId).to.be.empty;
-                    expect(savedPost.info.authorId).not.to.be.empty;
-                } catch (err) {
-                    throw err;
-                }
+                expect(savedPost.authorId).to.be.undefined;
+                expect(savedPost.info.authorId).not.to.be.undefined;
             })
         ));
 });
