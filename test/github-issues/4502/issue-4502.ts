@@ -24,7 +24,7 @@ describe("github issues > #4502 Lazy relations cannot be read immediately after 
         post1.title = "Hello Post #1";
         post1.category = Promise.resolve(category1);
 
-        expect(await post1.category).to.be.equal(category1);
+        expect(await post1.category).to.be.eql(category1);
     });
 
     it("should be able to read lazy OneToMany relations just after relation being initialized", async () => {
@@ -37,6 +37,6 @@ describe("github issues > #4502 Lazy relations cannot be read immediately after 
         category1.name = "category #1";
         category1.posts = Promise.resolve([post1, post2]);
 
-        expect(await category1.posts).to.be.equal([post1, post2]);
+        expect(await category1.posts).to.be.eql([post1, post2]);
     });
 });
