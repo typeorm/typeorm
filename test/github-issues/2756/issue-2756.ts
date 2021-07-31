@@ -18,7 +18,7 @@ describe("github issues > #2756 The field with a default value", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should leave the default value unmodified", () => Promise.all(connections.map(async connection => {
+    it.only("should leave the default value unmodified", () => Promise.all(connections.map(async connection => {
         const [lastMigration] = await connection.runMigrations();
 
         lastMigration.should.have.property("timestamp", 1567689639608);
@@ -29,10 +29,10 @@ describe("github issues > #2756 The field with a default value", () => {
         const result = await connection.manager.save(post);
 
         expect(result).not.to.be.empty;
-        expect(result!.title).not.to.be.empty;
+        expect(result!.title).to.not.be.undefined;
         result!.title.should.be.equal("Super title");
 
-        expect(result!.incr, "incr field is present").not.to.be.empty;
+        expect(result!.incr, "incr field is present").to.not.be.undefined;
         expect(result!.incr).to.be.equal(10);
 
     })));
