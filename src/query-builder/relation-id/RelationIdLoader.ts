@@ -4,6 +4,7 @@ import {RelationIdLoadResult} from "./RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverUtils} from "../../driver/DriverUtils";
+import { TypeORMError } from "../../error/TypeORMError";
 
 export class RelationIdLoader {
 
@@ -30,7 +31,7 @@ export class RelationIdLoader {
                 // we expect it to load id of tag
 
                 if (relationIdAttr.queryBuilderFactory)
-                    throw new Error("Additional condition can not be used with ManyToOne or OneToOne owner relations.");
+                    throw new TypeORMError("Additional condition can not be used with ManyToOne or OneToOne owner relations.");
 
                 const duplicates: Array<string> = [];
                 const results = rawEntities.map(rawEntity => {

@@ -77,12 +77,14 @@ export class Question {
 
 ```typescript
 const category1 = new Category();
-category1.name = "animals";
+category1.name = "ORMs";
 
 const category2 = new Category();
-category2.name = "zoo";
+category2.name = "Programming";
 
 const question = new Question();
+question.title = "How to ask questions?";
+question.text = "Where can I ask TypeORM-related questions?";
 question.categories = [category1, category2];
 await connection.manager.save(question);
 ```

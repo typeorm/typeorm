@@ -17,6 +17,7 @@ import {NestedSetSubjectExecutor} from "./tree/NestedSetSubjectExecutor";
 import {ClosureSubjectExecutor} from "./tree/ClosureSubjectExecutor";
 import {MaterializedPathSubjectExecutor} from "./tree/MaterializedPathSubjectExecutor";
 import {OrmUtils} from "../util/OrmUtils";
+import { UpdateResult } from "../query-builder/result/UpdateResult";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -380,14 +381,14 @@ export class SubjectExecutor {
      * Updates all given subjects in the database.
      */
     protected async executeUpdateOperations(): Promise<void> {
-        await Promise.all(this.updateSubjects.map(async subject => {
+        const updateSubject = async (subject: Subject) => {
 
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
-                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                const partialEntity = this.cloneMongoSubjectEntity(subject);
                 if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
                     delete partialEntity[subject.metadata.objectIdColumn.propertyName];
                 }
@@ -407,6 +408,21 @@ export class SubjectExecutor {
             } else {
 
                 const updateMap: ObjectLiteral = subject.createValueSetAndPopChangeMap();
+
+                // for tree tables we execute additional queries
+                switch (subject.metadata.treeType) {
+                    case "nested-set":
+                        await new NestedSetSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+
+                    case "closure-table":
+                        await new ClosureSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+
+                    case "materialized-path":
+                        await new MaterializedPathSubjectExecutor(this.queryRunner).update(subject);
+                        break;
+                }
 
                 // here we execute our updation query
                 // we need to enable entity updation because we update a subject identifier
@@ -442,20 +458,36 @@ export class SubjectExecutor {
                     }
                     Object.assign(subject.generatedMap, updateGeneratedMap);
                 }
-
-                // experiments, remove probably, need to implement tree tables children removal
-                // if (subject.updatedRelationMaps.length > 0) {
-                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
-                //         if (!updatedRelation.relation.isTreeParent) return;
-                //         if (!updatedRelation.value !== null) return;
-                //
-                //         if (subject.metadata.treeType === "closure-table") {
-                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
-                //         }
-                //     }));
-                // }
             }
-        }));
+        };
+
+        // Nested sets need to be updated one by one
+        // Split array in two, one with nested set subjects and the other with the remaining subjects
+        const nestedSetSubjects: Subject[] = [];
+        const remainingSubjects: Subject[] = [];
+
+        for (const subject of this.updateSubjects) {
+            if (subject.metadata.treeType === "nested-set") {
+                nestedSetSubjects.push(subject);
+            } else {
+                remainingSubjects.push(subject);
+            }
+        }
+
+        // Run nested set updates one by one
+        const nestedSetPromise = new Promise<void>(async (resolve, reject) => {
+            for (const subject of nestedSetSubjects) {
+                try {
+                    await updateSubject(subject);
+                } catch (error) {
+                    reject(error);
+                }
+            }
+            resolve();
+        });
+
+        // Run all remaning subjects in parallel
+        await Promise.all([...remainingSubjects.map(updateSubject), nestedSetPromise]);
     }
 
     /**
@@ -482,6 +514,16 @@ export class SubjectExecutor {
                 await manager.delete(subjects[0].metadata.target, deleteMaps);
 
             } else {
+                // for tree tables we execute additional queries
+                switch (subjects[0].metadata.treeType) {
+                    case "nested-set":
+                        await new NestedSetSubjectExecutor(this.queryRunner).remove(subjects);
+                        break;
+
+                    case "closure-table":
+                        await new ClosureSubjectExecutor(this.queryRunner).remove(subjects);
+                        break;
+                }
 
                 // here we execute our deletion query
                 // we don't need to specify entities and set update entity to true since the only thing query builder
@@ -499,6 +541,18 @@ export class SubjectExecutor {
         }
     }
 
+    private cloneMongoSubjectEntity(subject: Subject): ObjectLiteral {
+        const target: ObjectLiteral = {};
+
+        if (subject.entity) {
+            for (const column of subject.metadata.columns) {
+                OrmUtils.mergeDeep(target, column.getEntityValueMap(subject.entity));
+            }
+        }
+
+        return target;
+    }
+
     /**
      * Soft-removes all given subjects in the database.
      */
@@ -508,9 +562,11 @@ export class SubjectExecutor {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
+            let updateResult: UpdateResult;
+
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
-                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                const partialEntity = this.cloneMongoSubjectEntity(subject);
                 if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
                     delete partialEntity[subject.metadata.objectIdColumn.propertyName];
                 }
@@ -529,7 +585,7 @@ export class SubjectExecutor {
 
                 const manager = this.queryRunner.manager as MongoEntityManager;
 
-                await manager.update(subject.metadata.target, subject.identifier, partialEntity);
+                updateResult = await manager.update(subject.metadata.target, subject.identifier, partialEntity);
 
             } else {
 
@@ -552,30 +608,31 @@ export class SubjectExecutor {
                     softDeleteQueryBuilder.where(subject.identifier);
                 }
 
-                const updateResult = await softDeleteQueryBuilder.execute();
-                subject.generatedMap = updateResult.generatedMaps[0];
-                if (subject.generatedMap) {
-                    subject.metadata.columns.forEach(column => {
-                        const value = column.getEntityValue(subject.generatedMap!);
-                        if (value !== undefined && value !== null) {
-                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                            column.setEntityValue(subject.generatedMap!, preparedValue);
-                        }
-                    });
-                }
-
-                // experiments, remove probably, need to implement tree tables children removal
-                // if (subject.updatedRelationMaps.length > 0) {
-                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
-                //         if (!updatedRelation.relation.isTreeParent) return;
-                //         if (!updatedRelation.value !== null) return;
-                //
-                //         if (subject.metadata.treeType === "closure-table") {
-                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
-                //         }
-                //     }));
-                // }
+                updateResult = await softDeleteQueryBuilder.execute();
             }
+
+            subject.generatedMap = updateResult.generatedMaps[0];
+            if (subject.generatedMap) {
+                subject.metadata.columns.forEach(column => {
+                    const value = column.getEntityValue(subject.generatedMap!);
+                    if (value !== undefined && value !== null) {
+                        const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                        column.setEntityValue(subject.generatedMap!, preparedValue);
+                    }
+                });
+            }
+
+            // experiments, remove probably, need to implement tree tables children removal
+            // if (subject.updatedRelationMaps.length > 0) {
+            //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+            //         if (!updatedRelation.relation.isTreeParent) return;
+            //         if (!updatedRelation.value !== null) return;
+            //
+            //         if (subject.metadata.treeType === "closure-table") {
+            //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+            //         }
+            //     }));
+            // }
         }));
     }
 
@@ -588,9 +645,11 @@ export class SubjectExecutor {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject);
 
+            let updateResult: UpdateResult;
+
             // for mongodb we have a bit different updation logic
             if (this.queryRunner instanceof MongoQueryRunner) {
-                const partialEntity = OrmUtils.mergeDeep({}, subject.entity!);
+                const partialEntity = this.cloneMongoSubjectEntity(subject);
                 if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
                     delete partialEntity[subject.metadata.objectIdColumn.propertyName];
                 }
@@ -609,7 +668,7 @@ export class SubjectExecutor {
 
                 const manager = this.queryRunner.manager as MongoEntityManager;
 
-                await manager.update(subject.metadata.target, subject.identifier, partialEntity);
+                updateResult = await manager.update(subject.metadata.target, subject.identifier, partialEntity);
 
             } else {
 
@@ -632,30 +691,32 @@ export class SubjectExecutor {
                     softDeleteQueryBuilder.where(subject.identifier);
                 }
 
-                const updateResult = await softDeleteQueryBuilder.execute();
-                subject.generatedMap = updateResult.generatedMaps[0];
-                if (subject.generatedMap) {
-                    subject.metadata.columns.forEach(column => {
-                        const value = column.getEntityValue(subject.generatedMap!);
-                        if (value !== undefined && value !== null) {
-                            const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                            column.setEntityValue(subject.generatedMap!, preparedValue);
-                        }
-                    });
-                }
-
-                // experiments, remove probably, need to implement tree tables children removal
-                // if (subject.updatedRelationMaps.length > 0) {
-                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
-                //         if (!updatedRelation.relation.isTreeParent) return;
-                //         if (!updatedRelation.value !== null) return;
-                //
-                //         if (subject.metadata.treeType === "closure-table") {
-                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
-                //         }
-                //     }));
-                // }
+                updateResult = await softDeleteQueryBuilder.execute();
             }
+
+            subject.generatedMap = updateResult.generatedMaps[0];
+            if (subject.generatedMap) {
+                subject.metadata.columns.forEach(column => {
+                    const value = column.getEntityValue(subject.generatedMap!);
+                    if (value !== undefined && value !== null) {
+                        const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                        column.setEntityValue(subject.generatedMap!, preparedValue);
+                    }
+                });
+            }
+
+            // experiments, remove probably, need to implement tree tables children removal
+            // if (subject.updatedRelationMaps.length > 0) {
+            //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+            //         if (!updatedRelation.relation.isTreeParent) return;
+            //         if (!updatedRelation.value !== null) return;
+            //
+            //         if (subject.metadata.treeType === "closure-table") {
+            //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+            //         }
+            //     }));
+            // }
+
         }));
     }
 

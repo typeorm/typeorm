@@ -151,6 +151,11 @@ Example with `ts-node`:
 ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run
 ```
 
+Example `ts-node` not using `node_modules` directly:
+```
+ts-node $(yarn bin typeorm) migration:run
+```
+
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
 This means all sql queries written in the `up` methods of your created migrations will be executed.
 That's all! Now you have your database schema up-to-date.

@@ -119,7 +119,7 @@ post.categories = await getConnection()
 
 post.author = await getConnection()
     .createQueryBuilder()
-    .relation(User, "user")
+    .relation(Post, "user")
     .of(post) // you can use just post id as well
     .loadOne();
 ```

@@ -9,8 +9,17 @@ enum StandardSetType {
 @Entity()
 export class TestEntity {
     @PrimaryGeneratedColumn()
-    ud: number
+    id: number
 
     @Column("enum", { enum: StandardSetType, name: "type" })
     type: StandardSetType;
+
+    @Column({ type: "enum", enum: StandardSetType })
+    type2: StandardSetType;
+
+    @Column("enum", { enum: StandardSetType, enumName: "StandardSetType" })
+    type3: StandardSetType;
+
+    @Column({ type: "enum", enumName: "StandardSetType" })
+    type4: StandardSetType;
 }

@@ -1,5 +1,6 @@
 import {Repository} from "./Repository";
-import {FindConditions, getConnection} from "../index";
+import {getConnection} from "../globals";
+import {FindConditions} from "../find-options/FindConditions";
 import {DeepPartial} from "../common/DeepPartial";
 import {SaveOptions} from "./SaveOptions";
 import {FindOneOptions} from "../find-options/FindOneOptions";

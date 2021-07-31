@@ -133,9 +133,6 @@ You can specify closure table name and / or closure table columns names by setti
 })
 ```
 
-### Note:
-Updating or removing a component's parent has not been implemented yet ([see this issue](https://github.com/typeorm/typeorm/issues/2032)). The closure table will need to be explicitly updated to do either of these operations.
-
 ## Working with tree entities
 
 To make bind tree entities to each other its important to set to children entities their parent and save them,

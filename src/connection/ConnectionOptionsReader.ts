@@ -4,6 +4,7 @@ import {PlatformTools} from "../platform/PlatformTools";
 import {ConnectionOptionsEnvReader} from "./options-reader/ConnectionOptionsEnvReader";
 import {ConnectionOptionsYmlReader} from "./options-reader/ConnectionOptionsYmlReader";
 import {ConnectionOptionsXmlReader} from "./options-reader/ConnectionOptionsXmlReader";
+import { TypeORMError } from "../error";
 
 /**
  * Reads connection options from the ormconfig.
@@ -39,7 +40,7 @@ export class ConnectionOptionsReader {
     async all(): Promise<ConnectionOptions[]> {
         const options = await this.load();
         if (!options)
-            throw new Error(`No connection options were found in any orm configuration files.`);
+            throw new TypeORMError(`No connection options were found in any orm configuration files.`);
 
         return options;
     }
@@ -52,7 +53,7 @@ export class ConnectionOptionsReader {
         const allOptions = await this.all();
         const targetOptions = allOptions.find(options => options.name === name || (name === "default" && !options.name));
         if (!targetOptions)
-            throw new Error(`Cannot find connection ${name} because its not defined in any orm configuration files.`);
+            throw new TypeORMError(`Cannot find connection ${name} because its not defined in any orm configuration files.`);
 
         return targetOptions;
     }

@@ -19,8 +19,19 @@ export class Table {
     // -------------------------------------------------------------------------
 
     /**
-     * Contains database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * Database name that this table resides in if it applies.
+     */
+    database?: string;
+
+    /**
+     * Schema name that this table resides in if it applies.
+     */
+    schema?: string;
+
+    /**
+     * May contain database name, schema name and table name, unless they're the current database.
+     *
+     * E.g. myDB.mySchema.myTable
      */
     name: string;
 
@@ -72,6 +83,10 @@ export class Table {
 
     constructor(options?: TableOptions) {
         if (options) {
+            this.database = options.database;
+
+            this.schema = options.schema;
+
             this.name = options.name;
 
             if (options.columns)
@@ -81,7 +96,11 @@ export class Table {
                 this.indices = options.indices.map(index => new TableIndex(index));
 
             if (options.foreignKeys)
-                this.foreignKeys = options.foreignKeys.map(foreignKey => new TableForeignKey(foreignKey));
+                this.foreignKeys = options.foreignKeys.map(foreignKey => new TableForeignKey({
+                    ...foreignKey,
+                    referencedDatabase: foreignKey?.referencedDatabase || options.database,
+                    referencedSchema: foreignKey?.referencedSchema || options.schema,
+                }));
 
             if (options.uniques)
                 this.uniques = options.uniques.map(unique => new TableUnique(unique));
@@ -115,7 +134,9 @@ export class Table {
      * Clones this table to a new table with all properties cloned.
      */
     clone(): Table {
-        return new Table(<TableOptions>{
+        return new Table({
+            schema: this.schema,
+            database: this.database,
             name: this.name,
             columns: this.columns.map(column => column.clone()),
             indices: this.indices.map(constraint => constraint.clone()),
@@ -302,8 +323,13 @@ export class Table {
      * Creates table from a given entity metadata.
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): Table {
+        const database = entityMetadata.database === driver.database ? undefined : entityMetadata.database;
+        const schema = entityMetadata.schema === (driver.options as any).schema ? undefined : entityMetadata.schema;
+
         const options: TableOptions = {
-            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            database: entityMetadata.database,
+            schema: entityMetadata.schema,
+            name: driver.buildTableName(entityMetadata.tableName, schema, database),
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
                 .filter(column => column)

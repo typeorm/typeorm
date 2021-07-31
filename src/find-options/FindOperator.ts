@@ -91,7 +91,7 @@ export class FindOperator<T> {
     /**
      * Gets the Type of this FindOperator
      */
-    get type(): string {
+    get type(): FindOperatorType {
         return this._type;
     }
 

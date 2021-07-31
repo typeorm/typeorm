@@ -14,6 +14,9 @@ export class Post {
     @Column("enum", { enum: ["A", "B", "C"], array: true })
     enumArray: string[];
 
+    @Column("enum", { enum: ["A", "B", "C"], enumName: "enum_array", array: true })
+    enumArray2: string[];
+
     @Column("simple-enum", { enum: ["A", "B", "C"] })
     simpleEnum: string;
 

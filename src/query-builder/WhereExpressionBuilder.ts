@@ -4,7 +4,7 @@ import {Brackets} from "./Brackets";
 /**
  * Query Builders can implement this interface to support where expression
  */
-export interface WhereExpression {
+export interface WhereExpressionBuilder {
 
     /**
      * Sets WHERE condition in the query builder.
@@ -62,6 +62,18 @@ export interface WhereExpression {
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
      */
+    andWhere(where: ObjectLiteral, parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new AND WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
+    andWhere(where: ObjectLiteral[], parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new AND WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
     andWhere(subQuery: (qb: this) => string, parameters?: ObjectLiteral): this;
 
     /**
@@ -75,6 +87,18 @@ export interface WhereExpression {
      * Additionally you can add parameters used in where expression.
      */
     orWhere(where: Brackets, parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new OR WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
+    orWhere(where: ObjectLiteral, parameters?: ObjectLiteral): this;
+
+    /**
+     * Adds new OR WHERE condition in the query builder.
+     * Additionally you can add parameters used in where expression.
+     */
+    orWhere(where: ObjectLiteral[], parameters?: ObjectLiteral): this;
 
     /**
      * Adds new OR WHERE condition in the query builder.
@@ -112,5 +136,12 @@ export interface WhereExpression {
      */
     orWhereInIds(ids: any|any[]): this;
 
+
+}
+
+/**
+ * @deprecated Use `WhereExpressionBuilder` instead
+ */
+export interface WhereExpression extends WhereExpressionBuilder {
 
 }

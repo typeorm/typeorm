@@ -15,14 +15,12 @@ describe("repository > clear method", () => {
     it("should remove everything", () => Promise.all(connections.map(async connection => {
 
         // save dummy data
-        const promises: Promise<Post>[] = [];
         for (let i = 0; i < 100; i++) {
             const post = new Post();
             post.id = i;
             post.title = "post #" + i;
-            promises.push(connection.manager.save(post));
+            await connection.manager.save(post);
         }
-        await Promise.all(promises);
 
         // check if they all are saved
         const loadedPosts = await connection.manager.find(Post);

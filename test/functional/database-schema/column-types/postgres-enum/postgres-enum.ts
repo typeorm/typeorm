@@ -27,6 +27,7 @@ describe("database schema > column types > postgres-enum", () => {
         const post = new Post();
         post.enum = "A";
         post.enumArray = ["A", "B"];
+        post.enumArray2 = ["A", "C"];
         post.simpleEnum = "A";
         post.name = "Post #1";
         await postRepository.save(post);
@@ -34,10 +35,12 @@ describe("database schema > column types > postgres-enum", () => {
         const loadedPost = (await postRepository.findOne(1))!;
         loadedPost.enum.should.be.equal(post.enum);
         loadedPost.enumArray.should.be.deep.equal(post.enumArray);
+        loadedPost.enumArray2.should.be.deep.equal(post.enumArray2);
         loadedPost.simpleEnum.should.be.equal(post.simpleEnum);
 
         table!.findColumnByName("enum")!.type.should.be.equal("enum");
         table!.findColumnByName("enumArray")!.type.should.be.equal("enum");
+        table!.findColumnByName("enumArray2")!.type.should.be.equal("enum");
         table!.findColumnByName("enumArray")!.isArray.should.be.true;
         table!.findColumnByName("simpleEnum")!.type.should.be.equal("enum");
     })));

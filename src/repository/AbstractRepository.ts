@@ -5,7 +5,7 @@ import {TreeRepository} from "./TreeRepository";
 import {EntityTarget} from "../common/EntityTarget";
 import {ObjectType} from "../common/ObjectType";
 import {CustomRepositoryDoesNotHaveEntityError} from "../error/CustomRepositoryDoesNotHaveEntityError";
-import {getMetadataArgsStorage} from "../index";
+import {getMetadataArgsStorage} from "../globals";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 

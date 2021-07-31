@@ -1,5 +1,6 @@
-import {getMetadataArgsStorage, IndexOptions} from "../";
+import {getMetadataArgsStorage} from "../globals";
 import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
+import {IndexOptions} from "./options/IndexOptions";
 
 /**
  * Creates a database index.
