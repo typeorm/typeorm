@@ -1,26 +1,49 @@
 # Find Options
 
-* [Basic options](#basic-options)
-* [Advanced options](#advanced-options)
+-   [Basic options](#basic-options)
+-   [Advanced options](#advanced-options)
 
 ## Basic options
 
 All repository and manager `find` methods accept special options you can use to query data you need without using `QueryBuilder`:
 
-* `select` - indicates which properties of the main object must be selected
+-   `select` - indicates which properties of the main object must be selected
 
 ```typescript
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
-* `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for join and leftJoinAndSelect)
+will execute following query:
+
+```sql
+SELECT "firstName", "lastName" FROM "user"
+```
+
+-   `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for join and leftJoinAndSelect)
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });
-userRepository.find({ relations: ["profile", "photos", "videos", "videos.video_attributes"] });
+userRepository.find({
+    relations: ["profile", "photos", "videos", "videos.video_attributes"],
+});
 ```
 
-* `join` - joins needs to be performed for the entity. Extended version of "relations".
+will execute following queries:
+
+```sql
+SELECT * FROM "user"
+LEFT JOIN "profile" ON "profile"."id" = "user"."profileId"
+LEFT JOIN "photos" ON "photos"."id" = "user"."photoId"
+LEFT JOIN "videos" ON "videos"."id" = "user"."videoId"
+
+SELECT * FROM "user"
+LEFT JOIN "profile" ON "profile"."id" = "user"."profileId"
+LEFT JOIN "photos" ON "photos"."id" = "user"."photoId"
+LEFT JOIN "videos" ON "videos"."id" = "user"."videoId"
+LEFT JOIN "video_attributes" ON "video_attributes"."id" = "videos"."video_attributesId"
+```
+
+-   `join` - joins needs to be performed for the entity. Extended version of "relations".
 
 ```typescript
 userRepository.find({
@@ -29,31 +52,61 @@ userRepository.find({
         leftJoinAndSelect: {
             profile: "user.profile",
             photo: "user.photos",
-            video: "user.videos"
-        }
-    }
+            video: "user.videos",
+        },
+    },
 });
 ```
 
-* `where` - simple conditions by which entity should be queried.
+will execute following query:
+
+```sql
+SELECT * FROM "user" "user"
+LEFT JOIN "profile" ON "profile"."id" = "user"."profile"
+LEFT JOIN "photo" ON "photo"."id" = "user"."photos"
+LEFT JOIN "video" ON "video"."id" = "user"."videos"
+```
+
+-   `where` - simple conditions by which entity should be queried.
 
 ```typescript
 userRepository.find({ where: { firstName: "Timber", lastName: "Saw" } });
 ```
+
+will execute following query:
+
+```sql
+SELECT * FROM "user"
+WHERE "firstName" = 'Timber' AND "lastName" = 'Saw'
+```
+
 Querying a column from an embedded entity should be done with respect to the hierarchy in which it was defined. Example:
 
 ```typescript
-userRepository.find({ where: { name: { first: "Timber", last: "Saw" } } });
+userRepository.find({
+    where: {
+        project: { name: "TypeORM", initials: "TORM" },
+    },
+    relations: ["project"],
+});
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "user"
+WHERE "project"."name" = 'TypeORM' AND "project"."initials" = 'TORM'
+LEFT JOIN "project" ON "project"."id" = "user"."projectId"
 ```
 
 Querying with OR operator:
 
 ```typescript
 userRepository.find({
-  where: [
-    { firstName: "Timber", lastName: "Saw" },
-    { firstName: "Stan", lastName: "Lee" }
-  ]
+    where: [
+        { firstName: "Timber", lastName: "Saw" },
+        { firstName: "Stan", lastName: "Lee" },
+    ],
 });
 ```
 
@@ -63,80 +116,117 @@ will execute following query:
 SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("firstName" = 'Stan' AND "lastName" = 'Lee')
 ```
 
-* `order` - selection order.
+-   `order` - selection order.
 
 ```typescript
 userRepository.find({
     order: {
         name: "ASC",
-        id: "DESC"
-    }
+        id: "DESC",
+    },
 });
 ```
 
-* `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
+will execute following query:
+
+```sql
+SELECT * FROM "user"
+ORDER BY "name" ASC, "id" DESC
+```
+
+-   `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
 
 ```typescript
 userRepository.find({
-    withDeleted: true
+    withDeleted: true,
 });
 ```
 
 `find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
 
-* `skip` - offset (paginated) from where entities should be taken.
+-   `skip` - offset (paginated) from where entities should be taken.
 
 ```typescript
 userRepository.find({
-    skip: 5
+    skip: 5,
 });
 ```
 
-* `take` - limit (paginated) - max number of entities that should be taken.
+```sql
+SELECT * FROM "user"
+OFFSET 5
+```
+
+-   `take` - limit (paginated) - max number of entities that should be taken.
 
 ```typescript
 userRepository.find({
-    take: 10
+    take: 10,
 });
 ```
 
-** If you are using typeorm with MSSQL, and want to use `take` or `limit`, you need to use order as well or you will receive the following error:   `'Invalid usage of the option NEXT in the FETCH statement.'`
+will execute following query:
+
+```sql
+SELECT * FROM "user"
+LIMIT 10
+```
+
+\*\* `skip` and `take` should be used together
+
+\*\* If you are using typeorm with MSSQL, and want to use `take` or `limit`, you need to use order as well or you will receive the following error: `'Invalid usage of the option NEXT in the FETCH statement.'`
 
 ```typescript
 userRepository.find({
     order: {
-        columnName: 'ASC'
-        },
+        columnName: "ASC",
+    },
     skip: 0,
-    take: 10
-})
+    take: 10,
+});
 ```
 
+will execute following query:
 
+```sql
+SELECT * FROM "user"
+ORDER BY "columnName" ASC
+LIMIT 10 OFFSET 0
+```
 
-* `cache` - Enables or disables query result caching. See [caching](caching.md) for more information and options.
+-   `cache` - Enables or disables query result caching. See [caching](caching.md) for more information and options.
 
 ```typescript
 userRepository.find({
-    cache: true
-})
+    cache: true,
+});
 ```
 
-* `lock` - Enables locking mechanism for query. Can be used only in `findOne` method. `lock` is an object which can be defined as:
+-   `lock` - Enables locking mechanism for query. Can be used only in `findOne` method. `lock` is an object which can be defined as:
+
 ```ts
 { mode: "optimistic", version: number|Date }
 ```
+
 or
+
 ```ts
-{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update" }
+{
+    mode: "pessimistic_read" |
+        "pessimistic_write" |
+        "dirty_read" |
+        "pessimistic_partial_write" |
+        "pessimistic_write_or_fail" |
+        "for_no_key_update";
+}
 ```
 
 for example:
 
 ```typescript
 userRepository.findOne(1, {
-    lock: { mode: "optimistic", version: 1 }
-})
+    lock: { mode: "optimistic", version: 1 },
+});
 ```
 
 Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
@@ -162,32 +252,31 @@ userRepository.find({
         firstName: "Timber",
         lastName: "Saw",
         profile: {
-          userName: "tshaw"
-        }
+            userName: "tshaw",
+        },
     },
     order: {
         name: "ASC",
-        id: "DESC"
+        id: "DESC",
     },
     skip: 5,
     take: 10,
-    cache: true
+    cache: true,
 });
 ```
-
 
 ## Advanced options
 
 TypeORM provides a lot of built-in operators that can be used to create more complex comparisons:
 
-* `Not`
+-   `Not`
 
 ```ts
-import {Not} from "typeorm";
+import { Not } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Not("About #1")
-})
+    title: Not("About #1"),
+});
 ```
 
 will execute following query:
@@ -196,13 +285,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" != 'About #1'
 ```
 
-* `LessThan`
+-   `LessThan`
 
 ```ts
-import {LessThan} from "typeorm";
+import { LessThan } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: LessThan(10)
+    likes: LessThan(10),
 });
 ```
 
@@ -212,13 +301,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" < 10
 ```
 
-* `LessThanOrEqual`
+-   `LessThanOrEqual`
 
 ```ts
-import {LessThanOrEqual} from "typeorm";
+import { LessThanOrEqual } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: LessThanOrEqual(10)
+    likes: LessThanOrEqual(10),
 });
 ```
 
@@ -228,13 +317,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" <= 10
 ```
 
-* `MoreThan`
+-   `MoreThan`
 
 ```ts
-import {MoreThan} from "typeorm";
+import { MoreThan } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: MoreThan(10)
+    likes: MoreThan(10),
 });
 ```
 
@@ -244,13 +333,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" > 10
 ```
 
-* `MoreThanOrEqual`
+-   `MoreThanOrEqual`
 
 ```ts
-import {MoreThanOrEqual} from "typeorm";
+import { MoreThanOrEqual } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: MoreThanOrEqual(10)
+    likes: MoreThanOrEqual(10),
 });
 ```
 
@@ -260,13 +349,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" >= 10
 ```
 
-* `Equal`
+-   `Equal`
 
 ```ts
-import {Equal} from "typeorm";
+import { Equal } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Equal("About #2")
+    title: Equal("About #2"),
 });
 ```
 
@@ -276,13 +365,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" = 'About #2'
 ```
 
-* `Like`
+-   `Like`
 
 ```ts
-import {Like} from "typeorm";
+import { Like } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Like("%out #%")
+    title: Like("%out #%"),
 });
 ```
 
@@ -292,13 +381,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 ```
 
-* `ILike`
+-   `ILike`
 
 ```ts
-import {ILike} from "typeorm";
+import { ILike } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: ILike("%out #%")
+    title: ILike("%out #%"),
 });
 ```
 
@@ -308,13 +397,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
 ```
 
-* `Between`
+-   `Between`
 
 ```ts
-import {Between} from "typeorm";
+import { Between } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Between(1, 10)
+    likes: Between(1, 10),
 });
 ```
 
@@ -324,13 +413,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
 ```
 
-* `In`
+-   `In`
 
 ```ts
-import {In} from "typeorm";
+import { In } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: In(["About #2", "About #3"])
+    title: In(["About #2", "About #3"]),
 });
 ```
 
@@ -340,13 +429,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
 ```
 
-* `Any`
+-   `Any`
 
 ```ts
-import {Any} from "typeorm";
+import { Any } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Any(["About #2", "About #3"])
+    title: Any(["About #2", "About #3"]),
 });
 ```
 
@@ -356,13 +445,13 @@ will execute following query (Postgres notation):
 SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
 ```
 
-* `IsNull`
+-   `IsNull`
 
 ```ts
-import {IsNull} from "typeorm";
+import { IsNull } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: IsNull()
+    title: IsNull(),
 });
 ```
 
@@ -372,13 +461,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" IS NULL
 ```
 
-* `Raw`
+-   `Raw`
 
 ```ts
-import {Raw} from "typeorm";
+import { Raw } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    likes: Raw("dislikes - 4")
+    likes: Raw("dislikes - 4"),
 });
 ```
 
@@ -389,13 +478,13 @@ SELECT * FROM "post" WHERE "likes" = "dislikes" - 4
 ```
 
 In the simplest case, a raw query is inserted immediately after the equal symbol.
- But you can also completely rewrite the comparison logic using the function.
+But you can also completely rewrite the comparison logic using the function.
 
 ```ts
-import {Raw} from "typeorm";
+import { Raw } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    currentDate: Raw(alias =>`${alias} > NOW()`)
+    currentDate: Raw((alias) => `${alias} > NOW()`),
 });
 ```
 
@@ -405,13 +494,13 @@ will execute following query:
 SELECT * FROM "post" WHERE "currentDate" > NOW()
 ```
 
-If you need to provide user input, you should not include the user input directly in your query as this may create a SQL injection vulnerability.  Instead, you can use the second argument of the `Raw` function to provide a list of parameters to bind to the query.
+If you need to provide user input, you should not include the user input directly in your query as this may create a SQL injection vulnerability. Instead, you can use the second argument of the `Raw` function to provide a list of parameters to bind to the query.
 
 ```ts
-import {Raw} from "typeorm";
+import { Raw } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    currentDate: Raw(alias =>`${alias} > :date`, { date: "2020-10-06" })
+    currentDate: Raw((alias) => `${alias} > :date`, { date: "2020-10-06" }),
 });
 ```
 
@@ -424,10 +513,15 @@ SELECT * FROM "post" WHERE "currentDate" > '2020-10-06'
 If you need to provide user input that is an array, you can bind them as a list of values in the SQL statement by using the special expression syntax:
 
 ```ts
-import {Raw} from "typeorm";
+import { Raw } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
-    title: Raw(alias =>`${alias} IN (:...titles)`, { titles: ["Go To Statement Considered Harmful", "Structured Programming"] })
+    title: Raw((alias) => `${alias} IN (:...titles)`, {
+        titles: [
+            "Go To Statement Considered Harmful",
+            "Structured Programming",
+        ],
+    }),
 });
 ```
 
@@ -442,11 +536,11 @@ SELECT * FROM "post" WHERE "titles" IN ('Go To Statement Considered Harmful', 'S
 Also you can combine these operators with `Not` operator:
 
 ```ts
-import {Not, MoreThan, Equal} from "typeorm";
+import { Not, MoreThan, Equal } from "typeorm";
 
 const loadedPosts = await connection.getRepository(Post).find({
     likes: Not(MoreThan(10)),
-    title: Not(Equal("About #2"))
+    title: Not(Equal("About #2")),
 });
 ```
 
