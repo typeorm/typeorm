@@ -22,7 +22,7 @@ describe("github issues > #3226 Typeorm wrong generate field name for relations 
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should Post.authorId be empty and Post.info.authorId have user id", () =>
+    it.only("should Post.authorId be empty and Post.info.authorId have user id", () =>
         Promise.all(
             connections.map(async connection => {
                 const userRepo = connection.getRepository(User);
