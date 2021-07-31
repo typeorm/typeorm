@@ -22,6 +22,7 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import { Table } from "../../schema-builder/table/Table";
 import { View } from "../../schema-builder/view/View";
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -623,6 +624,10 @@ export class OracleDriver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
+            if (!this.master) {
+                return fail(new TypeORMError("Driver not Connected"));
+            }
+
             this.master.getConnection((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
                 ok(connection);

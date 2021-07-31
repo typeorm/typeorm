@@ -23,6 +23,7 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import { Table } from "../../schema-builder/table/Table";
 import { View } from "../../schema-builder/view/View";
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -640,6 +641,10 @@ export class SqlServerDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
+        if (!this.master) {
+            return Promise.reject(new TypeORMError("Driver not Connected"));
+        }
+
         return Promise.resolve(this.master);
     }
 

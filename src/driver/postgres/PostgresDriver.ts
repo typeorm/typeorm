@@ -910,6 +910,11 @@ export class PostgresDriver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise((ok, fail) => {
+            if (!this.master) {
+                fail(new TypeORMError("Driver not Connected"))
+                return;
+            }
+
             this.master.connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
@@ -921,9 +926,10 @@ export class PostgresDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
-        if (!this.slaves.length)
+    async obtainSlaveConnection(): Promise<any> {
+        if (!this.slaves.length) {
             return this.obtainMasterConnection();
+        }
 
         return new Promise((ok, fail) => {
             const random = Math.floor(Math.random() * this.slaves.length);

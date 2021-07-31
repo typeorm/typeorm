@@ -1,4 +1,13 @@
-import { ColumnType, Connection, EntityMetadata, ObjectLiteral, Table, TableColumn, TableForeignKey } from "../..";
+import {
+    ColumnType,
+    Connection,
+    EntityMetadata,
+    ObjectLiteral,
+    Table,
+    TableColumn,
+    TableForeignKey,
+    TypeORMError,
+} from "../..";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
 import {PlatformTools} from "../../platform/PlatformTools";
@@ -600,6 +609,10 @@ export class SapDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
+        if (!this.master) {
+            throw new TypeORMError("Driver not Connected");
+        }
+
         return this.master.getConnection();
     }
 
