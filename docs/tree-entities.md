@@ -204,7 +204,7 @@ There are other special methods to work with tree entities through `TreeReposito
 const treeCategories = await repository.findTrees();
 // returns root categories with sub categories inside
 
-const treeCategories = await repository.findTrees({ relations: ["sites"] });
+const treeCategoriesWithRelations = await repository.findTrees({ relations: ["sites"] });
 // automatically joins the sites relation
 ```
 
