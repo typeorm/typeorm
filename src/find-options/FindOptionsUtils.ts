@@ -4,7 +4,7 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {DriverUtils} from "../driver/DriverUtils";
-import {TypeORMError} from "../error";
+import { TypeORMError } from "../error";
 
 /**
  * Utilities to work with FindOptions.
@@ -38,7 +38,6 @@ export class FindOptionsUtils {
                     typeof possibleOptions.withDeleted === "boolean" ||
                     typeof possibleOptions.transaction === "boolean"
                 );
-  
     }
 
     /**
