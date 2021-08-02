@@ -1,10 +1,10 @@
-import { FindManyOptions } from "./FindManyOptions";
-import { FindOneOptions } from "./FindOneOptions";
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
-import { FindRelationsNotFoundError } from "../error/FindRelationsNotFoundError";
-import { EntityMetadata } from "../metadata/EntityMetadata";
-import { DriverUtils } from "../driver/DriverUtils";
-import { TypeORMError } from "../error";
+import {FindManyOptions} from "./FindManyOptions";
+import {FindOneOptions} from "./FindOneOptions";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {DriverUtils} from "../driver/DriverUtils";
+import {TypeORMError} from "../error";
 
 /**
  * Utilities to work with FindOptions.
@@ -21,23 +21,24 @@ export class FindOptionsUtils {
     static isFindOneOptions<Entity = any>(obj: any): obj is FindOneOptions<Entity> {
         const possibleOptions: FindOneOptions<Entity> = obj;
         return possibleOptions &&
-            (
-                Array.isArray(possibleOptions.select) ||
-                possibleOptions.where instanceof Object ||
-                typeof possibleOptions.where === "string" ||
-                Array.isArray(possibleOptions.relations) ||
-                possibleOptions.join instanceof Object ||
-                possibleOptions.order instanceof Object ||
-                possibleOptions.cache instanceof Object ||
-                typeof possibleOptions.cache === "boolean" ||
-                typeof possibleOptions.cache === "number" ||
-                possibleOptions.lock instanceof Object ||
-                possibleOptions.loadRelationIds instanceof Object ||
-                typeof possibleOptions.loadRelationIds === "boolean" ||
-                typeof possibleOptions.loadEagerRelations === "boolean" ||
-                typeof possibleOptions.withDeleted === "boolean" ||
-                typeof possibleOptions.transaction === "boolean"
-            );
+                (
+                    Array.isArray(possibleOptions.select) ||
+                    possibleOptions.where instanceof Object ||
+                    typeof possibleOptions.where === "string" ||
+                    Array.isArray(possibleOptions.relations) ||
+                    possibleOptions.join instanceof Object ||
+                    possibleOptions.order instanceof Object ||
+                    possibleOptions.cache instanceof Object ||
+                    typeof possibleOptions.cache === "boolean" ||
+                    typeof possibleOptions.cache === "number" ||
+                    possibleOptions.lock instanceof Object ||
+                    possibleOptions.loadRelationIds instanceof Object ||
+                    typeof possibleOptions.loadRelationIds === "boolean" ||
+                    typeof possibleOptions.loadEagerRelations === "boolean" ||
+                    typeof possibleOptions.withDeleted === "boolean" ||
+                    typeof possibleOptions.transaction === "boolean"
+                );
+  
     }
 
     /**
@@ -57,7 +58,7 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOptions interface.
      */
-    static extractFindManyOptionsAlias(object: any): string | undefined {
+    static extractFindManyOptionsAlias(object: any): string|undefined {
         if (this.isFindManyOptions(object) && object.join)
             return object.join.alias;
 
@@ -67,7 +68,7 @@ export class FindOptionsUtils {
     /**
      * Applies give find many options to the given query builder.
      */
-    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T> | Partial<T> | undefined): SelectQueryBuilder<T> {
+    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
         if (this.isFindManyOptions(options))
             return this.applyOptionsToQueryBuilder(qb, options);
 
@@ -80,7 +81,7 @@ export class FindOptionsUtils {
     /**
      * Applies give find options to the given query builder.
      */
-    static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T> | FindManyOptions<T> | undefined): SelectQueryBuilder<T> {
+    static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): SelectQueryBuilder<T> {
 
         // if options are not set then simply return query builder. This is made for simplicity of usage.
         if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
