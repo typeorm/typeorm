@@ -993,6 +993,7 @@ export abstract class QueryBuilder<Entity> {
 
             if (metadata.hasRelationWithPropertyPath(path)) {
                 const relation = metadata.findRelationWithPropertyPath(path)!;
+                const entityKeysLength = Object.keys(entity[key]).length;
 
                 // There's also cases where we don't want to return back all of the properties.
                 // These handles the situation where someone passes the model & we don't need to make
@@ -1006,11 +1007,19 @@ export abstract class QueryBuilder<Entity> {
                         .map(j => j.referencedColumn)
                         .filter((j): j is ColumnMetadata => !!j);
 
-                    const hasAllJoinColumns = joinColumns.length > 0 && joinColumns.every(
-                        column => column.getEntityValue(entity[key], false)
-                    );
+                    const seenJoinColumns = new Set<string>();
+                    for (const joinColumn of joinColumns) {
+                        const entityValueMap = joinColumn.getEntityValueMap(entity[key]);
+                        for (const [columnName, value] of Object.entries(entityValueMap || {})) {
+                            if (value) {
+                                seenJoinColumns.add(columnName);
+                            }
+                        }
+                    }
 
-                    if (hasAllJoinColumns) {
+                    const hasOnlyJoinColumns = joinColumns.length > 0 && seenJoinColumns.size === entityKeysLength;
+
+                    if (hasOnlyJoinColumns) {
                         paths.push(path);
                         continue;
                     }
@@ -1026,11 +1035,19 @@ export abstract class QueryBuilder<Entity> {
                 // This handles the situation where someone passes the model & we don't need to make
                 // a HUGE where.
                 const primaryColumns = relation.inverseEntityMetadata.primaryColumns;
-                const hasAllPrimaryKeys = primaryColumns.length > 0 && primaryColumns.every(
-                    column => column.getEntityValue(entity[key], false)
-                );
 
-                if (hasAllPrimaryKeys) {
+                const seenPrimaryColumns = new Set<string>();
+                for (const primaryColumn of primaryColumns) {
+                    const entityValueMap = primaryColumn.getEntityValueMap(entity[key]);
+                    for (const [columnName, value] of Object.entries(entityValueMap || {})) {
+                        if (value) {
+                            seenPrimaryColumns.add(columnName);
+                        }
+                    }
+                }
+                const hasOnlyPrimaryKeys = primaryColumns.length > 0 && seenPrimaryColumns.size === entityKeysLength;
+
+                if (hasOnlyPrimaryKeys) {
                     const subPaths = primaryColumns.map(
                         column => `${path}.${column.propertyPath}`
                     );
