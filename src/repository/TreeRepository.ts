@@ -1,7 +1,7 @@
-import { Repository } from "./Repository";
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
-import { ObjectLiteral } from "../common/ObjectLiteral";
-import { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import {Repository} from "./Repository";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import { TypeORMError } from "../error/TypeORMError";
 import { FindTreeOptions } from "../find-options/FindTreeOptions";
 import { FindRelationsNotFoundError } from "../error";
