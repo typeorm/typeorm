@@ -203,17 +203,23 @@ describe("query builder > select", () => {
             it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
                 // For github issue #6647
 
-                expect(() => {
-                    connection.createQueryBuilder(Category, "category")
-                        .select("category.id")
-                        .leftJoin("category.posts", "posts")
-                        .where({
-                            posts: {
-                                id: IsNull()
-                            }
-                        })
-                        .getQueryAndParameters();
-                }).to.throw();
+                const [sql, params] = connection.createQueryBuilder(Category, "category")
+                    .select("category.id")
+                    .leftJoin("category.posts", "posts")
+                    .where({
+                        posts: {
+                            id: IsNull()
+                        }
+                    })
+                    .getQueryAndParameters();
+
+                expect(sql).to.equal(
+                    'SELECT "category"."id" AS "category_id" FROM "category" "category" ' +
+                    'LEFT JOIN "post" "posts" ON "posts"."categoryId"="category"."id" ' +
+                    'WHERE "posts"."id" IS NULL'
+                );
+
+                expect(params).to.eql([]);
             })));
         });
 
@@ -234,17 +240,24 @@ describe("query builder > select", () => {
             })));
 
             it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
-                expect(() => {
-                    connection.createQueryBuilder(Post, "post")
-                        .select("post.id")
-                        .leftJoin("post.tags", "tags_join")
-                        .where({
-                            "tags": {
-                                "name": IsNull()
-                            }
-                        })
-                        .getQueryAndParameters();
-                }).to.throw();
+                const [sql, params] = connection.createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .leftJoin("post.tags", "tags_join")
+                    .where({
+                        "tags": {
+                            "name": IsNull()
+                        }
+                    })
+                    .getQueryAndParameters();
+
+                expect(sql).to.equal(
+                    'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                    'LEFT JOIN "post_tags_tag" "post_tags_join" ON "post_tags_join"."postId"="post"."id" ' +
+                    'LEFT JOIN "tag" "tags_join" ON "tags_join"."id"="post_tags_join"."tagId" ' +
+                    'WHERE "tags_join"."name" IS NULL'
+                );
+
+                expect(params).to.eql([]);
             })));
         });
 

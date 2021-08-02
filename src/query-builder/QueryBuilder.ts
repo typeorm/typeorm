@@ -994,21 +994,20 @@ export abstract class QueryBuilder<Entity> {
             if (metadata.hasRelationWithPropertyPath(path)) {
                 const relation = metadata.findRelationWithPropertyPath(path)!;
                 const isEntityTarget = relation.inverseEntityMetadata.target === entity[key].constructor;
-                const entityKeysLength = Object.keys(entity[key]).length;
 
-                // There's also cases where we don't want to return back all of the properties.
-                // These handles the situation where someone passes the model & we don't need to make
-                // a HUGE `where` to uniquely look up the entity.
+                if (isEntityTarget) {
+                    // There's also cases where we don't want to return back all of the properties.
+                    // These handles the situation where someone passes the model & we don't need to make
+                    // a HUGE `where` to uniquely look up the entity.
 
-                // In the case of a *-to-one, there's only ever one possible entity on the other side
-                // so if the join columns are all defined we can return just the relation itself
-                // because it will fetch only the join columns and do the lookup.
-                if (relation.relationType === "one-to-one" || relation.relationType === "many-to-one") {
-                    const joinColumns = relation.joinColumns
-                        .map(j => j.referencedColumn)
-                        .filter((j): j is ColumnMetadata => !!j);
+                    // In the case of a *-to-one, there's only ever one possible entity on the other side
+                    // so if the join columns are all defined we can return just the relation itself
+                    // because it will fetch only the join columns and do the lookup.
+                    if (relation.relationType === "one-to-one" || relation.relationType === "many-to-one") {
+                        const joinColumns = relation.joinColumns
+                            .map(j => j.referencedColumn)
+                            .filter((j): j is ColumnMetadata => !!j);
 
-                    if (isEntityTarget) {
                         const hasAllJoinColumns = joinColumns.length > 0 && joinColumns.every(
                             column => column.getEntityValue(entity[key], false)
                         );
@@ -1017,66 +1016,24 @@ export abstract class QueryBuilder<Entity> {
                             paths.push(path);
                             continue;
                         }
-                    } else {
-                        const seenJoinColumns = new Set<string>();
-                        for (const joinColumn of joinColumns) {
-                            const entityValueMap = joinColumn.getEntityValueMap(entity[key]);
-                            for (const [columnName, value] of Object.entries(entityValueMap || {})) {
-                                if (value) {
-                                    seenJoinColumns.add(columnName);
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-
-                        const hasOnlyJoinColumns = joinColumns.length > 0 && seenJoinColumns.size === entityKeysLength;
-
-                        if (hasOnlyJoinColumns) {
-                            paths.push(path);
-                            continue;
-                        }
                     }
-                }
 
-                if (relation.relationType === "one-to-many" || relation.relationType === "many-to-many") {
-                    throw new Error(`Cannot query across ${relation.relationType} for property ${path}`);
-                }
+                    if (relation.relationType === "one-to-many" || relation.relationType === "many-to-many") {
+                        throw new Error(`Cannot query across ${relation.relationType} for property ${path}`);
+                    }
 
-                // For any other case, if the `entity[key]` contains all of the primary keys we can do a
-                // lookup via these.  We don't need to look up via any other values 'cause these are
-                // the unique primary keys.
-                // This handles the situation where someone passes the model & we don't need to make
-                // a HUGE where.
-                const primaryColumns = relation.inverseEntityMetadata.primaryColumns;
+                    // For any other case, if the `entity[key]` contains all of the primary keys we can do a
+                    // lookup via these.  We don't need to look up via any other values 'cause these are
+                    // the unique primary keys.
+                    // This handles the situation where someone passes the model & we don't need to make
+                    // a HUGE where.
+                    const primaryColumns = relation.inverseEntityMetadata.primaryColumns;
 
-                if (isEntityTarget) {
                     const hasAllPrimaryKeys = primaryColumns.length > 0 && primaryColumns.every(
                         column => column.getEntityValue(entity[key], false)
                     );
 
                     if (hasAllPrimaryKeys) {
-                        const subPaths = primaryColumns.map(
-                            column => `${path}.${column.propertyPath}`
-                        );
-                        paths.push(...subPaths);
-                        continue;
-                    }
-                } else {
-                    const seenPrimaryColumns = new Set<string>();
-                    for (const primaryColumn of primaryColumns) {
-                        const entityValueMap = primaryColumn.getEntityValueMap(entity[key]);
-                        for (const [columnName, value] of Object.entries(entityValueMap || {})) {
-                            if (value) {
-                                seenPrimaryColumns.add(columnName);
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                    const hasOnlyPrimaryKeys = primaryColumns.length > 0 && seenPrimaryColumns.size === entityKeysLength;
-
-                    if (hasOnlyPrimaryKeys) {
                         const subPaths = primaryColumns.map(
                             column => `${path}.${column.propertyPath}`
                         );
