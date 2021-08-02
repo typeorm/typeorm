@@ -203,23 +203,17 @@ describe("query builder > select", () => {
             it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
                 // For github issue #6647
 
-                const [sql, params] = connection.createQueryBuilder(Category, "category")
-                    .select("category.id")
-                    .leftJoin("category.posts", "posts")
-                    .where({
-                        posts: {
-                            id: IsNull()
-                        }
-                    })
-                    .getQueryAndParameters();
-
-                expect(sql).to.equal(
-                    'SELECT "category"."id" AS "category_id" FROM "category" "category" ' +
-                    'LEFT JOIN "post" "posts" ON "posts"."categoryId"="category"."id" ' +
-                    'WHERE "posts"."id" IS NULL'
-                );
-
-                expect(params).to.eql([]);
+                expect(() => {
+                    connection.createQueryBuilder(Category, "category")
+                        .select("category.id")
+                        .leftJoin("category.posts", "posts")
+                        .where({
+                            posts: {
+                                id: IsNull()
+                            }
+                        })
+                        .getQueryAndParameters();
+                }).to.throw();
             })));
         });
 

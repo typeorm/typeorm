@@ -11,7 +11,7 @@ async function createDotenvFiles() {
 }
 
 async function createYamlFiles() {
-  await fs.mkdir(path.join(__dirname, "configs/yaml"));
+  await fs.mkdir(path.join(__dirname, "configs/yaml"), { recursive: true });
   await fs.writeFile(path.join(__dirname, "configs/yaml/test-yaml.yaml"), "- type: \"sqlite\"\n  name: \"file\"\n  database: \"test-yaml\"");
 }
 

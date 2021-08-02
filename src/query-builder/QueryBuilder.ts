@@ -995,7 +995,21 @@ export abstract class QueryBuilder<Entity> {
                 const relation = metadata.findRelationWithPropertyPath(path)!;
                 const isEntityTarget = relation.inverseEntityMetadata.target === entity[key].constructor;
 
-                if (isEntityTarget) {
+                const primaryColumns = relation.inverseEntityMetadata.primaryColumns;
+                const seenPrimaryColumns = new Set<string>();
+                for (const primaryColumn of primaryColumns) {
+                    const entityValueMap = primaryColumn.getEntityValueMap(entity[key]);
+                    for (const [columnName, value] of Object.entries(entityValueMap || {})) {
+                        if (value) {
+                            seenPrimaryColumns.add(columnName);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                const hasOnlyPrimaryKeys = primaryColumns.length > 0 && seenPrimaryColumns.size === Object.keys(entity[key]).length;
+
+                if (isEntityTarget || hasOnlyPrimaryKeys) {
                     // There's also cases where we don't want to return back all of the properties.
                     // These handles the situation where someone passes the model & we don't need to make
                     // a HUGE `where` to uniquely look up the entity.
@@ -1027,7 +1041,6 @@ export abstract class QueryBuilder<Entity> {
                     // the unique primary keys.
                     // This handles the situation where someone passes the model & we don't need to make
                     // a HUGE where.
-                    const primaryColumns = relation.inverseEntityMetadata.primaryColumns;
 
                     const hasAllPrimaryKeys = primaryColumns.length > 0 && primaryColumns.every(
                         column => column.getEntityValue(entity[key], false)
