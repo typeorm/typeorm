@@ -98,6 +98,27 @@ describe("repository > find options > locking", () => {
 
     })));
 
+    it("should attach for no key update lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
+        if (!(connection.driver instanceof PostgresDriver))
+            return;
+
+        const executedSql: string[] = [];
+
+        await connection.manager.transaction(entityManager => {
+            const originalQuery = entityManager.queryRunner!.query.bind(entityManager.queryRunner);
+            entityManager.queryRunner!.query = (...args: any[]) => {
+                executedSql.push(args[0]);
+                return originalQuery(...args);
+            };
+
+            return entityManager
+                .getRepository(PostWithVersion)
+                .findOne(1, { lock: { mode: "for_no_key_update" } });
+        });
+
+        expect(executedSql.join(" ").includes("FOR NO KEY UPDATE")).to.be.true;
+    })));
+
     it("should attach pessimistic write lock statement on query if locking enabled", () => Promise.all(connections.map(async connection => {
         if (connection.driver instanceof AbstractSqliteDriver || connection.driver instanceof CockroachDriver || connection.driver instanceof SapDriver)
             return;

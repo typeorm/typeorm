@@ -155,7 +155,14 @@ export class FindOptionsUtils {
         if (options.lock) {
             if (options.lock.mode === "optimistic") {
                 qb.setLock(options.lock.mode, options.lock.version);
-            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read" || options.lock.mode === "pessimistic_partial_write" || options.lock.mode === "pessimistic_write_or_fail") {
+            } else if (
+                options.lock.mode === "pessimistic_read" ||
+                options.lock.mode === "pessimistic_write" ||
+                options.lock.mode === "dirty_read" ||
+                options.lock.mode === "pessimistic_partial_write" ||
+                options.lock.mode === "pessimistic_write_or_fail" ||
+                options.lock.mode === "for_no_key_update"
+            ) {
                 const tableNames = options.lock.tables ? options.lock.tables.map((table) => {
                     const tableAlias = qb.expressionMap.aliases.find((alias) => {
                         return alias.metadata.tableNameWithoutPrefix === table;
