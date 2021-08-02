@@ -10,11 +10,9 @@ import {AlreadyHasActiveConnectionError} from "../error/AlreadyHasActiveConnecti
 export class ConnectionManager {
     /**
      * List of connections registered in this connection manager.
-     *
-     * @deprecated
      */
     get connections(): Connection[] {
-        return Array.from(Object.values(this.connectionMap));
+        return Array.from(this.connectionMap.values());
     }
 
     /**
