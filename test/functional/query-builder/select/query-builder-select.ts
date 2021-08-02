@@ -219,18 +219,24 @@ describe("query builder > select", () => {
 
         describe("many-to-many", () => {
             it("should craft query with exact value", () => Promise.all(connections.map(async connection => {
+                const [sql, params] = connection.createQueryBuilder(Post, "post")
+                    .select("post.id")
+                    .leftJoin("post.tags", "tags_join")
+                    .where({
+                        "tags": {
+                            "name": "Foo"
+                        }
+                    })
+                    .getQueryAndParameters();
 
-                expect(() => {
-                    connection.createQueryBuilder(Post, "post")
-                        .select("post.id")
-                        .leftJoin("post.tags", "tags_join")
-                        .where({
-                            "tags": {
-                                "name": "Foo"
-                            }
-                        })
-                        .getQueryAndParameters();
-                }).to.throw();
+                expect(sql).to.equal(
+                    'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
+                    'LEFT JOIN "post_tags_tag" "post_tags_join" ON "post_tags_join"."postId"="post"."id" ' +
+                    'LEFT JOIN "tag" "tags_join" ON "tags_join"."id"="post_tags_join"."tagId" ' +
+                    'WHERE "tags_join"."name" = ?'
+                );
+
+                expect(params).to.eql(["Foo"]);
             })));
 
             it("should craft query with FindOperator", () => Promise.all(connections.map(async connection => {
