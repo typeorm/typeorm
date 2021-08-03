@@ -96,6 +96,10 @@ export class FindOptionsUtils {
         const metadata = qb.expressionMap.mainAlias!.metadata;
 
         // apply all options from FindOptions
+        if (options.withDeleted) {
+            qb.withDeleted();
+        }
+
         if (options.select) {
             qb.select([]);
             options.select.forEach(select => {
@@ -167,10 +171,6 @@ export class FindOptionsUtils {
                 }) : undefined;
                 qb.setLock(options.lock.mode, undefined, tableNames);
             }
-        }
-
-        if (options.withDeleted) {
-            qb.withDeleted();
         }
 
         if (options.loadRelationIds === true) {
