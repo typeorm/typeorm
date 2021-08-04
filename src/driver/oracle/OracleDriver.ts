@@ -813,6 +813,10 @@ export class OracleDriver implements Driver {
                 connectData += `(SID=${credentials.sid})`;
             }
 
+            if (credentials.serviceName) {
+                connectData += `(SERVICE_NAME=${credentials.serviceName})`
+            }
+
             const connectString = `(DESCRIPTION=(ADDRESS=${address})(CONNECT_DATA=${connectData}))`;
             Object.assign(credentials, { connectString });
         }
