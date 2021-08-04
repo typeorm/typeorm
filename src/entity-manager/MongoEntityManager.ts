@@ -29,7 +29,7 @@ import {
     MongoCountPreferences,
     MongodbIndexOptions,
     MongoError,
-    ObjectID,
+    ObjectId,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -130,7 +130,7 @@ export class MongoEntityManager extends EntityManager {
     async findByIds<Entity>(entityClassOrName: EntityTarget<Entity>, ids: any[], optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions) || {};
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId;
         query["_id"] = {
             $in: ids.map(id => {
                 if (typeof id === "string") {
@@ -169,9 +169,9 @@ export class MongoEntityManager extends EntityManager {
      * Finds first entity that matches given conditions and/or find options.
      */
     async findOne<Entity>(entityClassOrName: EntityTarget<Entity>,
-                          optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOneOptions<Entity> | DeepPartial<Entity>,
+                          optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindOneOptions<Entity> | DeepPartial<Entity>,
                           maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId;
         const id = (optionsOrConditions instanceof objectIdInstance) || typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
         const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
         const query = this.convertFindOneOptionsOrConditionsToMongodbQuery(findOneOptionsOrConditions) || {};
@@ -224,7 +224,7 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
-    async update<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
+    async update<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
         const result = new UpdateResult();
 
         if (Array.isArray(criteria)) {
@@ -253,7 +253,7 @@ export class MongoEntityManager extends EntityManager {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      */
-    async delete<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>): Promise<DeleteResult> {
+    async delete<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindConditions<Entity>): Promise<DeleteResult> {
         const result = new DeleteResult();
 
         if (Array.isArray(criteria)) {
@@ -651,7 +651,7 @@ export class MongoEntityManager extends EntityManager {
      * Ensures given id is an id for query.
      */
     protected convertMixedCriteria(metadata: EntityMetadata, idMap: any): ObjectLiteral {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId;
 
         // check first if it's ObjectId compatible:
         // string, number, Buffer, ObjectId or ObjectId-like
@@ -672,7 +672,7 @@ export class MongoEntityManager extends EntityManager {
             }, {} as any);
         }
 
-        // last resort: try to convert it to an ObjectID anyway
+        // last resort: try to convert it to an ObjectId anyway
         // most likely it will fail, but we want to be backwards compatible and keep the same thrown Errors.
         // it can still pass with null/undefined
         return {

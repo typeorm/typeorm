@@ -247,13 +247,13 @@ temp/`;
      * Gets contents of the user entity.
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import {Entity, ${ database === "mongodb" ? "ObjectIdColumn, ObjectID" : "PrimaryGeneratedColumn" }, Column} from "typeorm";
+        return `import {Entity, ${ database === "mongodb" ? "ObjectIdColumn, ObjectId" : "PrimaryGeneratedColumn" }, Column} from "typeorm";
 
 @Entity()
 export class User {
 
     ${ database === "mongodb" ? "@ObjectIdColumn()" : "@PrimaryGeneratedColumn()" }
-    id: ${ database === "mongodb" ? "ObjectID" : "number" };
+    id: ${ database === "mongodb" ? "ObjectId" : "number" };
 
     @Column()
     firstName: string;
