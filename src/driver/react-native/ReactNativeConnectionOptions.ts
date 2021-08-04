@@ -19,4 +19,9 @@ export interface ReactNativeConnectionOptions extends BaseConnectionOptions {
      * Storage Location
      */
     readonly location: string;
+
+    /**
+     * Driver
+     */
+    readonly driver?: any;
 }

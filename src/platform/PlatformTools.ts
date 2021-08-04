@@ -124,6 +124,12 @@ export class PlatformTools {
                  */
                 case "react-native-sqlite-storage":
                     return require("react-native-sqlite-storage");
+
+                /**
+                 * react-native-quick-sqlite
+                 */
+                case "react-native-quick-sqlite":
+                  return require("react-native-quick-sqlite");
             }
 
         } catch (err) {
