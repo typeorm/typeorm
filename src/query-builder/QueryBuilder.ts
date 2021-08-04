@@ -339,10 +339,16 @@ export abstract class QueryBuilder<Entity> {
 
     /**
      * Sets parameter name and its value.
+     *
+     * The key for this parametere may contain numbers, letters, underscores, or periods.
      */
     setParameter(key: string, value: any): this {
         if (value instanceof Function) {
             throw new TypeORMError(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
+        }
+
+        if (!key.match(/^([A-Za-z0-9_.]+)$/)) {
+            throw new TypeORMError("QueryBuilder parameter keys may only contain numbers, letters, underscores, or periods.");
         }
 
         if (this.parentQueryBuilder) {
