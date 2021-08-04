@@ -25,7 +25,7 @@ import {
     MapReduceOptions,
     MongoCountPreferences,
     MongodbIndexOptions,
-    ObjectID,
+    ObjectId,
     OrderedBulkOperation,
     ParallelCollectionScanOptions,
     ReadPreference,
@@ -99,7 +99,7 @@ export class MongoRepository<Entity extends ObjectLiteral> extends Repository<En
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+    findOne(optionsOrConditions?: string|number|Date|ObjectId|FindOneOptions<Entity>|Partial<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
         return this.manager.findOne(this.metadata.target, optionsOrConditions as any, maybeOptions as any);
     }
 

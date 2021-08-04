@@ -1877,11 +1877,11 @@ export interface FindOneAndDeleteOptions {
 }
 
 /**
- * Create a new ObjectID instance.
+ * Create a new ObjectId instance.
  *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/ObjectID.html
+ * @see http://mongodb.github.io/node-mongodb-native/2.1/api/ObjectId.html
  */
-export declare class ObjectID {
+export declare class ObjectId {
     constructor(s?: string | number);
 
     /**
@@ -1890,14 +1890,14 @@ export declare class ObjectID {
     generationTime: number;
 
     /**
-     * Creates an ObjectID from a hex string representation of an ObjectID.
+     * Creates an ObjectId from a hex string representation of an ObjectId.
      */
-    static createFromHexString(hexString: string): ObjectID;
+    static createFromHexString(hexString: string): ObjectId;
 
     /**
-     * Creates an ObjectID from a second based number, with the rest of the ObjectID zeroed out. Used for comparisons or sorting the ObjectID.
+     * Creates an ObjectId from a second based number, with the rest of the ObjectId zeroed out. Used for comparisons or sorting the ObjectId.
      */
-    static createFromTime(time: number): ObjectID;
+    static createFromTime(time: number): ObjectId;
 
     /**
      * Checks if a value is a valid bson ObjectId.
@@ -1905,12 +1905,12 @@ export declare class ObjectID {
     static isValid(id: any): boolean;
 
     /**
-     * Compares the equality of this ObjectID with otherID.
+     * Compares the equality of this ObjectId with otherID.
      */
-    equals(otherID: ObjectID): boolean;
+    equals(otherID: ObjectId): boolean;
 
     /**
-     * Generate a 12 byte id buffer used in ObjectID's.
+     * Generate a 12 byte id buffer used in ObjectId's.
      */
     generate(time?: number): string;
 
@@ -1921,7 +1921,7 @@ export declare class ObjectID {
     getTimestamp(): Date;
 
     /**
-     * Return the ObjectID id as a 24 byte hex string representation.
+     * Return the ObjectId id as a 24 byte hex string representation.
      */
     toHexString(): string;
 
@@ -2562,7 +2562,7 @@ export interface CollectionDistinctOptions {
 }
 
 /**
- * Create a new ObjectID instance.
+ * Create a new ObjectId instance.
  *
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html
  */
@@ -4600,7 +4600,7 @@ export interface InsertWriteOpResult {
     /**
      * All the generated _id's for the inserted documents.
      */
-    insertedIds: Array<ObjectID>;
+    insertedIds: Array<ObjectId>;
 
     /**
      * The connection object used for the operation.
@@ -4674,7 +4674,7 @@ export interface InsertOneWriteOpResult {
     /**
      * The driver generated ObjectId for the insert operation.
      */
-    insertedId: ObjectID;
+    insertedId: ObjectId;
 
     /**
      * The connection object used for the operation.
@@ -4790,7 +4790,7 @@ export interface UpdateWriteOpResult {
      * The upserted id.
      * @param _id The upserted _id returned from the server.
      */
-    upsertedId: { _id: ObjectID };
+    upsertedId: { _id: ObjectId };
 }
 
 /**
@@ -5882,7 +5882,7 @@ export declare class GridFSBucket {
      * @param callback The result callback
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#delete
      */
-    delete(id: ObjectID, callback?: GridFSBucketErrorCallback): void;
+    delete(id: ObjectId, callback?: GridFSBucketErrorCallback): void;
 
     /**
      * Removes this bucket's files collection, followed by its chunks collection.
@@ -5902,7 +5902,7 @@ export declare class GridFSBucket {
      * @param options Optional settings
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openDownloadStream
      */
-    openDownloadStream(id: ObjectID, options?: { start: number, end: number }): GridFSBucketReadStream;
+    openDownloadStream(id: ObjectId, options?: { start: number, end: number }): GridFSBucketReadStream;
 
     /**
      * Returns a readable stream (GridFSBucketReadStream) for streaming file
@@ -5939,7 +5939,7 @@ export declare class GridFSBucket {
      * @param callback The result callback
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#rename
      */
-    rename(id: ObjectID, filename: string, callback?: GridFSBucketErrorCallback): void;
+    rename(id: ObjectId, filename: string, callback?: GridFSBucketErrorCallback): void;
 }
 
 /**
