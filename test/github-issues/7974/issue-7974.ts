@@ -12,8 +12,7 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
   before(async () => connections = await createTestingConnections({
     entities: [Category, Site],
     schemaCreate: true,
-    dropSchema: true,
-    enabledDrivers: ["mssql", "mariadb"]
+    dropSchema: true
   }));
 
   beforeEach(async () => {
