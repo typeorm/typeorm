@@ -22,10 +22,8 @@ describe("github issues > #8026 Inserting a value for a column that has a relati
     let queryBuilder = await connection.createQueryBuilder();
     
     const insertValue = {
-      departure_terminal_id: 1,
       scheduled_departure_time: new Date(),
       scheduled_arrival_time: new Date(),
-      vessel_position_number: 3,
     }
 
     const [query, params] = await queryBuilder
@@ -35,9 +33,9 @@ describe("github issues > #8026 Inserting a value for a column that has a relati
       .getQueryAndParameters()
       
     expect(query.includes("DEFAULT")).to.be.false;
-    expect(params).length(4);
+    expect(params).length(2);
+    expect(params[0]).to.be.an.instanceOf(Date);
     expect(params[1]).to.be.an.instanceOf(Date);
-    expect(params[2]).to.be.an.instanceOf(Date);
 
   })));
 
