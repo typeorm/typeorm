@@ -34,8 +34,6 @@ describe("github issues > #8026 Inserting a value for a column that has a relati
       
     expect(query.includes("DEFAULT")).to.be.false;
     expect(params).length(2);
-    expect(params[0]).to.be.an.instanceOf(Date);
-    expect(params[1]).to.be.an.instanceOf(Date);
 
   })));
 
