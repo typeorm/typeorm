@@ -412,9 +412,9 @@ describe("query builder > select", () => {
 
             expect(sql).to.equal(
                 'SELECT post.id AS post_id FROM external_post post WHERE ' +
-                '((post.outlet = ? AND post.id = ?) OR ' +
-                '(post.outlet = ? AND post.id = ?) OR ' +
-                '(post.outlet = ? AND post.id = ?))'
+                '(((post.outlet = ? AND post.id = ?)) OR ' +
+                '((post.outlet = ? AND post.id = ?)) OR ' +
+                '((post.outlet = ? AND post.id = ?)))'
             )
             expect(params).to.eql([ "foo", 1, "bar", 2, "baz", 5 ])
         })))
@@ -428,9 +428,9 @@ describe("query builder > select", () => {
 
             expect(sql).to.equal(
                 'SELECT post.id AS post_id FROM external_post post WHERE ' +
-                '((post.outlet = ? AND post.id = ?) OR ' +
-                '(post.outlet = ? AND post.id = ?) OR ' +
-                'post.id = ?)'
+                '(((post.outlet = ? AND post.id = ?)) OR ' +
+                '((post.outlet = ? AND post.id = ?)) OR ' +
+                '(post.id = ?))'
             )
             expect(params).to.eql([ "foo", 1, "bar", 2, 5 ])
         })))
