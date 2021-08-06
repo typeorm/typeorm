@@ -201,7 +201,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             const result = new QueryResult();
 
-            result.raw = raw.rows || raw.outBinds || raw.rowsAffected;
+            result.raw = raw.rows || raw.outBinds || raw.rowsAffected || raw.implicitResults;
 
             if (raw?.hasOwnProperty('rows') && Array.isArray(raw.rows)) {
                 result.records = raw.rows;
@@ -209,6 +209,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             if (raw?.hasOwnProperty('outBinds') && Array.isArray(raw.outBinds)) {
                 result.records = raw.outBinds;
+            }
+
+            if (raw?.hasOwnProperty('implicitResults') && Array.isArray(raw.implicitResults)) {
+                result.records = raw.implicitResults;
             }
 
             if (raw?.hasOwnProperty('rowsAffected')) {
