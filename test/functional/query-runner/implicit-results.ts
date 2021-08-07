@@ -3,7 +3,7 @@ import { Connection } from "../../../src";
 import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
 import { expect } from "chai";
 
-describe.only("query runner > implicit results", () => {
+describe("query runner > implicit results", () => {
 
     let connections: Connection[];
     before(async () => {
