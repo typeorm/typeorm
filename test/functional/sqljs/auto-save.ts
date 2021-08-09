@@ -34,7 +34,7 @@ describe("sqljs driver > autosave", () => {
         await connection.createQueryBuilder().insert().into(Post).values(posts).execute();
         await connection.createQueryBuilder().update(Post).set({title: "Many posts"}).execute();
         await connection.createQueryBuilder().delete().from(Post).where("title = ?", {title: "third post"}).execute();
-        
+
         const repository = connection.getRepository(Post);
         let post = new Post();
         post.title = "A post";
@@ -52,7 +52,7 @@ describe("sqljs driver > autosave", () => {
 
         await connection.close();
 
-        expect(saves).to.be.equal(7);
+        expect(saves).to.be.equal(8);
     })));
 });
 
