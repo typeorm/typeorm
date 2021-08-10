@@ -260,7 +260,7 @@ describe("query builder > soft-delete", () => {
         await userRepository.save(user2);
 
         const users = await userRepository.find({
-            relations: ["picture"]
+            relations: ["avatar"]
         });
 
         expect(users[0].avatar.deletedAt).to.equal(null);
