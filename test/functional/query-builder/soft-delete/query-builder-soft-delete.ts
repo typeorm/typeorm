@@ -9,6 +9,7 @@ import {Not, IsNull} from "../../../../src";
 import {MissingDeleteDateColumnError} from "../../../../src/error/MissingDeleteDateColumnError";
 import {UserWithoutDeleteDateColumn} from "./entity/UserWithoutDeleteDateColumn";
 import {Photo} from "./entity/Photo";
+import {Avatar} from "./entity/Avatar";
 
 describe("query builder > soft-delete", () => {
 
@@ -236,25 +237,25 @@ describe("query builder > soft-delete", () => {
     })));
 
     it("should find with soft deleted relations", () => Promise.all(connections.map(async connection => {
-        const photoRepository = connection.getRepository(Photo);
+        const avatarRepository = connection.getRepository(Avatar);
         const userRepository = connection.getRepository(User);
           
-        const photo1 = new Photo();
-        photo1.url = "image-1.jpg";
+        const avatar1 = new Avatar();
+        avatar1.url = "image-1.jpg";
 
-        const photo2 = new Photo();
-        photo2.url = "image-2.jpg";
+        const avatar2 = new Avatar();
+        avatar2.url = "image-2.jpg";
 
         const user1 = new User();
         user1.name = "user-1";
-        user1.picture = photo1;
+        user1.avatar = avatar1;
 
         const user2 = new User();
         user2.name = "user-2";
-        user2.picture = photo2;
+        user2.avatar = avatar2;
 
-        await photoRepository.save(photo1);
-        await photoRepository.save(photo2);
+        await avatarRepository.save(avatar1);
+        await avatarRepository.save(avatar2);
         await userRepository.save(user1);
         await userRepository.save(user2);
 
@@ -262,17 +263,17 @@ describe("query builder > soft-delete", () => {
             relations: ["picture"]
         });
 
-        expect(users[0].picture.deletedAt).to.equal(null);
-        expect(users[1].picture.deletedAt).to.equal(null);
+        expect(users[0].avatar.deletedAt).to.equal(null);
+        expect(users[1].avatar.deletedAt).to.equal(null);
 
-        await photoRepository.softDelete(photo1);
+        await avatarRepository.softDelete(avatar1);
 
         const usersWithSoftDelete = await userRepository.find({
             withDeleted: true,
-            relations: ["picture"]
+            relations: ["avatar"]
         });
 
-        expect(usersWithSoftDelete[0].picture.deletedAt).to.not.equal(null);
-        expect(usersWithSoftDelete[1].picture.deletedAt).to.equal(null);
+        expect(usersWithSoftDelete[0].avatar.deletedAt).to.not.equal(null);
+        expect(usersWithSoftDelete[1].avatar.deletedAt).to.equal(null);
     })));
 });
