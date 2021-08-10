@@ -3,6 +3,7 @@ import {IndexMetadataArgs} from "../metadata-args/IndexMetadataArgs";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import { TypeORMError } from "../error";
 
 /**
  * Index metadata contains all information about table's index.
@@ -164,7 +165,7 @@ export class IndexMetadata {
                     if (this.embeddedMetadata)
                         return this.embeddedMetadata.propertyPath + "." + columnName;
 
-                    return columnName;
+                    return columnName.trim();
                 });
                 columnPropertyPaths.forEach(propertyPath => map[propertyPath] = 1);
             } else { // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
@@ -190,7 +191,7 @@ export class IndexMetadata {
                 }
                 const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
                 const entityName = this.entityMetadata.targetName;
-                throw new Error(`Index ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyPath);
+                throw new TypeORMError(`Index ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyPath);
             })
             .reduce((a, b) => a.concat(b));
         }
@@ -203,7 +204,7 @@ export class IndexMetadata {
             return updatedMap;
         }, {} as { [key: string]: number });
 
-        this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName), this.where);
+        this.name = this.givenName ? this.givenName : namingStrategy.indexName(this.entityMetadata.tableName, this.columns.map(column => column.databaseName), this.where);
         return this;
     }
 

@@ -196,9 +196,9 @@ workflows:
           matrix:
             parameters:
               node-version:
-                - "10"
                 - "12"
                 - "13"
+                - "14"
       - test:
           name: test (cockroachdb) - Node v12
           requires:

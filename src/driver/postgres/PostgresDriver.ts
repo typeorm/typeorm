@@ -1,25 +1,30 @@
-import {Driver} from "../Driver";
-import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {Connection} from "../../connection/Connection";
+import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {PostgresQueryRunner} from "./PostgresQueryRunner";
-import {DateUtils} from "../../util/DateUtils";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {OrmUtils} from "../../util/OrmUtils";
+import {PlatformTools} from "../../platform/PlatformTools";
+import {QueryRunner} from "../../query-runner/QueryRunner";
+import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
+import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {DateUtils} from "../../util/DateUtils";
+import {OrmUtils} from "../../util/OrmUtils";
+import {Driver} from "../Driver";
+import {ColumnType} from "../types/ColumnTypes";
+import {DataTypeDefaults} from "../types/DataTypeDefaults";
+import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {VersionUtils} from "../../util/VersionUtils";
+import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
+import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
+import {PostgresQueryRunner} from "./PostgresQueryRunner";
+import {DriverUtils} from "../DriverUtils";
+import { TypeORMError } from "../../error";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -264,6 +269,8 @@ export class PostgresDriver implements Driver {
         // load postgres package
         this.loadDependencies();
 
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+
         // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
@@ -305,17 +312,16 @@ export class PostgresDriver implements Driver {
     async afterConnect(): Promise<void> {
         const extensionsMetadata = await this.checkMetadataForExtensions();
 
-        if (extensionsMetadata.hasExtensions) {
-            await Promise.all([this.master, ...this.slaves].map(pool => {
-                return new Promise<void>((ok, fail) => {
-                    pool.connect(async (err: any, connection: any, release: Function) => {
-                        await this.enableExtensions(extensionsMetadata, connection);
-                        if (err) return fail(err);
-                        release();
-                        ok();
-                    });
+        const installExtensions = this.options.installExtensions === undefined || this.options.installExtensions;
+        if (installExtensions && extensionsMetadata.hasExtensions) {
+                       return new Promise<void>((ok, fail) => {
+                this.master.connect(async (err: any, connection: any, release: Function) => {
+                    await this.enableExtensions(extensionsMetadata, connection);
+                    if (err) return fail(err);
+                    release();
+                    ok();
                 });
-            }));
+            });
         }
 
         return Promise.resolve();
@@ -619,36 +625,33 @@ export class PostgresDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const builtParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, builtParameters];
+            return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string): string => {
-            let value: any;
-            let isArray = false;
-            if (key.substr(0, 4) === ":...") {
-                isArray = true;
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
             }
+
+            let value: any = parameters[key];
 
             if (isArray) {
                 return value.map((v: any) => {
-                    builtParameters.push(v);
-                    return "$" + builtParameters.length;
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
                 }).join(", ");
 
-            } else if (value instanceof Function) {
-                return value();
-
-            } else {
-                builtParameters.push(value);
-                return "$" + builtParameters.length;
             }
+
+            if (value instanceof Function) {
+                return value();
+            }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
-        return [sql, builtParameters];
+        return [sql, escapedParameters];
     }
 
     /**
@@ -660,10 +663,65 @@ export class PostgresDriver implements Driver {
 
     /**
      * Build full table name with schema name and table name.
-     * E.g. "mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        return schema ? `${schema}.${tableName}` : tableName;
+        let tablePath = [ tableName ];
+
+        if (schema) {
+            tablePath.unshift(schema);
+        }
+
+        return tablePath.join('.');
+    }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.database;
+
+        // This really should be abstracted into the driver as well..
+        const driverSchema = this.options.schema;
+
+        if (target instanceof Table || target instanceof View) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            const parsed = this.parseTableName(target.referencedTableName);
+
+            return {
+                database: target.referencedDatabase || parsed.database || driverDatabase,
+                schema: target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof EntityMetadata) {
+            // EntityMetadata tableName is never a path
+
+            return {
+                database: target.database || driverDatabase,
+                schema: target.schema || driverSchema,
+                tableName: target.tableName
+            }
+
+        }
+
+        const parts = target.split(".")
+
+        return {
+            database: driverDatabase,
+            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
+            tableName: parts.length > 1 ? parts[1] : parts[0],
+        };
     }
 
     /**
@@ -734,11 +792,13 @@ export class PostgresDriver implements Driver {
 
         if (defaultValue === null) {
             return undefined;
+        }
 
-        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+        if (columnMetadata.isArray && Array.isArray(defaultValue)) {
             return `'{${defaultValue.map((val: string) => `${val}`).join(",")}}'`;
+        }
 
-        } else if (
+        if (
             (columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
             || typeof defaultValue === "number"
@@ -746,19 +806,47 @@ export class PostgresDriver implements Driver {
             && defaultValue !== undefined
         ) {
             return `'${defaultValue}'`;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "true" : "false";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "object") {
-            return `'${JSON.stringify(defaultValue)}'`;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "true" : "false";
+        }
+
+        if (typeof defaultValue === "function") {
+            const value = defaultValue();
+
+            return this.normalizeDatetimeFunction(value)
+        }
+
+        if (typeof defaultValue === "object") {
+            return `'${JSON.stringify(defaultValue)}'`;
+        }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
+    }
+
+    /**
+     * Compares "default" value of the column.
+     * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
+     */
+    private defaultEqual(columnMetadata: ColumnMetadata, tableColumn: TableColumn): boolean {
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string)
+            && !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            const tableColumnDefault = typeof tableColumn.default === "string" ?
+                JSON.parse(tableColumn.default.substring(1, tableColumn.default.length-1)) :
+                tableColumn.default;
+
+            return OrmUtils.deepCompare(columnMetadata.default, tableColumnDefault);
+        }
+
+        const columnDefault = this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata));
+        return columnDefault === tableColumn.default;
     }
 
     /**
@@ -823,6 +911,11 @@ export class PostgresDriver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise((ok, fail) => {
+            if (!this.master) {
+                fail(new TypeORMError("Driver not Connected"))
+                return;
+            }
+
             this.master.connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
@@ -834,9 +927,10 @@ export class PostgresDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
-        if (!this.slaves.length)
+    async obtainSlaveConnection(): Promise<any> {
+        if (!this.slaves.length) {
             return this.obtainMasterConnection();
+        }
 
         return new Promise((ok, fail) => {
             const random = Math.floor(Math.random() * this.slaves.length);
@@ -881,8 +975,8 @@ export class PostgresDriver implements Driver {
                 || tableColumn.isArray !== columnMetadata.isArray
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || tableColumn.comment !== columnMetadata.comment
-                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
+                || (!tableColumn.isGenerated && !this.defaultEqual(columnMetadata, tableColumn)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
@@ -903,10 +997,9 @@ export class PostgresDriver implements Driver {
             //     console.log("isArray:", tableColumn.isArray, columnMetadata.isArray);
             //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
             //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("comment:", tableColumn.comment, columnMetadata.comment);
+            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
             //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
-            //     console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
@@ -984,7 +1077,7 @@ export class PostgresDriver implements Driver {
             return PlatformTools.load("pg-query-stream");
 
         } catch (e) { // todo: better error for browser env
-            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
+            throw new TypeORMError(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
         }
     }
 
@@ -1026,7 +1119,8 @@ export class PostgresDriver implements Driver {
             database: credentials.database,
             port: credentials.port,
             ssl: credentials.ssl,
-            connectionTimeoutMillis: options.connectTimeoutMS
+            connectionTimeoutMillis: options.connectTimeoutMS,
+            application_name: options.applicationName
         }, options.extra || {});
 
         // create a connection pool
@@ -1063,7 +1157,10 @@ export class PostgresDriver implements Driver {
      * Closes connection pool.
      */
     protected async closePool(pool: any): Promise<void> {
-        await Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+        while (this.connectedQueryRunners.length) {
+            await this.connectedQueryRunners[0].release();
+        }
+
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => err ? fail(err) : ok());
         });
@@ -1074,11 +1171,60 @@ export class PostgresDriver implements Driver {
      */
     protected executeQuery(connection: any, query: string) {
         return new Promise((ok, fail) => {
+            this.connection.logger.logQuery(query);
             connection.query(query, (err: any, result: any) => {
                 if (err) return fail(err);
                 ok(result);
             });
         });
+    }
+
+    /**
+     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
+     * Otherwise returns original input.
+     */
+    protected normalizeDatetimeFunction(value: string) {
+        // check if input is datetime function
+        const upperCaseValue = value.toUpperCase()
+        const isDatetimeFunction = upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1
+            || upperCaseValue.indexOf("CURRENT_DATE") !== -1
+            || upperCaseValue.indexOf("CURRENT_TIME") !== -1
+            || upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1
+            || upperCaseValue.indexOf("LOCALTIME") !== -1;
+
+        if (isDatetimeFunction) {
+            // extract precision, e.g. "(3)"
+            const precision = value.match(/\(\d+\)/)
+
+            if (upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1) {
+                return precision ? `('now'::text)::timestamp${precision[0]} with time zone` : "now()";
+
+            } else if (upperCaseValue === "CURRENT_DATE") {
+                return "('now'::text)::date"
+
+            } else if (upperCaseValue.indexOf("CURRENT_TIME") !== -1) {
+                return precision ? `('now'::text)::time${precision[0]} with time zone` : "('now'::text)::time with time zone"
+
+            } else if (upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1) {
+                return precision ? `('now'::text)::timestamp${precision[0]} without time zone` : "('now'::text)::timestamp without time zone"
+
+            } else if (upperCaseValue.indexOf("LOCALTIME") !== -1) {
+                return precision ? `('now'::text)::time${precision[0]} without time zone` : "('now'::text)::time without time zone"
+            }
+        }
+
+        return value
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }

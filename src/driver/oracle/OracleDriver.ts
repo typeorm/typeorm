@@ -19,6 +19,10 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -222,8 +226,7 @@ export class OracleDriver implements Driver {
         // load oracle package
         this.loadDependencies();
 
-        // extra oracle setup
-        this.oracle.outFormat = this.oracle.OBJECT;
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
@@ -308,33 +311,32 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value: any;
-            let isArray = false;
-            if (key.substr(0, 4) === ":...") {
-                isArray = true;
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
             }
+
+            let value: any = parameters[key];
 
             if (isArray) {
-                return value.map((v: any, index: number) => {
+                return value.map((v: any) => {
                     escapedParameters.push(v);
-                    return `:${key.substr(4)}${index}`;
+                    return this.createParameter(key, escapedParameters.length - 1);
                 }).join(", ");
 
-            } else if (value instanceof Function) {
+            }
+
+            if (value instanceof Function) {
                 return value();
 
-            } else if (typeof value === "boolean") {
-                return value ? 1 : 0;
-
-            } else {
-                escapedParameters.push(value);
-                return key;
             }
+
+            if (typeof value === "boolean") {
+                return value ? '1' : '0';
+            }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -351,7 +353,76 @@ export class OracleDriver implements Driver {
      * Oracle does not support table schemas. One user can have only one schema.
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return tableName;
+        let tablePath = [ tableName ];
+
+        if (schema) {
+            tablePath.unshift(schema);
+        }
+
+        return tablePath.join('.');
+    }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.database;
+
+        // This really should be abstracted into the driver as well..
+        const driverSchema = this.options.schema;
+
+        if (target instanceof Table || target instanceof View) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            const parsed = this.parseTableName(target.referencedTableName);
+
+            return {
+                database: target.referencedDatabase || parsed.database || driverDatabase,
+                schema: target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof EntityMetadata) {
+            // EntityMetadata tableName is never a path
+
+            return {
+                database: target.database || driverDatabase,
+                schema: target.schema || driverSchema,
+                tableName: target.tableName
+            }
+
+        }
+
+        const parts = target.split(".");
+
+        if (parts.length === 3) {
+            return {
+                database: parts[0] || driverDatabase,
+                schema: parts[1] || driverSchema,
+                tableName: parts[2]
+            };
+        } else if (parts.length === 2) {
+            return {
+                database: driverDatabase,
+                schema: parts[0] || driverSchema,
+                tableName: parts[1]
+            };
+        } else {
+            return {
+                database: driverDatabase,
+                schema: driverSchema,
+                tableName: target
+            };
+        }
     }
 
     /**
@@ -469,22 +540,25 @@ export class OracleDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return undefined;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -550,6 +624,10 @@ export class OracleDriver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
+            if (!this.master) {
+                return fail(new TypeORMError("Driver not Connected"));
+            }
+
             this.master.getConnection((err: any, connection: any, release: Function) => {
                 if (err) return fail(err);
                 ok(connection);
@@ -718,11 +796,36 @@ export class OracleDriver implements Driver {
 
         credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
 
+        if (!credentials.connectString) {
+            let address = `(PROTOCOL=TCP)`;
+
+            if (credentials.host) {
+                address += `(HOST=${credentials.host})`;
+            }
+
+            if (credentials.port) {
+                address += `(PORT=${credentials.port})`;
+            }
+
+            let connectData = `(SERVER=DEDICATED)`;
+
+            if (credentials.sid) {
+                connectData += `(SID=${credentials.sid})`;
+            }
+
+            if (credentials.serviceName) {
+                connectData += `(SERVICE_NAME=${credentials.serviceName})`
+            }
+
+            const connectString = `(DESCRIPTION=(ADDRESS=${address})(CONNECT_DATA=${connectData}))`;
+            Object.assign(credentials, { connectString });
+        }
+
         // build connection options for the driver
         const connectionOptions = Object.assign({}, {
             user: credentials.username,
             password: credentials.password,
-            connectString: credentials.connectString ? credentials.connectString : credentials.host + ":" + credentials.port + "/" + credentials.sid,
+            connectString: credentials.connectString,
         }, options.extra || {});
 
         // pooling is enabled either when its set explicitly to true,

@@ -1,4 +1,4 @@
-import {createConnection} from "../index";
+import {createConnection} from "../globals";
 import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import * as yargs from "yargs";

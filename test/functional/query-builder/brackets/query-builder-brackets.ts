@@ -6,13 +6,43 @@ import {User} from "./entity/User";
 import {Brackets} from "../../../../src/query-builder/Brackets";
 
 describe("query builder > brackets", () => {
-    
+
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: [ "sqlite" ],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
+
+    it("should put parentheses in the SQL", () => Promise.all(connections.map(async connection => {
+        const sql = await connection.createQueryBuilder(User, "user")
+            .where("user.isAdmin = :isAdmin", { isAdmin: true })
+            .orWhere(new Brackets(qb => {
+                qb.where("user.firstName = :firstName1", { firstName1: "Hello" })
+                    .andWhere("user.lastName = :lastName1", { lastName1: "Mars" });
+            }))
+            .orWhere(new Brackets(qb => {
+                qb.where("user.firstName = :firstName2", { firstName2: "Hello" })
+                    .andWhere("user.lastName = :lastName2", { lastName2: "Earth" });
+            }))
+            .andWhere(new Brackets(qb => {
+                qb.where("user.firstName = :firstName3 AND foo = bar", { firstName3: "Hello" })
+
+            }))
+            .disableEscaping()
+            .getSql()
+
+        expect(sql).to.be.equal(
+            "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
+            "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
+            "FROM user user " +
+            "WHERE user.isAdmin = ? " +
+            "OR (user.firstName = ? AND user.lastName = ?) " +
+            "OR (user.firstName = ? AND user.lastName = ?) " +
+            "AND (user.firstName = ? AND foo = bar)"
+        )
+    })));
 
     it("should put brackets correctly into WHERE expression", () => Promise.all(connections.map(async connection => {
 

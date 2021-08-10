@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {TransactionRepositoryMetadataArgs} from "../../metadata-args/TransactionRepositoryMetadataArgs";
 import {CannotReflectMethodParameterTypeError} from "../../error/CannotReflectMethodParameterTypeError";
 
@@ -15,7 +15,7 @@ export function TransactionRepository(entityType?: Function): ParameterDecorator
         } catch (err) {
             throw new CannotReflectMethodParameterTypeError(object.constructor, methodName);
         }
-        
+
         getMetadataArgsStorage().transactionRepositories.push({
             target: object.constructor,
             methodName,

@@ -62,4 +62,15 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
      * Include notification messages from Postgres server in client logs
      */
     readonly logNotifications?: boolean;
+
+    /**
+     * Automatically install postgres extensions
+     */
+     readonly installExtensions?: boolean;
+
+    /**
+     * sets the application_name var to help db administrators identify
+     * the service using this connection. Defaults to 'undefined'
+     */
+    readonly applicationName?: string;
 }

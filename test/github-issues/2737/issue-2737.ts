@@ -9,7 +9,7 @@ describe("github issues > #2737 MySQLDriver findChangedColumns (fields: width, p
     before(async () => connections = await createTestingConnections({
         dropSchema: false,
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["mysql", "aurora-data-api"],
+        enabledDrivers: ["mysql", "mariadb", "aurora-data-api"],
         schemaCreate: false,
         cache: false,
         driverSpecific: {

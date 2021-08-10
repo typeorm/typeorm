@@ -97,6 +97,24 @@ describe("schema builder > change column", () => {
         postVersionColumn.type = "varchar";
     })));
 
+    it("should correctly change column default value", () => Promise.all(connections.map(async connection => {
+
+        const postMetadata = connection.getMetadata(Post);
+        const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
+
+        nameColumn.default = "My awesome post";
+        nameColumn.build(connection);
+
+        await connection.synchronize(false);
+
+        const queryRunner = connection.createQueryRunner();
+        const postTable = await queryRunner.getTable("post");
+        await queryRunner.release();
+
+        postTable!.findColumnByName("name")!.default.should.be.equal("'My awesome post'");
+
+    })));
+
     it("should correctly make column primary and generated", () => Promise.all(connections.map(async connection => {
         // CockroachDB does not allow changing PK
         if (connection.driver instanceof CockroachDriver)

@@ -39,7 +39,7 @@ describe("schema builder > create foreign key", () => {
                 entityMetadata: categoryMetadata,
                 columns: fkMetadata.columns,
                 args: {
-                    name: connection.namingStrategy.relationConstraintName(categoryMetadata.tablePath, fkMetadata.columns.map(c => c.databaseName)),
+                    name: connection.namingStrategy.relationConstraintName(categoryMetadata.tableName, fkMetadata.columns.map(c => c.databaseName)),
                     target: categoryMetadata.target,
                 }
             });

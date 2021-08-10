@@ -3,6 +3,8 @@ import {expect} from "chai";
 import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {Post} from "./entity/Post";
+import {Counters} from "./entity/Counters";
+import {User} from "./entity/User";
 
 describe("mongodb > basic repository actions", () => {
 
@@ -44,6 +46,32 @@ describe("mongodb > basic repository actions", () => {
         mergedPost.should.be.equal(post);
         mergedPost.title.should.be.equal("This is updated post");
         mergedPost.text.should.be.equal("And its text is updated as well");
+    })));
+
+    it("merge should merge all given recursive partial objects into given source entity", () => Promise.all(connections.map(async connection => {
+        const postRepository = connection.getRepository(Post);
+        const counter1 = new Counters();
+        counter1.likes = 5;
+        const counter2 = new Counters();
+        counter2.likes = 2;
+        counter2.viewer = new User();
+        counter2.viewer.name = "Hello World";
+        const post = postRepository.create({
+            title: "This is created post",
+            text: "All about this post",
+            counters: counter1
+        });
+        const mergedPost = postRepository.merge(post,
+            { title: "This is updated post" },
+            { text: "And its text is updated as well" },
+            { counters: counter2 }
+        );
+        mergedPost.should.be.instanceOf(Post);
+        mergedPost.should.be.equal(post);
+        mergedPost.title.should.be.equal("This is updated post");
+        mergedPost.text.should.be.equal("And its text is updated as well");
+        mergedPost.counters.likes.should.be.equal(2);
+        mergedPost.counters.viewer.name.should.be.equal("Hello World");
     })));
 
     it("target should be valid", () => Promise.all(connections.map(async connection => {

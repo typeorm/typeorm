@@ -1,6 +1,7 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {RelationUpdater} from "./RelationUpdater";
 import {RelationRemover} from "./RelationRemover";
+import { TypeORMError } from "../error";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
@@ -42,10 +43,10 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const relation = this.expressionMap.relationMetadata;
 
         if (!this.expressionMap.of) // todo: move this check before relation query builder creation?
-            throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
+            throw new TypeORMError(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
 
         if (relation.isManyToMany || relation.isOneToMany)
-            throw new Error(`Set operation is only supported for many-to-one and one-to-one relations. ` +
+            throw new TypeORMError(`Set operation is only supported for many-to-one and one-to-one relations. ` +
                 `However given "${relation.propertyPath}" has ${relation.relationType} relation. ` +
                 `Use .add() method instead.`);
 
@@ -53,7 +54,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (relation.joinColumns &&
             relation.joinColumns.length > 1 &&
             (!(value instanceof Object) || Object.keys(value).length < relation.joinColumns.length))
-            throw new Error(`Value to be set into the relation must be a map of relation ids, for example: .set({ firstName: "...", lastName: "..." })`);
+            throw new TypeORMError(`Value to be set into the relation must be a map of relation ids, for example: .set({ firstName: "...", lastName: "..." })`);
 
         const updater = new RelationUpdater(this, this.expressionMap);
         return updater.update(value);
@@ -73,10 +74,10 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const relation = this.expressionMap.relationMetadata;
 
         if (!this.expressionMap.of) // todo: move this check before relation query builder creation?
-            throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
+            throw new TypeORMError(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
 
         if (relation.isManyToOne || relation.isOneToOne)
-            throw new Error(`Add operation is only supported for many-to-many and one-to-many relations. ` +
+            throw new TypeORMError(`Add operation is only supported for many-to-many and one-to-many relations. ` +
                 `However given "${relation.propertyPath}" has ${relation.relationType} relation. ` +
                 `Use .set() method instead.`);
 
@@ -84,7 +85,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (relation.joinColumns &&
             relation.joinColumns.length > 1 &&
             (!(value instanceof Object) || Object.keys(value).length < relation.joinColumns.length))
-            throw new Error(`Value to be set into the relation must be a map of relation ids, for example: .set({ firstName: "...", lastName: "..." })`);
+            throw new TypeORMError(`Value to be set into the relation must be a map of relation ids, for example: .set({ firstName: "...", lastName: "..." })`);
 
         const updater = new RelationUpdater(this, this.expressionMap);
         return updater.update(value);
@@ -104,10 +105,10 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const relation = this.expressionMap.relationMetadata;
 
         if (!this.expressionMap.of) // todo: move this check before relation query builder creation?
-            throw new Error(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
+            throw new TypeORMError(`Entity whose relation needs to be set is not set. Use .of method to define whose relation you want to set.`);
 
         if (relation.isManyToOne || relation.isOneToOne)
-            throw new Error(`Add operation is only supported for many-to-many and one-to-many relations. ` +
+            throw new TypeORMError(`Add operation is only supported for many-to-many and one-to-many relations. ` +
                 `However given "${relation.propertyPath}" has ${relation.relationType} relation. ` +
                 `Use .set(null) method instead.`);
 
@@ -156,7 +157,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
         if (!(of instanceof Object)) {
             const metadata = this.expressionMap.mainAlias!.metadata;
             if (metadata.hasMultiplePrimaryKeys)
-                throw new Error(`Cannot load entity because only one primary key was specified, however entity contains multiple primary keys`);
+                throw new TypeORMError(`Cannot load entity because only one primary key was specified, however entity contains multiple primary keys`);
 
             of = metadata.primaryColumns[0].createValueMap(of);
         }

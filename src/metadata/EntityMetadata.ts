@@ -1,12 +1,6 @@
 import {QueryRunner, SelectQueryBuilder} from "..";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SapDriver} from "../driver/sap/SapDriver";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {TableMetadataArgs} from "../metadata-args/TableMetadataArgs";
@@ -75,7 +69,7 @@ export class EntityMetadata {
     inheritanceTree: Function[] = [];
 
     /**
-     * Table type. Tables can be abstract, closure, junction, embedded, etc.
+     * Table type. Tables can be closure, junction, etc.
      */
     tableType: TableType = "regular";
 
@@ -130,12 +124,6 @@ export class EntityMetadata {
     tablePath: string;
 
     /**
-     * Entity schema path. Contains database name and schema name.
-     * E.g. myDB.mySchema
-     */
-    schemaPath?: string;
-
-    /**
      * Gets the table name without global table prefix.
      * When querying table you need a table name with prefix, but in some scenarios,
      * for example when you want to name a junction table that contains names of two other tables,
@@ -186,6 +174,12 @@ export class EntityMetadata {
      * Its also possible to understand if entity is junction via tableType.
      */
     isJunction: boolean = false;
+
+    /**
+     * Indicates if the entity should be instantiated using the constructor
+     * or via allocating a new object via `Object.create()`.
+     */
+    isAlwaysUsingConstructor: boolean = true;
 
     /**
      * Indicates if this entity is a tree, what type of tree it is.
@@ -525,11 +519,16 @@ export class EntityMetadata {
     /**
      * Creates a new entity.
      */
-    create(queryRunner?: QueryRunner): any {
+    create(queryRunner?: QueryRunner, options?: { fromDeserializer?: boolean }): any {
         // if target is set to a function (e.g. class) that can be created then create it
         let ret: any;
         if (this.target instanceof Function) {
-            ret = new (<any> this.target)();
+            if (!options?.fromDeserializer || this.isAlwaysUsingConstructor) {
+                ret = new (<any> this.target)();
+            } else {
+                ret = Object.create(this.target.prototype);
+            }
+
             this.lazyRelations.forEach(relation => this.connection.relationLoader.enableLazyLoad(relation, ret, queryRunner));
             return ret;
         }
@@ -644,6 +643,14 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if there is a column or relationship with a given property path.
+     */
+    hasColumnWithPropertyPath(propertyPath: string): boolean {
+        const hasColumn = this.columns.some(column => column.propertyPath === propertyPath);
+        return hasColumn || this.hasRelationWithPropertyPath(propertyPath);
+    }
+
+    /**
      * Finds column with a given property path.
      */
     findColumnWithPropertyPath(propertyPath: string): ColumnMetadata|undefined {
@@ -671,11 +678,18 @@ export class EntityMetadata {
 
         // in the case if column with property path was not found, try to find a relation with such property path
         // if we find relation and it has a single join column then its the column user was seeking
-        const relation = this.relations.find(relation => relation.propertyPath === propertyPath);
+        const relation = this.findRelationWithPropertyPath(propertyPath);
         if (relation && relation.joinColumns)
             return relation.joinColumns;
 
         return [];
+    }
+
+    /**
+     * Checks if there is a relation with the given property path.
+     */
+    hasRelationWithPropertyPath(propertyPath: string): boolean {
+        return this.relations.some(relation => relation.propertyPath === propertyPath);
     }
 
     /**
@@ -729,6 +743,8 @@ export class EntityMetadata {
 
     /**
      * Creates a property paths for a given entity.
+     *
+     * @deprecated
      */
     static createPropertyPath(metadata: EntityMetadata, entity: ObjectLiteral, prefix: string = "") {
         const paths: string[] = [];
@@ -770,7 +786,7 @@ export class EntityMetadata {
             if (map === undefined || value === null || value === undefined)
                 return undefined;
 
-            return column.isObjectId ? Object.assign(map, value) : OrmUtils.mergeDeep(map, value);
+            return OrmUtils.mergeDeep(map, value);
         }, {} as ObjectLiteral|undefined);
     }
 
@@ -781,6 +797,8 @@ export class EntityMetadata {
     build() {
         const namingStrategy = this.connection.namingStrategy;
         const entityPrefix = this.connection.options.entityPrefix;
+        const entitySkipConstructor = this.connection.options.entitySkipConstructor;
+
         this.engine = this.tableMetadataArgs.engine;
         this.database = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.database : this.tableMetadataArgs.database;
         if (this.tableMetadataArgs.schema) {
@@ -788,9 +806,8 @@ export class EntityMetadata {
         }
         else if ((this.tableMetadataArgs.type === "entity-child") && this.parentEntityMetadata) {
             this.schema = this.parentEntityMetadata.schema;
-        }
-        else {
-            this.schema = (this.connection.options as PostgresConnectionOptions|SqlServerConnectionOptions).schema;
+        } else if (this.connection.options?.hasOwnProperty("schema")) {
+            this.schema = (this.connection.options as any).schema;
         }
         this.givenTableName = this.tableMetadataArgs.type === "entity-child" && this.parentEntityMetadata ? this.parentEntityMetadata.givenTableName : this.tableMetadataArgs.name;
         this.synchronize = this.tableMetadataArgs.synchronize === false ? false : true;
@@ -811,9 +828,12 @@ export class EntityMetadata {
         this.name = this.targetName ? this.targetName : this.tableName;
         this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid === true ? true : false;
-        this.tablePath = this.buildTablePath();
-        this.schemaPath = this.buildSchemaPath();
+        this.tablePath = this.connection.driver.buildTableName(this.tableName, this.schema, this.database);
         this.orderBy = (this.tableMetadataArgs.orderBy instanceof Function) ? this.tableMetadataArgs.orderBy(this.propertiesMap) : this.tableMetadataArgs.orderBy; // todo: is propertiesMap available here? Looks like its not
+
+        if (entitySkipConstructor !== undefined) {
+            this.isAlwaysUsingConstructor = !entitySkipConstructor;
+        }
 
         this.isJunction = this.tableMetadataArgs.type === "closure-junction" || this.tableMetadataArgs.type === "junction";
         this.isClosureJunction = this.tableMetadataArgs.type === "closure-junction";
@@ -850,35 +870,4 @@ export class EntityMetadata {
         this.relations.forEach(relation => OrmUtils.mergeDeep(map, relation.createValueMap(relation.propertyPath)));
         return map;
     }
-
-    /**
-     * Builds table path using database name, schema name and table name.
-     */
-    protected buildTablePath(): string {
-        let tablePath = this.tableName;
-        if (this.schema && ((this.connection.driver instanceof OracleDriver) || (this.connection.driver instanceof PostgresDriver) || (this.connection.driver instanceof SqlServerDriver) || (this.connection.driver instanceof SapDriver))) {
-            tablePath = this.schema + "." + tablePath;
-        }
-
-        if (this.database && !(this.connection.driver instanceof PostgresDriver)) {
-            if (!this.schema && this.connection.driver instanceof SqlServerDriver) {
-                tablePath = this.database + ".." + tablePath;
-            } else {
-                tablePath = this.database + "." + tablePath;
-            }
-        }
-
-        return tablePath;
-    }
-
-    /**
-     * Builds table path using schema name and database name.
-     */
-    protected buildSchemaPath(): string|undefined {
-        if (!this.schema)
-            return undefined;
-
-        return this.database && !(this.connection.driver instanceof PostgresDriver) ? this.database + "." + this.schema : this.schema;
-    }
-
 }

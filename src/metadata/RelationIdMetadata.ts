@@ -3,6 +3,7 @@ import {EntityMetadata} from "./EntityMetadata";
 import {RelationMetadata} from "./RelationMetadata";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
+import { TypeORMError } from "../error";
 
 /**
  * Contains all information about entity's relation count.
@@ -100,7 +101,7 @@ export class RelationIdMetadata {
         const propertyPath = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
         const relation = this.entityMetadata.findRelationWithPropertyPath(propertyPath);
         if (!relation)
-            throw new Error(`Cannot find relation ${propertyPath}. Wrong relation specified for @RelationId decorator.`);
+            throw new TypeORMError(`Cannot find relation ${propertyPath}. Wrong relation specified for @RelationId decorator.`);
 
         this.relation = relation;
     }

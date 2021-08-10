@@ -1,14 +1,10 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import {TypeORMError} from "./TypeORMError";
 
-/**
- */
-export class MissingJoinTableError extends Error {
-    name = "MissingJoinTableError";
-
+export class MissingJoinTableError extends TypeORMError {
     constructor(entityMetadata: EntityMetadata, relation: RelationMetadata) {
         super();
-        Object.setPrototypeOf(this, MissingJoinTableError.prototype);
 
         if (relation.inverseRelation) {
             this.message = `JoinTable is missing on both sides of ${entityMetadata.name}#${relation.propertyName} and ` +
@@ -19,5 +15,4 @@ export class MissingJoinTableError extends Error {
                 `You need to put JoinTable decorator on it.`;
         }
     }
-
 }

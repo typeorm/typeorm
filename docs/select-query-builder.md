@@ -1,6 +1,7 @@
 # Select using Query Builder
 
 * [What is `QueryBuilder`](#what-is-querybuilder)
+* [Important note when using the `QueryBuilder`](#important-note-when-using-the-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 * [Getting values using QueryBuilder](#getting-values-using-querybuilder)
 * [What are aliases for?](#what-are-aliases-for)
@@ -21,6 +22,7 @@
 * [Streaming result data](#streaming-result-data)
 * [Using pagination](#using-pagination)
 * [Set locking](#set-locking)
+* [Max execution time](#max-execution-time)
 * [Partial selection](#partial-selection)
 * [Using subqueries](#using-subqueries)
 * [Hidden Columns](#hidden-columns)
@@ -61,6 +63,32 @@ User {
     lastName: "Saw"
 }
 ```
+
+## Important note when using the `QueryBuilder`
+
+When using the `QueryBuilder`, you need to provide unique parameters in your `WHERE` expressions. **This will not work**:
+
+```TypeScript
+const result = await getConnection()
+    .createQueryBuilder('user')
+    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
+    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
+    .where('user.linkedSheep = :id', { id: sheepId })
+    .andWhere('user.linkedCow = :id', { id: cowId });
+```
+
+... but this will:
+
+```TypeScript
+const result = await getConnection()
+    .createQueryBuilder('user')
+    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
+    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
+    .where('user.linkedSheep = :sheepId', { sheepId })
+    .andWhere('user.linkedCow = :cowId', { cowId });
+```
+
+Note that we uniquely named `:sheepId` and `:cowId` instead of using `:id` twice for different parameters.
 
 ## How to create and use a `QueryBuilder`
 
@@ -886,6 +914,17 @@ const users = await getRepository(User)
 ```
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
+
+## Max execution time
+
+We can drop slow query to avoid crashing the server. Only MySQL driver is supported at the moment:
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .maxExecutionTime(1000) // milliseconds.
+    .getMany();
+```
 
 ## Partial selection
 

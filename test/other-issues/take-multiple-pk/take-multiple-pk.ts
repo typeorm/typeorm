@@ -26,7 +26,6 @@ describe("other issues > using take with multiple primary keys", () => {
     Promise.all(
       connections.map(async function(connection) {
         // generate bulk array of users with roles
-        const promises: Promise<any>[] = [];
         for (let i = 1; i <= 100; i++) {
           const user = new User();
           user.id = i;
@@ -39,10 +38,8 @@ describe("other issues > using take with multiple primary keys", () => {
             role.name = "role #" + i;
             user.roles.push(role);
           }
-          promises.push(connection.manager.save(user));
+          await connection.manager.save(user);
         }
-
-        await Promise.all(promises);
 
         expect(true).to.be.true;
 

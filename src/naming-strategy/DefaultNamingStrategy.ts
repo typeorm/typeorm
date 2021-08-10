@@ -7,7 +7,13 @@ import {Table} from "../schema-builder/table/Table";
  * Naming strategy that is used by default.
  */
 export class DefaultNamingStrategy implements NamingStrategyInterface {
+    private getTableName(tableOrName: Table | string): string {
+        if (tableOrName instanceof Table) {
+            tableOrName = tableOrName.name;
+        }
 
+        return tableOrName.split(".").pop()!;
+    }
     /**
      * Normalizes table name.
      *
@@ -44,7 +50,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "PK_" + RandomGenerator.sha1(key).substr(0, 27);
@@ -54,7 +60,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "UQ_" + RandomGenerator.sha1(key).substr(0, 27);
@@ -64,7 +70,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         let key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         if (where)
@@ -74,7 +80,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     defaultConstraintName(tableOrName: Table|string, columnName: string): string {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${columnName}`;
         return "DF_" + RandomGenerator.sha1(key).substr(0, 27);
@@ -84,7 +90,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         return "FK_" + RandomGenerator.sha1(key).substr(0, 27);
@@ -94,7 +100,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames];
         clonedColumnNames.sort();
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         let key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
         if (where)
@@ -104,7 +110,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     checkConstraintName(tableOrName: Table|string, expression: string, isEnum?: boolean): string {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${expression}`;
         const name = "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
@@ -112,7 +118,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     exclusionConstraintName(tableOrName: Table|string, expression: string): string {
-        const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
+        const tableName = this.getTableName(tableOrName);
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${expression}`;
         return "XCL_" + RandomGenerator.sha1(key).substr(0, 26);

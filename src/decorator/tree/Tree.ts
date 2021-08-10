@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {TreeMetadataArgs} from "../../metadata-args/TreeMetadataArgs";
 import {TreeType} from "../../metadata/types/TreeTypes";
 import {ClosureTreeOptions} from "../../metadata/types/ClosureTreeOptions";

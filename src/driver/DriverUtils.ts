@@ -1,5 +1,5 @@
 import {Driver} from "./Driver";
-import { hash } from "../util/StringUtils";
+import {hash,shorten} from "../util/StringUtils";
 
 /**
  * Common driver utility functions.
@@ -55,26 +55,48 @@ export class DriverUtils {
         return Object.assign({}, options);
     }
 
+
     /**
-     * Builds column alias from given alias name and column name.
+     * Joins and shortens alias if needed.
      *
-     * If alias length is greater than the limit (if any) allowed by the current
-     * driver, replaces it with a hashed string.
+     * If the alias length is greater than the limit allowed by the current
+     * driver, replaces it with a shortend string, if the shortend string
+     * is still too long, it will then hash the alias.
      *
      * @param driver Current `Driver`.
-     * @param alias Alias part.
-     * @param column Name of the column to be concatened to `alias`.
+     * @param buildOptions Optional settings.
+     * @param alias Alias parts.
      *
-     * @return An alias allowing to select/transform the target `column`.
+     * @return An alias that is no longer than the divers max alias length.
      */
-    static buildColumnAlias({ maxAliasLength }: Driver, alias: string, column: string): string {
-        const columnAliasName = alias + "_" + column;
-
-        if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength) {
-            return hash(columnAliasName, { length: maxAliasLength });
+     static buildAlias({ maxAliasLength }: Driver, buildOptions: { shorten?: boolean, joiner?: string } | string, ...alias: string[]): string {
+        if (typeof buildOptions === "string") {
+            alias.unshift(buildOptions);
+            buildOptions = { shorten: false, joiner: "_" };
+        } else {
+            buildOptions = Object.assign({ shorten: false, joiner: "_" }, buildOptions);
         }
 
-        return columnAliasName;
+        const newAlias = alias.length === 1 ? alias[0] : alias.join(buildOptions.joiner);
+        if (maxAliasLength && maxAliasLength > 0 && newAlias.length > maxAliasLength) {
+            if (buildOptions.shorten === true) {
+                const shortenedAlias = shorten(newAlias);
+                if (shortenedAlias.length < maxAliasLength) {
+                    return shortenedAlias;
+                }
+            }
+
+            return hash(newAlias, { length: maxAliasLength });
+        }
+
+        return newAlias;
+    }
+
+    /**
+     * @deprecated use `buildAlias` instead.
+     */
+    static buildColumnAlias({ maxAliasLength }: Driver, buildOptions: { shorten?: boolean, joiner?: string } | string, ...alias: string[]) {
+        return this.buildAlias({ maxAliasLength } as Driver, buildOptions, ...alias);
     }
 
     // -------------------------------------------------------------------------
@@ -134,12 +156,27 @@ export class DriverUtils {
         let port = undefined;
         let hostReplicaSet = undefined;
         let replicaSet = undefined;
-        // remove mongodb query params
-        if (afterBase && afterBase.indexOf("?") !== -1) {
-            // split params to get replica set
-            afterQuestionMark = afterBase.substr((afterBase.indexOf("?") + 1), afterBase.length);
-            replicaSet = afterQuestionMark.split("=")[1];
 
+        let optionsObject: any = {};
+
+        if (afterBase && afterBase.indexOf("?") !== -1) {
+
+            // split params
+            afterQuestionMark = afterBase.substr((afterBase.indexOf("?") + 1), afterBase.length);
+
+            const optionsList = afterQuestionMark.split("&");
+            let optionKey: string;
+            let optionValue: string;
+
+            // create optionsObject for merge with connectionUrl object before return
+            optionsList.forEach(optionItem => {
+                optionKey = optionItem.split("=")[0];
+                optionValue = optionItem.split("=")[1];
+                optionsObject[optionKey] = optionValue;
+            });
+
+            // specific replicaSet value to set options about hostReplicaSet
+            replicaSet = optionsObject["replicaSet"];
             afterBase = afterBase.substr(0, afterBase.indexOf("?"));
         }
 
@@ -155,21 +192,28 @@ export class DriverUtils {
             password = usernameAndPassword.substr(firstColon + 1);
         }
 
+        // If replicaSet have value set It as hostlist, If not set like standalone host
         if (replicaSet) {
             hostReplicaSet = hostAndPort;
         } else {
             [host, port] = hostAndPort.split(":");
         }
 
-        return {
+        let connectionUrl: any = {
             type: type,
             host: host,
             hostReplicaSet: hostReplicaSet,
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
-            replicaSet: replicaSet || undefined
+            database: afterBase || undefined
         };
+
+        // Loop to set every options in connectionUrl to object
+        for (const [key, value] of Object.entries(optionsObject)) {
+            connectionUrl[key] = value;
+        }
+
+        return connectionUrl;
     }
 }

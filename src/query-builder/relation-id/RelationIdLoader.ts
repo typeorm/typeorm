@@ -4,6 +4,7 @@ import {RelationIdLoadResult} from "./RelationIdLoadResult";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {DriverUtils} from "../../driver/DriverUtils";
+import { TypeORMError } from "../../error/TypeORMError";
 
 export class RelationIdLoader {
 
@@ -30,14 +31,14 @@ export class RelationIdLoader {
                 // we expect it to load id of tag
 
                 if (relationIdAttr.queryBuilderFactory)
-                    throw new Error("Additional condition can not be used with ManyToOne or OneToOne owner relations.");
+                    throw new TypeORMError("Additional condition can not be used with ManyToOne or OneToOne owner relations.");
 
                 const duplicates: Array<string> = [];
                 const results = rawEntities.map(rawEntity => {
                     const result: ObjectLiteral = {};
                     const duplicateParts: Array<string> = [];
                     relationIdAttr.relation.joinColumns.forEach(joinColumn => {
-                        result[joinColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.databaseName)], joinColumn.referencedColumn!);
+                        result[joinColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.databaseName)], joinColumn.referencedColumn!);
                         const duplicatePart = `${joinColumn.databaseName}:${result[joinColumn.databaseName]}`;
                         if (duplicateParts.indexOf(duplicatePart) === -1) {
                             duplicateParts.push(duplicatePart);
@@ -45,7 +46,7 @@ export class RelationIdLoader {
                     });
 
                     relationIdAttr.relation.entityMetadata.primaryColumns.forEach(primaryColumn => {
-                        result[primaryColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, primaryColumn.databaseName)], primaryColumn);
+                        result[primaryColumn.databaseName] = this.connection.driver.prepareHydratedValue(rawEntity[DriverUtils.buildAlias(this.connection.driver, relationIdAttr.parentAlias, primaryColumn.databaseName)], primaryColumn);
                         const duplicatePart = `${primaryColumn.databaseName}:${result[primaryColumn.databaseName]}`;
                         if (duplicateParts.indexOf(duplicatePart) === -1) {
                             duplicateParts.push(duplicatePart);
@@ -84,7 +85,7 @@ export class RelationIdLoader {
                     const parameterParts: ObjectLiteral = {};
                     const queryPart = joinColumns.map(joinColumn => {
                         const parameterName = joinColumn.databaseName + index;
-                        const parameterValue = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        const parameterValue = rawEntity[DriverUtils.buildAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
                         const duplicatePart = `${tableAlias}:${joinColumn.propertyPath}:${parameterValue}`;
                         if (duplicateParts.indexOf(duplicatePart) !== -1) {
                             return "";
@@ -162,7 +163,7 @@ export class RelationIdLoader {
 
                 const mappedColumns = rawEntities.map(rawEntity => {
                     return joinColumns.reduce((map, joinColumn) => {
-                        map[joinColumn.propertyPath] = rawEntity[DriverUtils.buildColumnAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
+                        map[joinColumn.propertyPath] = rawEntity[DriverUtils.buildAlias(this.connection.driver, relationIdAttr.parentAlias, joinColumn.referencedColumn!.databaseName)];
                         return map;
                     }, {} as ObjectLiteral);
                 });

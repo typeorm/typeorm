@@ -1,5 +1,6 @@
-import {getMetadataArgsStorage, SelectQueryBuilder} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {RelationCountMetadataArgs} from "../../metadata-args/RelationCountMetadataArgs";
+import {SelectQueryBuilder} from "../../query-builder/SelectQueryBuilder";
 
 /**
  * Holds a number of children in the closure table of the column.

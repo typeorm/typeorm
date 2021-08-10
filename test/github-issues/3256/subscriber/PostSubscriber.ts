@@ -12,7 +12,9 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     }
 
     async beforeUpdate(event: UpdateEvent<Post>) {
-        event.entity.updated = true;
+        if(event.entity) {
+            event.entity.updated = true;
+        }
     }
 
 }

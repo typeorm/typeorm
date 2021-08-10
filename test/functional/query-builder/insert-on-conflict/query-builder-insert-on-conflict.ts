@@ -113,10 +113,7 @@ describe("query builder > insertion > on conflict", () => {
             .insert()
             .into(Post)
             .values(post2)
-            .orUpdate({
-                conflict_target: ['date'],
-                overwrite: ['title']
-            })
+            .orUpdate(['title'], ['date'])
             .setParameter("title", post2.title)
             .execute();
 
