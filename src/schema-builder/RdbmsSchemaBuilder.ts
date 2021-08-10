@@ -19,6 +19,7 @@ import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -76,7 +77,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (this.viewEntityToSyncMetadatas.length > 0) {
                 await this.createTypeormMetadataTable();
             }
-            
+
             if (this.connection.driver instanceof PostgresDriver) {
                 if (await this.connection.driver.isGeneratedColumnsSupported(this.queryRunner)) {
                     await this.createTypeormGeneratedMetadataTable();
@@ -85,7 +86,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
-            
+
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
 

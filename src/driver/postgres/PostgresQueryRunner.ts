@@ -751,9 +751,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!oldColumn)
             throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-     
-        if (oldColumn.type !== newColumn.type 
-            || oldColumn.length !== newColumn.length 
+
+        if (oldColumn.type !== newColumn.type
+            || oldColumn.length !== newColumn.length
             || newColumn.isArray !== oldColumn.isArray
             || (!oldColumn.generatedType && newColumn.generatedType === "STORED")
             || (oldColumn.asExpression !== newColumn.asExpression && newColumn.generatedType === "STORED")) {
@@ -1870,7 +1870,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
                         // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                        const asExpressionQuery = `SELECT * FROM typeorm_generation_meta WHERE table_name = '${await this.getTableNameWithSchema(tableFullName)}' and column_name = '${tableColumn.name}'`;
+                        const fullTableName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
+                        const asExpressionQuery = `SELECT * FROM typeorm_generation_meta WHERE table_name = '${await this.getTableNameWithSchema(fullTableName)}' and column_name = '${tableColumn.name}'`;
                         const results: ObjectLiteral[] = await this.query(asExpressionQuery);
                         if (results[0] && results[0].generation_expression) {
                             tableColumn.asExpression = results[0].generation_expression;
