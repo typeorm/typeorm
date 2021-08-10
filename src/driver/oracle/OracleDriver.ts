@@ -256,11 +256,8 @@ export class OracleDriver implements Driver {
                 return this.createPool(this.options, slave);
             }));
             this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
-
         } else {
             this.master = await this.createPool(this.options, this.options);
-            this.database = this.options.database;
         }
     }
 
@@ -311,7 +308,7 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_]+)/g, (full, isArray: string, key: string): string => {
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
             if (!parameters.hasOwnProperty(key)) {
                 return full;
             }
@@ -811,6 +808,10 @@ export class OracleDriver implements Driver {
 
             if (credentials.sid) {
                 connectData += `(SID=${credentials.sid})`;
+            }
+
+            if (credentials.serviceName) {
+                connectData += `(SERVICE_NAME=${credentials.serviceName})`
             }
 
             const connectString = `(DESCRIPTION=(ADDRESS=${address})(CONNECT_DATA=${connectData}))`;

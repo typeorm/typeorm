@@ -257,8 +257,6 @@ export class SapDriver implements Driver {
 
         // create the pool
         this.master = this.client.createPool(dbParams, options);
-
-        this.database = this.options.database;
     }
 
     /**
@@ -307,7 +305,7 @@ export class SapDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_]+)/g, (full, isArray: string, key: string): string => {
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
             if (!parameters.hasOwnProperty(key)) {
                 return full;
             }

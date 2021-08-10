@@ -203,6 +203,9 @@ There are other special methods to work with tree entities through `TreeReposito
 ```typescript
 const treeCategories = await repository.findTrees();
 // returns root categories with sub categories inside
+
+const treeCategoriesWithRelations = await repository.findTrees({ relations: ["sites"] });
+// automatically joins the sites relation
 ```
 
 * `findRoots` - Roots are entities that have no ancestors. Finds them all.

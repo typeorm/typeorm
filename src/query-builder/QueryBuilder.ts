@@ -339,10 +339,16 @@ export abstract class QueryBuilder<Entity> {
 
     /**
      * Sets parameter name and its value.
+     *
+     * The key for this parametere may contain numbers, letters, underscores, or periods.
      */
     setParameter(key: string, value: any): this {
         if (value instanceof Function) {
             throw new TypeORMError(`Function parameter isn't supported in the parameters. Please check "${key}" parameter.`);
+        }
+
+        if (!key.match(/^([A-Za-z0-9_.]+)$/)) {
+            throw new TypeORMError("QueryBuilder parameter keys may only contain numbers, letters, underscores, or periods.");
         }
 
         if (this.parentQueryBuilder) {
@@ -813,7 +819,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
      */
-    protected createWhereConditionExpression(condition: WhereClauseCondition): string {
+    protected createWhereConditionExpression(condition: WhereClauseCondition, alwaysWrap: boolean = false): string {
         if (typeof condition === "string")
             return condition;
 
@@ -822,7 +828,9 @@ export abstract class QueryBuilder<Entity> {
                 return "1=1";
             }
 
-            if (condition.length === 1) {
+            // In the future we should probably remove this entire condition
+            // but for now to prevent any breaking changes it exists.
+            if (condition.length === 1 && !alwaysWrap) {
                 return this.createWhereClausesExpression(condition);
             }
 
@@ -866,6 +874,8 @@ export abstract class QueryBuilder<Entity> {
 
             case "not":
                 return `NOT(${this.createWhereConditionExpression(condition.condition)})`;
+            case "brackets":
+                return `${this.createWhereConditionExpression(condition.condition, true)}`;
         }
 
         throw new TypeError(`Unsupported FindOperator ${FindOperator.constructor.name}`);
@@ -1178,7 +1188,10 @@ export abstract class QueryBuilder<Entity> {
 
             where.whereFactory(whereQueryBuilder as any);
 
-            return whereQueryBuilder.expressionMap.wheres;
+            return {
+                operator: "brackets",
+                condition: whereQueryBuilder.expressionMap.wheres
+            };
         }
 
         if (where instanceof Function) {

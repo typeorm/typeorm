@@ -1,4 +1,4 @@
-type WrappingOperator = "not";
+type WrappingOperator = "not" | "brackets";
 
 type PredicateOperator = "lessThan" | "lessThanOrEqual" | "moreThan" | "moreThanOrEqual" | "equal" | "notEqual" | "ilike" | "like" | "between" | "in" | "any" | "isNull";
 

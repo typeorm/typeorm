@@ -222,7 +222,7 @@ export class FindOptionsUtils {
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
      */
-    protected static applyRelationsRecursively(qb: SelectQueryBuilder<any>, allRelations: string[], alias: string, metadata: EntityMetadata, prefix: string): void {
+    public static applyRelationsRecursively(qb: SelectQueryBuilder<any>, allRelations: string[], alias: string, metadata: EntityMetadata, prefix: string): void {
 
         // find all relations that match given prefix
         let matchedBaseRelations: string[] = [];
