@@ -257,8 +257,6 @@ export class SapDriver implements Driver {
 
         // create the pool
         this.master = this.client.createPool(dbParams, options);
-
-        this.database = this.options.database;
     }
 
     /**

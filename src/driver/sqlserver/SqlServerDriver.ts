@@ -254,11 +254,9 @@ export class SqlServerDriver implements Driver {
                 return this.createPool(this.options, slave);
             }));
             this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
 
         } else {
             this.master = await this.createPool(this.options, this.options);
-            this.database = this.options.database;
         }
     }
 
