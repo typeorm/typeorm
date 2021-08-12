@@ -216,7 +216,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
                 this.driver.connection.logger.logQuery(lastIdQuery, [], this);
                 const identityValueResult = await new Promise<any>((ok, fail) => {
-                    databaseConnection.exec(parameters, async (err: any, raw: any) => {
+                    databaseConnection.exec(lastIdQuery, async (err: any, raw: any) => {
                         if (err) {
                             fail(new QueryFailedError(lastIdQuery, [], err));
                         }
