@@ -231,6 +231,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     let c3 = await connection.getRepository(Category).findOne({ title: "Category 1.1.1" });
     let result = await connection.getTreeRepository(Category).findAncestors(c3!);
+    result.sort((a, b) => a.pk - b.pk);
 
     expect(result).to.have.lengthOf(3);
 
@@ -251,6 +252,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
 
     let c3 = await connection.getRepository(Category).findOne({ title: "Category 1.1.1" });
     let result = await connection.getTreeRepository(Category).findAncestors(c3!, { relations: ["members"] });
+    result.sort((a, b) => a.pk - b.pk);
 
     expect(result[0].title).equals("Category 1");
     expect(result[0].members).to.have.lengthOf(1);
