@@ -190,7 +190,7 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
     expect(result[1].sites).equals(undefined);
 
     expect(result[2].title).equals("Category 1.1.1");
-    expect(result[1].members).to.be.an("array");
+    expect(result[2].members).to.be.an("array");
     expect(result[2].members).to.have.lengthOf(0);
     expect(result[2].sites).equals(undefined);
   })));
