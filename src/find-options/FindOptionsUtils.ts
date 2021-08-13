@@ -5,6 +5,7 @@ import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {DriverUtils} from "../driver/DriverUtils";
 import { TypeORMError } from "../error";
+import { FindTreeOptions } from "./FindTreeOptions";
 
 /**
  * Utilities to work with FindOptions.
@@ -21,23 +22,23 @@ export class FindOptionsUtils {
     static isFindOneOptions<Entity = any>(obj: any): obj is FindOneOptions<Entity> {
         const possibleOptions: FindOneOptions<Entity> = obj;
         return possibleOptions &&
-                (
-                    Array.isArray(possibleOptions.select) ||
-                    possibleOptions.where instanceof Object ||
-                    typeof possibleOptions.where === "string" ||
-                    Array.isArray(possibleOptions.relations) ||
-                    possibleOptions.join instanceof Object ||
-                    possibleOptions.order instanceof Object ||
-                    possibleOptions.cache instanceof Object ||
-                    typeof possibleOptions.cache === "boolean" ||
-                    typeof possibleOptions.cache === "number" ||
-                    possibleOptions.lock instanceof Object ||
-                    possibleOptions.loadRelationIds instanceof Object ||
-                    typeof possibleOptions.loadRelationIds === "boolean" ||
-                    typeof possibleOptions.loadEagerRelations === "boolean" ||
-                    typeof possibleOptions.withDeleted === "boolean" ||
-                    typeof possibleOptions.transaction === "boolean"
-                );
+            (
+                Array.isArray(possibleOptions.select) ||
+                possibleOptions.where instanceof Object ||
+                typeof possibleOptions.where === "string" ||
+                Array.isArray(possibleOptions.relations) ||
+                possibleOptions.join instanceof Object ||
+                possibleOptions.order instanceof Object ||
+                possibleOptions.cache instanceof Object ||
+                typeof possibleOptions.cache === "boolean" ||
+                typeof possibleOptions.cache === "number" ||
+                possibleOptions.lock instanceof Object ||
+                possibleOptions.loadRelationIds instanceof Object ||
+                typeof possibleOptions.loadRelationIds === "boolean" ||
+                typeof possibleOptions.loadEagerRelations === "boolean" ||
+                typeof possibleOptions.withDeleted === "boolean" ||
+                typeof possibleOptions.transaction === "boolean"
+            );
     }
 
     /**
@@ -211,6 +212,23 @@ export class FindOptionsUtils {
                         break;
                 }
             });
+
+        return qb;
+    }
+
+    static applyOptionsToTreeQueryBuilder<T>(qb: SelectQueryBuilder<T>, options?: FindTreeOptions): SelectQueryBuilder<T> {
+        if (options?.relations) {
+            // Copy because `applyRelationsRecursively` modifies it
+            const allRelations = [...options.relations];
+
+            FindOptionsUtils.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
+
+            // recursive removes found relations from allRelations array
+            // if there are relations left in this array it means those relations were not found in the entity structure
+            // so, we give an exception about not found relations
+            if (allRelations.length > 0)
+                throw new FindRelationsNotFoundError(allRelations);
+        }
 
         return qb;
     }
