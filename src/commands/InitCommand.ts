@@ -600,8 +600,8 @@ Steps to run this project:
 
         if (!packageJson.scripts) packageJson.scripts = {};
         Object.assign(packageJson.scripts, {
-            start: /*(docker ? "docker-compose up && " : "") + */"ts-node src/index.ts"
-            , typeorm: "node --require ts-node/register ./node_modules/typeorm/cli.js"
+            start: /*(docker ? "docker-compose up && " : "") + */"ts-node src/index.ts",
+            typeorm: "node --require ts-node/register ./node_modules/typeorm/cli.js"
         });
         return JSON.stringify(packageJson, undefined, 3);
     }
