@@ -60,9 +60,14 @@ export class AuroraDataApiDriver implements Driver {
     options: AuroraDataApiConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to performn all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -338,6 +343,13 @@ export class AuroraDataApiDriver implements Driver {
      * Performs connection to the database.
      */
     async connect(): Promise<void> {
+        if (!this.database) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            this.database = await queryRunner.getCurrentDatabase();
+
+            await queryRunner.release();
+        }
     }
 
     /**

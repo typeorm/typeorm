@@ -347,6 +347,14 @@ export class MysqlDriver implements Driver {
         } else {
             this.pool = await this.createPool(this.createConnectionOptions(this.options, this.options));
         }
+
+        if (!this.database) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            this.database = await queryRunner.getCurrentDatabase();
+
+            await queryRunner.release();
+        }
     }
 
     /**

@@ -64,9 +64,14 @@ export class OracleDriver implements Driver {
     options: OracleConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -227,6 +232,7 @@ export class OracleDriver implements Driver {
         this.loadDependencies();
 
         this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+        this.schema = DriverUtils.buildDriverOptions(this.options).schema;
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
@@ -258,6 +264,20 @@ export class OracleDriver implements Driver {
             this.master = await this.createPool(this.options, this.options.replication.master);
         } else {
             this.master = await this.createPool(this.options, this.options);
+        }
+
+        if (!this.database || !this.schema) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase();
+            }
+
+            if (!this.schema) {
+                this.schema = await queryRunner.getCurrentSchema();
+            }
+
+            await queryRunner.release();
         }
     }
 
@@ -364,9 +384,7 @@ export class OracleDriver implements Driver {
      */
     parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
         const driverDatabase = this.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.options.schema;
+        const driverSchema = this.schema;
 
         if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);

@@ -24,11 +24,16 @@ export interface Driver {
     options: BaseConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      *
      * todo: probably move into query runner.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
