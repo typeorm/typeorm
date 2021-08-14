@@ -2160,21 +2160,21 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      * Escapes given table or View path.
      */
     protected escapePath(target: Table|View|string): string {
-        const parsed = this.driver.parseTableName(target);
+        const { database, schema, tableName } = this.driver.parseTableName(target);
 
-        if (parsed.database) {
-            if (parsed.schema) {
-                return `"${parsed.database}"."${parsed.schema}"."${parsed.tableName}"`;
+        if (database && database !== this.driver.database) {
+            if (schema && schema !== this.driver.searchSchema) {
+                return `"${database}"."${schema}"."${tableName}"`;
             }
 
-            return `"${parsed.database}".."${parsed.tableName}"`;
+            return `"${database}".."${tableName}"`;
         }
 
-        if (parsed.schema) {
-            return `"${parsed.schema}"."${parsed.tableName}"`;
+        if (schema && schema !== this.driver.searchSchema) {
+            return `"${schema}"."${tableName}"`;
         }
 
-        return `"${parsed.tableName}"`;
+        return `"${tableName}"`;
     }
 
     /**
@@ -2183,9 +2183,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
      */
     protected buildForeignKeyName(fkName: string, schemaName: string|undefined, dbName: string|undefined): string {
         let joinedFkName = fkName;
-        if (schemaName)
+        if (schemaName && schemaName !== this.driver.searchSchema)
             joinedFkName = schemaName + "." + joinedFkName;
-        if (dbName)
+        if (dbName && dbName !== this.driver.database)
             joinedFkName = dbName + "." + joinedFkName;
 
         return joinedFkName;

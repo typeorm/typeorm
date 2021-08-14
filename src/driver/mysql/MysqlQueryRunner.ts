@@ -1852,7 +1852,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected escapePath(target: Table|View|string): string {
         const { database, tableName } = this.driver.parseTableName(target);
 
-        if (database) {
+        if (database && database !== this.driver.database) {
             return `\`${database}\`.\`${tableName}\``;
         }
 

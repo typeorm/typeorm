@@ -1717,7 +1717,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // Ignore database when escaping paths
         const { schema, tableName } = this.driver.parseTableName(target);
 
-        if (schema) {
+        if (schema && schema !== this.driver.schema) {
             return `"${schema}"."${tableName}"`;
         }
 
