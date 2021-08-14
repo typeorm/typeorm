@@ -342,6 +342,31 @@ describe("query builder > select", () => {
 
                 expect(params).to.eql(["Foo", "Bar", "Baz"]);
             })));
+
+            it("should craft query with FindOperator with nested primary/non-primary key", () => Promise.all(connections.map(async connection => {
+                const [sql, params] = connection.createQueryBuilder(HeroImage, "hero")
+                    .leftJoin("hero.post", "posts")
+                    .leftJoin("posts.category", "category")
+                    .where({
+                        post: {
+                            category: {
+                                id: In([1, 2, 3]),
+                                name: "Foo",
+                            }
+                        }
+                    })
+                    .getQueryAndParameters();
+
+                expect(sql).to.equal(
+                    'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
+                    'FROM "hero_image" "hero" ' +
+                    'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id"  ' +
+                    'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
+                    'WHERE ("category"."id" IN (?, ?, ?) AND "category"."name" = ?)'
+                );
+
+                expect(params).to.eql([1, 2, 3, "Foo"]);
+            })));
         });
     });
 
