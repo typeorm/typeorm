@@ -1004,6 +1004,11 @@ export abstract class QueryBuilder<Entity> {
             if (metadata.hasRelationWithPropertyPath(path)) {
                 const relation = metadata.findRelationWithPropertyPath(path)!;
 
+                // Bail early if we're trying to join across an unsupported join type
+                if (relation.relationType === "one-to-many" || relation.relationType === "many-to-many") {
+                    throw new TypeORMError(`Cannot query across ${relation.relationType} for property ${path}`);
+                }
+
                 // There's also cases where we don't want to return back all of the properties.
                 // These handles the situation where someone passes the model & we don't need to make
                 // a HUGE `where` to uniquely look up the entity.
@@ -1016,18 +1021,14 @@ export abstract class QueryBuilder<Entity> {
                         .map(j => j.referencedColumn)
                         .filter((j): j is ColumnMetadata => !!j);
 
-                    const hasAllJoinColumns = joinColumns.length > 0 && joinColumns.every(
-                        column => column.getEntityValue(entity[key], false)
-                    );
+                    const hasAllJoinColumns = joinColumns.length > 0 && joinColumns
+                        .map(column => column.getEntityValue(entity[key], false))
+                        .every(value => value !== undefined && !(value instanceof FindOperator));
 
                     if (hasAllJoinColumns) {
                         paths.push(path);
                         continue;
                     }
-                }
-
-                if (relation.relationType === "one-to-many" || relation.relationType === "many-to-many") {
-                    throw new Error(`Cannot query across ${relation.relationType} for property ${path}`);
                 }
 
                 // For any other case, if the `entity[key]` contains all of the primary keys we can do a
@@ -1036,9 +1037,9 @@ export abstract class QueryBuilder<Entity> {
                 // This handles the situation where someone passes the model & we don't need to make
                 // a HUGE where.
                 const primaryColumns = relation.inverseEntityMetadata.primaryColumns;
-                const hasAllPrimaryKeys = primaryColumns.length > 0 && primaryColumns.every(
-                    column => column.getEntityValue(entity[key], false)
-                );
+                const hasAllPrimaryKeys = primaryColumns.length > 0 && primaryColumns
+                    .map(column => column.getEntityValue(entity[key], false))
+                    .every(value => value !== undefined && !(value instanceof FindOperator));
 
                 if (hasAllPrimaryKeys) {
                     const subPaths = primaryColumns.map(
