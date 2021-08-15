@@ -233,8 +233,35 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
-        throw new TypeORMError(`Stream is not supported by Oracle driver.`);
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        if (this.isReleased) {
+            throw new QueryRunnerAlreadyReleasedError();
+        }
+
+        const executionOptions = {
+            autoCommit: !this.isTransactionActive,
+            outFormat: this.driver.oracle.OBJECT,
+        }
+
+        const databaseConnection = await this.connect();
+
+        this.driver.connection.logger.logQuery(query, parameters, this);
+
+        try {
+            const stream = databaseConnection.queryStream(query, parameters, executionOptions);
+            if (onEnd) {
+                stream.on("end", onEnd);
+            }
+
+            if (onError) {
+                stream.on("error", onError);
+            }
+
+            return stream;
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            throw new QueryFailedError(query, parameters, err);
+        }
     }
 
     /**
