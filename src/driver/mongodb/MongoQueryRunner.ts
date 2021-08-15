@@ -1,43 +1,9 @@
 import {QueryRunner} from "../../query-runner/QueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {View} from "../../schema-builder/view/View";
-import {
-    AggregationCursor,
-    BulkWriteOpResultObject,
-    ChangeStream,
-    ChangeStreamOptions,
-    Code,
-    Collection,
-    CollectionAggregationOptions,
-    CollectionBulkWriteOptions,
-    CollectionInsertManyOptions,
-    CollectionInsertOneOptions,
-    CollectionOptions,
-    CollStats,
-    CommandCursor,
-    Cursor,
-    DeleteWriteOpResultObject,
-    FindAndModifyWriteOpResultObject,
-    FindOneAndReplaceOption,
-    GeoHaystackSearchOptions,
-    GeoNearOptions,
-    InsertOneWriteOpResult,
-    InsertWriteOpResult,
-    MapReduceOptions,
-    MongoClient,
-    MongoCountPreferences,
-    MongodbIndexOptions,
-    OrderedBulkOperation,
-    ParallelCollectionScanOptions,
-    ReadPreference,
-    ReplaceOneOptions,
-    UnorderedBulkOperation,
-    UpdateWriteOpResult
-} from "./typings";
 import {Connection} from "../../connection/Connection";
 import {ReadStream} from "../../platform/PlatformTools";
 import {MongoEntityManager} from "../../entity-manager/MongoEntityManager";
@@ -47,6 +13,52 @@ import {Broadcaster} from "../../subscriber/Broadcaster";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import { TypeORMError } from "../../error";
+
+import {
+    BulkWriteResult,
+    AggregationCursor,
+    MongoClient,
+    Collection,
+    FindCursor,
+    Document,
+    AggregateOptions,
+    AnyBulkWriteOperation,
+    BulkWriteOptions,
+    Filter,
+    CountOptions,
+    CountDocumentsOptions,
+    IndexSpecification,
+    CreateIndexesOptions,
+    IndexDescription,
+    DeleteResult,
+    DeleteOptions,
+    CommandOperationOptions,
+    FindOneAndDeleteOptions,
+    ModifyResult,
+    FindOneAndReplaceOptions,
+    UpdateFilter,
+    FindOneAndUpdateOptions,
+    RenameOptions,
+    ReplaceOptions,
+    UpdateResult,
+    CollStats,
+    CollStatsOptions,
+    ChangeStreamOptions,
+    ChangeStream,
+    UpdateOptions,
+    ListIndexesOptions,
+    ListIndexesCursor,
+    OptionalId,
+    InsertOneOptions,
+    InsertOneResult,
+    InsertManyResult,
+    MapFunction,
+    ReduceFunction,
+    MapReduceOptions,
+    UnorderedBulkOperation,
+    OrderedBulkOperation,
+    IndexInformationOptions
+} from "mongodb";
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -123,248 +135,219 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    cursor(collectionName: string, query?: ObjectLiteral): Cursor<any> {
-        return this.getCollection(collectionName).find(query || {});
+    cursor(collectionName: string, filter: Filter<Document>): FindCursor<any> {
+        return this.getCollection(collectionName).find(filter || {});
     }
 
     /**
      * Execute an aggregation framework pipeline against the collection.
      */
-    aggregate(collectionName: string, pipeline: ObjectLiteral[], options?: CollectionAggregationOptions): AggregationCursor<any> {
-        return this.getCollection(collectionName).aggregate(pipeline, options);
+    aggregate(collectionName: string, pipeline: Document[], options?: AggregateOptions): AggregationCursor<any> {
+        return this.getCollection(collectionName).aggregate(pipeline, options || {});
     }
 
     /**
      * Perform a bulkWrite operation without a fluent API.
      */
-    async bulkWrite(collectionName: string, operations: ObjectLiteral[], options?: CollectionBulkWriteOptions): Promise<BulkWriteOpResultObject> {
-        return await this.getCollection(collectionName).bulkWrite(operations, options);
+    async bulkWrite(collectionName: string, operations: AnyBulkWriteOperation<Document>[], options?: BulkWriteOptions): Promise<BulkWriteResult> {
+        return await this.getCollection(collectionName).bulkWrite(operations, options || {});
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
-    async count(collectionName: string, query?: ObjectLiteral, options?: MongoCountPreferences): Promise<any> {
-        return await this.getCollection(collectionName).countDocuments(query || {}, options);
+    async count(collectionName: string, filter: Filter<Document>, options?: CountOptions): Promise<number> {
+        return this.getCollection(collectionName).count(filter || {}, options || {});
+    }
+
+    /**
+     * Count number of matching documents in the db to a query.
+     */
+    async countDocuments(collectionName: string, filter: Filter<Document>, options?: CountDocumentsOptions): Promise<any> {
+        return this.getCollection(collectionName).countDocuments(filter || {}, options || {});
     }
 
     /**
      * Creates an index on the db and collection.
      */
-    async createCollectionIndex(collectionName: string, fieldOrSpec: string | any, options?: MongodbIndexOptions): Promise<string> {
-        return await this.getCollection(collectionName).createIndex(fieldOrSpec, options);
+    async createCollectionIndex(collectionName: string, indexSpec: IndexSpecification, options?: CreateIndexesOptions): Promise<string> {
+        return this.getCollection(collectionName).createIndex(indexSpec, options || {});
     }
 
     /**
      * Creates multiple indexes in the collection, this method is only supported for MongoDB 2.6 or higher.
      * Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      */
-    async createCollectionIndexes(collectionName: string, indexSpecs: ObjectLiteral[]): Promise<void> {
-        return await this.getCollection(collectionName).createIndexes(indexSpecs);
+    async createCollectionIndexes(collectionName: string, indexSpecs: IndexDescription[]): Promise<string[]> {
+        return this.getCollection(collectionName).createIndexes(indexSpecs);
     }
 
     /**
      * Delete multiple documents on MongoDB.
      */
-    async deleteMany(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
-        return await this.getCollection(collectionName).deleteMany(query, options);
+    async deleteMany(collectionName: string, filter: Filter<Document>, options: DeleteOptions): Promise<DeleteResult> {
+        return this.getCollection(collectionName).deleteMany(filter, options || {});
     }
 
     /**
      * Delete a document on MongoDB.
      */
-    async deleteOne(collectionName: string, query: ObjectLiteral, options?: CollectionOptions): Promise<DeleteWriteOpResultObject> {
-        return await this.getCollection(collectionName).deleteOne(query, options);
+    async deleteOne(collectionName: string, filter: Filter<Document>, options?: DeleteOptions): Promise<DeleteResult> {
+        return this.getCollection(collectionName).deleteOne(filter, options || {});
     }
 
     /**
      * The distinct command returns returns a list of distinct values for the given key across a collection.
      */
-    async distinct(collectionName: string, key: string, query: ObjectLiteral, options?: { readPreference?: ReadPreference | string }): Promise<any> {
-        return await this.getCollection(collectionName).distinct(key, query, options);
+    async distinct(collectionName: string, key: any, filter: Filter<Document>, options?: CommandOperationOptions): Promise<any> {
+        return this.getCollection(collectionName).distinct(key, filter, options || {});
     }
 
     /**
      * Drops an index from this collection.
      */
-    async dropCollectionIndex(collectionName: string, indexName: string, options?: CollectionOptions): Promise<any> {
-        return await this.getCollection(collectionName).dropIndex(indexName, options);
+    async dropCollectionIndex(collectionName: string, indexName: string, options?: CommandOperationOptions): Promise<Document> {
+        return this.getCollection(collectionName).dropIndex(indexName, options || {});
     }
 
     /**
      * Drops all indexes from the collection.
      */
-    async dropCollectionIndexes(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).dropIndexes();
+    async dropCollectionIndexes(collectionName: string): Promise<Document> {
+        return this.getCollection(collectionName).dropIndexes();
     }
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndDelete(collectionName: string, query: ObjectLiteral, options?: { projection?: Object, sort?: Object, maxTimeMS?: number }): Promise<FindAndModifyWriteOpResultObject> {
-        return await this.getCollection(collectionName).findOneAndDelete(query, options);
+    async findOneAndDelete(collectionName: string, filter: Filter<Document>, options?: FindOneAndDeleteOptions): Promise<ModifyResult<Document>> {
+        return this.getCollection(collectionName).findOneAndDelete(filter, options || {});
     }
 
     /**
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndReplace(collectionName: string, query: ObjectLiteral, replacement: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
-        return await this.getCollection(collectionName).findOneAndReplace(query, replacement, options);
+    async findOneAndReplace(collectionName: string, filter: Filter<Document>, replacement: Document, options?: FindOneAndReplaceOptions): Promise<ModifyResult<Document>> {
+        return this.getCollection(collectionName).findOneAndReplace(filter, replacement, options || {});
     }
 
     /**
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
      */
-    async findOneAndUpdate(collectionName: string, query: ObjectLiteral, update: Object, options?: FindOneAndReplaceOption): Promise<FindAndModifyWriteOpResultObject> {
-        return await this.getCollection(collectionName).findOneAndUpdate(query, update, options);
-    }
-
-    /**
-     * Execute a geo search using a geo haystack index on a collection.
-     */
-    async geoHaystackSearch(collectionName: string, x: number, y: number, options?: GeoHaystackSearchOptions): Promise<any> {
-        return await this.getCollection(collectionName).geoHaystackSearch(x, y, options);
-    }
-
-    /**
-     * Execute the geoNear command to search for items in the collection.
-     */
-    async geoNear(collectionName: string, x: number, y: number, options?: GeoNearOptions): Promise<any> {
-        return await this.getCollection(collectionName).geoNear(x, y, options);
-    }
-
-    /**
-     * Run a group command across a collection.
-     */
-    async group(collectionName: string, keys: Object | Array<any> | Function | Code, condition: Object, initial: Object, reduce: Function | Code, finalize: Function | Code, command: boolean, options?: { readPreference?: ReadPreference | string }): Promise<any> {
-        return await this.getCollection(collectionName).group(keys, condition, initial, reduce, finalize, command, options);
+    async findOneAndUpdate(collectionName: string, filter: Filter<Document>, update: UpdateFilter<Document>, options?: FindOneAndUpdateOptions): Promise<ModifyResult<Document>> {
+        return this.getCollection(collectionName).findOneAndUpdate(filter, update, options || {});
     }
 
     /**
      * Retrieve all the indexes on the collection.
      */
-    async collectionIndexes(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).indexes();
+    async collectionIndexes(collectionName: string): Promise<Document> {
+        return this.getCollection(collectionName).indexes();
     }
 
     /**
      * Retrieve all the indexes on the collection.
      */
     async collectionIndexExists(collectionName: string, indexes: string | string[]): Promise<boolean> {
-        return await this.getCollection(collectionName).indexExists(indexes);
+        return this.getCollection(collectionName).indexExists(indexes);
     }
 
     /**
      * Retrieves this collections index info.
      */
-    async collectionIndexInformation(collectionName: string, options?: { full: boolean }): Promise<any> {
-        return await this.getCollection(collectionName).indexInformation(options);
+    async collectionIndexInformation(collectionName: string, options?: IndexInformationOptions): Promise<any> {
+        return this.getCollection(collectionName).indexInformation(options || {});
     }
 
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
      */
-    initializeOrderedBulkOp(collectionName: string, options?: CollectionOptions): OrderedBulkOperation {
+    initializeOrderedBulkOp(collectionName: string, options?: BulkWriteOptions): OrderedBulkOperation {
         return this.getCollection(collectionName).initializeOrderedBulkOp(options);
     }
 
     /**
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
      */
-    initializeUnorderedBulkOp(collectionName: string, options?: CollectionOptions): UnorderedBulkOperation {
+    initializeUnorderedBulkOp(collectionName: string, options?: BulkWriteOptions): UnorderedBulkOperation {
         return this.getCollection(collectionName).initializeUnorderedBulkOp(options);
     }
 
     /**
      * Inserts an array of documents into MongoDB.
      */
-    async insertMany(collectionName: string, docs: ObjectLiteral[], options?: CollectionInsertManyOptions): Promise<InsertWriteOpResult> {
-        return await this.getCollection(collectionName).insertMany(docs, options);
+    async insertMany(collectionName: string, docs: OptionalId<Document>[], options?: BulkWriteOptions): Promise<InsertManyResult> {
+        return this.getCollection(collectionName).insertMany(docs, options || {});
     }
 
     /**
      * Inserts a single document into MongoDB.
      */
-    async insertOne(collectionName: string, doc: ObjectLiteral, options?: CollectionInsertOneOptions): Promise<InsertOneWriteOpResult> {
-        return await this.getCollection(collectionName).insertOne(doc, options);
+    async insertOne(collectionName: string, doc: OptionalId<Document>, options?: InsertOneOptions): Promise<InsertOneResult> {
+        return this.getCollection(collectionName).insertOne(doc, options || {});
     }
 
     /**
      * Returns if the collection is a capped collection.
      */
-    async isCapped(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).isCapped();
+    async isCapped(collectionName: string): Promise<boolean> {
+        return this.getCollection(collectionName).isCapped();
     }
 
     /**
      * Get the list of all indexes information for the collection.
      */
-    listCollectionIndexes(collectionName: string, options?: { batchSize?: number, readPreference?: ReadPreference | string }): CommandCursor {
+    listCollectionIndexes(collectionName: string, options?: ListIndexesOptions): ListIndexesCursor {
         return this.getCollection(collectionName).listIndexes(options);
     }
 
     /**
      * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
      */
-    async mapReduce(collectionName: string, map: Function | string, reduce: Function | string, options?: MapReduceOptions): Promise<any> {
-        return await this.getCollection(collectionName).mapReduce(map, reduce, options);
-    }
-
-    /**
-     * Return N number of parallel cursors for a collection allowing parallel reading of entire collection.
-     * There are no ordering guarantees for returned results.
-     */
-    async parallelCollectionScan(collectionName: string, options?: ParallelCollectionScanOptions): Promise<Cursor<any>[]> {
-        return await this.getCollection(collectionName).parallelCollectionScan(options);
+    async mapReduce(collectionName: string, map: MapFunction, reduce: ReduceFunction | string, options?: MapReduceOptions): Promise<Document | Document[]> {
+        return this.getCollection(collectionName).mapReduce(map, reduce, options || {});
     }
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
-    async reIndex(collectionName: string): Promise<any> {
-        return await this.getCollection(collectionName).reIndex();
-    }
-
-    /**
-     * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
-     */
-    async rename(collectionName: string, newName: string, options?: { dropTarget?: boolean }): Promise<Collection<any>> {
-        return await this.getCollection(collectionName).rename(newName, options);
+    async rename(collectionName: string, newName: string, options?: RenameOptions ): Promise<Collection<Document>> {
+        return this.getCollection(collectionName).rename(newName, options || {});
     }
 
     /**
      * Replace a document on MongoDB.
      */
-    async replaceOne(collectionName: string, query: ObjectLiteral, doc: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
-        return await this.getCollection(collectionName).replaceOne(query, doc, options);
+    async replaceOne(collectionName: string, filter: Filter<Document>, replacement: Document, options?: ReplaceOptions): Promise<Document | UpdateResult> {
+        return this.getCollection(collectionName).replaceOne(filter, replacement, options || {});
     }
 
     /**
      * Get all the collection statistics.
      */
-    async stats(collectionName: string, options?: { scale: number }): Promise<CollStats> {
-        return await this.getCollection(collectionName).stats(options);
+    async stats(collectionName: string, options?: CollStatsOptions): Promise<CollStats> {
+        return this.getCollection(collectionName).stats(options || {});
     }
 
     /**
      * Watching new changes as stream.
      */
-    watch(collectionName: string, pipeline?: Object[], options?: ChangeStreamOptions): ChangeStream {
+    watch(collectionName: string, pipeline?: Document[], options?: ChangeStreamOptions): ChangeStream {
         return this.getCollection(collectionName).watch(pipeline, options);
     }
 
     /**
      * Update multiple documents on MongoDB.
      */
-    async updateMany(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
-        return await this.getCollection(collectionName).updateMany(query, update, options);
+    async updateMany(collectionName: string, filter: Filter<Document>, update: UpdateFilter<Document>, options?: UpdateOptions): Promise<Document | UpdateResult> {
+        return this.getCollection(collectionName).updateMany(filter, update, options || {});
     }
 
     /**
      * Update a single document on MongoDB.
      */
-    async updateOne(collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
-        return await this.getCollection(collectionName).updateOne(query, update, options);
+    async updateOne(collectionName: string, filter: Filter<Document>, update: UpdateFilter<Document>, options?: UpdateOptions): Promise<Document | UpdateResult> {
+        return await this.getCollection(collectionName).updateOne(filter, update, options || {});
     }
 
     // -------------------------------------------------------------------------

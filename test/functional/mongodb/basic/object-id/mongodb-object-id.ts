@@ -27,7 +27,7 @@ describe("mongodb > object id columns", () => {
         // little hack to get raw data from mongodb
         const aggArr = await postMongoRepository.aggregate([]).toArray();
 
-        expect(aggArr[0]._id).to.be.not.undefined;
+        expect((aggArr[0] as any)._id).to.be.not.undefined;
         expect(aggArr[0].nonIdNameOfObjectId).to.be.undefined;
     })));
 
@@ -78,7 +78,7 @@ describe("mongodb > object id columns", () => {
         // little hack to get raw data from mongodb
         const aggArr = await postMongoRepository.aggregate([]).toArray();
 
-        expect(aggArr[0]._id).to.be.not.undefined;
+        expect((aggArr[0] as any)._id).to.be.not.undefined;
         expect(aggArr[0].nonIdNameOfObjectId).to.be.undefined;
     })));
 
