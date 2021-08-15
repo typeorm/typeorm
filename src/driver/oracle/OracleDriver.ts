@@ -198,6 +198,37 @@ export class OracleDriver implements Driver {
         "timestamp with local time zone": { precision: 6 }
     };
 
+    reservedWords: Array<string> = [
+        "ACCESS", "ELSE", "MODIFY", "START",
+        "ADD", "EXCLUSIVE", "NOAUDIT", "SELECT",
+        "ALL", "EXISTS", "NOCOMPRESS", "SESSION",
+        "ALTER", "FILE", "NOT", "SET",
+        "AND", "FLOAT", "NOTFOUND", "SHARE",
+        "ANY", "FOR", "NOWAIT", "SIZE",
+        "ARRAYLEN", "FROM", "NULL", "SMALLINT",
+        "AS", "GRANT", "NUMBER", "SQLBUF",
+        "ASC", "GROUP", "OF", "SUCCESSFUL",
+        "AUDIT", "HAVING", "OFFLINE", "SYNONYM",
+        "BETWEEN", "IDENTIFIED", "ON", "SYSDATE",
+        "BY", "IMMEDIATE", "ONLINE", "TABLE",
+        "CHAR", "IN", "OPTION", "THEN",
+        "CHECK", "INCREMENT", "OR", "TO",
+        "CLUSTER", "INDEX", "ORDER", "TRIGGER",
+        "COLUMN", "INITIAL", "PCTFREE", "UID",
+        "COMMENT", "INSERT", "PRIOR", "UNION",
+        "COMPRESS", "INTEGER", "PRIVILEGES", "UNIQUE",
+        "CONNECT", "INTERSECT", "PUBLIC", "UPDATE",
+        "CREATE", "INTO", "RAW", "USER",
+        "CURRENT", "IS", "RENAME", "VALIDATE",
+        "DATE", "LEVEL", "RESOURCE", "VALUES",
+        "DECIMAL", "LIKE", "REVOKE", "VARCHAR",
+        "DEFAULT", "LOCK", "ROW", "VARCHAR2",
+        "DELETE", "LONG", "ROWID", "VIEW",
+        "DESC", "MAXEXTENTS", "ROWLABEL", "WHENEVER",
+        "DISTINCT", "MINUS", "ROWNUM", "WHERE",
+        "DROP", "MODE", "ROWS", "WITH",
+    ];
+
     /**
      * Max length allowed by Oracle for aliases.
      * @see https://docs.oracle.com/database/121/SQLRF/sql_elements008.htm#SQLRF51129
@@ -221,7 +252,7 @@ export class OracleDriver implements Driver {
         this.options = connection.options as OracleConnectionOptions;
 
         if (this.options.useUTC === true) {
-            process.env.ORA_SDTZ = 'UTC';
+            process.env.ORA_SDTZ = "UTC";
         }
         // load oracle package
         this.loadDependencies();
@@ -329,7 +360,7 @@ export class OracleDriver implements Driver {
             }
 
             if (typeof value === "boolean") {
-                return value ? '1' : '0';
+                return value ? "1" : "0";
             }
 
             escapedParameters.push(value);
@@ -342,7 +373,7 @@ export class OracleDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `"${columnName}"`;
+        return columnName.toUpperCase();
     }
 
     /**
@@ -356,7 +387,7 @@ export class OracleDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -395,7 +426,7 @@ export class OracleDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
@@ -708,7 +739,7 @@ export class OracleDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
 
@@ -811,7 +842,7 @@ export class OracleDriver implements Driver {
             }
 
             if (credentials.serviceName) {
-                connectData += `(SERVICE_NAME=${credentials.serviceName})`
+                connectData += `(SERVICE_NAME=${credentials.serviceName})`;
             }
 
             const connectString = `(DESCRIPTION=(ADDRESS=${address})(CONNECT_DATA=${connectData}))`;

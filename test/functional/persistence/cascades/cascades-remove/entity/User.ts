@@ -6,7 +6,9 @@ import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
 import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User { // todo: check one-to-one relation as well, but in another model or test
 
     @PrimaryColumn()

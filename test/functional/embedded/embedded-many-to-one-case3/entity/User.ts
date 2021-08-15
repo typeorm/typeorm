@@ -4,7 +4,9 @@ import {Entity} from "../../../../../src/decorator/entity/Entity";
 import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
 import {Post} from "./Post";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryColumn()

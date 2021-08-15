@@ -1,7 +1,9 @@
 import {Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn} from "../../../../src";
 import {Company} from "./Company";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

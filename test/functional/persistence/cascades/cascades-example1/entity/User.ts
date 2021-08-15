@@ -4,7 +4,9 @@ import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/Pr
 import {Profile} from "./Profile";
 import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

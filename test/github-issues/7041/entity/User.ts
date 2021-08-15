@@ -9,7 +9,9 @@ import {
 import { Admin } from "./Admin";
 import { OrganizationMembership } from "./OrganizationMembership";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id: string;

@@ -4,7 +4,9 @@ import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryG
 import {Profile} from "./Profile";
 import {Information} from "./Information";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

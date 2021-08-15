@@ -3,7 +3,9 @@ import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryC
 import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
 import {Post} from "./Post";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryColumn()

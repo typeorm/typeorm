@@ -1,7 +1,9 @@
 import {PrimaryColumn, Column} from "../../../../src";
 import {Entity} from "../../../../src/decorator/entity/Entity";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
   @PrimaryColumn()

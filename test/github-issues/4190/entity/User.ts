@@ -2,7 +2,9 @@ import {Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, JoinColumn}
 import {Photo} from "./Photo";
 import {Profile} from "./Profile";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

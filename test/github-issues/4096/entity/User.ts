@@ -1,6 +1,8 @@
 import { Entity, PrimaryColumn, Column } from "../../../../src";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
   @PrimaryColumn()
   email: string;

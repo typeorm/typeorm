@@ -3,7 +3,9 @@ import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryG
 import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
 import { Circle } from "./Circle";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     /**

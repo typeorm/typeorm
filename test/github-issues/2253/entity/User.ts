@@ -1,7 +1,9 @@
 import { ChildEntity, Column, Entity, PrimaryColumn, TableInheritance } from "../../../../src";
 
 @TableInheritance({ column: "type" })
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
   @PrimaryColumn()
   id: number;

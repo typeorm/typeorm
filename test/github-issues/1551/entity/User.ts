@@ -11,7 +11,9 @@ export interface UserConstructor {
   phone?: string;
 }
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
   constructor({username, password, name, picture, phone}: UserConstructor = {}) {
     if (username) {

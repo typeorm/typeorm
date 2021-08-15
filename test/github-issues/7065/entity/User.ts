@@ -2,7 +2,9 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "../../../../s
 import { Email } from "./Email";
 import { Phone } from "./Phone";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
     @PrimaryGeneratedColumn()
     id: number;

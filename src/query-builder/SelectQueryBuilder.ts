@@ -39,6 +39,7 @@ import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {EntityNotFoundError} from "../error/EntityNotFoundError";
 import { TypeORMError } from "../error";
+import {OracleRawSqlResultsToEntityTransformer} from "./transformer/OracleRawSqlResultsToEntityTransformer";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -2025,7 +2026,13 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // transform raw results into entities
             const rawRelationIdResults = await relationIdLoader.load(rawResults);
             const rawRelationCountResults = await relationCountLoader.load(rawResults);
-            const transformer = new RawSqlResultsToEntityTransformer(this.expressionMap, this.connection.driver, rawRelationIdResults, rawRelationCountResults, this.queryRunner);
+
+            let transformer;
+            if(this.connection.driver instanceof OracleDriver) {
+                transformer = new OracleRawSqlResultsToEntityTransformer(this.expressionMap, this.connection.driver, rawRelationIdResults, rawRelationCountResults, this.queryRunner);
+            } else {
+                transformer = new RawSqlResultsToEntityTransformer(this.expressionMap, this.connection.driver, rawRelationIdResults, rawRelationCountResults, this.queryRunner);
+            }
             entities = transformer.transform(rawResults, this.expressionMap.mainAlias!);
 
             // broadcast all "after load" events

@@ -2,7 +2,9 @@ import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryColumn, Column} from "../../../../src";
 import { URL } from "url";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryColumn()

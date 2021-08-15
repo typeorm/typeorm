@@ -1,6 +1,8 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

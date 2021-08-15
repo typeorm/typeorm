@@ -4,7 +4,9 @@ import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {EventMember} from "./EventMember";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

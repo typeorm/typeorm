@@ -3,7 +3,9 @@ import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryG
 import {Index} from "../../../../src/decorator/Index";
 import {Column} from "../../../../src/decorator/columns/Column";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

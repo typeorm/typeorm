@@ -1,7 +1,9 @@
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "../../../src";
 
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
     @PrimaryGeneratedColumn()
     id: number;
@@ -39,5 +41,5 @@ export class Post {
         () => User,
         (user) => user.posts,
     )
-    user: User
+    user: User;
 }

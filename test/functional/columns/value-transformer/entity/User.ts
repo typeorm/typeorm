@@ -28,7 +28,9 @@ export const lowercase: ValueTransformer = {
     }
 };
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
     @PrimaryGeneratedColumn("uuid")
     id: string;

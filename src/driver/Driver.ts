@@ -119,7 +119,7 @@ export interface Driver {
      *
      * todo: probably escape should be able to handle dots in the names and automatically escape them
      */
-    escape(name: string): string;
+    escape(name: string, forceNoEscape?: boolean): string;
 
     /**
      * Build full table name with database name, schema name and table name.

@@ -5,7 +5,9 @@ import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/Primar
 
 export type Role = "sa" | "user" | "admin" | "server";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

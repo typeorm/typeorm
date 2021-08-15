@@ -5,7 +5,9 @@ export enum Realm {
     KelThuzad = "Kel'Thuzad",
 }
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
     @PrimaryGeneratedColumn()
     id: number;

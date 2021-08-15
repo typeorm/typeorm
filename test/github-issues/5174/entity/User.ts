@@ -2,7 +2,9 @@ import {Entity} from "../../../../src/decorator/entity/Entity";
 import {PrimaryColumn, ManyToOne} from "../../../../src";
 import {Role} from "./Role";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
   @PrimaryColumn()

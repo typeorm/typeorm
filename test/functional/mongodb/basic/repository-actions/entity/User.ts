@@ -1,7 +1,9 @@
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @Column()

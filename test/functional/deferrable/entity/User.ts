@@ -4,7 +4,9 @@ import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
 import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 import {Company} from "./Company";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryColumn()

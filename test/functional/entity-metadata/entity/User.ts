@@ -4,7 +4,9 @@ import {Entity} from "../../../../src/decorator/entity/Entity";
 import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
 import {Post} from "./Post";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

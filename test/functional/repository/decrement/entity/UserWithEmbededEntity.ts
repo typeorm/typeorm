@@ -11,7 +11,9 @@ class FriendStats {
     received: number;
 }
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class UserWithEmbededEntity {
 
     @PrimaryColumn()

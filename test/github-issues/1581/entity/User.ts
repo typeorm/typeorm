@@ -1,7 +1,9 @@
 import {Column, Entity, OneToMany, PrimaryGeneratedColumn} from "../../../../src";
 import {Order} from "./Order";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

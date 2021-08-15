@@ -18,7 +18,9 @@ export class UserInfo extends PersonalInfo {
     userName: string;
 }
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

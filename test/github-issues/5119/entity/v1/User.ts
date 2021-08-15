@@ -4,7 +4,9 @@ import {
     PrimaryGeneratedColumn
 } from "../../../../../src/index";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
     @PrimaryGeneratedColumn()
     id: number;

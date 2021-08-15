@@ -7,7 +7,9 @@ import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
 import {Column} from "../../../../../../src/decorator/columns/Column";
 import {DeleteDateColumn} from "../../../../../../src/decorator/columns/DeleteDateColumn";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User { // todo: check one-to-one relation as well, but in another model or test
 
     @PrimaryColumn()

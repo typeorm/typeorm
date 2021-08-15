@@ -2,7 +2,9 @@ import {Entity} from "../../../../src";
 import {Column} from "../../../../src";
 import {PrimaryColumn} from "../../../../src";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
     @PrimaryColumn({
         type: "int4",

@@ -2,7 +2,9 @@ import {Entity} from "../../../../src";
 import {PrimaryColumn} from "../../../../src";
 import {CreateDateColumn, UpdateDateColumn} from "../../../../src";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryColumn()

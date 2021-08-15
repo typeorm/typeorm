@@ -6,7 +6,9 @@ import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 import {Entity} from "../../../../src/decorator/entity/Entity";
 import {Generated} from "../../../../src/decorator/Generated";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryColumn("int")

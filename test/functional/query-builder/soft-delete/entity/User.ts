@@ -5,7 +5,9 @@ import {Column} from "../../../../../src/decorator/columns/Column";
 import {Photo} from "./Photo";
 import {JoinColumn,OneToOne} from "../../../../../src";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

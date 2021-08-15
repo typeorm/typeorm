@@ -2,7 +2,9 @@ import { Column } from "../../../../src/decorator/columns/Column";
 import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn";
 import { Entity } from "../../../../src/decorator/entity/Entity";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class Username {
   @PrimaryColumn()
   username: string;

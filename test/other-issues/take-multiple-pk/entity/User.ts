@@ -5,7 +5,9 @@ import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
 import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
 import {Role} from "./Role";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
   @PrimaryColumn() id: number;
 

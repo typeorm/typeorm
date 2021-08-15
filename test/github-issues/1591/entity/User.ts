@@ -1,7 +1,9 @@
 import {Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn} from "../../../../src";
 import {Photo} from "./Photo";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryGeneratedColumn()

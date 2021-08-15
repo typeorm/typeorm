@@ -4,7 +4,9 @@ import {Column} from "../../../../src/decorator/columns/Column";
 import {ObjectID} from "../../../../src/driver/mongodb/typings";
 import {Event} from "./Event";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @ObjectIdColumn()

@@ -2,7 +2,9 @@ import {Column} from "../../../../src";
 import {PrimaryGeneratedColumn} from "../../../../src";
 import {Entity} from "../../../../src";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
     @PrimaryGeneratedColumn("increment")
     public id: number;

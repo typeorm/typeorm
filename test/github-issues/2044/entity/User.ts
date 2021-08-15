@@ -2,7 +2,9 @@ import {Column, Entity, OneToMany, PrimaryColumn} from "../../../../src";
 import {Photo} from "./Photo";
 import {StringDecoder} from "string_decoder";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class User {
 
     @PrimaryColumn("binary", {

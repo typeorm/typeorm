@@ -2,7 +2,9 @@ import {PrimaryColumn, Entity, ManyToOne, BeforeInsert, JoinColumn} from "../../
 import {Month} from "./month";
 import {User} from "./user";
 
-@Entity()
+@Entity({
+  name: "USERS"
+})
 export class UserMonth {
 
     @PrimaryColumn()
