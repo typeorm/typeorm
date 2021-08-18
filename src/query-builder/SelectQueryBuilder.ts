@@ -1951,7 +1951,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
-            const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
+            const [selects, orderBys, subquerySelect] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
             const metadata = this.expressionMap.mainAlias.metadata;
             const mainAliasName = this.expressionMap.mainAlias.name;
 
@@ -1973,7 +1973,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().addSelect(subquerySelect).getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
@@ -2042,7 +2042,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         };
     }
 
-    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition] {
+    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition, string] {
 
         // if table has a default order then apply it
         const orderBys = this.expressionMap.allOrderBys;
@@ -2082,7 +2082,24 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         });
 
-        return [selectString, orderByObject];
+        const subquerySelectString = Object.keys(orderBys)
+            .filter(orderCriteria => orderCriteria.includes("."))
+            .map(orderCriteria => {
+                const criteriaParts = orderCriteria.split(".");
+                const aliasName = criteriaParts[0];
+                const propertyPath = criteriaParts.slice(1).join(".");
+                const alias = this.expressionMap.findAliasByName(aliasName);
+                if (alias.type !== "join") {
+                    return "";
+                }
+                const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
+                const property = this.escape(alias.name) + "." + this.escape(column!.databaseName);
+                const propertyAlias = this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName));
+                return [property, "AS", propertyAlias].join(" ");
+            })
+            .join(", ");
+
+        return [selectString, orderByObject, subquerySelectString];
     }
 
     /**
