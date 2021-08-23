@@ -209,6 +209,7 @@
     "compile": "rimraf ./build && tsc",
     "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
+    "pack": "gulp pack",
     "lint": "eslint -c ./.eslintrc.js src/**/*.ts test/**/*.ts sample/**/*.ts",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1"
   },

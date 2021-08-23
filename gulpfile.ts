@@ -116,6 +116,17 @@ export class Gulpfile {
                 "cd ./build/package && npm publish"
             ]));
     }
+    
+    /**
+     * Packs a .tgz from ./build/package directory.
+     */
+    @Task()
+    packagePack() {
+        return gulp.src("package.json", { read: false })
+            .pipe(shell([
+                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
+            ]));
+    }
 
     /**
      * Publishes a package to npm from ./build/package directory with @next tag.
@@ -228,6 +239,14 @@ export class Gulpfile {
                 "packageCopyShims"
             ],
         ];
+    }
+
+    /**
+     * Creates a package .tgz
+     */
+    @SequenceTask()
+    pack() {
+        return ["package", "packagePack"];
     }
 
     /**
