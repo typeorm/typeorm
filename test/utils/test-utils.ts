@@ -214,6 +214,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
                 cache: options ? options.cache : undefined,
+                logging: process.env.TYPEORM_LOGGING === "1"
             });
             if (options && options.driverSpecific)
                 newOptions = Object.assign({}, options.driverSpecific, newOptions);
@@ -337,4 +338,24 @@ export function sleep(ms: number): Promise<void> {
     return new Promise<void>(ok => {
         setTimeout(ok, ms);
     });
+}
+
+export function asyncMapper<TIn, TOut>(
+    list: TIn[] | (() => TIn[]),
+    mapper: (value: TIn) => Promise<TOut>
+): () => Promise<TOut[]> {
+    return async function () {
+        if (typeof list === "function") {
+            list = list();
+        }
+        if (process.env.PARALLEL_MAP === "0") {
+            const out: TOut[] = [];
+            for (const value of list) {
+                out.push(await mapper(value));
+            }
+            return out;
+        } else {
+            return Promise.all(list.map((value) => mapper(value)));
+        }
+    };
 }

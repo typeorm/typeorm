@@ -149,6 +149,11 @@ export class CockroachDriver implements Driver {
     ];
 
     /**
+     * Returns type of upsert supported by driver if any
+     */
+    readonly supportedUpsertType = "on-conflict-do-update";
+
+    /**
      * Gets list of spatial column data types.
      */
     spatialTypes: ColumnType[] = [];
