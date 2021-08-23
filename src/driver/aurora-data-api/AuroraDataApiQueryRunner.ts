@@ -1663,7 +1663,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     protected escapePath(target: Table|View|string): string {
         const { database, tableName } = this.driver.parseTableName(target);
 
-        if (database) {
+        if (database && database !== this.driver.database) {
             return `\`${database}\`.\`${tableName}\``;
         }
 

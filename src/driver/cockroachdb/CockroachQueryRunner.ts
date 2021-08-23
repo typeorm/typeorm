@@ -1978,7 +1978,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     protected escapePath(target: Table|View|string): string {
         const { schema, tableName } = this.driver.parseTableName(target);
 
-        if (schema) {
+        if (schema && schema !== this.driver.searchSchema) {
             return `"${schema}"."${tableName}"`;
         }
 
