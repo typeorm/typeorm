@@ -1,4 +1,4 @@
-import {LoggerOptions, FileLoggerOptions} from "./LoggerOptions";
+import {LoggerOptions, FileLoggerOptions, shouldLog} from "./LoggerOptions";
 import appRootPath from "app-root-path";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Logger} from "./Logger";
@@ -28,7 +28,7 @@ export class FileLogger implements Logger {
      * Logs query and parameters used in it.
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("query") !== -1)) {
+        if (shouldLog("query", this.options)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write("[QUERY]: " + sql);
         }
@@ -38,7 +38,7 @@ export class FileLogger implements Logger {
      * Logs query that is failed.
      */
     logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("error") !== -1)) {
+        if (shouldLog("error", this.options)) {
             const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write([
                 `[FAILED QUERY]: ${sql}`,
@@ -59,7 +59,7 @@ export class FileLogger implements Logger {
      * Logs events from the schema build process.
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("schema") !== -1)) {
+        if (shouldLog("schema", this.options)) {
             this.write(message);
         }
     }
@@ -78,15 +78,15 @@ export class FileLogger implements Logger {
     log(level: "log"|"info"|"warn", message: any, queryRunner?: QueryRunner) {
         switch (level) {
             case "log":
-                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("log") !== -1))
+                if (shouldLog("log", this.options))
                     this.write("[LOG]: " + message);
                 break;
             case "info":
-                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("info") !== -1))
+                if (shouldLog("info", this.options))
                     this.write("[INFO]: " + message);
                 break;
             case "warn":
-                if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("warn") !== -1))
+                if (shouldLog("warn", this.options))
                     this.write("[WARN]: " + message);
                 break;
         }
