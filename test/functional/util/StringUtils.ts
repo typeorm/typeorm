@@ -48,6 +48,14 @@ describe("StringUtils", () => {
             expect(actual).to.be.equal(expected, `Failed for Input: ${input}`);
         });
 
+        it("should correctly convert strings with numbers", () => {
+            const input = "device1Status";
+            const expected = "device1_status";
+            const actual = snakeCase(input);
+
+            expect(actual).to.be.equal(expected, `Failed for Input: ${input}`);
+        });
+
         it("should match the examples given in the older implementation", () => {
             // Pulled from https://regex101.com/r/QeSm2I/1
             const examples = {
