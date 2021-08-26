@@ -171,8 +171,7 @@ You can change it by specifying your own name.
 you specify column type and length options.
 * `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
 * `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
-* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database.
-By default column is `nullable: false`.
+* `nullable: boolean` - determines whether the column can become `NULL` or always has to be `NOT NULL`. By default column is `nullable: false`.
 * `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object.
 Default value is `true`.
 * `insert: boolean` - Indicates if column value is set the first time you insert the object.  Default value is `true`.
@@ -366,7 +365,7 @@ Value will be generated only once, before inserting the entity into the database
 
 #### `@OneToOne`
 
-One-to-one is a relation where A contains only once instance of B, and B contains only one instance of A.
+One-to-one is a relation where A contains only one instance of B, and B contains only one instance of A.
 Let's take for example `User` and `Profile` entities.
 User can have only a single profile, and a single profile is owned by only a single user.
 Example:
@@ -499,7 +498,7 @@ export class Post {
 
 Used for `many-to-many` relations and describes join columns of the "junction" table.
 Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
-You can change the column names inside the junction table and their referenced columns with the `@JoinColumn` decorator. You can also change the name of the generated "junction" table.
+You can change the name of the generated "junction" table and also the column names inside the junction table and their referenced columns with the `joinColumn`- and `inverseJoinColumn` attributes. 
 Example:
 
 ```typescript
@@ -564,7 +563,7 @@ export class Post {
 Relation id is used only for representation.
 The underlying relation is not added/removed/changed when chaining the value.
 
-## Subscriber and listener decorators
+## Subscriber and listener decorators - Query-Life-Cycle-Hooks
 
 #### `@AfterLoad`
 
