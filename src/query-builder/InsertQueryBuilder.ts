@@ -371,8 +371,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (Array.isArray(overwrite)) {
                     query += ` ${conflictTarget} DO UPDATE SET `;
                     query += overwrite?.map((val: string | {column: string, expression?: string}) => {
-                        const column = this.escape(typeof val === 'string' ? val : val.column);
-                        const expression = typeof val !== 'string' && val.expression ? val.expression :  `EXCLUDED.${column}`
+                        const column = this.escape(typeof val === "string" ? val : val.column);
+                        const expression = typeof val !== "string" && val.expression ? val.expression :  `EXCLUDED.${column}`;
 
                         return `${column} = ${expression}`;
                     }).join(", ");
@@ -392,8 +392,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (Array.isArray(overwrite)) {
                     query += " ON DUPLICATE KEY UPDATE ";
                     query += overwrite?.map((val: string | {column: string, expression?: string}) => {
-                        const column = this.escape(typeof val === 'string' ? val : val.column);
-                        const expression = typeof val !== 'string' && val.expression ? val.expression :  `VALUES(${column})`
+                        const column = this.escape(typeof val === "string" ? val : val.column);
+                        const expression = typeof val !== "string" && val.expression ? val.expression :  `VALUES(${column})`;
 
                         return `${column} = ${expression}`;
                     }).join(", ");
