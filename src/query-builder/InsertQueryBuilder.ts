@@ -281,14 +281,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * @deprecated
      */
-    orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this;
+    orUpdate(statement?: { columns?: string[], overwrite?: (string | {column: string; expression?: string})[], conflict_target?: string | string[] }): this;
 
-    orUpdate(overwrite: string[], conflictTarget?: string | string[]): this;
+    orUpdate(overwrite: string[] | {column: string; expression?: string}[], conflictTarget?: string | string[]): this;
 
     /**
      * Adds additional update statement supported in databases.
      */
-    orUpdate(statementOrOverwrite?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] } | string[], conflictTarget?: string | string[]): this {
+    orUpdate(statementOrOverwrite?: { columns?: string[], overwrite?: (string | {column: string; expression?: string})[], conflict_target?: string | string[] } | string[] | {column: string; expression?: string}[], conflictTarget?: string | string[]): this {
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
                 conflict: statementOrOverwrite?.conflict_target,
@@ -370,7 +370,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                 if (Array.isArray(overwrite)) {
                     query += ` ${conflictTarget} DO UPDATE SET `;
-                    query += overwrite?.map(column => `${this.escape(column)} = EXCLUDED.${this.escape(column)}`).join(", ");
+                    query += overwrite?.map((val: string | {column: string, expression?: string}) => {
+                        const column = this.escape(typeof val === 'string' ? val : val.column);
+                        const expression = typeof val !== 'string' && val.expression ? val.expression :  `EXCLUDED.${column}`
+
+                        return `${column} = ${expression}`;
+                    }).join(", ");
                     query += " ";
                 } else if (columns) {
                     query += ` ${conflictTarget} DO UPDATE SET `;
@@ -386,7 +391,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                 if (Array.isArray(overwrite)) {
                     query += " ON DUPLICATE KEY UPDATE ";
-                    query += overwrite.map(column => `${this.escape(column)} = VALUES(${this.escape(column)})`).join(", ");
+                    query += overwrite?.map((val: string | {column: string, expression?: string}) => {
+                        const column = this.escape(typeof val === 'string' ? val : val.column);
+                        const expression = typeof val !== 'string' && val.expression ? val.expression :  `VALUES(${column})`
+
+                        return `${column} = ${expression}`;
+                    }).join(", ");
                     query += " ";
                 } else if (Array.isArray(columns)) {
                     query += " ON DUPLICATE KEY UPDATE ";

@@ -99,7 +99,7 @@ export class QueryExpressionMap {
     onUpdate: {
         conflict?: string | string[],
         columns?: string[],
-        overwrite?: string[],
+        overwrite?: (string | {column: string; expression?: string})[],
     };
 
     /**
