@@ -150,6 +150,12 @@ export interface ColumnOptions extends ColumnCommonOptions {
     hstoreType?: "object"|"string";
 
     /**
+     * Return type of JSON/JSONB column.
+     * Returns value as string or as object.
+     */
+    jsonType?: "object"|"string";
+
+    /**
      * Indicates if this column is an array.
      * Can be simply set to true or array length can be specified.
      * Supported only by postgres.

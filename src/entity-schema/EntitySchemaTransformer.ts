@@ -94,6 +94,7 @@ export class EntitySchemaTransformer {
                         asExpression: column.asExpression,
                         generatedType: column.generatedType,
                         hstoreType: column.hstoreType,
+                        jsonType: column.jsonType,
                         array: column.array,
                         transformer: column.transformer,
                         spatialFeatureType: column.spatialFeatureType,

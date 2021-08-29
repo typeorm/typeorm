@@ -179,6 +179,12 @@ export class ColumnMetadata {
     hstoreType?: "object"|"string";
 
     /**
+     * Return type of JSON/JSONB column.
+     * Returns value as string or as object.
+     */
+    jsonType?: "object"|"string";
+
+    /**
      * Indicates if this column is an array.
      */
     isArray: boolean = false;
@@ -396,6 +402,8 @@ export class ColumnMetadata {
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType;
+        if (options.args.options.jsonType)
+            this.jsonType = options.args.options.jsonType;            
         if (options.args.options.array)
             this.isArray = options.args.options.array;
         if (options.args.mode) {

@@ -17,6 +17,7 @@ import {ColumnEmbeddedOptions} from "../options/ColumnEmbeddedOptions";
 import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
+import {ColumnJsonOptions} from "../options/ColumnJsonOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
 import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
 import {ColumnOptions} from "../options/ColumnOptions";
@@ -90,6 +91,18 @@ export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHst
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Column(type: "json", options?: ColumnCommonOptions & ColumnJsonOptions): PropertyDecorator;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Column(type: "jsonb", options?: ColumnCommonOptions & ColumnJsonOptions): PropertyDecorator;
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  *
  * Property in entity can be marked as Embedded, and on persist all columns from the embedded are mapped to the
  * single table of the entity where Embedded is used. And on hydration all columns which supposed to be in the
@@ -127,6 +140,18 @@ export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(Co
         // specify HSTORE type if column is HSTORE
         if (options.type === "hstore" && !options.hstoreType)
             options.hstoreType = reflectMetadataType === Object ? "object" : "string";
+
+        if (options.type === "json" && !options.jsonType) 
+            options.jsonType = reflectMetadataType === String ? "string" : "object";
+        
+        if (options.type === "jsonb" && !options.jsonType) 
+            options.jsonType = reflectMetadataType === String ? "string" : "object";
+        
+        if (options.type === "geometry" && !options.jsonType) 
+            options.jsonType = reflectMetadataType === String ? "string" : "object";
+        
+        if (options.type === "geography" && !options.jsonType) 
+            options.jsonType = reflectMetadataType === String ? "string" : "object";
 
         if (typeOrOptions instanceof Function) { // register an embedded
             getMetadataArgsStorage().embeddeds.push({
