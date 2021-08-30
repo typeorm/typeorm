@@ -19,7 +19,7 @@ describe("github issues > #7110: Typeorm Migrations ignore existing default valu
 
         it("can recognize model changes", () => Promise.all(connections.map(async connection => {
             const sqlInMemory = await connection.driver.createSchemaBuilder().log();
-            sqlInMemory.upQueries.length.should.be.greaterThan(0, sqlInMemory.upQueries.join("\n"));
+            sqlInMemory.upQueries.length.should.be.greaterThan(0);
             sqlInMemory.downQueries.length.should.be.greaterThan(0);
         })));
 
