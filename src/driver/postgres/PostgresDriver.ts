@@ -45,11 +45,6 @@ export class PostgresDriver implements Driver {
     postgres: any;
 
     /**
-     * Postgres type mapper
-     */
-    types: any;
-
-    /**
      * Pool for master database.
      */
     master: any;
