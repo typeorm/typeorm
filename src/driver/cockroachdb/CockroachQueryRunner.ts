@@ -1590,7 +1590,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             tableColumn.generationStrategy = "uuid";
 
                         } else  {
-                            tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
+                            tableColumn.default = dbColumn["column_default"].replace(/:::[\w\s\[\]\"]+/g, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?[\d\.]+)$/, "($1)");
                         }
                     }

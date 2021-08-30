@@ -9,7 +9,7 @@ export class Foo extends BaseEntity {
     @Column({
         nullable: false,
         type: "varchar",
-        default: () => "TO_CHAR(100, 'FMU000')",
+        default: () => "concat(chr(65), 'FMU000')",
     })
     displayId: string;
 }
