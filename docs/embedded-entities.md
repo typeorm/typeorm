@@ -180,3 +180,16 @@ This way code duplication in the entity classes is reduced.
  You can use as many columns (or relations) in embedded classes as you need.
  You even can have nested embedded columns inside embedded classes.
  
+You can set value  two ways:
+
+student.name= new Name();
+studento.name.first ='António';
+
+//or
+
+const  student = studentRepository.create({
+name:{
+    first:'António',
+    last:'Machado'
+}
+});
