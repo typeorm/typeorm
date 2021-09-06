@@ -1790,13 +1790,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
+                    /* Find all contraints that are not composite one for specific column and take first one */
+                    const uniqueConstraint = columnConstraints.filter(constraint => constraint["constraint_type"] === "UNIQUE").map(constraint => {
+                        return !dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
                             && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
                             && dbConstraint["column_name"] !== dbColumn["column_name"])
-                        : false;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    })[0];
+                    tableColumn.isUnique = !!uniqueConstraint;
 
                     if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         const serialDefaultName = `nextval('${this.buildSequenceName(table, dbColumn["column_name"])}'::regclass)`;
