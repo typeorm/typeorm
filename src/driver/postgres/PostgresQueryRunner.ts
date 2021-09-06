@@ -1791,9 +1791,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
                     /* Find all contraints that are not composite one for specific column and take first one */
-                    const uniqueConstraint = columnConstraints.filter(constraint => constraint["constraint_type"] === "UNIQUE").map(constraint => {
+                    const uniqueConstraint: ObjectLiteral | undefined = columnConstraints.filter(constraint => constraint["constraint_type"] === "UNIQUE").filter(constraint => {
                         return !dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
-                            && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
+                            && dbConstraint["constraint_name"] === constraint["constraint_name"]
                             && dbConstraint["column_name"] !== dbColumn["column_name"])
                     })[0];
                     tableColumn.isUnique = !!uniqueConstraint;
