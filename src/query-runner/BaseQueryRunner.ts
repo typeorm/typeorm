@@ -12,6 +12,7 @@ import {ReplicationMode} from "../driver/types/ReplicationMode";
 import { TypeORMError } from "../error/TypeORMError";
 import { EntityMetadata } from "../metadata/EntityMetadata";
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
+import { OrmUtils } from "../util/OrmUtils";
 
 export abstract class BaseQueryRunner {
 
@@ -325,7 +326,7 @@ export abstract class BaseQueryRunner {
         // console.log((checkComment && oldColumn.comment !== newColumn.comment));
         // console.log(oldColumn.comment, newColumn.comment);
         // console.log("enum ---------------");
-        // console.log(oldColumn.enum !== newColumn.enum);
+        // console.log(!OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []));
         // console.log(oldColumn.enum, newColumn.enum);
 
         return oldColumn.charset !== newColumn.charset
@@ -340,7 +341,7 @@ export abstract class BaseQueryRunner {
             || oldColumn.onUpdate !== newColumn.onUpdate // MySQL only
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)
-            || oldColumn.enum !== newColumn.enum;
+            || !OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []);
     }
 
     /**
