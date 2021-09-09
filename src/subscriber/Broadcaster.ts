@@ -393,52 +393,56 @@ export class Broadcaster {
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
     broadcastLoadEventsForAll(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
-        entities.forEach(entity => {
-            if (entity instanceof Promise) // todo: check why need this?
-                return;
+        // Calculate which subscribers are fitting for the given entity type
+        const fittingSubscribers = this.queryRunner.connection.subscribers.length
+            ? this.queryRunner.connection.subscribers.filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad)
+            : [];
+
+        if (metadata.relations.length || metadata.afterLoadListeners.length || fittingSubscribers.length) {
+            // todo: check why need this?
+            const nonPromiseEntities = entities.filter(entity => !(entity instanceof Promise));
 
             // collect load events for all children entities that were loaded with the main entity
             if (metadata.relations.length) {
                 metadata.relations.forEach(relation => {
+                    nonPromiseEntities.forEach(entity => {
+                        // in lazy relations we cannot simply access to entity property because it will cause a getter and a database query
+                        if (relation.isLazy && !entity.hasOwnProperty(relation.propertyName)) return;
 
-                    // in lazy relations we cannot simply access to entity property because it will cause a getter and a database query
-                    if (relation.isLazy && !entity.hasOwnProperty(relation.propertyName))
-                        return;
-
-                    const value = relation.getEntityValue(entity);
-                    if (value instanceof Object)
-                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
+                        const value = relation.getEntityValue(entity);
+                        if (value instanceof Object) this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
+                    });
                 });
             }
 
             if (metadata.afterLoadListeners.length) {
                 metadata.afterLoadListeners.forEach(listener => {
-                    if (listener.isAllowed(entity)) {
-                        const executionResult = listener.execute(entity);
-                        if (executionResult instanceof Promise)
-                            result.promises.push(executionResult);
-                        result.count++;
-                    }
+                    nonPromiseEntities.forEach(entity => {
+                        if (listener.isAllowed(entity)) {
+                            const executionResult = listener.execute(entity);
+                            if (executionResult instanceof Promise) result.promises.push(executionResult);
+                            result.count++;
+                        }
+                    });
                 });
             }
 
-            if (this.queryRunner.connection.subscribers.length) {
-                this.queryRunner.connection.subscribers.forEach(subscriber => {
-                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad) {
+            if (fittingSubscribers.length) {
+                fittingSubscribers.forEach(subscriber => {
+                    nonPromiseEntities.forEach(entity => {
                         const executionResult = subscriber.afterLoad!(entity, {
+                            entity,
+                            metadata,
                             connection: this.queryRunner.connection,
                             queryRunner: this.queryRunner,
                             manager: this.queryRunner.manager,
-                            entity: entity,
-                            metadata: metadata
                         });
-                        if (executionResult instanceof Promise)
-                            result.promises.push(executionResult);
+                        if (executionResult instanceof Promise) result.promises.push(executionResult);
                         result.count++;
-                    }
+                    });
                 });
             }
-        });
+        }
     }
 
     // -------------------------------------------------------------------------
