@@ -55,16 +55,14 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
             await UserRepository
                 .createQueryBuilder()
                 .insert()
-                .orUpdate({ columns: [ "is_updated" ] })
-                .setParameter("is_updated", user1.is_updated)
+                .orUpdate([ "is_updated" ])
                 .into(User)
                 .values(user1)
                 .execute();
              await UserRepository
                 .createQueryBuilder()
                 .insert()
-                .orUpdate({ columns: [ "is_updated" ] })
-                .setParameter("is_updated", user2.is_updated)
+                .orUpdate([ "is_updated" ])
                 .into(User)
                 .values(user2)
                 .execute();
@@ -108,16 +106,14 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                 await UserRepository
                     .createQueryBuilder()
                     .insert()
-                    .orUpdate({ columns: [ "is_updated" ], conflict_target: [ "first_name", "last_name" ] })
-                    .setParameter("is_updated", user1.is_updated)
+                    .orUpdate([ "is_updated" ], [ "first_name", "last_name" ])
                     .into(User)
                     .values(user1)
                     .execute();
                  await UserRepository
                     .createQueryBuilder()
                     .insert()
-                    .orUpdate({ columns: [ "is_updated" ], conflict_target: [ "first_name", "last_name" ] })
-                    .setParameter("is_updated", user2.is_updated)
+                    .orUpdate([ "is_updated" ], [ "first_name", "last_name" ])
                     .into(User)
                     .values(user2)
                     .execute();
@@ -134,15 +130,14 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                 await UserRepository
                     .createQueryBuilder()
                     .insert()
-                    .orUpdate({ columns: [ "is_updated" ], conflict_target: "constraint_unique_idx" })
-                    .setParameter("is_updated", user1.is_updated)
+                    .orUpdate([ "is_updated" ], "constraint_unique_idx")
                     .into(User)
                     .values(user1)
                     .execute();
                  await UserRepository
                     .createQueryBuilder()
                     .insert()
-                    .orUpdate({ columns: [ "is_updated" ], conflict_target: "constraint_unique_idx" })
+                    .orUpdate([ "is_updated" ], "constraint_unique_idx")
                     .setParameter("is_updated", user2.is_updated)
                     .into(User)
                     .values(user2)

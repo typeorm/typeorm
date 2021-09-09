@@ -18,6 +18,16 @@ export interface TableForeignKeyOptions {
     columnNames: string[];
 
     /**
+     * Database of the Table referenced in the foreign key.
+     */
+    referencedDatabase?: string;
+
+    /**
+     * Schema of the Table referenced in the foreign key.
+     */
+    referencedSchema?: string;
+
+    /**
      * Table referenced in the foreign key.
      */
     referencedTableName: string;
@@ -38,9 +48,9 @@ export interface TableForeignKeyOptions {
      * referenced stuff is being updated.
      */
     onUpdate?: string;
-    
+
     /**
-     * Set this foreign key constraint as "DEFERRABLE" e.g. check constraints at start 
+     * Set this foreign key constraint as "DEFERRABLE" e.g. check constraints at start
      * or at the end of a transaction
      */
     deferrable?: string;

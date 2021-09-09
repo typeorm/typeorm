@@ -1,13 +1,12 @@
-import { Connection } from "../../src/connection/Connection";
-import { ConnectionOptions } from "../../src/connection/ConnectionOptions";
-import { PostgresDriver } from "../../src/driver/postgres/PostgresDriver";
-import { SqlServerDriver } from "../../src/driver/sqlserver/SqlServerDriver";
-import { DatabaseType } from "../../src/driver/types/DatabaseType";
-import { EntitySchema } from "../../src/entity-schema/EntitySchema";
-import { createConnections } from "../../src/index";
-import { NamingStrategyInterface } from "../../src/naming-strategy/NamingStrategyInterface";
-import { QueryResultCache } from "../../src/cache/QueryResultCache";
-import { Logger } from "../../src/logger/Logger";
+import {Connection} from "../../src/connection/Connection";
+import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
+import {DatabaseType} from "../../src/driver/types/DatabaseType";
+import {EntitySchema} from "../../src/entity-schema/EntitySchema";
+import {createConnections} from "../../src/index";
+import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
+import {QueryResultCache} from "../../src/cache/QueryResultCache";
+import {Logger} from "../../src/logger/Logger";
+import {CockroachDriver} from "../../src/driver/cockroachdb/CockroachDriver";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -302,6 +301,7 @@ export async function createTestingConnections(
                 await queryRunner.createDatabase(database, true);
             }
 
+<<<<<<< HEAD
             // create new schemas
             if (
                 connection.driver instanceof PostgresDriver ||
@@ -325,6 +325,50 @@ export async function createTestingConnections(
                 for (const schemaPath of schemaPaths) {
                     await queryRunner.createSchema(schemaPath, true);
                 }
+=======
+        if (connection.driver instanceof CockroachDriver) {
+            await queryRunner.query(`ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER DATABASE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER TABLE system.public.jobs CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE meta CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE liveness CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`SET CLUSTER SETTING jobs.retention_time = '180s';`);
+            await queryRunner.query(`SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`);
+            await queryRunner.query(`SET CLUSTER SETTING kv.raft_log.disable_synchronization_unsafe = 'true'`);
+            await queryRunner.query(`SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`);
+
+        }
+
+        // create new schemas
+        const schemaPaths: Set<string> = new Set();
+        connection.entityMetadatas
+            .filter(entityMetadata => !!entityMetadata.schema)
+            .forEach(entityMetadata => {
+                let schema = entityMetadata.schema!;
+
+                if (entityMetadata.database) {
+                    schema = `${entityMetadata.database}.${schema}`;
+                }
+
+                schemaPaths.add(schema);
+            });
+
+        const schema =
+            connection.driver.options?.hasOwnProperty("schema") ?
+                (connection.driver.options as any).schema :
+                undefined;
+
+        if (schema) {
+            schemaPaths.add(schema);
+        }
+
+        for (const schemaPath of schemaPaths) {
+            try {
+                await queryRunner.createSchema(schemaPath, true);
+            } catch (e) {
+                // Do nothing
+>>>>>>> a868078f8f4f63cc8d81a63e098d639ed12c6608
             }
 
             await queryRunner.release();

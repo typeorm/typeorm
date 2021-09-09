@@ -5,10 +5,9 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
+import { TypeORMError } from "../error";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -31,6 +30,8 @@ export class MigrationExecutor {
     // Private Properties
     // -------------------------------------------------------------------------
 
+    private readonly migrationsDatabase?: string;
+    private readonly migrationsSchema?: string;
     private readonly migrationsTable: string;
     private readonly migrationsTableName: string;
 
@@ -41,9 +42,12 @@ export class MigrationExecutor {
     constructor(protected connection: Connection,
                 protected queryRunner?: QueryRunner) {
 
-        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
+        const { schema } = this.connection.driver.options as any;
+        const database = this.connection.driver.database;
+        this.migrationsDatabase = database;
+        this.migrationsSchema = schema;
         this.migrationsTableName = connection.options.migrationsTableName || "migrations";
-        this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, options.schema, options.database);
+        this.migrationsTable = this.connection.driver.buildTableName(this.migrationsTableName, schema, database);
     }
 
     // -------------------------------------------------------------------------
@@ -186,7 +190,7 @@ export class MigrationExecutor {
 
             // migration is new and not executed. now check if its timestamp is correct
             // if (lastTimeExecutedMigration && migration.timestamp < lastTimeExecutedMigration.timestamp)
-            //     throw new Error(`New migration found: ${migration.name}, however this migration's timestamp is not valid. Migration's timestamp should not be older then migrations already executed in the database.`);
+            //     throw new TypeORMError(`New migration found: ${migration.name}, however this migration's timestamp is not valid. Migration's timestamp should not be older then migrations already executed in the database.`);
 
             // every check is passed means that migration was not run yet and we need to run it
             return true;
@@ -289,7 +293,7 @@ export class MigrationExecutor {
 
         // if no migrations found in the database then nothing to revert
         if (!migrationToRevert)
-            throw new Error(`No migration ${lastTimeExecutedMigration.name} was found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`);
+            throw new TypeORMError(`No migration ${lastTimeExecutedMigration.name} was found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`);
 
         // log information about migration execution
         this.connection.logger.logSchemaBuild(`${executedMigrations.length} migrations are already loaded in the database.`);
@@ -345,6 +349,8 @@ export class MigrationExecutor {
         if (!tableExist) {
             await queryRunner.createTable(new Table(
                 {
+                    database: this.migrationsDatabase,
+                    schema: this.migrationsSchema,
                     name: this.migrationsTable,
                     columns: [
                         {
@@ -405,7 +411,7 @@ export class MigrationExecutor {
             const migrationClassName = migration.name || (migration.constructor as any).name;
             const migrationTimestamp = parseInt(migrationClassName.substr(-13), 10);
             if (!migrationTimestamp || isNaN(migrationTimestamp)) {
-                throw new Error(`${migrationClassName} migration name is wrong. Migration class name should have a JavaScript timestamp appended.`);
+                throw new TypeORMError(`${migrationClassName} migration name is wrong. Migration class name should have a JavaScript timestamp appended.`);
             }
 
             return new Migration(undefined, migrationTimestamp, migrationClassName, migration);
@@ -455,7 +461,7 @@ export class MigrationExecutor {
         }
         if (this.connection.driver instanceof MongoDriver) {
             const mongoRunner = queryRunner as MongoQueryRunner;
-            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insert(values);
+            await mongoRunner.databaseConnection.db(this.connection.driver.database!).collection(this.migrationsTableName).insertOne(values);
         } else {
             const qb = queryRunner.manager.createQueryBuilder();
             await qb.insert()

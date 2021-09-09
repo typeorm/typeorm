@@ -9,8 +9,9 @@ import {EntityMetadata} from "../metadata/EntityMetadata";
 import {SelectQuery} from "./SelectQuery";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import {QueryBuilder} from "./QueryBuilder";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
+import { TypeORMError } from "../error";
+import { WhereClause } from "./WhereClause";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -45,6 +46,11 @@ export class QueryExpressionMap {
      * Data needs to be SELECT-ed.
      */
     selects: SelectQuery[] = [];
+
+    /**
+     * Max execution time in millisecond.
+     */
+    maxExecutionTime: number = 0;
 
     /**
      * Whether SELECT is DISTINCT.
@@ -85,12 +91,16 @@ export class QueryExpressionMap {
     /**
      * Optional on ignore statement used in insertion query in databases.
      */
-    onIgnore: string|boolean = false;
+    onIgnore: boolean = false;
 
     /**
      * Optional on update statement used in insertion query in databases.
      */
-    onUpdate: { columns?: string, conflict?: string, overwrite?: string };
+    onUpdate: {
+        conflict?: string | string[],
+        columns?: string[],
+        overwrite?: string[],
+    };
 
     /**
      * JOIN queries.
@@ -110,7 +120,7 @@ export class QueryExpressionMap {
     /**
      * WHERE queries.
      */
-    wheres: { type: "simple"|"and"|"or", condition: string }[] = [];
+    wheres: WhereClause[] = [];
 
     /**
      * HAVING queries.
@@ -158,6 +168,11 @@ export class QueryExpressionMap {
     lockVersion?: number|Date;
 
     /**
+     * Tables to be specified in the "FOR UPDATE OF" clause, referred by their alias
+     */
+    lockTables?: string[];
+
+    /**
      * Indicates if soft-deleted rows should be included in entity result.
      * By default the soft-deleted rows are not included.
      */
@@ -192,11 +207,6 @@ export class QueryExpressionMap {
      * Indicates if query builder creates a subquery.
      */
     subQuery: boolean = false;
-
-    /**
-     * If QueryBuilder was created in a subquery mode then its parent QueryBuilder (who created subquery) will be stored here.
-     */
-    parentQueryBuilder: QueryBuilder<any>;
 
     /**
      * Indicates if property names are prefixed with alias names during property replacement.
@@ -267,7 +277,8 @@ export class QueryExpressionMap {
 
     /**
      * Extra parameters.
-     * Used in InsertQueryBuilder to avoid default parameters mechanizm and execute high performance insertions.
+     *
+     * @deprecated Use standard parameters instead
      */
     nativeParameters: ObjectLiteral = {};
 
@@ -275,6 +286,13 @@ export class QueryExpressionMap {
      * Query Comment to include extra information for debugging or other purposes.
      */
     comment?: string;
+
+    /**
+     * Items from an entity that have been locally generated & are recorded here for later use.
+     * Examples include the UUID generation when the database does not natively support it.
+     * These are included in the entity index order.
+     */
+    locallyGenerated: { [key: number]: ObjectLiteral } = {};
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -359,7 +377,7 @@ export class QueryExpressionMap {
     findAliasByName(aliasName: string): Alias {
         const alias = this.aliases.find(alias => alias.name === aliasName);
         if (!alias)
-            throw new Error(`"${aliasName}" alias was not found. Maybe you forgot to join it?`);
+            throw new TypeORMError(`"${aliasName}" alias was not found. Maybe you forgot to join it?`);
 
         return alias;
     }
@@ -377,11 +395,11 @@ export class QueryExpressionMap {
      */
     get relationMetadata(): RelationMetadata {
         if (!this.mainAlias)
-            throw new Error(`Entity to work with is not specified!`); // todo: better message
+            throw new TypeORMError(`Entity to work with is not specified!`); // todo: better message
 
         const relationMetadata = this.mainAlias.metadata.findRelationWithPropertyPath(this.relationPropertyPath);
         if (!relationMetadata)
-            throw new Error(`Relation ${this.relationPropertyPath} was not found in entity ${this.mainAlias.name}`); // todo: better message
+            throw new TypeORMError(`Relation ${this.relationPropertyPath} was not found in entity ${this.mainAlias.name}`); // todo: better message
 
         return relationMetadata;
     }
@@ -394,6 +412,7 @@ export class QueryExpressionMap {
         const map = new QueryExpressionMap(this.connection);
         map.queryType = this.queryType;
         map.selects = this.selects.map(select => select);
+        map.maxExecutionTime = this.maxExecutionTime;
         map.selectDistinct = this.selectDistinct;
         map.selectDistinctOn = this.selectDistinctOn;
         this.aliases.forEach(alias => map.aliases.push(new Alias(alias)));
@@ -416,6 +435,7 @@ export class QueryExpressionMap {
         map.take = this.take;
         map.lockMode = this.lockMode;
         map.lockVersion = this.lockVersion;
+        map.lockTables = this.lockTables;
         map.withDeleted = this.withDeleted;
         map.parameters = Object.assign({}, this.parameters);
         map.disableEscaping = this.disableEscaping;
@@ -434,6 +454,7 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
         map.nativeParameters = Object.assign({}, this.nativeParameters);
+        map.comment = this.comment;
         return map;
     }
 

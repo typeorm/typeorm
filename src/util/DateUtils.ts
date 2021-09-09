@@ -24,7 +24,7 @@ export class DateUtils {
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
-    static mixedDateToDateString(value: Date | any): string | any {
+    static mixedDateToDateString(value: string|Date): string {
         if (value instanceof Date)
             return (
                 this.formatZerolessValue(value.getFullYear()) +

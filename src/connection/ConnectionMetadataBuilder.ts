@@ -2,7 +2,7 @@ import {importClassesFromDirectories} from "../util/DirectoryExportedClassesLoad
 import {OrmUtils} from "../util/OrmUtils";
 import {getFromContainer} from "../container";
 import {MigrationInterface} from "../migration/MigrationInterface";
-import {getMetadataArgsStorage} from "../index";
+import {getMetadataArgsStorage} from "../globals";
 import {EntityMetadataBuilder} from "../metadata-builder/EntityMetadataBuilder";
 import {EntitySchemaTransformer} from "../entity-schema/EntitySchemaTransformer";
 import {Connection} from "./Connection";
@@ -60,7 +60,6 @@ export class ConnectionMetadataBuilder {
         allEntityClasses.forEach(entityClass => { // if we have entity schemas loaded from directories
             if (entityClass instanceof EntitySchema) {
                 entitySchemas.push(entityClass);
-                allEntityClasses.slice(allEntityClasses.indexOf(entityClass), 1);
             }
         });
         const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);

@@ -1,6 +1,7 @@
-import { JoinOptions } from "./JoinOptions";
-import { ObjectLiteral } from "../common/ObjectLiteral";
-import { FindConditions } from "./FindConditions";
+import {EntityFieldsNames} from "../common/EntityFieldsNames";
+import {JoinOptions} from "./JoinOptions";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {FindConditions} from "./FindConditions";
 
 /**
  * Defines a special criteria to find specific entity.
@@ -33,7 +34,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Order, in which entities should be ordered.
      */
-    order?: { [P in keyof Entity]?: "ASC" | "DESC" | 1 | -1 };
+    order?: { [P in EntityFieldsNames<Entity>]?: "ASC"|"DESC"|1|-1 };
 
     /**
      * Enables or disables query result caching.
@@ -42,17 +43,10 @@ export interface FindOneOptions<Entity = any> {
 
     /**
      * Indicates what locking mode should be used.
+     *
+     * Note: For lock tables, you must specify the table names and not the relation names
      */
-    lock?:
-        | { mode: "optimistic"; version: number | Date }
-        | {
-              mode:
-                  | "pessimistic_read"
-                  | "pessimistic_write"
-                  | "dirty_read"
-                  | "pessimistic_partial_write"
-                  | "pessimistic_write_or_fail";
-          };
+    lock?: { mode: "optimistic", version: number|Date } | { mode: "pessimistic_read"|"pessimistic_write"|"dirty_read"|"pessimistic_partial_write"|"pessimistic_write_or_fail"|"for_no_key_update", tables?: string[] };
 
     /**
      * Indicates if soft-deleted rows should be included in entity result.

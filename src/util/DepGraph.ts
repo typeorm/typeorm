@@ -8,6 +8,8 @@
  * A simple dependency graph
  */
 
+import { TypeORMError } from "../error";
+
 /**
  * Helper for creating a Depth-First-Search on
  * a set of edges.
@@ -29,7 +31,7 @@ function createDFS(edges: any, leavesOnly: any, result: any) {
                 DFS(node);
             } else if (currentPath.indexOf(node) >= 0) {
                 currentPath.push(node);
-                throw new Error(`Dependency Cycle Found: ${currentPath.join(" -> ")}`);
+                throw new TypeORMError(`Dependency Cycle Found: ${currentPath.join(" -> ")}`);
             }
         });
         currentPath.pop();
@@ -94,7 +96,7 @@ export class DepGraph {
         if (this.hasNode(node)) {
             return this.nodes[node];
         } else {
-            throw new Error(`Node does not exist: ${node}`);
+            throw new TypeORMError(`Node does not exist: ${node}`);
         }
     }
 
@@ -105,7 +107,7 @@ export class DepGraph {
         if (this.hasNode(node)) {
             this.nodes[node] = data;
         } else {
-            throw new Error(`Node does not exist: ${node}`);
+            throw new TypeORMError(`Node does not exist: ${node}`);
         }
     }
 
@@ -115,10 +117,10 @@ export class DepGraph {
      */
     addDependency(from: any, to: any) {
         if (!this.hasNode(from)) {
-            throw new Error(`Node does not exist: ${from}`);
+            throw new TypeORMError(`Node does not exist: ${from}`);
         }
         if (!this.hasNode(to)) {
-            throw new Error(`Node does not exist: ${to}`);
+            throw new TypeORMError(`Node does not exist: ${to}`);
         }
         if (this.outgoingEdges[from].indexOf(to) === -1) {
             this.outgoingEdges[from].push(to);
@@ -169,7 +171,7 @@ export class DepGraph {
             return result;
         }
         else {
-            throw new Error(`Node does not exist: ${node}`);
+            throw new TypeORMError(`Node does not exist: ${node}`);
         }
     }
 
@@ -191,7 +193,7 @@ export class DepGraph {
             }
             return result;
         } else {
-            throw new Error(`Node does not exist: ${node}`);
+            throw new TypeORMError(`Node does not exist: ${node}`);
         }
     }
 

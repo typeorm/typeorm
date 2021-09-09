@@ -25,10 +25,8 @@ describe("query builder > count", () => {
     it("Count query should count database values", () => Promise.all(connections.map(async connection => {
         const repo = connection.getRepository(Test);
 
-        await Promise.all([
-            repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174000', intField: 4}),
-            repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174001', intField: 4}),
-        ]);
+        await repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174000', intField: 4});
+        await repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174001', intField: 4});
 
         const count = await repo.count();
         expect(count).to.be.equal(2);
@@ -53,10 +51,8 @@ describe("query builder > count", () => {
     it("counting joined query should count database values", () => Promise.all(connections.map(async connection => {
         const repo = connection.getRepository(Test);
 
-        await Promise.all([
-            repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174000', intField: 4}),
-            repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174001', intField: 4}),
-        ]);
+        await repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174000', intField: 4});
+        await repo.save({ varcharField: 'ok', uuidField: '123e4567-e89b-12d3-a456-426614174001', intField: 4});
 
         const count = await repo.createQueryBuilder()
             .from(Test, 'main')

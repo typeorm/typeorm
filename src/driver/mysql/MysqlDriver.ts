@@ -19,6 +19,10 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { TypeORMError } from "../../error";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -310,7 +314,7 @@ export class MysqlDriver implements Driver {
         // load mysql package
         this.loadDependencies();
 
-        this.database = this.options.replication ? this.options.replication.master.database : this.options.database;
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
 
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
@@ -342,6 +346,14 @@ export class MysqlDriver implements Driver {
 
         } else {
             this.pool = await this.createPool(this.createConnectionOptions(this.options, this.options));
+        }
+
+        if (!this.database) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            this.database = await queryRunner.getCurrentDatabase();
+
+            await queryRunner.release();
         }
     }
 
@@ -399,22 +411,28 @@ export class MysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value: any;
-            if (key.substr(0, 4) === ":...") {
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
+            }
+
+            let value: any = parameters[key];
+
+            if (isArray) {
+                return value.map((v: any) => {
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
+                }).join(", ");
+
             }
 
             if (value instanceof Function) {
                 return value();
 
-            } else {
-                escapedParameters.push(value);
-                return "?";
             }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -428,10 +446,63 @@ export class MysqlDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return database ? `${database}.${tableName}` : tableName;
+        let tablePath = [ tableName ];
+
+        if (database) {
+            tablePath.unshift(database);
+        }
+
+        return tablePath.join('.');
+    }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.database;
+        const driverSchema = undefined;
+
+        if (target instanceof Table || target instanceof View) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            const parsed = this.parseTableName(target.referencedTableName);
+
+            return {
+                database: target.referencedDatabase || parsed.database || driverDatabase,
+                schema: target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof EntityMetadata) {
+            // EntityMetadata tableName is never a path
+
+            return {
+                database: target.database || driverDatabase,
+                schema: target.schema || driverSchema,
+                tableName: target.tableName
+            }
+
+        }
+
+        const parts = target.split(".")
+
+        return {
+            database: (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+            schema: driverSchema,
+            tableName: parts.length > 1 ? parts[1] : parts[0]
+        };
     }
 
     /**
@@ -539,7 +610,7 @@ export class MysqlDriver implements Driver {
             return "tinyint";
 
         } else if (column.type === "uuid") {
-            return "varchar";
+            return "char";
 
         } else if (column.type === "json" && this.options.type === "mariadb") {
             /*
@@ -579,10 +650,18 @@ export class MysqlDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
-        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
+        if (defaultValue === null) {
+            return undefined
+        }
+
+        if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined) {
             return `'${defaultValue}'`;
         }
 
@@ -592,22 +671,22 @@ export class MysqlDriver implements Driver {
 
         if (typeof defaultValue === "number") {
             return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return `NULL`;
-
-        } else {
-            return defaultValue;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
+
+        if (typeof defaultValue === "function") {
+            const value = defaultValue();
+            return this.normalizeDatetimeFunction(value)
+        }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -624,13 +703,10 @@ export class MysqlDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
-        /**
-         * fix https://github.com/typeorm/typeorm/issues/1139
-         */
-        if (column.generationStrategy === "uuid")
-            return "36";
-
         switch (column.type) {
+            case "uuid":
+                return "36";
+
             case String:
             case "varchar":
             case "nvarchar":
@@ -686,7 +762,7 @@ export class MysqlDriver implements Driver {
                     err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
             } else {
-                fail(new Error(`Connection is not established with mysql database`));
+                fail(new TypeORMError(`Connection is not established with mysql database`));
             }
         });
     }
@@ -702,7 +778,7 @@ export class MysqlDriver implements Driver {
 
         return new Promise<any>((ok, fail) => {
             this.poolCluster.getConnection("SLAVE*", (err: any, dbConnection: any) => {
-                err ? fail(err) : ok(dbConnection);
+                err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
             });
         });
     }
@@ -738,37 +814,9 @@ export class MysqlDriver implements Driver {
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
-            // console.log("width:", tableColumn.width, columnMetadata.width);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
-            // console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
-            // console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
-            // console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
-            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
-            // console.log("default:", tableColumn.default, columnMetadata.default);
-            // console.log("enum:", tableColumn.enum, columnMetadata.enum);
-            // console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            // console.log("onUpdate:", tableColumn.onUpdate, columnMetadata.onUpdate);
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
-            // console.log("==========================================");
-
-            let columnMetadataLength = columnMetadata.length;
-            if (!columnMetadataLength && columnMetadata.generationStrategy === "uuid") { // fixing #3374
-                columnMetadataLength = this.getColumnLength(columnMetadata);
-            }
-
-            return tableColumn.name !== columnMetadata.databaseName
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadataLength
+                || tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.width !== columnMetadata.width
                 || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
@@ -776,14 +824,42 @@ export class MysqlDriver implements Driver {
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
-                || (tableColumn.comment || "") !== columnMetadata.comment
+                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
-                || tableColumn.onUpdate !== columnMetadata.onUpdate
+                || tableColumn.onUpdate !== this.normalizeDatetimeFunction(columnMetadata.onUpdate)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
                 || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
+
+            // DEBUG SECTION
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName);
+            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
+            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
+            //     console.log("length:", tableColumn.length, columnMetadata.length);
+            //     console.log("width:", tableColumn.width, columnMetadata.width);
+            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
+            //     console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
+            //     console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
+            //     console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
+            //     console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
+            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
+            //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
+            //     console.log("enum:", tableColumn.enum, columnMetadata.enum);
+            //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
+            //     console.log("onUpdate:", tableColumn.onUpdate, this.normalizeOnUpdate(columnMetadata.onUpdate));
+            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
+            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
+            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
+            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            //     console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
+            //     console.log("==========================================");
+            // }
+
+            return isColumnChanged
         });
     }
 
@@ -833,7 +909,7 @@ export class MysqlDriver implements Driver {
              * @see https://github.com/typeorm/typeorm/issues/1373
              */
             if (Object.keys(this.mysql).length === 0) {
-                throw new Error("'mysql' was found but it is empty. Falling back to 'mysql2'.");
+                throw new TypeORMError("'mysql' was found but it is empty. Falling back to 'mysql2'.");
             }
         } catch (e) {
             try {
@@ -871,7 +947,8 @@ export class MysqlDriver implements Driver {
             password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            ssl: options.ssl
+            ssl: options.ssl,
+            socketPath: credentials.socketPath
         },
         options.acquireTimeout === undefined
           ? {}
@@ -919,7 +996,7 @@ export class MysqlDriver implements Driver {
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
-    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+    protected compareDefaultValues(columnMetadataValue: string | undefined, databaseValue: string | undefined): boolean {
         if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not
@@ -928,6 +1005,41 @@ export class MysqlDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue;
+    }
+
+    /**
+     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
+     * Otherwise returns original input.
+     */
+    protected normalizeDatetimeFunction(value?: string) {
+        if (!value) return value
+
+        // check if input is datetime function
+        const isDatetimeFunction = value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1
+            || value.toUpperCase().indexOf("NOW") !== -1;
+
+        if (isDatetimeFunction) {
+            // extract precision, e.g. "(3)"
+            const precision = value.match(/\(\d+\)/)
+            if (this.options.type === "mariadb") {
+                return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP()";
+            } else {
+                return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP";
+            }
+        } else {
+            return value
+        }
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment)  return comment;
+
+        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+
+        return comment;
     }
 
 }

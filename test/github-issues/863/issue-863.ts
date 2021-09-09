@@ -5,7 +5,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { Master } from "./entities/master";
 import { Detail } from "./entities/detail";
 
-describe("indices > create schema", () => {
+describe("github issues > #863 indices > create schema", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

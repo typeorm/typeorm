@@ -89,7 +89,7 @@ export class MetadataArgsStorage {
     filterRelations(target: Function|string): RelationMetadataArgs[];
     filterRelations(target: (Function|string)[]): RelationMetadataArgs[];
     filterRelations(target: (Function|string)|(Function|string)[]): RelationMetadataArgs[] {
-        return this.filterByTargetAndWithoutDuplicateProperties(this.relations, target);
+        return this.filterByTargetAndWithoutDuplicateRelationProperties(this.relations, target);
     }
 
     filterRelationIds(target: Function|string): RelationIdMetadataArgs[];
@@ -226,6 +226,27 @@ export class MetadataArgsStorage {
             if (sameTarget) {
                 if (!newArray.find(newItem => newItem.propertyName === item.propertyName))
                     newArray.push(item);
+            }
+        });
+        return newArray;
+    }
+
+    /**
+     * Filters given array by a given target or targets and prevents duplicate relation property names.
+     */
+    protected filterByTargetAndWithoutDuplicateRelationProperties<T extends RelationMetadataArgs>(array: T[], target: (Function|string)|(Function|string)[]): T[] {
+        const newArray: T[] = [];
+        array.forEach(item => {
+            const sameTarget = target instanceof Array ? target.indexOf(item.target) !== -1 : item.target === target;
+            if (sameTarget) {
+                const existingIndex = newArray.findIndex(newItem => newItem.propertyName === item.propertyName);
+                if (target instanceof Array && existingIndex !== -1 && target.indexOf(item.target) < target.indexOf(newArray[existingIndex].target)) {
+                    const clone = Object.create(newArray[existingIndex]);
+                    clone.type = item.type;
+                    newArray[existingIndex] = clone;
+                } else if (existingIndex === -1) {
+                    newArray.push(item);
+                }
             }
         });
         return newArray;

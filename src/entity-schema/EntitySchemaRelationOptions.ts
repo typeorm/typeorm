@@ -4,7 +4,8 @@ import {JoinTableMultipleColumnsOptions} from "../decorator/options/JoinTableMul
 import {DeferrableType} from "../metadata/types/DeferrableType";
 import {OnDeleteType} from "../metadata/types/OnDeleteType";
 import {OnUpdateType} from "../metadata/types/OnUpdateType";
-import {JoinTableOptions} from "../index";
+import { JoinTableOptions } from "../decorator/options/JoinTableOptions";
+
 
 export interface EntitySchemaRelationOptions {
 
@@ -98,4 +99,8 @@ export interface EntitySchemaRelationOptions {
      */
     deferrable?: DeferrableType;
 
+    /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction?: "nullify" | "delete";
 }

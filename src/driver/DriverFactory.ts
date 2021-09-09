@@ -1,22 +1,23 @@
-import { MissingDriverError } from "../error/MissingDriverError";
-import { CockroachDriver } from "./cockroachdb/CockroachDriver";
-import { MongoDriver } from "./mongodb/MongoDriver";
-import { SqlServerDriver } from "./sqlserver/SqlServerDriver";
-import { OracleDriver } from "./oracle/OracleDriver";
-import { SqliteDriver } from "./sqlite/SqliteDriver";
-import { CordovaDriver } from "./cordova/CordovaDriver";
-import { ReactNativeDriver } from "./react-native/ReactNativeDriver";
-import { NativescriptDriver } from "./nativescript/NativescriptDriver";
-import { SqljsDriver } from "./sqljs/SqljsDriver";
-import { MysqlDriver } from "./mysql/MysqlDriver";
-import { PostgresDriver } from "./postgres/PostgresDriver";
-import { ExpoDriver } from "./expo/ExpoDriver";
-import { AuroraDataApiDriver } from "./aurora-data-api/AuroraDataApiDriver";
-import { AuroraDataApiPostgresDriver } from "./aurora-data-api-pg/AuroraDataApiPostgresDriver";
-import { Driver } from "./Driver";
-import { Connection } from "../connection/Connection";
-import { SapDriver } from "./sap/SapDriver";
-import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver";
+import {MissingDriverError} from "../error/MissingDriverError";
+import {CockroachDriver} from "./cockroachdb/CockroachDriver";
+import {MongoDriver} from "./mongodb/MongoDriver";
+import {SqlServerDriver} from "./sqlserver/SqlServerDriver";
+import {OracleDriver} from "./oracle/OracleDriver";
+import {SqliteDriver} from "./sqlite/SqliteDriver";
+import {CordovaDriver} from "./cordova/CordovaDriver";
+import {ReactNativeDriver} from "./react-native/ReactNativeDriver";
+import {NativescriptDriver} from "./nativescript/NativescriptDriver";
+import {SqljsDriver} from "./sqljs/SqljsDriver";
+import {MysqlDriver} from "./mysql/MysqlDriver";
+import {PostgresDriver} from "./postgres/PostgresDriver";
+import {ExpoDriver} from "./expo/ExpoDriver";
+import {AuroraDataApiDriver} from "./aurora-data-api/AuroraDataApiDriver";
+import {AuroraDataApiPostgresDriver} from "./aurora-data-api-pg/AuroraDataApiPostgresDriver";
+import {Driver} from "./Driver";
+import {Connection} from "../connection/Connection";
+import {SapDriver} from "./sap/SapDriver";
+import {BetterSqlite3Driver} from "./better-sqlite3/BetterSqlite3Driver";
+import {CapacitorDriver} from "./capacitor/CapacitorDriver";
 import { DB2Driver } from "./db2/DB2Driver";
 
 /**
@@ -65,8 +66,33 @@ export class DriverFactory {
                 return new AuroraDataApiPostgresDriver(connection);
             case "db2":
                 return new DB2Driver(connection);
+            case "capacitor":
+                return new CapacitorDriver(connection);
             default:
-                throw new MissingDriverError(type);
+                throw new MissingDriverError(
+                    type,
+                    [
+                        "aurora-data-api",
+                        "aurora-data-api-pg",
+                        "better-sqlite3",
+                        "capacitor",
+                        "cockroachdb",
+                        "cordova",
+                        "expo",
+                        "mariadb",
+                        "mongodb",
+                        "mssql",
+                        "mysql",
+                        "nativescript",
+                        "oracle",
+                        "postgres",
+                        "react-native",
+                        "sap",
+                        "sqlite",
+                        "sqljs",
+                        "db2",
+                    ]
+                );
         }
     }
 }

@@ -1,23 +1,21 @@
 /**
  * Column types used for @PrimaryGeneratedColumn() decorator.
  */
-export type PrimaryGeneratedColumnType =
-    | "int" // mysql, mssql, oracle, sqlite, sap
-    | "int2" // postgres, sqlite, cockroachdb
-    | "int4" // postgres, cockroachdb
-    | "int8" // postgres, sqlite, cockroachdb
-    | "integer" // postgres, oracle, sqlite, mysql, cockroachdb, sap
-    | "tinyint" // mysql, mssql, sqlite, sap
-    | "smallint" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap
-    | "mediumint" // mysql, sqlite
-    | "bigint" // mysql, postgres, mssql, sqlite, cockroachdb, sap
-    | "dec" // oracle, mssql, sap
-    | "decimal" // mysql, postgres, mssql, sqlite, sap
-    | "smalldecimal" // sap
-    | "fixed" // mysql
-    | "numeric" // postgres, mssql, sqlite
-    | "number" // oracle
-    | "uuid"; // postgres
+export type PrimaryGeneratedColumnType = "int" // mysql, mssql, oracle, sqlite, sap
+    |"int2" // postgres, sqlite, cockroachdb
+    |"int4" // postgres, cockroachdb
+    |"int8" // postgres, sqlite, cockroachdb
+    |"integer" // postgres, oracle, sqlite, mysql, cockroachdb, sap
+    |"tinyint" // mysql, mssql, sqlite, sap
+    |"smallint" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap
+    |"mediumint" // mysql, sqlite
+    |"bigint" // mysql, postgres, mssql, sqlite, cockroachdb, sap
+    |"dec" // oracle, mssql, sap
+    |"decimal" // mysql, postgres, mssql, sqlite, sap
+    |"smalldecimal" // sap
+    |"fixed" // mysql
+    |"numeric" // postgres, mssql, sqlite
+    |"number"; // oracle
 
 /**
  * Column types where spatial properties are used.

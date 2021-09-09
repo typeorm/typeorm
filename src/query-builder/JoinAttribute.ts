@@ -5,6 +5,7 @@ import {QueryBuilderUtils} from "./QueryBuilderUtils";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {Alias} from "./Alias";
 import {ObjectUtils} from "../util/ObjectUtils";
+import { TypeORMError } from "../error";
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -157,7 +158,7 @@ export class JoinAttribute {
                     }
                 }
 
-                throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
+                throw new TypeORMError(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
             };
             this.relationCache = getValue.bind(this)();
             this.relationEvaluated = true;
@@ -199,7 +200,7 @@ export class JoinAttribute {
      */
     get junctionAlias(): string {
         if (!this.relation)
-            throw new Error(`Cannot get junction table for join without relation.`);
+            throw new TypeORMError(`Cannot get junction table for join without relation.`);
 
         return this.relation.isOwning ? this.parentAlias + "_" + this.alias.name : this.alias.name + "_" + this.parentAlias;
     }

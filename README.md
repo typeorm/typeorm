@@ -16,7 +16,7 @@
     <a href="https://codecov.io/gh/typeorm/typeorm">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
     </a>
-	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-gej3gc00-hR~L~DqGUJ7qOpGy4SSq3g">
+	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-uu12ljeb-OH_0086I379fUDApYJHNuw">
 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
 	</a>
   <br>
@@ -209,7 +209,6 @@ await timber.remove();
     - for **SAP Hana**
 
         ```
-        npm config set @sap:registry https://npm.sap.com
         npm i @sap/hana-client
         npm i hdb-pool
         ```
@@ -218,7 +217,7 @@ await timber.remove();
 
     - for **MongoDB** (experimental)
 
-        `npm install mongodb --save`
+        `npm install mongodb@^3.6.0 --save`
 
     - for **DB2** (experimental)
 
@@ -616,20 +615,22 @@ Now let's create a new photo to save it in the database:
 import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 
-createConnection(/*...*/)
-    .then((connection) => {
-        let photo = new Photo();
-        photo.name = "Me and Bears";
-        photo.description = "I am near polar bears";
-        photo.filename = "photo-with-bears.jpg";
-        photo.views = 1;
-        photo.isPublished = true;
+createConnection(/*...*/).then(connection => {
 
-        return connection.manager.save(photo).then((photo) => {
-            console.log("Photo has been saved. Photo id is", photo.id);
-        });
-    })
-    .catch((error) => console.log(error));
+    let photo = new Photo();
+    photo.name = "Me and Bears";
+    photo.description = "I am near polar bears";
+    photo.filename = "photo-with-bears.jpg";
+    photo.views = 1;
+    photo.isPublished = true;
+
+    return connection.manager
+            .save(photo)
+            .then(photo => {
+                console.log("Photo has been saved. Photo id is", photo.id);
+            });
+
+}).catch(error => console.log(error));
 ```
 
 Once your entity is saved it will get a newly generated id.
@@ -644,19 +645,19 @@ Let's take advantage of the latest ES8 (ES2017) features and use async/await syn
 import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        let photo = new Photo();
-        photo.name = "Me and Bears";
-        photo.description = "I am near polar bears";
-        photo.filename = "photo-with-bears.jpg";
-        photo.views = 1;
-        photo.isPublished = true;
+createConnection(/*...*/).then(async connection => {
 
-        await connection.manager.save(photo);
-        console.log("Photo has been saved");
-    })
-    .catch((error) => console.log(error));
+    let photo = new Photo();
+    photo.name = "Me and Bears";
+    photo.description = "I am near polar bears";
+    photo.filename = "photo-with-bears.jpg";
+    photo.views = 1;
+    photo.isPublished = true;
+
+    await connection.manager.save(photo);
+    console.log("Photo has been saved");
+
+}).catch(error => console.log(error));
 ```
 
 ### Using Entity Manager
@@ -670,13 +671,13 @@ For example, let's load our saved entity:
 import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        /*...*/
-        let savedPhotos = await connection.manager.find(Photo);
-        console.log("All photos from the db: ", savedPhotos);
-    })
-    .catch((error) => console.log(error));
+createConnection(/*...*/).then(async connection => {
+
+    /*...*/
+    let savedPhotos = await connection.manager.find(Photo);
+    console.log("All photos from the db: ", savedPhotos);
+
+}).catch(error => console.log(error));
 ```
 
 `savedPhotos` will be an array of Photo objects with the data loaded from the database.
@@ -692,6 +693,15 @@ When you deal with entities a lot, Repositories are more convenient to use than 
 ```typescript
 import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
+
+createConnection(/*...*/).then(async connection => {
+
+    let photo = new Photo();
+    photo.name = "Me and Bears";
+    photo.description = "I am near polar bears";
+    photo.filename = "photo-with-bears.jpg";
+    photo.views = 1;
+    photo.isPublished = true;
 
 createConnection(/*...*/)
     .then(async (connection) => {
@@ -723,33 +733,29 @@ Let's try more load operations using the Repository:
 import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        /*...*/
-        let allPhotos = await photoRepository.find();
-        console.log("All photos from the db: ", allPhotos);
+createConnection(/*...*/).then(async connection => {
 
-        let firstPhoto = await photoRepository.findOne(1);
-        console.log("First photo from the db: ", firstPhoto);
+    /*...*/
+    let allPhotos = await photoRepository.find();
+    console.log("All photos from the db: ", allPhotos);
 
-        let meAndBearsPhoto = await photoRepository.findOne({
-            name: "Me and Bears",
-        });
-        console.log("Me and Bears photo from the db: ", meAndBearsPhoto);
+    let firstPhoto = await photoRepository.findOne(1);
+    console.log("First photo from the db: ", firstPhoto);
 
-        let allViewedPhotos = await photoRepository.find({ views: 1 });
-        console.log("All viewed photos: ", allViewedPhotos);
+    let meAndBearsPhoto = await photoRepository.findOne({ name: "Me and Bears" });
+    console.log("Me and Bears photo from the db: ", meAndBearsPhoto);
 
-        let allPublishedPhotos = await photoRepository.find({
-            isPublished: true,
-        });
-        console.log("All published photos: ", allPublishedPhotos);
+    let allViewedPhotos = await photoRepository.find({ views: 1 });
+    console.log("All viewed photos: ", allViewedPhotos);
 
-        let [allPhotos, photosCount] = await photoRepository.findAndCount();
-        console.log("All photos: ", allPhotos);
-        console.log("Photos count: ", photosCount);
-    })
-    .catch((error) => console.log(error));
+    let allPublishedPhotos = await photoRepository.find({ isPublished: true });
+    console.log("All published photos: ", allPublishedPhotos);
+
+    let [allPhotos, photosCount] = await photoRepository.findAndCount();
+    console.log("All photos: ", allPhotos);
+    console.log("Photos count: ", photosCount);
+
+}).catch(error => console.log(error));
 ```
 
 ### Updating in the database
@@ -760,14 +766,14 @@ Now let's load a single photo from the database, update it and save it:
 import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        /*...*/
-        let photoToUpdate = await photoRepository.findOne(1);
-        photoToUpdate.name = "Me, my friends and polar bears";
-        await photoRepository.save(photoToUpdate);
-    })
-    .catch((error) => console.log(error));
+createConnection(/*...*/).then(async connection => {
+
+    /*...*/
+    let photoToUpdate = await photoRepository.findOne(1);
+    photoToUpdate.name = "Me, my friends and polar bears";
+    await photoRepository.save(photoToUpdate);
+
+}).catch(error => console.log(error));
 ```
 
 Now photo with `id = 1` will be updated in the database.
@@ -780,13 +786,13 @@ Now let's remove our photo from the database:
 import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        /*...*/
-        let photoToRemove = await photoRepository.findOne(1);
-        await photoRepository.remove(photoToRemove);
-    })
-    .catch((error) => console.log(error));
+createConnection(/*...*/).then(async connection => {
+
+    /*...*/
+    let photoToRemove = await photoRepository.findOne(1);
+    await photoRepository.remove(photoToRemove);
+
+}).catch(error => console.log(error));
 ```
 
 Now photo with `id = 1` will be removed from the database.
@@ -797,13 +803,7 @@ Let's create a one-to-one relation with another class.
 Let's create a new class in `PhotoMetadata.ts`. This PhotoMetadata class is supposed to contain our photo's additional meta-information:
 
 ```typescript
-import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    OneToOne,
-    JoinColumn,
-} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -868,40 +868,39 @@ import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 import { PhotoMetadata } from "./entity/PhotoMetadata";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        // create a photo
-        let photo = new Photo();
-        photo.name = "Me and Bears";
-        photo.description = "I am near polar bears";
-        photo.filename = "photo-with-bears.jpg";
-        photo.isPublished = true;
+createConnection(/*...*/).then(async connection => {
 
-        // create a photo metadata
-        let metadata = new PhotoMetadata();
-        metadata.height = 640;
-        metadata.width = 480;
-        metadata.compressed = true;
-        metadata.comment = "cybershoot";
-        metadata.orientation = "portrait";
-        metadata.photo = photo; // this way we connect them
+    // create a photo
+    let photo = new Photo();
+    photo.name = "Me and Bears";
+    photo.description = "I am near polar bears";
+    photo.filename = "photo-with-bears.jpg";
+    photo.views = 1;
+    photo.isPublished = true;
 
-        // get entity repositories
-        let photoRepository = connection.getRepository(Photo);
-        let metadataRepository = connection.getRepository(PhotoMetadata);
+    // create a photo metadata
+    let metadata = new PhotoMetadata();
+    metadata.height = 640;
+    metadata.width = 480;
+    metadata.compressed = true;
+    metadata.comment = "cybershoot";
+    metadata.orientation = "portrait";
+    metadata.photo = photo; // this way we connect them
 
-        // first we should save a photo
-        await photoRepository.save(photo);
+    // get entity repositories
+    let photoRepository = connection.getRepository(Photo);
+    let metadataRepository = connection.getRepository(PhotoMetadata);
 
-        // photo is saved. Now we need to save a photo metadata
-        await metadataRepository.save(metadata);
+    // first we should save a photo
+    await photoRepository.save(photo);
 
-        // done
-        console.log(
-            "Metadata is saved, and relation between metadata and photo is created in the database too"
-        );
-    })
-    .catch((error) => console.log(error));
+    // photo is saved. Now we need to save a photo metadata
+    await metadataRepository.save(metadata);
+
+    // done
+    console.log("Metadata is saved, and relation between metadata and photo is created in the database too");
+
+}).catch(error => console.log(error));
 ```
 
 ### Inverse side of the relationship
@@ -914,13 +913,7 @@ To fix this issue we should add an inverse relation, and make relations between 
 Let's modify our entities:
 
 ```typescript
-import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    OneToOne,
-    JoinColumn,
-} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -967,13 +960,13 @@ import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 import { PhotoMetadata } from "./entity/PhotoMetadata";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        /*...*/
-        let photoRepository = connection.getRepository(Photo);
-        let photos = await photoRepository.find({ relations: ["metadata"] });
-    })
-    .catch((error) => console.log(error));
+createConnection(/*...*/).then(async connection => {
+
+    /*...*/
+    let photoRepository = connection.getRepository(Photo);
+    let photos = await photoRepository.find({ relations: ["metadata"] });
+
+}).catch(error => console.log(error));
 ```
 
 Here, photos will contain an array of photos from the database, and each photo will contain its photo metadata.
@@ -987,10 +980,10 @@ import { createConnection } from "typeorm";
 import { Photo } from "./entity/Photo";
 import { PhotoMetadata } from "./entity/PhotoMetadata";
 
-createConnection(/*...*/)
-    .then(async (connection) => {
-        /*...*/
-        let photos = await connection
+createConnection(/*...*/).then(async connection => {
+
+    /*...*/
+    let photos = await connection
             .getRepository(Photo)
             .createQueryBuilder("photo")
             .innerJoinAndSelect("photo.metadata", "metadata")
@@ -1063,13 +1056,7 @@ Let's say a photo has one author, and each author can have many photos.
 First, let's create an `Author` class:
 
 ```typescript
-import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    OneToMany,
-    JoinColumn,
-} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn } from "typeorm";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -1135,18 +1122,12 @@ It will also modify the `photo` table, adding a new `author` column and creating
 
 ### Creating a many-to-many relation
 
-Let's create a many-to-one / many-to-many relation.
+Let's create a many-to-many relation.
 Let's say a photo can be in many albums, and each album can contain many photos.
 Let's create an `Album` class:
 
 ```typescript
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    ManyToMany,
-    JoinTable,
-} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
 
 @Entity()
 export class Album {
@@ -1297,12 +1278,13 @@ There are a few repositories which you can clone and start with:
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
--   [TypeORM + GraphQL framework](http://vesper-framework.com)
--   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
--   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
--   Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
--   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
--   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
+* [TypeORM + GraphQL framework](http://vesper-framework.com)
+* [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
+* [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
+* Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+* Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
+* ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
+* Create/Drop database - [typeorm-extension](https://github.com/Tada5hi/typeorm-extension)
 
 ## Contributing
 

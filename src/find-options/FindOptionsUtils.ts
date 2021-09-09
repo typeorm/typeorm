@@ -1,9 +1,10 @@
-import { FindManyOptions } from "./FindManyOptions";
-import { FindOneOptions } from "./FindOneOptions";
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
-import { FindRelationsNotFoundError } from "../error/FindRelationsNotFoundError";
-import { EntityMetadata } from "../metadata/EntityMetadata";
-import { shorten } from "../util/StringUtils";
+import {FindManyOptions} from "./FindManyOptions";
+import {FindOneOptions} from "./FindOneOptions";
+import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
+import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
+import {EntityMetadata} from "../metadata/EntityMetadata";
+import {DriverUtils} from "../driver/DriverUtils";
+import { TypeORMError } from "../error";
 
 /**
  * Utilities to work with FindOptions.
@@ -114,62 +115,28 @@ export class FindOptionsUtils {
         const metadata = qb.expressionMap.mainAlias!.metadata;
 
         // apply all options from FindOptions
+        if (options.withDeleted) {
+            qb.withDeleted();
+        }
+
         if (options.select) {
             qb.select([]);
-            options.select.forEach((select) => {
-                if (!metadata.findColumnWithPropertyPath(String(select)))
-                    throw new Error(
-                        `${select} column was not found in the ${metadata.name} entity.`
-                    );
+            options.select.forEach(select => {
+                if (!metadata.hasColumnWithPropertyPath(`${select}`))
+                    throw new TypeORMError(`${select} column was not found in the ${metadata.name} entity.`);
 
-                qb.addSelect(qb.alias + "." + select);
+                const columns = metadata.findColumnsWithPropertyPath(`${select}`);
+
+                for (const column of columns) {
+                    qb.addSelect(qb.alias + "." + column.propertyPath);
+                }
             });
         }
 
-        if (options.where) qb.where(options.where);
-
-        if ((options as FindManyOptions<T>).skip)
-            qb.skip((options as FindManyOptions<T>).skip!);
-
-        if ((options as FindManyOptions<T>).take)
-            qb.take((options as FindManyOptions<T>).take!);
-
-        if (options.order)
-            Object.keys(options.order).forEach((key) => {
-                const order = ((options as FindOneOptions<T>).order as any)[
-                    key as any
-                ];
-
-                if (!metadata.findColumnWithPropertyPath(key))
-                    throw new Error(
-                        `${key} column was not found in the ${metadata.name} entity.`
-                    );
-
-                switch (order) {
-                    case 1:
-                        qb.addOrderBy(qb.alias + "." + key, "ASC");
-                        break;
-                    case -1:
-                        qb.addOrderBy(qb.alias + "." + key, "DESC");
-                        break;
-                    case "ASC":
-                        qb.addOrderBy(qb.alias + "." + key, "ASC");
-                        break;
-                    case "DESC":
-                        qb.addOrderBy(qb.alias + "." + key, "DESC");
-                        break;
-                }
-            });
-
         if (options.relations) {
-            const allRelations = options.relations.map((relation) => relation);
-            this.applyRelationsRecursively(
-                qb,
-                allRelations,
-                qb.expressionMap.mainAlias!.name,
-                qb.expressionMap.mainAlias!.metadata,
-                ""
-            );
+            // Copy because `applyRelationsRecursively` modifies it
+            const allRelations = [...options.relations];
+            this.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
             // recursive removes found relations from allRelations array
             // if there are relations left in this array it means those relations were not found in the entity structure
             // so, we give an exception about not found relations
@@ -219,20 +186,19 @@ export class FindOptionsUtils {
 
         if (options.lock) {
             if (options.lock.mode === "optimistic") {
-                qb.setLock(options.lock.mode, options.lock.version as any);
-            } else if (
-                options.lock.mode === "pessimistic_read" ||
-                options.lock.mode === "pessimistic_write" ||
-                options.lock.mode === "dirty_read" ||
-                options.lock.mode === "pessimistic_partial_write" ||
-                options.lock.mode === "pessimistic_write_or_fail"
-            ) {
-                qb.setLock(options.lock.mode);
+                qb.setLock(options.lock.mode, options.lock.version);
+            } else if (options.lock.mode === "pessimistic_read" || options.lock.mode === "pessimistic_write" || options.lock.mode === "dirty_read" || options.lock.mode === "pessimistic_partial_write" || options.lock.mode === "pessimistic_write_or_fail") {
+                const tableNames = options.lock.tables ? options.lock.tables.map((table) => {
+                    const tableAlias = qb.expressionMap.aliases.find((alias) => {
+                        return alias.metadata.tableNameWithoutPrefix === table;
+                    });
+                    if (!tableAlias) {
+                        throw new TypeORMError(`"${table}" is not part of this query`);
+                    }
+                    return qb.escape(tableAlias.name);
+                }) : undefined;
+                qb.setLock(options.lock.mode, undefined, tableNames);
             }
-        }
-
-        if (options.withDeleted) {
-            qb.withDeleted();
         }
 
         if (options.loadRelationIds === true) {
@@ -240,6 +206,38 @@ export class FindOptionsUtils {
         } else if (options.loadRelationIds instanceof Object) {
             qb.loadAllRelationIds(options.loadRelationIds as any);
         }
+
+        if (options.where)
+            qb.where(options.where);
+
+        if ((options as FindManyOptions<T>).skip)
+            qb.skip((options as FindManyOptions<T>).skip!);
+
+        if ((options as FindManyOptions<T>).take)
+            qb.take((options as FindManyOptions<T>).take!);
+
+        if (options.order)
+            Object.keys(options.order).forEach(key => {
+                const order = ((options as FindOneOptions<T>).order as any)[key as any];
+
+                if (!metadata.findColumnWithPropertyPath(key))
+                    throw new Error(`${key} column was not found in the ${metadata.name} entity.`);
+
+                switch (order) {
+                    case 1:
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case -1:
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                    case "ASC":
+                        qb.addOrderBy(qb.alias + "." + key, "ASC");
+                        break;
+                    case "DESC":
+                        qb.addOrderBy(qb.alias + "." + key, "DESC");
+                        break;
+                }
+            });
 
         return qb;
     }
@@ -251,13 +249,8 @@ export class FindOptionsUtils {
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
      */
-    protected static applyRelationsRecursively(
-        qb: SelectQueryBuilder<any>,
-        allRelations: string[],
-        alias: string,
-        metadata: EntityMetadata,
-        prefix: string
-    ): void {
+    public static applyRelationsRecursively(qb: SelectQueryBuilder<any>, allRelations: string[], alias: string, metadata: EntityMetadata, prefix: string): void {
+
         // find all relations that match given prefix
         let matchedBaseRelations: string[] = [];
         if (prefix) {
@@ -277,30 +270,11 @@ export class FindOptionsUtils {
         // go through all matched relations and add join for them
         matchedBaseRelations.forEach((relation) => {
             // generate a relation alias
-            let relationAlias: string = alias + "__" + relation;
-            // shorten it if needed by the driver
-            if (
-                qb.connection.driver.maxAliasLength &&
-                relationAlias.length > qb.connection.driver.maxAliasLength
-            ) {
-                relationAlias = shorten(relationAlias);
-            }
+            let relationAlias: string = DriverUtils.buildAlias(qb.connection.driver, { shorten: true, joiner: "__" }, alias, relation);
 
             // add a join for the found relation
             const selection = alias + "." + relation;
             qb.leftJoinAndSelect(selection, relationAlias);
-
-            // join the eager relations of the found relation
-            const relMetadata = metadata.relations.find(
-                (metadata) => metadata.propertyName === relation
-            );
-            if (relMetadata) {
-                this.joinEagerRelations(
-                    qb,
-                    relationAlias,
-                    relMetadata.inverseEntityMetadata
-                );
-            }
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
             allRelations.splice(
@@ -311,38 +285,62 @@ export class FindOptionsUtils {
             );
 
             // try to find sub-relations
-            const join = qb.expressionMap.joinAttributes.find(
-                (join) => join.entityOrProperty === selection
-            );
-            this.applyRelationsRecursively(
-                qb,
-                allRelations,
-                join!.alias.name,
-                join!.metadata!,
-                prefix ? prefix + "." + relation : relation
-            );
+            const join = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === selection);
+            this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, prefix ? prefix + "." + relation : relation);
+
+            // join the eager relations of the found relation
+            const relMetadata = metadata.relations.find(metadata => metadata.propertyName === relation);
+            if (relMetadata) {
+                this.joinEagerRelations(qb, relationAlias, relMetadata.inverseEntityMetadata);
+            }
         });
     }
 
-    public static joinEagerRelations(
-        qb: SelectQueryBuilder<any>,
-        alias: string,
-        metadata: EntityMetadata
-    ) {
-        metadata.eagerRelations.forEach((relation) => {
-            const relationAlias = qb.connection.namingStrategy.eagerJoinRelationAlias(
-                alias,
-                relation.propertyPath
-            );
-            qb.leftJoinAndSelect(
-                alias + "." + relation.propertyPath,
-                relationAlias
-            );
-            this.joinEagerRelations(
-                qb,
-                relationAlias,
-                relation.inverseEntityMetadata
-            );
+    public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
+        metadata.eagerRelations.forEach(relation => {
+
+            // generate a relation alias
+            let relationAlias = DriverUtils.buildAlias(qb.connection.driver, { shorten: true }, qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath));
+
+            // add a join for the relation
+            // Checking whether the relation wasn't joined yet.
+            let addJoin = true;
+            for (const join of qb.expressionMap.joinAttributes) {
+                if (
+                    join.condition !== undefined ||
+                    join.mapToProperty !== undefined ||
+                    join.isMappingMany !== undefined ||
+                    join.direction !== "LEFT" ||
+                    join.entityOrProperty !== `${alias}.${relation.propertyPath}`
+                ) {
+                    continue;
+                }
+                addJoin = false;
+                relationAlias = join.alias.name;
+                break;
+            }
+
+            if (addJoin) {
+                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias);
+            }
+
+            // Checking whether the relation wasn't selected yet.
+            // This check shall be after the join check to detect relationAlias.
+            let addSelect = true;
+            for (const select of qb.expressionMap.selects) {
+                if (select.aliasName !== undefined || select.virtual !== undefined || select.selection !== relationAlias) {
+                    continue;
+                }
+                addSelect = false;
+                break;
+            }
+
+            if (addSelect) {
+                qb.addSelect(relationAlias);
+            }
+
+            // (recursive) join the eager relations
+            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
         });
     }
 }

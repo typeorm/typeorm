@@ -3,6 +3,7 @@ import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryExpressionMap} from "./QueryExpressionMap";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
+import { TypeORMError } from "../error";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
@@ -77,7 +78,7 @@ export class RelationUpdater {
         } else if (relation.isOneToOneNotOwner || relation.isOneToMany) {
 
             if (Array.isArray(this.expressionMap.of))
-                throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
+                throw new TypeORMError(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
 
             const of = this.expressionMap.of;
             const updateSet = relation.inverseRelation!.joinColumns.reduce((updateSet, joinColumn) => {

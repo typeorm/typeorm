@@ -18,6 +18,10 @@ import {ObjectUtils} from "../../util/ObjectUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
 import {DriverUtils} from "../DriverUtils";
+import { TypeORMError } from "../../error";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with MongoDB.
@@ -166,6 +170,7 @@ export class MongoDriver implements Driver {
         "w",
         "wtimeout",
         "j",
+        "writeConcern",
         "forceServerObjectId",
         "serializeFunctions",
         "ignoreUndefined",
@@ -198,7 +203,8 @@ export class MongoDriver implements Driver {
         "monitorCommands",
         "useNewUrlParser",
         "useUnifiedTopology",
-        "autoEncryption"
+        "autoEncryption",
+        "retryWrites"
     ];
 
     // -------------------------------------------------------------------------
@@ -213,6 +219,8 @@ export class MongoDriver implements Driver {
 
         // load mongodb package
         this.loadDependencies();
+
+        this.database = DriverUtils.buildMongoDBDriverOptions(this.options).database;
     }
 
     // -------------------------------------------------------------------------
@@ -224,7 +232,7 @@ export class MongoDriver implements Driver {
      */
     connect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            const options = DriverUtils.buildDriverOptions(this.options);
+            const options = DriverUtils.buildMongoDBDriverOptions(this.options);
 
             this.mongodb.MongoClient.connect(
                 this.buildConnectionUrl(options),
@@ -276,7 +284,7 @@ export class MongoDriver implements Driver {
      * and an array of parameter names to be passed to a query.
      */
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        throw new Error(`This operation is not supported by Mongodb driver.`);
+        throw new TypeORMError(`This operation is not supported by Mongodb driver.`);
     }
 
     /**
@@ -288,10 +296,37 @@ export class MongoDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
         return tableName;
+    }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { tableName: string; schema?: string; database?: string } {
+        if (target instanceof EntityMetadata) {
+            return {
+                tableName: target.tableName
+            };
+        }
+
+        if (target instanceof Table || target instanceof View) {
+            return {
+                tableName: target.name
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            return {
+                tableName: target.referencedTableName
+            };
+        }
+
+        return {
+            tableName: target
+        };
     }
 
     /**
@@ -316,35 +351,35 @@ export class MongoDriver implements Driver {
      * Creates a database type from a given column metadata.
      */
     normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Calculates column length taking into account the default length values.
      */
     getColumnLength(column: ColumnMetadata): string {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
      * Normalizes "default" value of the column.
      */
     createFullType(column: TableColumn): string {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
@@ -377,7 +412,7 @@ export class MongoDriver implements Driver {
      * and returns only changed.
      */
     findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
-        throw new Error(`MongoDB is schema-less, not supported by this driver.`);
+        throw new TypeORMError(`MongoDB is schema-less, not supported by this driver.`);
     }
 
     /**
@@ -438,11 +473,24 @@ export class MongoDriver implements Driver {
      * Builds connection url that is passed to underlying driver to perform connection to the mongodb database.
      */
     protected buildConnectionUrl(options: { [key: string]: any }): string {
-        const credentialsUrlPart = (options.username && options.password)
+         const schemaUrlPart = options.type.toLowerCase();
+         const credentialsUrlPart = (options.username && options.password)
             ? `${options.username}:${options.password}@`
             : "";
 
-        return `mongodb://${credentialsUrlPart}${options.host || "127.0.0.1"}:${options.port || "27017"}/${options.database || ""}`;
+
+        const portUrlPart = (schemaUrlPart === "mongodb+srv")
+            ? ""
+            : `:${options.port || "27017"}`;
+
+        let connectionString: string;
+        if(options.replicaSet) {
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.hostReplicaSet || options.host + portUrlPart || "127.0.0.1" + portUrlPart}/${options.database || ""}?replicaSet=${options.replicaSet}${options.tls ? "&tls=true" : ""}`;
+        } else {
+            connectionString = `${schemaUrlPart}://${credentialsUrlPart}${options.host || "127.0.0.1"}${portUrlPart}/${options.database || ""}${options.tls ? "?tls=true" : ""}`;
+        }
+
+        return connectionString;
     }
 
     /**

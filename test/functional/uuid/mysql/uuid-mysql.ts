@@ -30,7 +30,7 @@ describe("uuid-mysql", () => {
         await postRepository.save(post);
         const loadedPost = await postRepository.findOne(1);
         expect(loadedPost!.uuid).to.be.exist;
-        postTable!.findColumnByName("uuid")!.type.should.be.equal("varchar");
+        postTable!.findColumnByName("uuid")!.type.should.be.equal("char");
 
         const post2 = new Post();
         post2.uuid = "fd357b8f-8838-42f6-b7a2-ae027444e895";
@@ -47,10 +47,11 @@ describe("uuid-mysql", () => {
         expect(loadedQuestion!.uuid2).to.equal("fd357b8f-8838-42f6-b7a2-ae027444e895");
         expect(loadedQuestion!.uuid3).to.be.null;
         expect(loadedQuestion!.uuid4).to.be.exist;
-        questionTable!.findColumnByName("id")!.type.should.be.equal("varchar");
-        questionTable!.findColumnByName("uuid")!.type.should.be.equal("varchar");
+        questionTable!.findColumnByName("id")!.type.should.be.equal("char");
+        questionTable!.findColumnByName("uuid")!.type.should.be.equal("char");
         questionTable!.findColumnByName("uuid2")!.type.should.be.equal("varchar");
         questionTable!.findColumnByName("uuid3")!.type.should.be.equal("varchar");
+        questionTable!.findColumnByName("uuid4")!.type.should.be.equal("char");
 
         const question2 = new Question();
         question2.id = "1ecad7f6-23ee-453e-bb44-16eca26d5189";
@@ -74,6 +75,15 @@ describe("uuid-mysql", () => {
         expect(question!.id).to.exist;
         expect(question!.uuid).to.exist;
         expect(question!.uuid2).to.exist;
+    })));
+
+    it("should create a table column that's char(36)", () => Promise.all(connections.map(async connection => {
+        const table = await connection.createQueryRunner().getTable('question')
+
+        const column = table?.findColumnByName("uuid")
+
+        expect(column?.type).to.equal("char")
+        expect(column?.length).to.equal("36")
     })));
 
 });

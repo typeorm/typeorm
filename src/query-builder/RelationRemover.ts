@@ -30,7 +30,7 @@ export class RelationRemover {
         if (relation.isOneToMany) {
 
             // if (this.expressionMap.of instanceof Array)
-            //     throw new Error(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
+            //     throw new TypeORMError(`You cannot update relations of multiple entities with the same related object. Provide a single entity into .of method.`);
 
             // DELETE FROM post WHERE post.categoryId = of AND post.id = id
             const ofs = Array.isArray(this.expressionMap.of) ? this.expressionMap.of : [this.expressionMap.of];

@@ -2,6 +2,10 @@ import {Repository} from "./Repository";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
+import { TypeORMError } from "../error/TypeORMError";
+import { FindTreeOptions } from "../find-options/FindTreeOptions";
+import { FindRelationsNotFoundError } from "../error";
+import { FindOptionsUtils } from "../find-options/FindOptionsUtils";
 
 /**
  * Repository with additional functions to work with trees.
@@ -10,9 +14,6 @@ import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriv
  */
 export class TreeRepository<Entity> extends Repository<Entity> {
 
-    // todo: implement moving
-    // todo: implement removing
-
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -20,23 +21,38 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     /**
      * Gets complete trees for all roots in the table.
      */
-    async findTrees(): Promise<Entity[]> {
-        const roots = await this.findRoots();
-        await Promise.all(roots.map(root => this.findDescendantsTree(root)));
+    async findTrees(options?: FindTreeOptions): Promise<Entity[]> {
+        const roots = await this.findRoots(options);
+        await Promise.all(roots.map(root => this.findDescendantsTree(root, options)));
         return roots;
     }
 
     /**
      * Roots are entities that have no ancestors. Finds them all.
      */
-    findRoots(): Promise<Entity[]> {
+    findRoots(options?: FindTreeOptions): Promise<Entity[]> {
         const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
         const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
         const parentPropertyName = this.manager.connection.namingStrategy.joinColumnName(
-          this.metadata.treeParentRelation!.propertyName, this.metadata.primaryColumns[0].propertyName
+            this.metadata.treeParentRelation!.propertyName, this.metadata.primaryColumns[0].propertyName
         );
 
-        return this.createQueryBuilder("treeEntity")
+        const qb = this.createQueryBuilder("treeEntity");
+
+        if (options?.relations) {
+            const allRelations = [...options.relations];
+
+            FindOptionsUtils.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
+
+            // recursive removes found relations from allRelations array
+            // if there are relations left in this array it means those relations were not found in the entity structure
+            // so, we give an exception about not found relations
+            if (allRelations.length > 0)
+                throw new FindRelationsNotFoundError(allRelations);
+        }
+
+
+        return qb
             .where(`${escapeAlias("treeEntity")}.${escapeColumn(parentPropertyName)} IS NULL`)
             .getMany();
     }
@@ -53,16 +69,29 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     /**
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
      */
-    findDescendantsTree(entity: Entity): Promise<Entity> {
+    async findDescendantsTree(entity: Entity, options?: FindTreeOptions): Promise<Entity> {
         // todo: throw exception if there is no column of this relation?
-        return this
-            .createDescendantsQueryBuilder("treeEntity", "treeClosure", entity)
-            .getRawAndEntities()
-            .then(entitiesAndScalars => {
-                const relationMaps = this.createRelationMaps("treeEntity", entitiesAndScalars.raw);
-                this.buildChildrenEntityTree(entity, entitiesAndScalars.entities, relationMaps);
-                return entity;
-            });
+
+        const qb: SelectQueryBuilder<Entity> = this.createDescendantsQueryBuilder("treeEntity", "treeClosure", entity);
+
+        if (options?.relations) {
+            // Copy because `applyRelationsRecursively` modifies it
+            const allRelations = [...options.relations];
+
+            FindOptionsUtils.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
+
+            // recursive removes found relations from allRelations array
+            // if there are relations left in this array it means those relations were not found in the entity structure
+            // so, we give an exception about not found relations
+            if (allRelations.length > 0)
+                throw new FindRelationsNotFoundError(allRelations);
+        }
+
+        const entities = await qb.getRawAndEntities();
+        const relationMaps = this.createRelationMaps("treeEntity", entities.raw);
+        this.buildChildrenEntityTree(entity, entities.entities, relationMaps);
+
+        return entity;
     }
 
     /**
@@ -125,7 +154,6 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
-                    qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
                         return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE ${subQuery.getQuery()} || '%'`;
                     } else {
@@ -134,7 +162,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                 });
         }
 
-        throw new Error(`Supported only in tree entities`);
+        throw new TypeORMError(`Supported only in tree entities`);
     }
 
     /**
@@ -222,7 +250,6 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                         .from(this.metadata.target, this.metadata.targetName)
                         .whereInIds(this.metadata.getEntityIdMap(entity));
 
-                    qb.setNativeParameters(subQuery.expressionMap.nativeParameters);
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
                         return `${subQuery.getQuery()} LIKE ${alias}.${this.metadata.materializedPathColumn!.propertyPath} || '%'`;
 
@@ -232,7 +259,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                 });
         }
 
-        throw new Error(`Supported only in tree entities`);
+        throw new TypeORMError(`Supported only in tree entities`);
     }
 
     /**
@@ -265,7 +292,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         const parentEntityId = this.metadata.primaryColumns[0].getEntityValue(entity);
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
         const childIds = new Set(childRelationMaps.map(relationMap => relationMap.id));
-        entity[childProperty] = entities.filter(entity => childIds.has(entity[this.metadata.primaryColumns[0].propertyName]));
+        entity[childProperty] = entities.filter(entity => childIds.has(this.metadata.primaryColumns[0].getEntityValue(entity)));
         entity[childProperty].forEach((childEntity: any) => {
             this.buildChildrenEntityTree(childEntity, entities, relationMaps);
         });
@@ -279,7 +306,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
             if (!parentRelationMap)
                 return false;
 
-            return entity[this.metadata.primaryColumns[0].propertyName] === parentRelationMap.parentId;
+            return this.metadata.primaryColumns[0].getEntityValue(entity) === parentRelationMap.parentId;
         });
         if (parentEntity) {
             entity[parentProperty] = parentEntity;

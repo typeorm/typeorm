@@ -5,7 +5,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {expect} from "chai";
 
-describe("github issues > Join query on ManyToMany relations not working", () => {
+describe("github issues > #345 Join query on ManyToMany relations not working", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

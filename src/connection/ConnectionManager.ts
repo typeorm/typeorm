@@ -8,14 +8,17 @@ import { AlreadyHasActiveConnectionError } from "../error/AlreadyHasActiveConnec
  * It also provides useful factory methods to simplify connection creation.
  */
 export class ConnectionManager {
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
     /**
      * List of connections registered in this connection manager.
      */
-    public readonly connections: Connection[] = [];
+    get connections(): Connection[] {
+        return Array.from(this.connectionMap.values());
+    }
+
+    /**
+     * Internal lookup to quickly get from a connection name to the Connection object.
+     */
+    private readonly connectionMap: Map<string, Connection> = new Map();
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -25,9 +28,7 @@ export class ConnectionManager {
      * Checks if connection with the given name exist in the manager.
      */
     has(name: string): boolean {
-        return !!this.connections.find(
-            (connection) => connection.name === name
-        );
+        return this.connectionMap.has(name);
     }
 
     /**
@@ -36,10 +37,9 @@ export class ConnectionManager {
      * Throws error if connection with the given name was not found.
      */
     get(name: string = "default"): Connection {
-        const connection = this.connections.find(
-            (connection) => connection.name === name
-        );
-        if (!connection) throw new ConnectionNotFoundError(name);
+        const connection = this.connectionMap.get(name);
+        if (!connection)
+            throw new ConnectionNotFoundError(name);
 
         return connection;
     }
@@ -50,26 +50,16 @@ export class ConnectionManager {
      */
     create(options: ConnectionOptions): Connection {
         // check if such connection is already registered
-        const existConnection = this.connections.find(
-            (connection) => connection.name === (options.name || "default")
-        );
+        const existConnection = this.connectionMap.get(options.name || "default");
         if (existConnection) {
             // if connection is registered and its not closed then throw an error
             if (existConnection.isConnected)
-                throw new AlreadyHasActiveConnectionError(
-                    options.name || "default"
-                );
-
-            // if its registered but closed then simply remove it from the manager
-            this.connections.splice(
-                this.connections.indexOf(existConnection),
-                1
-            );
+                throw new AlreadyHasActiveConnectionError(options.name || "default");
         }
 
         // create a new connection
         const connection = new Connection(options);
-        this.connections.push(connection);
+        this.connectionMap.set(connection.name, connection);
         return connection;
     }
 }

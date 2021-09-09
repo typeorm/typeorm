@@ -7,6 +7,7 @@ import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { TypeORMError } from "../error";
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -56,13 +57,14 @@ export class RelationJoinColumnBuilder {
      */
     build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): {
       foreignKey: ForeignKeyMetadata|undefined,
+      columns: ColumnMetadata[],
       uniqueConstraint: UniqueMetadata|undefined,
     } {
         const referencedColumns = this.collectReferencedColumns(joinColumns, relation);
-        if (!referencedColumns.length)
-            return { foreignKey: undefined, uniqueConstraint: undefined }; // this case is possible only for one-to-one non owning side
-
         const columns = this.collectColumns(joinColumns, relation, referencedColumns);
+        if (!referencedColumns.length || !relation.createForeignKeyConstraints)
+            return { foreignKey: undefined, columns, uniqueConstraint: undefined }; // this case is possible for one-to-one non owning side and relations with createForeignKeyConstraints = false
+
         const foreignKey = new ForeignKeyMetadata({
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
@@ -76,7 +78,7 @@ export class RelationJoinColumnBuilder {
 
         // Oracle does not allow both primary and unique constraints on the same column
         if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
-            return { foreignKey, uniqueConstraint: undefined };
+            return { foreignKey, columns, uniqueConstraint: undefined };
 
         // CockroachDB requires UNIQUE constraints on referenced columns
         if (referencedColumns.length > 0 && relation.isOneToOne) {
@@ -84,15 +86,15 @@ export class RelationJoinColumnBuilder {
                 entityMetadata: relation.entityMetadata,
                 columns: foreignKey.columns,
                 args: {
-                    name: this.connection.namingStrategy.relationConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
+                    name: this.connection.namingStrategy.relationConstraintName(relation.entityMetadata.tableName, foreignKey.columns.map(c => c.databaseName)),
                     target: relation.entityMetadata.target,
                 }
             });
             uniqueConstraint.build(this.connection.namingStrategy);
-            return {foreignKey, uniqueConstraint};
+            return {foreignKey, columns, uniqueConstraint};
         }
 
-        return { foreignKey, uniqueConstraint: undefined };
+        return { foreignKey, columns, uniqueConstraint: undefined };
     }
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -113,7 +115,7 @@ export class RelationJoinColumnBuilder {
             return joinColumns.map(joinColumn => {
                 const referencedColumn = relation.inverseEntityMetadata.ownColumns.find(column => column.propertyName === joinColumn.referencedColumnName); // todo: can we also search in relations?
                 if (!referencedColumn)
-                    throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
+                    throw new TypeORMError(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
 
                 return referencedColumn;
             });
@@ -158,8 +160,10 @@ export class RelationJoinColumnBuilder {
                             zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
+                            enum: referencedColumn.enum,
+                            enumName: referencedColumn.enumName,
                             primary: relation.isPrimary,
-                            nullable: relation.isNullable
+                            nullable: relation.isNullable,
                         }
                     }
                 });

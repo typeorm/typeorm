@@ -185,7 +185,7 @@ Learn more about [custom repositories](custom-repository.md).
 The decision is up to you.
 Both strategies have their own cons and pros.
 
-One thing we should always keep in mind in with software development is how we are going to maintain our applications.
+One thing we should always keep in mind with software development is how we are going to maintain our applications.
 The `Data Mapper` approach helps with maintainability, which is more effective in bigger apps.
 The `Active record` approach helps keep things simple which works well in smaller apps.
  And simplicity is always a key to better maintainability.

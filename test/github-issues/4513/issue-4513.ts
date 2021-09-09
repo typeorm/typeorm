@@ -125,10 +125,7 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
       .insert()
       .into(User)
       .values(user2)
-      .orUpdate({
-        conflict_target: ["name", "email"],
-        overwrite: ["age"],
-      })
+      .orUpdate(["age"], ["name", "email"])
       .execute();
 
     await connection.manager.findOne(User, { name: "example", email: "example@example.com" }).should.eventually.be.eql({
