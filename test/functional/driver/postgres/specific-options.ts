@@ -8,7 +8,9 @@ describe("postgres specific options", () => {
   before(async () => connections = await createTestingConnections({
     enabledDrivers: ["postgres"],
     driverSpecific: {
-      applicationName: "some test name"
+      schema: "my_schema",
+      applicationName: "some test name",
+      updateSearchPath: true
     }
   }));
   beforeEach(() => reloadTestingDatabases(connections));
@@ -20,5 +22,13 @@ describe("postgres specific options", () => {
     );
     expect(result.length).equals(1);
     expect(result[0].application_name).equals("some test name");
+  })));
+
+  it("should set search_path", () => Promise.all(connections.map(async connection => {
+    const result = await connection.query(
+      "show search_path"
+    );
+    expect(result.length).equals(1);
+    expect(result[0].search_path).equals("my_schema, public");
   })));
 });

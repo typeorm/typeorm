@@ -73,6 +73,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
     /**
      * Creates/uses database connection from the connection pool to perform further operations.
+     * If the `updateSearchPath` driver option is truthy, the newly created connection will
+     * have its search_path updated to use the connection's schema in a first place, fallbacking
+     * to the public one.
      * Returns obtained database connection.
      */
     connect(): Promise<any> {
@@ -112,6 +115,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 return this.databaseConnection;
             });
         }
+
+        this.databaseConnectionPromise = this.databaseConnectionPromise.then(async (connection) => {
+            if (this.driver.options.updateSearchPath && this.driver.schema) {
+                await connection.query(`SET search_path = ${this.driver.schema},public`);
+            }
+
+            return connection;
+        })
 
         return this.databaseConnectionPromise;
     }

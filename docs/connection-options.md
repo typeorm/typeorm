@@ -195,6 +195,8 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
 
+* `updateSearchPath` - A boolean to control whether to update the connection's search path to prioritize the connection's schema (default: `false`)
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"

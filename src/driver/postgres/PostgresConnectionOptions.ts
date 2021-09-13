@@ -73,4 +73,10 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
      * the service using this connection. Defaults to 'undefined'
      */
     readonly applicationName?: string;
+
+    /**
+     * Update connection's search_path to prepand the working schema,
+     * if available.
+     */
+    readonly updateSearchPath?: boolean;
 }
