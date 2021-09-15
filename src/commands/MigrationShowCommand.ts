@@ -24,6 +24,9 @@ export class MigrationShowCommand implements yargs.CommandModule {
         alias: "f",
         default: "ormconfig",
         describe: "Name of the file with connection configuration."
+      })
+      .option("quiet", {
+        describe: "Silences the error exit code if there are unapplied migrations"
       });
   }
 
@@ -46,8 +49,9 @@ export class MigrationShowCommand implements yargs.CommandModule {
       const unappliedMigrations = await connection.showMigrations();
       await connection.close();
 
-      // return error code if there are unapplied migrations for CI
-      process.exit(unappliedMigrations ? 1 : 0);
+      const silenceError = args.quiet !== undefined ? true : false;
+      // return error code if there are unapplied migrations
+      process.exit(unappliedMigrations && !silenceError ? 1 : 0);
 
     } catch (err) {
       if (connection) await (connection as Connection).close();
