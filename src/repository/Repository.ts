@@ -399,6 +399,14 @@ export class Repository<Entity extends ObjectLiteral> {
     query(query: string, parameters?: any[]): Promise<any> {
         return this.manager.query(query, parameters);
     }
+    
+    /**
+     * Executes a raw SQL query and returns a raw database results.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     */
+    query(options: { text: string, values?: any[] }): Promise<any> {
+        return this.manager.query(options.text, options.values);
+    }
 
     /**
      * Clears all the data from the given table/collection (truncates/drops it).
