@@ -396,7 +396,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query(query: string | { text: string; values?: any[] }, parameters?: any[]): Promise<any> {
         return this.manager.query(query, parameters);
     }
 

@@ -384,21 +384,36 @@ export class Connection {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string, parameters?: any[], queryRunner?: QueryRunner): Promise<any> {
-        if (this instanceof MongoEntityManager)
-            throw new TypeORMError(`Queries aren't supported by MongoDB.`);
+    async query(
+        query: string | { text: string; values?: any[] },
+        values?: any[],
+        queryRunner?: QueryRunner
+    ): Promise<any> {
+        if (this instanceof MongoEntityManager) throw new TypeORMError(`Queries aren't supported by MongoDB.`);
 
-        if (queryRunner && queryRunner.isReleased)
-            throw new QueryRunnerProviderAlreadyReleasedError();
+        if (queryRunner && queryRunner.isReleased) throw new QueryRunnerProviderAlreadyReleasedError();
 
         const usedQueryRunner = queryRunner || this.createQueryRunner();
 
         try {
-            return await usedQueryRunner.query(query, parameters);  // await is needed here because we are using finally
+            let text: string;
+            let parameters = values;
 
+            if (typeof query === 'object' && query.text) {
+                text = query.text;
+            } else if (typeof query === 'string') {
+                text = query;
+            } else {
+                throw new TypeORMError('Undefined query type was passed to a function');
+            }
+
+            if (typeof query === 'object' && query.values) {
+                parameters = query.values;
+            }
+
+            return await usedQueryRunner.query(text, parameters); // await is needed here because we are using finally
         } finally {
-            if (!queryRunner)
-                await usedQueryRunner.release();
+            if (!queryRunner) await usedQueryRunner.release();
         }
     }
 
