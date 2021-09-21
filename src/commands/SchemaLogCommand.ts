@@ -47,12 +47,12 @@ export class SchemaLogCommand implements yargs.CommandModule {
             connection = await createConnection(connectionOptions);
             const sqlInMemory = await connection.driver.createSchemaBuilder().log();
             if (sqlInMemory.upQueries.length === 0) {
-                console.log(chalk.yellow("Your schema is up to date - there are no queries to be executed by schema syncronization."));
+                console.log(chalk.yellow("Your schema is up to date - there are no queries to be executed by schema synchronization."));
 
             } else {
                 const lengthSeparators = String(sqlInMemory.upQueries.length).split("").map(char => "-").join("");
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
-                console.log(chalk.yellow.bold(`-- Schema syncronization will execute following sql queries (${chalk.white(sqlInMemory.upQueries.length.toString())}):`));
+                console.log(chalk.yellow.bold(`-- Schema synchronization will execute following sql queries (${chalk.white(sqlInMemory.upQueries.length.toString())}):`));
                 console.log(chalk.yellow("---------------------------------------------------------------" + lengthSeparators));
 
                 sqlInMemory.upQueries.forEach(upQuery => {
