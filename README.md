@@ -23,6 +23,42 @@
   <br>
 </div>
 
+# TypeORM
+
+* [Features](#features)
+* [Installation](#installation)
+* [Quick Start](#quick-start)
+* [Step-by-Step Guide](#step-by-step-guide)
+  * [Create a model](#create-a-model)
+  * [Create an entity](#create-an-entity)
+  * [Adding table columns](#adding-table-columns)
+  * [Creating a primary column](#creating-a-primary-column)
+  * [Creating an auto generated column](#creating-an-auto-generated-column)
+  * [Column data types](#column-data-types)
+  * [Creating a connection to the database](#creating-a-connection-to-the-database)
+  * [Loading all entities from the directory](#loading-all-entities-from-the-directory)
+  * [Running the application](#running-the-application)
+  * [Creating and inserting a photo into the database](#creating-and-inserting-a-photo-into-the-database)
+  * [Using async/await syntax](#using-asyncawait-syntax)
+  * [Using Entity Manager](#using-entity-manager)
+  * [Using Repositories](#using-repositories)
+  * [Loading from the database](#loading-from-the-database)
+  * [Updating in the database](#updating-in-the-database)
+  * [Removing from the database](#removing-from-the-database)
+  * [Creating a one-to-one relation](#creating-a-one-to-one-relation)
+  * [Save a one-to-one relation](#save-a-one-to-one-relation)
+  * [Inverse side of the relationship](#inverse-side-of-the-relationship)
+  * [Loading objects with their relations](#loading-objects-with-their-relations)
+  * [Using cascades to automatically save related objects](#using-cascades-to-automatically-save-related-objects)
+  * [Creating a many-to-one / one-to-many relation](#creating-a-many-to-one--one-to-many-relation)
+  * [Creating a many-to-many relation](#creating-a-many-to-many-relation)
+  * [Using QueryBuilder](#using-querybuilder)
+* [Samples](#samples)
+* [Extensions](#extensions)
+* [Contributing](#contributing)
+* [Sponsors](#sponsors)
+* [Gold Sponsors](#gold-sponsors)
+
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
 that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo, and Electron platforms
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
