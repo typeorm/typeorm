@@ -921,6 +921,7 @@ export abstract class QueryBuilder<Entity> {
         let alias = this.expressionMap.mainAlias;
         const root: string[] = [];
         const propertyPathParts = propertyPath.split(".");
+        const joinedAliasNames: string[] = [];
 
         while (propertyPathParts.length > 1) {
             const part = propertyPathParts[0];
@@ -946,7 +947,7 @@ export abstract class QueryBuilder<Entity> {
                 // that match the relation & then continue further down
                 // the property path
                 const joinAttr = this.expressionMap.joinAttributes.find(
-                    (joinAttr) => joinAttr.relationPropertyPath === part
+                    (joinAttr) => joinAttr.relationPropertyPath === part && !joinedAliasNames.includes(joinAttr.alias.name)
                 );
 
                 if (!joinAttr?.alias) {
@@ -955,6 +956,7 @@ export abstract class QueryBuilder<Entity> {
                 }
 
                 alias = joinAttr.alias;
+                joinedAliasNames.push(alias.name);
                 root.push(...part.split("."));
                 propertyPathParts.shift();
                 continue;
