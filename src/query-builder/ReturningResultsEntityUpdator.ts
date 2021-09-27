@@ -166,6 +166,60 @@ export class ReturningResultsEntityUpdator {
     }
 
     /**
+     * Updates entities with a special columns after soft delete and restore query execution.
+     */
+    async softDelete(updateResult: UpdateResult, entities: ObjectLiteral[]): Promise<void> {
+        const metadata = this.expressionMap.mainAlias!.metadata;
+
+        await Promise.all(entities.map(async (entity, entityIndex) => {
+
+            // if database supports returning/output statement then we already should have updating values in the raw data returned by insert query
+            if (this.queryRunner.connection.driver.isReturningSqlSupported()) {
+                if (this.queryRunner.connection.driver instanceof OracleDriver && Array.isArray(updateResult.raw) && this.expressionMap.extraReturningColumns.length > 0) {
+                    updateResult.raw = updateResult.raw.reduce((newRaw, rawItem, rawItemIndex) => {
+                        newRaw[this.expressionMap.extraReturningColumns[rawItemIndex].databaseName] = rawItem[0];
+                        return newRaw;
+                    }, {} as ObjectLiteral);
+                }
+                const result = Array.isArray(updateResult.raw) ? updateResult.raw[entityIndex] : updateResult.raw;
+                const returningColumns = this.queryRunner.connection.driver.createGeneratedMap(metadata, result);
+                if (returningColumns) {
+                    this.queryRunner.manager.merge(metadata.target as any, entity, returningColumns);
+                    updateResult.generatedMaps.push(returningColumns);
+                }
+
+            } else {
+
+                // for driver which do not support returning/output statement we need to perform separate query and load what we need
+                const updationColumns = this.getSoftDeletionReturningColumns();
+                if (updationColumns.length > 0) {
+
+                    // get entity id by which we will get needed data
+                    const entityId = this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity);
+                    if (!entityId)
+                        throw new TypeORMError(`Cannot update entity because entity id is not set in the entity.`);
+
+                    // execute query to get needed data
+                    const loadedReturningColumns = await this.queryRunner.manager
+                        .createQueryBuilder()
+                        .select(metadata.primaryColumns.map(column => metadata.targetName + "." + column.propertyPath))
+                        .addSelect(this.getSoftDeletionReturningColumns().map(column => metadata.targetName + "." + column.propertyPath))
+                        .from(metadata.target, metadata.targetName)
+                        .where(entityId)
+                        .withDeleted()
+                        .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
+                        .getOne() as any;
+
+                    if (loadedReturningColumns) {
+                        this.queryRunner.manager.merge(metadata.target as any, entity, loadedReturningColumns);
+                        updateResult.generatedMaps.push(loadedReturningColumns);
+                    }
+                }
+            }
+        }));
+    }
+
+    /**
      * Columns we need to be returned from the database when we insert entity.
      */
     getInsertionReturningColumns(): ColumnMetadata[] {
@@ -191,6 +245,15 @@ export class ReturningResultsEntityUpdator {
     getUpdationReturningColumns(): ColumnMetadata[] {
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
             return column.isUpdateDate || column.isVersion;
+        });
+    }
+
+    /**
+     * Columns we need to be returned from the database when we soft delete and restore entity.
+     */
+    getSoftDeletionReturningColumns(): ColumnMetadata[] {
+        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+            return column.isUpdateDate || column.isVersion || column.isDeleteDate;
         });
     }
 
