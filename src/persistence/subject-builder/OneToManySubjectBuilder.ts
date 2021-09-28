@@ -59,10 +59,18 @@ export class OneToManySubjectBuilder {
         // note: subject.databaseEntity contains relations with loaded relation ids only
         // by example: since subject is a post, we are expecting to get all post's categories saved in the database here,
         //             particularly their relation ids, e.g. category ids stored in the database
+		
+		// until 0.2.37, relatedEntityDatabaseRelationIds did not contain correct relationIds but full entity data.
+		// old data of relatedEntityDatabaseRelationIds is now available in relatedEntityDatabaseValues.
+		// var relatedEntityDatabaseRelationIds does now contain real relationIds.
+        let relatedEntityDatabaseValues: ObjectLiteral[] = [];
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = [];
         if (subject.databaseEntity) { // related entities in the database can exist only if this entity (post) is saved
-            relatedEntityDatabaseRelationIds = relation.getEntityValue(subject.databaseEntity);
-        }
+            relatedEntityDatabaseValues = relation.getEntityValue(subject.databaseEntity);
+			relatedEntityDatabaseRelationIds = relatedEntityDatabaseValues.map(entityData=> { 
+				return relation.inverseEntityMetadata.getEntityIdMap(entityData) as ObjectLiteral
+			});
+		}
 
         // get related entities of persisted entity
         // by example: get categories from the passed to persist post entity
