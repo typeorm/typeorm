@@ -66,7 +66,9 @@ export class OneToManySubjectBuilder {
         let relatedEntityDatabaseValues: ObjectLiteral[] = [];
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = [];
         if (subject.databaseEntity) { // related entities in the database can exist only if this entity (post) is saved
-            relatedEntityDatabaseValues = relation.getEntityValue(subject.databaseEntity);
+			// relation.getEntityValue can sometimes return undefined which is against stated type. let falsy return values fall back to [].
+            relatedEntityDatabaseValues = relation.getEntityValue(subject.databaseEntity) || [];
+
 			relatedEntityDatabaseRelationIds = relatedEntityDatabaseValues.map(entityData=> { 
 				return relation.inverseEntityMetadata.getEntityIdMap(entityData) as ObjectLiteral
 			});
