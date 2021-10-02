@@ -174,22 +174,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             statement = databaseConnection.prepare(query);
 
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+            }
+
             const raw = await new Promise<any>((ok, fail) => {
-                statement.exec(parameters, async (err: any, raw: any) => {
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-                    }
-
-                    if (err) {
-                        fail(new QueryFailedError(query, parameters, err));
-                    }
-
-                    ok(raw);
-                });
+                statement.exec(
+                    parameters,
+                    (err: any, raw: any) => err ? fail(new QueryFailedError(query, parameters, err)) : ok(raw)
+                )
             });
 
             if (typeof raw === "number") {
@@ -204,13 +201,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
                 this.driver.connection.logger.logQuery(lastIdQuery, [], this);
                 const identityValueResult = await new Promise<any>((ok, fail) => {
-                    databaseConnection.exec(lastIdQuery, async (err: any, raw: any) => {
-                        if (err) {
-                            fail(new QueryFailedError(lastIdQuery, [], err));
-                        }
-
-                        ok(raw);
-                    });
+                    databaseConnection.exec(
+                        lastIdQuery,
+                        (err: any, raw: any) => err ? fail(new QueryFailedError(lastIdQuery, [], err)) : ok(raw)
+                    );
                 });
 
                 result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];
