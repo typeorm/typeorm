@@ -20,7 +20,7 @@ export class ConnectionOptionsYmlReader {
 
         const config = ymlParser.load(contents);
 
-        if (!config || typeof config !== 'object') {
+        if (!config || typeof config !== 'object' || config === null) {
             return [];
         }
 
