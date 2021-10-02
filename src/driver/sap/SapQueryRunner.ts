@@ -174,6 +174,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             statement = databaseConnection.prepare(query);
 
+            const raw = await new Promise<any>((ok, fail) => {
+                statement.exec(
+                    parameters,
+                    (err: any, raw: any) => err ? fail(new QueryFailedError(query, parameters, err)) : ok(raw)
+                )
+            });
+
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
             const queryEndTime = +new Date();
@@ -181,13 +188,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
                 this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
             }
-
-            const raw = await new Promise<any>((ok, fail) => {
-                statement.exec(
-                    parameters,
-                    (err: any, raw: any) => err ? fail(new QueryFailedError(query, parameters, err)) : ok(raw)
-                )
-            });
 
             if (typeof raw === "number") {
                 result.affected = raw;
