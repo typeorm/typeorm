@@ -56,16 +56,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            try {
-                this.queryRunner = undefined;
-                this.databaseConnection.close();
-                ok();
-            }
-            catch (e)  {
-                fail(e);
-            }
-        });
+        this.queryRunner = undefined;
+        this.databaseConnection.close();
     }
 
     /**
@@ -258,16 +250,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new sqlite.Database();
         }
 
-        // Enable foreign keys for database
-        return new Promise<any>((ok, fail) => {
-            try {
-                this.databaseConnection.exec(`PRAGMA foreign_keys = ON;`);
-                ok(this.databaseConnection);
-            }
-            catch (e) {
-                fail(e);
-            }
-        });
+        this.databaseConnection.exec(`PRAGMA foreign_keys = ON;`);
+
+        return this.databaseConnection;
     }
 
     /**
