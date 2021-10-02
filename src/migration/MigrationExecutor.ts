@@ -104,14 +104,14 @@ export class MigrationExecutor {
      * Inserts an executed migration.
      */
     public insertMigration(migration: Migration): Promise<void> {
-        return this.withQueryRunner(q => this.insertExecutedMigration(q, migration))
+        return this.withQueryRunner(q => this.insertExecutedMigration(q, migration));
     }
 
     /**
      * Deletes an executed migration.
      */
     public deleteMigration(migration: Migration): Promise<void> {
-        return this.withQueryRunner(q => this.deleteExecutedMigration(q, migration))
+        return this.withQueryRunner(q => this.deleteExecutedMigration(q, migration));
     }
 
     /**
