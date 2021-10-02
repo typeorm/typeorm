@@ -344,17 +344,10 @@ export class PostgresDriver implements Driver {
 
         const installExtensions = this.options.installExtensions === undefined || this.options.installExtensions;
         if (installExtensions && extensionsMetadata.hasExtensions) {
-                       return new Promise<void>((ok, fail) => {
-                this.master.connect(async (err: any, connection: any, release: Function) => {
-                    await this.enableExtensions(extensionsMetadata, connection);
-                    if (err) return fail(err);
-                    release();
-                    ok();
-                });
-            });
+            const [ connection, release ] = await this.obtainMasterConnection()
+            await this.enableExtensions(extensionsMetadata, connection);
+            await release()
         }
-
-        return Promise.resolve();
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
@@ -937,13 +930,12 @@ export class PostgresDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
-        return new Promise((ok, fail) => {
-            if (!this.master) {
-                fail(new TypeORMError("Driver not Connected"));
-                return;
-            }
+    async obtainMasterConnection(): Promise<[any, Function]> {
+        if (!this.master) {
+            throw new TypeORMError("Driver not Connected");
+        }
 
+        return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
@@ -955,13 +947,14 @@ export class PostgresDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    async obtainSlaveConnection(): Promise<any> {
+    async obtainSlaveConnection(): Promise<[any, Function]> {
         if (!this.slaves.length) {
             return this.obtainMasterConnection();
         }
 
+        const random = Math.floor(Math.random() * this.slaves.length);
+
         return new Promise((ok, fail) => {
-            const random = Math.floor(Math.random() * this.slaves.length);
             this.slaves[random].connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
@@ -1188,12 +1181,10 @@ export class PostgresDriver implements Driver {
      * Executes given query.
      */
     protected executeQuery(connection: any, query: string) {
+        this.connection.logger.logQuery(query);
+
         return new Promise((ok, fail) => {
-            this.connection.logger.logQuery(query);
-            connection.query(query, (err: any, result: any) => {
-                if (err) return fail(err);
-                ok(result);
-            });
+            connection.query(query, (err: any, result: any) => err ? fail(err) : ok(result));
         });
     }
 
