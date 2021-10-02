@@ -209,18 +209,18 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             this.queries.push({ query, parameters });
         }
 
-        // log slow queries if maxQueryExecution time is set
-        const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
-        const queryEndTime = +new Date();
-        const queryExecutionTime = queryEndTime - queryStartTime;
-        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
-            this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-        }
-
         try {
             const raw = await new Promise<any>((resolve, reject) => {
                 databaseConnection.query(query, parameters, (err: any, raw: any) => err ? reject(err) : resolve(raw))
             });
+
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+            }
 
             const result = new QueryResult();
 
