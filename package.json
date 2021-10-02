@@ -193,7 +193,6 @@
     "sha.js": "^2.4.11",
     "tslib": "^2.1.0",
     "xml2js": "^0.4.23",
-    "yargonaut": "^1.1.4",
     "yargs": "^17.0.1",
     "zen-observable-ts": "^1.0.0"
   },
