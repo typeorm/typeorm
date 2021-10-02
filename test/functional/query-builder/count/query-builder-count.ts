@@ -35,14 +35,12 @@ describe("query builder > count", () => {
     it("Count query should handle ambiguous values", () => Promise.all(connections.map(async connection => {
         const repo = connection.getRepository(AmbigiousPrimaryKey);
 
-        await Promise.all([
-            repo.save({ a: 'A', b: 'AAA' }),
-            repo.save({ a: 'AAA', b: 'A' }),
-            repo.save({ a: 'AA', b: 'AA' }),
-            repo.save({ a: 'BB', b: 'BB' }),
-            repo.save({ a: 'B', b: 'BBB' }),
-            repo.save({ a: 'BBB', b: 'B' })
-        ]);
+        await repo.save({ a: 'A', b: 'AAA' })
+        await repo.save({ a: 'AAA', b: 'A' })
+        await repo.save({ a: 'AA', b: 'AA' })
+        await repo.save({ a: 'BB', b: 'BB' })
+        await repo.save({ a: 'B', b: 'BBB' })
+        await repo.save({ a: 'BBB', b: 'B' })
 
         const count = await repo.count();
         expect(count).to.be.equal(6, connection.name);
@@ -65,14 +63,12 @@ describe("query builder > count", () => {
     it("counting joined queries should handle ambiguous values", () => Promise.all(connections.map(async connection => {
         const repo = connection.getRepository(AmbigiousPrimaryKey);
 
-        await Promise.all([
-            repo.save({ a: 'A', b: 'AAA' }),
-            repo.save({ a: 'AAA', b: 'A' }),
-            repo.save({ a: 'AA', b: 'AA' }),
-            repo.save({ a: 'BB', b: 'BB' }),
-            repo.save({ a: 'B', b: 'BBB' }),
-            repo.save({ a: 'BBB', b: 'B' })
-        ]);
+        await repo.save({ a: 'A', b: 'AAA' })
+        await repo.save({ a: 'AAA', b: 'A' })
+        await repo.save({ a: 'AA', b: 'AA' })
+        await repo.save({ a: 'BB', b: 'BB' })
+        await repo.save({ a: 'B', b: 'BBB' })
+        await repo.save({ a: 'BBB', b: 'B' })
 
         const count = await repo.createQueryBuilder()
             .from(AmbigiousPrimaryKey, 'main')
