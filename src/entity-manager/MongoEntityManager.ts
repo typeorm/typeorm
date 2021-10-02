@@ -52,7 +52,6 @@ import { UpdateResult } from "../query-builder/result/UpdateResult";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import { EntityMetadata } from "../metadata/EntityMetadata";
 import { FindConditions } from "../find-options/FindConditions";
-import { BroadcasterResult } from "../subscriber/BroadcasterResult";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -698,10 +697,8 @@ export class MongoEntityManager extends EntityManager {
                     const entities = transformer.transformAll(results, metadata);
 
                     // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
-
-                    Promise.all(broadcastResult.promises).then(() => callback(error, entities));
+                    queryRunner.broadcaster.broadcast("Load", metadata, entities)
+                        .then(() => callback(error, entities));
                 });
             } else {
                 return ParentCursor.prototype.toArray.call(this).then((results: Entity[]) => {
@@ -709,10 +706,8 @@ export class MongoEntityManager extends EntityManager {
                     const entities = transformer.transformAll(results, metadata);
 
                     // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
-
-                    return Promise.all(broadcastResult.promises).then(() => entities);
+                    return queryRunner.broadcaster.broadcast("Load", metadata, entities)
+                        .then(() => entities);
                 });
             }
         };
@@ -728,10 +723,9 @@ export class MongoEntityManager extends EntityManager {
                     const entity = transformer.transform(result, metadata);
 
                     // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
 
-                    Promise.all(broadcastResult.promises).then(() => callback(error, entity));
+                    queryRunner.broadcaster.broadcast("Load", metadata, [entity])
+                        .then(() => callback(error, entity));
                 });
             } else {
                 return ParentCursor.prototype.next.call(this).then((result: Entity) => {
@@ -740,11 +734,10 @@ export class MongoEntityManager extends EntityManager {
                     const transformer = new DocumentToEntityTransformer();
                     const entity = transformer.transform(result, metadata);
 
-                    // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
 
-                    return Promise.all(broadcastResult.promises).then(() => entity);
+                    // broadcast "load" events
+                    return queryRunner.broadcaster.broadcast("Load", metadata, [entity])
+                        .then(() => entity);
                 });
             }
         };
