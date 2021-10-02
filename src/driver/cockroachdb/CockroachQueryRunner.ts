@@ -197,86 +197,86 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<QueryResult>(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const queryStartTime = +new Date();
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const queryStartTime = +new Date();
 
-                databaseConnection.query(query, parameters, (err: any, raw: any) => {
-                    if (this.isTransactionActive && this.storeQueries)
-                        this.queries.push({ query, parameters });
+        if (this.isTransactionActive && this.storeQueries) {
+            this.queries.push({ query, parameters });
+        }
 
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+        // log slow queries if maxQueryExecution time is set
+        const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
+        const queryEndTime = +new Date();
+        const queryExecutionTime = queryEndTime - queryStartTime;
+        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+            this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+        }
 
-                    if (err) {
-                        if (err.code !== "40001")
-                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        fail(new QueryFailedError(query, parameters, err));
-                    } else {
-                        const result = new QueryResult();
+        try {
+            const raw = await new Promise<any>((resolve, reject) => {
+                databaseConnection.query(query, parameters, (err: any, raw: any) => err ? reject(err) : resolve(raw))
+            });
 
-                        if (raw.hasOwnProperty('rowCount')) {
-                            result.affected = raw.rowCount;
-                        }
+            const result = new QueryResult();
 
-                        if (raw.hasOwnProperty('rows')) {
-                            result.records = raw.rows;
-                        }
-
-                        switch (raw.command) {
-                            case "DELETE":
-                                // for DELETE query additionally return number of affected rows
-                                result.raw = [raw.rows, raw.rowCount]
-                                break;
-                            default:
-                                result.raw = raw.rows;
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result);
-                        } else {
-                            ok(result.raw);
-                        }
-                    }
-                });
-
-            } catch (err) {
-                fail(err);
+            if (raw.hasOwnProperty('rowCount')) {
+                result.affected = raw.rowCount;
             }
-        });
+
+            if (raw.hasOwnProperty('rows')) {
+                result.records = raw.rows;
+            }
+
+            switch (raw.command) {
+                case "DELETE":
+                    // for DELETE query additionally return number of affected rows
+                    result.raw = [raw.rows, raw.rowCount]
+                    break;
+                default:
+                    result.raw = raw.rows;
+            }
+
+            if (useStructuredResult) {
+                return result;
+            } else {
+                return result.raw;
+            }
+        } catch (err) {
+            if (err.code !== "40001") {
+                this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            }
+
+            throw new QueryFailedError(query, parameters, err);
+        }
     }
 
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         const QueryStream = this.driver.loadStreamDependency();
-        if (this.isReleased)
+        if (this.isReleased) {
             throw new QueryRunnerAlreadyReleasedError();
+        }
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const stream = databaseConnection.query(new QueryStream(query, parameters));
-                if (onEnd) stream.on("end", onEnd);
-                if (onError) stream.on("error", onError);
-                ok(stream);
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const stream = databaseConnection.query(new QueryStream(query, parameters));
 
-            } catch (err) {
-                fail(err);
-            }
-        });
+        if (onEnd) {
+            stream.on("end", onEnd);
+        }
+
+        if (onError) {
+            stream.on("error", onError);
+        }
+
+        return stream;
     }
 
     /**

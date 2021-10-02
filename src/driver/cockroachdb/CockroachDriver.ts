@@ -648,11 +648,11 @@ export class CockroachDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
-        return new Promise((ok, fail) => {
-            if (!this.master) {
-                return fail(new TypeORMError("Driver not Connected"));
-            }
+        if (!this.master) {
+            return fail(new TypeORMError("Driver not Connected"));
+        }
 
+        return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
@@ -668,8 +668,9 @@ export class CockroachDriver implements Driver {
         if (!this.slaves.length)
             return this.obtainMasterConnection();
 
+        const random = Math.floor(Math.random() * this.slaves.length);
+
         return new Promise((ok, fail) => {
-            const random = Math.floor(Math.random() * this.slaves.length);
             this.slaves[random].connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
