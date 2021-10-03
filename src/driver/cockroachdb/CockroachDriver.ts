@@ -649,7 +649,7 @@ export class CockroachDriver implements Driver {
      */
     obtainMasterConnection(): Promise<any> {
         if (!this.master) {
-            return fail(new TypeORMError("Driver not Connected"));
+            throw new TypeORMError("Driver not Connected");
         }
 
         return new Promise((ok, fail) => {
