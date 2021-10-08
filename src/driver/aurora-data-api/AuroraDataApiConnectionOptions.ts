@@ -21,6 +21,12 @@ export interface AuroraDataApiConnectionOptions extends BaseConnectionOptions, A
 
     readonly database: string;
 
+    /**
+     * The driver object
+     * This defaults to require("typeorm-aurora-data-api-driver")
+     */
+    readonly driver?: any;
+
     readonly serviceConfigOptions?: { [key: string]: any }; // pass optional AWS.ConfigurationOptions here
 
     readonly formatOptions?: { [key: string]: any, castParameters: boolean };

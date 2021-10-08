@@ -146,7 +146,8 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        const { pg } = PlatformTools.load("typeorm-aurora-data-api-driver");
+        const driver = (this.connection.options as AuroraDataApiPostgresConnectionOptions).driver || PlatformTools.load("typeorm-aurora-data-api-driver");
+        const { pg } = driver;
 
         this.DataApiDriver = pg;
     }

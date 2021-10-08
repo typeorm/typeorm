@@ -16,6 +16,12 @@ export interface BetterSqlite3ConnectionOptions extends BaseConnectionOptions {
     readonly database: string;
 
     /**
+     * The driver object
+     * This defaults to require("better-sqlite3")
+     */
+    readonly driver?: any;
+
+    /**
      * Encryption key for for SQLCipher.
      */
     readonly key?: string;
@@ -29,7 +35,7 @@ export interface BetterSqlite3ConnectionOptions extends BaseConnectionOptions {
     /**
      * Function to run before a database is used in typeorm.
      * You can set pragmas, register plugins or register
-     * functions or aggregates in this function. 
+     * functions or aggregates in this function.
      */
     readonly prepareDatabase?: (db: any) => void | Promise<void>;
 

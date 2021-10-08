@@ -16,6 +16,12 @@ export interface ReactNativeConnectionOptions extends BaseConnectionOptions {
     readonly database: string;
 
     /**
+     * The driver object
+     * This defaults to require("react-native-sqlite-storage")
+     */
+    readonly driver?: any;
+
+    /**
      * Storage Location
      */
     readonly location: string;

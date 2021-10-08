@@ -880,7 +880,8 @@ export class AuroraDataApiDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
-        this.DataApiDriver = PlatformTools.load("typeorm-aurora-data-api-driver");
+        const DataApiDriver = (this.connection.options as AuroraDataApiConnectionOptions).driver || PlatformTools.load("typeorm-aurora-data-api-driver");
+        this.DataApiDriver = DataApiDriver;
 
         // Driver uses rollup for publishing, which has issues when using typeorm in combination with webpack
         // See https://github.com/webpack/webpack/issues/4742#issuecomment-295556787
@@ -925,9 +926,9 @@ export class AuroraDataApiDriver implements Driver {
      */
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection;
-        /*
-          Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
-          cause the hosting app to crash.
+        /**
+         * Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
+         * cause the hosting app to crash.
          */
         if (connection.listeners("error").length === 0) {
             connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));

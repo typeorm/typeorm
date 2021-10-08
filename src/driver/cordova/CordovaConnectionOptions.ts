@@ -16,6 +16,12 @@ export interface CordovaConnectionOptions extends BaseConnectionOptions {
     readonly database: string;
 
     /**
+     * The driver object
+     * This defaults to `window.sqlitePlugin`
+     */
+    readonly driver?: any;
+
+    /**
      * Storage Location
      */
     readonly location: string;
