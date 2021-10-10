@@ -99,6 +99,12 @@ export class EntityMetadata {
     expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
 
     /**
+     * View's dependencies.
+     * Used in views
+     */
+     dependsOn?: Set<Function|string>;
+
+    /**
      * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
      */
     withoutRowid?: boolean = false;
@@ -510,6 +516,7 @@ export class EntityMetadata {
         this.tableType = this.tableMetadataArgs.type;
         this.expression = this.tableMetadataArgs.expression;
         this.withoutRowid = this.tableMetadataArgs.withoutRowid;
+        this.dependsOn = this.tableMetadataArgs.dependsOn;
     }
 
     // -------------------------------------------------------------------------

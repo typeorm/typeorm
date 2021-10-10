@@ -17,6 +17,7 @@ import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
+import { ViewUtils } from "./util/ViewUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
@@ -160,7 +161,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns only entities that should be synced in the database.
      */
     protected get viewEntityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => metadata.tableType === "view" && metadata.synchronize);
+        return this.connection.entityMetadatas
+            .filter(metadata => metadata.tableType === "view" && metadata.synchronize)
+            // sort views in creation order by dependencies
+            .sort(ViewUtils.viewMetadataCmp);
     }
 
     /**
@@ -426,24 +430,73 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async dropOldViews(): Promise<void> {
-        const droppedViews: Set<View> = new Set();
+        const droppedViews: Array<View> = [];
+        const viewEntityToSyncMetadatas = this.viewEntityToSyncMetadatas;
+        // BuIld lookup cache for finding views metadata
+        const viewToMetadata = new Map<View, EntityMetadata>();
         for (const view of this.queryRunner.loadedViews) {
-            const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
-                const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-                const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
-                return this.getTablePath(view) === this.getTablePath(metadata) && viewExpression === metadataExpression;
+            const viewMetadata = viewEntityToSyncMetadatas.find(metadata => {
+                return this.getTablePath(view) === this.getTablePath(metadata);
             });
+            if(viewMetadata){
+                viewToMetadata.set(view, viewMetadata);
+            }
+        }
+        // Gather all changed view, that need a drop
+        for (const view of this.queryRunner.loadedViews) {
+            const viewMetadata = viewToMetadata.get(view);
+            if(!viewMetadata){
+                continue;
+            }
+            const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+            const metadataExpression = typeof viewMetadata.expression === "string" ? viewMetadata.expression.trim() : viewMetadata.expression!(this.connection).getQuery();
 
-            if (existViewMetadata)
+            if (viewExpression === metadataExpression)
                 continue;
 
             this.connection.logger.logSchemaBuild(`dropping an old view: ${view.name}`);
 
             // drop an old view
-            await this.queryRunner.dropView(view);
-            droppedViews.add(view);
+            //await this.queryRunner.dropView(view);
+            droppedViews.push(view);
         }
-        this.queryRunner.loadedViews = this.queryRunner.loadedViews.filter(view => !droppedViews.has(view));
+        const viewDependencyChain = (view: View): View[] => {
+            const viewMetadata = viewToMetadata.get(view);
+            let views = [view];
+            if(!viewMetadata){
+                return views;
+            }
+            for(const [view, metadata] of viewToMetadata.entries()){
+                if(metadata.dependsOn && (
+                    metadata.dependsOn.has(viewMetadata.target) ||
+                    metadata.dependsOn.has(viewMetadata.name)
+                )){
+                    views = views.concat(viewDependencyChain(view));
+                }
+            }
+            return views;
+        };
+        // Add dependencies to be dropped also
+        const droppedViewsWithDependencies: Set<View> = new Set(
+            droppedViews.map(view => viewDependencyChain(view))
+            .reduce((all, segment) => {
+                for(const el of segment){
+                    if(!all.includes(el)){
+                        all.push(el);
+                    }
+                }
+                return all;
+            }, [])
+            .sort((a, b)=> {
+                return ViewUtils.viewMetadataCmp(viewToMetadata.get(a), viewToMetadata.get(b));
+            })
+            .reverse()
+        );
+        // Finally emit all drop views
+        for(const view of droppedViewsWithDependencies){
+            await this.queryRunner.dropView(view);
+        }
+        this.queryRunner.loadedViews = this.queryRunner.loadedViews.filter(view => !droppedViewsWithDependencies.has(view));
     }
 
     /**
