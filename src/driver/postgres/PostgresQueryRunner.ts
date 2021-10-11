@@ -1800,7 +1800,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         } else if (dbColumn["column_default"] === "now()" || dbColumn["column_default"].indexOf("'now'::text") !== -1) {
                             tableColumn.default = dbColumn["column_default"];
                         } else {
-                            tableColumn.default = dbColumn["column_default"].replace(/::[\w\s\[\]\"]+/g, "");
+                            tableColumn.default = dbColumn["column_default"].replace(/::[\w\s\.\[\]\"]+/g, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?\d+)$/, "'$1'");
                         }
                     }
