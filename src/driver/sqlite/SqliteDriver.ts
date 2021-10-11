@@ -129,7 +129,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            const sqlite = (this.connection.options as SqliteConnectionOptions).driver || PlatformTools.load("sqlite3");
+            const sqlite = this.options.driver || PlatformTools.load("sqlite3");
             this.sqlite = sqlite.verbose();
 
         } catch (e) {

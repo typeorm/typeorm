@@ -99,7 +99,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            const sqlite = (this.connection.options as CordovaConnectionOptions).driver || window.sqlitePlugin;
+            const sqlite = this.options.driver || window.sqlitePlugin;
             this.sqlite = sqlite;
 
         } catch (e) {

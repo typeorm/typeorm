@@ -462,7 +462,7 @@ export class MongoDriver implements Driver {
      */
     protected loadDependencies(): any {
         try {
-            const mongodb = (this.connection.options as MongoConnectionOptions).driver || PlatformTools.load("mongodb");
+            const mongodb = this.options.driver || PlatformTools.load("mongodb");
             this.mongodb = mongodb;
 
         } catch (e) {

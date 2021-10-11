@@ -901,7 +901,7 @@ export class MysqlDriver implements Driver {
     protected loadDependencies(): void {
         try {
             // try to load first supported package
-            const mysql = (this.connection.options as MysqlConnectionOptions).driver || PlatformTools.load("mysql");
+            const mysql = this.options.driver || PlatformTools.load("mysql");
             this.mysql = mysql;
             /*
              * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module

@@ -125,7 +125,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            const sqlite = (this.connection.options as BetterSqlite3ConnectionOptions).driver || PlatformTools.load("better-sqlite3");
+            const sqlite = this.options.driver || PlatformTools.load("better-sqlite3");
             this.sqlite = sqlite;
 
         } catch (e) {

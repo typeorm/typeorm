@@ -90,7 +90,7 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            const sqlite = (this.connection.options as ReactNativeConnectionOptions).driver || require("react-native-sqlite-storage");
+            const sqlite = this.options.driver || require("react-native-sqlite-storage");
             this.sqlite = sqlite;
 
         } catch (e) {

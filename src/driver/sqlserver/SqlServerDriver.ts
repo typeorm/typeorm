@@ -866,7 +866,7 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const mssql = (this.connection.options as SqlServerConnectionOptions).driver || PlatformTools.load("mssql");
+            const mssql = this.options.driver || PlatformTools.load("mssql");
             this.mssql = mssql;
 
         } catch (e) { // todo: better error for browser env

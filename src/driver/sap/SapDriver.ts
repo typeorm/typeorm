@@ -739,7 +739,7 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const client = (this.connection.options as SapConnectionOptions).driver || PlatformTools.load("hdb-pool");
+            const client = this.options.driver || PlatformTools.load("hdb-pool");
             this.client = client;
 
         } catch (e) { // todo: better error for browser env
@@ -747,7 +747,7 @@ export class SapDriver implements Driver {
         }
 
         try {
-            if (!(this.connection.options as SapConnectionOptions).hanaClientDriver) {
+            if (!this.options.hanaClientDriver) {
                 PlatformTools.load("@sap/hana-client");
             }
 

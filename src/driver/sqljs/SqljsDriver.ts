@@ -275,12 +275,12 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         if (PlatformTools.type === "browser") {
-            const sqlite = (this.connection.options as SqljsConnectionOptions).driver || window.SQL;
+            const sqlite = this.options.driver || window.SQL;
             this.sqlite = sqlite;
         }
         else {
             try {
-                const sqlite = (this.connection.options as SqljsConnectionOptions).driver || PlatformTools.load("sql.js");
+                const sqlite = this.options.driver || PlatformTools.load("sql.js");
                 this.sqlite = sqlite;
 
             } catch (e) {

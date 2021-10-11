@@ -795,10 +795,10 @@ export class CockroachDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const postgres = (this.connection.options as CockroachConnectionOptions).driver || PlatformTools.load("pg");
+            const postgres = this.options.driver || PlatformTools.load("pg");
             this.postgres = postgres;
             try {
-                const pgNative = (this.connection.options as CockroachConnectionOptions).nativeDriver || PlatformTools.load("pg-native");
+                const pgNative = this.options.nativeDriver || PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
 
             } catch (e) { }

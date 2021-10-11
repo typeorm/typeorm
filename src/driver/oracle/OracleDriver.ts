@@ -797,7 +797,7 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const oracle = (this.connection.options as OracleConnectionOptions).driver || PlatformTools.load("oracledb");
+            const oracle = this.options.driver || PlatformTools.load("oracledb");
             this.oracle = oracle;
 
         } catch (e) {
