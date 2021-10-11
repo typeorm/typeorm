@@ -23,7 +23,7 @@ describe("github issues > #8221 Using OneToMany relation with composed primary k
 
 	const user = new User(1, "FooGuy");
 	const settingA = new Setting(1, "A", "foo");
-	const settingB = new Setting(1, "B", "");
+	const settingB = new Setting(1, "B", "bar");
 	user.settings = [settingA,settingB];
 
 	return userRepo.save(user);

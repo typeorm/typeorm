@@ -6,7 +6,7 @@ export class Setting extends BaseEntity {
 	@PrimaryColumn("int")
 	assetId?: number;
 
-	@ManyToOne("User","settings",{ cascade:false , orphanedRowAction: "delete", nullable:false, onDelete:"CASCADE", onUpdate:"RESTRICT" })
+	@ManyToOne("User","settings",{ cascade:false , orphanedRowAction: "delete", nullable:false })
 	asset?: User;
 
 	@PrimaryColumn("varchar")
