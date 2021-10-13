@@ -13,4 +13,14 @@ export class BroadcasterResult {
      */
     promises: Promise<any>[] = [];
 
+    /**
+     * Wait for all promises to settle
+     */
+    async wait(): Promise<BroadcasterResult> {
+        if (this.promises.length > 0) {
+            await Promise.all(this.promises);
+        }
+
+        return this;
+    }
 }

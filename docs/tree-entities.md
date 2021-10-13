@@ -135,7 +135,7 @@ You can specify closure table name and / or closure table columns names by setti
 
 ## Working with tree entities
 
-To make bind tree entities to each other its important to set to children entities their parent and save them,
+To bind tree entities to each other, it is required to set the parent in the child entity and then save them.
 for example:
 
 ```typescript

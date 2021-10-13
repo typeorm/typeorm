@@ -76,7 +76,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 valueSets.forEach(valueSet => {
                     queryRunner.broadcaster.broadcastBeforeInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
                 });
-                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+                await broadcastResult.wait();
             }
 
             let declareSql: string | null = null;
@@ -140,7 +140,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 valueSets.forEach(valueSet => {
                     queryRunner.broadcaster.broadcastAfterInsertEvent(broadcastResult, this.expressionMap.mainAlias!.metadata, valueSet);
                 });
-                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+                await broadcastResult.wait();
             }
 
             // close transaction if we started it

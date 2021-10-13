@@ -24,7 +24,6 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {MssqlParameter} from "./MssqlParameter";
 import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
 import { QueryLock } from "../../query-runner/QueryLock";
 
@@ -91,9 +90,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         return new Promise<void>(async (ok, fail) => {
             this.isTransactionActive = true;
@@ -119,9 +116,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 this.databaseConnection.begin(transactionCallback);
             }
 
-            const afterBroadcastResult = new BroadcasterResult();
-            this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-            if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+            await this.broadcaster.broadcast('AfterTransactionStart');
         });
     }
 
@@ -136,9 +131,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         return new Promise<void>((ok, fail) => {
             this.databaseConnection.commit(async (err: any) => {
@@ -146,9 +139,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 this.isTransactionActive = false;
                 this.databaseConnection = null;
 
-                const afterBroadcastResult = new BroadcasterResult();
-                this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-                if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+                await this.broadcaster.broadcast('AfterTransactionCommit');
 
                 ok();
                 this.connection.logger.logQuery("COMMIT");
@@ -167,9 +158,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         return new Promise<void>( (ok, fail) => {
             this.databaseConnection.rollback(async (err: any) => {
@@ -177,9 +166,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 this.isTransactionActive = false;
                 this.databaseConnection = null;
 
-                const afterBroadcastResult = new BroadcasterResult();
-                this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-                if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+                await this.broadcaster.broadcast('AfterTransactionRollback');
 
                 ok();
                 this.connection.logger.logQuery("ROLLBACK");

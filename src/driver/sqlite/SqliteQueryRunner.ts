@@ -51,13 +51,15 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
-            const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
+            const isInsertQuery = query.startsWith("INSERT ");
+            const isDeleteQuery = query.startsWith("DELETE ");
+            const isUpdateQuery = query.startsWith("UPDATE ");
 
             const execute = async () => {
-                if (isInsertQuery) {
-                    databaseConnection.run(query, parameters, handler);
+                if (isInsertQuery || isDeleteQuery || isUpdateQuery) {
+                    await databaseConnection.run(query, parameters, handler);
                 } else {
-                    databaseConnection.all(query, parameters, handler);
+                    await databaseConnection.all(query, parameters, handler);
                 }
             };
 

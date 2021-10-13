@@ -69,20 +69,18 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
       s5.parentCategory = c4;
 
       // Create the categories
-      c1 = await categoryRepo.save(c1);
-      c2 = await categoryRepo.save(c2);
-      c3 = await categoryRepo.save(c3);
-      c4 = await categoryRepo.save(c4);
+      await categoryRepo.save(c1);
+      await categoryRepo.save(c2);
+      await categoryRepo.save(c3);
+      await categoryRepo.save(c4);
 
       // Create the sites
-      [s1, s2, s3, s4, s5] =
-        await Promise.all([
-          siteRepo.save(s1),
-          siteRepo.save(s2),
-          siteRepo.save(s3),
-          siteRepo.save(s4),
-          siteRepo.save(s5)
-        ]);
+
+      await siteRepo.save(s1);
+      await siteRepo.save(s2);
+      await siteRepo.save(s3);
+      await siteRepo.save(s4);
+      await siteRepo.save(s5);
 
       // Set the just created relations correctly
       c1.sites = [s1, s2];

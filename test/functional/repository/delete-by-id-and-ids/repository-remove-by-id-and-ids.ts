@@ -34,12 +34,10 @@ describe("repository > deleteById methods", function() {
         const newPost4 = postRepository.create();
         newPost4.title = "Super post #4";
 
-        await Promise.all([
-            postRepository.save(newPost1),
-            postRepository.save(newPost2),
-            postRepository.save(newPost3),
-            postRepository.save(newPost4)
-        ]);
+        await postRepository.save(newPost1);
+        await postRepository.save(newPost2);
+        await postRepository.save(newPost3);
+        await postRepository.save(newPost4);
 
         // remove one
         await postRepository.delete(1);
@@ -68,12 +66,10 @@ describe("repository > deleteById methods", function() {
         const newPost4 = postRepository.create();
         newPost4.title = "Super post #4";
 
-        await Promise.all([
-            postRepository.save(newPost1),
-            postRepository.save(newPost2),
-            postRepository.save(newPost3),
-            postRepository.save(newPost4)
-        ]);
+        await postRepository.save(newPost1);
+        await postRepository.save(newPost2);
+        await postRepository.save(newPost3);
+        await postRepository.save(newPost4);
 
         // remove multiple
         await postRepository.delete([2, 3]);

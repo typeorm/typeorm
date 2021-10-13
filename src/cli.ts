@@ -39,9 +39,3 @@ yargs
     .help("h")
     .alias("h", "help")
     .argv;
-
-require("yargonaut")
-    .style("blue")
-    .style("yellow", "required")
-    .helpStyle("green")
-    .errorsStyle("red");

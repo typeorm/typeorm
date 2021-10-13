@@ -6,6 +6,27 @@ import {BroadcasterResult} from "./BroadcasterResult";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 
+interface BroadcasterEvents {
+    "BeforeTransactionCommit": () => void;
+    "AfterTransactionCommit": () => void;
+    "BeforeTransactionStart": () => void;
+    "AfterTransactionStart": () => void;
+    "BeforeTransactionRollback": () => void;
+    "AfterTransactionRollback": () => void;
+
+    "BeforeUpdate": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]) => void;
+    "AfterUpdate": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]) => void;
+
+    "BeforeInsert": (metadata: EntityMetadata, entity: ObjectLiteral | undefined) => void;
+    "AfterInsert": (metadata: EntityMetadata, entity: ObjectLiteral | undefined) => void;
+
+    "BeforeRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+    "AfterRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+
+    "Load": (metadata: EntityMetadata, entities: ObjectLiteral[]) => void;
+}
+
+
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
@@ -22,6 +43,22 @@ export class Broadcaster {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    async broadcast<U extends keyof BroadcasterEvents>(event: U, ...args: Parameters<BroadcasterEvents[U]>): Promise<void> {
+        const result = new BroadcasterResult();
+
+        const broadcastFunction = this[`broadcast${event}Event` as keyof this];
+
+        if (typeof broadcastFunction === "function") {
+            (broadcastFunction as any).call(
+                this,
+                result,
+                ...args
+            );
+        }
+
+        await result.wait();
+    }
+
     /**
      * Broadcasts "BEFORE_INSERT" event.
      * Before insert event is executed before entity is being inserted to the database for the first time.
@@ -30,7 +67,7 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral): void {
+    broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity: undefined | ObjectLiteral): void {
 
         if (entity && metadata.beforeInsertListeners.length) {
             metadata.beforeInsertListeners.forEach(listener => {
@@ -385,6 +422,13 @@ export class Broadcaster {
     }
 
     /**
+     * @deprecated Use `broadcastLoadForAllEvent`
+     */
+    broadcastLoadEventsForAll(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
+        return this.broadcastLoadEvent(result, metadata, entities);
+    }
+
+    /**
      * Broadcasts "AFTER_LOAD" event for all given entities, and their sub-entities.
      * After load event is executed after entity has been loaded from the database.
      * All subscribers and entity listeners who listened to this event will be executed at this point.
@@ -392,7 +436,7 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastLoadEventsForAll(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
+    broadcastLoadEvent(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
         entities.forEach(entity => {
             if (entity instanceof Promise) // todo: check why need this?
                 return;
@@ -407,7 +451,7 @@ export class Broadcaster {
 
                     const value = relation.getEntityValue(entity);
                     if (value instanceof Object)
-                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
+                        this.broadcastLoadEvent(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
                 });
             }
 
