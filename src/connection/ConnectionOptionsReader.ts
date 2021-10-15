@@ -1,4 +1,5 @@
 import appRootPath from "app-root-path";
+import path from "path";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {ConnectionOptionsEnvReader} from "./options-reader/ConnectionOptionsEnvReader";
@@ -193,7 +194,7 @@ export class ConnectionOptionsReader {
      * Gets directory where configuration file should be located and configuration file name.
      */
     protected get baseFilePath(): string {
-        return this.baseDirectory + "/" + this.baseConfigName;
+        return path.resolve(this.baseDirectory, this.baseConfigName);
     }
 
     /**
