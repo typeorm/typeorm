@@ -160,7 +160,7 @@ export class SubjectExecutor {
         // execute recover operations
         await this.executeRecoverOperations();
 
-        // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
+        // update all special columns in persisted entities, like inserted id
         // console.time(".updateSpecialColumnsInPersistedEntities");
         await this.updateSpecialColumnsInPersistedEntities();
         // console.timeEnd(".updateSpecialColumnsInPersistedEntities");
@@ -742,17 +742,6 @@ export class SubjectExecutor {
         if (this.updateSubjects.length)
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.recoverSubjects);
 
-        // remove ids from the entities that were removed
-        if (this.removeSubjects.length) {
-            this.removeSubjects.forEach(subject => {
-                if (!subject.entity) return;
-
-                subject.metadata.primaryColumns.forEach(primaryColumn => {
-                    primaryColumn.setEntityValue(subject.entity!, undefined);
-                });
-            });
-        }
-
         // other post-persist updations
         this.allSubjects.forEach(subject => {
             if (!subject.entity) return;
@@ -760,16 +749,6 @@ export class SubjectExecutor {
             subject.metadata.relationIds.forEach(relationId => {
                 relationId.setValue(subject.entity!);
             });
-
-            // mongo _id remove
-            if (this.queryRunner instanceof MongoQueryRunner) {
-                if (subject.metadata.objectIdColumn
-                    && subject.metadata.objectIdColumn.databaseName
-                    && subject.metadata.objectIdColumn.databaseName !== subject.metadata.objectIdColumn.propertyName
-                ) {
-                    delete subject.entity[subject.metadata.objectIdColumn.databaseName];
-                }
-            }
         });
     }
 

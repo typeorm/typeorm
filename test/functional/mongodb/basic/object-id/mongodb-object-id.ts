@@ -32,7 +32,7 @@ describe("mongodb > object id columns", () => {
     })));
 
 
-    it("should map _id to ObjectIdColumn property and remove BD _id property", () => Promise.all(connections.map(async connection => {
+    it("should map _id to ObjectIdColumn property", () => Promise.all(connections.map(async connection => {
         const postMongoRepository = connection.getMongoRepository(Post);
 
         // save a post
@@ -41,7 +41,6 @@ describe("mongodb > object id columns", () => {
         await postMongoRepository.save(post);
 
         expect(post.nonIdNameOfObjectId).to.be.not.undefined;
-        expect((post as any)._id).to.be.undefined;
     })));
 
 
@@ -69,11 +68,10 @@ describe("mongodb > object id columns", () => {
         await postMongoRepository.save(post);
 
         post.title = "Muhaha changed title";
-
         await postMongoRepository.save(post);
 
         expect(post.nonIdNameOfObjectId).to.be.not.undefined;
-        expect((post as any)._id).to.be.undefined;
+        expect((post as any)._id).to.be.not.undefined;
 
         // little hack to get raw data from mongodb
         const aggArr = await postMongoRepository.aggregate([]).toArray();
