@@ -63,18 +63,25 @@ export class OneToManySubjectBuilder {
         // to handle such situations, we pass the data to relation.inverseEntityMetadata.getEntityIdMap to extract the key without any other properties.
 
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = []
+        const relatedEntityDatabaseRelationIdsToEntityMap = new Map()
+
         if (subject.databaseEntity) {
             // related entities in the database can exist only if this entity (post) is saved
             const relatedEntityDatabaseRelation: ObjectLiteral[] | undefined =
                 relation.getEntityValue(subject.databaseEntity)
             if (relatedEntityDatabaseRelation) {
                 relatedEntityDatabaseRelationIds =
-                    relatedEntityDatabaseRelation.map(
-                        (entity) =>
+                    relatedEntityDatabaseRelation.map((entity) => {
+                        const relationIdMap =
                             relation.inverseEntityMetadata.getEntityIdMap(
                                 entity,
-                            )!,
-                    )
+                            )!
+                        relatedEntityDatabaseRelationIdsToEntityMap.set(
+                            relationIdMap,
+                            entity,
+                        )
+                        return relationIdMap
+                    })
             }
         }
 
@@ -193,6 +200,14 @@ export class OneToManySubjectBuilder {
                     parentSubject: subject,
                     identifier: removedRelatedEntityRelationId,
                 })
+
+                // Fix #6573 -- define event.databaseEntity for use in beforeUpdate subscriber hook when detaching linked entity
+                // Note that it will not include the full entity (not fetched from database).
+                // but the columns responsible for identifying the relation item (Primary key / composed key) will be available.
+                removedRelatedEntitySubject.databaseEntity =
+                    relatedEntityDatabaseRelationIdsToEntityMap.get(
+                        removedRelatedEntityRelationId,
+                    )
 
                 if (
                     !relation.inverseRelation ||
