@@ -25,7 +25,8 @@ There are several options you can specify for relations:
 * `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign key should behave when referenced object is deleted
 * `primary: boolean` - Indicates whether this relation's column will be a primary column or not.
 * `nullable: boolean` - Indicates whether this relation's column is nullable or not. By default it is nullable.
-* `orphanedRowAction: "nullify" | "delete"` - When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+* `orphanedRowAction: "nullify" | "delete" | "skip"` - When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them.
+  _delete_ will remove these rows from database. _nullify_ will remove the relation key. _skip_ will keep the relation intact. Removal of related item is only possible through its own repo.
 
 ## Cascades
 
