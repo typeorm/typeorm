@@ -12,7 +12,7 @@ interface Window {
     sqlitePlugin: any;
 }
 
-declare var window: Window;
+declare let window: Window;
 
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions;
@@ -99,7 +99,8 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            this.sqlite = window.sqlitePlugin;
+            const sqlite = this.options.driver || window.sqlitePlugin;
+            this.sqlite = sqlite;
 
         } catch (e) {
             throw new DriverPackageNotInstalledError("Cordova-SQLite", "cordova-sqlite-storage");

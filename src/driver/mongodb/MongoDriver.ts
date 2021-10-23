@@ -462,7 +462,8 @@ export class MongoDriver implements Driver {
      */
     protected loadDependencies(): any {
         try {
-            this.mongodb = PlatformTools.load("mongodb");  // try to load native driver dynamically
+            const mongodb = this.options.driver || PlatformTools.load("mongodb");
+            this.mongodb = mongodb;
 
         } catch (e) {
             throw new DriverPackageNotInstalledError("MongoDB", "mongodb");
@@ -473,8 +474,8 @@ export class MongoDriver implements Driver {
      * Builds connection url that is passed to underlying driver to perform connection to the mongodb database.
      */
     protected buildConnectionUrl(options: { [key: string]: any }): string {
-         const schemaUrlPart = options.type.toLowerCase();
-         const credentialsUrlPart = (options.username && options.password)
+        const schemaUrlPart = options.type.toLowerCase();
+        const credentialsUrlPart = (options.username && options.password)
             ? `${options.username}:${options.password}@`
             : "";
 

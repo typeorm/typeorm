@@ -21,7 +21,7 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Database host.
      */
     readonly host?: string;
-    
+
     /**
      * Database host replica set.
      */
@@ -46,6 +46,12 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Database name to connect to.
      */
     readonly database?: string;
+
+    /**
+     * The driver object
+     * This defaults to require("mongodb")
+     */
+    readonly driver?: any;
 
     /**
      * Set the maximum poolSize for each individual server or proxy connection.
@@ -332,7 +338,7 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * https://github.com/mongodb/node-mongodb-native/releases/tag/v3.2.1
      */
     readonly useUnifiedTopology?: boolean;
-    
+
     /**
      * Automatic Client-Side Field Level Encryption configuration.
      */

@@ -226,7 +226,7 @@ export class OracleDriver implements Driver {
         this.options = connection.options as OracleConnectionOptions;
 
         if (this.options.useUTC === true) {
-            process.env.ORA_SDTZ = 'UTC';
+            process.env.ORA_SDTZ = "UTC";
         }
         // load oracle package
         this.loadDependencies();
@@ -349,7 +349,7 @@ export class OracleDriver implements Driver {
             }
 
             if (typeof value === "boolean") {
-                return value ? '1' : '0';
+                return value ? "1" : "0";
             }
 
             escapedParameters.push(value);
@@ -376,7 +376,7 @@ export class OracleDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -413,7 +413,7 @@ export class OracleDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
@@ -726,7 +726,7 @@ export class OracleDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
 
@@ -797,7 +797,8 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.oracle = PlatformTools.load("oracledb");
+            const oracle = this.options.driver || PlatformTools.load("oracledb");
+            this.oracle = oracle;
 
         } catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb");
@@ -829,7 +830,7 @@ export class OracleDriver implements Driver {
             }
 
             if (credentials.serviceName) {
-                connectData += `(SERVICE_NAME=${credentials.serviceName})`
+                connectData += `(SERVICE_NAME=${credentials.serviceName})`;
             }
 
             const connectString = `(DESCRIPTION=(ADDRESS=${address})(CONNECT_DATA=${connectData}))`;

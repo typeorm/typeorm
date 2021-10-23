@@ -455,7 +455,7 @@ export class MysqlDriver implements Driver {
             tablePath.unshift(database);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -492,11 +492,11 @@ export class MysqlDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
-        const parts = target.split(".")
+        const parts = target.split(".");
 
         return {
             database: (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
@@ -654,7 +654,7 @@ export class MysqlDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (defaultValue === null) {
-            return undefined
+            return undefined;
         }
 
         if (
@@ -679,7 +679,7 @@ export class MysqlDriver implements Driver {
 
         if (typeof defaultValue === "function") {
             const value = defaultValue();
-            return this.normalizeDatetimeFunction(value)
+            return this.normalizeDatetimeFunction(value);
         }
 
         if (defaultValue === undefined) {
@@ -859,7 +859,7 @@ export class MysqlDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
 
@@ -900,7 +900,9 @@ export class MysqlDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.mysql = PlatformTools.load("mysql");  // try to load first supported package
+            // try to load first supported package
+            const mysql = this.options.driver || PlatformTools.load("mysql");
+            this.mysql = mysql;
             /*
              * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
              * if it was not installed. We check that the object we got actually contains something otherwise we treat
@@ -1012,7 +1014,7 @@ export class MysqlDriver implements Driver {
      * Otherwise returns original input.
      */
     protected normalizeDatetimeFunction(value?: string) {
-        if (!value) return value
+        if (!value) return value;
 
         // check if input is datetime function
         const isDatetimeFunction = value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1
@@ -1020,14 +1022,14 @@ export class MysqlDriver implements Driver {
 
         if (isDatetimeFunction) {
             // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/)
+            const precision = value.match(/\(\d+\)/);
             if (this.options.type === "mariadb") {
                 return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP()";
             } else {
                 return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP";
             }
         } else {
-            return value
+            return value;
         }
     }
 

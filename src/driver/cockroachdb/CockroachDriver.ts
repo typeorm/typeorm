@@ -464,7 +464,7 @@ export class CockroachDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -503,11 +503,11 @@ export class CockroachDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
-        const parts = target.split(".")
+        const parts = target.split(".");
 
         return {
             database: driverDatabase,
@@ -795,9 +795,10 @@ export class CockroachDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.postgres = PlatformTools.load("pg");
+            const postgres = this.options.driver || PlatformTools.load("pg");
+            this.postgres = postgres;
             try {
-                const pgNative = PlatformTools.load("pg-native");
+                const pgNative = this.options.nativeDriver || PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
 
             } catch (e) { }

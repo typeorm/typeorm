@@ -1199,6 +1199,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.expressionMap.queryEntity = true;
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             this.expressionMap.queryEntity = false;
+            const cacheId = this.expressionMap.cacheId;
+            // Creates a new cacheId for the count query, or it will retreive the above query results
+            // and count will return 0.
+            this.expressionMap.cacheId = (cacheId) ? `${cacheId}-count` : cacheId;
             const count = await this.executeCountQuery(queryRunner);
             const results: [Entity[], number] = [entitiesAndRaw.entities, count];
 

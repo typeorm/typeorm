@@ -278,7 +278,7 @@ export class PostgresDriver implements Driver {
         this.options = connection.options as PostgresConnectionOptions;
         this.isReplicated = this.options.replication ? true : false;
         if(this.options.useUTC) {
-            process.env.PGTZ = 'UTC';
+            process.env.PGTZ = "UTC";
         }
         // load postgres package
         this.loadDependencies();
@@ -630,9 +630,9 @@ export class PostgresDriver implements Driver {
                     // replace double quotes from the beginning and from the end
                     if (val.startsWith(`"`) && val.endsWith(`"`)) val = val.slice(1, -1);
                     // replace double escaped backslash to single escaped e.g. \\\\ -> \\
-                    val = val.replace(/(\\\\)/g, "\\")
+                    val = val.replace(/(\\\\)/g, "\\");
                     // replace escaped double quotes to non-escaped e.g. \"asd\" -> "asd"
-                    return val.replace(/(\\")/g, '"')
+                    return val.replace(/(\\")/g, '"');
                 });
 
                 // convert to number if that exists in possible enum options
@@ -702,7 +702,7 @@ export class PostgresDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -739,11 +739,11 @@ export class PostgresDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
-        const parts = target.split(".")
+        const parts = target.split(".");
 
         return {
             database: driverDatabase,
@@ -843,7 +843,7 @@ export class PostgresDriver implements Driver {
         if (typeof defaultValue === "function") {
             const value = defaultValue();
 
-            return this.normalizeDatetimeFunction(value)
+            return this.normalizeDatetimeFunction(value);
         }
 
         if (typeof defaultValue === "object") {
@@ -940,7 +940,7 @@ export class PostgresDriver implements Driver {
     obtainMasterConnection(): Promise<any> {
         return new Promise((ok, fail) => {
             if (!this.master) {
-                fail(new TypeORMError("Driver not Connected"))
+                fail(new TypeORMError("Driver not Connected"));
                 return;
             }
 
@@ -1036,7 +1036,7 @@ export class PostgresDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
 
@@ -1107,9 +1107,10 @@ export class PostgresDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.postgres = PlatformTools.load("pg");
+            const postgres = this.options.driver || PlatformTools.load("pg");
+            this.postgres = postgres;
             try {
-                const pgNative = PlatformTools.load("pg-native");
+                const pgNative = this.options.nativeDriver || PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
 
             } catch (e) { }
@@ -1202,7 +1203,7 @@ export class PostgresDriver implements Driver {
      */
     protected normalizeDatetimeFunction(value: string) {
         // check if input is datetime function
-        const upperCaseValue = value.toUpperCase()
+        const upperCaseValue = value.toUpperCase();
         const isDatetimeFunction = upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1
             || upperCaseValue.indexOf("CURRENT_DATE") !== -1
             || upperCaseValue.indexOf("CURRENT_TIME") !== -1
@@ -1211,26 +1212,26 @@ export class PostgresDriver implements Driver {
 
         if (isDatetimeFunction) {
             // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/)
+            const precision = value.match(/\(\d+\)/);
 
             if (upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1) {
                 return precision ? `('now'::text)::timestamp${precision[0]} with time zone` : "now()";
 
             } else if (upperCaseValue === "CURRENT_DATE") {
-                return "('now'::text)::date"
+                return "('now'::text)::date";
 
             } else if (upperCaseValue.indexOf("CURRENT_TIME") !== -1) {
-                return precision ? `('now'::text)::time${precision[0]} with time zone` : "('now'::text)::time with time zone"
+                return precision ? `('now'::text)::time${precision[0]} with time zone` : "('now'::text)::time with time zone";
 
             } else if (upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1) {
-                return precision ? `('now'::text)::timestamp${precision[0]} without time zone` : "('now'::text)::timestamp without time zone"
+                return precision ? `('now'::text)::timestamp${precision[0]} without time zone` : "('now'::text)::timestamp without time zone";
 
             } else if (upperCaseValue.indexOf("LOCALTIME") !== -1) {
-                return precision ? `('now'::text)::time${precision[0]} without time zone` : "('now'::text)::time without time zone"
+                return precision ? `('now'::text)::time${precision[0]} without time zone` : "('now'::text)::time without time zone";
             }
         }
 
-        return value
+        return value;
     }
 
     /**

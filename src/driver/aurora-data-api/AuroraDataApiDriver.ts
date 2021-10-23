@@ -440,7 +440,7 @@ export class AuroraDataApiDriver implements Driver {
             tablePath.unshift(database);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -477,11 +477,11 @@ export class AuroraDataApiDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
-        const parts = target.split(".")
+        const parts = target.split(".");
 
         return {
             database: (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
@@ -498,7 +498,7 @@ export class AuroraDataApiDriver implements Driver {
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
-            return this.client.preparePersistentValue(value, columnMetadata)
+            return this.client.preparePersistentValue(value, columnMetadata);
         }
 
         if (value === null || value === undefined)
@@ -540,7 +540,7 @@ export class AuroraDataApiDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
-            return this.client.prepareHydratedValue(value, columnMetadata)
+            return this.client.prepareHydratedValue(value, columnMetadata);
         }
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
@@ -633,7 +633,7 @@ export class AuroraDataApiDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (defaultValue === null) {
-            return undefined
+            return undefined;
         }
 
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
@@ -880,7 +880,8 @@ export class AuroraDataApiDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
-        this.DataApiDriver = PlatformTools.load("typeorm-aurora-data-api-driver");
+        const DataApiDriver = this.options.driver || PlatformTools.load("typeorm-aurora-data-api-driver");
+        this.DataApiDriver = DataApiDriver;
 
         // Driver uses rollup for publishing, which has issues when using typeorm in combination with webpack
         // See https://github.com/webpack/webpack/issues/4742#issuecomment-295556787
@@ -925,9 +926,9 @@ export class AuroraDataApiDriver implements Driver {
      */
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection;
-        /*
-          Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
-          cause the hosting app to crash.
+        /**
+         * Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
+         * cause the hosting app to crash.
          */
         if (connection.listeners("error").length === 0) {
             connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));
