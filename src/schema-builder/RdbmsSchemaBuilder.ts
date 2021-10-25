@@ -456,42 +456,54 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             this.connection.logger.logSchemaBuild(`dropping an old view: ${view.name}`);
 
-            // drop an old view
-            //await this.queryRunner.dropView(view);
+            // Collect view to be dropped
             droppedViews.push(view);
         }
+
+        // Helper function that for a given view, will recursively return list of the view and all views that depend on it
         const viewDependencyChain = (view: View): View[] => {
+            // Get the view metadata
             const viewMetadata = viewToMetadata.get(view);
-            let views = [view];
+            let viewWithDependencies = [view];
+            // If no metadata is known for the view, simply return the view itself
             if(!viewMetadata){
-                return views;
+                return viewWithDependencies;
             }
-            for(const [view, metadata] of viewToMetadata.entries()){
-                if(metadata.dependsOn && (
-                    metadata.dependsOn.has(viewMetadata.target) ||
-                    metadata.dependsOn.has(viewMetadata.name)
+            // Iterate over all known views
+            for(const [currentView, currentMetadata] of viewToMetadata.entries()){
+                // Ignore self reference
+                if(currentView === view) {
+                    continue;
+                }
+                // If the currently iterated view depends on the passed in view
+                if(currentMetadata.dependsOn && (
+                    currentMetadata.dependsOn.has(viewMetadata.target) ||
+                    currentMetadata.dependsOn.has(viewMetadata.name)
                 )){
-                    views = views.concat(viewDependencyChain(view));
+                    // Recursively add currently iterate view and its dependents
+                    viewWithDependencies = viewWithDependencies.concat(viewDependencyChain(currentView));
                 }
             }
-            return views;
+            // Return all collected views
+            return viewWithDependencies;
         };
-        // Add dependencies to be dropped also
+
+        // Collect final list of views to be dropped in a Set so there are no duplicates
         const droppedViewsWithDependencies: Set<View> = new Set(
+            // Collect all dropped views, and their dependencies
             droppedViews.map(view => viewDependencyChain(view))
+            // Flattened to single Array ( can be replaced with flatMap, once supported)
             .reduce((all, segment) => {
-                for(const el of segment){
-                    if(!all.includes(el)){
-                        all.push(el);
-                    }
-                }
-                return all;
+                return all.concat(segment);
             }, [])
+            // Sort the views to be dropped in creation order
             .sort((a, b)=> {
                 return ViewUtils.viewMetadataCmp(viewToMetadata.get(a), viewToMetadata.get(b));
             })
+            // reverse order to get drop order
             .reverse()
         );
+
         // Finally emit all drop views
         for(const view of droppedViewsWithDependencies){
             await this.queryRunner.dropView(view);
