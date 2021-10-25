@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases, sleep } from "../../utils/test-utils";
+import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Connection } from "../../../src/connection/Connection";
 import { Post } from "./entity/Post";
 
@@ -23,11 +23,8 @@ describe("github issues > #6327 softRemove DeleteDateColumn is null at Susbscrib
         await manager.save(entity);
 
         const deletedEntity = await manager.softRemove(entity, { data: { action: "soft-delete" } });
-        const softDeleteDate = deletedEntity!.updatedAt;
 
-        await sleep(1000);
-
-        await manager.recover(deletedEntity, { data: { action: "restore", softDeleteDate } });
+        await manager.recover(deletedEntity, { data: { action: "restore" } });
 
     })));
 
