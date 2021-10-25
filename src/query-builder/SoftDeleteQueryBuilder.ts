@@ -86,7 +86,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
             if (this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata &&
                 this.expressionMap.whereEntities.length > 0) {
-                await returningResultsEntityUpdator.update(updateResult, this.expressionMap.whereEntities);
+                await returningResultsEntityUpdator.softDelete(updateResult, this.expressionMap.whereEntities);
             }
 
             // call after updation methods in listeners and subscribers

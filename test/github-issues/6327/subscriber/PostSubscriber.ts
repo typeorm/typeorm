@@ -19,6 +19,10 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
 
         if (data!.action === "restore") {
             expect(entity!.deletedAt).to.be.null;
+<<<<<<< HEAD
+=======
+            expect(entity!.updatedAt.getTime()).not.to.be.eq(data!.softDeleteDate.getTime());
+>>>>>>> e99369cead3f73172f18969ee74d306c91032c9c
         }
     }
 }
