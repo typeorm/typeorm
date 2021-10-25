@@ -41,42 +41,42 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 ## Features
 
-* supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
-* entities and columns
-* database-specific column types
-* entity manager
-* repositories and custom repositories
-* clean object relational model
-* associations (relations)
-* eager and lazy relations
-* uni-directional, bi-directional and self-referenced relations
-* supports multiple inheritance patterns
-* cascades
-* indices
-* transactions
-* migrations and automatic migrations generation
-* connection pooling
-* replication
-* using multiple database connections
-* working with multiple databases types
-* cross-database and cross-schema queries
-* elegant-syntax, flexible and powerful QueryBuilder
-* left and inner joins
-* proper pagination for queries using joins
-* query caching
-* streaming raw results
-* logging
-* listeners and subscribers (hooks)
-* supports closure table pattern
-* schema declaration in models or separate configuration files
-* connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js
-* supports MongoDB NoSQL database
-* works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
-* TypeScript and JavaScript support
-* produced code is performant, flexible, clean and maintainable
-* follows all possible best practices
-* CLI
+* Supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice).
+* Entities and columns.
+* Database-specific column types.
+* Entity manager.
+* Repositories and custom repositories.
+* Clean object relational model.
+* Associations (relations).
+* Eager and lazy relations.
+* Uni-directional, bi-directional and self-referenced relations.
+* Supports multiple inheritance patterns.
+* Cascades.
+* Indices.
+* Transactions.
+* Migrations and automatic migrations generation.
+* Connection pooling.
+* Replication.
+* Using multiple database connections.
+* Working with multiple databases types.
+* Cross-database and cross-schema queries.
+* Elegant-syntax, flexible and powerful QueryBuilder.
+* Left and inner joins.
+* Proper pagination for queries using joins.
+* Query caching.
+* Streaming raw results.
+* Logging.
+* Listeners and subscribers (hooks).
+* Supports closure table pattern.
+* Schema declaration in models or separate configuration files.
+* Connection configuration in json / xml / yml / env formats.
+* Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
+* Supports MongoDB NoSQL database.
+* Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
+* TypeScript and JavaScript support.
+* Produced code is performant, flexible, clean and maintainable.
+* Follows all possible best practices.
+* CLI.
 
 And more...
 
