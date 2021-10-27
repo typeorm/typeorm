@@ -228,6 +228,10 @@ export class MigrationExecutor {
                 }
 
                 await migration.instance!.up(queryRunner)
+                    .catch(error => { // informative log about migration failure
+                        this.connection.logger.logMigration(`Migration ${migration.name} has been failed, error: ${error?.message}`);
+                        throw error;
+                    })
                     .then(async () => { // now when migration is executed we need to insert record about it into the database
                         await this.insertExecutedMigration(queryRunner, migration);
                         // commit transaction if we started it
