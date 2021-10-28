@@ -1,17 +1,14 @@
 import { EntitySubscriberInterface, EventSubscriber, LoadEvent, UpdateEvent } from "../../../../src";
 import {Setting} from "./Setting";
 
-function newCounter() {
-	return {
-		deletes:0,
-		inserts:0,
-		updates:0,
-	};
-}
 
 @EventSubscriber()
 export class SettingSubscriber implements EntitySubscriberInterface {
-    counter = newCounter();
+    counter: any;
+
+	constructor() {
+		this.reset();
+	}
 
 	listenTo() {
 		return Setting;
@@ -35,6 +32,10 @@ export class SettingSubscriber implements EntitySubscriberInterface {
     }
 
 	reset() {
-		this.counter = newCounter();
+		this.counter = {
+			deletes:0,
+			inserts:0,
+			updates:0,
+		};
 	}
 }
