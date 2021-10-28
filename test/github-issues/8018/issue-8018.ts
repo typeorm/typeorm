@@ -23,7 +23,7 @@ describe("github issues > #8018 Non-unique relation property names causes entity
     beforeEach(async () => await reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("Should parse the child entities as the correct type", async () =>
+    it("should create child entities of the correct type", async () =>
         await Promise.all(
             connections.map(async (connection) => {
                 const parent = new Parent();
