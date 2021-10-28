@@ -12,7 +12,7 @@ export class Setting extends BaseEntity {
 	@PrimaryColumn("varchar")
 	name: string;
 
-	@Column()
+	@Column({nullable:true})
 	value: string;
 
 	constructor(id: number, name: string, value: string) {

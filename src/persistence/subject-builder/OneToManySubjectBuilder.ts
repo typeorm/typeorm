@@ -56,21 +56,22 @@ export class OneToManySubjectBuilder {
     protected buildForSubjectRelation(subject: Subject, relation: RelationMetadata) {
 
         // prepare objects (relation id maps) for the database entity
-        // note: subject.databaseEntity contains relations with loaded relation ids only
         // by example: since subject is a post, we are expecting to get all post's categories saved in the database here,
         //             particularly their relation ids, e.g. category ids stored in the database
 		
-		// until 0.2.37, relatedEntityDatabaseRelationIds did not contain correct relationIds but full entity data.
-		// old data of relatedEntityDatabaseRelationIds is now available in relatedEntityDatabaseValues.
-		// var relatedEntityDatabaseRelationIds does now contain real relationIds.
+		// in most cases relatedEntityDatabaseValues will contain only the entity key properties.
+		// this is because subject.databaseEntity contains relations with loaded relation ids only.
+		// however if the entity uses the afterLoad hook to calculate any properties, the fetched "key object" might include ADDITIONAL properties.
+		// to handle such situations, we pass the data to relation.inverseEntityMetadata.getEntityIdMap to extract the key without any other properties.
+
         let relatedEntityDatabaseValues: ObjectLiteral[] = [];
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = [];
         if (subject.databaseEntity) { // related entities in the database can exist only if this entity (post) is saved
-			// relation.getEntityValue can sometimes return undefined which is against stated type. let falsy return values fall back to [].
+
             relatedEntityDatabaseValues = relation.getEntityValue(subject.databaseEntity) || [];
 
 			relatedEntityDatabaseRelationIds = relatedEntityDatabaseValues.map(entityData=> { 
-				return relation.inverseEntityMetadata.getEntityIdMap(entityData) as ObjectLiteral
+				return relation.inverseEntityMetadata.getEntityIdMap(entityData) as ObjectLiteral;
 			});
 		}
 
