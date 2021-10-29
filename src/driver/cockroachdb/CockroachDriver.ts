@@ -647,7 +647,7 @@ export class CockroachDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
+    async obtainMasterConnection(): Promise<any> {
         if (!this.master) {
             throw new TypeORMError("Driver not Connected");
         }
@@ -664,7 +664,7 @@ export class CockroachDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
+    async obtainSlaveConnection(): Promise<any> {
         if (!this.slaves.length)
             return this.obtainMasterConnection();
 
