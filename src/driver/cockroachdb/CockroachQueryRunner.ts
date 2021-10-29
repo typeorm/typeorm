@@ -210,8 +210,8 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         try {
-            const raw = await new Promise<any>((resolve, reject) => {
-                databaseConnection.query(query, parameters, (err: any, raw: any) => err ? reject(err) : resolve(raw))
+            const raw = await new Promise<any>((ok, fail) => {
+                databaseConnection.query(query, parameters, (err: any, raw: any) => err ? fail(err) : ok(raw))
             });
 
             // log slow queries if maxQueryExecution time is set

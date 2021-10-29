@@ -13,11 +13,11 @@ const wrap = (fn: Func | AsyncFunc, condition: boolean | (() => boolean)): Func 
             return Promise.resolve();
         }
 
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>((ok, fail) => {
             if (fn.length > 1) {
-                fn.call(context, (err: any) => err ? reject(err) : resolve());
+                fn.call(context, (err: any) => err ? fail(err) : ok());
             } else {
-                resolve(fn.call(context));
+                ok(fn.call(context));
             }
         }).then(
             (e: any) => assert.fail("Expected this test to fail"),

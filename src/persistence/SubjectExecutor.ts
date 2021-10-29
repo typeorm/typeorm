@@ -475,15 +475,15 @@ export class SubjectExecutor {
         }
 
         // Run nested set updates one by one
-        const nestedSetPromise = new Promise<void>(async (resolve, reject) => {
+        const nestedSetPromise = new Promise<void>(async (ok, fail) => {
             for (const subject of nestedSetSubjects) {
                 try {
                     await updateSubject(subject);
                 } catch (error) {
-                    reject(error);
+                    fail(error);
                 }
             }
-            resolve();
+            ok();
         });
 
         // Run all remaning subjects in parallel
