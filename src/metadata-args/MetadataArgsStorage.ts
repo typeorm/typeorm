@@ -117,7 +117,7 @@ export class MetadataArgsStorage {
     filterUniques(target: (Function|string)[]): UniqueMetadataArgs[];
     filterUniques(target: (Function|string)|(Function|string)[]): UniqueMetadataArgs[] {
         return this.uniques.filter(unique => {
-            return Array.isArray(target) ? target.indexOf(unique.target) !== -1 : unique.target === target;
+            return Array.isArray(target) ? target.indexOf(unique.target) === 0 : unique.target === target;
         });
     }
 
@@ -220,12 +220,16 @@ export class MetadataArgsStorage {
      * Filters given array by a given target or targets and prevents duplicate property names.
      */
     protected filterByTargetAndWithoutDuplicateProperties<T extends { target: Function|string, propertyName: string }>(array: T[], target: (Function|string)|(Function|string)[]): T[] {
+
+        const frequency: Map<string, number> = this.calculateFrequencyOfProperties(array);
         const newArray: T[] = [];
         array.forEach(item => {
             const sameTarget = Array.isArray(target) ? target.indexOf(item.target) !== -1 : item.target === target;
             if (sameTarget) {
-                if (!newArray.find(newItem => newItem.propertyName === item.propertyName))
+                if (!newArray.find(newItem => newItem.propertyName === item.propertyName)
+                && this.targetIsValidForPropertyCount(frequency, item, target)) {
                     newArray.push(item);
+                }
             }
         });
         return newArray;
@@ -270,4 +274,27 @@ export class MetadataArgsStorage {
         return newArray;
     }
 
+    /**
+     * Compute frequency of each property name in the given array
+     */
+    protected calculateFrequencyOfProperties<T extends { target: Function|string, propertyName: string }>(array: T[]): Map<string, number> {
+        const frequency: Map<string, number> = new Map();
+        array.forEach(item => {
+            const previousCount: number | undefined = frequency.get(item.propertyName);
+            frequency.set(item.propertyName, (previousCount) ? previousCount + 1 : 1);
+        });
+        return frequency;
+    }
+
+    /**
+     * If frequency of property name is more than 1, it should
+     * match the given inheritance tree's topmost element (at index 0).
+     */
+    protected targetIsValidForPropertyCount<T extends { target: Function|string, propertyName: string }>(frequency: Map<string, number>, item: T, target: (Function|string)|(Function|string)[]): boolean {
+        const count: number | undefined = frequency.get(item.propertyName);
+        if (typeof count === "number" && count > 1) {
+            return Array.isArray(target) ? item.target === target[0] : item.target === target;
+        }
+        return true;
+    }
 }
