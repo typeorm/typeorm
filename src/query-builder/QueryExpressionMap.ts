@@ -12,6 +12,7 @@ import {RelationMetadata} from "../metadata/RelationMetadata";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import { TypeORMError } from "../error";
 import { WhereClause } from "./WhereClause";
+import { RelationSeparateAttributes } from "./relation-separate/RelationSeparateAttributes";
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -116,6 +117,12 @@ export class QueryExpressionMap {
      * Relation count queries.
      */
     relationCountAttributes: RelationCountAttribute[] = [];
+
+    /**
+     *  Relation separately queries
+     */
+
+    relationSeparateAttributes: RelationSeparateAttributes[] = [];
 
     /**
      * WHERE queries.

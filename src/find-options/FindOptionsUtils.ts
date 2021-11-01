@@ -5,6 +5,7 @@ import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {DriverUtils} from "../driver/DriverUtils";
 import { TypeORMError } from "../error";
+import { RelationSeparateAttributes } from "../query-builder/relation-separate/RelationSeparateAttributes";
 
 /**
  * Utilities to work with FindOptions.
@@ -123,6 +124,11 @@ export class FindOptionsUtils {
             // so, we give an exception about not found relations
             if (allRelations.length > 0)
                 throw new FindRelationsNotFoundError(allRelations);
+        }
+
+        if (options.separateFetchRelations) {
+            const separateRelations = [...options.separateFetchRelations];
+            separateRelations.map((relation)=>qb.expressionMap.relationSeparateAttributes.push(new RelationSeparateAttributes({relationPath:relation})));
         }
 
         if (options.join) {

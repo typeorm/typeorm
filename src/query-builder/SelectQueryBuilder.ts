@@ -38,6 +38,7 @@ import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {EntityNotFoundError} from "../error/EntityNotFoundError";
 import { TypeORMError } from "../error";
+import { RelationSeparateLoader } from "./relation-separate/RelationSeparateLoader";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1939,6 +1940,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         const relationIdLoader = new RelationIdLoader(this.connection, queryRunner, this.expressionMap.relationIdAttributes);
         const relationCountLoader = new RelationCountLoader(this.connection, queryRunner, this.expressionMap.relationCountAttributes);
+        const relationSeparateLoader = new RelationSeparateLoader(this.connection, queryRunner, this.expressionMap.relationSeparateAttributes);
         const relationIdMetadataTransformer = new RelationIdMetadataToAttributeTransformer(this.expressionMap);
         relationIdMetadataTransformer.transform();
         const relationCountMetadataTransformer = new RelationCountMetadataToAttributeTransformer(this.expressionMap);
@@ -2030,7 +2032,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             const rawRelationCountResults = await relationCountLoader.load(rawResults);
             const transformer = new RawSqlResultsToEntityTransformer(this.expressionMap, this.connection.driver, rawRelationIdResults, rawRelationCountResults, this.queryRunner);
             entities = transformer.transform(rawResults, this.expressionMap.mainAlias!);
-
+            await relationSeparateLoader.load(entities);
             // broadcast all "after load" events
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias.hasMetadata) {
                 await queryRunner.broadcaster.broadcast("Load", this.expressionMap.mainAlias.metadata, entities);

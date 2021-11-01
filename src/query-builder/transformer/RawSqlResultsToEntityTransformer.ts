@@ -97,7 +97,7 @@ export class RawSqlResultsToEntityTransformer {
         if (metadata.discriminatorColumn) {
             const discriminatorValues = rawResults.map(result => result[DriverUtils.buildAlias(this.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)]);
             const discriminatorMetadata = metadata.childEntityMetadatas.find(childEntityMetadata => {
-                return typeof discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue) !== 'undefined';
+                return typeof discriminatorValues.find(value => value === childEntityMetadata.discriminatorValue) !== "undefined";
             });
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
