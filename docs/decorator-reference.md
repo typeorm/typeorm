@@ -563,7 +563,7 @@ export class Post {
 Relation id is used only for representation.
 The underlying relation is not added/removed/changed when chaining the value.
 
-## Subscriber and listener decorators - Query-Life-Cycle-Hooks
+## Subscriber and listener decorators
 
 #### `@AfterLoad`
 
