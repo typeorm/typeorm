@@ -38,19 +38,19 @@ describe("github issues > #8221", () => {
 
 	it("afterLoad entity modifier must not make relation key matching fail", async () => {
 		for(const connection of connections) {
-		
+
 			const userRepo = connection.getRepository(User);
 			const subscriber = (connection.subscribers[0] as SettingSubscriber);
 			subscriber.reset();
 
 			await insertSimpleTestData(connection);
 			subscriber.reset();
-		
+
 			await userRepo.save([{
 				id:1,
-				settings:[
-					{id:1,name:"A",value:"foobar"},
-					{id:1,name:"B",value:"testvalue"},
+				settings: [
+					{ assertId:1, name:"A", value:"foobar" },
+					{ assertId:1, name:"B", value:"testvalue" },
 				]
 			}]);
 
@@ -58,11 +58,11 @@ describe("github issues > #8221", () => {
 			// the save query should only update settings, so only beforeUpdate should have been called.
 			// if beforeInsert/beforeUpdate has been called, this would indicate that key matching has failed.
 			// the resulting state would be the same, but settings entities would be deleted and inserted instead.
-		
+
 			expect(subscriber.counter.deletes).to.equal(0);
 			expect(subscriber.counter.inserts).to.equal(0);
 			expect(subscriber.counter.updates).to.equal(2);
-		
+
 		}
 	});
 
