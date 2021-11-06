@@ -157,7 +157,7 @@ await manager.upsert(User, { externalId: "abc123" }, { firstName: "Rizzrak" });
  *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
  **/
 
-await manager.update(User, ["externalId"], [
+await manager.upsert(User, ["externalId"], [
     { externalId:"abc123", firstName: "Rizzrak" },
     { externalId:"bca321", firstName: "Karzzir" },
     ]);
