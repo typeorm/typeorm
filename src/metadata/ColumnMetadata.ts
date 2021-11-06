@@ -541,9 +541,22 @@ export class ColumnMetadata {
                 const propertyName = propertyNames.shift();
 
                 if (propertyName) {
-                    const submap = extractEmbeddedColumnValue(propertyNames, value[propertyName]);
-                    if (Object.keys(submap).length > 0) {
-                        return { [propertyName]: submap };
+                    if(Array.isArray(value)) {
+                        const mappedArray: any = [];
+
+                        value.forEach((arrayElement) => {
+                            const mappedArrayElement = extractEmbeddedColumnValue(propertyNames, arrayElement[propertyName]);
+                            if (Object.keys(mappedArrayElement).length > 0) {
+                                mappedArray.push({ [propertyName]: mappedArrayElement });
+                            }
+                        });
+
+                        return mappedArray;
+                    } else {
+                        const submap = extractEmbeddedColumnValue(propertyNames, value[propertyName]);
+                        if (Object.keys(submap).length > 0) {
+                            return { [propertyName]: submap };
+                        }
                     }
                     return {};
                 }
