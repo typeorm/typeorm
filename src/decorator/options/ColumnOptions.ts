@@ -151,7 +151,9 @@ export interface ColumnOptions extends ColumnCommonOptions {
 
     /**
      * Return type of JSON/JSONB column.
-     * Returns value as string or as object.
+     * 
+     * Determines whether value is passed to/returned from the database as a string or object.
+     * Supported only by postgres.
      */
     jsonType?: "object"|"string";
 

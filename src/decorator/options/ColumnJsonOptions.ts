@@ -1,5 +1,5 @@
 /**
- * Column options for enum-typed columns.
+ * Column options for JSON-typed columns.
  */
 export interface ColumnJsonOptions {
 
