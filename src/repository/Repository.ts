@@ -15,7 +15,6 @@ import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 import {ObjectID} from "../driver/mongodb/typings";
 import {FindConditions} from "../find-options/FindConditions";
 import {UpsertOptions} from "./UpsertOptions";
-import {PropertyPath} from "../util/PropertyPath";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -250,7 +249,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     upsert(
         entityOrEntities: QueryDeepPartialEntity<Entity> | (QueryDeepPartialEntity<Entity>[]),
-        conflictPathsOrOptions: PropertyPath<Entity>[] | UpsertOptions<Entity>): Promise<InsertResult> {
+        conflictPathsOrOptions: string[] | UpsertOptions<Entity>): Promise<InsertResult> {
         return this.manager.upsert(this.metadata.target as any, entityOrEntities, conflictPathsOrOptions);
     }
 

@@ -39,7 +39,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {getMetadataArgsStorage} from "../globals";
 import {TypeORMError} from "../error";
 import {UpsertOptions} from "../repository/UpsertOptions";
-import {PropertyPath} from "../util/PropertyPath";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -483,7 +482,7 @@ export class EntityManager {
     async upsert<Entity>(
         target: EntityTarget<Entity>,
         entityOrEntities: QueryDeepPartialEntity<Entity> | (QueryDeepPartialEntity<Entity>[]),
-        conflictPathsOrOptions: PropertyPath<Entity>[] | UpsertOptions<Entity>): Promise<InsertResult> {
+        conflictPathsOrOptions: string[] | UpsertOptions<Entity>): Promise<InsertResult> {
         const metadata = this.connection.getMetadata(target);
 
         let options: UpsertOptions<Entity>;

@@ -16,7 +16,6 @@ import {ObjectID} from "../driver/mongodb/typings";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 import {UpsertOptions} from "./UpsertOptions";
-import {PropertyPath} from "../util/PropertyPath";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -258,7 +257,7 @@ export class BaseEntity {
      */
     static upsert<T extends BaseEntity>(this: ObjectType<T> & typeof BaseEntity, 
         entityOrEntities: QueryDeepPartialEntity<T> | (QueryDeepPartialEntity<T>[]),
-        conflictPathsOrOptions: PropertyPath<T>[] | UpsertOptions<T>): Promise<InsertResult> {
+        conflictPathsOrOptions: string[] | UpsertOptions<T>): Promise<InsertResult> {
         return this.getRepository<T>().upsert(entityOrEntities, conflictPathsOrOptions);
     }
 

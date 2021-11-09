@@ -531,17 +531,6 @@ describe("repository > basic methods", () => {
             await externalIdObjects.upsert({ title: "foo"}, ["title"])
                 .should.be.rejectedWith(TypeORMError);
         }));
-        it("should have type error and throw with invalid conflict property", asyncMapper(upsertableConnections(true), async (connection) => {
-            const postRepository = connection.getRepository(Post);
-           
-            // optional nested properties should be okay
-            await postRepository.upsert({ externalId: "abc123" }, ["category.id"])
-                .should.be.rejectedWith(TypeORMError);
-           
-            // @ts-expect-error
-            await postRepository.upsert({ externalId: "abc123" }, ["category.invalid"])
-                .should.be.rejectedWith(TypeORMError);
-        }));
         it("should throw if using an unsupported driver", asyncMapper(upsertableConnections(false), async (connection) => {
             const postRepository = connection.getRepository(Post);
             const externalId = "external-2";
