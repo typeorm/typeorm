@@ -918,7 +918,7 @@ Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` 
 
 ## Use custom index
 
-We need provide a certain index for database server to use in some cases. Only MySQL driver is supporting at the moment:
+You can provide a certain index for database server to use in some cases. This feature is only supported in MySQL.
 
 ```typescript
 const users = await getRepository(User)
@@ -929,7 +929,7 @@ const users = await getRepository(User)
 
 ## Max execution time
 
-We can drop slow query to avoid crashing the server. Only MySQL driver is supported at the moment:
+We can drop slow query to avoid crashing the server.
 
 ```typescript
 const users = await getRepository(User)
