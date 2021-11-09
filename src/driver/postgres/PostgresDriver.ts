@@ -1200,9 +1200,7 @@ export class PostgresDriver implements Driver {
     /**
      * Executes given query.
      */
-    protected executeQuery(connection: any, query: string) {
-        this.connection.logger.logQuery(query);
-
+    protected executeQuery(connection: any, query: string) {        
         return new Promise((ok, fail) => {
             this.connection.logger.logQuery(query);
             connection.query(
