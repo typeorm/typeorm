@@ -154,7 +154,7 @@ await repository.update(1, { firstName: "Rizzrak" });
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
 ```
 
-* `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead.
+* `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
 
 ```typescript
 await repository.update([
