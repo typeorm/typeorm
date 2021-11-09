@@ -957,7 +957,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
             }
 
-            if (oldColumn.isGenerated !== newColumn.isGenerated && !["uuid", "identity"].includes(newColumn.generationStrategy as string)) {
+            if (oldColumn.isGenerated !== newColumn.isGenerated &&
+                newColumn.generationStrategy !== "uuid" &&
+                newColumn.generationStrategy !== "identity"
+            ) {
                 if (newColumn.isGenerated === true) {
                     upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
                     downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));

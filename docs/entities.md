@@ -524,7 +524,7 @@ export class User {
 
 `uuid` value will be automatically generated and stored into the database.
 
-Besides "uuid" there is also "increment" "identity" (Postgres 10+ only) and "rowid" (CockroachDB only) generated types, however there are some limitations
+Besides "uuid" there is also "increment", "identity" (Postgres 10+ only) and "rowid" (CockroachDB only) generated types, however there are some limitations
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
