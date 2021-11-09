@@ -339,23 +339,3 @@ export function sleep(ms: number): Promise<void> {
         setTimeout(ok, ms);
     });
 }
-
-export function asyncMapper<TIn, TOut>(
-    list: TIn[] | (() => TIn[]),
-    mapper: (value: TIn) => Promise<TOut>
-): () => Promise<TOut[]> {
-    return async function () {
-        if (typeof list === "function") {
-            list = list();
-        }
-        if (process.env.PARALLEL_MAP === "0") {
-            const out: TOut[] = [];
-            for (const value of list) {
-                out.push(await mapper(value));
-            }
-            return out;
-        } else {
-            return Promise.all(list.map((value) => mapper(value)));
-        }
-    };
-}

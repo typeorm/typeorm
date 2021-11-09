@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {asyncMapper, closeTestingConnections, createTestingConnections, reloadTestingDatabases, sleep} from "../../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases, sleep} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import {Post} from "./entity/Post";
 import {QueryBuilder} from "../../../../src/query-builder/QueryBuilder";
@@ -14,7 +14,6 @@ import { ExternalIdPrimaryKeyEntity } from "./entity/ExternalIdPrimaryKeyEntity"
 import { EmbeddedUniqueConstraintEntity } from "./entity/EmbeddedUniqueConstraintEntity";
 import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey";
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns";
-import { UpsertType } from "../../../../src/driver/types/UpsertType";
 
 describe("repository > basic methods", () => {
 
@@ -375,16 +374,8 @@ describe("repository > basic methods", () => {
     });
 
     describe("upsert", function () {
-        function upsertableConnections(able: boolean | UpsertType) {
-            return function () {
-                return connections.filter((c) =>
-                    typeof able === "string"
-                        ? c.driver.supportedUpsertType === able
-                        : (c.driver.supportedUpsertType != null) === able
-                );
-            };
-        }
-        it("should first create then update an entity", asyncMapper(upsertableConnections(true), async (connection) => {
+        it("should first create then update an entity", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType == null) return;
             const externalIdObjects = connection.getRepository(ExternalIdPrimaryKeyEntity);
             const postRepository = connection.getRepository(Post);
             const categoryRepository = connection.getRepository(Category);
@@ -448,8 +439,10 @@ describe("repository > basic methods", () => {
                     { relations: ["category"] }
                 )
             ).category.id.should.equal(category.id);
-        }));
-        it("should bulk upsert", asyncMapper(upsertableConnections(true), async (connection) => {
+        })));
+        it("should bulk upsert", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType == null) return;
+
             const externalIdObjects = connection.getRepository(ExternalIdPrimaryKeyEntity);
 
             const entitiesToInsert = Array.from({ length: 5 }, (v, i) => ({
@@ -473,8 +466,10 @@ describe("repository > basic methods", () => {
             (await externalIdObjects.find({ externalId: Like("external-bulk-%") })).forEach((updated, i) => {
                 updated.title.should.be.equal("Updated");
             });
-        }));
-        it("should not overwrite unspecified properties", asyncMapper(upsertableConnections(true), async (connection) => {
+        })));
+        it("should not overwrite unspecified properties", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType == null) return;
+            
             const postObjects = connection.getRepository(Post);
             const externalId = "external-no-overwrite-unrelated";
 
@@ -483,8 +478,10 @@ describe("repository > basic methods", () => {
             await postObjects.upsert({ externalId, title: "title updated" }, ["externalId"]);
             (await postObjects.findOneOrFail(({ externalId }))).subTitle.should.equal("subtitle");
             (await postObjects.findOneOrFail(({ externalId }))).title.should.equal("title updated");
-        }));
-        it("should upsert with embedded columns", asyncMapper(upsertableConnections(true), async (connection) => {
+        })));
+        it("should upsert with embedded columns", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType == null) return;
+            
             const externalIdObjects = connection.getRepository(ExternalIdPrimaryKeyEntity);
             const embeddedConstraintObjects = connection.getRepository(EmbeddedUniqueConstraintEntity);
             const externalId = "external-embedded";
@@ -503,8 +500,10 @@ describe("repository > basic methods", () => {
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar1" } })).embedded.value.should.be.equal("foo 1");
             await embeddedConstraintObjects.upsert({ embedded: { id: "bar1", value: "foo 2" } }, ["embedded.id"]);
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar1" } })).embedded.value.should.be.equal("foo 2");
-        }));
-        it("should bulk upsert with embedded columns", asyncMapper(upsertableConnections(true), async (connection) => {
+        })));
+        it("should bulk upsert with embedded columns", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType == null) return;
+            
             const embeddedConstraintObjects = connection.getRepository(EmbeddedUniqueConstraintEntity);
             
             await embeddedConstraintObjects.upsert([{
@@ -524,19 +523,23 @@ describe("repository > basic methods", () => {
             }], ["embedded.id"]);
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar2" } })).embedded.value.should.be.equal("value2 2");
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar3" } })).embedded.value.should.be.equal("value3 2");
-        }));
-        it("should throw if attempting to conflict on properties with no unique constraint", asyncMapper(upsertableConnections(true), async (connection) => {
+        })));
+        it("should throw if attempting to conflict on properties with no unique constraint", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType == null) return;
+            
             const externalIdObjects = connection.getRepository(ExternalIdPrimaryKeyEntity);
             // cannot conflict on a column with no unique index
             await externalIdObjects.upsert({ title: "foo"}, ["title"])
                 .should.be.rejectedWith(TypeORMError);
-        }));
-        it("should throw if using an unsupported driver", asyncMapper(upsertableConnections(false), async (connection) => {
+        })));
+        it("should throw if using an unsupported driver", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType != null) return;
+            
             const postRepository = connection.getRepository(Post);
             const externalId = "external-2";
             await postRepository.upsert({ externalId, title: "Post title initial" }, ["externalId"])
                 .should.be.rejectedWith(TypeORMError);
-        }));
+        })));
     });
 
     describe("preload also should also implement merge functionality", function() {
