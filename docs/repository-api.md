@@ -157,17 +157,10 @@ await repository.update(1, { firstName: "Rizzrak" });
 * `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead.
 
 ```typescript
-await repository.upsert({ externalId: "abc123" }, { firstName: "Rizzrak" });
-/** executes 
- *  INSERT INTO user 
- *  VALUES (externalId = abc123, firstName = Rizzrak) 
- *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
- **/
-
-await repository.update(["externalId"], [
+await repository.update([
     { externalId:"abc123", firstName: "Rizzrak" },
     { externalId:"bca321", firstName: "Karzzir" },
-    ]);
+], ["externalId"]);
 /** executes 
  *  INSERT INTO user 
  *  VALUES 

@@ -150,17 +150,10 @@ await manager.update(User, 1, { firstName: "Rizzrak" });
 * `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
 
 ```typescript
-await manager.upsert(User, { externalId: "abc123" }, { firstName: "Rizzrak" });
-/** executes 
- *  INSERT INTO user 
- *  VALUES (externalId = abc123, firstName = Rizzrak) 
- *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
- **/
-
-await manager.upsert(User, ["externalId"], [
+await manager.upsert(User, [
     { externalId:"abc123", firstName: "Rizzrak" },
     { externalId:"bca321", firstName: "Karzzir" },
-    ]);
+], ["externalId"]);
 /** executes 
  *  INSERT INTO user 
  *  VALUES 

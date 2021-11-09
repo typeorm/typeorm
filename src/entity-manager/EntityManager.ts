@@ -38,8 +38,8 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {getMetadataArgsStorage} from "../globals";
 import {TypeORMError} from "../error";
-import {OrmUtils} from "../util/OrmUtils";
-import { UpsertOptions } from "../repository/UpsertOptions";
+import {UpsertOptions} from "../repository/UpsertOptions";
+import {PropertyPath} from "../util/PropertyPath";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -482,25 +482,18 @@ export class EntityManager {
 
     async upsert<Entity>(
         target: EntityTarget<Entity>,
-        conditionsOrConflictPropertyPaths: string[] | QueryDeepPartialEntity<Entity>,
         entityOrEntities: QueryDeepPartialEntity<Entity> | (QueryDeepPartialEntity<Entity>[]),
-        {
-            insertOnly = {},
-            allowUnsafeInsertOnly = false
-        }: UpsertOptions<Entity> = {}): Promise<InsertResult> {
+        conflictPathsOrOptions: PropertyPath<Entity>[] | UpsertOptions<Entity>): Promise<InsertResult> {
         const metadata = this.connection.getMetadata(target);
 
-        let conditions: QueryDeepPartialEntity<Entity>|null;
-        let conflictPropertyPaths: string[];
+        let options: UpsertOptions<Entity>;
 
-        if (Array.isArray(conditionsOrConflictPropertyPaths)) {
-            conflictPropertyPaths = conditionsOrConflictPropertyPaths;
-            conditions = null;
+        if (Array.isArray(conflictPathsOrOptions)) {
+            options = {
+                conflictPaths: conflictPathsOrOptions
+            };
         } else {
-            conflictPropertyPaths = metadata.columns
-                .filter(col => typeof col.getEntityValue(conditionsOrConflictPropertyPaths) !== "undefined")
-                .map(col => col.propertyPath);
-            conditions = conditionsOrConflictPropertyPaths;
+            options = conflictPathsOrOptions;
         }
 
         const uniqueColumnConstraints = [
@@ -510,12 +503,12 @@ export class EntityManager {
         ];
 
         const useIndex = uniqueColumnConstraints.find((ix) =>
-            ix.length === conflictPropertyPaths.length &&
-            conflictPropertyPaths.every((conflictPropertyPath) => ix.some((col) => col.propertyPath === conflictPropertyPath))
+            ix.length === options.conflictPaths.length &&
+            options.conflictPaths.every((conflictPropertyPath) => ix.some((col) => col.propertyPath === conflictPropertyPath))
         );
 
         if (useIndex == null) {
-            throw new TypeORMError(`An upsert requires conditions that have a unique constraint but none was found for conflict properties: ${conflictPropertyPaths.join(", ")}`);
+            throw new TypeORMError(`An upsert requires conditions that have a unique constraint but none was found for conflict properties: ${options.conflictPaths.join(", ")}`);
         }
 
         let entities: QueryDeepPartialEntity<Entity>[];
@@ -526,47 +519,10 @@ export class EntityManager {
             entities = entityOrEntities;
         }
 
-        const conflictColumns = metadata.mapPropertyPathsToColumns(conflictPropertyPaths);
+        const conflictColumns = metadata.mapPropertyPathsToColumns(options.conflictPaths);
 
         const overwriteColumns = metadata.columns
-            .filter((col) => (conditions != null || !conflictColumns.includes(col)) && entities.some(entity => typeof col.getEntityValue(entity) !== "undefined"));
-
-        const insertOnlyColumns = metadata.columns
-            .filter(col => typeof col.getEntityValue(insertOnly) !== "undefined");
-
-        if (!OrmUtils.areMutuallyExclusive(conflictColumns, overwriteColumns, insertOnlyColumns)) {
-            throw new TypeORMError(`Columns should be specified as a condition, an update, or an insertOnly exclusively`);
-        }
-        
-        entities = entities.map(entity => OrmUtils.mergeDeep({}, conditions, entity, insertOnly));
-
-        /**
-         * cannot perform upsert with an insertOnly if the values only inserted could possibly conflict on multiple unique indices
-         * 
-         * given a table: 
-         *  test(external_id UNIQUE, email UNIQUE, name) 
-         * 
-         * with values:
-         *  ('abc123', 'jdoe@foo.com', 'jane doe')
-         *  ('abc234', 'jsmith@foo.com', 'john smith')
-         *
-         * this query is unsafe as the results vary depending on column order: (https://mariadb.com/kb/en/insert-on-duplicate-key-update/)
-         * 
-         *  INSERT INTO test(external_id, email, name) VALUES('abc123', 'jsmith@foo.com', 'Jane Smith') ON DUPLICATE KEY UPDATE name = VALUES(name);
-         * 
-         * either the id=abc123 row or the email=jsmith@foo.com row will be updated, depending on row order
-         * 
-         * it is safe if the values are being overwritten, as that will result in the database engine throwing a duplicate entry error if there is a conflict
-         * 
-         *  INSERT INTO test(external_id, email, name) VALUES('abc123', 'jsmith@foo.com', 'Jane Smith') ON DUPLICATE KEY UPDATE external_id = VALUES(external_id), email = VALUES(email), name = VALUES(name);
-         */
-    
-        if (!allowUnsafeInsertOnly && this.connection.driver.supportedUpsertType === "on-duplicate-key-update") {
-            const overwritePossibleConflict = insertOnlyColumns.some(col => uniqueColumnConstraints.some(uq => uq.includes(col)));
-            if (overwritePossibleConflict) {
-                throw new TypeORMError(`You are attempting to insert-only a value with a unique constraint, this database type cannot guarantee that the row you may update is the row that you specify with your conflict properties.`);
-            }
-        }
+            .filter((col) => (!conflictColumns.includes(col)) && entities.some(entity => typeof col.getEntityValue(entity) !== "undefined"));
 
         return this.createQueryBuilder()
             .insert()

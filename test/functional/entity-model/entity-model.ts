@@ -40,10 +40,10 @@ describe("entity-model", () => {
 
                 const externalId = "external-entity";
 
-                await Post.upsert({ externalId }, { title: "External post" });
+                await Post.upsert({ externalId, title: "External post" }, ["externalId"]);
                 const upsertInsertedExternalPost = await Post.findOneOrFail({ externalId });
 
-                await Post.upsert({ externalId }, { title: "External post 2" });
+                await Post.upsert({ externalId, title: "External post 2" }, ["externalId"]);
                 const upsertUpdatedExternalPost = await Post.findOneOrFail({ externalId });
 
                 upsertInsertedExternalPost.id.should.be.equal(upsertUpdatedExternalPost.id);

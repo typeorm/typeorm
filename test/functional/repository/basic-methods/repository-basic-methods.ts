@@ -396,7 +396,7 @@ describe("repository > basic methods", () => {
             });
 
             // create a new post and insert it
-            await postRepository.upsert({ externalId }, { title: "Post title initial" });
+            await postRepository.upsert({ externalId, title: "Post title initial" }, ["externalId"]);
 
             const initial = await postRepository.findOneOrFail({ externalId });
 
@@ -405,7 +405,7 @@ describe("repository > basic methods", () => {
             await sleep(1000);
 
             // update post with externalId
-            await postRepository.upsert({ externalId }, { title: "Post title updated", category });
+            await postRepository.upsert({ externalId, title: "Post title updated", category }, ["externalId"]);
 
             const updated = await postRepository.findOneOrFail({ externalId }, { relations: ["category"] });
             // title should have changed
@@ -433,14 +433,15 @@ describe("repository > basic methods", () => {
             count.length.should.be.equal(1);
 
             // upserts on primary key without specifying conflict columns should upsert
-            await externalIdObjects.upsert({ externalId }, { title: "foo" });
+            await externalIdObjects.upsert({ externalId, title: "foo" }, ["externalId"]);
             (await externalIdObjects.findOneOrFail(externalId))!.title.should.be.equal("foo");
 
-            await externalIdObjects.upsert({ externalId }, { title: "bar" });
+            await externalIdObjects.upsert({ externalId, title: "bar" }, ["externalId"]);
             (await externalIdObjects.findOneOrFail(externalId))!.title.should.be.equal("bar");
 
             // upserts on unique relation should work
-            await relationAsPrimaryKeyRepository.upsert({ category }, {});
+            await relationAsPrimaryKeyRepository.upsert({ category }, ["category.id"]);
+
             (
                 await relationAsPrimaryKeyRepository.findOneOrFail(
                     { category },
@@ -456,7 +457,7 @@ describe("repository > basic methods", () => {
                 title: "Initially inserted",
             }));
 
-            await externalIdObjects.upsert(["externalId"], entitiesToInsert);
+            await externalIdObjects.upsert(entitiesToInsert, ["externalId"]);
 
             (await externalIdObjects.find({ externalId: Like("external-bulk-%") })).forEach((inserted, i) => {
                 inserted.title.should.be.equal("Initially inserted");
@@ -467,7 +468,7 @@ describe("repository > basic methods", () => {
                 title: "Updated",
             }));
 
-            await externalIdObjects.upsert(["externalId"], entitiesToUpdate);
+            await externalIdObjects.upsert(entitiesToUpdate, ["externalId"]);
 
             (await externalIdObjects.find({ externalId: Like("external-bulk-%") })).forEach((updated, i) => {
                 updated.title.should.be.equal("Updated");
@@ -478,8 +479,8 @@ describe("repository > basic methods", () => {
             const externalId = "external-no-overwrite-unrelated";
 
             // update properties of embedded
-            await postObjects.upsert({ externalId }, { title: "title", subTitle: "subtitle" });
-            await postObjects.upsert({ externalId }, { title: "title updated" });
+            await postObjects.upsert({ externalId, title: "title", subTitle: "subtitle" }, ["externalId"]);
+            await postObjects.upsert({ externalId, title: "title updated" }, ["externalId"]);
             (await postObjects.findOneOrFail(({ externalId }))).subTitle.should.equal("subtitle");
             (await postObjects.findOneOrFail(({ externalId }))).title.should.equal("title updated");
         }));
@@ -489,110 +490,62 @@ describe("repository > basic methods", () => {
             const externalId = "external-embedded";
             
             // update properties of embedded
-            await externalIdObjects.upsert({ externalId }, { title: "embedded", embedded: { foo: "foo 1" } });
+            await externalIdObjects.upsert({ externalId, title: "embedded", embedded: { foo: "foo 1" } }, ["externalId"]);
             
             (await externalIdObjects.findOneOrFail({ externalId })).embedded.foo.should.be.equal("foo 1");
             
-            await externalIdObjects.upsert({ externalId }, { title: "embedded", embedded: { foo: "foo 2" } });
+            await externalIdObjects.upsert({ externalId, title: "embedded", embedded: { foo: "foo 2" } }, ["externalId"]);
             
             (await externalIdObjects.findOneOrFail({ externalId })).embedded.foo.should.be.equal("foo 2");
             
             // upsert on embedded
-            await embeddedConstraintObjects.upsert({ embedded: { id: "bar1" } }, { embedded: { value: "foo 1" } });
+            await embeddedConstraintObjects.upsert({ embedded: { id: "bar1", value: "foo 1" } }, ["embedded.id"]);
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar1" } })).embedded.value.should.be.equal("foo 1");
-            await embeddedConstraintObjects.upsert({ embedded: { id: "bar1" } }, { embedded: { value: "foo 2" } });
+            await embeddedConstraintObjects.upsert({ embedded: { id: "bar1", value: "foo 2" } }, ["embedded.id"]);
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar1" } })).embedded.value.should.be.equal("foo 2");
         }));
         it("should bulk upsert with embedded columns", asyncMapper(upsertableConnections(true), async (connection) => {
             const embeddedConstraintObjects = connection.getRepository(EmbeddedUniqueConstraintEntity);
             
-            await embeddedConstraintObjects.upsert(["embedded.id"], [{
+            await embeddedConstraintObjects.upsert([{
                 embedded: { id: "bar2", value: "value2" },
             },
             {
                 embedded: { id: "bar3", value: "value3" },
-            }]);
+            }], ["embedded.id"]);
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar2" } })).embedded.value.should.be.equal("value2");
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar3" } })).embedded.value.should.be.equal("value3");
 
-            await embeddedConstraintObjects.upsert(["embedded.id"], [{
+            await embeddedConstraintObjects.upsert([{
                 embedded: { id: "bar2", value: "value2 2" },
             },
             {
                 embedded: { id: "bar3", value: "value3 2" },
-            }]);
+            }], ["embedded.id"]);
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar2" } })).embedded.value.should.be.equal("value2 2");
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar3" } })).embedded.value.should.be.equal("value3 2");
         }));
         it("should throw if attempting to conflict on properties with no unique constraint", asyncMapper(upsertableConnections(true), async (connection) => {
             const externalIdObjects = connection.getRepository(ExternalIdPrimaryKeyEntity);
             // cannot conflict on a column with no unique index
-            await externalIdObjects.upsert({ title: "foo" }, {})
+            await externalIdObjects.upsert({ title: "foo"}, ["title"])
                 .should.be.rejectedWith(TypeORMError);
         }));
-        it("should throw if a column is used more than once", asyncMapper(upsertableConnections(true), async (connection) => {
-            const postObjects = connection.getRepository(Post);
-
-            await postObjects.upsert({
-                externalId: "abc4523424"
-            }, {
-                title: "Title 1",
-                subTitle: "Subtitle 1"
-            }, {
-                insertOnly: {
-                    title: "Title 1"
-                }
-            }).should.be.rejectedWith(TypeORMError);
-
-            await postObjects.upsert({
-                externalId: "abc646484984"
-            }, {
-                externalId: "abc646484984",
-                title: "Title 2"
-            }).should.be.rejectedWith(TypeORMError);
-
-            await postObjects.upsert(
-                ["externalId"],
-                [{
-                    externalId: "abc5434",
-                    title: "Title 3"
-                }]).should.be.fulfilled;
-        }));
-        it("should prevent unsafe ON DUPLICATE KEY UPDATE", asyncMapper(upsertableConnections("on-duplicate-key-update"), async (connection) => {
-            const externalIdObjects = connection.getRepository(TwoUniqueColumnsEntity);
-
-            await externalIdObjects.upsert({ externalId: "abc123" }, { email: "jdoe@foo.com", name: "Jane Doe" });
-            await externalIdObjects.upsert({ externalId: "abc234" }, { email: "jsmith@foo.com", name: "John Smith" });
-            
-            // cannot perform upsert with an insertOnly if it could possibly conflict on multiple unique indices
-            // this query is unsafe as the results vary depending on row order: 
-            //  INSERT INTO test(external_id, email, name) VALUES('abc123', 'jsmith@foo.com', 'Jane Smith') ON DUPLICATE KEY UPDATE name = VALUES(name);
-            await externalIdObjects.upsert({
-                externalId: "abc123"
-            }, {
-                name: "Jane Smith"
-            }, {
-                insertOnly: {
-                    email: "jsmith@foo.com"
-                }
-            }).should.be.rejectedWith(TypeORMError);
-
-            // can perform unsafe upsert if explicitly allowed
-            await externalIdObjects.upsert({
-                externalId: "abc123"
-            }, {
-                name: "Jane Smith"
-            }, {
-                insertOnly: {
-                    email: "jsmith@foo.com"
-                },
-                allowUnsafeInsertOnly: true
-            }).should.be.fulfilled;
+        it("should have type error and throw with invalid conflict property", asyncMapper(upsertableConnections(true), async (connection) => {
+            const postRepository = connection.getRepository(Post);
+           
+            // optional nested properties should be okay
+            await postRepository.upsert({ externalId: "abc123" }, ["category.id"])
+                .should.be.rejectedWith(TypeORMError);
+           
+            // @ts-expect-error
+            await postRepository.upsert({ externalId: "abc123" }, ["category.invalid"])
+                .should.be.rejectedWith(TypeORMError);
         }));
         it("should throw if using an unsupported driver", asyncMapper(upsertableConnections(false), async (connection) => {
             const postRepository = connection.getRepository(Post);
             const externalId = "external-2";
-            await postRepository.upsert({ externalId }, { title: "Post title initial" })
+            await postRepository.upsert({ externalId, title: "Post title initial" }, ["externalId"])
                 .should.be.rejectedWith(TypeORMError);
         }));
     });
