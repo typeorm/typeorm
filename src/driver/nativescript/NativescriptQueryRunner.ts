@@ -31,51 +31,56 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
      * Executes a given SQL query.
      */
     async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
-        if (this.isReleased)
+
+        if (this.isReleased) {
             throw new QueryRunnerAlreadyReleasedError();
+        }
 
         const connection = this.driver.connection;
 
-        return new Promise( (ok, fail) => {
-            const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
+        return new Promise(async (ok, fail) => {
 
-            const handler = function (err: any, raw: any) {
+            const databaseConnection = await this.connect();
+            const isInsertQuery = query.substr(0, 11) === "INSERT INTO";
+            connection.logger.logQuery(query, parameters, this);
+
+            const handler = (err: any, raw: any) => {
 
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
                 const queryEndTime = +new Date();
                 const queryExecutionTime = queryEndTime - queryStartTime;
-                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                
+                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
                     connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-
+                }
+                
                 if (err) {
                     connection.logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
-                } else {
-                    const result = new QueryResult();
-
-                    result.raw = raw;
-
-                    if (!isInsertQuery && Array.isArray(raw)) {
-                        result.records = raw;
-                    }
-
-                    if (useStructuredResult) {
-                        ok(result);
-                    } else {
-                        ok(result.raw);
-                    }
                 }
+
+                const result = new QueryResult();
+                result.raw = raw;
+
+                if (!isInsertQuery && Array.isArray(raw)) {
+                    result.records = raw;
+                }
+
+                if (useStructuredResult) {
+                    ok(result);
+                } else {
+                    ok(result.raw);
+                }
+                
             };
-            this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
-            this.connect().then(databaseConnection => {
-                if (isInsertQuery) {
-                    databaseConnection.execSQL(query, parameters, handler);
-                } else {
-                    databaseConnection.all(query, parameters, handler);
-                }
-            });
+
+            if (isInsertQuery) {
+                databaseConnection.execSQL(query, parameters, handler);
+            } else {
+                databaseConnection.all(query, parameters, handler);
+            } 
         });
     }
 

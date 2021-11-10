@@ -12,6 +12,7 @@ import {ReplicationMode} from "../driver/types/ReplicationMode";
 import { TypeORMError } from "../error/TypeORMError";
 import { EntityMetadata } from "../metadata/EntityMetadata";
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
+import { OrmUtils } from "../util/OrmUtils";
 
 export abstract class BaseQueryRunner {
 
@@ -86,6 +87,8 @@ export abstract class BaseQueryRunner {
      * If replication is not setup its value is ignored.
      */
     protected mode: ReplicationMode;
+
+    private cachedTablePaths: Record<string, string> = {};
 
     // -------------------------------------------------------------------------
     // Public Abstract Methods
@@ -223,13 +226,29 @@ export abstract class BaseQueryRunner {
      * Gets table from previously loaded tables, otherwise loads it from database.
      */
     protected async getCachedTable(tableName: string): Promise<Table> {
-        const table = this.loadedTables.find(table => table.name === tableName);
-        if (table) return table;
+        if (tableName in this.cachedTablePaths) {
+            const tablePath = this.cachedTablePaths[tableName];
+            const table = this.loadedTables.find(table => this.getTablePath(table) === tablePath);
+
+            if (table) {
+                return table;
+            }
+        }
 
         const foundTables = await this.loadTables([tableName]);
+
         if (foundTables.length > 0) {
-            this.loadedTables.push(foundTables[0]);
-            return foundTables[0];
+            const foundTablePath = this.getTablePath(foundTables[0]);
+
+            const cachedTable = this.loadedTables.find((table) => this.getTablePath(table) === foundTablePath);
+
+            if (!cachedTable) {
+                this.cachedTablePaths[tableName] = this.getTablePath(foundTables[0]);
+                this.loadedTables.push(foundTables[0]);
+                return foundTables[0];
+            } else {
+                return cachedTable;
+            }
         } else {
             throw new TypeORMError(`Table "${tableName}" does not exist.`);
         }
@@ -239,7 +258,16 @@ export abstract class BaseQueryRunner {
      * Replaces loaded table with given changed table.
      */
     protected replaceCachedTable(table: Table, changedTable: Table): void {
-        const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
+        const oldTablePath = this.getTablePath(table);
+        const foundTable = this.loadedTables.find(loadedTable => this.getTablePath(loadedTable) === oldTablePath);
+
+        // Clean up the lookup cache..
+        for (const [key, cachedPath] of Object.entries(this.cachedTablePaths)) {
+            if (cachedPath === oldTablePath) {
+                this.cachedTablePaths[key] = this.getTablePath(changedTable);
+            }
+        }
+
         if (foundTable) {
             foundTable.database = changedTable.database;
             foundTable.schema = changedTable.schema;
@@ -254,20 +282,14 @@ export abstract class BaseQueryRunner {
         }
     }
 
-    protected getTablePath(target: EntityMetadata | Table | TableForeignKey | string): string {
-        if (target instanceof Table) {
-            return target.name;
-        }
+    protected getTablePath(target: EntityMetadata | Table | View | TableForeignKey | string): string {
+        const parsed = this.connection.driver.parseTableName(target);
 
-        if (target instanceof TableForeignKey) {
-            return target.referencedTableName;
-        }
-
-        if (target instanceof EntityMetadata) {
-            return target.tablePath;
-        }
-
-        return target;
+        return this.connection.driver.buildTableName(
+            parsed.tableName,
+            parsed.schema,
+            parsed.database
+        );
     }
 
     protected getTypeormMetadataTableName(): string {
@@ -304,7 +326,7 @@ export abstract class BaseQueryRunner {
         // console.log((checkComment && oldColumn.comment !== newColumn.comment));
         // console.log(oldColumn.comment, newColumn.comment);
         // console.log("enum ---------------");
-        // console.log(oldColumn.enum !== newColumn.enum);
+        // console.log(!OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []));
         // console.log(oldColumn.enum, newColumn.enum);
 
         return oldColumn.charset !== newColumn.charset
@@ -319,7 +341,7 @@ export abstract class BaseQueryRunner {
             || oldColumn.onUpdate !== newColumn.onUpdate // MySQL only
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)
-            || oldColumn.enum !== newColumn.enum;
+            || !OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []);
     }
 
     /**

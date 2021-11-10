@@ -66,9 +66,14 @@ export class SapDriver implements Driver {
     options: SapConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -211,6 +216,7 @@ export class SapDriver implements Driver {
         this.loadDependencies();
 
         this.database = DriverUtils.buildDriverOptions(this.options).database;
+        this.schema = DriverUtils.buildDriverOptions(this.options).schema;
     }
 
     // -------------------------------------------------------------------------
@@ -258,7 +264,19 @@ export class SapDriver implements Driver {
         // create the pool
         this.master = this.client.createPool(dbParams, options);
 
-        this.database = this.options.database;
+        if (!this.database || !this.schema) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase();
+            }
+
+            if (!this.schema) {
+                this.schema = await queryRunner.getCurrentSchema();
+            }
+
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -355,7 +373,7 @@ export class SapDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -363,9 +381,7 @@ export class SapDriver implements Driver {
      */
     parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
         const driverDatabase = this.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.options.schema;
+        const driverSchema = this.schema;
 
         if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
@@ -374,7 +390,7 @@ export class SapDriver implements Driver {
                 database: target.database || parsed.database || driverDatabase,
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName
-            }
+            };
         }
 
         if (target instanceof TableForeignKey) {
@@ -394,11 +410,11 @@ export class SapDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
-        const parts = target.split(".")
+        const parts = target.split(".");
 
         return {
             database: driverDatabase,
@@ -723,14 +739,17 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.client = PlatformTools.load("hdb-pool");
+            const client = this.options.driver || PlatformTools.load("hdb-pool");
+            this.client = client;
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SAP Hana", "hdb-pool");
         }
 
         try {
-            PlatformTools.load("@sap/hana-client");
+            if (!this.options.hanaClientDriver) {
+                PlatformTools.load("@sap/hana-client");
+            }
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SAP Hana", "@sap/hana-client");

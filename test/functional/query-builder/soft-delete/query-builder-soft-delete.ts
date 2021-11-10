@@ -91,6 +91,7 @@ describe("query builder > soft-delete", () => {
         loadedPhoto2!.should.be.eql({
             id: 2,
             url: "2.jpg",
+            deletedAt: null,
             counters: {
                 likes: 0,
                 favorites: 1,
@@ -114,6 +115,7 @@ describe("query builder > soft-delete", () => {
         restoredPhoto2!.should.be.eql({
             id: 1,
             url: "1.jpg",
+            deletedAt: null,
             counters: {
                 likes: 2,
                 favorites: 1,

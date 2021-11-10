@@ -63,28 +63,25 @@ describe("github issues > #5691 RelationId is too slow", () => {
         const child23 = new Child2();
         const child24 = new Child2();
         const child25 = new Child2();
-        await Promise.all([
-            connection.getRepository(Child2).save(child21),
-            connection.getRepository(Child2).save(child22),
-            connection.getRepository(Child2).save(child23),
-            connection.getRepository(Child2).save(child24),
-            connection.getRepository(Child2).save(child25),
-        ]);
 
-        await Promise.all([
-            setupFixtures(connection, [child21, child22, child23]),
-            // To understand the problem deeper add more fixtures.
-            // It will take forever.
-            // setupFixtures(connection, [child22, child23, child24]),
-            // setupFixtures(connection, [child23, child24, child25]),
-            // setupFixtures(connection, [child24, child25, child21]),
-            // setupFixtures(connection, [child25, child21, child22]),
-            // setupFixtures(connection, [child21, child22, child23]),
-            // setupFixtures(connection, [child22, child23, child24]),
-            // setupFixtures(connection, [child23, child24, child25]),
-            // setupFixtures(connection, [child24, child25, child21]),
-            // setupFixtures(connection, [child25, child21, child22]),
-        ]);
+        await connection.getRepository(Child2).save(child21);
+        await connection.getRepository(Child2).save(child22);
+        await connection.getRepository(Child2).save(child23);
+        await connection.getRepository(Child2).save(child24);
+        await connection.getRepository(Child2).save(child25);
+
+        await setupFixtures(connection, [child21, child22, child23]);
+        // To understand the problem deeper add more fixtures.
+        // It will take forever.
+        // await setupFixtures(connection, [child22, child23, child24]),
+        // await setupFixtures(connection, [child23, child24, child25]),
+        // await setupFixtures(connection, [child24, child25, child21]),
+        // await setupFixtures(connection, [child25, child21, child22]),
+        // await setupFixtures(connection, [child21, child22, child23]),
+        // await setupFixtures(connection, [child22, child23, child24]),
+        // await setupFixtures(connection, [child23, child24, child25]),
+        // await setupFixtures(connection, [child24, child25, child21]),
+        // await setupFixtures(connection, [child25, child21, child22]),
 
         const test1Start = new Date().getTime();
         // 54 rows for 1 root

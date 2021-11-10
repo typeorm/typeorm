@@ -114,6 +114,11 @@ export abstract class AbstractSqliteDriver implements Driver {
     ];
 
     /**
+     * Returns type of upsert supported by driver if any
+     */
+    readonly supportedUpsertType = "on-conflict-do-update";
+
+    /**
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [
@@ -421,8 +426,6 @@ export abstract class AbstractSqliteDriver implements Driver {
      */
     parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
         const driverDatabase = this.database;
-
-        // This really should be abstracted into the driver as well..
         const driverSchema = undefined
 
         if (target instanceof Table || target instanceof View) {

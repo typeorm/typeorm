@@ -70,9 +70,24 @@ export class CockroachDriver implements Driver {
     options: CockroachConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
+
+    /**
+     * Schema that's used internally by Postgres for object resolution.
+     *
+     * Because we never set this we have to track it in separately from the `schema` so
+     * we know when we have to specify the full schema or not.
+     *
+     * In most cases this will be `public`.
+     */
+    searchSchema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -132,6 +147,11 @@ export class CockroachDriver implements Driver {
         "jsonb",
         "uuid",
     ];
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    readonly supportedUpsertType = "on-conflict-do-update";
 
     /**
      * Gets list of spatial column data types.
@@ -225,6 +245,7 @@ export class CockroachDriver implements Driver {
         this.loadDependencies();
 
         this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+        this.schema = DriverUtils.buildDriverOptions(this.options).schema;
 
         // ObjectUtils.assign(this.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
@@ -253,11 +274,27 @@ export class CockroachDriver implements Driver {
                 return this.createPool(this.options, slave);
             }));
             this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
 
         } else {
             this.master = await this.createPool(this.options, this.options);
-            this.database = this.options.database;
+        }
+
+        if (!this.database || !this.searchSchema) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase();
+            }
+
+            if (!this.searchSchema) {
+                this.searchSchema = await queryRunner.getCurrentSchema();
+            }
+
+            await queryRunner.release();
+        }
+
+        if (!this.schema) {
+            this.schema = this.searchSchema;
         }
     }
 
@@ -432,7 +469,7 @@ export class CockroachDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -440,9 +477,7 @@ export class CockroachDriver implements Driver {
      */
     parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
         const driverDatabase = this.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.options.schema;
+        const driverSchema = this.schema;
 
         if (target instanceof Table || target instanceof View) {
             // name is sometimes a path
@@ -473,11 +508,11 @@ export class CockroachDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
-        const parts = target.split(".")
+        const parts = target.split(".");
 
         return {
             database: driverDatabase,
@@ -617,12 +652,12 @@ export class CockroachDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainMasterConnection(): Promise<any> {
-        return new Promise((ok, fail) => {
-            if (!this.master) {
-                return fail(new TypeORMError("Driver not Connected"));
-            }
+    async obtainMasterConnection(): Promise<any> {
+        if (!this.master) {
+            throw new TypeORMError("Driver not Connected");
+        }
 
+        return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
@@ -634,12 +669,13 @@ export class CockroachDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    obtainSlaveConnection(): Promise<any> {
+    async obtainSlaveConnection(): Promise<any> {
         if (!this.slaves.length)
             return this.obtainMasterConnection();
 
+        const random = Math.floor(Math.random() * this.slaves.length);
+
         return new Promise((ok, fail) => {
-            const random = Math.floor(Math.random() * this.slaves.length);
             this.slaves[random].connect((err: any, connection: any, release: any) => {
                 err ? fail(err) : ok([connection, release]);
             });
@@ -765,9 +801,10 @@ export class CockroachDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.postgres = PlatformTools.load("pg");
+            const postgres = this.options.driver || PlatformTools.load("pg");
+            this.postgres = postgres;
             try {
-                const pgNative = PlatformTools.load("pg-native");
+                const pgNative = this.options.nativeDriver || PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
 
             } catch (e) { }

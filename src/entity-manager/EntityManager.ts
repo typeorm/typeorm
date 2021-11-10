@@ -37,7 +37,8 @@ import {ObjectUtils} from "../util/ObjectUtils";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {getMetadataArgsStorage} from "../globals";
-import { TypeORMError } from "../error";
+import {TypeORMError} from "../error";
+import {UpsertOptions} from "../repository/UpsertOptions";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -475,6 +476,61 @@ export class EntityManager {
             .insert()
             .into(target)
             .values(entity)
+            .execute();
+    }
+
+    async upsert<Entity>(
+        target: EntityTarget<Entity>,
+        entityOrEntities: QueryDeepPartialEntity<Entity> | (QueryDeepPartialEntity<Entity>[]),
+        conflictPathsOrOptions: string[] | UpsertOptions<Entity>): Promise<InsertResult> {
+        const metadata = this.connection.getMetadata(target);
+
+        let options: UpsertOptions<Entity>;
+
+        if (Array.isArray(conflictPathsOrOptions)) {
+            options = {
+                conflictPaths: conflictPathsOrOptions
+            };
+        } else {
+            options = conflictPathsOrOptions;
+        }
+
+        const uniqueColumnConstraints = [
+            metadata.primaryColumns,
+            ...metadata.indices.filter(ix => ix.isUnique).map(ix => ix.columns),
+            ...metadata.uniques.map(uq => uq.columns)
+        ];
+
+        const useIndex = uniqueColumnConstraints.find((ix) =>
+            ix.length === options.conflictPaths.length &&
+            options.conflictPaths.every((conflictPropertyPath) => ix.some((col) => col.propertyPath === conflictPropertyPath))
+        );
+
+        if (useIndex == null) {
+            throw new TypeORMError(`An upsert requires conditions that have a unique constraint but none was found for conflict properties: ${options.conflictPaths.join(", ")}`);
+        }
+
+        let entities: QueryDeepPartialEntity<Entity>[];
+
+        if (!Array.isArray(entityOrEntities)) {
+            entities = [entityOrEntities];
+        } else {
+            entities = entityOrEntities;
+        }
+
+        const conflictColumns = metadata.mapPropertyPathsToColumns(options.conflictPaths);
+
+        const overwriteColumns = metadata.columns
+            .filter((col) => (!conflictColumns.includes(col)) && entities.some(entity => typeof col.getEntityValue(entity) !== "undefined"));
+
+        return this.createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(entities)
+            .orUpdate(
+                [...conflictColumns, ...overwriteColumns].map((col) => col.databaseName),
+                conflictColumns.map((col) => col.databaseName)
+            )
             .execute();
     }
 

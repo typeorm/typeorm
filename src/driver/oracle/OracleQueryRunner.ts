@@ -21,7 +21,6 @@ import {ColumnType} from "../types/ColumnTypes";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
 
@@ -120,16 +119,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(`Oracle only supports SERIALIZABLE and READ COMMITTED isolation`);
         }
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         this.isTransactionActive = true;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -140,16 +135,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -160,16 +151,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -233,8 +220,35 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
-        throw new TypeORMError(`Stream is not supported by Oracle driver.`);
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+        if (this.isReleased) {
+            throw new QueryRunnerAlreadyReleasedError();
+        }
+
+        const executionOptions = {
+            autoCommit: !this.isTransactionActive,
+            outFormat: this.driver.oracle.OBJECT,
+        }
+
+        const databaseConnection = await this.connect();
+
+        this.driver.connection.logger.logQuery(query, parameters, this);
+
+        try {
+            const stream = databaseConnection.queryStream(query, parameters, executionOptions);
+            if (onEnd) {
+                stream.on("end", onEnd);
+            }
+
+            if (onError) {
+                stream.on("error", onError);
+            }
+
+            return stream;
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            throw new QueryFailedError(query, parameters, err);
+        }
     }
 
     /**
@@ -1717,7 +1731,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         // Ignore database when escaping paths
         const { schema, tableName } = this.driver.parseTableName(target);
 
-        if (schema) {
+        if (schema && schema !== this.driver.schema) {
             return `"${schema}"."${tableName}"`;
         }
 

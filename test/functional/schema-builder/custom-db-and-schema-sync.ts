@@ -143,6 +143,65 @@ describe("schema builder > custom-db-and-schema-sync", () => {
             await queryRunner.release();
 
         })));
+
+        it("should correctly sync tables with `public` schema", () => Promise.all(connections.map(async connection => {
+            const queryRunner = connection.createQueryRunner();
+            const photoMetadata = connection.getMetadata("photo");
+            const albumMetadata = connection.getMetadata("album");
+
+            // create tables
+            photoMetadata.synchronize = true;
+            albumMetadata.synchronize = true;
+
+            photoMetadata.schema = "public";
+            photoMetadata.tablePath = "photo";
+
+            albumMetadata.schema = "public";
+            albumMetadata.tablePath = "album";
+
+            await queryRunner.createSchema(photoMetadata.schema, true);
+            await queryRunner.createSchema(albumMetadata.schema, true);
+
+            await connection.synchronize();
+
+            // create foreign key
+            let albumTable = await queryRunner.getTable(albumMetadata.tablePath);
+            let photoTable = await queryRunner.getTable(photoMetadata.tablePath);
+
+            albumTable!.should.be.exist;
+            photoTable!.should.be.exist;
+
+            photoTable!.foreignKeys.length.should.be.equal(0);
+
+            const columns = photoMetadata.columns.filter(column => column.propertyName === "albumId");
+            const referencedColumns = albumMetadata.columns.filter(column => column.propertyName === "id");
+            const fkMetadata = new ForeignKeyMetadata({
+                entityMetadata: photoMetadata,
+                referencedEntityMetadata: albumMetadata,
+                columns: columns,
+                referencedColumns: referencedColumns,
+                namingStrategy: connection.namingStrategy
+            });
+
+            photoMetadata.foreignKeys.push(fkMetadata);
+            await connection.synchronize();
+
+            photoTable = await queryRunner.getTable(photoMetadata.tablePath);
+            photoTable!.foreignKeys.length.should.be.equal(1);
+
+            // drop foreign key
+            photoMetadata.foreignKeys = [];
+            await connection.synchronize();
+
+            // drop tables manually, because they will not synchronize automatically
+            await queryRunner.dropTable(photoMetadata.tablePath, true, false);
+            await queryRunner.dropTable(albumMetadata.tablePath, true, false);
+
+            // drop created database
+            await queryRunner.dropDatabase("secondDB", true);
+
+            await queryRunner.release();
+        })));
     })
 
     describe("custom database and schema", () => {

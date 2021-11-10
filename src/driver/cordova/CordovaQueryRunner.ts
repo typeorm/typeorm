@@ -35,43 +35,50 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect();
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const queryStartTime = +new Date();
-            databaseConnection.executeSql(query, parameters, (raw: any) => {
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const queryStartTime = +new Date();
 
-                // log slow queries if maxQueryExecution time is set
-                const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
-                const queryEndTime = +new Date();
-                const queryExecutionTime = queryEndTime - queryStartTime;
-                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-
-                const result = new QueryResult();
-
-                if (query.substr(0, 11) === "INSERT INTO") {
-                    result.raw = raw.insertId;
-                } else {
-                    let resultSet = [];
-                    for (let i = 0; i < raw.rows.length; i++) {
-                        resultSet.push(raw.rows.item(i));
-                    }
-
-                    result.records = resultSet;
-                    result.raw = resultSet;
-                }
-
-                if (useStructuredResult) {
-                    ok(result);
-                } else {
-                    ok(result.raw);
-                }
-            }, (err: any) => {
-                this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                fail(new QueryFailedError(query, parameters, err));
+        try {
+            const raw = await new Promise<any>(async (ok, fail) => {
+                databaseConnection.executeSql(query, parameters,
+                    (raw: any) => ok(raw),
+                    (err: any) => fail(err)
+                )
             });
-        });
+
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+            }
+
+            const result = new QueryResult();
+
+            if (query.substr(0, 11) === "INSERT INTO") {
+                result.raw = raw.insertId;
+            } else {
+                let resultSet = [];
+                for (let i = 0; i < raw.rows.length; i++) {
+                    resultSet.push(raw.rows.item(i));
+                }
+
+                result.records = resultSet;
+                result.raw = resultSet;
+            }
+
+            if (useStructuredResult) {
+                return result;
+            } else {
+                return result.raw;
+            }
+
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            throw new QueryFailedError(query, parameters, err);
+        }
     }
 
     /**

@@ -17,6 +17,18 @@ export interface CockroachConnectionOptions extends BaseConnectionOptions, Cockr
     readonly schema?: string;
 
     /**
+     * The driver object
+     * This defaults to `require("pg")`.
+     */
+    readonly driver?: any;
+
+    /**
+     * The driver object
+     * This defaults to `require("pg-native")`.
+     */
+    readonly nativeDriver?: any;
+
+    /**
      * Replication setup.
      */
     readonly replication?: {

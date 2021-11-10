@@ -64,9 +64,14 @@ export class OracleDriver implements Driver {
     options: OracleConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -221,12 +226,13 @@ export class OracleDriver implements Driver {
         this.options = connection.options as OracleConnectionOptions;
 
         if (this.options.useUTC === true) {
-            process.env.ORA_SDTZ = 'UTC';
+            process.env.ORA_SDTZ = "UTC";
         }
         // load oracle package
         this.loadDependencies();
 
         this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+        this.schema = DriverUtils.buildDriverOptions(this.options).schema;
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
@@ -256,11 +262,22 @@ export class OracleDriver implements Driver {
                 return this.createPool(this.options, slave);
             }));
             this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
-
         } else {
             this.master = await this.createPool(this.options, this.options);
-            this.database = this.options.database;
+        }
+
+        if (!this.database || !this.schema) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase();
+            }
+
+            if (!this.schema) {
+                this.schema = await queryRunner.getCurrentSchema();
+            }
+
+            await queryRunner.release();
         }
     }
 
@@ -332,7 +349,7 @@ export class OracleDriver implements Driver {
             }
 
             if (typeof value === "boolean") {
-                return value ? '1' : '0';
+                return value ? "1" : "0";
             }
 
             escapedParameters.push(value);
@@ -359,7 +376,7 @@ export class OracleDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -367,9 +384,7 @@ export class OracleDriver implements Driver {
      */
     parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
         const driverDatabase = this.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.options.schema;
+        const driverSchema = this.schema;
 
         if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
@@ -398,7 +413,7 @@ export class OracleDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
@@ -711,7 +726,7 @@ export class OracleDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
 
@@ -782,7 +797,8 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.oracle = PlatformTools.load("oracledb");
+            const oracle = this.options.driver || PlatformTools.load("oracledb");
+            this.oracle = oracle;
 
         } catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb");
@@ -814,7 +830,7 @@ export class OracleDriver implements Driver {
             }
 
             if (credentials.serviceName) {
-                connectData += `(SERVICE_NAME=${credentials.serviceName})`
+                connectData += `(SERVICE_NAME=${credentials.serviceName})`;
             }
 
             const connectString = `(DESCRIPTION=(ADDRESS=${address})(CONNECT_DATA=${connectData}))`;

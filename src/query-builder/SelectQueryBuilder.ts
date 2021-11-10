@@ -31,7 +31,6 @@ import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
-import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
@@ -968,6 +967,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Set certain index to be used by the query.
+     *
+     * @param index Name of index to be used.
+     */
+    useIndex(index: string): this {
+        this.expressionMap.useIndex = index;
+
+        return this;
+    }
+
+    /**
      * Sets locking mode.
      */
     setLock(lockMode: "optimistic", lockVersion: number | Date): this;
@@ -1200,6 +1210,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.expressionMap.queryEntity = true;
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             this.expressionMap.queryEntity = false;
+            const cacheId = this.expressionMap.cacheId;
+            // Creates a new cacheId for the count query, or it will retreive the above query results
+            // and count will return 0.
+            this.expressionMap.cacheId = (cacheId) ? `${cacheId}-count` : cacheId;
             const count = await this.executeCountQuery(queryRunner);
             const results: [Entity[], number] = [entitiesAndRaw.entities, count];
 
@@ -1438,6 +1452,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         }
 
+        // Use certain index
+        let useIndex: string = "";
+        if (this.expressionMap.useIndex) {
+            if (this.connection.driver instanceof MysqlDriver) {
+                useIndex = ` USE INDEX (${this.expressionMap.useIndex})`;
+            }
+        }
+
         // create a selection query
         const froms = this.expressionMap.aliases
             .filter(alias => alias.type === "from" && (alias.tablePath || alias.subQuery))
@@ -1451,7 +1473,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const select = this.createSelectDistinctExpression();
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
 
-        return select + selection + " FROM " + froms.join(", ") + lock;
+        return select + selection + " FROM " + froms.join(", ") + lock + useIndex;
     }
 
     /**
@@ -1951,7 +1973,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
-            const [selects, orderBys] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
+            const [selects, orderBys, subquerySelect] = this.createOrderByCombinedWithSelectExpression("distinctAlias");
             const metadata = this.expressionMap.mainAlias.metadata;
             const mainAliasName = this.expressionMap.mainAlias.name;
 
@@ -1973,7 +1995,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             rawResults = await new SelectQueryBuilder(this.connection, queryRunner)
                 .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .from(`(${this.clone().orderBy().addSelect(subquerySelect).getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
@@ -2030,9 +2052,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // broadcast all "after load" events
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias.hasMetadata) {
-                const broadcastResult = new BroadcasterResult();
-                queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, this.expressionMap.mainAlias.metadata, entities);
-                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+                await queryRunner.broadcaster.broadcast("Load", this.expressionMap.mainAlias.metadata, entities);
             }
         }
 
@@ -2042,7 +2062,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         };
     }
 
-    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition] {
+    protected createOrderByCombinedWithSelectExpression(parentAlias: string): [ string, OrderByCondition, string] {
 
         // if table has a default order then apply it
         const orderBys = this.expressionMap.allOrderBys;
@@ -2082,7 +2102,24 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         });
 
-        return [selectString, orderByObject];
+        const subquerySelectString = Object.keys(orderBys)
+            .filter(orderCriteria => orderCriteria.includes("."))
+            .map(orderCriteria => {
+                const criteriaParts = orderCriteria.split(".");
+                const aliasName = criteriaParts[0];
+                const propertyPath = criteriaParts.slice(1).join(".");
+                const alias = this.expressionMap.findAliasByName(aliasName);
+                if (alias.type !== "join") {
+                    return "";
+                }
+                const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
+                const property = this.escape(alias.name) + "." + this.escape(column!.databaseName);
+                const propertyAlias = this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName));
+                return [property, "AS", propertyAlias].join(" ");
+            })
+            .join(", ");
+
+        return [selectString, orderByObject, subquerySelectString];
     }
 
     /**

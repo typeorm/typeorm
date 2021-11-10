@@ -23,7 +23,6 @@ import {ColumnType} from "../types/ColumnTypes";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
 
 /**
@@ -133,9 +132,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
         await this.query("START TRANSACTION");
@@ -145,9 +142,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
         this.storeQueries = true;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -158,9 +153,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         this.storeQueries = false;
 
@@ -180,9 +173,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             }
         }
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -193,103 +184,99 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         this.storeQueries = false;
         await this.query("ROLLBACK");
         this.queries = [];
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<QueryResult>(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const queryStartTime = +new Date();
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const queryStartTime = +new Date();
 
-                databaseConnection.query(query, parameters, (err: any, raw: any) => {
-                    if (this.isTransactionActive && this.storeQueries)
-                        this.queries.push({ query, parameters });
+        if (this.isTransactionActive && this.storeQueries) {
+            this.queries.push({ query, parameters });
+        }
 
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+        try {
+            const raw = await new Promise<any>((ok, fail) => {
+                databaseConnection.query(query, parameters, (err: any, raw: any) => err ? fail(err) : ok(raw))
+            });
 
-                    if (err) {
-                        if (err.code !== "40001")
-                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        fail(new QueryFailedError(query, parameters, err));
-                    } else {
-                        const result = new QueryResult();
-
-                        if (raw.hasOwnProperty('rowCount')) {
-                            result.affected = raw.rowCount;
-                        }
-
-                        if (raw.hasOwnProperty('rows')) {
-                            result.records = raw.rows;
-                        }
-
-                        switch (raw.command) {
-                            case "DELETE":
-                                // for DELETE query additionally return number of affected rows
-                                result.raw = [raw.rows, raw.rowCount]
-                                break;
-                            default:
-                                result.raw = raw.rows;
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result);
-                        } else {
-                            ok(result.raw);
-                        }
-                    }
-                });
-
-            } catch (err) {
-                fail(err);
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
             }
-        });
+
+            const result = new QueryResult();
+
+            if (raw.hasOwnProperty('rowCount')) {
+                result.affected = raw.rowCount;
+            }
+
+            if (raw.hasOwnProperty('rows')) {
+                result.records = raw.rows;
+            }
+
+            switch (raw.command) {
+                case "DELETE":
+                    // for DELETE query additionally return number of affected rows
+                    result.raw = [raw.rows, raw.rowCount]
+                    break;
+                default:
+                    result.raw = raw.rows;
+            }
+
+            if (useStructuredResult) {
+                return result;
+            } else {
+                return result.raw;
+            }
+        } catch (err) {
+            if (err.code !== "40001") {
+                this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            }
+
+            throw new QueryFailedError(query, parameters, err);
+        }
     }
 
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         const QueryStream = this.driver.loadStreamDependency();
-        if (this.isReleased)
+        if (this.isReleased) {
             throw new QueryRunnerAlreadyReleasedError();
+        }
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const stream = databaseConnection.query(new QueryStream(query, parameters));
-                if (onEnd) stream.on("end", onEnd);
-                if (onError) stream.on("error", onError);
-                ok(stream);
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const stream = databaseConnection.query(new QueryStream(query, parameters));
 
-            } catch (err) {
-                fail(err);
-            }
-        });
+        if (onEnd) {
+            stream.on("end", onEnd);
+        }
+
+        if (onError) {
+            stream.on("error", onError);
+        }
+
+        return stream;
     }
 
     /**
@@ -1590,7 +1577,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             tableColumn.generationStrategy = "uuid";
 
                         } else  {
-                            tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
+                            tableColumn.default = dbColumn["column_default"].replace(/:::[\w\s\[\]\"]+/g, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?[\d\.]+)$/, "($1)");
                         }
                     }
@@ -1978,7 +1965,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     protected escapePath(target: Table|View|string): string {
         const { schema, tableName } = this.driver.parseTableName(target);
 
-        if (schema) {
+        if (schema && schema !== this.driver.searchSchema) {
             return `"${schema}"."${tableName}"`;
         }
 

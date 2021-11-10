@@ -22,7 +22,6 @@ import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {PostgresDriver} from "./PostgresDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {VersionUtils} from "../../util/VersionUtils";
 import { TypeORMError } from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
@@ -153,9 +152,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
         await this.query("START TRANSACTION");
@@ -163,9 +160,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         }
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -176,16 +171,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -196,16 +187,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -262,24 +249,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         const QueryStream = this.driver.loadStreamDependency();
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const stream = databaseConnection.query(new QueryStream(query, parameters));
-                if (onEnd) stream.on("end", onEnd);
-                if (onError) stream.on("error", onError);
-                ok(stream);
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const stream = databaseConnection.query(new QueryStream(query, parameters));
+        if (onEnd) stream.on("end", onEnd);
+        if (onError) stream.on("error", onError);
 
-            } catch (err) {
-                fail(err);
-            }
-        });
+        return stream;
     }
 
     /**
@@ -1000,7 +981,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
             }
 
-            if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
+            if (oldColumn.isGenerated !== newColumn.isGenerated &&
+                newColumn.generationStrategy !== "uuid" &&
+                newColumn.generationStrategy !== "identity"
+            ) {
                 if (newColumn.isGenerated === true) {
                     upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
                     downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
@@ -1846,7 +1830,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         : false;
                     tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
 
-                    if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
+                    if (dbColumn.is_identity === "YES") { // Postgres 10+ Identity column
+                        tableColumn.isGenerated = true;
+                        tableColumn.generationStrategy = "identity";
+                    } else if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         const serialDefaultName = `nextval('${this.buildSequenceName(table, dbColumn["column_name"])}'::regclass)`;
                         const serialDefaultPath = `nextval('${this.buildSequencePath(table, dbColumn["column_name"])}'::regclass)`;
 
@@ -2395,7 +2382,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected escapePath(target: Table|View|string): string {
         const { schema, tableName } = this.driver.parseTableName(target);
 
-        if (schema) {
+        if (schema && schema !== this.driver.searchSchema) {
             return `"${schema}"."${tableName}"`;
         }
 
@@ -2423,12 +2410,16 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = "\"" + column.name + "\"";
         if (column.isGenerated === true && column.generationStrategy !== "uuid") {
-            if (column.type === "integer" || column.type === "int" || column.type === "int4")
-                c += " SERIAL";
-            if (column.type === "smallint" || column.type === "int2")
-                c += " SMALLSERIAL";
-            if (column.type === "bigint" || column.type === "int8")
-                c += " BIGSERIAL";
+            if (column.generationStrategy === "identity") { // Postgres 10+ Identity generated column
+                c += ` ${column.type} GENERATED BY DEFAULT AS IDENTITY`;
+            } else { // classic SERIAL primary column
+                if (column.type === "integer" || column.type === "int" || column.type === "int4")
+                    c += " SERIAL";
+                if (column.type === "smallint" || column.type === "int2")
+                    c += " SMALLSERIAL";
+                if (column.type === "bigint" || column.type === "int8")
+                    c += " BIGSERIAL";
+            }
         }
         if (column.type === "enum" || column.type === "simple-enum") {
             c += " " + this.buildEnumName(table, column);

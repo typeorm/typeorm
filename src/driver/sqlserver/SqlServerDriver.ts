@@ -65,9 +65,24 @@ export class SqlServerDriver implements Driver {
     options: SqlServerConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
+
+    /**
+     * Schema that's used internally by SQL Server for object resolution.
+     *
+     * Because we never set this we have to track it in separately from the `schema` so
+     * we know when we have to specify the full schema or not.
+     *
+     * In most cases this will be `dbo`.
+     */
+    searchSchema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -227,6 +242,7 @@ export class SqlServerDriver implements Driver {
         this.loadDependencies();
 
         this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+        this.schema = DriverUtils.buildDriverOptions(this.options).schema;
 
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
@@ -254,11 +270,27 @@ export class SqlServerDriver implements Driver {
                 return this.createPool(this.options, slave);
             }));
             this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
 
         } else {
             this.master = await this.createPool(this.options, this.options);
-            this.database = this.options.database;
+        }
+
+        if (!this.database || !this.searchSchema) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase();
+            }
+
+            if (!this.searchSchema) {
+                this.searchSchema = await queryRunner.getCurrentSchema();
+            }
+
+            await queryRunner.release();
+        }
+
+        if (!this.schema) {
+            this.schema = this.searchSchema;
         }
     }
 
@@ -362,13 +394,13 @@ export class SqlServerDriver implements Driver {
 
         if (database) {
             if (!schema) {
-                tablePath.unshift('')
+                tablePath.unshift("");
             }
 
             tablePath.unshift(database);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -376,9 +408,7 @@ export class SqlServerDriver implements Driver {
      */
     parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
         const driverDatabase = this.database;
-
-        // This really should be abstracted into the driver as well..
-        const driverSchema = this.options.schema;
+        const driverSchema = this.schema;
 
         if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name);
@@ -407,7 +437,7 @@ export class SqlServerDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
@@ -576,9 +606,9 @@ export class SqlServerDriver implements Driver {
         if (typeof defaultValue === "function") {
             const value = defaultValue();
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
-                return "getdate()"
+                return "getdate()";
             }
-            return value
+            return value;
         }
 
         if (typeof defaultValue === "string") {
@@ -715,7 +745,7 @@ export class SqlServerDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
     private lowerDefaultValueIfNecessary(value: string | undefined) {
@@ -836,7 +866,8 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.mssql = PlatformTools.load("mssql");
+            const mssql = this.options.driver || PlatformTools.load("mssql");
+            this.mssql = mssql;
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SQL Server", "mssql");
@@ -882,7 +913,7 @@ export class SqlServerDriver implements Driver {
             Object.assign(
                 connectionOptions.options,
                 { useUTC: false }
-            )
+            );
         }
 
         // Match the next release of tedious for configuration options
@@ -890,7 +921,7 @@ export class SqlServerDriver implements Driver {
         Object.assign(
             connectionOptions.options,
             { enableArithAbort: true }
-        )
+        );
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
@@ -900,9 +931,9 @@ export class SqlServerDriver implements Driver {
             const { logger } = this.connection;
 
             const poolErrorHandler = (options.pool && options.pool.errorHandler) || ((error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
-            /*
-              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
-              cause the hosting app to crash.
+            /**
+             * Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+             * cause the hosting app to crash.
              */
             pool.on("error", poolErrorHandler);
 

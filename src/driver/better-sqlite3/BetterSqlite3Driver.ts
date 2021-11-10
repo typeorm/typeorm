@@ -1,5 +1,5 @@
-import mkdirp from 'mkdirp';
-import path from 'path';
+import mkdirp from "mkdirp";
+import path from "path";
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
 import { PlatformTools } from "../../platform/PlatformTools";
@@ -125,7 +125,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            this.sqlite = PlatformTools.load("better-sqlite3");
+            const sqlite = this.options.driver || PlatformTools.load("better-sqlite3");
+            this.sqlite = sqlite;
 
         } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "better-sqlite3");

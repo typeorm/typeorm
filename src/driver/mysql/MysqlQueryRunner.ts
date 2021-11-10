@@ -24,7 +24,6 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {VersionUtils} from "../../util/VersionUtils";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
 
 /**
@@ -112,9 +111,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
         if (isolationLevel) {
@@ -124,9 +121,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.query("START TRANSACTION");
         }
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -137,16 +132,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -157,16 +148,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -1852,7 +1839,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected escapePath(target: Table|View|string): string {
         const { database, tableName } = this.driver.parseTableName(target);
 
-        if (database) {
+        if (database && database !== this.driver.database) {
             return `\`${database}\`.\`${tableName}\``;
         }
 
@@ -1879,7 +1866,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += " UNSIGNED";
         }
         if (column.enum)
-            c += ` (${column.enum.map(value => "'" + value.replace("'", "''") + "'").join(", ")})`;
+            c += ` (${column.enum.map(value => "'" + value.replace(/'/g, "''") + "'").join(", ")})`;
         if (column.charset)
             c += ` CHARACTER SET "${column.charset}"`;
         if (column.collation)

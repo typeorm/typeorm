@@ -21,7 +21,6 @@ import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {SapDriver} from "./SapDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { QueryFailedError, TypeORMError } from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
 import { QueryLock } from "../../query-runner/QueryLock";
@@ -104,18 +103,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
+
         if (isolationLevel) {
             await this.query(`SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`);
         }
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -129,16 +125,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -152,16 +144,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -187,22 +175,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             statement = databaseConnection.prepare(query);
 
             const raw = await new Promise<any>((ok, fail) => {
-                statement.exec(parameters, async (err: any, raw: any) => {
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-                    }
-
-                    if (err) {
-                        fail(new QueryFailedError(query, parameters, err));
-                    }
-
-                    ok(raw);
-                });
+                statement.exec(
+                    parameters,
+                    (err: any, raw: any) => err ? fail(new QueryFailedError(query, parameters, err)) : ok(raw)
+                )
             });
+
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+            }
 
             if (typeof raw === "number") {
                 result.affected = raw;
@@ -216,13 +201,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
                 this.driver.connection.logger.logQuery(lastIdQuery, [], this);
                 const identityValueResult = await new Promise<any>((ok, fail) => {
-                    databaseConnection.exec(parameters, async (err: any, raw: any) => {
-                        if (err) {
-                            fail(new QueryFailedError(lastIdQuery, [], err));
-                        }
-
-                        ok(raw);
-                    });
+                    databaseConnection.exec(
+                        lastIdQuery,
+                        (err: any, raw: any) => err ? fail(new QueryFailedError(lastIdQuery, [], err)) : ok(raw)
+                    );
                 });
 
                 result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];

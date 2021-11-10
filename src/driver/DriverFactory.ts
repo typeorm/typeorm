@@ -70,8 +70,24 @@ export class DriverFactory {
                 throw new MissingDriverError(
                     type,
                     [
-                        "cordova", "expo", "mariadb", "mongodb", "mssql", "mysql", "oracle", "postgres",
-                        "sqlite", "better-sqlite3", "sqljs", "react-native", "aurora-data-api", "aurora-data-api-pg"
+                        "aurora-data-api",
+                        "aurora-data-api-pg",
+                        "better-sqlite3",
+                        "capacitor",
+                        "cockroachdb",
+                        "cordova",
+                        "expo",
+                        "mariadb",
+                        "mongodb",
+                        "mssql",
+                        "mysql",
+                        "nativescript",
+                        "oracle",
+                        "postgres",
+                        "react-native",
+                        "sap",
+                        "sqlite",
+                        "sqljs",
                     ]
                 );
         }

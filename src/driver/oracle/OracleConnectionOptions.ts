@@ -17,6 +17,12 @@ export interface OracleConnectionOptions extends BaseConnectionOptions, OracleCo
     readonly schema?: string;
 
     /**
+     * The driver object
+     * This defaults to require("oracledb")
+     */
+    readonly driver?: any;
+
+    /**
     * A boolean determining whether to pass time values in UTC or local time. (default: true).
     */
     readonly useUTC?: boolean;

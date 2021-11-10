@@ -17,7 +17,7 @@ interface Window {
     SQL: any;
     localforage: any;
 }
-declare var window: Window;
+declare let window: Window;
 
 export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
@@ -56,16 +56,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            try {
-                this.queryRunner = undefined;
-                this.databaseConnection.close();
-                ok();
-            }
-            catch (e)  {
-                fail(e);
-            }
-        });
+        this.queryRunner = undefined;
+        this.databaseConnection.close();
     }
 
     /**
@@ -258,16 +250,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new sqlite.Database();
         }
 
-        // Enable foreign keys for database
-        return new Promise<any>((ok, fail) => {
-            try {
-                this.databaseConnection.exec(`PRAGMA foreign_keys = ON;`);
-                ok(this.databaseConnection);
-            }
-            catch (e) {
-                fail(e);
-            }
-        });
+        this.databaseConnection.exec(`PRAGMA foreign_keys = ON;`);
+
+        return this.databaseConnection;
     }
 
     /**
@@ -275,11 +260,13 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         if (PlatformTools.type === "browser") {
-            this.sqlite = window.SQL;
+            const sqlite = this.options.driver || window.SQL;
+            this.sqlite = sqlite;
         }
         else {
             try {
-                this.sqlite = PlatformTools.load("sql.js");
+                const sqlite = this.options.driver || PlatformTools.load("sql.js");
+                this.sqlite = sqlite;
 
             } catch (e) {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js");

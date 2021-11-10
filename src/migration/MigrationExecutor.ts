@@ -104,26 +104,14 @@ export class MigrationExecutor {
      * Inserts an executed migration.
      */
     public insertMigration(migration: Migration): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.withQueryRunner(queryRunner => {
-                this.insertExecutedMigration(queryRunner, migration)
-                    .then(resolve)
-                    .catch(reject);
-            });
-        });
+        return this.withQueryRunner(q => this.insertExecutedMigration(q, migration));
     }
 
     /**
      * Deletes an executed migration.
      */
     public deleteMigration(migration: Migration): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.withQueryRunner(queryRunner => {
-                this.deleteExecutedMigration(queryRunner, migration)
-                    .then(resolve)
-                    .catch(reject);
-            });
-        });
+        return this.withQueryRunner(q => this.deleteExecutedMigration(q, migration));
     }
 
     /**
@@ -228,6 +216,10 @@ export class MigrationExecutor {
                 }
 
                 await migration.instance!.up(queryRunner)
+                    .catch(error => { // informative log about migration failure
+                        this.connection.logger.logMigration(`Migration "${migration.name}" has been failed, error: ${error?.message}`);
+                        throw error;
+                    })
                     .then(async () => { // now when migration is executed we need to insert record about it into the database
                         await this.insertExecutedMigration(queryRunner, migration);
                         // commit transaction if we started it
@@ -500,7 +492,7 @@ export class MigrationExecutor {
 
     }
 
-    protected async withQueryRunner<T extends any>(callback: (queryRunner: QueryRunner) => T) {
+    protected async withQueryRunner<T extends any>(callback: (queryRunner: QueryRunner) => T | Promise<T>) {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
 
         try {
