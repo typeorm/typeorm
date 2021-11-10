@@ -1864,7 +1864,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
                         // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                        const asExpressionQuery = `SELECT * FROM typeorm_generation_meta WHERE table = '${dbTable["table_name"]}' AND name = '${tableColumn.name}' AND schema = '${dbTable["table_schema"]}' AND database = '${this.driver.database}' AND type = 'generated_column'`;
+                        const asExpressionQuery = `SELECT * FROM typeorm_metadata WHERE table = '${dbTable["table_name"]}' AND name = '${tableColumn.name}' AND schema = '${dbTable["table_schema"]}' AND database = '${this.driver.database}' AND type = 'generated_column'`;
                         const results: ObjectLiteral[] = await this.query(asExpressionQuery);
                         if (results[0] && results[0].value) {
                             tableColumn.asExpression = results[0].value;
