@@ -163,7 +163,7 @@ export class MigrationExecutor {
         const schemaBuilder = this.connection.driver.createSchemaBuilder();
 
         if (schemaBuilder instanceof RdbmsSchemaBuilder) {
-            await schemaBuilder.createMetadataTableIfNecessary();
+            await schemaBuilder.createMetadataTableIfNecessary(queryRunner);
         }
 
         // get all migrations that are executed and saved in the database

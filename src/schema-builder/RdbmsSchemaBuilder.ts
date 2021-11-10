@@ -77,10 +77,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         }
 
         try {
+            await this.createMetadataTableIfNecessary(this.queryRunner);
+            
             // Flush the queryrunner table & view cache
-            const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
-            await this.createMetadataTableIfNecessary();
-
+            const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
 
@@ -111,10 +111,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
      */
-    async createMetadataTableIfNecessary(): Promise<void> {
+    async createMetadataTableIfNecessary(queryRunner: QueryRunner): Promise<void> {
         if (this.viewEntityToSyncMetadatas.length > 0) {
-            this.queryRunner = this.queryRunner || this.connection.createQueryRunner();
-            await this.createTypeormMetadataTable();
+            await this.createTypeormMetadataTable(queryRunner);
         }
     }
 
@@ -124,10 +123,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     async log(): Promise<SqlInMemory> {
         this.queryRunner = this.connection.createQueryRunner();
         try {
+            await this.createMetadataTableIfNecessary(this.queryRunner);
+            
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
-            await this.createMetadataTableIfNecessary();
-
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
 
@@ -833,12 +832,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates typeorm service table for storing user defined Views.
      */
-    protected async createTypeormMetadataTable() {
+    protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema;
         const database = this.currentDatabase;
         const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", schema, database);
 
-        await this.queryRunner.createTable(new Table(
+        await queryRunner.createTable(new Table(
             {
                 database: database,
                 schema: schema,
