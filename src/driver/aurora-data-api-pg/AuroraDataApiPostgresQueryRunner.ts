@@ -6,7 +6,7 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {AuroraDataApiPostgresDriver} from "./AuroraDataApiPostgresDriver";
 import {PostgresQueryRunner} from "../postgres/PostgresQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     driver: any;
@@ -40,11 +40,6 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
      * Promise used to obtain a database connection for a first time.
      */
     protected databaseConnectionPromise: Promise<any>;
-
-    /**
-     * Special callback provided by a driver used to release a created connection.
-     */
-    protected releaseCallback: Function;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -98,17 +93,13 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart')
 
         this.isTransactionActive = true;
-      
+
         await this.client.startTransaction();
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart')
     }
 
     /**
@@ -118,18 +109,14 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
     async commitTransaction(): Promise<void> {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
-      
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.client.commitTransaction();
 
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -140,28 +127,36 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.client.rollbackTransaction();
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.client.query(query, parameters);
+        const raw = await this.client.query(query, parameters);
 
-        if (result.records) {
-            return result.records;
+        const result = new QueryResult();
+
+        result.raw = raw;
+
+        if (raw?.hasOwnProperty('records') && Array.isArray(raw.records)) {
+            result.records = raw.records;
+        }
+
+        if (raw?.hasOwnProperty('numberOfRecordsUpdated')) {
+            result.affected = raw.numberOfRecordsUpdated;
+        }
+
+        if (!useStructuredResult) {
+            return result.raw;
         }
 
         return result;

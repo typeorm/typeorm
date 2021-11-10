@@ -1,11 +1,13 @@
-import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
+import { ObjectType } from "../../common/ObjectType";
+import { RelationOptions } from "../options/RelationOptions";
 
 /**
  * One-to-one relation allows to create direct relation between two entities. Entity1 have only one Entity2.
  * Entity1 is an owner of the relationship, and storages Entity1 id on its own side.
  */
-export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>), 
+export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>),
                             options?: RelationOptions): PropertyDecorator;
 
 /**

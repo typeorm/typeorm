@@ -1,4 +1,6 @@
-import {Connection, ObjectLiteral, QueryRunner} from "../";
+import {Connection} from "../connection/Connection";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {QueryRunner} from "../query-runner/QueryRunner";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**

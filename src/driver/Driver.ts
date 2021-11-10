@@ -9,6 +9,10 @@ import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ReplicationMode} from "./types/ReplicationMode";
+import { Table } from "../schema-builder/table/Table";
+import { View } from "../schema-builder/view/View";
+import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
+import { UpsertType } from "./types/UpsertType";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -21,11 +25,16 @@ export interface Driver {
     options: BaseConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      *
      * todo: probably move into query runner.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -41,6 +50,11 @@ export interface Driver {
      * Gets list of supported column data types by a driver.
      */
     supportedDataTypes: ColumnType[];
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertType?: UpsertType;
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -120,9 +134,14 @@ export interface Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string;
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { tableName: string, schema?: string, database?: string };
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.

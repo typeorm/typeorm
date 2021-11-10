@@ -10,13 +10,14 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { TypeORMError } from "../../error";
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
     SQL: any;
     localforage: any;
 }
-declare var window: Window;
+declare let window: Window;
 
 export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
@@ -55,16 +56,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            try {
-                this.queryRunner = undefined;
-                this.databaseConnection.close();
-                ok();
-            }
-            catch (e)  {
-                fail(e);
-            }
-        });
+        this.queryRunner = undefined;
+        this.databaseConnection.close();
     }
 
     /**
@@ -92,7 +85,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     return this.createDatabaseConnectionWithImport(database);
                 }
                 else if (checkIfFileOrLocalStorageExists) {
-                    throw new Error(`File ${fileNameOrLocalStorageOrData} does not exist`);
+                    throw new TypeORMError(`File ${fileNameOrLocalStorageOrData} does not exist`);
                 }
                 else {
                     // File doesn't exist and checkIfFileOrLocalStorageExists is set to false.
@@ -109,7 +102,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     if (window.localforage) {
                         localStorageContent = await window.localforage.getItem(fileNameOrLocalStorageOrData);
                     } else {
-                        throw new Error(`localforage is not defined - please import localforage.js into your site`);
+                        throw new TypeORMError(`localforage is not defined - please import localforage.js into your site`);
                     }
                 } else {
                     localStorageContent = PlatformTools.getGlobalVariable().localStorage.getItem(fileNameOrLocalStorageOrData);
@@ -120,7 +113,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     return this.createDatabaseConnectionWithImport(JSON.parse(localStorageContent));
                 }
                 else if (checkIfFileOrLocalStorageExists) {
-                    throw new Error(`File ${fileNameOrLocalStorageOrData} does not exist`);
+                    throw new TypeORMError(`File ${fileNameOrLocalStorageOrData} does not exist`);
                 }
                 else {
                     // localStorage value doesn't exist and checkIfFileOrLocalStorageExists is set to false.
@@ -142,7 +135,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     async save(location?: string) {
         if (!location && !this.options.location) {
-            throw new Error(`No location is set, specify a location parameter or add the location option to your configuration`);
+            throw new TypeORMError(`No location is set, specify a location parameter or add the location option to your configuration`);
         }
 
         let path = "";
@@ -159,7 +152,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 await PlatformTools.writeFile(path, content);
             }
             catch (e) {
-                throw new Error(`Could not save database, error: ${e}`);
+                throw new TypeORMError(`Could not save database, error: ${e}`);
             }
         }
         else {
@@ -170,7 +163,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 if (window.localforage) {
                     await window.localforage.setItem(path, JSON.stringify(databaseArray));
                 } else {
-                    throw new Error(`localforage is not defined - please import localforage.js into your site`);
+                    throw new TypeORMError(`localforage is not defined - please import localforage.js into your site`);
                 }
             } else {
                 PlatformTools.getGlobalVariable().localStorage.setItem(path, JSON.stringify(databaseArray));
@@ -257,16 +250,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new sqlite.Database();
         }
 
-        // Enable foreign keys for database
-        return new Promise<any>((ok, fail) => {
-            try {
-                this.databaseConnection.exec(`PRAGMA foreign_keys = ON;`);
-                ok(this.databaseConnection);
-            }
-            catch (e) {
-                fail(e);
-            }
-        });
+        this.databaseConnection.exec(`PRAGMA foreign_keys = ON;`);
+
+        return this.databaseConnection;
     }
 
     /**
@@ -274,11 +260,13 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         if (PlatformTools.type === "browser") {
-            this.sqlite = window.SQL;
+            const sqlite = this.options.driver || window.SQL;
+            this.sqlite = sqlite;
         }
         else {
             try {
-                this.sqlite = PlatformTools.load("sql.js");
+                const sqlite = this.options.driver || PlatformTools.load("sql.js");
+                this.sqlite = sqlite;
 
             } catch (e) {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js");

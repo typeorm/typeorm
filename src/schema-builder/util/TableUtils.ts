@@ -7,7 +7,7 @@ export class TableUtils {
     static createTableColumnOptions(columnMetadata: ColumnMetadata, driver: Driver): TableColumnOptions {
         return {
             name: columnMetadata.databaseName,
-            length: columnMetadata.length,
+            length: driver.getColumnLength(columnMetadata),
             width: columnMetadata.width,
             charset: columnMetadata.charset,
             collation: columnMetadata.collation,

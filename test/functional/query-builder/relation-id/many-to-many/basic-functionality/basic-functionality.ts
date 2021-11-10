@@ -133,10 +133,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         const category2 = new Category();
         category2.name = "future";
 
-        await Promise.all([
-            connection.manager.save(category1),
-            connection.manager.save(category2)
-        ]);
+        await connection.manager.save(category1);
+        await connection.manager.save(category2);
 
         const post = new Post();
         post.title = "about kids";
@@ -169,10 +167,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         post2.title = "about Audi";
         post2.categories = [category];
 
-        await Promise.all([
-            connection.manager.save(post1),
-            connection.manager.save(post2)
-        ]);
+        await connection.manager.save(post1);
+        await connection.manager.save(post2);
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
@@ -194,10 +190,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         const category2 = new Category();
         category2.name = "future";
 
-        await Promise.all([
-            connection.manager.save(category1),
-            connection.manager.save(category2)
-        ]);
+        await connection.manager.save(category1);
+        await connection.manager.save(category2);
 
         const post = new Post();
         post.title = "about kids";
@@ -223,10 +217,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         const category2 = new Category();
         category2.name = "future";
 
-        await Promise.all([
-            connection.manager.save(category1),
-            connection.manager.save(category2)
-        ]);
+        await connection.manager.save(category1);
+        await connection.manager.save(category2);
 
         const post = new Post();
         post.title = "about kids";
@@ -258,10 +250,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         post2.title = "about Audi";
         post2.categories = [category];
 
-        await Promise.all([
-            connection.manager.save(post1),
-            connection.manager.save(post2)
-        ]);
+        await connection.manager.save(post1);
+        await connection.manager.save(post2);
 
         let loadedCategory = await connection.manager
             .createQueryBuilder(Category, "category")
@@ -283,10 +273,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         const image2 = new Image();
         image2.name = "photo2";
 
-        await Promise.all([
-            connection.manager.save(image1),
-            connection.manager.save(image2)
-        ]);
+        await connection.manager.save(image1);
+        await connection.manager.save(image2);
 
         const category1 = new Category();
         category1.name = "cars";
@@ -331,10 +319,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         const image2 = new Image();
         image2.name = "photo2";
 
-        await Promise.all([
-            connection.manager.save(image1),
-            connection.manager.save(image2)
-        ]);
+        await connection.manager.save(image1);
+        await connection.manager.save(image2);
 
         const category1 = new Category();
         category1.name = "cars";
@@ -377,10 +363,8 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
         const image2 = new Image();
         image2.name = "photo2";
 
-        await Promise.all([
-            connection.manager.save(image1),
-            connection.manager.save(image2)
-        ]);
+        await connection.manager.save(image1);
+        await connection.manager.save(image2);
 
         const category1 = new Category();
         category1.name = "cars";

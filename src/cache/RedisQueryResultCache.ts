@@ -3,6 +3,7 @@ import {QueryResultCacheOptions} from "./QueryResultCacheOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Caches query result into Redis database.
@@ -73,7 +74,7 @@ export class RedisQueryResultCache implements QueryResultCache {
             } else if (cacheOptions && cacheOptions.options && cacheOptions.options.startupNodes) {
                 this.client = new this.redis.Cluster(cacheOptions.options.startupNodes, cacheOptions.options.options);
             } else {
-                throw new Error(`options.startupNodes required for ${this.clientType}.`);
+                throw new TypeORMError(`options.startupNodes required for ${this.clientType}.`);
             }
         }
     }
@@ -198,7 +199,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 return PlatformTools.load(this.clientType);
             }
         } catch (e) {
-            throw new Error(`Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`);
+            throw new TypeORMError(`Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`);
         }
     }
 

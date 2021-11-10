@@ -32,6 +32,26 @@ describe("entity-model", () => {
         }
     });
 
+    describe("upsert", function () {
+        it("should upsert successfully", async () => {
+            // These must run sequentially as we have the global context of the `Post` ActiveRecord class
+            for (const connection of connections.filter((c) => c.driver.supportedUpsertType != null)) {
+                Post.useConnection(connection); // change connection each time because of AR specifics
+
+                const externalId = "external-entity";
+
+                await Post.upsert({ externalId, title: "External post" }, ["externalId"]);
+                const upsertInsertedExternalPost = await Post.findOneOrFail({ externalId });
+
+                await Post.upsert({ externalId, title: "External post 2" }, ["externalId"]);
+                const upsertUpdatedExternalPost = await Post.findOneOrFail({ externalId });
+
+                upsertInsertedExternalPost.id.should.be.equal(upsertUpdatedExternalPost.id);
+                upsertInsertedExternalPost.title.should.not.be.equal(upsertUpdatedExternalPost.title);
+            }
+        });
+    });
+
     it("should reload given entity successfully", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
         for (const connection of connections) {
@@ -73,5 +93,4 @@ describe("entity-model", () => {
             });
         }
     });
-
 });

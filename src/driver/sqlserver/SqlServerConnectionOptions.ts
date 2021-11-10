@@ -34,6 +34,12 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
     readonly schema?: string;
 
     /**
+     * The driver object
+     * This defaults to `require("mssql")`
+     */
+    readonly driver?: any;
+
+    /**
      * An optional object/dictionary with the any of the properties
      */
     readonly pool?: {
@@ -78,11 +84,6 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
          * are available. see example. (default 1)
          */
         readonly priorityRange?: number;
-
-        /**
-         * Should the pool start creating resources etc once the constructor is called, (default true)
-         */
-        readonly autostart?: number;
 
         /**
          * How often to run eviction checks. Default: 0 (does not run).
@@ -281,6 +282,5 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
         readonly slaves: SqlServerConnectionCredentialsOptions[];
 
     };
-
 
 }

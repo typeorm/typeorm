@@ -758,7 +758,7 @@ export class User {
 #### `@Transaction`, `@TransactionManager` 和 `@TransactionRepository`
 
 `@Transaction`用于方法上，并将其所有的执行包裹到单个数据库事务中。
-必须使用`@TransportManager`提供的管理器执行所有数据库查询
+必须使用`@TransactionManager`提供的管理器执行所有数据库查询
 或者使用`@TransactionRepository`注入的事务存储库。
 例如：
 

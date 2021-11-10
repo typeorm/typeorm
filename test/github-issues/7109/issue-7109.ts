@@ -7,13 +7,13 @@ import {expect} from "chai";
 
 function ingestStream (stream: ReadStream): Promise<any[]> {
     let chunks: any[] = [];
-    return new Promise((resolve, reject) => {
+    return new Promise((ok, fail) => {
       stream.on('data', chunk => chunks.push(chunk))
-      stream.on('error', reject)
-      stream.on('end', () => resolve(chunks))
+      stream.on('error', fail)
+      stream.on('end', () => ok(chunks))
     })
   }
-  
+
 describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgresql", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({

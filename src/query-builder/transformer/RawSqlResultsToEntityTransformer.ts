@@ -102,7 +102,7 @@ export class RawSqlResultsToEntityTransformer {
             if (discriminatorMetadata)
                 metadata = discriminatorMetadata;
         }
-        let entity: any = this.expressionMap.options.indexOf("create-pojo") !== -1 ? {} : metadata.create(this.queryRunner);
+        let entity: any = this.expressionMap.options.indexOf("create-pojo") !== -1 ? {} : metadata.create(this.queryRunner, { fromDeserializer: true });
 
         // get value from columns selections and put them into newly created entity
         const hasColumns = this.transformColumns(rawResults, alias, entity, metadata);
@@ -172,15 +172,8 @@ export class RawSqlResultsToEntityTransformer {
 
             // this check need to avoid setting properties than not belong to entity when single table inheritance used. (todo: check if we still need it)
             // const metadata = metadata.childEntityMetadatas.find(childEntityMetadata => discriminatorValue === childEntityMetadata.discriminatorValue);
-            if (join.relation) {
-                const relation = metadata.relations.find(relation => relation.propertyPath === join.relation!.propertyPath);
-                if (!relation)
-                    return;
-
-                // Use current entity's type metadata, join might be from an STI parent with a different type
-                if (relation.inverseEntityMetadata)
-                    join.alias.metadata = relation.inverseEntityMetadata;
-            }
+            if (join.relation && !metadata.relations.find(relation => relation === join.relation))
+                return;
 
             // some checks to make sure this join is for current alias
             if (join.mapToProperty) {

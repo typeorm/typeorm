@@ -2,6 +2,7 @@ import {RedisQueryResultCache} from "./RedisQueryResultCache";
 import {DbQueryResultCache} from "./DbQueryResultCache";
 import {QueryResultCache} from "./QueryResultCache";
 import {Connection} from "../connection/Connection";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Caches query result into Redis database.
@@ -24,7 +25,7 @@ export class QueryResultCacheFactory {
      */
     create(): QueryResultCache {
         if (!this.connection.options.cache)
-            throw new Error(`To use cache you need to enable it in connection options by setting cache: true or providing some caching options. Example: { host: ..., username: ..., cache: true }`);
+            throw new TypeORMError(`To use cache you need to enable it in connection options by setting cache: true or providing some caching options. Example: { host: ..., username: ..., cache: true }`);
 
         const cache: any = this.connection.options.cache;
 

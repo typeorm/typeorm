@@ -17,6 +17,10 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { TypeORMError } from "../../error";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -56,9 +60,14 @@ export class AuroraDataApiDriver implements Driver {
     options: AuroraDataApiConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to performn all write queries.
+     */
+    schema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -132,6 +141,11 @@ export class AuroraDataApiDriver implements Driver {
         "multipolygon",
         "geometrycollection"
     ];
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    readonly supportedUpsertType = "on-duplicate-key-update";
 
     /**
      * Gets list of spatial column data types.
@@ -312,6 +326,8 @@ export class AuroraDataApiDriver implements Driver {
             this.options.formatOptions,
         );
 
+        this.database = DriverUtils.buildDriverOptions(this.options).database;
+
         // validate options to make sure everything is set
         // todo: revisit validation with replication in mind
         // if (!(this.options.host || (this.options.extra && this.options.extra.socketPath)) && !this.options.socketPath)
@@ -332,6 +348,13 @@ export class AuroraDataApiDriver implements Driver {
      * Performs connection to the database.
      */
     async connect(): Promise<void> {
+        if (!this.database) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            this.database = await queryRunner.getCurrentDatabase();
+
+            await queryRunner.release();
+        }
     }
 
     /**
@@ -378,22 +401,28 @@ export class AuroraDataApiDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value: any;
-            if (key.substr(0, 4) === ":...") {
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
+            }
+
+            let value: any = parameters[key];
+
+            if (isArray) {
+                return value.map((v: any) => {
+                    escapedParameters.push(v);
+                    return this.createParameter(key, escapedParameters.length - 1);
+                }).join(", ");
+
             }
 
             if (value instanceof Function) {
                 return value();
 
-            } else {
-                escapedParameters.push(value);
-                return "?";
             }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -407,10 +436,63 @@ export class AuroraDataApiDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        return database ? `${database}.${tableName}` : tableName;
+        let tablePath = [ tableName ];
+
+        if (database) {
+            tablePath.unshift(database);
+        }
+
+        return tablePath.join(".");
+    }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.database;
+        const driverSchema = undefined;
+
+        if (target instanceof Table || target instanceof View) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            const parsed = this.parseTableName(target.referencedTableName);
+
+            return {
+                database: target.referencedDatabase || parsed.database || driverDatabase,
+                schema: target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof EntityMetadata) {
+            // EntityMetadata tableName is never a path
+
+            return {
+                database: target.database || driverDatabase,
+                schema: target.schema || driverSchema,
+                tableName: target.tableName
+            };
+
+        }
+
+        const parts = target.split(".");
+
+        return {
+            database: (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+            schema: driverSchema,
+            tableName: parts.length > 1 ? parts[1] : parts[0]
+        };
     }
 
     /**
@@ -421,7 +503,7 @@ export class AuroraDataApiDriver implements Driver {
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
-            return this.client.preparePersistentValue(value, columnMetadata)
+            return this.client.preparePersistentValue(value, columnMetadata);
         }
 
         if (value === null || value === undefined)
@@ -463,7 +545,7 @@ export class AuroraDataApiDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
-            return this.client.prepareHydratedValue(value, columnMetadata)
+            return this.client.prepareHydratedValue(value, columnMetadata);
         }
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
@@ -556,31 +638,38 @@ export class AuroraDataApiDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (defaultValue === null) {
-            return undefined
+            return undefined;
         }
 
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
             return `'${defaultValue}'`;
         }
+
         if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
-
         }
+
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
-
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
-
-        } else if (typeof defaultValue === "function") {
-            return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else {
-            return defaultValue;
+            return `${defaultValue}`;
         }
+
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
+        }
+
+        if (typeof defaultValue === "function") {
+            return defaultValue();
+        }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === undefined) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -659,7 +748,7 @@ export class AuroraDataApiDriver implements Driver {
                     err ? fail(err) : ok(this.prepareDbConnection(dbConnection));
                 });
             } else {
-                fail(new Error(`Connection is not established with mysql database`));
+                fail(new TypeORMError(`Connection is not established with mysql database`));
             }
         });
     }
@@ -796,7 +885,8 @@ export class AuroraDataApiDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
-        this.DataApiDriver = PlatformTools.load("typeorm-aurora-data-api-driver");
+        const DataApiDriver = this.options.driver || PlatformTools.load("typeorm-aurora-data-api-driver");
+        this.DataApiDriver = DataApiDriver;
 
         // Driver uses rollup for publishing, which has issues when using typeorm in combination with webpack
         // See https://github.com/webpack/webpack/issues/4742#issuecomment-295556787
@@ -841,9 +931,9 @@ export class AuroraDataApiDriver implements Driver {
      */
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection;
-        /*
-          Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
-          cause the hosting app to crash.
+        /**
+         * Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
+         * cause the hosting app to crash.
          */
         if (connection.listeners("error").length === 0) {
             connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));

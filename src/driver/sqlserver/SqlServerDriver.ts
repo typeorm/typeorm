@@ -20,6 +20,10 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
+import { Table } from "../../schema-builder/table/Table";
+import { View } from "../../schema-builder/view/View";
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import { TypeORMError } from "../../error";
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -61,9 +65,24 @@ export class SqlServerDriver implements Driver {
     options: SqlServerConnectionOptions;
 
     /**
-     * Master database used to perform all write queries.
+     * Database name used to perform all write queries.
      */
     database?: string;
+
+    /**
+     * Schema name used to perform all write queries.
+     */
+    schema?: string;
+
+    /**
+     * Schema that's used internally by SQL Server for object resolution.
+     *
+     * Because we never set this we have to track it in separately from the `schema` so
+     * we know when we have to specify the full schema or not.
+     *
+     * In most cases this will be `dbo`.
+     */
+    searchSchema?: string;
 
     /**
      * Indicates if replication is enabled.
@@ -222,6 +241,9 @@ export class SqlServerDriver implements Driver {
         // load mssql package
         this.loadDependencies();
 
+        this.database = DriverUtils.buildDriverOptions(this.options.replication ? this.options.replication.master : this.options).database;
+        this.schema = DriverUtils.buildDriverOptions(this.options).schema;
+
         // Object.assign(connection.options, DriverUtils.buildDriverOptions(connection.options)); // todo: do it better way
         // validate options to make sure everything is set
         // if (!this.options.host)
@@ -248,11 +270,27 @@ export class SqlServerDriver implements Driver {
                 return this.createPool(this.options, slave);
             }));
             this.master = await this.createPool(this.options, this.options.replication.master);
-            this.database = this.options.replication.master.database;
 
         } else {
             this.master = await this.createPool(this.options, this.options);
-            this.database = this.options.database;
+        }
+
+        if (!this.database || !this.searchSchema) {
+            const queryRunner = await this.createQueryRunner("master");
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase();
+            }
+
+            if (!this.searchSchema) {
+                this.searchSchema = await queryRunner.getCurrentSchema();
+            }
+
+            await queryRunner.release();
+        }
+
+        if (!this.schema) {
+            this.schema = this.searchSchema;
         }
     }
 
@@ -310,30 +348,28 @@ export class SqlServerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
-        sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
-            let value: any;
-            let isArray = false;
-            if (key.substr(0, 4) === ":...") {
-                isArray = true;
-                value = parameters[key.substr(4)];
-            } else {
-                value = parameters[key.substr(1)];
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
+            if (!parameters.hasOwnProperty(key)) {
+                return full;
             }
+
+            let value: any = parameters[key];
 
             if (isArray) {
                 return value.map((v: any) => {
                     escapedParameters.push(v);
-                    return "@" + (escapedParameters.length - 1);
+                    return this.createParameter(key, escapedParameters.length - 1);
                 }).join(", ");
 
-            } else if (value instanceof Function) {
+            }
+
+            if (value instanceof Function) {
                 return value();
 
-            } else {
-                escapedParameters.push(value);
-                return "@" + (escapedParameters.length - 1);
             }
+
+            escapedParameters.push(value);
+            return this.createParameter(key, escapedParameters.length - 1);
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
@@ -347,21 +383,85 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Build full table name with database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string, database?: string): string {
-        let fullName = tableName;
-        if (schema)
-            fullName = schema + "." + tableName;
-        if (database) {
-            if (!schema) {
-                fullName = database + ".." + tableName;
-            } else {
-                fullName = database + "." + fullName;
-            }
+        let tablePath = [ tableName ];
+
+        if (schema) {
+            tablePath.unshift(schema);
         }
 
-        return fullName;
+        if (database) {
+            if (!schema) {
+                tablePath.unshift("");
+            }
+
+            tablePath.unshift(database);
+        }
+
+        return tablePath.join(".");
+    }
+
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
+        const driverDatabase = this.database;
+        const driverSchema = this.schema;
+
+        if (target instanceof Table || target instanceof View) {
+            const parsed = this.parseTableName(target.name);
+
+            return {
+                database: target.database || parsed.database || driverDatabase,
+                schema: target.schema || parsed.schema || driverSchema,
+                tableName: parsed.tableName,
+            };
+        }
+
+        if (target instanceof TableForeignKey) {
+            const parsed = this.parseTableName(target.referencedTableName);
+
+            return {
+                database: target.referencedDatabase || parsed.database || driverDatabase,
+                schema: target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName
+            };
+        }
+
+        if (target instanceof EntityMetadata) {
+            // EntityMetadata tableName is never a path
+
+            return {
+                database: target.database || driverDatabase,
+                schema: target.schema || driverSchema,
+                tableName: target.tableName
+            };
+
+        }
+
+        const parts = target.split(".");
+
+        if (parts.length === 3) {
+            return {
+                database: parts[0] || driverDatabase,
+                schema: parts[1] || driverSchema,
+                tableName: parts[2]
+            };
+        } else if (parts.length === 2) {
+            return {
+                database: driverDatabase,
+                schema: parts[0],
+                tableName: parts[1]
+            };
+        } else {
+            return {
+                database: driverDatabase,
+                schema: driverSchema,
+                tableName: target
+            };
+        }
     }
 
     /**
@@ -495,24 +595,31 @@ export class SqlServerDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+            return `${defaultValue}`;
+        }
 
-        } else if (typeof defaultValue === "boolean") {
-            return defaultValue === true ? "1" : "0";
+        if (typeof defaultValue === "boolean") {
+            return defaultValue ? "1" : "0";
 
-        } else if (typeof defaultValue === "function") {
+        }
+
+        if (typeof defaultValue === "function") {
             const value = defaultValue();
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
-                return "getdate()"
+                return "getdate()";
             }
-            return value
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else {
-            return defaultValue;
+            return value;
         }
+
+        if (typeof defaultValue === "string") {
+            return `'${defaultValue}'`;
+        }
+
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined;
+        }
+
+        return `${defaultValue}`;
     }
 
     /**
@@ -564,6 +671,10 @@ export class SqlServerDriver implements Driver {
      * If replication is not setup then returns default connection's database connection.
      */
     obtainMasterConnection(): Promise<any> {
+        if (!this.master) {
+            return Promise.reject(new TypeORMError("Driver not Connected"));
+        }
+
         return Promise.resolve(this.master);
     }
 
@@ -608,7 +719,7 @@ export class SqlServerDriver implements Driver {
 
             const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
                 || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== columnMetadata.length
+                || tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
@@ -634,7 +745,7 @@ export class SqlServerDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
     private lowerDefaultValueIfNecessary(value: string | undefined) {
@@ -755,7 +866,8 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.mssql = PlatformTools.load("mssql");
+            const mssql = this.options.driver || PlatformTools.load("mssql");
+            this.mssql = mssql;
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SQL Server", "mssql");
@@ -795,8 +907,21 @@ export class SqlServerDriver implements Driver {
         }, options.extra || {});
 
         // set default useUTC option if it hasn't been set
-        if (!connectionOptions.options) connectionOptions.options = { useUTC: false };
-        else if (!connectionOptions.options.useUTC) connectionOptions.options.useUTC = false;
+        if (!connectionOptions.options) {
+            connectionOptions.options = { useUTC: false };
+        } else if (!connectionOptions.options.useUTC) {
+            Object.assign(
+                connectionOptions.options,
+                { useUTC: false }
+            );
+        }
+
+        // Match the next release of tedious for configuration options
+        // Also prevents warning messages.
+        Object.assign(
+            connectionOptions.options,
+            { enableArithAbort: true }
+        );
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
@@ -806,9 +931,9 @@ export class SqlServerDriver implements Driver {
             const { logger } = this.connection;
 
             const poolErrorHandler = (options.pool && options.pool.errorHandler) || ((error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
-            /*
-              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
-              cause the hosting app to crash.
+            /**
+             * Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+             * cause the hosting app to crash.
              */
             pool.on("error", poolErrorHandler);
 

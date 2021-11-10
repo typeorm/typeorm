@@ -67,9 +67,9 @@ assignees: ''
 | Dependency          | Version  |
 | ---                 | ---      |
 | Operating System    |          |
-| Node.js version     | vX.Y.ZZZ | <!-- run `node -v` to obtain this -->
-| Typescript version  | vX.Y.ZZZ | <!-- run `npm list typescript` to obtain this -->
-| TypeORM version     | vX.Y.ZZZ | <!-- run `npm list typeorm` to obtain this -->
+| Node.js version     | x.y.zzz  | <!-- run `node -v` to obtain this -->
+| Typescript version  | x.y.zzz  | <!-- run `npm list typescript` to obtain this -->
+| TypeORM version     | x.y.zzz  | <!-- run `npm list typeorm` to obtain this -->
 
 
 ### Additional Context
@@ -81,47 +81,40 @@ assignees: ''
 
 ### Relevant Database Driver(s)
 
-<!--
-  Please include the relevant database drivers to your issue.
+<!-- Put "yes" instead of "no" to your issue's relevant databases -->
 
-  Please include an `x` inside the brackets like so:
-
-  - [ ] `cockroachdb`
-  - [x] `cordova`
-  - [ ] `expo`
--->
-
-- [ ] `aurora-data-api`
-- [ ] `aurora-data-api-pg`
-- [ ] `better-sqlite3`
-- [ ] `cockroachdb`
-- [ ] `cordova`
-- [ ] `expo`
-- [ ] `mongodb`
-- [ ] `mysql`
-- [ ] `nativescript`
-- [ ] `oracle`
-- [ ] `postgres`
-- [ ] `react-native`
-- [ ] `sap`
-- [ ] `sqlite`
-- [ ] `sqlite-abstract`
-- [ ] `sqljs`
-- [ ] `sqlserver`
+| DB Type              | Reproducible  |
+| ---                  | ---           |
+| `aurora-data-api`    | no            |
+| `aurora-data-api-pg` | no            |
+| `better-sqlite3`     | no            |
+| `cockroachdb`        | no            |
+| `cordova`            | no            |
+| `expo`               | no            |
+| `mongodb`            | no            |
+| `mysql`              | no            |
+| `nativescript`       | no            |
+| `oracle`             | no            |
+| `postgres`           | no            |
+| `react-native`       | no            |
+| `sap`                | no            |
+| `sqlite`             | no            |
+| `sqlite-abstract`    | no            |
+| `sqljs`              | no            |
+| `sqlserver`          | no            |
 
 
 ### Are you willing to resolve this issue by submitting a Pull Request?
 
+<!-- Put "✅" (:white_check_mark:) to one of these options, left "✖️" (:heavy_multiplication_x:) others: -->
+
+ - ✅ Yes, I have the time, and I know how to start.
+ - ✖️ Yes, I have the time, but I don't know how to start. I would need guidance.
+ - ✖️ No, I don’t have the time, but I can support (using donations) development.
+ - ✖️ No, I don’t have the time and I’m okay to wait for the community / maintainers to resolve this issue.
+
+
 <!--
   Remember that first-time contributors are welcome! 🙌
--->
-
-- [ ] Yes, I have the time, and I know how to start.
-- [ ] Yes, I have the time, but I don't know how to start. I would need guidance.
-- [ ] No, I don't have the time, although I believe I could do it if I had the time...
-- [ ] No, I don't have the time and I wouldn't even know how to start.
-
-
-<!--
   👋 Have a great day and thank you for the bug report!
 -->

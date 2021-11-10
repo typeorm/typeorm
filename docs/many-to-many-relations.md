@@ -109,7 +109,7 @@ To delete a many-to-many relationship between two records, remove it from the co
 ```typescript
 const question = getRepository(Question);
 question.categories = question.categories.filter(category => {
-    category.id !== categoryToRemove.id
+    return category.id !== categoryToRemove.id
 })
 await connection.manager.save(question)
 ```

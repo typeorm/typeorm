@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
 import {OnDeleteType} from "../../metadata/types/OnDeleteType";
 import {RelationOptions} from "../options/RelationOptions";

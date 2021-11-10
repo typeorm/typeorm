@@ -4,7 +4,7 @@ import {closeTestingConnections, createTestingConnections, reloadTestingDatabase
 
 import {Connection} from "../../../../src/connection/Connection";
 import {PhoneBook} from "./entity/PhoneBook";
-import {Post} from "./entity/Post";
+import {Complex, Post} from "./entity/Post";
 import {User} from "./entity/User";
 import {Category} from "./entity/Category";
 import {View} from "./entity/View";
@@ -94,5 +94,61 @@ describe("columns > value-transformer functionality", () => {
         const dbView = await viewRepository.findOne();
         dbView && dbView.title.should.be.eql(title);
 
+    })));
+
+    it("should marshal data using a complex value-transformer", () => Promise.all(connections.map(async connection => {
+
+        const postRepository = connection.getRepository(Post);
+
+        // create and save a post first
+        const post = new Post();
+        post.title = "Complex transformers!";
+        post.tags = ["complex", "transformer"];
+        await postRepository.save(post);
+
+        let loadedPost = await postRepository.findOne(post.id);
+        expect(loadedPost!.complex).to.eq(null);
+
+        // then update all its properties and save again
+        post.title = "Complex transformers2!";
+        post.tags = ["very", "complex", "actually"];
+        post.complex = new Complex("3 2.5");
+        await postRepository.save(post);
+
+        // check if all columns are updated except for readonly columns
+        loadedPost = await postRepository.findOne(post.id);
+        expect(loadedPost!.title).to.be.equal("Complex transformers2!");
+        expect(loadedPost!.tags).to.deep.eq(["very", "complex", "actually"]);
+        expect(loadedPost!.complex!.x).to.eq(3);
+        expect(loadedPost!.complex!.y).to.eq(2.5);
+
+        // then update all its properties and save again
+        post.title = "Complex transformers3!";
+        post.tags = ["very", "lacking", "actually"];
+        post.complex = null;
+        await postRepository.save(post);
+
+        loadedPost = await postRepository.findOne(post.id);
+        expect(loadedPost!.complex).to.eq(null);
+
+        // then update all its properties and save again
+        post.title = "Complex transformers4!";
+        post.tags = ["very", "here", "again!"];
+        post.complex = new Complex("0.5 0.5");
+        await postRepository.save(post);
+
+        loadedPost = await postRepository.findOne(post.id);
+        expect(loadedPost!.complex!.x).to.eq(0.5);
+        expect(loadedPost!.complex!.y).to.eq(0.5);
+
+        // then update all its properties and save again
+        post.title = "Complex transformers5!";
+        post.tags = ["now", "really", "lacking!"];
+        post.complex = new Complex("1.05 2.3");
+        await postRepository.save(post);
+
+        loadedPost = await postRepository.findOne(post.id);
+        expect(loadedPost!.complex!.x).to.eq(1.05);
+        expect(loadedPost!.complex!.y).to.eq(2.3);
     })));
 });

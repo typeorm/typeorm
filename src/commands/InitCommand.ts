@@ -4,6 +4,7 @@ import * as path from "path";
 import * as yargs from "yargs";
 import chalk from "chalk";
 import { exec } from "child_process";
+import { TypeORMError } from "../error/TypeORMError";
 
 /**
  * Generates a new project with TypeORM.
@@ -493,7 +494,7 @@ services:
 services:
 `;
             case "oracle":
-                throw new Error(`You cannot initialize a project with docker for Oracle driver yet.`); // todo: implement for oracle as well
+                throw new TypeORMError(`You cannot initialize a project with docker for Oracle driver yet.`); // todo: implement for oracle as well
 
             case "mssql":
                 return `version: '3'
@@ -599,7 +600,8 @@ Steps to run this project:
 
         if (!packageJson.scripts) packageJson.scripts = {};
         Object.assign(packageJson.scripts, {
-            start: /*(docker ? "docker-compose up && " : "") + */"ts-node src/index.ts"
+            start: /*(docker ? "docker-compose up && " : "") + */"ts-node src/index.ts",
+            typeorm: "node --require ts-node/register ./node_modules/typeorm/cli.js"
         });
         return JSON.stringify(packageJson, undefined, 3);
     }

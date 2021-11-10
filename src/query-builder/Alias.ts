@@ -1,5 +1,6 @@
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ObjectUtils} from "../util/ObjectUtils";
+import { TypeORMError } from "../error";
 
 /**
  */
@@ -40,7 +41,7 @@ export class Alias {
 
     get metadata(): EntityMetadata {
         if (!this._metadata)
-            throw new Error(`Cannot get entity metadata for the given alias "${this.name}"`);
+            throw new TypeORMError(`Cannot get entity metadata for the given alias "${this.name}"`);
 
         return this._metadata;
     }

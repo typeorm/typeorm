@@ -1,9 +1,16 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {VersionColumn} from "../../../../../src/decorator/columns/VersionColumn";
-import {Category} from "./Category";
-import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    VersionColumn,
+    ManyToOne,
+    JoinTable,
+    ManyToMany,
+    OneToOne, JoinColumn,
+} from "../../../../../src";
+import { Tag } from "./Tag";
+import { Category } from "./Category";
+import { HeroImage } from "./HeroImage";
 
 @Entity()
 export class Post {
@@ -23,7 +30,15 @@ export class Post {
     @VersionColumn()
     version: string;
 
+    @OneToOne(() => HeroImage, (hero) => hero.post)
+    @JoinColumn()
+    heroImage: HeroImage;
+
     @ManyToOne(type => Category)
     category: Category;
+
+    @ManyToMany(() => Tag, (tag) => tag.posts)
+    @JoinTable()
+    tags: Tag[]
 
 }

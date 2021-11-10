@@ -145,7 +145,15 @@ List of available env variables you can set:
 * TYPEORM_USERNAME
 * TYPEORM_UUID_EXTENSION
 
-`TYPEORM_CACHE` should be boolean or string of cache type
+`TYPEORM_CACHE` should be boolean or string of cache type.
+Here is an example of how you can setup a `redis` cache.
+
+```
+TYPEORM_CACHE=redis # other valid values: a boolean or ioredis or database
+TYPEORM_CACHE_ALWAYS_ENABLED=true
+TYPEORM_CACHE_DURATION=30000 # in milliseconds
+TYPEORM_CACHE_OPTIONS={"host":"localhost","port":6379}
+```
 
 `ormconfig.env` should be used only during development.
 On production you can set all these values in real ENVIRONMENT VARIABLES.

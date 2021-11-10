@@ -1,4 +1,4 @@
-import {WhereExpression} from "./WhereExpression";
+import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 
 /**
  * Syntax sugar.
@@ -9,12 +9,12 @@ export class Brackets {
     /**
      * WHERE expression that will be taken into brackets.
      */
-    whereFactory: (qb: WhereExpression) => any;
+    whereFactory: (qb: WhereExpressionBuilder) => any;
 
     /**
      * Given WHERE query builder that will build a WHERE expression that will be taken into brackets.
      */
-    constructor(whereFactory: (qb: WhereExpression) => any) {
+    constructor(whereFactory: (qb: WhereExpressionBuilder) => any) {
         this.whereFactory = whereFactory;
     }
 

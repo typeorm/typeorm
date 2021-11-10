@@ -24,6 +24,7 @@ import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { TypeORMError } from "../error";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -631,7 +632,7 @@ export class EntityMetadataBuilder {
         entityMetadata.treeParentRelation = entityMetadata.relations.find(relation => relation.isTreeParent);
         entityMetadata.treeChildrenRelation = entityMetadata.relations.find(relation => relation.isTreeChildren);
         entityMetadata.columns = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.columnsFromTree), entityMetadata.ownColumns);
-        entityMetadata.listeners = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.listenersFromTree), entityMetadata.ownListeners);
+        entityMetadata.listeners = entityMetadata.embeddeds.reduce((listeners, embedded) => listeners.concat(embedded.listenersFromTree), entityMetadata.ownListeners);
         entityMetadata.afterLoadListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_LOAD);
         entityMetadata.afterInsertListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_INSERT);
         entityMetadata.afterUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE);
@@ -639,8 +640,8 @@ export class EntityMetadataBuilder {
         entityMetadata.beforeInsertListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT);
         entityMetadata.beforeUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE);
         entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE);
-        entityMetadata.indices = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
-        entityMetadata.uniques = entityMetadata.embeddeds.reduce((columns, embedded) => columns.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
+        entityMetadata.indices = entityMetadata.embeddeds.reduce((indices, embedded) => indices.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
+        entityMetadata.uniques = entityMetadata.embeddeds.reduce((uniques, embedded) => uniques.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(column => !column.isVirtual);
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(column => column.closureType === "ancestor");
@@ -677,7 +678,7 @@ export class EntityMetadataBuilder {
             // compute inverse side (related) entity metadatas for all relation metadatas
             const inverseEntityMetadata = entityMetadatas.find(m => m.target === relation.type || (typeof relation.type === "string" && (m.targetName === relation.type || m.givenTableName === relation.type)));
             if (!inverseEntityMetadata)
-                throw new Error("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found. Check if you specified a correct entity object and if it's connected in the connection options.");
+                throw new TypeORMError("Entity metadata for " + entityMetadata.name + "#" + relation.propertyPath + " was not found. Check if you specified a correct entity object and if it's connected in the connection options.");
 
             relation.inverseEntityMetadata = inverseEntityMetadata;
             relation.inverseSidePropertyPath = relation.buildInverseSidePropertyPath();
