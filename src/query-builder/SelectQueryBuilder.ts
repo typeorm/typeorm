@@ -2117,6 +2117,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 const propertyAlias = this.escape(DriverUtils.buildAlias(this.connection.driver, aliasName, column!.databaseName));
                 return [property, "AS", propertyAlias].join(" ");
             })
+            .filter(orderCriteria => !!orderCriteria)
             .join(", ");
 
         return [selectString, orderByObject, subquerySelectString];
