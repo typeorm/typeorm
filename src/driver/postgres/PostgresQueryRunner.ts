@@ -417,15 +417,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         // if table have column with generated type, we must add the expression to the meta table
-        await Promise.all(table.columns
-            .filter(column => column.generatedType === "STORED" && column.asExpression)
-            .map(async column => {
-                const tableName = await this.getTableNameWithSchema(table.name);
-                const deleteQuery = new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, column.name]);
-                upQueries.push(deleteQuery);
-                upQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, column.name, column.asExpression]));
-                downQueries.push(deleteQuery);
-            }));
+        for (const column of table.columns) {
+            if (column.generatedType !== "STORED" || !column.asExpression) continue;
+            const tableName = await this.getTableNameWithSchema(table.name);
+            const deleteQuery = new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, column.name]);
+            upQueries.push(deleteQuery);
+            upQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, column.name, column.asExpression]));
+            downQueries.push(deleteQuery);
+        }
 
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
