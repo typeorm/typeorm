@@ -419,10 +419,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // if table have column with generated type, we must add the expression to the meta table
         for (const column of table.columns) {
             if (column.generatedType !== "STORED" || !column.asExpression) continue;
-            const tableName = await this.getTableNameWithSchema(table.name);
-            const deleteQuery = new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, column.name]);
+            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+            const tableName = tableNameWithSchema[1];
+            const schema = tableNameWithSchema[0];
+            const deleteQuery = new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND database = $3 AND type = 'generated_column' AND schema = $4`, [tableName, column.name, this.connection.driver.database, schema]);
             upQueries.push(deleteQuery);
-            upQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, column.name, column.asExpression]));
+            upQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, database, schema, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, this.driver.database, schema]));
             downQueries.push(deleteQuery);
         }
 
@@ -667,10 +669,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         if (column.generatedType === "STORED" && column.asExpression) {
-            const tableName = await this.getTableNameWithSchema(table.name);
-            const deleteQuery = new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, column.name]);
+            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+            const tableName = tableNameWithSchema[1];
+            const schema = tableNameWithSchema[0];
+            const deleteQuery = new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, column.name, schema, this.driver.database]);
             upQueries.push(deleteQuery);
-            upQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, column.name, column.asExpression]));
+            upQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, database, schema, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, this.driver.database, schema]));
             downQueries.push(deleteQuery);
         }
 
@@ -1026,17 +1030,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 // Convert generated column data to normal column
                 if (!newColumn.generatedType || newColumn.generatedType === "VIRTUAL") {
                     // We can copy the generated data to the new column
-                    const tableName = await this.getTableNameWithSchema(table.name);
+                    const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+                    const tableName = tableNameWithSchema[1];
+                    const schema = tableNameWithSchema[0];
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${oldColumn.name}" TO "TEMP_OLD_${oldColumn.name}"`));
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, newColumn)}`));
                     upQueries.push(new Query(`UPDATE ${this.escapePath(table)} SET "${newColumn.name}" = "TEMP_OLD_${oldColumn.name}"`));
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`));
-                    upQueries.push(new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, oldColumn.name]));
+                    upQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, oldColumn.name, schema, this.driver.database]));
                     // However, we can't copy it back on downgrade. It needs to regenerate.
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${newColumn.name}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, oldColumn)}`));
-                    downQueries.push(new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, newColumn.name]));
-                    downQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, oldColumn.name, oldColumn.asExpression]));
+                    downQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, newColumn.name, schema, this.driver.database]));
+                    downQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, schema, database, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, oldColumn.name, oldColumn.asExpression, schema, this.driver.database]));
                 }
             }
 
@@ -1127,9 +1133,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         }
 
         if (column.generatedType === "STORED") {
-            const tableName = await this.getTableNameWithSchema(table.name);
-            upQueries.push(new Query(`DELETE FROM typeorm_generation_meta WHERE table_name = $1 AND column_name = $2`, [tableName, column.name]));
-            downQueries.push(new Query(`INSERT INTO typeorm_generation_meta(table_name, column_name, generation_expression) VALUES ($1, $2, $3)`, [tableName, column.name, column.asExpression]));
+            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+            const tableName = tableNameWithSchema[1];
+            const schema = tableNameWithSchema[0];
+            upQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, column.name, schema, this.driver.database]));
+            downQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, schema, database, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, schema, this.driver.database]));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -1856,11 +1864,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
                         // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                        const fullTableName = this.driver.buildTableName(dbTable["table_name"], dbTable["table_schema"]);
-                        const asExpressionQuery = `SELECT * FROM typeorm_generation_meta WHERE table_name = '${await this.getTableNameWithSchema(fullTableName)}' and column_name = '${tableColumn.name}'`;
+                        const asExpressionQuery = `SELECT * FROM typeorm_generation_meta WHERE table = '${dbTable["table_name"]}' AND name = '${tableColumn.name}' AND schema = '${dbTable["table_schema"]}' AND database = '${this.driver.database}' AND type = 'generated_column'`;
                         const results: ObjectLiteral[] = await this.query(asExpressionQuery);
-                        if (results[0] && results[0].generation_expression) {
-                            tableColumn.asExpression = results[0].generation_expression;
+                        if (results[0] && results[0].value) {
+                            tableColumn.asExpression = results[0].value;
                         } else {
                             tableColumn.asExpression = "";
                         }

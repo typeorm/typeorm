@@ -145,7 +145,7 @@ describe("query runner > change column", () => {
         const queryRunner = connection.createQueryRunner();
 
         // Database is running < postgres 12
-        if (!await connection.driver.isGeneratedColumnsSupported(queryRunner)) return;
+        if (!connection.driver.isGeneratedColumnsSupported) return;
 
         let generatedColumn = new TableColumn({
             name: "generated",

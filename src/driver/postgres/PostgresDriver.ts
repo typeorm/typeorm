@@ -271,6 +271,8 @@ export class PostgresDriver implements Driver {
      */
     maxAliasLength = 63;
 
+    isGeneratedColumnsSupported: boolean = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -354,6 +356,10 @@ export class PostgresDriver implements Driver {
             await this.enableExtensions(extensionsMetadata, connection);
             await release()
         }
+
+        const results = await this.executeQuery(this.connection, 'SHOW server_version;') as any;
+        const versionString = results[0]["server_version"] as string;
+        this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(versionString, '12.0');
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
@@ -1063,15 +1069,6 @@ export class PostgresDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return true;
-    }
-
-    /**
-     * Returns true if postgres supports generated columns
-     */
-    async isGeneratedColumnsSupported(runner: QueryRunner): Promise<boolean> {
-        const results = await runner.query("SHOW server_version;", []);
-        const versionString = results[0]["server_version"] as string;
-        return VersionUtils.isGreaterOrEqual(versionString, '12.0');
     }
 
     /**

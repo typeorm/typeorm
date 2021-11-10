@@ -7,7 +7,6 @@ import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/Abstract
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-import {VersionUtils} from "../../../src/util/VersionUtils";
 
 describe("query runner > add column", () => {
 
@@ -95,9 +94,7 @@ describe("query runner > add column", () => {
             let postgresSupported = false;
 
             if (connection.driver instanceof PostgresDriver) {
-                const results = await queryRunner.query("SHOW server_version;");
-                const versionString = results[0]["server_version"] as string;
-                postgresSupported = VersionUtils.isGreaterOrEqual(versionString, '12.0');
+                postgresSupported = connection.driver.isGeneratedColumnsSupported;
             }
 
             if (isMySQL || postgresSupported) {
