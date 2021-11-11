@@ -22,6 +22,16 @@ export interface AuroraDataApiConnectionOptions extends BaseConnectionOptions, A
     readonly database: string;
 
     /**
+     * The driver object
+     * This defaults to require("typeorm-aurora-data-api-driver")
+     */
+    readonly driver?: any;
+
+    readonly serviceConfigOptions?: { [key: string]: any }; // pass optional AWS.ConfigurationOptions here
+
+    readonly formatOptions?: { [key: string]: any, castParameters: boolean };
+
+    /**
      * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
      * (Default: true)
      */

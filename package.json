@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.2.24",
+  "version": "0.2.39",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -11,15 +11,25 @@
   },
   "main": "./index.js",
   "browser": {
+    "./browser/driver/aurora-data-api/AuroraDataApiDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/cockroachdb/CockroachDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/oracle/OracleDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sap/SapDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/oracle/OracleDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/sap/SapDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/mysql/MysqlDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sqlserver/SqlServerDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/sqlserver/SqlServerDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/mongodb/MongoDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/mongodb/MongoQueryRunner.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/repository/MongoRepository.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/sqlite/SqliteDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/better-sqlite3/BetterSqlite3Driver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/util/DirectoryExportedClassesLoader.js": "./browser/platform/BrowserDirectoryExportedClassesLoader.js",
+    "./browser/logger/FileLogger.js": "./browser/platform/BrowserFileLoggerDummy.js",
+    "./browser/connection/ConnectionOptionsReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
+    "./browser/connection/options-reader/ConnectionOptionsXmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
+    "./browser/connection/options-reader/ConnectionOptionsYmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
+    "./browser/platform/PlatformTools.js": "./browser/platform/BrowserPlatformTools.js",
     "./index.js": "./browser/index.js"
   },
   "repository": {
@@ -47,88 +57,165 @@
     "oracle-orm"
   ],
   "devDependencies": {
-    "@types/chai": "^4.1.2",
-    "@types/chai-as-promised": "7.1.0",
-    "@types/debug": "4.1.2",
-    "@types/mocha": "^5.2.6",
-    "@types/node": "^9.6.0",
-    "@types/rimraf": "^2.0.2",
+    "@types/app-root-path": "^1.2.4",
+    "@types/chai": "^4.2.15",
+    "@types/chai-as-promised": "^7.1.3",
+    "@types/debug": "^4.1.5",
+    "@types/dotenv": "^8.2.0",
+    "@types/js-yaml": "^4.0.0",
+    "@types/mkdirp": "^1.0.1",
+    "@types/mocha": "^8.2.1",
+    "@types/node": "^14.14.31",
+    "@types/rimraf": "^3.0.0",
     "@types/sha.js": "^2.4.0",
-    "@types/sinon": "^7.0.8",
-    "@types/source-map-support": "^0.4.2",
-    "@types/yargs": "^12.0.9",
-    "chai": "^4.2.0",
+    "@types/sinon": "^9.0.10",
+    "@types/source-map-support": "^0.5.3",
+    "@types/xml2js": "^0.4.8",
+    "@types/yargs": "^17.0.2",
+    "@typescript-eslint/eslint-plugin": "^4.15.2",
+    "@typescript-eslint/parser": "^4.15.2",
+    "better-sqlite3": "^7.1.2",
+    "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
-    "class-transformer": "^0.2.3",
-    "conventional-changelog-angular": "^5.0.3",
-    "conventional-changelog-cli": "^2.0.21",
-    "del": "^3.0.0",
-    "gulp": "^4.0.0",
+    "class-transformer": "^0.4.0",
+    "conventional-changelog-angular": "^5.0.12",
+    "conventional-changelog-cli": "^2.1.1",
+    "del": "^6.0.0",
+    "eslint": "^7.20.0",
+    "gulp": "^4.0.2",
+    "gulp-eslint": "^6.0.0",
     "gulp-istanbul": "^1.1.3",
-    "gulp-mocha": "^6.0.0",
-    "gulp-rename": "^1.2.2",
+    "gulp-mocha": "^8.0.0",
+    "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
-    "gulp-shell": "^0.6.5",
-    "gulp-sourcemaps": "^2.6.5",
-    "gulp-tslint": "^8.1.4",
-    "gulp-typescript": "^5.0.0",
+    "gulp-shell": "^0.8.0",
+    "gulp-sourcemaps": "^3.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
     "gulpclass": "^0.2.0",
-    "husky": "^1.3.1",
-    "lint-staged": "^8.1.4",
-    "mocha": "^6.1.4",
-    "mongodb": "^3.1.13",
-    "mssql": "^4.3.2",
-    "mysql": "^2.15.0",
-    "mysql2": "^1.6.5",
-    "pg": "^7.8.1",
-    "redis": "^2.8.0",
+    "husky": "^5.1.1",
+    "lint-staged": "^10.5.4",
+    "mocha": "^8.3.0",
+    "mongodb": "^3.6.4",
+    "mssql": "^6.3.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.2.5",
+    "oracledb": "^5.1.0",
+    "pg": "^8.5.1",
+    "pg-query-stream": "^4.0.0",
+    "redis": "^3.1.1",
     "remap-istanbul": "^0.13.0",
-    "rimraf": "^2.6.3",
-    "sinon": "^7.2.5",
-    "sinon-chai": "^3.3.0",
-    "source-map-support": "^0.5.10",
-    "sql.js": "^1.0.0",
-    "sqlite3": "^4.0.9",
-    "ts-node": "^8.0.2",
-    "tslint": "^5.13.1",
-    "typeorm-aurora-data-api-driver": "^1.1.1",
-    "typescript": "^3.3.3333"
+    "rimraf": "^3.0.2",
+    "sinon": "^9.2.4",
+    "sinon-chai": "^3.5.0",
+    "source-map-support": "^0.5.19",
+    "sql.js": "^1.4.0",
+    "sqlite3": "^5.0.2",
+    "ts-node": "^9.1.1",
+    "typeorm-aurora-data-api-driver": "^2.0.0",
+    "typescript": "^4.2.2"
+  },
+  "peerDependencies": {
+    "@sap/hana-client": "*",
+    "better-sqlite3": "*",
+    "hdb-pool": "*",
+    "ioredis": "*",
+    "mongodb": "^3.6.0",
+    "mssql": "*",
+    "mysql2": "*",
+    "oracledb": "*",
+    "pg": "*",
+    "pg-native": "*",
+    "pg-query-stream": "*",
+    "redis": "*",
+    "sql.js": "*",
+    "sqlite3": "*",
+    "typeorm-aurora-data-api-driver": "*"
+  },
+  "peerDependenciesMeta": {
+    "@sap/hana-client": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    },
+    "hdb-pool": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    },
+    "mssql": {
+      "optional": true
+    },
+    "mysql2": {
+      "optional": true
+    },
+    "oracledb": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "pg-native": {
+      "optional": true
+    },
+    "pg-query-stream": {
+      "optional": true
+    },
+    "redis": {
+      "optional": true
+    },
+    "sql.js": {
+      "optional": true
+    },
+    "sqlite3": {
+      "optional": true
+    },
+    "typeorm-aurora-data-api-driver": {
+      "optional": true
+    }
   },
   "dependencies": {
+    "@sqltools/formatter": "^1.2.2",
     "app-root-path": "^3.0.0",
-    "buffer": "^5.1.0",
-    "chalk": "^2.4.2",
-    "cli-highlight": "^2.0.0",
-    "debug": "^4.1.1",
-    "dotenv": "^6.2.0",
-    "glob": "^7.1.2",
-    "js-yaml": "^3.13.1",
-    "mkdirp": "^0.5.1",
+    "buffer": "^6.0.3",
+    "chalk": "^4.1.0",
+    "cli-highlight": "^2.1.11",
+    "debug": "^4.3.1",
+    "dotenv": "^8.2.0",
+    "glob": "^7.1.6",
+    "js-yaml": "^4.0.0",
+    "mkdirp": "^1.0.4",
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
-    "tslib": "^1.9.0",
-    "xml2js": "^0.4.17",
-    "yargonaut": "^1.1.2",
-    "yargs": "^13.2.1"
+    "tslib": "^2.1.0",
+    "xml2js": "^0.4.23",
+    "yargs": "^17.0.1",
+    "zen-observable-ts": "^1.0.0"
   },
   "lint-staged": {
     "*.ts": [
-      "tslint --fix",
+      "eslint --fix",
       "git add"
     ]
   },
   "scripts": {
-    "test-ci": "gulp ci-tests",
     "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
+    "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
-    "lint": "tslint -p .",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
+    "pack": "gulp pack",
+    "lint": "eslint -c ./.eslintrc.js src/**/*.ts test/**/*.ts sample/**/*.ts",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1"
   },
   "bin": {
     "typeorm": "./cli.js"
   },
+  "funding": "https://opencollective.com/typeorm",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",

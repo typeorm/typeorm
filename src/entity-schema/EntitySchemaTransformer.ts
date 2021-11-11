@@ -136,7 +136,8 @@ export class EntitySchemaTransformer {
                             onUpdate: relationSchema.onUpdate,
                             deferrable: relationSchema.deferrable,
                             primary: relationSchema.primary,
-                            persistence: relationSchema.persistence
+                            persistence: relationSchema.persistence,
+                            orphanedRowAction: relationSchema.orphanedRowAction
                         }
                     };
 
@@ -151,13 +152,17 @@ export class EntitySchemaTransformer {
                             };
                             metadataArgsStorage.joinColumns.push(joinColumn);
                         } else {
-                            const joinColumn: JoinColumnMetadataArgs = {
-                                target: options.target || options.name,
-                                propertyName: relationName,
-                                name: relationSchema.joinColumn.name,
-                                referencedColumnName: relationSchema.joinColumn.referencedColumnName
-                            };
-                            metadataArgsStorage.joinColumns.push(joinColumn);
+                            const joinColumnsOptions = Array.isArray(relationSchema.joinColumn) ? relationSchema.joinColumn : [relationSchema.joinColumn];
+
+                            for (const joinColumnOption of joinColumnsOptions) {
+                                const joinColumn: JoinColumnMetadataArgs = {
+                                    target: options.target || options.name,
+                                    propertyName: relationName,
+                                    name: joinColumnOption.name,
+                                    referencedColumnName: joinColumnOption.referencedColumnName
+                                };
+                                metadataArgsStorage.joinColumns.push(joinColumn);
+                            }
                         }
                     }
 

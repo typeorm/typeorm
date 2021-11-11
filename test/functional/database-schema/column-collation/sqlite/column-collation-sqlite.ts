@@ -10,7 +10,7 @@ describe.skip("database schema > column collation > sqlite", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["sqlite", "better-sqlite3"],
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));

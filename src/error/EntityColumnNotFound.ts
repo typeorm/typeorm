@@ -1,13 +1,9 @@
-/**
- *
- */
-export class EntityColumnNotFound extends Error {
-    name = "EntityColumnNotFound";
+import {TypeORMError} from "./TypeORMError";
 
+export class EntityColumnNotFound extends TypeORMError {
     constructor(propertyPath: string) {
-        super();
-        Object.setPrototypeOf(this, EntityColumnNotFound.prototype);
-        this.message = `No entity column "${propertyPath}" was found.`;
+        super(
+            `No entity column "${propertyPath}" was found.`
+        );
     }
-
 }

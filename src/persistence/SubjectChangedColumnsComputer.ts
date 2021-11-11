@@ -1,8 +1,8 @@
 import {Subject} from "./Subject";
 import {DateUtils} from "../util/DateUtils";
 import {ObjectLiteral} from "../common/ObjectLiteral";
-import {EntityMetadata} from "../metadata/EntityMetadata";
 import {OrmUtils} from "../util/OrmUtils";
+import {ApplyValueTransformers} from "../util/ApplyValueTransformers";
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -40,10 +40,11 @@ export class SubjectChangedColumnsComputer {
 
             // ignore special columns
             if (column.isVirtual ||
-                column.isDiscriminator ||
-                column.isUpdateDate ||
-                column.isVersion ||
-                column.isCreateDate)
+                column.isDiscriminator // ||
+                // column.isUpdateDate ||
+                // column.isVersion ||
+                // column.isCreateDate
+            )
                 return;
 
             const changeMap = subject.changeMaps.find(changeMap => changeMap.column === column);
@@ -60,9 +61,11 @@ export class SubjectChangedColumnsComputer {
 
             // if there is no database entity then all columns are treated as new, e.g. changed
             if (subject.databaseEntity) {
+                // skip transform database value for json / jsonb for comparison later on
+                const shouldTransformDatabaseEntity = column.type !== "json" && column.type !== "jsonb";
 
                 // get database value of the column
-                let databaseValue = column.getEntityValue(subject.databaseEntity);
+                let databaseValue = column.getEntityValue(subject.databaseEntity, shouldTransformDatabaseEntity);
 
                 // filter out "relational columns" only in the case if there is a relation object in entity
                 if (column.relationMetadata) {
@@ -118,11 +121,22 @@ export class SubjectChangedColumnsComputer {
                             databaseValue = DateUtils.simpleJsonToString(databaseValue);
                             break;
                     }
+
+                    if (column.transformer) {
+                        normalizedValue = ApplyValueTransformers.transformTo(column.transformer, entityValue);
+                    }
                 }
 
                 // if value is not changed - then do nothing
-                if (normalizedValue === databaseValue)
-                    return;
+                if (normalizedValue instanceof Buffer && databaseValue instanceof Buffer) {
+                    if (normalizedValue.equals(databaseValue)) {
+                        return;
+                    }
+
+                } else {
+                    if (normalizedValue === databaseValue)
+                        return;
+                }
             }
             subject.diffColumns.push(column);
             subject.changeMaps.push({
@@ -167,7 +181,7 @@ export class SubjectChangedColumnsComputer {
                 const databaseRelatedEntityRelationIdMap = relation.getEntityValue(subject.databaseEntity);
 
                 // if relation ids are equal then we don't need to update anything
-                const areRelatedIdsEqual = EntityMetadata.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
+                const areRelatedIdsEqual = OrmUtils.compareIds(relatedEntityRelationIdMap, databaseRelatedEntityRelationIdMap);
                 if (areRelatedIdsEqual) {
                     return;
                 } else {

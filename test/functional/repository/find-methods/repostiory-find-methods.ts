@@ -19,17 +19,14 @@ describe("repository > find methods", () => {
     describe("count", function () {
         it("should return a full count when no criteria given", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const post        = new Post();
                 post.id           = i;
                 post.title        = "post #" + i;
                 post.categoryName = "other";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check count method
             const count = await postRepository.count({ order: { id: "ASC" }});
@@ -38,17 +35,13 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given criteria", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
                 const post        = new Post();
                 post.id           = i;
                 post.title        = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check count method
             const count = await postRepository.count({
@@ -60,18 +53,14 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given multiple criteria", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
                 const post        = new Post();
                 post.id           = i;
                 post.title        = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
                 post.isNew        = i > 90;
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check count method
             const count = await postRepository.count({
@@ -83,18 +72,14 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given find options", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
                 const post        = new Post();
                 post.id           = i;
                 post.isNew        = i > 90;
                 post.title        = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check count method
             const count = await postRepository.count();
@@ -103,18 +88,14 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match both criteria and find options", () => Promise.all(connections.map(async connection => {
             const postRepository            = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
             for (let i = 1; i <= 100; i++) {
                 const post        = new Post();
                 post.id           = i;
                 post.isNew        = i > 90;
                 post.title        = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check count method
             const count = await postRepository.count({
@@ -132,17 +113,14 @@ describe("repository > find methods", () => {
 
         it("should return everything when no criteria given", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const post = new Post();
                 post.id = i;
                 post.title = "post #" + i;
                 post.categoryName = "other";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
             const loadedPosts = await postRepository.find({ order: { id: "ASC" }});
@@ -166,17 +144,14 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given criteria", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
+
             for (let i = 1; i <= 100; i++) {
                 const post = new Post();
                 post.id = i;
                 post.title = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
             const loadedPosts = await postRepository.find({
@@ -206,18 +181,15 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given multiple criteria", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
+
             for (let i = 1; i <= 100; i++) {
                 const post = new Post();
                 post.id = i;
                 post.title = "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
                 post.isNew = i > 90;
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
             const loadedPosts = await postRepository.find({
@@ -247,18 +219,15 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given find options", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
+
             for (let i = 1; i <= 100; i++) {
                 const post = new Post();
                 post.id = i;
                 post.isNew = i > 90;
                 post.title = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
             const loadedPosts = await postRepository.createQueryBuilder("post")
@@ -296,18 +265,15 @@ describe("repository > find methods", () => {
 
         it("should return posts that match both criteria and find options", () => Promise.all(connections.map(async connection => {
             const postRepository = connection.getRepository(Post);
-            const promises: Promise<Post>[] = [];
+
             for (let i = 1; i <= 100; i++) {
                 const post = new Post();
                 post.id = i;
                 post.isNew = i > 90;
                 post.title = post.isNew ? "new post #" + i : "post #" + i;
                 post.categoryName = i % 2 === 0 ? "even" : "odd";
-                promises.push(postRepository.save(post));
+                await postRepository.save(post);
             }
-
-            const savedPosts = await Promise.all(promises);
-            savedPosts.length.should.be.equal(100); // check if they all are saved
 
             // check find method
             const loadedPosts = await postRepository.find({
@@ -355,18 +321,15 @@ describe("repository > find methods", () => {
 
         it("should return first when no criteria given", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             const loadedUser = (await userRepository.findOne({ order: { id: "ASC" }}))!;
             loadedUser.id.should.be.equal(0);
@@ -376,18 +339,15 @@ describe("repository > find methods", () => {
 
         it("should return when criteria given", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             const loadedUser = (await userRepository.findOne({ where: { firstName: "name #1" }, order: { id: "ASC" } }))!;
             loadedUser.id.should.be.equal(1);
@@ -397,18 +357,15 @@ describe("repository > find methods", () => {
 
         it("should return when find options given", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             const loadedUser = await userRepository.findOne({
                 where: {
@@ -430,18 +387,15 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             let loadedUser = (await userRepository.findOne(0))!;
             loadedUser.id.should.be.equal(0);
@@ -461,18 +415,15 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id and find options", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             let loadedUser = await userRepository.findOne(0, {
                 where: {
@@ -521,18 +472,15 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             let loadedUser = (await userRepository.findOneOrFail(0))!;
             loadedUser.id.should.be.equal(0);
@@ -552,18 +500,15 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id and find options", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             let loadedUser = await userRepository.findOneOrFail(0, {
                 where: {
@@ -583,18 +528,15 @@ describe("repository > find methods", () => {
 
         it("should throw an error if nothing was found", () => Promise.all(connections.map(async connection => {
             const userRepository = connection.getRepository<User>("User");
-            const promises: Promise<User>[] = [];
+
             for (let i = 0; i < 100; i++) {
                 const user: User = {
                     id: i,
                     firstName: "name #" + i,
                     secondName: "Doe"
                 };
-                promises.push(userRepository.save(user));
+                await userRepository.save(user);
             }
-
-            const savedUsers = await Promise.all(promises);
-            savedUsers.length.should.be.equal(100); // check if they all are saved
 
             await userRepository.findOneOrFail(100).should.eventually.be.rejectedWith(EntityNotFoundError);
         })));

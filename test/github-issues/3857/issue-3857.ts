@@ -9,7 +9,7 @@ describe("github issues > #3857 Schema inheritance when STI pattern is used", ()
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        enabledDrivers: ["postgres", "mariadb", "mysql"],
+        enabledDrivers: ["postgres"],
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schema: "custom",
         schemaCreate: true

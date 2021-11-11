@@ -9,6 +9,7 @@ import {DeferrableType} from "./types/DeferrableType";
 import {OnUpdateType} from "./types/OnUpdateType";
 import {OnDeleteType} from "./types/OnDeleteType";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
+import { TypeORMError } from "../error";
 
 /**
  * Contains all information about some entity's relation.
@@ -110,6 +111,11 @@ export class RelationMetadata {
     persistenceEnabled: boolean = true;
 
     /**
+     * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
+     */
+    orphanedRowAction?: "nullify" | "delete";
+
+    /**
      * If set to true then related objects are allowed to be inserted to the database.
      */
     isCascadeInsert: boolean = false;
@@ -153,6 +159,13 @@ export class RelationMetadata {
      * What to do with a relation on update of the row containing a foreign key.
      */
     deferrable?: DeferrableType;
+
+    /**
+     * Indicates whether foreign key constraints will be created for join columns.
+     * Can be used only for many-to-one and owner one-to-one relations.
+     * Defaults to true.
+     */
+    createForeignKeyConstraints: boolean = true;
 
     /**
      * Gets the property's type to which this relation is applied.
@@ -296,8 +309,10 @@ export class RelationMetadata {
         this.onDelete = args.options.onDelete;
         this.onUpdate = args.options.onUpdate;
         this.deferrable = args.options.deferrable;
+        this.createForeignKeyConstraints = args.options.createForeignKeyConstraints === false ? false : true;
         this.isEager = args.options.eager || false;
         this.persistenceEnabled = args.options.persistence === false ? false : true;
+        this.orphanedRowAction = args.options.orphanedRowAction || "nullify";
         this.isTreeParent = args.isTreeParent || false;
         this.isTreeChildren = args.isTreeChildren || false;
         this.type = args.type instanceof Function ? (args.type as () => any)() : args.type;
@@ -339,7 +354,7 @@ export class RelationMetadata {
         const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
 
         if (referencedColumns.length > 1)
-            throw new Error(`Cannot create relation id map for a single value because relation contains multiple referenced columns.`);
+            throw new TypeORMError(`Cannot create relation id map for a single value because relation contains multiple referenced columns.`);
 
         return referencedColumns[0].createValueMap(id);
     }
@@ -489,8 +504,15 @@ export class RelationMetadata {
      */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
         this.foreignKeys.push(...foreignKeys);
-        this.joinColumns = this.foreignKeys[0] ? this.foreignKeys[0].columns : [];
-        this.inverseJoinColumns = this.foreignKeys[1] ? this.foreignKeys[1].columns : [];
+    }
+
+    /**
+     * Registers given join columns in the relation.
+     * This builder method should be used to register join column in the relation.
+     */
+    registerJoinColumns(joinColumns: ColumnMetadata[] = [], inverseJoinColumns: ColumnMetadata[] = []) {
+        this.joinColumns = joinColumns;
+        this.inverseJoinColumns = inverseJoinColumns;
         this.isOwning = this.isManyToOne || ((this.isManyToMany || this.isOneToOne) && this.joinColumns.length > 0);
         this.isOneToOneOwner = this.isOneToOne && this.isOwning;
         this.isOneToOneNotOwner = this.isOneToOne && !this.isOwning;

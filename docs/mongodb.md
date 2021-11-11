@@ -266,6 +266,35 @@ const timber = await userRepository.find({
 });
 ```
 
+Querying subdocuments
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+// Query users with education Tree School
+const users = await userRepository.find({
+  where: {
+   'profile.education': { $eq: "Tree School"}
+  }
+});
+```
+
+Querying Array of subdocuments
+
+```typescript
+import {getMongoRepository} from "typeorm";
+
+const userRepository = getMongoRepository(User);
+// Query users with photos of size less than 500
+const users = await userRepository.find({
+  where: {
+   'photos.size': { $lt: 500}
+  }
+});
+
+```
+
 
 Both `MongoEntityManager` and `MongoRepository` contain lot of useful MongoDB-specific methods:
 
@@ -309,7 +338,7 @@ Delete a document on MongoDB.
 
 #### `distinct`
 
-The distinct command returns returns a list of distinct values for the given key across a collection.
+The distinct command returns a list of distinct values for the given key across a collection.
 
 #### `dropCollectionIndex`
 

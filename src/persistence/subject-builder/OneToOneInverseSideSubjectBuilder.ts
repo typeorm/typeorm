@@ -120,7 +120,7 @@ export class OneToOneInverseSideSubjectBuilder {
             // in this persistence because he didn't pass this entity for save or he did not set cascades
             // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
             // if (!relatedEntitySubject)
-            //     throw new Error(`One-to-one inverse relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
+            //     throw new TypeORMError(`One-to-one inverse relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
             //         `entity which does not exist in the database yet, thus cannot be bind in the database. ` +
             //         `Please setup cascade insertion or save entity before binding it.`);
             if (!relatedEntitySubject)
@@ -139,7 +139,7 @@ export class OneToOneInverseSideSubjectBuilder {
 
         // check if this binding really exist in the database
         // by example: find our post if its already bind to category in the database and its not equal to what user tries to set
-        const areRelatedIdEqualWithDatabase = relatedEntityDatabaseRelationId && OrmUtils.deepCompare(relationIdMap, relatedEntityDatabaseRelationId);
+        const areRelatedIdEqualWithDatabase = relatedEntityDatabaseRelationId && OrmUtils.compareIds(relationIdMap, relatedEntityDatabaseRelationId);
 
         // if they aren't equal it means its a new relation and we need to "bind" them
         // by example: this will tell category to insert into its post relation our post we are working with

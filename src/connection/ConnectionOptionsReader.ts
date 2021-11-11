@@ -1,8 +1,11 @@
+import appRootPath from "app-root-path";
+import path from "path";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {PlatformTools} from "../platform/PlatformTools";
 import {ConnectionOptionsEnvReader} from "./options-reader/ConnectionOptionsEnvReader";
 import {ConnectionOptionsYmlReader} from "./options-reader/ConnectionOptionsYmlReader";
 import {ConnectionOptionsXmlReader} from "./options-reader/ConnectionOptionsXmlReader";
+import { TypeORMError } from "../error";
 
 /**
  * Reads connection options from the ormconfig.
@@ -38,7 +41,7 @@ export class ConnectionOptionsReader {
     async all(): Promise<ConnectionOptions[]> {
         const options = await this.load();
         if (!options)
-            throw new Error(`No connection options were found in any of configurations file.`);
+            throw new TypeORMError(`No connection options were found in any orm configuration files.`);
 
         return options;
     }
@@ -51,7 +54,7 @@ export class ConnectionOptionsReader {
         const allOptions = await this.all();
         const targetOptions = allOptions.find(options => options.name === name || (name === "default" && !options.name));
         if (!targetOptions)
-            throw new Error(`Cannot find connection ${name} because its not defined in any orm configuration files.`);
+            throw new TypeORMError(`Cannot find connection ${name} because its not defined in any orm configuration files.`);
 
         return targetOptions;
     }
@@ -80,7 +83,7 @@ export class ConnectionOptionsReader {
     protected async load(): Promise<ConnectionOptions[]|undefined> {
         let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
 
-        const fileFormats = ["env", "js", "ts", "json", "yml", "yaml", "xml"];
+        const fileFormats = ["env", "js", "cjs", "ts", "json", "yml", "yaml", "xml"];
 
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
@@ -91,36 +94,37 @@ export class ConnectionOptionsReader {
             return PlatformTools.fileExist(this.baseFilePath + "." + format);
         });
 
-        // if .env file found then load all its variables into process.env using dotenv package
-        if (foundFileFormat === "env") {
-            const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: this.baseFilePath });
-        } else if (PlatformTools.fileExist(".env")) {
-            const dotenv = PlatformTools.load("dotenv");
-            dotenv.config({ path: ".env" });
-        }
-
         // Determine config file name
         const configFile = fileExtension ? this.baseFilePath : this.baseFilePath + "." + foundFileFormat;
 
+        // if .env file found then load all its variables into process.env using dotenv package
+        if (foundFileFormat === "env") {
+            PlatformTools.dotenv(configFile);
+        } else if (PlatformTools.fileExist(this.baseDirectory + "/.env")) {
+            PlatformTools.dotenv(this.baseDirectory + "/.env");
+        }
+
         // try to find connection options from any of available sources of configuration
-        if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
-            connectionOptions = new ConnectionOptionsEnvReader().read();
+        if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
+            connectionOptions = await new ConnectionOptionsEnvReader().read();
 
-        } else if (foundFileFormat === "js") {
-            connectionOptions = await PlatformTools.load(configFile);
+        } else if (foundFileFormat === "js" || foundFileFormat === "cjs" || foundFileFormat === "ts") {
+            const configModule = await require(configFile);
 
-        } else if (foundFileFormat === "ts") {
-            connectionOptions = await PlatformTools.load(configFile);
+            if (configModule && "__esModule" in configModule && "default" in configModule) {
+                connectionOptions = configModule.default;
+            } else {
+                connectionOptions = configModule;
+            }
 
         } else if (foundFileFormat === "json") {
-            connectionOptions = PlatformTools.load(configFile);
+            connectionOptions = require(configFile);
 
         } else if (foundFileFormat === "yml") {
-            connectionOptions = new ConnectionOptionsYmlReader().read(configFile);
+            connectionOptions = await new ConnectionOptionsYmlReader().read(configFile);
 
         } else if (foundFileFormat === "yaml") {
-            connectionOptions = new ConnectionOptionsYmlReader().read(configFile);
+            connectionOptions = await new ConnectionOptionsYmlReader().read(configFile);
 
         } else if (foundFileFormat === "xml") {
             connectionOptions = await new ConnectionOptionsXmlReader().read(configFile);
@@ -171,7 +175,7 @@ export class ConnectionOptionsReader {
             }
 
             // make database path file in sqlite relative to package.json
-            if (options.type === "sqlite") {
+            if (options.type === "sqlite" || options.type === "better-sqlite3") {
                 if (typeof options.database === "string" &&
                     options.database.substr(0, 1) !== "/" &&  // unix absolute
                     options.database.substr(1, 2) !== ":\\" && // windows absolute
@@ -190,7 +194,7 @@ export class ConnectionOptionsReader {
      * Gets directory where configuration file should be located and configuration file name.
      */
     protected get baseFilePath(): string {
-        return this.baseDirectory + "/" + this.baseConfigName;
+        return path.resolve(this.baseDirectory, this.baseConfigName);
     }
 
     /**
@@ -200,7 +204,7 @@ export class ConnectionOptionsReader {
         if (this.options && this.options.root)
             return this.options.root;
 
-        return PlatformTools.load("app-root-path").path;
+        return appRootPath.path;
     }
 
     /**

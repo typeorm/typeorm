@@ -1,12 +1,14 @@
-import {getMetadataArgsStorage, ObjectType, RelationOptions} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
+import { ObjectType } from "../../common/ObjectType";
+import { RelationOptions } from "../options/RelationOptions";
 
 /**
  * One-to-one relation allows to create direct relation between two entities. Entity1 have only one Entity2.
  * Entity1 is an owner of the relationship, and storages Entity1 id on its own side.
  */
-export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>), 
-                            options?: RelationOptions): Function;
+export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>),
+                            options?: RelationOptions): PropertyDecorator;
 
 /**
  * One-to-one relation allows to create direct relation between two entities. Entity1 have only one Entity2.
@@ -14,7 +16,7 @@ export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => Object
  */
 export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>),
                             inverseSide?: string|((object: T) => any),
-                            options?: RelationOptions): Function;
+                            options?: RelationOptions): PropertyDecorator;
 
 /**
  * One-to-one relation allows to create direct relation between two entities. Entity1 have only one Entity2.
@@ -22,7 +24,7 @@ export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => Object
  */
 export function OneToOne<T>(typeFunctionOrTarget: string|((type?: any) => ObjectType<T>),
                             inverseSideOrOptions?: string|((object: T) => any)|RelationOptions,
-                            options?: RelationOptions): Function {
+                            options?: RelationOptions): PropertyDecorator {
 
     // normalize parameters
     let inverseSideProperty: string|((object: T) => any);

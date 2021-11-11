@@ -1,13 +1,12 @@
 import {Connection} from "../../src/connection/Connection";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
-import {PostgresDriver} from "../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../src/driver/sqlserver/SqlServerDriver";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
-import {PromiseUtils} from "../../src/util/PromiseUtils";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
+import {Logger} from "../../src/logger/Logger";
+import {CockroachDriver} from "../../src/driver/cockroachdb/CockroachDriver";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -133,6 +132,11 @@ export interface TestingOptions {
      * They are passed down to the enabled drivers.
      */
     driverSpecific?: Object;
+
+    /**
+     * Factory to create a logger for each test connection.
+     */
+    createLogger?: () => "advanced-console"|"simple-console"|"file"|"debug"|Logger;
 }
 
 /**
@@ -166,10 +170,12 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
 
         try {
-            return require(__dirname + "/../../../../ormconfig.json");
-
-        } catch (err) {
+            // first checks build/compiled
+            // useful for docker containers in order to provide a custom config
             return require(__dirname + "/../../ormconfig.json");
+        } catch (err) {
+            // fallbacks to the root config
+            return require(__dirname + "/../../../../ormconfig.json");
         }
 
     } catch (err) {
@@ -209,7 +215,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 migrations: options && options.migrations ? options.migrations : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
-                cache: options ? options.cache : undefined,
+                cache: options ? options.cache : undefined
             });
             if (options && options.driverSpecific)
                 newOptions = Object.assign({}, options.driverSpecific, newOptions);
@@ -219,6 +225,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.schema = options.schema;
             if (options && options.logging !== undefined)
                 newOptions.logging = options.logging;
+            if (options && options.createLogger !== undefined)
+                newOptions.logger = options.createLogger();
             if (options && options.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"];
             if (options && options.__dirname)
@@ -244,24 +252,54 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         });
 
         const queryRunner = connection.createQueryRunner();
-        await PromiseUtils.runInSequence(databases, database => queryRunner.createDatabase(database, true));
+
+        for (const database of databases) {
+            await queryRunner.createDatabase(database, true);
+        }
+
+        if (connection.driver instanceof CockroachDriver) {
+            await queryRunner.query(`ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER DATABASE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER TABLE system.public.jobs CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE meta CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`ALTER RANGE liveness CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`);
+            await queryRunner.query(`SET CLUSTER SETTING jobs.retention_time = '180s';`);
+            await queryRunner.query(`SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`);
+            await queryRunner.query(`SET CLUSTER SETTING kv.raft_log.disable_synchronization_unsafe = 'true'`);
+            await queryRunner.query(`SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`);
+
+        }
 
         // create new schemas
-        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
-            const schemaPaths: string[] = [];
-            connection.entityMetadatas
-                .filter(entityMetadata => !!entityMetadata.schemaPath)
-                .forEach(entityMetadata => {
-                    const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
-                    if (!existSchemaPath)
-                        schemaPaths.push(entityMetadata.schemaPath!);
-                });
+        const schemaPaths: Set<string> = new Set();
+        connection.entityMetadatas
+            .filter(entityMetadata => !!entityMetadata.schema)
+            .forEach(entityMetadata => {
+                let schema = entityMetadata.schema!;
 
-            const schema = connection.driver.options.schema;
-            if (schema && schemaPaths.indexOf(schema) === -1)
-                schemaPaths.push(schema);
+                if (entityMetadata.database) {
+                    schema = `${entityMetadata.database}.${schema}`;
+                }
 
-            await PromiseUtils.runInSequence(schemaPaths, schemaPath => queryRunner.createSchema(schemaPath, true));
+                schemaPaths.add(schema);
+            });
+
+        const schema =
+            connection.driver.options?.hasOwnProperty("schema") ?
+                (connection.driver.options as any).schema :
+                undefined;
+
+        if (schema) {
+            schemaPaths.add(schema);
+        }
+
+        for (const schemaPath of schemaPaths) {
+            try {
+                await queryRunner.createSchema(schemaPath, true);
+            } catch (e) {
+                // Do nothing
+            }
         }
 
         await queryRunner.release();

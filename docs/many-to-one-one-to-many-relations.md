@@ -17,7 +17,7 @@ export class Photo {
     @Column()
     url: string;
     
-    @ManyToOne(type => User, user => user.photos)
+    @ManyToOne(() => User, user => user.photos)
     user: User;
     
 }
@@ -36,7 +36,7 @@ export class User {
     @Column()
     name: string;
     
-    @OneToMany(type => Photo, photo => photo.user)
+    @OneToMany(() => Photo, photo => photo.user)
     photos: Photo[];
     
 }
@@ -84,7 +84,7 @@ user.photos = [photo1, photo2];
 await connection.manager.save(user);
 ```
 
-or alternative you can do:
+or alternatively you can do:
 
 ```typescript
 const user = new User();
@@ -102,7 +102,7 @@ photo2.user = user;
 await connection.manager.save(photo2);
 ```
 
-With cascades enabled you can save this relation with only one `save` call.
+With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 To load a user with photos inside you must specify the relation in `FindOptions`:
  

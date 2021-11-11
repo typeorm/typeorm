@@ -34,7 +34,6 @@ describe("persistence > custom-column-names", function() {
         return connection
             .synchronize(true)
             .catch(e => {
-                console.log("Error during schema re-creation: ", e);
                 throw e;
             });
     }
@@ -53,7 +52,7 @@ describe("persistence > custom-column-names", function() {
     // -------------------------------------------------------------------------
     // Specifications
     // -------------------------------------------------------------------------
-    
+
     describe("attach exist entity to exist entity with many-to-one relation", function() {
         if (!connection)
             return;

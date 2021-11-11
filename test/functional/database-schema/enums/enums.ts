@@ -9,7 +9,7 @@ describe("database schema > enums", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres", "mysql"]
+            enabledDrivers: ["postgres", "mysql", "mariadb"]
         });
     });
     beforeEach(() => reloadTestingDatabases(connections));
@@ -57,6 +57,16 @@ describe("database schema > enums", () => {
         loadedEnumEntity!.heterogeneousEnum.should.be.eq(HeterogeneousEnum.YES);
         loadedEnumEntity!.arrayDefinedStringEnum.should.be.eq("editor");
         loadedEnumEntity!.arrayDefinedNumericEnum.should.be.eq(13);
+
+    })));
+
+    it("should not generate queries when no model changes", () => Promise.all(connections.map(async connection => {
+        await connection.driver.createSchemaBuilder().build();
+
+        const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+
+        sqlInMemory.upQueries.length.should.be.equal(0);
+        sqlInMemory.downQueries.length.should.be.equal(0);
 
     })));
 

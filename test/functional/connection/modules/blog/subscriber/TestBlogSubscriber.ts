@@ -4,12 +4,12 @@ import {InsertEvent} from "../../../../../../src/subscriber/event/InsertEvent";
 
 @EventSubscriber()
 export class TestBlogSubscriber implements EntitySubscriberInterface {
-    
+
     /**
      * Called after entity insertion.
      */
     beforeInsert(event: InsertEvent<any>) {
-        console.log(`BEFORE ENTITY INSERTED: `, event.entity);
+        // Do nothing
     }
 
 }

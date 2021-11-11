@@ -3,12 +3,16 @@ import {Query} from "../driver/Query";
 import {SqlInMemory} from "../driver/SqlInMemory";
 import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {View} from "../schema-builder/view/View";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {Connection} from "../connection/Connection";
 import {Table} from "../schema-builder/table/Table";
 import {EntityManager} from "../entity-manager/EntityManager";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {Broadcaster} from "../subscriber/Broadcaster";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
+import { TypeORMError } from "../error/TypeORMError";
+import { EntityMetadata } from "../metadata/EntityMetadata";
+import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
+import { OrmUtils } from "../util/OrmUtils";
 
 export abstract class BaseQueryRunner {
 
@@ -82,7 +86,9 @@ export abstract class BaseQueryRunner {
      * Used for replication.
      * If replication is not setup its value is ignored.
      */
-    protected mode: "master"|"slave";
+    protected mode: ReplicationMode;
+
+    private cachedTablePaths: Record<string, string> = {};
 
     // -------------------------------------------------------------------------
     // Public Abstract Methods
@@ -91,15 +97,15 @@ export abstract class BaseQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    abstract query(query: string, parameters?: any[]): Promise<any>;
+    abstract query(query: string, parameters?: any[], useStructuredResult?: boolean): Promise<any>;
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
     // -------------------------------------------------------------------------
 
-    protected abstract async loadTables(tablePaths: string[]): Promise<Table[]>;
+    protected abstract loadTables(tablePaths?: string[]): Promise<Table[]>;
 
-    protected abstract async loadViews(tablePaths: string[]): Promise<View[]>;
+    protected abstract loadViews(tablePaths?: string[]): Promise<View[]>;
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -116,7 +122,13 @@ export abstract class BaseQueryRunner {
     /**
      * Loads all tables (with given names) from the database.
      */
-    async getTables(tableNames: string[]): Promise<Table[]> {
+    async getTables(tableNames?: string[]): Promise<Table[]> {
+        if (!tableNames) {
+            // Don't cache in this case.
+            // This is the new case & isn't used anywhere else anyway.
+            return await this.loadTables(tableNames);
+        }
+
         this.loadedTables = await this.loadTables(tableNames);
         return this.loadedTables;
     }
@@ -132,7 +144,7 @@ export abstract class BaseQueryRunner {
     /**
      * Loads given view's data from the database.
      */
-    async getViews(viewPaths: string[]): Promise<View[]> {
+    async getViews(viewPaths?: string[]): Promise<View[]> {
         this.loadedViews = await this.loadViews(viewPaths);
         return this.loadedViews;
     }
@@ -176,14 +188,18 @@ export abstract class BaseQueryRunner {
      * Executes up sql queries.
      */
     async executeMemoryUpSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
+        for (const {query, parameters} of this.sqlInMemory.upQueries) {
+            await this.query(query, parameters);
+        }
     }
 
     /**
      * Executes down sql queries.
      */
     async executeMemoryDownSql(): Promise<void> {
-        await PromiseUtils.runInSequence(this.sqlInMemory.downQueries.reverse(), downQuery => this.query(downQuery.query, downQuery.parameters));
+        for (const {query, parameters} of this.sqlInMemory.downQueries.reverse()) {
+            await this.query(query, parameters);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -202,7 +218,7 @@ export abstract class BaseQueryRunner {
             this.loadedViews.push(foundViews[0]);
             return foundViews[0];
         } else {
-            throw new Error(`View "${viewName}" does not exist.`);
+            throw new TypeORMError(`View "${viewName}" does not exist.`);
         }
     }
 
@@ -210,15 +226,31 @@ export abstract class BaseQueryRunner {
      * Gets table from previously loaded tables, otherwise loads it from database.
      */
     protected async getCachedTable(tableName: string): Promise<Table> {
-        const table = this.loadedTables.find(table => table.name === tableName);
-        if (table) return table;
+        if (tableName in this.cachedTablePaths) {
+            const tablePath = this.cachedTablePaths[tableName];
+            const table = this.loadedTables.find(table => this.getTablePath(table) === tablePath);
+
+            if (table) {
+                return table;
+            }
+        }
 
         const foundTables = await this.loadTables([tableName]);
+
         if (foundTables.length > 0) {
-            this.loadedTables.push(foundTables[0]);
-            return foundTables[0];
+            const foundTablePath = this.getTablePath(foundTables[0]);
+
+            const cachedTable = this.loadedTables.find((table) => this.getTablePath(table) === foundTablePath);
+
+            if (!cachedTable) {
+                this.cachedTablePaths[tableName] = this.getTablePath(foundTables[0]);
+                this.loadedTables.push(foundTables[0]);
+                return foundTables[0];
+            } else {
+                return cachedTable;
+            }
         } else {
-            throw new Error(`Table "${tableName}" does not exist.`);
+            throw new TypeORMError(`Table "${tableName}" does not exist.`);
         }
     }
 
@@ -226,8 +258,19 @@ export abstract class BaseQueryRunner {
      * Replaces loaded table with given changed table.
      */
     protected replaceCachedTable(table: Table, changedTable: Table): void {
-        const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
+        const oldTablePath = this.getTablePath(table);
+        const foundTable = this.loadedTables.find(loadedTable => this.getTablePath(loadedTable) === oldTablePath);
+
+        // Clean up the lookup cache..
+        for (const [key, cachedPath] of Object.entries(this.cachedTablePaths)) {
+            if (cachedPath === oldTablePath) {
+                this.cachedTablePaths[key] = this.getTablePath(changedTable);
+            }
+        }
+
         if (foundTable) {
+            foundTable.database = changedTable.database;
+            foundTable.schema = changedTable.schema;
             foundTable.name = changedTable.name;
             foundTable.columns = changedTable.columns;
             foundTable.indices = changedTable.indices;
@@ -237,6 +280,16 @@ export abstract class BaseQueryRunner {
             foundTable.justCreated = changedTable.justCreated;
             foundTable.engine = changedTable.engine;
         }
+    }
+
+    protected getTablePath(target: EntityMetadata | Table | View | TableForeignKey | string): string {
+        const parsed = this.connection.driver.parseTableName(target);
+
+        return this.connection.driver.buildTableName(
+            parsed.tableName,
+            parsed.schema,
+            parsed.database
+        );
     }
 
     protected getTypeormMetadataTableName(): string {
@@ -273,7 +326,7 @@ export abstract class BaseQueryRunner {
         // console.log((checkComment && oldColumn.comment !== newColumn.comment));
         // console.log(oldColumn.comment, newColumn.comment);
         // console.log("enum ---------------");
-        // console.log(oldColumn.enum !== newColumn.enum);
+        // console.log(!OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []));
         // console.log(oldColumn.enum, newColumn.enum);
 
         return oldColumn.charset !== newColumn.charset
@@ -288,7 +341,7 @@ export abstract class BaseQueryRunner {
             || oldColumn.onUpdate !== newColumn.onUpdate // MySQL only
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)
-            || oldColumn.enum !== newColumn.enum;
+            || !OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []);
     }
 
     /**
@@ -299,35 +352,18 @@ export abstract class BaseQueryRunner {
         if (this.connection.hasMetadata(table.name)) {
             const metadata = this.connection.getMetadata(table.name);
             const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-            if (columnMetadata && columnMetadata.length)
-                return false;
+
+            if (columnMetadata) {
+                const columnMetadataLength = this.connection.driver.getColumnLength(columnMetadata);
+                if (columnMetadataLength)
+                    return false;
+            }
         }
 
         if (this.connection.driver.dataTypeDefaults
             && this.connection.driver.dataTypeDefaults[column.type]
             && this.connection.driver.dataTypeDefaults[column.type].length) {
             return this.connection.driver.dataTypeDefaults[column.type].length!.toString() === length.toString();
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if column display width is by default. Used only for MySQL.
-     */
-    protected isDefaultColumnWidth(table: Table, column: TableColumn, width: number): boolean {
-        // if table have metadata, we check if length is specified in column metadata
-        if (this.connection.hasMetadata(table.name)) {
-            const metadata = this.connection.getMetadata(table.name);
-            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
-            if (columnMetadata && columnMetadata.width)
-                return false;
-        }
-
-        if (this.connection.driver.dataTypeDefaults
-            && this.connection.driver.dataTypeDefaults[column.type]
-            && this.connection.driver.dataTypeDefaults[column.type].width) {
-            return this.connection.driver.dataTypeDefaults[column.type].width === width;
         }
 
         return false;
@@ -391,7 +427,9 @@ export abstract class BaseQueryRunner {
         if (this.sqlMemoryMode === true)
             return Promise.resolve() as Promise<any>;
 
-        await PromiseUtils.runInSequence(upQueries, upQuery => this.query(upQuery.query, upQuery.parameters));
+        for (const {query, parameters} of upQueries) {
+            await this.query(query, parameters);
+        }
     }
 
 }

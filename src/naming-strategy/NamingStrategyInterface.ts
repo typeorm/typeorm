@@ -69,8 +69,13 @@ export interface NamingStrategyInterface {
 
     /**
      * Gets the name of the check constraint.
+     *
+     * "isEnum" parameter is used to indicate if this check constraint used
+     * to handle "simple-enum" type for databases that are not supporting "enum"
+     * type out of the box. If "true", constraint is ignored during CHECK constraints
+     * synchronization.
      */
-    checkConstraintName(tableOrName: Table|string, expression: string): string;
+    checkConstraintName(tableOrName: Table|string, expression: string, isEnum?: boolean): string;
 
     /**
      * Gets the name of the exclusion constraint.
@@ -121,4 +126,14 @@ export interface NamingStrategyInterface {
      * Gets the name of the alias used for relation joins.
      */
     eagerJoinRelationAlias(alias: string, propertyPath: string): string;
+
+    /**
+     * Column names for nested sets.
+     */
+    nestedSetColumnNames: { left: string, right: string };
+
+    /**
+     * Column name for materialized paths.
+     */
+    materializedPathColumnName: string;
 }

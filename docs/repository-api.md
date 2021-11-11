@@ -51,7 +51,7 @@ const users = await repository
  }
 ```
 
-* `getId` - Gets the primary column property values of the given entity. 
+* `getId` - Gets the primary column property values of the given entity.
 If entity has composite primary keys then the returned value will be an object with names and values of primary columns.
 
 ```typescript
@@ -135,12 +135,12 @@ await repository.insert({
 });
 
 
-await manager.insert(User, [{ 
-    firstName: "Foo", 
-    lastName: "Bar" 
-}, { 
-    firstName: "Rizz", 
-    lastName: "Rak" 
+await manager.insert(User, [{
+    firstName: "Foo",
+    lastName: "Bar"
+}, {
+    firstName: "Rizz",
+    lastName: "Rak"
 }]);
 ```
 
@@ -154,6 +154,22 @@ await repository.update(1, { firstName: "Rizzrak" });
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
 ```
 
+* `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
+
+```typescript
+await repository.update([
+    { externalId:"abc123", firstName: "Rizzrak" },
+    { externalId:"bca321", firstName: "Karzzir" },
+], ["externalId"]);
+/** executes 
+ *  INSERT INTO user 
+ *  VALUES 
+ *      (externalId = abc123, firstName = Rizzrak),
+ *      (externalId = cba321, firstName = Karzzir),
+ *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
+ **/
+```
+
 * `delete` - Deletes entities by entity id, ids or given conditions:
 
 ```typescript
@@ -161,6 +177,27 @@ await repository.delete(1);
 await repository.delete([1, 2, 3]);
 await repository.delete({ firstName: "Timber" });
 ```
+
+* `softDelete` and `restore` - Soft deleting and restoring a row by id
+
+```typescript
+const repository = connection.getRepository(Entity);
+// Delete a entity
+await repository.softDelete(1);
+// And You can restore it using restore;
+await repository.restore(1);
+```
+
+* `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
+```typescript
+// You can soft-delete them using softRemove
+const entities = await repository.find();
+const entitiesAfterSoftRemove = await repository.softRemove(entities);
+
+// And You can recover them using recover;
+await repository.recover(entitiesAfterSoftRemove);
+```
+
 
 * `count` - Counts entities that match given options. Useful for pagination.
 
@@ -213,6 +250,8 @@ Rejects the returned promise if nothing matches.
 const user = await repository.findOneOrFail(1);
 const timber = await repository.findOneOrFail({ firstName: "Timber" });
 ```
+
+>Note: It is strongly recommended to ensure that your `id` or `FindOptions` value is not `null` or `undefined` before calling `findOne` and `findOneOrFail`. When passed `null` or `undefined`, the query will match with every entity in the repository and return the first record.
 
 * `query` - Executes a raw SQL query.
 

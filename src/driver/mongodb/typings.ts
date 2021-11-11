@@ -1,4 +1,4 @@
-import { EventEmitter, Readable, Writable } from "../../platform/PlatformTools";
+import {EventEmitter, Readable, Writable} from "../../platform/PlatformTools";
 
 /**
  * Creates a new MongoClient instance.
@@ -2929,8 +2929,7 @@ export interface Collection<T> {
      *
      * @param query Query for find Operation.
      * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
-     * @deprecated use find().limit(1).next(function(err, doc){}).
+     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
      */
     findOne(query: FilterQuery<T>, callback: MongoCallback<any>): void;
 
@@ -2939,8 +2938,7 @@ export interface Collection<T> {
      *
      * @param query Query for find Operation.
      * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
-     * @deprecated use find().limit(1).next(function(err, doc){}).
+     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
      */
     findOne(query: FilterQuery<T>, options?: MongodbFindOneOptions): Promise<any>;
 
@@ -2950,8 +2948,7 @@ export interface Collection<T> {
      * @param query Query for find Operation.
      * @param options Optional settings.
      * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
-     * @deprecated use find().limit(1).next(function(err, doc){}).
+     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
      */
     findOne(query: FilterQuery<T>, options: MongodbFindOneOptions, callback: MongoCallback<any>): void;
 
@@ -4271,7 +4268,7 @@ export interface BulkWriteResult {
     /**
      * Return an array of upserted ids.
      */
-    getUpsertedIds(): Array<Object>;
+    getUpsertedIds(): Array<{ _id: string, index: number }>;
 
     /**
      * Retrieve the write concern error if any.
@@ -4896,6 +4893,7 @@ export type CursorResult = any | void | boolean;
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html
  */
 export declare class Cursor<T> extends Readable {
+    [Symbol.asyncIterator](): AsyncIterableIterator<T>;
 
     /**
      * Cursor query sort setting.
@@ -5014,7 +5012,7 @@ export declare class Cursor<T> extends Readable {
      * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Cursor.html#forEach
      */
     forEach(iterator: IteratorCallback<T>, callback: EndCallback): void;
-    forEach(iterator: IteratorCallback<T>): Promise<void>;    
+    forEach(iterator: IteratorCallback<T>): Promise<void>;
 
     /**
      * Check if there is any document still available in the cursor.

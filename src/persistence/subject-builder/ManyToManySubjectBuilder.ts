@@ -2,7 +2,6 @@ import {Subject} from "../Subject";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
 
 /**
  * Builds operations needs to be executed for many-to-many relations of the given subjects.
@@ -140,7 +139,7 @@ export class ManyToManySubjectBuilder {
                 // but without entity being inserted we cannot bind it in the relation operation, so we throw an exception here
                 // we decided to remove this error because it brings complications when saving object with non-saved entities
                 // if (!relatedEntitySubject)
-                //     throw new Error(`Many-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
+                //     throw new TypeORMError(`Many-to-many relation "${relation.entityMetadata.name}.${relation.propertyPath}" contains ` +
                 //         `entities which do not exist in the database yet, thus they cannot be bind in the database. ` +
                 //         `Please setup cascade insertion or save entities before binding it.`);
                 if (!relatedEntitySubject)
@@ -150,7 +149,7 @@ export class ManyToManySubjectBuilder {
             // try to find related entity in the database
             // by example: find post's category in the database post's categories
             const relatedEntityExistInDatabase = databaseRelatedEntityIds.find(databaseRelatedEntityRelationId => {
-                return EntityMetadata.compareIds(databaseRelatedEntityRelationId, relatedEntityRelationIdMap);
+                return OrmUtils.compareIds(databaseRelatedEntityRelationId, relatedEntityRelationIdMap);
             });
 
             // if entity is found then don't do anything - it means binding in junction table already exist, we don't need to add anything
@@ -207,7 +206,7 @@ export class ManyToManySubjectBuilder {
         // now from all entities in the persisted entity find only those which aren't found in the db
         const removedJunctionEntityIds = databaseRelatedEntityIds.filter(existRelationId => {
             return !changedInverseEntityRelationIds.find(changedRelationId => {
-                return EntityMetadata.compareIds(changedRelationId, existRelationId);
+                return OrmUtils.compareIds(changedRelationId, existRelationId);
             });
         });
 

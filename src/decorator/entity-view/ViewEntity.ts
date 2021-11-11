@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 import {ViewEntityOptions} from "../options/ViewEntityOptions";
 
@@ -6,19 +6,19 @@ import {ViewEntityOptions} from "../options/ViewEntityOptions";
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
  */
-export function ViewEntity(options?: ViewEntityOptions): Function;
+export function ViewEntity(options?: ViewEntityOptions): ClassDecorator;
 
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
  */
-export function ViewEntity(name?: string, options?: ViewEntityOptions): Function;
+export function ViewEntity(name?: string, options?: ViewEntityOptions): ClassDecorator;
 
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
  */
-export function ViewEntity(nameOrOptions?: string|ViewEntityOptions, maybeOptions?: ViewEntityOptions): Function {
+export function ViewEntity(nameOrOptions?: string|ViewEntityOptions, maybeOptions?: ViewEntityOptions): ClassDecorator {
     const options = (typeof nameOrOptions === "object" ? nameOrOptions as ViewEntityOptions : maybeOptions) || {};
     const name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
 
@@ -27,6 +27,7 @@ export function ViewEntity(nameOrOptions?: string|ViewEntityOptions, maybeOption
             target: target,
             name: name,
             expression: options.expression,
+            dependsOn: options.dependsOn ? new Set(options.dependsOn) : undefined,
             type: "view",
             database: options.database ? options.database : undefined,
             schema: options.schema ? options.schema : undefined,

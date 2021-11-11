@@ -4,6 +4,7 @@
 * [Creating a new migration](#creating-a-new-migration)
 * [Running and reverting migrations](#running-and-reverting-migrations)
 * [Generating migrations](#generating-migrations)
+* [Connection option](#connection-option)
 * [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations work
@@ -86,7 +87,7 @@ typeorm migration:create -n PostRefactoring
 ```
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
-After you run the command you can see a new file generated in the "migration" directory 
+After you run the command you can see a new file generated in the "migration" directory
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
 Now you can open the file and add your migration sql queries there.
 
@@ -143,11 +144,16 @@ Once you have a migration to run on production, you can run them using a CLI com
 typeorm migration:run
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files. 
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
 ```
-ts-node ./node_modules/typeorm/cli.js migration:run
+ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run
+```
+
+Example `ts-node` not using `node_modules` directly:
+```
+ts-node $(yarn bin typeorm) migration:run
 ```
 
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
@@ -160,8 +166,8 @@ If for some reason you want to revert the changes, you can run:
 typeorm migration:revert
 ```
 
-This command will execute `down` in the latest executed migration. 
-If you need to revert multiple migrations you must call this command multiple times. 
+This command will execute `down` in the latest executed migration.
+If you need to revert multiple migrations you must call this command multiple times.
 
 ## Generating migrations
 
@@ -193,8 +199,31 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 }
 ```
 
+Alternatively you can also output your migrations as Javascript files using the `o` (alias for `--outputJs`) flag. This is useful for Javascript only projects in which TypeScript additional packages are not installed. This command, will generate a new migration file `{TIMESTAMP}-PostRefactoring.js` with the following content:
+
+```javascript
+const { MigrationInterface, QueryRunner } = require("typeorm");
+
+module.exports = class PostRefactoringTIMESTAMP {
+
+    async up(queryRunner) {
+        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+    }
+
+    async down(queryRunner) {
+        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+    }
+}
+```
+
 See, you don't need to write the queries on your own.
-The rule of thumb for generating migrations is that you generate them after "each" change you made to your models.
+The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag. 
+
+## Connection option
+If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
+```
+typeorm -c <your-config-name> migration:{run|revert}
+```
 
 ## Using migration API to write migrations
 
@@ -239,6 +268,11 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
                 {
                     name: "name",
                     type: "varchar",
+                },
+                {
+                  name: 'created_at',
+                  type: 'timestamp',
+                  default: 'now()'
                 }
             ]
         }), true);
@@ -257,10 +291,10 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     }
 
     async down(queryRunner: QueryRunner): Promise<void> {
-        const table = await queryRunner.getTable("question");
+        const table = await queryRunner.getTable("answer");
         const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
-        await queryRunner.dropForeignKey("question", foreignKey);
-        await queryRunner.dropColumn("question", "questionId");
+        await queryRunner.dropForeignKey("answer", foreignKey);
+        await queryRunner.dropColumn("answer", "questionId");
         await queryRunner.dropTable("answer");
         await queryRunner.dropIndex("question", "IDX_QUESTION_NAME");
         await queryRunner.dropTable("question");
@@ -376,7 +410,7 @@ Drops database.
 createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
 ```
 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
 If schema path passed, it will create schema in specified database
 - `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
 
@@ -388,7 +422,7 @@ Creates a new table schema.
 dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>
 ```
 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
 If schema path passed, it will drop schema in specified database
 - `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
 - `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
@@ -506,11 +540,11 @@ Drops a column in the table.
 ---
 
 ```ts
-dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>
+dropColumns(table: Table|string, columns: TableColumn[]|string[]): Promise<void>
 ```
 
 - `table` - Table object or name
-- `columns` - array of TableColumn objects to be dropped
+- `columns` - array of TableColumn objects or column names to be dropped 
 
 Drops a columns in the table.
 

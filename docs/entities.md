@@ -102,7 +102,7 @@ Learn more about parameters `@Entity` in [Decorators reference](decorator-refere
 
 ## Entity columns
 
-Since database table consist of columns your entities must consist of columns too.
+Since database tables consist of columns your entities must consist of columns too.
 Each entity class property you marked with `@Column` will be mapped to a database table column.
 
 ### Primary columns
@@ -125,7 +125,7 @@ export class User {
 }
 ```
 
-* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence` (depend on the database). You don't have to manually assign its value before save - value will be automatically generated.
+* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence`/`identity` (depend on the database and configuration provided). You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
 import {Entity, PrimaryGeneratedColumn} from "typeorm";
@@ -196,11 +196,13 @@ There are several special column types with additional functionality available:
 * `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
 You don't need to set this column - it will be automatically set.
 
-* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time 
+* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
-* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)  
+* `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
+
+* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
 each time you call `save` of entity manager or repository.
 You don't need to set this column - it will be automatically set.
 
@@ -289,6 +291,8 @@ or
 @Column({ type: "int", width: 200 })
 ```
 
+> Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
+
 ### Column types for `mysql` / `mariadb`
 
 `bit`, `int`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`,
@@ -307,7 +311,7 @@ or
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`
+`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`, `ltree`
 
 ### Column types for `cockroachdb`
 
@@ -476,7 +480,7 @@ Note you **MUST NOT** have any comma in values you write.
 There is a special column type called `simple-json` which can store any values which can be stored in database
 via JSON.stringify.
 Very useful when you do not have json type in your database and you want to store and load object
-without any hustle.
+without any hassle.
 For example:
 
 ```typescript
@@ -520,7 +524,7 @@ export class User {
 
 `uuid` value will be automatically generated and stored into the database.
 
-Besides "uuid" there is also "increment" and "rowid" (CockroachDB only) generated types, however there are some limitations
+Besides "uuid" there is also "increment", "identity" (Postgres 10+ only) and "rowid" (CockroachDB only) generated types, however there are some limitations
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
@@ -565,6 +569,7 @@ You can change it by specifying your own name.
 * `charset: string` - Defines a column character set. Not supported by all database types.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
+* `enumName: string` - Defines the name for the used enum.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
@@ -701,11 +706,11 @@ export class Category {
     @Column()
     description: string;
 
-    @OneToMany(type => Category, category => category.children)
+    @ManyToOne(type => Category, category => category.children)
     parent: Category;
 
-    @ManyToOne(type => Category, category => category.parent)
-    children: Category;
+    @OneToMany(type => Category, category => category.parent)
+    children: Category[];
 }
 
 ```

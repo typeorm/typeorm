@@ -1,9 +1,10 @@
 # Select using Query Builder
 
 * [What is `QueryBuilder`](#what-is-querybuilder)
+* [Important note when using the `QueryBuilder`](#important-note-when-using-the-querybuilder)
 * [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 * [Getting values using QueryBuilder](#getting-values-using-querybuilder)
-* [What are aliases for?](#what-are-aliases-for?)
+* [What are aliases for?](#what-are-aliases-for)
 * [Using parameters to escape data](#using-parameters-to-escape-data)
 * [Adding `WHERE` expression](#adding-where-expression)
 * [Adding `HAVING` expression](#adding-having-expression)
@@ -21,9 +22,12 @@
 * [Streaming result data](#streaming-result-data)
 * [Using pagination](#using-pagination)
 * [Set locking](#set-locking)
+* [Use custom index](#use-custom-index)
+* [Max execution time](#max-execution-time)
 * [Partial selection](#partial-selection)
 * [Using subqueries](#using-subqueries)
 * [Hidden Columns](#hidden-columns)
+* [Querying Deleted rows](#querying-deleted-rows)
 
 ## What is `QueryBuilder`
 
@@ -61,6 +65,32 @@ User {
     lastName: "Saw"
 }
 ```
+
+## Important note when using the `QueryBuilder`
+
+When using the `QueryBuilder`, you need to provide unique parameters in your `WHERE` expressions. **This will not work**:
+
+```TypeScript
+const result = await getConnection()
+    .createQueryBuilder('user')
+    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
+    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
+    .where('user.linkedSheep = :id', { id: sheepId })
+    .andWhere('user.linkedCow = :id', { id: cowId });
+```
+
+... but this will:
+
+```TypeScript
+const result = await getConnection()
+    .createQueryBuilder('user')
+    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
+    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
+    .where('user.linkedSheep = :sheepId', { sheepId })
+    .andWhere('user.linkedCow = :cowId', { cowId });
+```
+
+Note that we uniquely named `:sheepId` and `:cowId` instead of using `:id` twice for different parameters.
 
 ## How to create and use a `QueryBuilder`
 
@@ -174,6 +204,16 @@ const timber = await getRepository(User)
     .getOne();
 ```
 
+`getOneOrFail` will get a single result from the database, but if
+no result exists it will throw an `EntityNotFoundError`:
+
+```typescript
+const timber = await getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id OR user.name = :name", { id: 1, name: "Timber" })
+    .getOneOrFail();
+```
+
 To get multiple results from the database,
 for example, to get all users from the database, use `getMany`:
 
@@ -204,7 +244,7 @@ const photosSums = await getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
+    .groupBy("user.id")
     .getRawMany();
 
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
@@ -342,7 +382,7 @@ createQueryBuilder("user")
 Which will produce the following SQL query:
 
 ```sql
-SELECT ... FROM users user WHERE user.firstName IN (1, 2, 3, 4)
+SELECT ... FROM users user WHERE user.id IN (1, 2, 3, 4)
 ```
 
 
@@ -711,7 +751,7 @@ const user = await createQueryBuilder("user")
 Add `profilePhoto` to `User` entity and you can map any data into that property using `QueryBuilder`:
 
 ```typescript
-export class User {    
+export class User {
     /// ...
     profilePhoto: Photo;
 
@@ -776,7 +816,7 @@ const photosSums = await getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
-    .where("user.id = :id", { id: 1 })
+    .groupBy("user.id")
     .getRawMany();
 
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
@@ -876,6 +916,28 @@ const users = await getRepository(User)
 ```
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
+
+## Use custom index
+
+You can provide a certain index for database server to use in some cases. This feature is only supported in MySQL.
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .useIndex("my_index") // name of index
+    .getMany();
+```
+
+## Max execution time
+
+We can drop slow query to avoid crashing the server.
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .maxExecutionTime(1000) // milliseconds.
+    .getMany();
+```
 
 ## Partial selection
 
@@ -1020,3 +1082,40 @@ const users = await connection.getRepository(User)
 ```
 
 You will get the property `password` in your query.
+
+
+## Querying Deleted rows
+
+If the model you are querying has a column with the attribute `@DeleteDateColumn` set, the query builder will automatically query rows which are 'soft deleted'.
+
+Let's say you have the following entity:
+
+```typescript
+import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+
+@Entity()
+export class User {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    name: string;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
+}
+```
+
+Using a standard `find` or query, you will not receive the rows which have a value in that row. However, if you do the following:
+
+```typescript
+const users = await connection.getRepository(User)
+    .createQueryBuilder()
+    .select("user.id", "id")
+    .withDeleted()
+    .getMany();
+```
+
+You will get all the rows, including the ones which are deleted.
+

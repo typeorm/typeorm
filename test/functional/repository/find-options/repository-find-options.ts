@@ -6,13 +6,13 @@ import {User} from "./entity/User";
 import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 import {Photo} from "./entity/Photo";
+import sinon from "sinon";
 
 describe("repository > find options", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: ["sqlite"]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -48,6 +48,35 @@ describe("repository > find options", () => {
                 name: "Boys"
             }]
         });
+
+    })));
+
+    it("should execute select query inside transaction", () => Promise.all(connections.map(async connection => {
+
+        const user = new User();
+        user.name = "Alex Messer";
+        await connection.manager.save(user);
+
+
+        const queryRunner = await connection.createQueryRunner();
+
+        const startTransactionFn = sinon.spy(queryRunner, "startTransaction");
+        const commitTransactionFn = sinon.spy(queryRunner, "commitTransaction");
+
+        expect(startTransactionFn.called).to.be.false;
+        expect(commitTransactionFn.called).to.be.false;
+
+        await connection
+            .createEntityManager(queryRunner)
+            .getRepository(User)
+            .findOne(1, {
+                transaction: true
+            });
+
+        expect(startTransactionFn.calledOnce).to.be.true;
+        expect(commitTransactionFn.calledOnce).to.be.true;
+
+        await queryRunner.release();
 
     })));
 

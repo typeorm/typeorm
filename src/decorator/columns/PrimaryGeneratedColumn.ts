@@ -1,47 +1,50 @@
-import {ColumnOptions, getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {PrimaryGeneratedColumnNumericOptions} from "../options/PrimaryGeneratedColumnNumericOptions";
 import {PrimaryGeneratedColumnUUIDOptions} from "../options/PrimaryGeneratedColumnUUIDOptions";
 import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
+import { ColumnOptions } from "../options/ColumnOptions";
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  */
-export function PrimaryGeneratedColumn(): Function;
+export function PrimaryGeneratedColumn(): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  */
-export function PrimaryGeneratedColumn(options: PrimaryGeneratedColumnNumericOptions): Function;
+export function PrimaryGeneratedColumn(options: PrimaryGeneratedColumnNumericOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  */
-export function PrimaryGeneratedColumn(strategy: "increment", options?: PrimaryGeneratedColumnNumericOptions): Function;
+export function PrimaryGeneratedColumn(strategy: "increment", options?: PrimaryGeneratedColumnNumericOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  */
-export function PrimaryGeneratedColumn(strategy: "uuid", options?: PrimaryGeneratedColumnUUIDOptions): Function;
+export function PrimaryGeneratedColumn(strategy: "uuid", options?: PrimaryGeneratedColumnUUIDOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  */
-export function PrimaryGeneratedColumn(strategy: "rowid", options?: PrimaryGeneratedColumnUUIDOptions): Function;
+export function PrimaryGeneratedColumn(strategy: "rowid", options?: PrimaryGeneratedColumnUUIDOptions): PropertyDecorator;
+
+export function PrimaryGeneratedColumn(strategy: "identity", options?: PrimaryGeneratedColumnUUIDOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * This column creates an integer PRIMARY COLUMN with generated set to true.
  */
-export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|"rowid"|PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions,
-                                       maybeOptions?: PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions): Function {
+export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|"rowid"|"identity"|PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions,
+                                       maybeOptions?: PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions): PropertyDecorator {
 
     // normalize parameters
     const options: ColumnOptions = {};
-    let strategy: "increment"|"uuid"|"rowid";
+    let strategy: "increment"|"uuid"|"rowid"|"identity";
     if (strategyOrOptions) {
         if (typeof strategyOrOptions === "string")
-            strategy = strategyOrOptions as "increment"|"uuid"|"rowid";
+            strategy = strategyOrOptions as "increment"|"uuid"|"rowid"|"identity";
 
         if (strategyOrOptions instanceof Object) {
             strategy = "increment";
@@ -57,7 +60,7 @@ export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|"r
 
         // if column type is not explicitly set then determine it based on generation strategy
         if (!options.type) {
-            if (strategy === "increment") {
+            if (strategy === "increment" || strategy === "identity") {
                 options.type = Number;
             } else if (strategy === "uuid") {
                 options.type = "uuid";

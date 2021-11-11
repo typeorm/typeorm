@@ -1,11 +1,12 @@
-import {getMetadataArgsStorage, RelationOptions} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {RelationMetadataArgs} from "../../metadata-args/RelationMetadataArgs";
+import { RelationOptions } from "../options/RelationOptions";
 
 /**
  * Marks a entity property as a children of the tree.
  * "Tree children" will contain all children (bind) of this entity.
  */
-export function TreeChildren(options?: { cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[] }): Function {
+export function TreeChildren(options?: { cascade?: boolean|("insert"|"update"|"remove"|"soft-remove"|"recover")[] }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions;
 

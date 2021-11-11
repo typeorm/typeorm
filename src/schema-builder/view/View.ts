@@ -1,5 +1,4 @@
-import {Connection, Driver, SelectQueryBuilder} from "../..";
-import {EntityMetadata} from "../..";
+import {Connection, Driver, EntityMetadata, SelectQueryBuilder} from "../..";
 import {ViewOptions} from "../options/ViewOptions";
 
 /**
@@ -12,8 +11,17 @@ export class View {
     // -------------------------------------------------------------------------
 
     /**
-     * Contains database name, schema name and table name.
-     * E.g. "myDB"."mySchema"."myTable"
+     * Database name that this view resides in if it applies.
+     */
+    database?: string;
+
+    /**
+     * Schema name that this view resides in if it applies.
+     */
+    schema?: string;
+
+    /**
+     * View name
      */
     name: string;
 
@@ -34,6 +42,8 @@ export class View {
 
     constructor(options?: ViewOptions) {
         if (options) {
+            this.database = options.database;
+            this.schema = options.schema;
             this.name = options.name;
             this.expression = options.expression;
             this.materialized = !!options.materialized;
@@ -49,6 +59,8 @@ export class View {
      */
     clone(): View {
         return new View(<ViewOptions>{
+            database: this.database,
+            schema: this.schema,
             name: this.name,
             expression: this.expression,
             materialized: this.materialized,
@@ -64,6 +76,8 @@ export class View {
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): View {
         const options: ViewOptions = {
+            database: entityMetadata.database,
+            schema: entityMetadata.schema,
             name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
             expression: entityMetadata.expression!,
             materialized: entityMetadata.tableMetadataArgs.materialized

@@ -40,7 +40,7 @@ await getManager().transaction(async transactionalEntityManager => {
 });
 ```
 
-The most important restriction when working in an transaction is, to **ALWAYS** use the provided instance of entity manager - 
+The most important restriction when working in a transaction is to **ALWAYS** use the provided instance of entity manager - 
 `transactionalEntityManager` in this example.
 If you'll use global manager (from `getManager` or manager from connection) you'll have problems.
 You also cannot use classes which use global manager or connection to execute their queries.
@@ -150,7 +150,7 @@ try {
     
 } catch (err) {
     
-    // since we have errors lets rollback changes we made
+    // since we have errors let's rollback changes we made
     await queryRunner.rollbackTransaction();
     
 } finally {

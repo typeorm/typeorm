@@ -3,7 +3,6 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Connection} from "../../../src/connection/Connection";
-import {PromiseUtils} from "../../../src/util/PromiseUtils";
 
 describe("entity-model", () => {
 
@@ -14,60 +13,84 @@ describe("entity-model", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should save successfully and use static methods successfully", () => PromiseUtils.runInSequence(connections, async connection => {
-        Post.useConnection(connection); // change connection each time because of AR specifics
+    it("should save successfully and use static methods successfully", async () => {
+        // These must run sequentially as we have the global context of the `Post` ActiveRecord class
+        for (const connection of connections) {
+            Post.useConnection(connection); // change connection each time because of AR specifics
 
-        const post = Post.create();
-        post.title = "About ActiveRecord";
-        post.text = "Huge discussion how good or bad ActiveRecord is.";
-        await post.save();
+            const post = Post.create();
+            post.title = "About ActiveRecord";
+            post.text = "Huge discussion how good or bad ActiveRecord is.";
+            await post.save();
 
-        const loadedPost = await Post.findOne(post.id);
+            const loadedPost = await Post.findOne(post.id);
 
-        loadedPost!.should.be.instanceOf(Post);
-        loadedPost!.id.should.be.eql(post.id);
-        loadedPost!.title.should.be.eql("About ActiveRecord");
-        loadedPost!.text.should.be.eql("Huge discussion how good or bad ActiveRecord is.");
-    }));
+            loadedPost!.should.be.instanceOf(Post);
+            loadedPost!.id.should.be.eql(post.id);
+            loadedPost!.title.should.be.eql("About ActiveRecord");
+            loadedPost!.text.should.be.eql("Huge discussion how good or bad ActiveRecord is.");
+        }
+    });
 
-    it("should reload given entity successfully", () => PromiseUtils.runInSequence(connections, async connection => {
-        await connection.synchronize(true);
-        Post.useConnection(connection);
-        Category.useConnection(connection);
+    describe("upsert", function () {
+        it("should upsert successfully", async () => {
+            // These must run sequentially as we have the global context of the `Post` ActiveRecord class
+            for (const connection of connections.filter((c) => c.driver.supportedUpsertType != null)) {
+                Post.useConnection(connection); // change connection each time because of AR specifics
 
-        const category = Category.create();
-        category.id = 1;
-        category.name = "Persistence";
-        await category.save();
+                const externalId = "external-entity";
 
-        const post = Post.create();
-        post.title = "About ActiveRecord";
-        post.categories = [category];
-        await post.save();
+                await Post.upsert({ externalId, title: "External post" }, ["externalId"]);
+                const upsertInsertedExternalPost = await Post.findOneOrFail({ externalId });
 
-        await post.reload();
+                await Post.upsert({ externalId, title: "External post 2" }, ["externalId"]);
+                const upsertUpdatedExternalPost = await Post.findOneOrFail({ externalId });
 
-        const assertCategory = Object.assign({}, post.categories[0]);
-        post!.should.be.instanceOf(Post);
-        post!.id.should.be.eql(post.id);
-        post!.title.should.be.eql("About ActiveRecord");
-        post!.text.should.be.eql("This is default text.");
-        assertCategory.should.be.eql({
-            id: 1,
-            name: "Persistence"
+                upsertInsertedExternalPost.id.should.be.equal(upsertUpdatedExternalPost.id);
+                upsertInsertedExternalPost.title.should.not.be.equal(upsertUpdatedExternalPost.title);
+            }
         });
+    });
 
-        category.name = "Persistence and Entity";
-        await category.save();
+    it("should reload given entity successfully", async () => {
+        // These must run sequentially as we have the global context of the `Post` ActiveRecord class
+        for (const connection of connections) {
+            await connection.synchronize(true);
+            Post.useConnection(connection);
+            Category.useConnection(connection);
 
-        await post.reload();
+            const category = Category.create();
+            category.id = 1;
+            category.name = "Persistence";
+            await category.save();
 
-        const assertReloadedCategory = Object.assign({}, post.categories[0]);
-        assertReloadedCategory.should.be.eql({
-            id: 1,
-            name: "Persistence and Entity"
-        });
+            const post = Post.create();
+            post.title = "About ActiveRecord";
+            post.categories = [category];
+            await post.save();
 
-    }));
+            await post.reload();
 
+            const assertCategory = Object.assign({}, post.categories[0]);
+            post!.should.be.instanceOf(Post);
+            post!.id.should.be.eql(post.id);
+            post!.title.should.be.eql("About ActiveRecord");
+            post!.text.should.be.eql("This is default text.");
+            assertCategory.should.be.eql({
+                id: 1,
+                name: "Persistence"
+            });
+
+            category.name = "Persistence and Entity";
+            await category.save();
+
+            await post.reload();
+
+            const assertReloadedCategory = Object.assign({}, post.categories[0]);
+            assertReloadedCategory.should.be.eql({
+                id: 1,
+                name: "Persistence and Entity"
+            });
+        }
+    });
 });

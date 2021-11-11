@@ -12,6 +12,9 @@ import {NativescriptConnectionOptions} from "../driver/nativescript/Nativescript
 import {ExpoConnectionOptions} from "../driver/expo/ExpoConnectionOptions";
 import {AuroraDataApiConnectionOptions} from "../driver/aurora-data-api/AuroraDataApiConnectionOptions";
 import {SapConnectionOptions} from "../driver/sap/SapConnectionOptions";
+import {AuroraDataApiPostgresConnectionOptions} from "../driver/aurora-data-api-pg/AuroraDataApiPostgresConnectionOptions";
+import {BetterSqlite3ConnectionOptions} from "../driver/better-sqlite3/BetterSqlite3ConnectionOptions";
+import {CapacitorConnectionOptions} from "../driver/capacitor/CapacitorConnectionOptions";
 
 
 /**
@@ -33,4 +36,7 @@ export type ConnectionOptions =
     SqljsConnectionOptions|
     MongoConnectionOptions|
     AuroraDataApiConnectionOptions|
-    ExpoConnectionOptions;
+    AuroraDataApiPostgresConnectionOptions|
+    ExpoConnectionOptions|
+    BetterSqlite3ConnectionOptions |
+    CapacitorConnectionOptions;

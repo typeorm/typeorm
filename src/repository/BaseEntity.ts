@@ -1,5 +1,6 @@
 import {Repository} from "./Repository";
-import {FindConditions, getConnection} from "../index";
+import {getConnection} from "../globals";
+import {FindConditions} from "../find-options/FindConditions";
 import {DeepPartial} from "../common/DeepPartial";
 import {SaveOptions} from "./SaveOptions";
 import {FindOneOptions} from "../find-options/FindOneOptions";
@@ -14,6 +15,7 @@ import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {ObjectID} from "../driver/mongodb/typings";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
+import {UpsertOptions} from "./UpsertOptions";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -55,6 +57,20 @@ export class BaseEntity {
      */
     remove(options?: RemoveOptions): Promise<this> {
         return (this.constructor as any).getRepository().remove(this, options);
+    }
+
+    /**
+     * Records the delete date of current entity.
+     */
+    softRemove(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().softRemove(this, options);
+    }
+
+    /**
+     * Recovers a given entity in the database.
+     */
+    recover(options?: SaveOptions): Promise<this> {
+        return (this.constructor as any).getRepository().recover(this, options);
     }
 
     /**
@@ -149,7 +165,7 @@ export class BaseEntity {
     }
 
     /**
-     * Creates a new entity from the given plan javascript object. If entity already exist in the database, then
+     * Creates a new entity from the given plain javascript object. If entity already exist in the database, then
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
@@ -198,6 +214,23 @@ export class BaseEntity {
     }
 
     /**
+     * Records the delete date of all given entities.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entities: T[], options?: SaveOptions): Promise<T[]>;
+
+    /**
+     * Records the delete date of a given entity.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entity: T, options?: SaveOptions): Promise<T>;
+
+    /**
+     * Records the delete date of one or many given entities.
+     */
+    static softRemove<T extends BaseEntity>(this: ObjectType<T>, entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
+        return (this as any).getRepository().softRemove(entityOrEntities as any, options);
+    }
+
+    /**
      * Inserts a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
@@ -215,6 +248,17 @@ export class BaseEntity {
      */
     static update<T extends BaseEntity>(this: ObjectType<T>, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<T>, partialEntity: QueryDeepPartialEntity<T>, options?: SaveOptions): Promise<UpdateResult> {
         return (this as any).getRepository().update(criteria, partialEntity, options);
+    }
+
+    /**
+     * Inserts a given entity into the database, unless a unique constraint conflicts then updates the entity
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient INSERT ... ON CONFLICT DO UPDATE/ON DUPLICATE KEY UPDATE query.
+     */
+    static upsert<T extends BaseEntity>(this: ObjectType<T> & typeof BaseEntity, 
+        entityOrEntities: QueryDeepPartialEntity<T> | (QueryDeepPartialEntity<T>[]),
+        conflictPathsOrOptions: string[] | UpsertOptions<T>): Promise<InsertResult> {
+        return this.getRepository<T>().upsert(entityOrEntities, conflictPathsOrOptions);
     }
 
     /**

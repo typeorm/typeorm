@@ -38,4 +38,10 @@ export interface ViewEntityOptions {
      * It's supported by Postgres and Oracle.
      */
     materialized?: boolean;
+
+    /**
+     * View dependencies. In case the view depends on another view it can be listed here
+     * to ensure correct order of view migrations.
+     */
+    dependsOn?: (Function|string)[];
 }

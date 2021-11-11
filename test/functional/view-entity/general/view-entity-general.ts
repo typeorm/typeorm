@@ -104,11 +104,13 @@ describe("view entity > general", () => {
         photoAlbumCategories[1].albumName.should.be.equal("BMW photos");
         photoAlbumCategories[1].categoryName.should.be.equal("Cars");
 
+        const albumId = connection.driver instanceof CockroachDriver ? "1" : 1;
         const photoAlbumCategory = await connection.manager.findOne(PhotoAlbumCategory, { id: 1 });
         photoAlbumCategory!.id.should.be.equal(photoId1);
         photoAlbumCategory!.name.should.be.equal("BMW E39");
         photoAlbumCategory!.albumName.should.be.equal("BMW photos");
         photoAlbumCategory!.categoryName.should.be.equal("Cars");
+        photoAlbumCategory!.photoAlbumId.should.be.equal(albumId);
 
     })));
 });

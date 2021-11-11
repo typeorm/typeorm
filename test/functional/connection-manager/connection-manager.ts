@@ -7,6 +7,12 @@ import {PrimaryGeneratedColumn} from "../../../src/decorator/columns/PrimaryGene
 import {Column} from "../../../src/decorator/columns/Column";
 import {Entity} from "../../../src/decorator/entity/Entity";
 
+// Uncomment when testing the aurora data API driver
+// import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
+// import {AuroraDataApiConnectionOptions} from "../../../src/driver/aurora-data-api/AuroraDataApiConnectionOptions";
+// import {AuroraDataApiPostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+// import {AuroraDataApiPostgresConnectionOptions} from "../../../src/driver/aurora-data-api-pg/AuroraDataApiPostgresConnectionOptions";
+
 describe("ConnectionManager", () => {
 
     @Entity()
@@ -67,6 +73,41 @@ describe("ConnectionManager", () => {
             connection.name.should.be.equal("default");
             connection.driver.should.be.instanceOf(MysqlDriver);
             connection.isConnected.should.be.true;
+            await connection.close();
+
+        it("should create a aurora connection when aurora-data-api driver is specified", async () => {
+            const options = setupSingleTestingConnection("aurora-data-api", {
+                name: "aurora-data-api",
+                dropSchema: false,
+                schemaCreate: false,
+                enabledDrivers: ["aurora-data-api"]
+            });
+            const connectionManager = new ConnectionManager();
+            const connection = connectionManager.create(options!);
+            await connection.connect();
+            connection.name.should.contain("aurora-data-api");
+            connection.driver.should.be.instanceOf(AuroraDataApiDriver);
+            connection.isConnected.should.be.true;
+            const serviceConfigOptions = (connection.options as AuroraDataApiConnectionOptions).serviceConfigOptions;
+            expect(serviceConfigOptions).to.include({ maxRetries: 3, region: "us-east-1" });
+            await connection.close();
+        });
+
+        it("should create a aurora connection when aurora-data-api-pg driver is specified", async () => {
+            const options = setupSingleTestingConnection("aurora-data-api-pg", {
+                name: "aurora-data-api-pg",
+                dropSchema: false,
+                schemaCreate: false,
+                enabledDrivers: ["aurora-data-api-pg"]
+            });
+            const connectionManager = new ConnectionManager();
+            const connection = connectionManager.create(options!);
+            await connection.connect();
+            connection.name.should.contain("aurora-data-api-pg");
+            connection.driver.should.be.instanceOf(AuroraDataApiPostgresDriver);
+            connection.isConnected.should.be.true;
+            const serviceConfigOptions = (connection.options as AuroraDataApiPostgresConnectionOptions).serviceConfigOptions;
+            expect(serviceConfigOptions).to.include({ maxRetries: 3, region: "us-east-1" });
             await connection.close();
         });
 

@@ -9,7 +9,7 @@ describe("github issues > #4096 SQLite support for orUpdate", () => {
 
     before(async () => connections = await createTestingConnections({
         entities: [User],
-        enabledDrivers: ["sqlite"],
+        enabledDrivers: ["sqlite", "better-sqlite3"],
         schemaCreate: true,
         dropSchema: true,
     }));
@@ -43,10 +43,7 @@ describe("github issues > #4096 SQLite support for orUpdate", () => {
         .insert()
         .into(User)
         .values(user2)
-        .orUpdate({
-          conflict_target: [ "email", "username" ],
-          overwrite: ["bio"],
-        })
+        .orUpdate(["bio"], [ "email", "username" ])
         .execute();
 
       const users = await UserRepository.find();

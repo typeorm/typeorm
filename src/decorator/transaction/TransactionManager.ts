@@ -1,10 +1,10 @@
-import {getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {TransactionEntityMetadataArgs} from "../../metadata-args/TransactionEntityMetadataArgs";
 
 /**
  * Injects transaction's entity manager into the method wrapped with @Transaction decorator.
  */
-export function TransactionManager(): Function {
+export function TransactionManager(): ParameterDecorator {
     return function (object: Object, methodName: string, index: number) {
 
         getMetadataArgsStorage().transactionEntityManagers.push({

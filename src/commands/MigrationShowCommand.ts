@@ -1,9 +1,9 @@
-import {createConnection} from "../index";
+import {createConnection} from "../globals";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as process from "process";
 import * as yargs from "yargs";
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
  * Runs migration command.

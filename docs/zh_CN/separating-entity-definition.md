@@ -141,9 +141,9 @@ export const CategoryEntity = new EntitySchema<Category>({
 当使用`Decorator`方法时，很容易将基本列`extend`为抽象类并简单地扩展它。
 例如，在`BaseEntity`中这样定义`id`，`createdAt`和`updatedAt`列。 有关更多详细信息，请参阅[具体表继承](entity-inheritance.md#concrete-table-inheritance)的文档
 
-当使用`EntitySchema`方法时该方法便不可行。 但是，你可以使用`Spread Operator`（```）来改善。
+当使用 `EntitySchema` 方法时该方法便不可行。 但是，你可以使用`Spread Operator`（...）来改善。
 
-重新审视上面的`Category`示例。 你可能希望`extract`基本列描述并在其他模式中复用它，则可以通过以下方式完成：
+重新审视上面的 `Category` 示例。 你可能希望 `extract` 基本列描述并在其他模式中复用它，则可以通过以下方式完成：
 
 ```ts
 import {EntitySchemaColumnOptions} from "typeorm";

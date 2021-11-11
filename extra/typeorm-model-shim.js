@@ -21,212 +21,247 @@
 // }
 
 
-// columns
-
-/* export */ function Column(typeOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function Column() {
+    return function () {};
 }
 exports.Column = Column;
 
-/* export */ function CreateDateColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function CreateDateColumn() {
+    return function () {};
 }
 exports.CreateDateColumn = CreateDateColumn;
 
-/* export */ function ObjectIdColumn(columnOptions) {
-    return function (object, propertyName) {
-    };
+/* export */ function DeleteDateColumn() {
+    return function () {};
 }
-exports.ObjectIdColumn = ObjectIdColumn;
+exports.DeleteDateColumn = DeleteDateColumn;
 
-/* export */ function PrimaryColumn(typeOrOptions, options) {
-    return function (object, propertyName) {
-    };
-}
-exports.PrimaryColumn = PrimaryColumn;
-
-/* export */ function PrimaryGeneratedColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function PrimaryGeneratedColumn() {
+    return function () {};
 }
 exports.PrimaryGeneratedColumn = PrimaryGeneratedColumn;
 
-/* export */ function UpdateDateColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function PrimaryColumn() {
+    return function () {};
+}
+exports.PrimaryColumn = PrimaryColumn;
+
+/* export */ function UpdateDateColumn() {
+    return function () {};
 }
 exports.UpdateDateColumn = UpdateDateColumn;
 
-/* export */ function VersionColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function VersionColumn() {
+    return function () {};
 }
 exports.VersionColumn = VersionColumn;
 
-// entities
-
-/* export */ function ChildEntity(tableName, options) {
-    return function (object) {
-    };
+/* export */ function ViewColumn() {
+    return function () {};
 }
-exports.ChildEntity = ChildEntity;
+exports.ViewColumn = ViewColumn;
 
-/* export */ function Entity(name, options) {
-    return function (object) {
-    };
+/* export */ function ObjectIdColumn() {
+    return function () {};
 }
-exports.Entity = Entity;
-
-/* export */ function TableInheritance(type) {
-    return function (object) {
-    };
-}
-exports.TableInheritance = TableInheritance;
-
-// listeners
+exports.ObjectIdColumn = ObjectIdColumn;
 
 /* export */ function AfterInsert() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.AfterInsert = AfterInsert;
 
 /* export */ function AfterLoad() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.AfterLoad = AfterLoad;
 
 /* export */ function AfterRemove() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.AfterRemove = AfterRemove;
 
 /* export */ function AfterUpdate() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.AfterUpdate = AfterUpdate;
 
 /* export */ function BeforeInsert() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.BeforeInsert = BeforeInsert;
 
 /* export */ function BeforeRemove() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.BeforeRemove = BeforeRemove;
 
 /* export */ function BeforeUpdate() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.BeforeUpdate = BeforeUpdate;
 
 /* export */ function EventSubscriber() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.EventSubscriber = EventSubscriber;
 
-// relations
+/* export */ function ColumnOptions() {
+    return function () {};
+}
+exports.ColumnOptions = ColumnOptions;
 
-/* export */ function JoinColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function IndexOptions() {
+    return function () {};
+}
+exports.IndexOptions = IndexOptions;
+
+/* export */ function JoinColumnOptions() {
+    return function () {};
+}
+exports.JoinColumnOptions = JoinColumnOptions;
+
+/* export */ function JoinTableOptions() {
+    return function () {};
+}
+exports.JoinTableOptions = JoinTableOptions;
+
+/* export */ function RelationOptions() {
+    return function () {};
+}
+exports.RelationOptions = RelationOptions;
+
+/* export */ function EntityOptions() {
+    return function () {};
+}
+exports.EntityOptions = EntityOptions;
+
+/* export */ function ValueTransformer() {
+    return function () {};
+}
+exports.ValueTransformer = ValueTransformer;
+
+/* export */ function JoinColumn() {
+    return function () {};
 }
 exports.JoinColumn = JoinColumn;
 
-/* export */ function JoinTable(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function JoinTable() {
+    return function () {};
 }
 exports.JoinTable = JoinTable;
 
-/* export */ function ManyToMany(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function ManyToMany() {
+    return function () {};
 }
 exports.ManyToMany = ManyToMany;
 
-/* export */ function ManyToOne(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function ManyToOne() {
+    return function () {};
 }
 exports.ManyToOne = ManyToOne;
 
-/* export */ function OneToMany(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function OneToMany() {
+    return function () {};
 }
 exports.OneToMany = OneToMany;
 
-/* export */ function OneToOne(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function OneToOne() {
+    return function () {};
 }
 exports.OneToOne = OneToOne;
 
-/* export */ function RelationCount(relation) {
-    return function (object, propertyName) {
-    };
+/* export */ function RelationCount() {
+    return function () {};
 }
 exports.RelationCount = RelationCount;
 
-/* export */ function RelationId(relation) {
-    return function (object, propertyName) {
-    };
+/* export */ function RelationId() {
+    return function () {};
 }
 exports.RelationId = RelationId;
 
-// tree
-
-/* export */ function Tree(name, options) {
-    return function (object) {
-    };
+/* export */ function Entity() {
+    return function () {};
 }
-exports.Tree = Tree;
+exports.Entity = Entity;
 
-/* export */ function TreeChildren(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function ChildEntity() {
+    return function () {};
 }
-exports.TreeChildren = TreeChildren;
+exports.ChildEntity = ChildEntity;
 
-/* export */ function TreeChildrenCount(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function TableInheritance() {
+    return function () {};
 }
-exports.TreeChildrenCount = TreeChildrenCount;
+exports.TableInheritance = TableInheritance;
+
+/* export */ function ViewEntity() {
+    return function () {};
+}
+exports.ViewEntity = ViewEntity;
+
+/* export */ function Transaction() {
+    return function () {};
+}
+exports.Transaction = Transaction;
+
+/* export */ function TransactionManager() {
+    return function () {};
+}
+exports.TransactionManager = TransactionManager;
+
+/* export */ function TransactionRepository() {
+    return function () {};
+}
+exports.TransactionRepository = TransactionRepository;
 
 /* export */ function TreeLevelColumn() {
-    return function (object, propertyName) {
-    };
+    return function () {};
 }
 exports.TreeLevelColumn = TreeLevelColumn;
 
-/* export */ function TreeParent(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function TreeParent() {
+    return function () {};
 }
 exports.TreeParent = TreeParent;
 
-// other
+/* export */ function TreeChildren() {
+    return function () {};
+}
+exports.TreeChildren = TreeChildren;
 
-/* export */ function Generated(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function Tree() {
+    return function () {};
+}
+exports.Tree = Tree;
+
+/* export */ function Index() {
+    return function () {};
+}
+exports.Index = Index;
+
+/* export */ function Unique() {
+    return function () {};
+}
+exports.Unique = Unique;
+
+/* export */ function Check() {
+    return function () {};
+}
+exports.Check = Check;
+
+/* export */ function Exclusion() {
+    return function () {};
+}
+exports.Exclusion = Exclusion;
+
+/* export */ function Generated() {
+    return function () {};
 }
 exports.Generated = Generated;
 
-/* export */ function Index(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function EntityRepository() {
+    return function () {};
 }
-exports.Index = Index;
+exports.EntityRepository = EntityRepository;

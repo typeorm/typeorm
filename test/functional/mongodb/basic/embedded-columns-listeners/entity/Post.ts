@@ -3,6 +3,7 @@ import {Column} from "../../../../../../src/decorator/columns/Column";
 import {ObjectIdColumn} from "../../../../../../src/decorator/columns/ObjectIdColumn";
 import {Counters} from "./Counters";
 import {ObjectID} from "../../../../../../src/driver/mongodb/typings";
+import { Tags } from "./Tags";
 
 @Entity()
 export class Post {
@@ -18,5 +19,8 @@ export class Post {
 
     @Column(type => Counters)
     counters?: Counters;
+
+    @Column(type => Tags)
+    tags?: Tags[];
 
 }
