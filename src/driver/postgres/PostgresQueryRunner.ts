@@ -1826,7 +1826,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const uniques = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
                 return new TableUnique({
                     name: constraint["constraint_name"],
-                    columnNames: uniques.map(u => u["column_name"])
+                    columnNames: uniques.map(u => u["column_name"]),
+                    deferrable: constraint["deferrable"] ? constraint["deferred"] : undefined,
                 });
             });
 
@@ -1941,7 +1942,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const uniquesSql = table.uniques.map(unique => {
                 const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table, unique.columnNames);
                 const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
-                return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
+                let constraint = `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
+                if (unique.deferrable)
+                    constraint += ` DEFERRABLE ${unique.deferrable}`;
+                return constraint;
             }).join(", ");
 
             sql += `, ${uniquesSql}`;
@@ -2168,7 +2172,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): Query {
         const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
-        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`);
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`;
+        if (uniqueConstraint.deferrable)
+            sql += ` DEFERRABLE ${uniqueConstraint.deferrable}`;
+        return new Query(sql);
     }
 
     /**
