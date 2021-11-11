@@ -422,9 +422,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
             const tableName = tableNameWithSchema[1];
             const schema = tableNameWithSchema[0];
-            const deleteQuery = new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND database = $3 AND type = 'generated_column' AND schema = $4`, [tableName, column.name, this.connection.driver.database, schema]);
+            const deleteQuery = new Query(`DELETE FROM typeorm_metadata WHERE "table" = $1 AND name = $2 AND database = $3 AND type = 'generated_column' AND schema = $4`, [tableName, column.name, this.connection.driver.database, schema]);
             upQueries.push(deleteQuery);
-            upQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, database, schema, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, this.driver.database, schema]));
+            upQueries.push(new Query(`INSERT INTO typeorm_metadata("table", name, value, database, schema, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, this.driver.database, schema]));
             downQueries.push(deleteQuery);
         }
 
@@ -672,9 +672,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
             const tableName = tableNameWithSchema[1];
             const schema = tableNameWithSchema[0];
-            const deleteQuery = new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, column.name, schema, this.driver.database]);
+            const deleteQuery = new Query(`DELETE FROM typeorm_metadata WHERE "table" = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, column.name, schema, this.driver.database]);
             upQueries.push(deleteQuery);
-            upQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, database, schema, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, this.driver.database, schema]));
+            upQueries.push(new Query(`INSERT INTO typeorm_metadata("table", name, value, database, schema, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, this.driver.database, schema]));
             downQueries.push(deleteQuery);
         }
 
@@ -1037,12 +1037,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, newColumn)}`));
                     upQueries.push(new Query(`UPDATE ${this.escapePath(table)} SET "${newColumn.name}" = "TEMP_OLD_${oldColumn.name}"`));
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`));
-                    upQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, oldColumn.name, schema, this.driver.database]));
+                    upQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE "table" = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, oldColumn.name, schema, this.driver.database]));
                     // However, we can't copy it back on downgrade. It needs to regenerate.
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${newColumn.name}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, oldColumn)}`));
-                    downQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, newColumn.name, schema, this.driver.database]));
-                    downQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, schema, database, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, oldColumn.name, oldColumn.asExpression, schema, this.driver.database]));
+                    downQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE "table" = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, newColumn.name, schema, this.driver.database]));
+                    downQueries.push(new Query(`INSERT INTO typeorm_metadata("table", name, value, schema, database, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, oldColumn.name, oldColumn.asExpression, schema, this.driver.database]));
                 }
             }
 
@@ -1136,8 +1136,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
             const tableName = tableNameWithSchema[1];
             const schema = tableNameWithSchema[0];
-            upQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE table = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, column.name, schema, this.driver.database]));
-            downQueries.push(new Query(`INSERT INTO typeorm_metadata(table, name, value, schema, database, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, schema, this.driver.database]));
+            upQueries.push(new Query(`DELETE FROM typeorm_metadata WHERE "table" = $1 AND name = $2 AND schema = $3 AND database = $4 AND type = 'generated_column'`, [tableName, column.name, schema, this.driver.database]));
+            downQueries.push(new Query(`INSERT INTO typeorm_metadata("table", name, value, schema, database, type) VALUES ($1, $2, $3, $4, $5, 'generated_column')`, [tableName, column.name, column.asExpression, schema, this.driver.database]));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -1864,7 +1864,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
                         // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                        const asExpressionQuery = `SELECT * FROM typeorm_metadata WHERE table = '${dbTable["table_name"]}' AND name = '${tableColumn.name}' AND schema = '${dbTable["table_schema"]}' AND database = '${this.driver.database}' AND type = 'generated_column'`;
+                        const asExpressionQuery = `SELECT * FROM typeorm_metadata WHERE "table" = '${dbTable["table_name"]}' AND name = '${tableColumn.name}' AND schema = '${dbTable["table_schema"]}' AND database = '${this.driver.database}' AND type = 'generated_column'`;
                         const results: ObjectLiteral[] = await this.query(asExpressionQuery);
                         if (results[0] && results[0].value) {
                             tableColumn.asExpression = results[0].value;

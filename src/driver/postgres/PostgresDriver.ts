@@ -358,7 +358,7 @@ export class PostgresDriver implements Driver {
         }
 
         const results = await this.executeQuery(this.connection, 'SHOW server_version;') as any;
-        const versionString = results[0]["server_version"] as string;
+        const versionString = results.rows[0]["server_version"] as string;
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(versionString, '12.0');
     }
 
