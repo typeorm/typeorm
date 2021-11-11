@@ -203,6 +203,9 @@ There are other special methods to work with tree entities through `TreeReposito
 ```typescript
 const treeCategories = await repository.findTrees();
 // returns root categories with sub categories inside
+
+const treeCategoriesWithLimitedDepth = await repository.findTrees({ depth: 2 });
+// returns root categories with sub categories inside, up to depth 2
 ```
 
 * `findRoots` - Roots are entities that have no ancestors. Finds them all.
@@ -225,6 +228,8 @@ const children = await repository.findDescendants(parentCategory);
 ```typescript
 const childrenTree = await repository.findDescendantsTree(parentCategory);
 // returns all direct subcategories (with its nested categories) of a parentCategory
+const childrenTreeWithLimitedDepth = await repository.findDescendantsTree(parentCategory, { depth: 2 });
+// returns all direct subcategories (with its nested categories) of a parentCategory, up to depth 2
 ```
 
 * `createDescendantsQueryBuilder` - Creates a query builder used to get descendants of the entities in a tree.
@@ -279,10 +284,10 @@ For the following methods, options can be passed:
 * findAncestors
 * findAncestorsTree
 
-The following options are available: 
+The following options are available:
 * `relations` - Indicates what relations of entity should be loaded (simplified left join form).
 
-Examples: 
+Examples:
 ```typescript
 const treeCategoriesWithRelations = await repository.findTrees({ relations: ["sites"] });
 // automatically joins the sites relation
