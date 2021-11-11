@@ -553,7 +553,7 @@ describe("query builder > joins", () => {
 
         })));
 
-        it.only("should get wrong sql", () => Promise.all(connections.map(async connection => {
+        it("should get wrong sql", () => Promise.all(connections.map(async connection => {
 
             const menu1 = new Menu();
             menu1.id = 1;
@@ -580,8 +580,7 @@ describe("query builder > joins", () => {
                 .take(10)
                 .getManyAndCount()
                 .catch(e => e);
-            expect(sql instanceof Error).to.be.true;
-            expect(sql.sql).exist.contains(', ,');
+            expect(sql instanceof Error).to.be.false;
 
         })));
 
