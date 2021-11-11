@@ -123,8 +123,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     async log(): Promise<SqlInMemory> {
         this.queryRunner = this.connection.createQueryRunner();
         try {
-            await this.createMetadataTableIfNecessary(this.queryRunner);
-            
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
             await this.queryRunner.getTables(tablePaths);
