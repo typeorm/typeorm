@@ -8,6 +8,7 @@ import {Post} from "./entity/Post";
 import {Category} from "./entity/Category";
 import {Image} from "./entity/Image";
 import {User} from "./entity/User";
+import {Menu} from "./entity/Menu";
 
 describe("query builder > joins", () => {
 
@@ -549,6 +550,38 @@ describe("query builder > joins", () => {
             expect(loadedPost!.subcategories).to.not.be.eql([]);
             expect(loadedPost!.subcategories.length).to.be.equal(2);
             expect(loadedPost!.subcategories[0].titleImage.id).to.be.equal(1);
+
+        })));
+
+        it.only("should get wrong sql", () => Promise.all(connections.map(async connection => {
+
+            const menu1 = new Menu();
+            menu1.id = 1;
+            menu1.name = "menu1";
+            menu1.index = 1;
+            menu1.createdTime = new Date();
+            await connection.manager.save(menu1);
+
+            const menu2 = new Menu();
+            menu2.id = 2;
+            menu2.name = "menu2";
+            menu2.index = 2;
+            menu2.parentId = menu1.id;
+            menu2.createdTime = new Date();
+            await connection.manager.save(menu2);
+
+            const sql = await connection.manager
+                .createQueryBuilder(Menu, "menu")
+                .leftJoinAndMapOne('menu.parent', 'menu', 'pMenu', 'menu.parentId = pMenu.id')
+                .where({})
+                .orderBy('menu.createdTime', 'DESC')
+                .addOrderBy('menu.index', 'ASC')
+                .skip(0)
+                .take(10)
+                .getManyAndCount()
+                .catch(e => e);
+            expect(sql instanceof Error).to.be.true;
+            expect(sql.sql).exist.contains(', ,');
 
         })));
 
