@@ -81,6 +81,15 @@ This command will generate you a distribution package in the `build/package` dir
 You can link (or simply copy/paste) this directory into your project and test TypeORM there
 (but make sure to keep all node_modules required by TypeORM).
 
+To build the distribution package of TypeORM packed into a `.tgz`, run:
+
+```shell
+npm run pack
+```
+
+This command will generate you a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
+You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz` to bundle your build of TypeORM in your project.
+
 ## Running Tests Locally
 
 It would be greatly appreciated if PRs that change code come with appropriate tests.

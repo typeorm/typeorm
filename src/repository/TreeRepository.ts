@@ -5,6 +5,7 @@ import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriv
 import { TypeORMError } from "../error/TypeORMError";
 import { FindTreeOptions } from "../find-options/FindTreeOptions";
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils";
+import { FindTreesOptions } from "./FindTreesOptions";
 
 /**
  * Repository with additional functions to work with trees.
@@ -64,7 +65,11 @@ export class TreeRepository<Entity> extends Repository<Entity> {
 
         const entities = await qb.getRawAndEntities();
         const relationMaps = this.createRelationMaps("treeEntity", entities.raw);
-        this.buildChildrenEntityTree(entity, entities.entities, relationMaps);
+        this.buildChildrenEntityTree(entity, entities.entities, relationMaps, {
+            depth: -1,
+            ...options
+
+        });
 
         return entity;
     }
@@ -261,14 +266,18 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         });
     }
 
-    protected buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[]): void {
+    protected buildChildrenEntityTree(entity: any, entities: any[], relationMaps: { id: any, parentId: any }[], options: (FindTreesOptions & { depth: number })): void {
         const childProperty = this.metadata.treeChildrenRelation!.propertyName;
+        if (options.depth === 0) {
+            entity[childProperty] = [];
+            return;
+        }
         const parentEntityId = this.metadata.primaryColumns[0].getEntityValue(entity);
         const childRelationMaps = relationMaps.filter(relationMap => relationMap.parentId === parentEntityId);
         const childIds = new Set(childRelationMaps.map(relationMap => relationMap.id));
         entity[childProperty] = entities.filter(entity => childIds.has(this.metadata.primaryColumns[0].getEntityValue(entity)));
         entity[childProperty].forEach((childEntity: any) => {
-            this.buildChildrenEntityTree(childEntity, entities, relationMaps);
+            this.buildChildrenEntityTree(childEntity, entities, relationMaps, { ...options, depth: options.depth - 1 });
         });
     }
 
