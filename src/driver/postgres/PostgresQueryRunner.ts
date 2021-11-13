@@ -1774,13 +1774,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
-                            && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
-                            && dbConstraint["column_name"] !== dbColumn["column_name"])
-                        : false;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["constraint_type"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
+                                && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
+                                && dbConstraint["column_name"] !== dbColumn["column_name"])
+                    })
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
 
                     if (dbColumn.is_identity === "YES") { // Postgres 10+ Identity column
                         tableColumn.isGenerated = true;
