@@ -349,17 +349,22 @@ export class PostgresDriver implements Driver {
      */
     async afterConnect(): Promise<void> {
         const extensionsMetadata = await this.checkMetadataForExtensions();
+        const [ connection, release ] = await this.obtainMasterConnection()
 
         const installExtensions = this.options.installExtensions === undefined || this.options.installExtensions;
         if (installExtensions && extensionsMetadata.hasExtensions) {
-            const [ connection, release ] = await this.obtainMasterConnection()
             await this.enableExtensions(extensionsMetadata, connection);
-            await release()
         }
 
-        const results = await this.executeQuery(this.connection, 'SHOW server_version;') as any;
-        const versionString = results.rows[0]["server_version"] as string;
-        this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(versionString, '12.0');
+        const results = await this.executeQuery(connection, "SHOW server_version;") as {
+            rows: {
+                server_version: string;
+            }[];
+        };
+        const versionString = results.rows[0].server_version;
+        this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(versionString, "12.0");
+
+        await release()
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {

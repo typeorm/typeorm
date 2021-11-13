@@ -22,6 +22,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import { TypeORMError } from "../../error";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -1172,7 +1173,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         }).join(" OR ");
 
         const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapePath(this.getTypeormMetadataTableName())} \`t\` ` +
-            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = '${MetadataTableType.VIEW}' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
@@ -1532,13 +1533,12 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentDatabase = await this.getCurrentDatabase();
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", schema: currentDatabase, name: view.name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            schema: currentDatabase,
+            name: view.name,
+            value: expression
+        });
     }
 
     /**
@@ -1554,15 +1554,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
         const currentDatabase = await this.getCurrentDatabase();
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema: currentDatabase })
-            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({ type: MetadataTableType.VIEW, schema: currentDatabase, name: viewName });
     }
 
     /**

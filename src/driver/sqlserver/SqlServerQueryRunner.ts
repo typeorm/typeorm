@@ -26,6 +26,7 @@ import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import { TypeORMError } from "../../error";
 import { QueryLock } from "../../query-runner/QueryLock";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1521,7 +1522,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const query = dbNames.map(dbName => {
             return `SELECT "T".*, "V"."CHECK_OPTION" FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
-                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."VIEWS" "V" ON "V"."TABLE_SCHEMA" = "T"."SCHEMA" AND "v"."TABLE_NAME" = "T"."NAME" WHERE "T"."TYPE" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."VIEWS" "V" ON "V"."TABLE_SCHEMA" = "T"."SCHEMA" AND "v"."TABLE_NAME" = "T"."NAME" WHERE "T"."TYPE" = '${MetadataTableType.VIEW}' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         }).join(" UNION ALL ");
 
         const dbViews = await this.query(query);
@@ -2016,13 +2017,13 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", database: parsedTableName.database, schema: parsedTableName.schema, name: parsedTableName.tableName, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            database: parsedTableName.database,
+            schema: parsedTableName.schema,
+            name: parsedTableName.tableName,
+            value: expression
+        });
     }
 
     /**
@@ -2042,16 +2043,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             parsedTableName.schema = await this.getCurrentSchema();
         }
 
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("database")} = :database`, { database: parsedTableName.database })
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema: parsedTableName.schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name: parsedTableName.tableName })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            database: parsedTableName.database,
+            schema: parsedTableName.schema,
+            name: parsedTableName.tableName
+        });
     }
 
     /**
