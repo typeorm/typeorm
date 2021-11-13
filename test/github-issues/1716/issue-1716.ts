@@ -8,6 +8,7 @@ import { PgEntity } from "./entity/pgEntity";
 import { MysqlEntity } from "./entity/mysqlEntity";
 import { MariadbEntity } from "./entity/mariadbEntity";
 import { MssqlEntity } from "./entity/mssqlEntity";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 
 
@@ -30,6 +31,8 @@ const isDriverEnabled = (driver: string) => {
 
 describe("github issues > #1716 send timestamp to database without converting it into UTC", () => {
 
+    // Save the original set timezone for later restore
+    let originalTimezone: string;
 
     describe("postgres", async () => {
 
@@ -48,10 +51,27 @@ describe("github issues > #1716 send timestamp to database without converting it
                     "postgres"
                 ]
             });
+
+            for (const connection of connections) {
+                if (connection.driver instanceof PostgresDriver) {
+                    const result = await connection.query("SHOW timezone;");
+                    originalTimezone = result[0].TimeZone;
+                    // We want to have UTC as timezone
+                    await connection.query("SET TIME ZONE 'UTC';");
+                }
+            }
         });
 
         beforeEach(() => reloadTestingDatabases(connections));
-        after(() => closeTestingConnections(connections));
+        after(async () => {
+            for (const connection of connections) {
+                if (connection.driver instanceof PostgresDriver) {
+                    // Restore the timezone after the test finished
+                    await connection.query(`SET TIME ZONE '${originalTimezone}';`);
+                }
+            }
+            await closeTestingConnections(connections);
+        });
 
 
         it("should persist dates and times correctly", async () => {
