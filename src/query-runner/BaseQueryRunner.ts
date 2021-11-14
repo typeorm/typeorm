@@ -311,7 +311,7 @@ export abstract class BaseQueryRunner {
     }: {
         database?: string,
         schema?: string,
-        table? : string,
+        table?: string,
         type: MetadataTableType
         name: string,
         value?: string
