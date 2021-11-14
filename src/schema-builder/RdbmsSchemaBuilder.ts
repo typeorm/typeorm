@@ -78,9 +78,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         try {
             await this.createMetadataTableIfNecessary(this.queryRunner);
-            
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
+
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
 
@@ -112,7 +112,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
      */
     async createMetadataTableIfNecessary(queryRunner: QueryRunner): Promise<void> {
-        if (this.viewEntityToSyncMetadatas.length > 0) {
+        if (this.viewEntityToSyncMetadatas.length > 0 || (this.connection.driver instanceof PostgresDriver && this.connection.driver.isGeneratedColumnsSupported)) {
             await this.createTypeormMetadataTable(queryRunner);
         }
     }
@@ -875,5 +875,4 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             },
         ), true);
     }
-
 }

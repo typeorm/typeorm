@@ -19,6 +19,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import { TypeORMError } from "../../error";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -765,7 +766,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
 
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
-        let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = 'VIEW'`;
+        let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = '${MetadataTableType.VIEW}'`;
         if (viewNamesString.length > 0)
             query += ` AND "t"."name" IN (${viewNamesString})`;
         const dbViews = await this.query(query);
@@ -1095,13 +1096,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
     protected insertViewDefinitionSql(view: View): Query {
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", name: view.name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            name: view.name,
+            value: expression
+        });
     }
 
     /**
@@ -1117,14 +1116,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected deleteViewDefinitionSql(viewOrPath: View|string): Query {
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({ type: MetadataTableType.VIEW, name: viewName });
     }
 
     /**
