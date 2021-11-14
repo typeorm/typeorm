@@ -1588,26 +1588,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
                     ));
 
-                    const columnUniqueIndex = dbIndices.find(dbIndex => {
-                        if (dbIndex["TABLE_NAME"] !== dbTable["TABLE_NAME"] || dbIndex["SCHEMA_NAME"] !== dbTable["SCHEMA_NAME"]) {
-                            return false;
-                        }
-
-                        // Index is not for this column
-                        if (dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]) {
-                            return false;
-                        }
-
-                        return dbIndex["CONSTRAINT"] && dbIndex["CONSTRAINT"].indexOf("UNIQUE") !== -1;
-                    });
+                    const columnUniqueIndices = dbIndices.filter(dbIndex => {
+                        return dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"]
+                            && dbIndex["SCHEMA_NAME"] === dbTable["SCHEMA_NAME"]
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
+                            && dbIndex["CONSTRAINT"] && dbIndex["CONSTRAINT"].indexOf("UNIQUE") !== -1
+                    })
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
-                    const hasIgnoredIndex = columnUniqueIndex && tableMetadata && tableMetadata.indices
-                        .some(index => index.name === columnUniqueIndex["INDEX_NAME"] && index.synchronize === false);
+                    const hasIgnoredIndex = columnUniqueIndices.length > 0
+                        && tableMetadata
+                        && tableMetadata.indices.some(index => {
+                            return columnUniqueIndices.some(uniqueIndex => {
+                                return index.name === uniqueIndex["INDEX_NAME"] && index.synchronize === false;
+                            })
+                        });
 
-                    const isConstraintComposite = columnUniqueIndex
-                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnUniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
+                    const isConstraintComposite = columnUniqueIndices.every((uniqueIndex) => {
+                        return dbIndices.some(dbIndex => dbIndex["INDEX_NAME"] === uniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]);
+                    })
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
@@ -1638,7 +1637,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         const length = dbColumn["LENGTH"].toString();
                         tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                     }
-                    tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
+                    tableColumn.isUnique = columnUniqueIndices.length > 0 && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "TRUE";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["IS_PRIMARY_KEY"] === "TRUE");
                     tableColumn.isGenerated = dbColumn["GENERATION_TYPE"] === "ALWAYS AS IDENTITY";

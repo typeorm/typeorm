@@ -3,7 +3,7 @@ import {User} from "./User";
 
 @Entity()
 export class UserMeta {
-    @PrimaryGeneratedColumn({ type:"bigint" })
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

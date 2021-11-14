@@ -8,7 +8,6 @@ describe("github issues > #8158 Typeorm creates migration that creates already e
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         migrations: [],
-        enabledDrivers: ["postgres"],
         schemaCreate: false,
         dropSchema: true,
         entities: [UserMeta, User],
@@ -25,7 +24,6 @@ describe("github issues > #8158 Typeorm creates migration that creates already e
         await connection.driver.createSchemaBuilder().build();
 
         const sqlInMemory = await connection.driver.createSchemaBuilder().log();
-        console.log(sqlInMemory);
         sqlInMemory.upQueries.length.should.be.equal(0);
         sqlInMemory.downQueries.length.should.be.equal(0);
     })));

@@ -1556,13 +1556,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["constraint_type"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
                             && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
                             && dbConstraint["column_name"] !== dbColumn["column_name"])
-                        : false;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    })
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
 
                     if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         if (dbColumn["column_default"] === "unique_rowid()") {

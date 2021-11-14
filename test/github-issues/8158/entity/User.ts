@@ -5,7 +5,7 @@ import {UserMeta} from "./UserMeta";
 @Unique(["userMetaId"])
 @Unique(["id", "userMetaId"])
 export class User {
-    @PrimaryGeneratedColumn({ type:"bigint" })
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column()

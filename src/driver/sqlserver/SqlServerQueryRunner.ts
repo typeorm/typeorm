@@ -1745,14 +1745,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
                     ));
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
                             && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
                             && dbConstraint["TABLE_SCHEMA"] === dbColumn["TABLE_SCHEMA"]
                             && dbConstraint["TABLE_CATALOG"] === dbColumn["TABLE_CATALOG"]
                             && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
+                    })
 
                     const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY");
                     const isGenerated = !!dbIdentityColumns.find(column => (
@@ -1809,7 +1809,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         : undefined;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = isPrimary;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
                     tableColumn.isGenerated = isGenerated;
                     if (isGenerated)
                         tableColumn.generationStrategy = "increment";

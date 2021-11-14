@@ -1367,18 +1367,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )
                     );
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "U");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => (
-                                dbConstraint["OWNER"] === dbColumn["OWNER"] &&
-                                dbConstraint["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
-                                dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"] &&
-                                dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"] &&
-                                dbConstraint["CONSTRAINT_TYPE"] === "U"
-                            )
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["CONSTRAINT_TYPE"] === "U");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => (
+                            dbConstraint["OWNER"] === dbColumn["OWNER"] &&
+                            dbConstraint["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
+                            dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"] &&
+                            dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"] &&
+                            dbConstraint["CONSTRAINT_TYPE"] === "U")
                         )
-                        : false;
-                    const isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    })
 
                     const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "P");
 
@@ -1411,7 +1409,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         && dbColumn["DATA_DEFAULT"].trim() !== "NULL" ? tableColumn.default = dbColumn["DATA_DEFAULT"].trim() : undefined;
 
                     tableColumn.isNullable = dbColumn["NULLABLE"] === "Y";
-                    tableColumn.isUnique = isUnique;
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
                     tableColumn.isPrimary = isPrimary;
                     tableColumn.isGenerated = dbColumn["IDENTITY_COLUMN"] === "YES";
                     if (tableColumn.isGenerated) {

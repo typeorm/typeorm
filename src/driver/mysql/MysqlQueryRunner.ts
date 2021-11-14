@@ -1451,27 +1451,25 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] && dbColumn["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"])
                 .map(dbColumn => {
 
-                    const columnUniqueIndex = dbIndices.find(dbIndex => {
-                        if (dbIndex["TABLE_NAME"] !== dbTable["TABLE_NAME"] || dbIndex["TABLE_SCHEMA"] !== dbTable["TABLE_SCHEMA"]) {
-                            return false;
-                        }
-
-                        // Index is not for this column
-                        if (dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]) {
-                            return false;
-                        }
-
-                        const nonUnique = parseInt(dbIndex["NON_UNIQUE"], 10);
-                        return nonUnique === 0;
-                    });
+                    const columnUniqueIndices = dbIndices.filter(dbIndex => {
+                        return dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"]
+                            && dbIndex["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
+                            && parseInt(dbIndex["NON_UNIQUE"], 10) === 0
+                    })
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
-                    const hasIgnoredIndex = columnUniqueIndex && tableMetadata && tableMetadata.indices
-                        .some(index => index.name === columnUniqueIndex["INDEX_NAME"] && index.synchronize === false);
+                    const hasIgnoredIndex = columnUniqueIndices.length > 0
+                        && tableMetadata
+                        && tableMetadata.indices.some(index => {
+                            return columnUniqueIndices.some(uniqueIndex => {
+                                return index.name === uniqueIndex["INDEX_NAME"] && index.synchronize === false;
+                            });
+                        });
 
-                    const isConstraintComposite = columnUniqueIndex
-                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnUniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
+                    const isConstraintComposite = columnUniqueIndices.every((uniqueIndex) => {
+                        return dbIndices.some(dbIndex => dbIndex["INDEX_NAME"] === uniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]);
+                    })
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
@@ -1512,7 +1510,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.generatedType = dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1 ? "VIRTUAL" : "STORED";
                     }
 
-                    tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
+                    tableColumn.isUnique = columnUniqueIndices.length > 0 && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => {
                         return (
