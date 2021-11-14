@@ -77,12 +77,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         }
 
         try {
-            if (this.viewEntityToSyncMetadatas.length > 0) {
+            if (this.viewEntityToSyncMetadatas.length > 0 || (this.connection.driver instanceof PostgresDriver && this.connection.driver.isGeneratedColumnsSupported)) {
                 await this.createTypeormMetadataTable();
             }
 
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
+
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
 
@@ -875,5 +876,4 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             },
         ), true);
     }
-
 }

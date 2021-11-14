@@ -24,6 +24,7 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import { QueryFailedError, TypeORMError } from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
 import { QueryLock } from "../../query-runner/QueryLock";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1483,7 +1484,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" WHERE "t"."type" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+        const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" WHERE "t"."type" = '${MetadataTableType.VIEW}' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
@@ -1842,13 +1843,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", schema: schema, name: name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            schema: schema,
+            name: name,
+            value: expression
+        });
     }
 
     /**
@@ -1868,15 +1868,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             schema = await this.getCurrentSchema();
         }
 
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({ type: MetadataTableType.VIEW, schema, name });
     }
 
     protected addColumnSql(table: Table, column: TableColumn): string {

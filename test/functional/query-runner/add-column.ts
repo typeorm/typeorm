@@ -6,6 +6,7 @@ import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
+import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
 
 describe("query runner > add column", () => {
 
@@ -48,6 +49,22 @@ describe("query runner > add column", () => {
             default: "'this is description'"
         });
 
+        let column3 = new TableColumn({
+            name: "textAndTag",
+            type: "varchar",
+            length: "200",
+            generatedType: "STORED",
+            asExpression: "text || tag"
+        });
+
+        let column4 = new TableColumn({
+            name: "textAndTag2",
+            type: "varchar",
+            length: "200",
+            generatedType: "VIRTUAL",
+            asExpression: "text || tag"
+        });
+
         await queryRunner.addColumn(table!, column1);
         await queryRunner.addColumn("post", column2);
 
@@ -71,6 +88,33 @@ describe("query runner > add column", () => {
         column2.should.be.exist;
         column2.length.should.be.equal("100");
         column2!.default!.should.be.equal("'this is description'");
+
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver) {
+            const isMySQL = connection.driver instanceof MysqlDriver && connection.options.type === "mysql";
+            let postgresSupported = false;
+
+            if (connection.driver instanceof PostgresDriver) {
+                postgresSupported = connection.driver.isGeneratedColumnsSupported;
+            }
+
+            if (isMySQL || postgresSupported) {
+                await queryRunner.addColumn(table!, column3);
+                table = await queryRunner.getTable("post");
+                column3 = table!.findColumnByName("textAndTag")!;
+                column3.should.be.exist;
+                column3!.generatedType!.should.be.equals("STORED");
+                column3!.asExpression!.should.be.a("string");
+
+                if (connection.driver instanceof MysqlDriver) {
+                    await queryRunner.addColumn(table!, column4);
+                    table = await queryRunner.getTable("post");
+                    column4 = table!.findColumnByName("textAndTag2")!;
+                    column4.should.be.exist;
+                    column4!.generatedType!.should.be.equals("VIRTUAL");
+                    column4!.asExpression!.should.be.a("string");
+                }
+            }
+        }
 
         await queryRunner.executeMemoryDownSql();
 
