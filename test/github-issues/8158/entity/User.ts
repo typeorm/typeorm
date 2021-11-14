@@ -2,8 +2,8 @@ import {Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, Unique} fr
 import {UserMeta} from "./UserMeta";
 
 @Entity()
-@Unique(["userMetaId"])
-@Unique(["id", "userMetaId"])
+@Unique(["firstName"])
+@Unique(["id", "firstName"])
 export class User {
     @PrimaryGeneratedColumn()
     id: number;
