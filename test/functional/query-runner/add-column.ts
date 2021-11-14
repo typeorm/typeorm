@@ -14,7 +14,6 @@ describe("query runner > add column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
             schemaCreate: true,
             dropSchema: true,
         });
