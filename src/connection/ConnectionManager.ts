@@ -2,6 +2,7 @@ import {Connection} from "./Connection";
 import {ConnectionNotFoundError} from "../error/ConnectionNotFoundError";
 import {ConnectionOptions} from "./ConnectionOptions";
 import {AlreadyHasActiveConnectionError} from "../error/AlreadyHasActiveConnectionError";
+import { CannotRemoveActiveConnectionError } from "../error/CannotRemoveActiveConnectionError";
 
 /**
  * ConnectionManager is used to store and manage multiple orm connections.
@@ -18,7 +19,7 @@ export class ConnectionManager {
     /**
      * Internal lookup to quickly get from a connection name to the Connection object.
      */
-    private readonly connectionMap: Map<string, Connection> = new Map();
+    protected readonly connectionMap: Map<string, Connection> = new Map();
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -61,6 +62,21 @@ export class ConnectionManager {
         const connection = new Connection(options);
         this.connectionMap.set(connection.name, connection);
         return connection;
+    }
+
+    /**
+     * Removes registered connection with the given name from ConnectionManager.
+     * Throws error if connection name is not registered, or if the connection is still connected.
+     */
+    remove(connectionName: string = "unknown"): void {
+        // check if such connection is registered
+        const existConnection = this.get(connectionName);
+        // if connection is registered and its not closed then throw an error
+        if (existConnection && existConnection.isConnected) {
+            throw new CannotRemoveActiveConnectionError(existConnection.name);
+        }
+
+        this.connectionMap.delete(connectionName);
     }
 
 }

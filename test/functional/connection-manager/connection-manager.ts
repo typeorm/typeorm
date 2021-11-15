@@ -255,4 +255,41 @@ describe("ConnectionManager", () => {
 
     });
 
+    describe("remove", () => {
+
+        it("should remove a registered connection from the ConnectionManager", () => {
+            const options = setupSingleTestingConnection("mysql", {
+                name: "myMysqlConnection",
+                entities: []
+            });
+            if (!options)
+                return;
+            const connectionManager = new ConnectionManager();
+            const connection = connectionManager.create(options);
+            connectionManager.has(connection.name).should.be.true;
+            connectionManager.remove(connection.name);
+            connectionManager.has(connection.name).should.be.false;
+        });
+
+        it("should throw an error if the connectionName was not already registered", () => {
+            const connectionManager = new ConnectionManager();
+            expect(() => connectionManager.remove()).to.throw(Error);
+            expect(() => connectionManager.remove("someFakeConnectionName")).to.throw(Error);
+        });
+
+        it("should throw an error if the connection is not already closed", async () => {
+            const options = setupSingleTestingConnection("mysql", {
+                name: "myMysqlConnection",
+                entities: []
+            });
+            if (!options)
+                return;
+            const connectionManager = new ConnectionManager();
+            const connection = connectionManager.create(options);
+            await connection.connect();
+            expect(() => connectionManager.remove(connection.name)).to.throw(Error);
+        });
+
+    });
+
 });
