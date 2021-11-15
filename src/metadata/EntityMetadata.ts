@@ -1,4 +1,4 @@
-import {QueryRunner, SelectQueryBuilder} from "..";
+import {EntityColumnNotFound, QueryRunner, SelectQueryBuilder} from "..";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {Connection} from "../connection/Connection";
 import {CannotCreateEntityIdMapError} from "../error/CannotCreateEntityIdMapError";
@@ -718,6 +718,19 @@ export class EntityMetadata {
      */
     findEmbeddedWithPropertyPath(propertyPath: string): EmbeddedMetadata|undefined {
         return this.allEmbeddeds.find(embedded => embedded.propertyPath === propertyPath);
+    }
+
+    /**
+     * Returns an array of databaseNames mapped from provided propertyPaths
+     */
+    mapPropertyPathsToColumns(propertyPaths: string[]) {
+        return propertyPaths.map(propertyPath => {
+            const column = this.findColumnWithPropertyPath(propertyPath);
+            if (column == null) {
+                throw new EntityColumnNotFound(propertyPath);
+            }
+            return column;
+        });
     }
 
     /**

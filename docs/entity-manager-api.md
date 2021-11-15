@@ -147,6 +147,22 @@ await manager.update(User, 1, { firstName: "Rizzrak" });
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
 ```
 
+* `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
+
+```typescript
+await manager.upsert(User, [
+    { externalId:"abc123", firstName: "Rizzrak" },
+    { externalId:"bca321", firstName: "Karzzir" },
+], ["externalId"]);
+/** executes 
+ *  INSERT INTO user 
+ *  VALUES 
+ *      (externalId = abc123, firstName = Rizzrak),
+ *      (externalId = cba321, firstName = Karzzir),
+ *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
+ **/
+```
+
 * `delete` - Deletes entities by entity id, ids or given conditions:
 
 ```typescript

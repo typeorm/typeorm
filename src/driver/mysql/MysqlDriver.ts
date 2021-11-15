@@ -142,6 +142,11 @@ export class MysqlDriver implements Driver {
     ];
 
     /**
+     * Returns type of upsert supported by driver if any
+     */
+    readonly supportedUpsertType = "on-duplicate-key-update";
+
+    /**
      * Gets list of spatial column data types.
      */
     spatialTypes: ColumnType[] = [
@@ -610,7 +615,7 @@ export class MysqlDriver implements Driver {
             return "tinyint";
 
         } else if (column.type === "uuid") {
-            return "char";
+            return "varchar";
 
         } else if (column.type === "json" && this.options.type === "mariadb") {
             /*
@@ -703,10 +708,13 @@ export class MysqlDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
-        switch (column.type) {
-            case "uuid":
-                return "36";
+        /**
+         * fix https://github.com/typeorm/typeorm/issues/1139
+         */
+        if (column.generationStrategy === "uuid")
+            return "36";
 
+        switch (column.type) {
             case String:
             case "varchar":
             case "nvarchar":
