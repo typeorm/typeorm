@@ -10,9 +10,6 @@
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
 	</a>
-	<a href="https://david-dm.org/typeorm/typeorm">
-		<img src="https://david-dm.org/typeorm/typeorm.svg">
-	</a>
     <a href="https://codecov.io/gh/typeorm/typeorm">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
     </a>

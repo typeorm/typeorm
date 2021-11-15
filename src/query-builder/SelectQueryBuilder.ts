@@ -967,6 +967,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Set certain index to be used by the query.
+     *
+     * @param index Name of index to be used.
+     */
+    useIndex(index: string): this {
+        this.expressionMap.useIndex = index;
+
+        return this;
+    }
+
+    /**
      * Sets locking mode.
      */
     setLock(lockMode: "optimistic", lockVersion: number | Date): this;
@@ -1441,6 +1452,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         }
 
+        // Use certain index
+        let useIndex: string = "";
+        if (this.expressionMap.useIndex) {
+            if (this.connection.driver instanceof MysqlDriver) {
+                useIndex = ` USE INDEX (${this.expressionMap.useIndex})`;
+            }
+        }
+
         // create a selection query
         const froms = this.expressionMap.aliases
             .filter(alias => alias.type === "from" && (alias.tablePath || alias.subQuery))
@@ -1454,7 +1473,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const select = this.createSelectDistinctExpression();
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
 
-        return select + selection + " FROM " + froms.join(", ") + lock;
+        return select + selection + " FROM " + froms.join(", ") + lock + useIndex;
     }
 
     /**

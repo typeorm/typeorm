@@ -18,6 +18,7 @@ import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import { TypeORMError } from "../error";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -352,7 +353,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 query += ` DEFAULT VALUES`;
             }
         }
-        if (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof AbstractSqliteDriver || this.connection.driver instanceof CockroachDriver) {
+        if (this.connection.driver.supportedUpsertType === "on-conflict-do-update") {
             if (this.expressionMap.onIgnore) {
                 query += " ON CONFLICT DO NOTHING ";
             } else if (this.expressionMap.onConflict) {
@@ -378,9 +379,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     query += " ";
                 }
             }
-        }
-
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
+        } else if (this.connection.driver.supportedUpsertType === "on-duplicate-key-update") {
             if (this.expressionMap.onUpdate) {
                 const { overwrite, columns } = this.expressionMap.onUpdate;
 
@@ -393,6 +392,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     query += columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
                     query += " ";
                 }
+            }
+        } else {
+            if (this.expressionMap.onUpdate) {
+                throw new TypeORMError(`onUpdate is not supported by the current database driver`);
             }
         }
 

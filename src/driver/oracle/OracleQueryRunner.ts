@@ -23,6 +23,7 @@ import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
 import { TypeORMError } from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single oracle database connection.
@@ -1248,7 +1249,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
         let query = `SELECT "T".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "T" ` +
             `INNER JOIN "USER_OBJECTS" "O" ON "O"."OBJECT_NAME" = "T"."name" AND "O"."OBJECT_TYPE" IN ( 'MATERIALIZED VIEW', 'VIEW' ) ` +
-            `WHERE "T"."type" IN ( 'MATERIALIZED_VIEW', 'VIEW' )`;
+            `WHERE "T"."type" IN ( '${MetadataTableType.MATERIALIZED_VIEW}', '${MetadataTableType.VIEW}' )`;
         if (viewNamesString.length > 0)
             query += ` AND "T"."name" IN (${viewNamesString})`;
         const dbViews = await this.query(query);
@@ -1260,7 +1261,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             view.schema = parsedName.schema || dbView["schema"] || currentSchema;
             view.name = parsedName.tableName;
             view.expression = dbView["value"];
-            view.materialized = dbView["type"] === "MATERIALIZED_VIEW";
+            view.materialized = dbView["type"] === MetadataTableType.MATERIALIZED_VIEW;
             return view;
         });
     }
@@ -1366,18 +1367,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )
                     );
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "U");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => (
-                                dbConstraint["OWNER"] === dbColumn["OWNER"] &&
-                                dbConstraint["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
-                                dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"] &&
-                                dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"] &&
-                                dbConstraint["CONSTRAINT_TYPE"] === "U"
-                            )
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["CONSTRAINT_TYPE"] === "U");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => (
+                            dbConstraint["OWNER"] === dbColumn["OWNER"] &&
+                            dbConstraint["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
+                            dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"] &&
+                            dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"] &&
+                            dbConstraint["CONSTRAINT_TYPE"] === "U")
                         )
-                        : false;
-                    const isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    })
 
                     const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "P");
 
@@ -1410,7 +1409,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         && dbColumn["DATA_DEFAULT"].trim() !== "NULL" ? tableColumn.default = dbColumn["DATA_DEFAULT"].trim() : undefined;
 
                     tableColumn.isNullable = dbColumn["NULLABLE"] === "Y";
-                    tableColumn.isUnique = isUnique;
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
                     tableColumn.isPrimary = isPrimary;
                     tableColumn.isGenerated = dbColumn["IDENTITY_COLUMN"] === "YES";
                     if (tableColumn.isGenerated) {
@@ -1584,14 +1583,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     protected insertViewDefinitionSql(view: View): Query {
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: type, name: view.name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        const type = view.materialized ? MetadataTableType.MATERIALIZED_VIEW : MetadataTableType.VIEW;
+        return this.insertTypeormMetadataSql({ type: type, name: view.name, value: expression });
     }
 
     /**
@@ -1606,15 +1599,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds remove view sql.
      */
     protected deleteViewDefinitionSql(view: View): Query {
-        const qb = this.connection.createQueryBuilder();
-        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = :type`, { type })
-            .andWhere(`${qb.escape("name")} = :name`, { name: view.name })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        const type = view.materialized ? MetadataTableType.MATERIALIZED_VIEW : MetadataTableType.VIEW;
+        return this.deleteTypeormMetadataSql({ type, name: view.name });
     }
 
     /**
