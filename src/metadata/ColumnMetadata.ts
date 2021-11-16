@@ -111,6 +111,11 @@ export class ColumnMetadata {
     generationStrategy?: "uuid"|"increment"|"rowid";
 
     /**
+     * Identity column type. Supports only in Postgres 10+.
+     */
+    generatedIdentity?: "ALWAYS"|"BY DEFAULT";
+
+    /**
      * Column comment.
      * This feature is not supported by all databases.
      */
@@ -360,6 +365,8 @@ export class ColumnMetadata {
             this.default = options.args.options.default;
         if (options.args.options.onUpdate)
             this.onUpdate = options.args.options.onUpdate;
+        if (options.args.options.generatedIdentity)
+            this.generatedIdentity = options.args.options.generatedIdentity;
         if (options.args.options.scale !== null && options.args.options.scale !== undefined)
             this.scale = options.args.options.scale;
         if (options.args.options.zerofill) {
