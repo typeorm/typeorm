@@ -24,8 +24,8 @@ describe("github issues > #1308 Raw Postgresql Update query result is always an 
     await connection.manager.save(author);
   }
 
-  it("Update query returns the number of affected rows", () =>
-    Promise.all(
+  it("Update query returns the number of affected rows", async () =>
+    await Promise.all(
       connections.map(async connection => {
         await prepareData(connection);
 
