@@ -134,7 +134,8 @@ export class SubjectChangedColumnsComputer {
                     }
 
                 } else {
-                    if (normalizedValue === databaseValue)
+                    // Use lodash library for check equality of primitive, array, object
+                    if (_.isEqual(normalizedValue, databaseValue))
                         return;
                 }
             }
