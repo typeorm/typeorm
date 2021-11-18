@@ -1679,7 +1679,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         let lockTablesClause = "";
 
         if (this.expressionMap.lockTables) {
-            if (!(driver instanceof PostgresDriver)) {
+            if (!(driver instanceof PostgresDriver || driver instanceof CockroachDriver)) {
                 throw new TypeORMError("Lock tables not supported in selected driver");
             }
             if (this.expressionMap.lockTables.length < 1) {
@@ -1710,7 +1710,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     return " FOR UPDATE";
 
                 }
-                else if (driver instanceof PostgresDriver ) {
+                else if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR UPDATE" + lockTablesClause;
 
                 } else if (driver instanceof SqlServerDriver) {
@@ -1730,7 +1730,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write_or_fail":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR UPDATE" + lockTablesClause + " NOWAIT";
 
                 } else if (driver instanceof MysqlDriver) {
@@ -1741,7 +1741,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
 
             case "for_no_key_update":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR NO KEY UPDATE" + lockTablesClause;
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
