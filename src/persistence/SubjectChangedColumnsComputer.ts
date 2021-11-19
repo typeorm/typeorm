@@ -134,7 +134,7 @@ export class SubjectChangedColumnsComputer {
                     }
 
                 } else {
-                    if (normalizedValue === databaseValue)
+                    if (OrmUtils.deepCompare(normalizedValue, databaseValue))
                         return;
                 }
             }
