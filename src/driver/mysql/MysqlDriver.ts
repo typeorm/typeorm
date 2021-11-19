@@ -43,6 +43,8 @@ export class MysqlDriver implements Driver {
      */
     mysql: any;
 
+    usingMySQL2: boolean = false;
+
     /**
      * Connection pool.
      * Used in non-replication mode.
@@ -517,8 +519,12 @@ export class MysqlDriver implements Driver {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
-        if (value === null || value === undefined)
+        if (value === null || value === undefined) {
+            if (columnMetadata.type === "json") {
+                return "null";
+            }
             return value;
+        }
 
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0;
@@ -568,7 +574,10 @@ export class MysqlDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "json") {
-            value = typeof value === "string" ? JSON.parse(value) : value;
+
+            if (!this.usingMySQL2) {
+                value = typeof value === "string" ? JSON.parse(value) : value;
+            }
 
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value);
@@ -907,6 +916,11 @@ export class MysqlDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
+        if (this.options.driver === "mysql2") {
+            this.usingMySQL2 = true;
+            this.mysql = PlatformTools.load("mysql2");
+            return;
+        }
         try {
             // try to load first supported package
             const mysql = this.options.driver || PlatformTools.load("mysql");
@@ -924,7 +938,7 @@ export class MysqlDriver implements Driver {
         } catch (e) {
             try {
                 this.mysql = PlatformTools.load("mysql2"); // try to load second supported package
-
+                this.usingMySQL2 = true;
             } catch (e) {
                 throw new DriverPackageNotInstalledError("Mysql", "mysql");
             }
