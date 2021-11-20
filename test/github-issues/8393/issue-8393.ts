@@ -8,7 +8,7 @@ import { Connection } from "../../../src/connection/Connection";
 import { expect } from "chai";
 import { Post } from "./entity/Post";
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("github issues > #8393 When trying to update `update: false` column with `@UpdateDateColumn` the update column is updated", () => {
     let connections: Connection[];
@@ -45,12 +45,14 @@ describe("github issues > #8393 When trying to update `update: false` column wit
                     post.id
                 );
 
+                expect(updatedPost).toBeDefined();
+
                 expect(post.readOnlyColumn).to.be.equal(
-                    updatedPost.readOnlyColumn
+                    updatedPost!.readOnlyColumn
                 );
 
                 // Gonna be false
-                expect(post.lastUpdated).to.be.equal(updatedPost.lastUpdated);
+                expect(post.lastUpdated).to.be.equal(updatedPost!.lastUpdated);
             })
         ));
 });
