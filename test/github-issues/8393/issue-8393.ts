@@ -45,7 +45,7 @@ describe("github issues > #8393 When trying to update `update: false` column wit
                     post.id
                 );
 
-                expect(updatedPost).toBeDefined();
+                expect(updatedPost).to.be.an('object');
 
                 expect(post.readOnlyColumn).to.be.equal(
                     updatedPost!.readOnlyColumn
