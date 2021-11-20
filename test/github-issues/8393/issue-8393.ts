@@ -18,13 +18,12 @@ describe("github issues > #8393 When trying to update `update: false` column wit
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
-                logging: true,
             }))
     );
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should return customers ordered by contacts", () =>
+    it("should not update the @UpdateDateColumn column when trying to update un-updatable column", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const post = new Post();
