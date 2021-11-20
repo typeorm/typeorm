@@ -2,7 +2,7 @@ import "reflect-metadata";
 import {
     createTestingConnections,
     closeTestingConnections,
-    reloadTestingDatabases./entity/Post
+    reloadTestingDatabases
 } from "../../utils/test-utils";
 import { Connection } from "../../../src/connection/Connection";
 import { expect } from "chai";
