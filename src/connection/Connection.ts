@@ -33,6 +33,7 @@ import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
@@ -254,17 +255,27 @@ export class Connection {
     async dropDatabase(): Promise<void> {
         const queryRunner = this.createQueryRunner();
         try {
-            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
-                const databases: string[] = this.driver.database ? [this.driver.database] : [];
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver || this.driver instanceof AbstractSqliteDriver) {
+                const databases: string[] = [];
                 this.entityMetadatas.forEach(metadata => {
                     if (metadata.database && databases.indexOf(metadata.database) === -1)
                         databases.push(metadata.database);
                 });
+                if (databases.length === 0 && this.driver.database) {
+                    databases.push(this.driver.database);
+                };
 
-                for (const database of databases) {
-                    await queryRunner.clearDatabase(database);
+                // await queryRunner.clearDatabase();
+                if (databases.length === 0) {
+                    await queryRunner.clearDatabase();
+                }
+                else {
+                    for (const database of databases) {
+                        await queryRunner.clearDatabase(database);
+                    }
                 }
             } else {
+                console.log(`this.driver :>> `, this.driver)
                 await queryRunner.clearDatabase();
             }
         } finally {

@@ -114,4 +114,19 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryFailedError(query, parameters, err);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    protected async loadTableRecords(tablePath: string, tableOrIndex: "table" | "index") {
+        const [database, tableName] = this.splitTablePath(tablePath);
+        const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, * FROM ${this.escapePath(`${database ? `${database}.` : ""}sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === "table" ? "name" : "tbl_name"}" IN ('${tableName}')`);
+        return res;
+    }
+    protected async loadPragmaRecords(tablePath: string, pragma: string) {
+        const [database, tableName] = this.splitTablePath(tablePath);
+        const res = await this.query(`PRAGMA ${database ? `"${database}".` : ""}${pragma}("${tableName}")`);
+        return res;
+    }
 }

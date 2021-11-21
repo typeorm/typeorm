@@ -11,8 +11,11 @@ async function createDotenvFiles() {
 }
 
 async function createYamlFiles() {
-  await fs.mkdir(path.join(__dirname, "configs/yaml"));
-  await fs.writeFile(path.join(__dirname, "configs/yaml/test-yaml.yaml"), "- type: \"sqlite\"\n  name: \"file\"\n  database: \"test-yaml\"");
+  try {
+    await fs.mkdir(path.join(__dirname, "configs/yaml"));
+    await fs.writeFile(path.join(__dirname, "configs/yaml/test-yaml.yaml"), "- type: \"sqlite\"\n  name: \"file\"\n  database: \"test-yaml\"");
+  }
+  catch (e) {}
 }
 
 describe("ConnectionOptionsReader", () => {
@@ -94,5 +97,5 @@ describe("ConnectionOptionsReader", () => {
     const connectionOptionsReader = new ConnectionOptionsReader({ root: path.join(__dirname, "configs/yaml"), configName: "test-yaml" });
     const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
     expect(fileOptions.database).to.have.string("/test-yaml");
-  })
+  });
 });

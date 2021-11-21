@@ -20,6 +20,12 @@ import { Table } from "../../schema-builder/table/Table";
 import { View } from "../../schema-builder/view/View";
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
+
+type DatabasesMap = Record<string, {
+    attachFilepath: string
+    attachHandle: string
+}>;
+
 /**
  * Organizes communication with sqlite DBMS.
  */
@@ -210,6 +216,15 @@ export abstract class AbstractSqliteDriver implements Driver {
     maxAliasLength?: number;
 
     // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Any attached databases (excepting default 'main')
+     */
+    attachedDatabases: DatabasesMap = {};
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
@@ -255,6 +270,14 @@ export abstract class AbstractSqliteDriver implements Driver {
             this.queryRunner = undefined;
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
+    }
+
+    hasAttachedDatabases(): boolean {
+        return !!Object.keys(this.attachedDatabases).length;
+    }
+
+    hasAttachedDatabase(database: string): boolean {
+        return !!this.attachedDatabases[database];
     }
 
     /**

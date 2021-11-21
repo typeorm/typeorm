@@ -14,6 +14,7 @@ describe("column kinds > create date column", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
+        enabledDrivers: ["sqlite"],
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -74,6 +75,7 @@ describe("column kinds > create date column", () => {
         const loadedPostAfterUpdate = await postRepository.findOne();
         expect(loadedPostAfterUpdate!.createdAt.toString()).to.be.eql(loadedPostBeforeUpdate!.createdAt.toString());
     })));
+
 
     it("create date column should set a custom date when specified", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);

@@ -116,6 +116,11 @@ export interface BaseConnectionOptions {
     readonly extra?: any;
 
     /**
+     * The directory where ormconfig has been read from
+     */
+     baseDirectory?: string;
+
+    /**
      * Allows to setup cache options.
      */
     readonly cache?: boolean|{
