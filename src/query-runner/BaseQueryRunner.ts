@@ -203,6 +203,10 @@ export abstract class BaseQueryRunner {
         }
     }
 
+    getReplicationMode(): ReplicationMode {
+        return this.mode;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

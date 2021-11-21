@@ -101,7 +101,7 @@ const users = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation you don't have to specify relation or join it - it will ALWAYS be loaded automatically.
+With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use leftJoinAndSelect to load the relation.
 
 Relations can be uni-directional and bi-directional. 
 Uni-directional are relations with a relation decorator only on one side.
