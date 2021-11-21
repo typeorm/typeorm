@@ -548,6 +548,12 @@ export class ColumnMetadata {
                             const mappedArrayElement = extractEmbeddedColumnValue(propertyNames, arrayElement[propertyName]);
                             if (Object.keys(mappedArrayElement).length > 0) {
                                 mappedArray.push({ [propertyName]: mappedArrayElement });
+                            } else {
+                                if(Array.isArray(mappedArrayElement)) {
+                                    mappedArray.push({ [propertyName]: [] });
+                                } else {
+                                    mappedArray.push({ [propertyName]: {} });
+                                }
                             }
                         });
 

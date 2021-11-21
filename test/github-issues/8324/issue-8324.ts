@@ -43,4 +43,26 @@ describe("github issues > #8324 Mongodb: When a document is updated, all embedde
         expect(persisted.meals[0].foods[0].productId).to.equal("product-id-after");
     })));
 
+    it("should add empty arrays", () => Promise.all(connections.map(async connection => {
+        const dayRepository = connection.getRepository(Day);
+        const day = new Day();
+        day.meals = [new Meal()];
+        day.meals[0].mealId = "meal-id-before";
+        day.meals[0].foods = [new Food()];
+        day.meals[0].foods[0].productId = "product-id-before";
+
+        await dayRepository.save(day);
+
+        day.meals[0].mealId = "meal-id-after";
+        day.meals[0].foods = [];
+
+        await dayRepository.save(day);
+
+        const [persisted] = await dayRepository.findByIds([day._id.toHexString()]);
+
+        expect(persisted.meals.length).to.equal(1);
+        expect(persisted.meals[0].mealId).to.equal("meal-id-after");
+        expect(persisted.meals[0].foods.length).to.equal(0);
+    })));
+
 });
