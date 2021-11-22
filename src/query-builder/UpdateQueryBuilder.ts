@@ -441,7 +441,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 });
             });
 
-            if (updateColumnAndValues.length <= 0) {
+            // It won't throw if trying to trigger update for computational columns such as version/update column
+            // If wanted to update some columns but all of them is not updatable then throw error
+            if (updateColumnAndValues.length <= 0 && Object.keys(valuesSet).length > 0) {
+                // TODO - throw better error
                 throw new UpdateValuesMissingError();
             }
 
