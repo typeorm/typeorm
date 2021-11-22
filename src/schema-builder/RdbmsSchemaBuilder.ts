@@ -17,7 +17,7 @@ import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
-import { ViewUtils } from "./util/ViewUtils";
+import {ViewUtils} from "./util/ViewUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
@@ -77,12 +77,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         }
 
         try {
-            if (this.viewEntityToSyncMetadatas.length > 0) {
-                await this.createTypeormMetadataTable();
-            }
-
+            await this.createMetadataTableIfNecessary(this.queryRunner);
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
+
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
 
@@ -111,18 +109,20 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
+     */
+    async createMetadataTableIfNecessary(queryRunner: QueryRunner): Promise<void> {
+        if (this.viewEntityToSyncMetadatas.length > 0 || (this.connection.driver instanceof PostgresDriver && this.connection.driver.isGeneratedColumnsSupported)) {
+            await this.createTypeormMetadataTable(queryRunner);
+        }
+    }
+
+    /**
      * Returns sql queries to be executed by schema builder.
      */
     async log(): Promise<SqlInMemory> {
         this.queryRunner = this.connection.createQueryRunner();
         try {
-
-            // TODO: typeorm_metadata table needs only for Views for now.
-            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
-            if (this.viewEntityToSyncMetadatas.length > 0) {
-                await this.createTypeormMetadataTable();
-            }
-
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
             await this.queryRunner.getTables(tablePaths);
@@ -830,12 +830,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates typeorm service table for storing user defined Views.
      */
-    protected async createTypeormMetadataTable() {
+    protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema;
         const database = this.currentDatabase;
         const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", schema, database);
 
-        await this.queryRunner.createTable(new Table(
+        await queryRunner.createTable(new Table(
             {
                 database: database,
                 schema: schema,
@@ -875,5 +875,4 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             },
         ), true);
     }
-
 }

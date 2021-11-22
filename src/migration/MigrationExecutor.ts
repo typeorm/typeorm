@@ -5,9 +5,10 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MssqlParameter} from "../driver/sqlserver/MssqlParameter";
+import {RdbmsSchemaBuilder} from "../schema-builder/RdbmsSchemaBuilder";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
-import { TypeORMError } from "../error";
+import {TypeORMError} from "../error";
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -157,6 +158,14 @@ export class MigrationExecutor {
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner);
+
+        // create the typeorm_metadata table if necessary
+        const schemaBuilder = this.connection.driver.createSchemaBuilder();
+
+        if (schemaBuilder instanceof RdbmsSchemaBuilder) {
+            await schemaBuilder.createMetadataTableIfNecessary(queryRunner);
+        }
+
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(queryRunner);
 

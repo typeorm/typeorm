@@ -343,4 +343,9 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Automatic Client-Side Field Level Encryption configuration.
      */
     readonly autoEncryption?: any;
+
+    /**
+     * Enables or disables the ability to retry writes upon encountering transient network errors.
+     */
+    readonly retryWrites?: boolean;
 }

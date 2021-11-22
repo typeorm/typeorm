@@ -16,6 +16,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {DataTypeDefaults} from "../types/DataTypeDefaults";
 import {MappedColumnTypes} from "../types/MappedColumnTypes";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {VersionUtils} from "../../util/VersionUtils";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 import {PostgresConnectionOptions} from "./PostgresConnectionOptions";
 import {PostgresQueryRunner} from "./PostgresQueryRunner";
@@ -270,6 +271,8 @@ export class PostgresDriver implements Driver {
      */
     maxAliasLength = 63;
 
+    isGeneratedColumnsSupported: boolean = false;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -346,13 +349,22 @@ export class PostgresDriver implements Driver {
      */
     async afterConnect(): Promise<void> {
         const extensionsMetadata = await this.checkMetadataForExtensions();
+        const [ connection, release ] = await this.obtainMasterConnection()
 
         const installExtensions = this.options.installExtensions === undefined || this.options.installExtensions;
         if (installExtensions && extensionsMetadata.hasExtensions) {
-            const [ connection, release ] = await this.obtainMasterConnection()
             await this.enableExtensions(extensionsMetadata, connection);
-            await release()
         }
+
+        const results = await this.executeQuery(connection, "SHOW server_version;") as {
+            rows: {
+                server_version: string;
+            }[];
+        };
+        const versionString = results.rows[0].server_version;
+        this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(versionString, "12.0");
+
+        await release()
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
@@ -1010,7 +1022,9 @@ export class PostgresDriver implements Driver {
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
-                || tableColumn.srid !== columnMetadata.srid;
+                || tableColumn.srid !== columnMetadata.srid
+                || tableColumn.generatedType !== columnMetadata.generatedType
+                || (tableColumn.asExpression || "").trim() !== (columnMetadata.asExpression || "").trim();
 
             // DEBUG SECTION
             // if (isColumnChanged) {
