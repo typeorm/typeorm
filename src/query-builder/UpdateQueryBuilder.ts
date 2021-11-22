@@ -441,6 +441,10 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 });
             });
 
+            if (updateColumnAndValues.length <= 0) {
+                throw new UpdateValuesMissingError();
+            }
+
             if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
                 updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
             if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
