@@ -7,9 +7,6 @@ import {Post} from "./entity/Post";
 import {PostgresDriver} from "../../../../../src/driver/postgres/PostgresDriver";
 
 describe("database schema > column types > postgres", () => {
-    // Save the original set timezone for later restore
-    let originalTimezone: string;
-
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
@@ -19,23 +16,13 @@ describe("database schema > column types > postgres", () => {
 
         for (const connection of connections) {
             if (connection.driver instanceof PostgresDriver) {
-                const result = await connection.query("SHOW timezone;");
-                originalTimezone = result[0].TimeZone;
                 // We want to have UTC as timezone
                 await connection.query("SET TIME ZONE 'UTC';");
             }
         }
     });
     beforeEach(() => reloadTestingDatabases(connections));
-    after(async () => {
-        for (const connection of connections) {
-            if (connection.driver instanceof PostgresDriver) {
-                // Restore the timezone after the test finished
-                await connection.query(`SET TIME ZONE '${originalTimezone}';`);
-            }
-        }
-        await closeTestingConnections(connections);
-    });
+    after(() => closeTestingConnections(connections));
 
     it("all types should work correctly - persist and hydrate", () => Promise.all(connections.map(async connection => {
 
