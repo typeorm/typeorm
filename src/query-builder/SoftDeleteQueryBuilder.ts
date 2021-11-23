@@ -63,9 +63,12 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
                 transactionStartedByUs = true;
             }
 
-            // call before updation methods in listeners and subscribers
+            // call before soft remove and recover methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
-                await queryRunner.broadcaster.broadcast("BeforeUpdate", this.expressionMap.mainAlias!.metadata);
+                if (this.expressionMap.queryType === "soft-delete")
+                    await queryRunner.broadcaster.broadcast("BeforeSoftRemove", this.expressionMap.mainAlias!.metadata);
+                else if (this.expressionMap.queryType === "restore")
+                    await queryRunner.broadcaster.broadcast("BeforeRecover", this.expressionMap.mainAlias!.metadata);
             }
 
             // if update entity mode is enabled we may need extra columns for the returning statement
@@ -89,9 +92,12 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
                 await returningResultsEntityUpdator.update(updateResult, this.expressionMap.whereEntities);
             }
 
-            // call after updation methods in listeners and subscribers
+            // call after soft remove and recover methods in listeners and subscribers
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias!.hasMetadata) {
-                await queryRunner.broadcaster.broadcast("AfterUpdate", this.expressionMap.mainAlias!.metadata);
+                if (this.expressionMap.queryType === "soft-delete")
+                    await queryRunner.broadcaster.broadcast("AfterSoftRemove", this.expressionMap.mainAlias!.metadata);
+                else if (this.expressionMap.queryType === "restore")
+                    await queryRunner.broadcaster.broadcast("AfterRecover", this.expressionMap.mainAlias!.metadata);
             }
 
             // close transaction if we started it

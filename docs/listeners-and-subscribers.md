@@ -1,15 +1,20 @@
 # Entity Listeners and Subscribers
 
-* [What is an Entity Listener](#what-is-an-entity-listener)
-    * [`@AfterLoad`](#afterload)
-    * [`@BeforeInsert`](#beforeinsert)
-    * [`@AfterInsert`](#afterinsert)
-    * [`@BeforeUpdate`](#beforeupdate)
-    * [`@AfterUpdate`](#afterupdate)
-    * [`@BeforeRemove`](#beforeremove)
-    * [`@AfterRemove`](#afterremove)
-* [What is a Subscriber](#what-is-a-subscriber)
-    * [`Event Object`](#event-object)
+- [Entity Listeners and Subscribers](#entity-listeners-and-subscribers)
+  - [What is an Entity Listener](#what-is-an-entity-listener)
+    - [`@AfterLoad`](#afterload)
+    - [`@BeforeInsert`](#beforeinsert)
+    - [`@AfterInsert`](#afterinsert)
+    - [`@BeforeUpdate`](#beforeupdate)
+    - [`@AfterUpdate`](#afterupdate)
+    - [`@BeforeRemove`](#beforeremove)
+    - [`@AfterRemove`](#afterremove)
+    - [`@BeforeSoftRemove`](#beforesoftremove)
+    - [`@AfterSoftRemove`](#aftersoftremove)
+    - [`@BeforeRecover`](#beforerecover)
+    - [`@AfterRecover`](#afterrecover)
+  - [What is a Subscriber](#what-is-a-subscriber)
+    - [`Event Object`](#event-object)
 
 ## What is an Entity Listener
 
@@ -28,11 +33,9 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-
     @AfterLoad()
     updateCounters() {
-        if (this.likesCount === undefined)
-            this.likesCount = 0;
+        if (this.likesCount === undefined) this.likesCount = 0;
     }
 }
 ```
@@ -46,7 +49,6 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-
     @BeforeInsert()
     updateDates() {
         this.createdDate = new Date();
@@ -63,7 +65,6 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-
     @AfterInsert()
     resetCounters() {
         this.counters = 0;
@@ -80,7 +81,6 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-
     @BeforeUpdate()
     updateDates() {
         this.updatedDate = new Date();
@@ -97,7 +97,6 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-
     @AfterUpdate()
     updateCounters() {
         this.counter = 0;
@@ -114,7 +113,6 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-
     @BeforeRemove()
     updateStatus() {
         this.status = "removed";
@@ -131,10 +129,73 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-
     @AfterRemove()
     updateStatus() {
         this.status = "removed";
+    }
+}
+```
+
+### `@BeforeSoftRemove`
+
+You can define a method with any name in the entity and mark it with `@BeforeSoftRemove`
+and TypeORM will call it before a entity is soft removed using repository/manager `softRemove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    @BeforeSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+### `@AfterSoftRemove`
+
+You can define a method with any name in the entity and mark it with `@AfterSoftRemove`
+and TypeORM will call it after the entity is soft removed using repository/manager `softRemove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    @AfterSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+### `@BeforeRecover`
+
+You can define a method with any name in the entity and mark it with `@BeforeRecover`
+and TypeORM will call it before a entity is recovered using repository/manager `recover`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    @BeforeRecover()
+    updateStatus() {
+        this.status = "recovered";
+    }
+}
+```
+
+### `@AfterRecover`
+
+You can define a method with any name in the entity and mark it with `@AfterRecover`
+and TypeORM will call it after the entity is recovered using repository/manager `recover`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+    @AfterSoftRemove()
+    updateStatus() {
+        this.status = "recovered";
     }
 }
 ```
@@ -148,8 +209,6 @@ Example:
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
-
-
     /**
      * Indicates that this subscriber only listen to Post events.
      */
@@ -163,7 +222,6 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     beforeInsert(event: InsertEvent<Post>) {
         console.log(`BEFORE POST INSERTED: `, event.entity);
     }
-
 }
 ```
 
@@ -173,7 +231,6 @@ To listen to any entity you just omit `listenTo` method and use `any`:
 ```typescript
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface {
-
     /**
      * Called after entity is loaded.
      */
@@ -213,14 +270,60 @@ export class PostSubscriber implements EntitySubscriberInterface {
      * Called before entity removal.
      */
     beforeRemove(event: RemoveEvent<any>) {
-        console.log(`BEFORE ENTITY WITH ID ${event.entityId} REMOVED: `, event.entity);
+        console.log(
+            `BEFORE ENTITY WITH ID ${event.entityId} REMOVED: `,
+            event.entity
+        );
     }
 
     /**
      * Called after entity removal.
      */
     afterRemove(event: RemoveEvent<any>) {
-        console.log(`AFTER ENTITY WITH ID ${event.entityId} REMOVED: `, event.entity);
+        console.log(
+            `AFTER ENTITY WITH ID ${event.entityId} REMOVED: `,
+            event.entity
+        );
+    }
+
+    /**
+     * Called before entity removal.
+     */
+    beforeSoftRemove(event: SoftRemoveEvent<any>) {
+        console.log(
+            `BEFORE ENTITY WITH ID ${event.entityId} SOFT REMOVED: `,
+            event.entity
+        );
+    }
+
+    /**
+     * Called after entity removal.
+     */
+    afterSoftRemove(event: SoftRemoveEvent<any>) {
+        console.log(
+            `AFTER ENTITY WITH ID ${event.entityId} SOFT REMOVED: `,
+            event.entity
+        );
+    }
+
+    /**
+     * Called before entity removal.
+     */
+    beforeRecover(event: RecoverEvent<any>) {
+        console.log(
+            `BEFORE ENTITY WITH ID ${event.entityId} RECOVERED: `,
+            event.entity
+        );
+    }
+
+    /**
+     * Called after entity removal.
+     */
+    afterRecover(event: RecoverEvent<any>) {
+        console.log(
+            `AFTER ENTITY WITH ID ${event.entityId} RECOVERED: `,
+            event.entity
+        );
     }
 
     /**
@@ -264,7 +367,6 @@ export class PostSubscriber implements EntitySubscriberInterface {
     afterTransactionRollback(event: TransactionRollbackEvent) {
         console.log(`AFTER TRANSACTION ROLLBACK: `, event);
     }
-
 }
 ```
 
@@ -274,9 +376,9 @@ Make sure your `subscribers` property is set in your [Connection Options](./conn
 
 Excluding `listenTo`, all `EntitySubscriberInterface` methods are passed an event object that has the following base properties:
 
-- `connection: Connection` - Connection used in the event.
-- `queryRunner: QueryRunner` - QueryRunner used in the event transaction.
-- `manager: EntityManager` - EntityManager used in the event transaction.
+-   `connection: Connection` - Connection used in the event.
+-   `queryRunner: QueryRunner` - QueryRunner used in the event transaction.
+-   `manager: EntityManager` - EntityManager used in the event transaction.
 
 See each [Event's interface](https://github.com/typeorm/typeorm/tree/master/src/subscriber/event) for additional properties.
 

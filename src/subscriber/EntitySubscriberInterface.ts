@@ -5,6 +5,8 @@ import {UpdateEvent} from "./event/UpdateEvent";
 import {RemoveEvent} from "./event/RemoveEvent";
 import {InsertEvent} from "./event/InsertEvent";
 import {LoadEvent} from "./event/LoadEvent";
+import { SoftRemoveEvent } from "./event/SoftRemoveEvent";
+import { RecoverEvent } from "./event/RecoverEvent";
 
 /**
  * Classes that implement this interface are subscribers that subscribe for the specific events in the ORM.
@@ -53,9 +55,29 @@ export interface EntitySubscriberInterface<Entity = any> {
     beforeRemove?(event: RemoveEvent<Entity>): Promise<any>|void;
 
     /**
+     * Called before entity is soft removed from the database.
+     */
+    beforeSoftRemove?(event: SoftRemoveEvent<Entity>): Promise<any>|void;
+
+    /**
+     * Called before entity is recovered in the database.
+     */
+    beforeRecover?(event: RecoverEvent<Entity>): Promise<any>|void;
+
+    /**
      * Called after entity is removed from the database.
      */
     afterRemove?(event: RemoveEvent<Entity>): Promise<any>|void;
+
+    /**
+     * Called after entity is soft removed from the database.
+     */
+    afterSoftRemove?(event: SoftRemoveEvent<Entity>): Promise<any>|void;
+
+    /**
+     * Called after entity is recovered in the database.
+     */
+    afterRecover?(event: RecoverEvent<Entity>): Promise<any>|void;
 
     /**
      * Called before transaction is started.

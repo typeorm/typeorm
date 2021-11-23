@@ -28,6 +28,10 @@
     * [`@AfterUpdate`](#afterupdate)
     * [`@BeforeRemove`](#beforeremove)
     * [`@AfterRemove`](#afterremove)
+    * [`@BeforeSoftRemove`](#beforeremove)
+    * [`@AfterSoftRemove`](#afterremove)
+    * [`@BeforeRecover`](#beforeremove)
+    * [`@AfterRecover`](#afterremove)
     * [`@EventSubscriber`](#eventsubscriber)
 * [其他装饰器](#其他装饰器)
     * [`@Index`](#index)
@@ -614,6 +618,74 @@ export class Post {
     @AfterRemove()
     updateStatus() {
         this.status = "removed";
+    }
+}
+```
+
+了解有关 [listeners](listeners-and-subscribers.md) 的更多信息
+
+#### `@BeforeSoftRemove`
+
+你可以在实体中定义任何名称的方法，并使用`@BeforeSoftRemove`标记，TypeORM 将在使用 repository/manager`softRemove`删除实体之前调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+    @BeforeSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+了解有关 [listeners](listeners-and-subscribers.md)的更多信息。
+
+#### `@AfterSoftRemove`
+
+你可以在实体中定义一个任何名称的方法，并使用`@AfterSoftRemove`标记它，TypeORM 将在使用 repository/manager`softRemove`删除实体之后调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+    @AfterSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+了解有关 [listeners](listeners-and-subscribers.md) 的更多信息
+
+#### `@BeforeRecover`
+
+你可以在实体中定义任何名称的方法，并使用`@BeforeRecover`标记，TypeORM 将在使用 repository/manager`recover`删除实体之前调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+    @BeforeRecover()
+    updateStatus() {
+        this.status = "recovered";
+    }
+}
+```
+
+了解有关 [listeners](listeners-and-subscribers.md)的更多信息。
+
+#### `@AfterRecover`
+
+你可以在实体中定义一个任何名称的方法，并使用`@AfterRecover`标记它，TypeORM 将在使用 repository/manager`recover`删除实体之后调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+    @AfterRecover()
+    updateStatus() {
+        this.status = "recovered";
     }
 }
 ```

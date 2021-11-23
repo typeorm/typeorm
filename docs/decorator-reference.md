@@ -1,42 +1,47 @@
 # Decorator reference
 
-* [Entity decorators](#entity-decorators)
-    * [`@Entity`](#entity)
-    * [`@ViewEntity`](#viewentity)
-* [Column decorators](#column-decorators)
-    * [`@Column`](#column)
-    * [`@PrimaryColumn`](#primarycolumn)
-    * [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
-    * [`@ObjectIdColumn`](#objectidcolumn)
-    * [`@CreateDateColumn`](#createdatecolumn)
-    * [`@UpdateDateColumn`](#updatedatecolumn)
-    * [`@DeleteDateColumn`](#deletedatecolumn)
-    * [`@VersionColumn`](#versioncolumn)
-    * [`@Generated`](#generated)
-* [Relation decorators](#relation-decorators)
-    * [`@OneToOne`](#onetoone)
-    * [`@ManyToOne`](#manytoone)
-    * [`@OneToMany`](#onetomany)
-    * [`@ManyToMany`](#manytomany)
-    * [`@JoinColumn`](#joincolumn)
-    * [`@JoinTable`](#jointable)
-    * [`@RelationId`](#relationid)
-* [Subscriber and listener decorators](#subscriber-and-listener-decorators)
-    * [`@AfterLoad`](#afterload)
-    * [`@BeforeInsert`](#beforeinsert)
-    * [`@AfterInsert`](#afterinsert)
-    * [`@BeforeUpdate`](#beforeupdate)
-    * [`@AfterUpdate`](#afterupdate)
-    * [`@BeforeRemove`](#beforeremove)
-    * [`@AfterRemove`](#afterremove)
-    * [`@EventSubscriber`](#eventsubscriber)
-* [Other decorators](#other-decorators)
-    * [`@Index`](#index)
-    * [`@Unique`](#unique)
-    * [`@Check`](#check)
-    * [`@Exclusion`](#exclusion)
-    * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
-    * [`@EntityRepository`](#entityrepository)
+- [Decorators reference](#decorators-reference)
+  - [Entity decorators](#entity-decorators)
+      - [`@Entity`](#entity)
+      - [`@ViewEntity`](#viewentity)
+  - [Column decorators](#column-decorators)
+      - [`@Column`](#column)
+      - [`@PrimaryColumn`](#primarycolumn)
+      - [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
+      - [`@ObjectIdColumn`](#objectidcolumn)
+      - [`@CreateDateColumn`](#createdatecolumn)
+      - [`@UpdateDateColumn`](#updatedatecolumn)
+      - [`@DeleteDateColumn`](#deletedatecolumn)
+      - [`@VersionColumn`](#versioncolumn)
+      - [`@Generated`](#generated)
+  - [Relation decorators](#relation-decorators)
+      - [`@OneToOne`](#onetoone)
+      - [`@ManyToOne`](#manytoone)
+      - [`@OneToMany`](#onetomany)
+      - [`@ManyToMany`](#manytomany)
+      - [`@JoinColumn`](#joincolumn)
+      - [`@JoinTable`](#jointable)
+      - [`@RelationId`](#relationid)
+  - [Subscriber and listener decorators](#subscriber-and-listener-decorators)
+      - [`@AfterLoad`](#afterload)
+      - [`@BeforeInsert`](#beforeinsert)
+      - [`@AfterInsert`](#afterinsert)
+      - [`@BeforeUpdate`](#beforeupdate)
+      - [`@AfterUpdate`](#afterupdate)
+      - [`@BeforeRemove`](#beforeremove)
+      - [`@AfterRemove`](#afterremove)
+      - [`@BeforeSoftRemove`](#beforesoftremove)
+      - [`@AfterSoftRemove`](#aftersoftremove)
+      - [`@BeforeRecover`](#beforerecover)
+      - [`@AfterRecover`](#afterrecover)
+      - [`@EventSubscriber`](#eventsubscriber)
+  - [Other decorators](#other-decorators)
+      - [`@Index`](#index)
+      - [`@Unique`](#unique)
+      - [`@Check`](#check)
+      - [`@Exclusion`](#exclusion)
+      - [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
+      - [`@EntityRepository`](#entityrepository)
 
 ## Entity decorators
 
@@ -694,6 +699,82 @@ export class Post {
     @AfterRemove()
     updateStatus() {
         this.status = "removed";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@BeforeSoftRemove`
+
+You can define a method with any name in the entity and mark it with `@BeforeSoftRemove`
+and TypeORM will call it before a entity is soft removed using repository/manager `softRemove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @BeforeSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@AfterSoftRemove`
+
+You can define a method with any name in the entity and mark it with `@AfterSoftRemove`
+and TypeORM will call it after the entity is soft removed using repository/manager `softRemove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @AfterSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@BeforeRecover`
+
+You can define a method with any name in the entity and mark it with `@BeforeRecover`
+and TypeORM will call it before a entity is recovered using repository/manager `recover`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @BeforeRecover()
+    updateStatus() {
+        this.status = "recovered";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@AfterRecover`
+
+You can define a method with any name in the entity and mark it with `@AfterRecover`
+and TypeORM will call it after the entity is recovered using repository/manager `recover`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @AfterRecover()
+    updateStatus() {
+        this.status = "recovered";
     }
 }
 ```

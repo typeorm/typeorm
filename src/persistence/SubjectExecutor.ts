@@ -203,7 +203,7 @@ export class SubjectExecutor {
     }
 
     /**
-     * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
+     * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE", "BEFORE_SOFT_REMOVE", "BEFORE_RECOVER" events for all given subjects.
      */
     protected broadcastBeforeEventsForAll(): BroadcasterResult {
         const result = new BroadcasterResult();
@@ -214,14 +214,14 @@ export class SubjectExecutor {
         if (this.removeSubjects.length)
             this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
         if (this.softRemoveSubjects.length)
-            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeSoftRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
         if (this.recoverSubjects.length)
-            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeRecoverEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
         return result;
     }
 
     /**
-     * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE" events for all given subjects.
+     * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE", "AFTER_SOFT_REMOVE", "AFTER_RECOVER" events for all given subjects.
      * Returns void if there wasn't any listener or subscriber executed.
      * Note: this method has a performance-optimized code organization.
      */
@@ -234,9 +234,9 @@ export class SubjectExecutor {
         if (this.removeSubjects.length)
             this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
         if (this.softRemoveSubjects.length)
-            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterSoftRemoveEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
         if (this.recoverSubjects.length)
-            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity!, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterRecoverEvent(result, subject.metadata, subject.entity!, subject.databaseEntity));
         return result;
     }
 

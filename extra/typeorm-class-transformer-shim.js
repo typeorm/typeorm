@@ -117,6 +117,16 @@ exports.AfterInsert = AfterInsert;
 }
 exports.AfterLoad = AfterLoad;
 
+/* export */ function AfterRecover() {
+  return function(object, propertyName) {};
+}
+exports.AfterRecover = AfterRecover;
+
+/* export */ function AfterSoftRemove() {
+  return function(object, propertyName) {};
+}
+exports.AfterSoftRemove = AfterSoftRemove;
+
 /* export */ function AfterRemove() {
   return function(object, propertyName) {};
 }
@@ -131,6 +141,16 @@ exports.AfterUpdate = AfterUpdate;
   return function(object, propertyName) {};
 }
 exports.BeforeInsert = BeforeInsert;
+
+/* export */ function BeforeRecover() {
+  return function(object, propertyName) {};
+}
+exports.BeforeRecover = BeforeRecover;
+
+/* export */ function BeforeSoftRemove() {
+  return function(object, propertyName) {};
+}
+exports.BeforeSoftRemove = BeforeSoftRemove;
 
 /* export */ function BeforeRemove() {
   return function(object, propertyName) {};
