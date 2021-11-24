@@ -441,18 +441,13 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 });
             });
 
-            // It won't throw if trying to trigger update for computational columns such as version/update column
-            // If wanted to update some columns but all of them is not updatable then throw error
-            if (updateColumnAndValues.length <= 0 && Object.keys(valuesSet).length > 0) {
-                // TODO - throw better error
-                throw new UpdateValuesMissingError();
+            // Don't allow calling update only with columns that are `update: false`
+            if (updateColumnAndValues.length > 0 || Object.keys(valuesSet).length === 0) {
+                if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
+                    updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
+                if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
+                    updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
             }
-
-            if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
-                updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
-
         } else {
             Object.keys(valuesSet).map(key => {
                 let value = valuesSet[key];

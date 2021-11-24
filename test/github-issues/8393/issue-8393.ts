@@ -8,8 +8,6 @@ import { Connection, UpdateValuesMissingError } from "../../../src/";
 import { expect } from "chai";
 import { Post } from "./entity/Post";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 describe("github issues > #8393 When trying to update `update: false` column with `@UpdateDateColumn` the update column is updated", () => {
     let connections: Connection[];
     before(
@@ -31,8 +29,6 @@ describe("github issues > #8393 When trying to update `update: false` column wit
                 post.readOnlyColumn = 1;
 
                 await connection.manager.save(post);
-
-                await sleep(1000);
 
                 const updateResultPromise = connection.manager.update(Post, post.id, {
                     // Make a change to read only column
