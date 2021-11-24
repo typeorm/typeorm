@@ -18,7 +18,7 @@ import {DriverUtils} from "../../driver/DriverUtils";
 export class RawSqlResultsToEntityTransformer {
 
       /**
-        * Contains an hashmap for every rawRelationIdResults given.
+        * Contains a hashmap for every rawRelationIdResults given.
         * In the hashmap you will find the idMaps of a result under the hash of this.hashEntityIds for the result.
         */
     private relationIdMaps: Array<{ [idHash: string]: any[] }>;
@@ -250,9 +250,7 @@ export class RawSqlResultsToEntityTransformer {
             }
           } else {
             mapToProperty(properties, entity, idMaps);
-            if (idMaps.length > 0) {
-              hasData = true;
-            }
+            hasData = hasData || idMaps.length > 0;
           }
         });
     
@@ -346,34 +344,39 @@ export class RawSqlResultsToEntityTransformer {
 
     /** Prepare data to run #transformRelationIds, as a lot of result independent data is needed in every call */
     private prepareDataForTransformRelationIds() {
+
+        // Return early if the relationIdMaps were already calculated
+        if(this.relationIdMaps) {
+            return;
+        }
+
         // Ensure this prepare function is only called once
-        if (!this.relationIdMaps) {
-            this.relationIdMaps = this.rawRelationIdResults.map(rawRelationIdResult => {
-                const relation = rawRelationIdResult.relationIdAttribute.relation;
+        this.relationIdMaps = this.rawRelationIdResults.map(rawRelationIdResult => {
+            const relation = rawRelationIdResult.relationIdAttribute.relation;
 
-                // Calculate column metadata
-                let columns: ColumnMetadata[];
-                if (relation.isManyToOne || relation.isOneToOneOwner) {
-                    columns = relation.joinColumns.map(joinColumn => joinColumn);
-                } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                    columns = relation.inverseEntityMetadata.primaryColumns.map(joinColumn => joinColumn);
+            // Calculate column metadata
+            let columns: ColumnMetadata[];
+            if (relation.isManyToOne || relation.isOneToOneOwner) {
+                columns = relation.joinColumns;
+            } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+                columns = relation.inverseEntityMetadata.primaryColumns;
+            } else {
+                // ManyToMany
+                if (relation.isOwning) {
+                    columns = relation.inverseJoinColumns;
                 } else {
-                    // ManyToMany
-                    if (relation.isOwning) {
-                    columns = relation.inverseJoinColumns.map(joinColumn => joinColumn);
-                    } else {
-                    columns = relation.inverseRelation!.joinColumns.map(joinColumn => joinColumn);
-                    }
+                    columns = relation.inverseRelation!.joinColumns;
                 }
+            }
 
-                // Calculate the idMaps for the rawRelationIdResult
-                return rawRelationIdResult.results.reduce((agg, result) => {
-                    let idMap = columns.reduce((idMap, column) => {
+            // Calculate the idMaps for the rawRelationIdResult
+            return rawRelationIdResult.results.reduce((agg, result) => {
+                let idMap = columns.reduce((idMap, column) => {
                     let value = result[column.databaseName];
                     if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                         if (column.isVirtual && column.referencedColumn && column.referencedColumn.propertyName !== column.propertyName) {
-                        // if column is a relation
-                        value = column.referencedColumn.createValueMap(value);
+                            // if column is a relation
+                            value = column.referencedColumn.createValueMap(value);
                         }
 
                         return OrmUtils.mergeDeep(idMap, column.createValueMap(value));
@@ -384,18 +387,18 @@ export class RawSqlResultsToEntityTransformer {
                     }
 
                     return OrmUtils.mergeDeep(idMap, column.referencedColumn!.createValueMap(value));
-                    }, {} as ObjectLiteral);
+                }, {} as ObjectLiteral);
 
-                    if (columns.length === 1 && !rawRelationIdResult.relationIdAttribute.disableMixedMap) {
+                if (columns.length === 1 && !rawRelationIdResult.relationIdAttribute.disableMixedMap) {
                     if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                         idMap = columns[0].getEntityValue(idMap);
                     } else {
                         idMap = columns[0].referencedColumn!.getEntityValue(idMap);
                     }
-                    }
+                }
 
-                    // If an idMap is found, set it in the aggregator under the correct hash
-                    if (idMap !== undefined) {
+                // If an idMap is found, set it in the aggregator under the correct hash
+                if (idMap !== undefined) {
                     const hash = this.hashEntityIds(relation, result);
 
                     if (agg[hash]) {
@@ -403,12 +406,12 @@ export class RawSqlResultsToEntityTransformer {
                     } else {
                         agg[hash] = [idMap];
                     }
-                    }
+                }
 
-                    return agg;
-                }, {});
-            });
-        }
+                return agg;
+            }, {});
+        });
+    
     }
 
     /**

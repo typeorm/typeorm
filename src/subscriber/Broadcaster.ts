@@ -438,9 +438,7 @@ export class Broadcaster {
      */
     broadcastLoadEvent(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
         // Calculate which subscribers are fitting for the given entity type
-        const fittingSubscribers = this.queryRunner.connection.subscribers.length
-            ? this.queryRunner.connection.subscribers.filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad)
-            : [];
+        const fittingSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad);
 
         if (metadata.relations.length || metadata.afterLoadListeners.length || fittingSubscribers.length) {
             // todo: check why need this?
@@ -471,21 +469,19 @@ export class Broadcaster {
                 });
             }
 
-            if (fittingSubscribers.length) {
-                fittingSubscribers.forEach(subscriber => {
-                    nonPromiseEntities.forEach(entity => {
-                        const executionResult = subscriber.afterLoad!(entity, {
-                            entity,
-                            metadata,
-                            connection: this.queryRunner.connection,
-                            queryRunner: this.queryRunner,
-                            manager: this.queryRunner.manager,
-                        });
-                        if (executionResult instanceof Promise) result.promises.push(executionResult);
-                        result.count++;
+            fittingSubscribers.forEach(subscriber => {
+                nonPromiseEntities.forEach(entity => {
+                    const executionResult = subscriber.afterLoad!(entity, {
+                        entity,
+                        metadata,
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                     });
+                    if (executionResult instanceof Promise) result.promises.push(executionResult);
+                    result.count++;
                 });
-            }
+            });
         }
     }
 
