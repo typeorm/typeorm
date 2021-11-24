@@ -59,63 +59,61 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters: any[] = [], useStructuredResult = false): Promise<any> {
+    async query(query: string, parameters: any[] = [], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         const command = query.trim().split(" ", 1)[0];
 
-        return new Promise(async (ok, fail) => {
-            const databaseConnection = this.driver.databaseConnection;
-            this.driver.connection.logger.logQuery(query, parameters, this);
-            const queryStartTime = +new Date();
-            let statement: any;
-            try {
-                statement = databaseConnection.prepare(query);
-                if (parameters) {
-                    parameters = parameters.map(p => typeof p !== 'undefined' ? p : null);
+        const databaseConnection = this.driver.databaseConnection;
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const queryStartTime = +new Date();
+        let statement: any;
+        try {
+            statement = databaseConnection.prepare(query);
+            if (parameters) {
+                parameters = parameters.map(p => typeof p !== 'undefined' ? p : null);
 
-                    statement.bind(parameters);
-                }
-
-                // log slow queries if maxQueryExecution time is set
-                const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
-                const queryEndTime = +new Date();
-                const queryExecutionTime = queryEndTime - queryStartTime;
-                if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                    this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-
-                const records: any[] = [];
-
-                while (statement.step()) {
-                    records.push(statement.getAsObject());
-                }
-
-                const result = new QueryResult();
-
-                result.affected = databaseConnection.getRowsModified();
-                result.records = records;
-                result.raw = records;
-
-                statement.free();
-
-                if (command !== "SELECT") {
-                    this.isDirty = true;
-                }
-
-                if (useStructuredResult) {
-                    ok(result);
-                } else {
-                    ok(result.raw);
-                }
-            } catch (e) {
-                if (statement) {
-                    statement.free();
-                }
-
-                this.driver.connection.logger.logQueryError(e, query, parameters, this);
-                fail(new QueryFailedError(query, parameters, e));
+                statement.bind(parameters);
             }
-        });
+
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+
+            const records: any[] = [];
+
+            while (statement.step()) {
+                records.push(statement.getAsObject());
+            }
+
+            const result = new QueryResult();
+
+            result.affected = databaseConnection.getRowsModified();
+            result.records = records;
+            result.raw = records;
+
+            statement.free();
+
+            if (command !== "SELECT") {
+                this.isDirty = true;
+            }
+
+            if (useStructuredResult) {
+                return result;
+            } else {
+                return result.raw;
+            }
+        } catch (e) {
+            if (statement) {
+                statement.free();
+            }
+
+            this.driver.connection.logger.logQueryError(e, query, parameters, this);
+            throw new QueryFailedError(query, parameters, e);
+        }
     }
 }

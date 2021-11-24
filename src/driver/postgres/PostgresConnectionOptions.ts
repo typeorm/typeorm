@@ -17,6 +17,18 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     readonly schema?: string;
 
     /**
+     * The driver object
+     * This defaults to `require("pg")`.
+     */
+    readonly driver?: any;
+
+    /**
+     * The driver object
+     * This defaults to `require("pg-native")`.
+     */
+    readonly nativeDriver?: any;
+
+    /**
     * A boolean determining whether to pass time values in UTC or local time. (default: true).
     */
     readonly useUTC?: boolean;
@@ -66,11 +78,12 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
     /**
      * Automatically install postgres extensions
      */
-     readonly installExtensions?: boolean;
+    readonly installExtensions?: boolean;
 
     /**
      * sets the application_name var to help db administrators identify
      * the service using this connection. Defaults to 'undefined'
      */
     readonly applicationName?: string;
+
 }

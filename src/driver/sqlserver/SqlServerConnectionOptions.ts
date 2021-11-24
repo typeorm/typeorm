@@ -34,6 +34,12 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
     readonly schema?: string;
 
     /**
+     * The driver object
+     * This defaults to `require("mssql")`
+     */
+    readonly driver?: any;
+
+    /**
      * An optional object/dictionary with the any of the properties
      */
     readonly pool?: {
@@ -276,6 +282,5 @@ export interface SqlServerConnectionOptions extends BaseConnectionOptions, SqlSe
         readonly slaves: SqlServerConnectionCredentialsOptions[];
 
     };
-
 
 }

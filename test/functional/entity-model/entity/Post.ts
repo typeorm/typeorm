@@ -11,6 +11,12 @@ export class Post extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
+    @Column({
+        nullable: true,
+        unique: true
+    })
+    externalId?: string;
+
     @Column()
     title: string;
 

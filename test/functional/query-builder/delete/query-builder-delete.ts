@@ -95,9 +95,8 @@ describe("query builder > delete", () => {
 
     it("should return correct delete result", () => Promise.all(connections.map(async connection => {
 
-        // don't run test for sqlite and sqljs as they don't return affected rows
-        // better-sqlite3 works correctly
-        if (connection.name === "sqlite" || connection.name === "sqljs" || connection.name === "sap")
+        // don't run test for SAP Hana as it won't return these
+        if (connection.name === "sap")
             return;
 
         // save some users

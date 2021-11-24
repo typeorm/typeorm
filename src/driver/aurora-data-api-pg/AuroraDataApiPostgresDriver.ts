@@ -115,13 +115,13 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (this.options.formatOptions && this.options.formatOptions.castParameters === false) {
-            return super.preparePersistentValue(value, columnMetadata)
+            return super.preparePersistentValue(value, columnMetadata);
         }
 
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
-        return this.client.preparePersistentValue(value, columnMetadata)
+        return this.client.preparePersistentValue(value, columnMetadata);
     }
 
     /**
@@ -129,13 +129,13 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (this.options.formatOptions && this.options.formatOptions.castParameters === false) {
-            return super.prepareHydratedValue(value, columnMetadata)
+            return super.prepareHydratedValue(value, columnMetadata);
         }
 
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
 
-        return this.client.prepareHydratedValue(value, columnMetadata)
+        return this.client.prepareHydratedValue(value, columnMetadata);
     }
 
     // -------------------------------------------------------------------------
@@ -146,7 +146,8 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        const { pg } = PlatformTools.load("typeorm-aurora-data-api-driver");
+        const driver = this.options.driver || PlatformTools.load("typeorm-aurora-data-api-driver");
+        const { pg } = driver;
 
         this.DataApiDriver = pg;
     }

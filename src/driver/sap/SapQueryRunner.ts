@@ -21,10 +21,10 @@ import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {SapDriver} from "./SapDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { QueryFailedError, TypeORMError } from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
 import { QueryLock } from "../../query-runner/QueryLock";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -104,18 +104,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
+
         if (isolationLevel) {
             await this.query(`SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`);
         }
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -129,16 +126,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -152,16 +145,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -187,22 +176,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             statement = databaseConnection.prepare(query);
 
             const raw = await new Promise<any>((ok, fail) => {
-                statement.exec(parameters, async (err: any, raw: any) => {
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-                    }
-
-                    if (err) {
-                        fail(new QueryFailedError(query, parameters, err));
-                    }
-
-                    ok(raw);
-                });
+                statement.exec(
+                    parameters,
+                    (err: any, raw: any) => err ? fail(new QueryFailedError(query, parameters, err)) : ok(raw)
+                )
             });
+
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+            }
 
             if (typeof raw === "number") {
                 result.affected = raw;
@@ -216,13 +202,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`;
                 this.driver.connection.logger.logQuery(lastIdQuery, [], this);
                 const identityValueResult = await new Promise<any>((ok, fail) => {
-                    databaseConnection.exec(lastIdQuery, async (err: any, raw: any) => {
-                        if (err) {
-                            fail(new QueryFailedError(lastIdQuery, [], err));
-                        }
-
-                        ok(raw);
-                    });
+                    databaseConnection.exec(
+                        lastIdQuery,
+                        (err: any, raw: any) => err ? fail(new QueryFailedError(lastIdQuery, [], err)) : ok(raw)
+                    );
                 });
 
                 result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"];
@@ -1501,7 +1484,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return `("t"."schema" = '${schema}' AND "t"."name" = '${name}')`;
         }).join(" OR ");
 
-        const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" WHERE "t"."type" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+        const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" WHERE "t"."type" = '${MetadataTableType.VIEW}' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
@@ -1605,26 +1588,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
                     ));
 
-                    const columnUniqueIndex = dbIndices.find(dbIndex => {
-                        if (dbIndex["TABLE_NAME"] !== dbTable["TABLE_NAME"] || dbIndex["SCHEMA_NAME"] !== dbTable["SCHEMA_NAME"]) {
-                            return false;
-                        }
-
-                        // Index is not for this column
-                        if (dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]) {
-                            return false;
-                        }
-
-                        return dbIndex["CONSTRAINT"] && dbIndex["CONSTRAINT"].indexOf("UNIQUE") !== -1;
-                    });
+                    const columnUniqueIndices = dbIndices.filter(dbIndex => {
+                        return dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"]
+                            && dbIndex["SCHEMA_NAME"] === dbTable["SCHEMA_NAME"]
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
+                            && dbIndex["CONSTRAINT"] && dbIndex["CONSTRAINT"].indexOf("UNIQUE") !== -1
+                    })
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
-                    const hasIgnoredIndex = columnUniqueIndex && tableMetadata && tableMetadata.indices
-                        .some(index => index.name === columnUniqueIndex["INDEX_NAME"] && index.synchronize === false);
+                    const hasIgnoredIndex = columnUniqueIndices.length > 0
+                        && tableMetadata
+                        && tableMetadata.indices.some(index => {
+                            return columnUniqueIndices.some(uniqueIndex => {
+                                return index.name === uniqueIndex["INDEX_NAME"] && index.synchronize === false;
+                            })
+                        });
 
-                    const isConstraintComposite = columnUniqueIndex
-                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnUniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
+                    const isConstraintComposite = columnUniqueIndices.every((uniqueIndex) => {
+                        return dbIndices.some(dbIndex => dbIndex["INDEX_NAME"] === uniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]);
+                    })
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
@@ -1655,7 +1637,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         const length = dbColumn["LENGTH"].toString();
                         tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
                     }
-                    tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
+                    tableColumn.isUnique = columnUniqueIndices.length > 0 && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "TRUE";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["IS_PRIMARY_KEY"] === "TRUE");
                     tableColumn.isGenerated = dbColumn["GENERATION_TYPE"] === "ALWAYS AS IDENTITY";
@@ -1860,13 +1842,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", schema: schema, name: name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            schema: schema,
+            name: name,
+            value: expression
+        });
     }
 
     /**
@@ -1886,15 +1867,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             schema = await this.getCurrentSchema();
         }
 
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({ type: MetadataTableType.VIEW, schema, name });
     }
 
     protected addColumnSql(table: Table, column: TableColumn): string {

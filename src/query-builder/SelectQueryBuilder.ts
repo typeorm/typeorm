@@ -31,7 +31,6 @@ import {Brackets} from "./Brackets";
 import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {QueryResultCacheOptions} from "../cache/QueryResultCacheOptions";
 import {OffsetWithoutLimitNotSupportedError} from "../error/OffsetWithoutLimitNotSupportedError";
-import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
@@ -968,6 +967,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Set certain index to be used by the query.
+     *
+     * @param index Name of index to be used.
+     */
+    useIndex(index: string): this {
+        this.expressionMap.useIndex = index;
+
+        return this;
+    }
+
+    /**
      * Sets locking mode.
      */
     setLock(lockMode: "optimistic", lockVersion: number | Date): this;
@@ -1200,6 +1210,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.expressionMap.queryEntity = true;
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             this.expressionMap.queryEntity = false;
+            const cacheId = this.expressionMap.cacheId;
+            // Creates a new cacheId for the count query, or it will retreive the above query results
+            // and count will return 0.
+            this.expressionMap.cacheId = (cacheId) ? `${cacheId}-count` : cacheId;
             const count = await this.executeCountQuery(queryRunner);
             const results: [Entity[], number] = [entitiesAndRaw.entities, count];
 
@@ -1438,6 +1452,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             }
         }
 
+        // Use certain index
+        let useIndex: string = "";
+        if (this.expressionMap.useIndex) {
+            if (this.connection.driver instanceof MysqlDriver) {
+                useIndex = ` USE INDEX (${this.expressionMap.useIndex})`;
+            }
+        }
+
         // create a selection query
         const froms = this.expressionMap.aliases
             .filter(alias => alias.type === "from" && (alias.tablePath || alias.subQuery))
@@ -1451,7 +1473,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const select = this.createSelectDistinctExpression();
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
 
-        return select + selection + " FROM " + froms.join(", ") + lock;
+        return select + selection + " FROM " + froms.join(", ") + lock + useIndex;
     }
 
     /**
@@ -1680,7 +1702,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         let lockTablesClause = "";
 
         if (this.expressionMap.lockTables) {
-            if (!(driver instanceof PostgresDriver)) {
+            if (!(driver instanceof PostgresDriver || driver instanceof CockroachDriver)) {
                 throw new TypeORMError("Lock tables not supported in selected driver");
             }
             if (this.expressionMap.lockTables.length < 1) {
@@ -1711,7 +1733,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     return " FOR UPDATE";
 
                 }
-                else if (driver instanceof PostgresDriver ) {
+                else if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR UPDATE" + lockTablesClause;
 
                 } else if (driver instanceof SqlServerDriver) {
@@ -1731,7 +1753,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write_or_fail":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR UPDATE" + lockTablesClause + " NOWAIT";
 
                 } else if (driver instanceof MysqlDriver) {
@@ -1742,7 +1764,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
 
             case "for_no_key_update":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR NO KEY UPDATE" + lockTablesClause;
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();
@@ -2030,9 +2052,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // broadcast all "after load" events
             if (this.expressionMap.callListeners === true && this.expressionMap.mainAlias.hasMetadata) {
-                const broadcastResult = new BroadcasterResult();
-                queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, this.expressionMap.mainAlias.metadata, entities);
-                if (broadcastResult.promises.length > 0) await Promise.all(broadcastResult.promises);
+                await queryRunner.broadcaster.broadcast("Load", this.expressionMap.mainAlias.metadata, entities);
             }
         }
 

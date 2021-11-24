@@ -16,6 +16,12 @@ export interface SqliteConnectionOptions extends BaseConnectionOptions {
     readonly database: string;
 
     /**
+     * The driver object
+     * This defaults to require("sqlite3")
+     */
+    readonly driver?: any;
+
+    /**
      * Encryption key for for SQLCipher.
      */
     readonly key?: string;

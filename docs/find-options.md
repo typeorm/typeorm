@@ -239,6 +239,7 @@ Support of lock modes, and SQL statements they translate to, are listed in the t
 | Oracle          | FOR UPDATE               | FOR UPDATE              | (nothing)     |                             |                             |                     |
 | SQL Server      | WITH (HOLDLOCK, ROWLOCK) | WITH (UPDLOCK, ROWLOCK) | WITH (NOLOCK) |                             |                             |                     |
 | AuroraDataApi   | LOCK IN SHARE MODE       | FOR UPDATE              | (nothing)     |                             |                             |                     |
+| CockroachDB     |                          | FOR UPDATE              | (nothing)     |                             | FOR UPDATE NOWAIT           | FOR NO KEY UPDATE   |
 
 ```
 

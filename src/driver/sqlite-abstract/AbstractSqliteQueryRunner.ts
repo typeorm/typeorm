@@ -8,7 +8,6 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {View} from "../../schema-builder/view/View";
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult";
 import {Query} from "../Query";
 import {AbstractSqliteDriver} from "./AbstractSqliteDriver";
 import {ReadStream} from "../../platform/PlatformTools";
@@ -20,6 +19,7 @@ import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import { TypeORMError } from "../../error";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -84,17 +84,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             }
         }
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
-
+        await this.broadcaster.broadcast('BeforeTransactionStart');
         this.isTransactionActive = true;
 
         await this.query("BEGIN TRANSACTION");
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -105,16 +100,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -125,17 +116,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
 
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -779,7 +766,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
 
         const viewNamesString = viewNames.map(name => "'" + name + "'").join(", ");
-        let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = 'VIEW'`;
+        let query = `SELECT "t".* FROM "${this.getTypeormMetadataTableName()}" "t" INNER JOIN "sqlite_master" s ON "s"."name" = "t"."name" AND "s"."type" = 'view' WHERE "t"."type" = '${MetadataTableType.VIEW}'`;
         if (viewNamesString.length > 0)
             query += ` AND "t"."name" IN (${viewNamesString})`;
         const dbViews = await this.query(query);
@@ -1109,13 +1096,11 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
     protected insertViewDefinitionSql(view: View): Query {
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", name: view.name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            name: view.name,
+            value: expression
+        });
     }
 
     /**
@@ -1131,14 +1116,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected deleteViewDefinitionSql(viewOrPath: View|string): Query {
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({ type: MetadataTableType.VIEW, name: viewName });
     }
 
     /**

@@ -24,8 +24,8 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {VersionUtils} from "../../util/VersionUtils";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import { TypeORMError } from "../../error";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -112,9 +112,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
         if (isolationLevel) {
@@ -124,9 +122,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.query("START TRANSACTION");
         }
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -137,16 +133,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -157,16 +149,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -1240,7 +1228,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }).join(" OR ");
 
         const query = `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapePath(this.getTypeormMetadataTableName())} \`t\` ` +
-            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = '${MetadataTableType.VIEW}' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
@@ -1463,27 +1451,25 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .filter(dbColumn => dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] && dbColumn["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"])
                 .map(dbColumn => {
 
-                    const columnUniqueIndex = dbIndices.find(dbIndex => {
-                        if (dbIndex["TABLE_NAME"] !== dbTable["TABLE_NAME"] || dbIndex["TABLE_SCHEMA"] !== dbTable["TABLE_SCHEMA"]) {
-                            return false;
-                        }
-
-                        // Index is not for this column
-                        if (dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]) {
-                            return false;
-                        }
-
-                        const nonUnique = parseInt(dbIndex["NON_UNIQUE"], 10);
-                        return nonUnique === 0;
-                    });
+                    const columnUniqueIndices = dbIndices.filter(dbIndex => {
+                        return dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"]
+                            && dbIndex["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                            && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
+                            && parseInt(dbIndex["NON_UNIQUE"], 10) === 0
+                    })
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
-                    const hasIgnoredIndex = columnUniqueIndex && tableMetadata && tableMetadata.indices
-                        .some(index => index.name === columnUniqueIndex["INDEX_NAME"] && index.synchronize === false);
+                    const hasIgnoredIndex = columnUniqueIndices.length > 0
+                        && tableMetadata
+                        && tableMetadata.indices.some(index => {
+                            return columnUniqueIndices.some(uniqueIndex => {
+                                return index.name === uniqueIndex["INDEX_NAME"] && index.synchronize === false;
+                            });
+                        });
 
-                    const isConstraintComposite = columnUniqueIndex
-                        ? !!dbIndices.find(dbIndex => dbIndex["INDEX_NAME"] === columnUniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
+                    const isConstraintComposite = columnUniqueIndices.every((uniqueIndex) => {
+                        return dbIndices.some(dbIndex => dbIndex["INDEX_NAME"] === uniqueIndex["INDEX_NAME"] && dbIndex["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"]);
+                    })
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
@@ -1524,7 +1510,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         tableColumn.generatedType = dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1 ? "VIRTUAL" : "STORED";
                     }
 
-                    tableColumn.isUnique = !!columnUniqueIndex && !hasIgnoredIndex && !isConstraintComposite;
+                    tableColumn.isUnique = columnUniqueIndices.length > 0 && !hasIgnoredIndex && !isConstraintComposite;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => {
                         return (
@@ -1733,13 +1719,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentDatabase = await this.getCurrentDatabase();
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", schema: currentDatabase, name: view.name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            schema: currentDatabase,
+            name: view.name,
+            value: expression
+        });
     }
 
     /**
@@ -1755,15 +1740,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected async deleteViewDefinitionSql(viewOrPath: View|string): Promise<Query> {
         const currentDatabase = await this.getCurrentDatabase();
         const viewName = viewOrPath instanceof View ? viewOrPath.name : viewOrPath;
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema: currentDatabase })
-            .andWhere(`${qb.escape("name")} = :name`, { name: viewName })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            schema: currentDatabase,
+            name: viewName
+        });
     }
 
     /**

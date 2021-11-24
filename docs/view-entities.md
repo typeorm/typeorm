@@ -15,11 +15,12 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 * `database` - database name in selected DB server.
 * `schema` - schema name.
 * `expression` - view definition. **Required parameter**.
+* `dependsOn` - List of other views on which the current views depends. If your view uses another view in it's definition, you can add it here so that migrations are generated in the correct order.
 
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -31,7 +32,7 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 or an instance of QueryBuilder
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -44,7 +45,7 @@ or an instance of QueryBuilder
 **Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
 
 ```typescript
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -92,14 +93,14 @@ const connection: Connection = await createConnection({
 ## View Entity columns
 
 To map data from view into the correct entity columns you must mark entity columns with `@ViewColumn()`
-decorator and specify these columns as select statement aliases. 
+decorator and specify these columns as select statement aliases.
 
 example with string expression definition:
 
 ```typescript
 import {ViewEntity, ViewColumn} from "typeorm";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: `
         SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
@@ -125,7 +126,7 @@ example using QueryBuilder:
 ```typescript
 import {ViewEntity, ViewColumn} from "typeorm";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")
@@ -192,7 +193,7 @@ export class Post {
 ```typescript
 import {ViewEntity, ViewColumn, Connection} from "typeorm";
 
-@ViewEntity({ 
+@ViewEntity({
     expression: (connection: Connection) => connection.createQueryBuilder()
         .select("post.id", "id")
         .addSelect("post.name", "name")

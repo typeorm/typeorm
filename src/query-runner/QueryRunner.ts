@@ -14,6 +14,7 @@ import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {TableExclusion} from "../schema-builder/table/TableExclusion";
 import {QueryResult} from "./QueryResult";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 /**
  * Runs queries on a single database connection.
@@ -148,6 +149,11 @@ export interface QueryRunner {
      * Loads all views from the database and returns them.
      */
     getViews(viewPaths?: string[]): Promise<View[]>;
+
+    /**
+     * Returns replication mode (ex: `master` or `slave`).
+     */
+    getReplicationMode(): ReplicationMode;
 
     /**
      * Checks if a database with the given name exist.

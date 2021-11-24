@@ -10,9 +10,6 @@
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
 	</a>
-	<a href="https://david-dm.org/typeorm/typeorm">
-		<img src="https://david-dm.org/typeorm/typeorm.svg">
-	</a>
     <a href="https://codecov.io/gh/typeorm/typeorm">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
     </a>
@@ -41,42 +38,42 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 ## Features
 
-* supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice)
-* entities and columns
-* database-specific column types
-* entity manager
-* repositories and custom repositories
-* clean object relational model
-* associations (relations)
-* eager and lazy relations
-* uni-directional, bi-directional and self-referenced relations
-* supports multiple inheritance patterns
-* cascades
-* indices
-* transactions
-* migrations and automatic migrations generation
-* connection pooling
-* replication
-* using multiple database connections
-* working with multiple databases types
-* cross-database and cross-schema queries
-* elegant-syntax, flexible and powerful QueryBuilder
-* left and inner joins
-* proper pagination for queries using joins
-* query caching
-* streaming raw results
-* logging
-* listeners and subscribers (hooks)
-* supports closure table pattern
-* schema declaration in models or separate configuration files
-* connection configuration in json / xml / yml / env formats
-* supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js
-* supports MongoDB NoSQL database
-* works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms
-* TypeScript and JavaScript support
-* produced code is performant, flexible, clean and maintainable
-* follows all possible best practices
-* CLI
+* Supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice).
+* Entities and columns.
+* Database-specific column types.
+* Entity manager.
+* Repositories and custom repositories.
+* Clean object relational model.
+* Associations (relations).
+* Eager and lazy relations.
+* Uni-directional, bi-directional and self-referenced relations.
+* Supports multiple inheritance patterns.
+* Cascades.
+* Indices.
+* Transactions.
+* Migrations and automatic migrations generation.
+* Connection pooling.
+* Replication.
+* Using multiple database connections.
+* Working with multiple databases types.
+* Cross-database and cross-schema queries.
+* Elegant-syntax, flexible and powerful QueryBuilder.
+* Left and inner joins.
+* Proper pagination for queries using joins.
+* Query caching.
+* Streaming raw results.
+* Logging.
+* Listeners and subscribers (hooks).
+* Supports closure table pattern.
+* Schema declaration in models or separate configuration files.
+* Connection configuration in json / xml / yml / env formats.
+* Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
+* Supports MongoDB NoSQL database.
+* Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
+* TypeScript and JavaScript support.
+* Produced code is performant, flexible, clean and maintainable.
+* Follows all possible best practices.
+* CLI.
 
 And more...
 
@@ -215,7 +212,7 @@ await timber.remove();
 		npm i hdb-pool
         ```
 
-        *SAP Hana support made possible by sponsorship of [Neptune Software](https://www.neptune-software.com/).*
+        *SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/).*
 
     * for **MongoDB** (experimental)
 
@@ -327,7 +324,7 @@ creating more entities.
 > You can generate an even more advanced project with express installed by running
 `typeorm init --name MyProject --database mysql --express` command.
 
-> You can generate docker-compose file by running
+> You can generate a docker-compose file by running
 `typeorm init --name MyProject --database postgres --docker` command.
 
 ## Step-by-Step Guide
@@ -336,7 +333,7 @@ What are you expecting from ORM?
 First of all, you are expecting it will create database tables for you
 and find / insert / update / delete your data without the pain of
 having to write lots of hardly maintainable SQL queries.
-This guide will show you how to setup TypeORM from scratch and make it do what you are expecting from an ORM.
+This guide will show you how to set up TypeORM from scratch and make it do what you are expecting from an ORM.
 
 ### Create a model
 
@@ -359,7 +356,7 @@ export class Photo {
 ```
 
 And you want to store photos in your database.
-To store things in the database, first you need a database table,
+To store things in the database, first, you need a database table,
 and database tables are created from your models.
 Not all models, but only those you define as *entities*.
 
@@ -387,7 +384,7 @@ export class Photo {
 ```
 
 Now, a database table will be created for the `Photo` entity and we'll be able to work with it anywhere in our app.
-We have created a database table, however what table can exist without columns?
+We have created a database table, however, what table can exist without columns?
 Let's create a few columns in our database table.
 
 ### Adding table columns
@@ -433,7 +430,7 @@ Each database table must have a column with a primary key.
 
 Each entity **must** have at least one primary key column.
 This is a requirement and you can't avoid it.
-To make a column a primary key, you need to use `@PrimaryColumn` decorator.
+To make a column a primary key, you need to use the `@PrimaryColumn` decorator.
 
 ```typescript
 import { Entity, Column, PrimaryColumn } from "typeorm";
@@ -461,7 +458,7 @@ export class Photo {
 }
 ```
 
-### Creating an auto generated column
+### Creating an auto-generated column
 
 Now, let's say you want your id column to be auto-generated (this is known as auto-increment / sequence / serial / generated identity column).
 To do that, you need to change the `@PrimaryColumn` decorator to a `@PrimaryGeneratedColumn` decorator:
@@ -494,8 +491,8 @@ export class Photo {
 
 ### Column data types
 
-Next, let's fix our data types. By default, string is mapped to a varchar(255)-like type (depending on the database type).
-Number is mapped to a integer-like type (depending on the database type).
+Next, let's fix our data types. By default, the string is mapped to a varchar(255)-like type (depending on the database type).
+The number is mapped to an integer-like type (depending on the database type).
 We don't want all our columns to be limited varchars or integers.
 Let's setup correct data types:
 
@@ -571,7 +568,7 @@ Setting `synchronize` makes sure your entities will be synced with the database,
 ### Loading all entities from the directory
 
 Later, when we create more entities we need to add them to the entities in our configuration.
-This is not very convenient, so instead we can set up the whole directory, from where all entities will be connected and used in our connection:
+This is not very convenient, so instead, we can set up the whole directory, from where all entities will be connected and used in our connection:
 
 ```typescript
 import { createConnection } from "typeorm";
@@ -594,14 +591,14 @@ createConnection({
 
 But be careful with this approach.
 If you are using `ts-node` then you need to specify paths to `.ts` files instead.
-If you are using `outDir` then you'll need to specify paths to `.js` files inside outDir directory.
+If you are using `outDir` then you'll need to specify paths to `.js` files inside the outDir directory.
 If you are using `outDir` and when you remove or rename your entities make sure to clear `outDir` directory
 and re-compile your project again, because when you remove your source `.ts` files their compiled `.js` versions
 aren't removed from output directory and still are loaded by TypeORM because they are present in the `outDir` directory.
 
 ### Running the application
 
-Now if you run your `index.ts`, a connection with database will be initialized and a database table for your photos will be created.
+Now if you run your `index.ts`, a connection with the database will be initialized and a database table for your photos will be created.
 
 
 ```shell
@@ -801,7 +798,7 @@ Now photo with `id = 1` will be removed from the database.
 
 ### Creating a one-to-one relation
 
-Let's create a one-to-one relation with another class.
+Let's create a one-to-one relationship with another class.
 Let's create a new class in `PhotoMetadata.ts`. This PhotoMetadata class is supposed to contain our photo's additional meta-information:
 
 ```typescript
@@ -901,7 +898,7 @@ createConnection(/*...*/).then(async connection => {
     await metadataRepository.save(metadata);
 
     // done
-    console.log("Metadata is saved, and relation between metadata and photo is created in the database too");
+    console.log("Metadata is saved, and the relation between metadata and photo is created in the database too");
 
 }).catch(error => console.log(error));
 ```
@@ -949,7 +946,7 @@ Here we show that the metadata property of the Photo class is where we store Pho
 Instead of passing a function that returns a property of the photo, you could alternatively simply pass a string to `@OneToOne` decorator, like `"metadata"`.
 But we used this function-typed approach to make our refactoring easier.
 
-Note that we should use `@JoinColumn` decorator only on one side of a relation.
+Note that we should use the `@JoinColumn` decorator only on one side of a relation.
 Whichever side you put this decorator on will be the owning side of the relationship.
 The owning side of a relationship contains a column with a foreign key in the database.
 
@@ -998,14 +995,14 @@ createConnection(/*...*/).then(async connection => {
 }).catch(error => console.log(error));
 ```
 
-`QueryBuilder` allows creation and execution of SQL queries of almost any complexity.
+`QueryBuilder` allows the creation and execution of SQL queries of almost any complexity.
 When you work with `QueryBuilder`, think like you are creating an SQL query.
 In this example, "photo" and "metadata" are aliases applied to selected photos.
 You use aliases to access columns and properties of the selected data.
 
 ### Using cascades to automatically save related objects
 
-We can setup cascade options in our relations, in the cases when we want our related object to be saved whenever the other object is saved.
+We can set up cascade options in our relations, in the cases when we want our related object to be saved whenever the other object is saved.
 Let's change our photo's `@OneToOne` decorator a bit:
 
 ```typescript
@@ -1057,7 +1054,7 @@ Notice that we now set the photo's `metadata` property, instead of the metadata'
 
 ### Creating a many-to-one / one-to-many relation
 
-Let's create a many-to-one / one-to-many relation.
+Let's create a many-to-one/one-to-many relation.
 Let's say a photo has one author, and each author can have many photos.
 First, let's create an `Author` class:
 
@@ -1080,7 +1077,7 @@ export class Author {
 ```
 
 `Author` contains an inverse side of a relation.
-`OneToMany` is always an inverse side of relation, and it can't exist without `ManyToOne` on the other side of the relation.
+`OneToMany` is always an inverse side of the relation, and it can't exist without `ManyToOne` on the other side of the relation.
 
 Now let's add the owner side of the relation into the Photo entity:
 
@@ -1255,10 +1252,10 @@ let photos = await connection
 ```
 
 This query selects all published photos with "My" or "Mishka" names.
-It will select results from position 5 (pagination offset),
+It will select results from position 5 (pagination offset)
 and will select only 10 results (pagination limit).
 The selection result will be ordered by id in descending order.
-The photo's albums will be left-joined and their metadata will be inner joined.
+The photo's albums will be left joined and their metadata will be inner joined.
 
 You'll use the query builder in your application a lot.
 Learn more about QueryBuilder [here](./docs/select-query-builder.md).
@@ -1273,6 +1270,7 @@ There are a few repositories which you can clone and start with:
 * [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
 * [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
 * [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
+* [Example how to use TypeORM with TypeScript and React in Browser](https://github.com/ItayGarin/typeorm-react-swc)
 * [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 * [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
 * [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
@@ -1306,12 +1304,12 @@ This project exists thanks to all the people who contribute:
 
 ## Sponsors
 
-Open source is hard and time-consuming. If you want to invest into TypeORM's future you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
+Open source is hard and time-consuming. If you want to invest in TypeORM's future you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?width=890"></a>
 
 ## Gold Sponsors
 
-Become a gold sponsor and get a premium technical support from our core contributors. [Become a gold sponsor](https://opencollective.com/typeorm)
+Become a gold sponsor and get premium technical support from our core contributors. [Become a gold sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/gold-sponsor.svg?width=890"></a>

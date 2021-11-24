@@ -15,6 +15,7 @@ import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {ObjectID} from "../driver/mongodb/typings";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
+import {UpsertOptions} from "./UpsertOptions";
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -247,6 +248,17 @@ export class BaseEntity {
      */
     static update<T extends BaseEntity>(this: ObjectType<T>, criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<T>, partialEntity: QueryDeepPartialEntity<T>, options?: SaveOptions): Promise<UpdateResult> {
         return (this as any).getRepository().update(criteria, partialEntity, options);
+    }
+
+    /**
+     * Inserts a given entity into the database, unless a unique constraint conflicts then updates the entity
+     * Unlike save method executes a primitive operation without cascades, relations and other operations included.
+     * Executes fast and efficient INSERT ... ON CONFLICT DO UPDATE/ON DUPLICATE KEY UPDATE query.
+     */
+    static upsert<T extends BaseEntity>(this: ObjectType<T> & typeof BaseEntity, 
+        entityOrEntities: QueryDeepPartialEntity<T> | (QueryDeepPartialEntity<T>[]),
+        conflictPathsOrOptions: string[] | UpsertOptions<T>): Promise<InsertResult> {
+        return this.getRepository<T>().upsert(entityOrEntities, conflictPathsOrOptions);
     }
 
     /**

@@ -22,10 +22,10 @@ import {Query} from "../Query";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {PostgresDriver} from "./PostgresDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 import {VersionUtils} from "../../util/VersionUtils";
-import { TypeORMError } from "../../error";
-import { QueryResult } from "../../query-runner/QueryResult";
+import {TypeORMError} from "../../error";
+import {QueryResult} from "../../query-runner/QueryResult";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -153,9 +153,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
         await this.query("START TRANSACTION");
@@ -163,9 +161,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         }
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -176,16 +172,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -196,16 +188,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         await this.query("ROLLBACK");
         this.isTransactionActive = false;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
@@ -229,27 +217,28 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
             const result = new QueryResult();
+            if (raw) {
+                if (raw.hasOwnProperty('rows')) {
+                    result.records = raw.rows;
+                }
 
-            if (raw?.hasOwnProperty('rows')) {
-                result.records = raw.rows;
-            }
+                if (raw.hasOwnProperty('rowCount')) {
+                    result.affected = raw.rowCount;
+                }
 
-            if (raw?.hasOwnProperty('rowCount')) {
-                result.affected = raw.rowCount;
-            }
+                switch (raw.command) {
+                    case "DELETE":
+                    case "UPDATE":
+                        // for UPDATE and DELETE query additionally return number of affected rows
+                        result.raw = [raw.rows, raw.rowCount];
+                        break;
+                    default:
+                        result.raw = raw.rows;
+                }
 
-            switch (raw.command) {
-                case "DELETE":
-                case "UPDATE":
-                    // for UPDATE and DELETE query additionally return number of affected rows
-                    result.raw = [raw.rows, raw.rowCount];
-                    break;
-                default:
-                    result.raw = raw.rows;
-            }
-
-            if (!useStructuredResult) {
-                return result.raw;
+                if (!useStructuredResult) {
+                    return result.raw;
+                }
             }
 
             return result;
@@ -262,24 +251,18 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         const QueryStream = this.driver.loadStreamDependency();
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const stream = databaseConnection.query(new QueryStream(query, parameters));
-                if (onEnd) stream.on("end", onEnd);
-                if (onError) stream.on("error", onError);
-                ok(stream);
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const stream = databaseConnection.query(new QueryStream(query, parameters));
+        if (onEnd) stream.on("end", onEnd);
+        if (onError) stream.on("error", onError);
 
-            } catch (err) {
-                fail(err);
-            }
-        });
+        return stream;
     }
 
     /**
@@ -433,6 +416,35 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(this.createEnumTypeSql(table, column, enumName));
                 downQueries.push(this.dropEnumTypeSql(table, column, enumName));
             }
+        }
+
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(column => column.generatedType === "STORED" && column.asExpression)
+        for (const column of generatedColumns) {
+            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+            const tableName = tableNameWithSchema[1];
+            const schema = tableNameWithSchema[0];
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name
+            })
+
+            upQueries.push(deleteQuery);
+            upQueries.push(insertQuery);
+            downQueries.push(deleteQuery);
         }
 
         upQueries.push(this.createTableSql(table, createForeignKeys));
@@ -675,6 +687,33 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
         }
 
+        if (column.generatedType === "STORED" && column.asExpression) {
+            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+            const tableName = tableNameWithSchema[1];
+            const schema = tableNameWithSchema[0];
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name
+            })
+
+            upQueries.push(deleteQuery);
+            upQueries.push(insertQuery);
+            downQueries.push(deleteQuery);
+        }
+
         // create column's comment
         if (column.comment) {
             upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
@@ -732,7 +771,12 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!oldColumn)
             throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
-        if (oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length || newColumn.isArray !== oldColumn.isArray) {
+
+        if (oldColumn.type !== newColumn.type
+            || oldColumn.length !== newColumn.length
+            || newColumn.isArray !== oldColumn.isArray
+            || (!oldColumn.generatedType && newColumn.generatedType === "STORED")
+            || (oldColumn.asExpression !== newColumn.asExpression && newColumn.generatedType === "STORED")) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn);
             await this.addColumn(table, newColumn);
@@ -976,7 +1020,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
             }
 
-            if (oldColumn.isGenerated !== newColumn.isGenerated && newColumn.generationStrategy !== "uuid") {
+            if (oldColumn.isGenerated !== newColumn.isGenerated &&
+                newColumn.generationStrategy !== "uuid" &&
+                newColumn.generationStrategy !== "identity"
+            ) {
                 if (newColumn.isGenerated === true) {
                     upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
                     downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
@@ -1013,6 +1060,46 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             if ((newColumn.spatialFeatureType || "").toLowerCase() !== (oldColumn.spatialFeatureType || "").toLowerCase() || newColumn.srid !== oldColumn.srid) {
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`));
+            }
+
+            if (newColumn.generatedType !== oldColumn.generatedType) {
+                // Convert generated column data to normal column
+                if (!newColumn.generatedType || newColumn.generatedType === "VIRTUAL") {
+                    // We can copy the generated data to the new column
+                    const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+                    const tableName = tableNameWithSchema[1];
+                    const schema = tableNameWithSchema[0];
+
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${oldColumn.name}" TO "TEMP_OLD_${oldColumn.name}"`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, newColumn)}`));
+                    upQueries.push(new Query(`UPDATE ${this.escapePath(table)} SET "${newColumn.name}" = "TEMP_OLD_${oldColumn.name}"`));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`));
+                    upQueries.push(this.deleteTypeormMetadataSql({
+                        database: this.driver.database,
+                        schema,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name
+                    }));
+                    // However, we can't copy it back on downgrade. It needs to regenerate.
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${newColumn.name}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, oldColumn)}`));
+                    downQueries.push(this.deleteTypeormMetadataSql({
+                        database: this.driver.database,
+                        schema,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: newColumn.name
+                    }));
+                    downQueries.push(this.insertTypeormMetadataSql({
+                        database: this.driver.database,
+                        schema,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                        value: oldColumn.asExpression
+                    }));
+                }
             }
 
         }
@@ -1099,6 +1186,30 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(this.dropEnumTypeSql(table, column, escapedEnumName));
                 downQueries.push(this.createEnumTypeSql(table, column, escapedEnumName));
             }
+        }
+
+        if (column.generatedType === "STORED") {
+            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
+            const tableName = tableNameWithSchema[1];
+            const schema = tableNameWithSchema[0];
+            const insertQuery = this.deleteTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name
+            })
+            const deleteQuery = this.insertTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression
+            })
+
+            upQueries.push(insertQuery);
+            downQueries.push(deleteQuery);
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -1517,7 +1628,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
             `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "c"."relnamespace" AND "n"."nspname" = "t"."schema" ` +
-            `WHERE "t"."type" IN ('VIEW', 'MATERIALIZED_VIEW') ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+            `WHERE "t"."type" IN ('${MetadataTableType.VIEW}', '${MetadataTableType.MATERIALIZED_VIEW}') ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
 
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
@@ -1527,7 +1638,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             view.schema = dbView["schema"];
             view.name = this.driver.buildTableName(dbView["name"], schema);
             view.expression = dbView["value"];
-            view.materialized = dbView["type"] === "MATERIALIZED_VIEW";
+            view.materialized = dbView["type"] === MetadataTableType.MATERIALIZED_VIEW;
             return view;
         });
     }
@@ -1790,15 +1901,19 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
-                            && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
-                            && dbConstraint["column_name"] !== dbColumn["column_name"])
-                        : false;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["constraint_type"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
+                                && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
+                                && dbConstraint["column_name"] !== dbColumn["column_name"])
+                    })
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
 
-                    if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
+                    if (dbColumn.is_identity === "YES") { // Postgres 10+ Identity column
+                        tableColumn.isGenerated = true;
+                        tableColumn.generationStrategy = "identity";
+                        tableColumn.generatedIdentity = dbColumn.identity_generation;
+                    } else if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         const serialDefaultName = `nextval('${this.buildSequenceName(table, dbColumn["column_name"])}'::regclass)`;
                         const serialDefaultPath = `nextval('${this.buildSequencePath(table, dbColumn["column_name"])}'::regclass)`;
 
@@ -1813,8 +1928,27 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         } else if (dbColumn["column_default"] === "now()" || dbColumn["column_default"].indexOf("'now'::text") !== -1) {
                             tableColumn.default = dbColumn["column_default"];
                         } else {
-                            tableColumn.default = dbColumn["column_default"].replace(/::[\w\s\[\]\"]+/g, "");
+                            tableColumn.default = dbColumn["column_default"].replace(/::[\w\s\.\[\]\"]+/g, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?\d+)$/, "'$1'");
+                        }
+                    }
+
+                    if (dbColumn["is_generated"] === "ALWAYS" && dbColumn["generation_expression"]) {
+                        // In postgres there is no VIRTUAL generated column type
+                        tableColumn.generatedType = "STORED";
+                        // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                        const asExpressionQuery = `SELECT * FROM "typeorm_metadata" `
+                            + ` WHERE "table" = '${dbTable["table_name"]}'`
+                            + ` AND "name" = '${tableColumn.name}'`
+                            + ` AND "schema" = '${dbTable["table_schema"]}'`
+                            + ` AND "database" = '${this.driver.database}'`
+                            + ` AND "type" = '${MetadataTableType.GENERATED_COLUMN}'`;
+
+                        const results: ObjectLiteral[] = await this.query(asExpressionQuery);
+                        if (results[0] && results[0].value) {
+                            tableColumn.asExpression = results[0].value;
+                        } else {
+                            tableColumn.asExpression = "";
                         }
                     }
 
@@ -2051,15 +2185,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             schema = currentSchema;
         }
 
-        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
+        const type = view.materialized ? MetadataTableType.MATERIALIZED_VIEW : MetadataTableType.VIEW
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: type, schema: schema, name: name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({ type, schema, name, value: expression })
     }
 
     /**
@@ -2082,16 +2210,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             schema = currentSchema;
         }
 
-        const type = view.materialized ? "MATERIALIZED_VIEW" : "VIEW"
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = :type`, { type })
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        const type = view.materialized ? MetadataTableType.MATERIALIZED_VIEW : MetadataTableType.VIEW
+        return this.deleteTypeormMetadataSql({ type, schema, name })
     }
 
     /**
@@ -2341,17 +2461,37 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
     }
 
     /**
+     * Get the table name with table schema
+     * Note: Without ' or "
+     */
+    protected async getTableNameWithSchema(target: Table|string) {
+        const tableName = target instanceof Table ? target.name : target;
+        if (tableName.indexOf(".") === -1) {
+            const schemaResult = await this.query(`SELECT current_schema()`);
+            const schema = schemaResult[0]["current_schema"];
+            return `${schema}.${tableName}`;
+        } else {
+            return `${tableName.split(".")[0]}.${tableName.split(".")[1]}`;
+        }
+    }
+
+    /**
      * Builds a query for create column.
      */
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = "\"" + column.name + "\"";
         if (column.isGenerated === true && column.generationStrategy !== "uuid") {
-            if (column.type === "integer" || column.type === "int" || column.type === "int4")
-                c += " SERIAL";
-            if (column.type === "smallint" || column.type === "int2")
-                c += " SMALLSERIAL";
-            if (column.type === "bigint" || column.type === "int8")
-                c += " BIGSERIAL";
+            if (column.generationStrategy === "identity") { // Postgres 10+ Identity generated column
+                const generatedIdentityOrDefault = column.generatedIdentity || "BY DEFAULT";
+                c += ` ${column.type} GENERATED ${generatedIdentityOrDefault} AS IDENTITY`;
+            } else { // classic SERIAL primary column
+                if (column.type === "integer" || column.type === "int" || column.type === "int4")
+                    c += " SERIAL";
+                if (column.type === "smallint" || column.type === "int2")
+                    c += " SMALLSERIAL";
+                if (column.type === "bigint" || column.type === "int8")
+                    c += " BIGSERIAL";
+            }
         }
         if (column.type === "enum" || column.type === "simple-enum") {
             c += " " + this.buildEnumName(table, column);
@@ -2361,16 +2501,22 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         } else if (!column.isGenerated || column.type === "uuid") {
             c += " " + this.connection.driver.createFullType(column);
         }
-        if (column.charset)
-            c += " CHARACTER SET \"" + column.charset + "\"";
-        if (column.collation)
-            c += " COLLATE \"" + column.collation + "\"";
-        if (column.isNullable !== true)
-            c += " NOT NULL";
-        if (column.default !== undefined && column.default !== null)
-            c += " DEFAULT " + column.default;
-        if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
-            c += ` DEFAULT ${this.driver.uuidGenerator}`;
+        // CHARACTER SET, COLLATE, NOT NULL and DEFAULT do not exist on generated (virtual) columns
+        // Also, postgres only supports the stored generated column type
+        if (column.generatedType === "STORED" && column.asExpression) {
+            c += ` GENERATED ALWAYS AS (${column.asExpression}) STORED`;
+        } else {
+            if (column.charset)
+                c += " CHARACTER SET \"" + column.charset + "\"";
+            if (column.collation)
+                c += " COLLATE \"" + column.collation + "\"";
+            if (column.isNullable !== true)
+                c += " NOT NULL";
+            if (column.default !== undefined && column.default !== null)
+                c += " DEFAULT " + column.default;
+            if (column.isGenerated && column.generationStrategy === "uuid" && !column.default)
+                c += ` DEFAULT ${this.driver.uuidGenerator}`;
+        }
 
         return c;
     }

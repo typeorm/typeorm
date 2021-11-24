@@ -41,7 +41,7 @@ export interface TableColumnOptions {
     /**
      * Specifies generation strategy if this column will use auto increment.
      */
-    generationStrategy?: "uuid"|"increment"|"rowid";
+    generationStrategy?: "uuid"|"increment"|"rowid"|"identity";
 
     /**
      * Indicates if column is a primary key.
@@ -127,6 +127,11 @@ export interface TableColumnOptions {
      * Generated column type. Supports only in MySQL.
      */
     generatedType?: "VIRTUAL"|"STORED";
+
+    /**
+     * Identity column type. Supports only in Postgres 10+.
+     */
+    generatedIdentity?: "ALWAYS"|"BY DEFAULT";
 
     /**
      * Spatial Feature Type (Geometry, Point, Polygon, etc.)

@@ -54,14 +54,21 @@ export class OneToManySubjectBuilder {
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
      */
     protected buildForSubjectRelation(subject: Subject, relation: RelationMetadata) {
-
         // prepare objects (relation id maps) for the database entity
-        // note: subject.databaseEntity contains relations with loaded relation ids only
         // by example: since subject is a post, we are expecting to get all post's categories saved in the database here,
         //             particularly their relation ids, e.g. category ids stored in the database
+
+		// in most cases relatedEntityDatabaseValues will contain only the entity key properties.
+		// this is because subject.databaseEntity contains relations with loaded relation ids only.
+		// however if the entity uses the afterLoad hook to calculate any properties, the fetched "key object" might include ADDITIONAL properties.
+		// to handle such situations, we pass the data to relation.inverseEntityMetadata.getEntityIdMap to extract the key without any other properties.
+
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = [];
         if (subject.databaseEntity) { // related entities in the database can exist only if this entity (post) is saved
-            relatedEntityDatabaseRelationIds = relation.getEntityValue(subject.databaseEntity);
+            const relatedEntityDatabaseRelation: ObjectLiteral[] | undefined = relation.getEntityValue(subject.databaseEntity)
+            if (relatedEntityDatabaseRelation) {
+                relatedEntityDatabaseRelationIds = relatedEntityDatabaseRelation.map((entity) => relation.inverseEntityMetadata.getEntityIdMap(entity)!);
+            }
         }
 
         // get related entities of persisted entity
@@ -72,7 +79,7 @@ export class OneToManySubjectBuilder {
         if (relatedEntities === undefined) // if relation is undefined then nothing to update
             return;
 
-        // extract only relation ids from the related entities, since we only need them for comparision
+        // extract only relation ids from the related entities, since we only need them for comparison
         // by example: extract from categories only relation ids (category id, or let's say category title, depend on join column options)
         const relatedPersistedEntityRelationIds: ObjectLiteral[] = [];
         relatedEntities.forEach(relatedEntity => { // by example: relatedEntity is a category here
