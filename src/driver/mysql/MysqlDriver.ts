@@ -957,7 +957,7 @@ export class MysqlDriver implements Driver {
             password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            ssl: options.ssl,
+            ssl:  credentials.ssl != undefined ? credentials.ssl : options.ssl,
             socketPath: credentials.socketPath
         },
         options.acquireTimeout === undefined

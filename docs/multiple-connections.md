@@ -1,9 +1,10 @@
 # Multiple connections, databases, schemas and replication setup
 
-* [Using multiple connections](#using-multiple-connections)
-* [Using multiple databases in a single connection](#using-multiple-databases-in-a-single-connection)
-* [Using multiple schemas in a single connection](#using-multiple-schemas-in-a-single-connection)
-* [Replication](#replication)
+- [Multiple connections, databases, schemas and replication setup](#multiple-connections-databases-schemas-and-replication-setup)
+  - [Using multiple connections](#using-multiple-connections)
+  - [Using multiple databases in a single connection](#using-multiple-databases-in-a-single-connection)
+  - [Using multiple schemas in a single connection](#using-multiple-schemas-in-a-single-connection)
+  - [Replication](#replication)
 
 
 ## Using multiple connections
@@ -316,6 +317,11 @@ Mysql supports deep configuration:
     master: {
       host: "server1",
       port: 3306,
+      ssl: {
+        ca: "",
+        key: "",
+        cert:""
+      }
       username: "test",
       password: "test",
       database: "test"
@@ -323,6 +329,11 @@ Mysql supports deep configuration:
     slaves: [{
       host: "server2",
       port: 3306,
+      ssl: {
+        ca: "",
+        key: "",
+        cert:""
+      }
       username: "test",
       password: "test",
       database: "test"
