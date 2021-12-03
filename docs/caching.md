@@ -149,8 +149,7 @@ Example:
 }
 ```
 
-"options" can be [node_redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
-
+"options" can be [node_redis specific options](https://github.com/redis/node-redis/blob/master/docs/client-configuration.md) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
 
 In case you want to connect to a redis-cluster using IORedis's cluster functionality, you can do that as well by doing the following:
 
