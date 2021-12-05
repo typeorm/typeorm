@@ -313,7 +313,7 @@ await queryRunner.release();
 
 ## `ConnectionManager` API
 
-* `create` - Creates a new connection and register it in the manager.
+* `create` - Creates a new connection and registers it in the manager.
 
 ```typescript
 const connection = connectionManager.create({
