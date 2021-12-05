@@ -42,6 +42,7 @@ export class EntitySchemaTransformer {
                 type: options.type || "regular",
                 orderBy: options.orderBy,
                 synchronize: options.synchronize,
+                withoutRowid: !!options.withoutRowid,
                 expression: options.expression
             };
             metadataArgsStorage.tables.push(tableMetadata);

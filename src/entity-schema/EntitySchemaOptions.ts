@@ -95,6 +95,13 @@ export class EntitySchemaOptions<T> {
     synchronize?: boolean;
 
     /**
+     * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
+     * an integer primary key column named 'rowid' on table creation. 
+     * @see https://www.sqlite.org/withoutrowid.html. 
+     */
+    withoutRowid?: boolean;
+
+    /**
      * View expression.
      */
     expression?: string|((connection: Connection) => SelectQueryBuilder<any>);
