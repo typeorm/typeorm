@@ -84,12 +84,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             }
         }
 
-        await this.broadcaster.broadcast('BeforeTransactionStart');
+        await this.broadcaster.broadcast("BeforeTransactionStart");
         this.isTransactionActive = true;
 
         await this.query("BEGIN TRANSACTION");
 
-        await this.broadcaster.broadcast('AfterTransactionStart');
+        await this.broadcaster.broadcast("AfterTransactionStart");
     }
 
     /**
@@ -100,12 +100,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.broadcaster.broadcast('BeforeTransactionCommit');
+        await this.broadcaster.broadcast("BeforeTransactionCommit");
 
         await this.query("COMMIT");
         this.isTransactionActive = false;
 
-        await this.broadcaster.broadcast('AfterTransactionCommit');
+        await this.broadcaster.broadcast("AfterTransactionCommit");
     }
 
     /**
@@ -116,13 +116,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.broadcaster.broadcast('BeforeTransactionRollback');
+        await this.broadcaster.broadcast("BeforeTransactionRollback");
 
         await this.query("ROLLBACK");
 
         this.isTransactionActive = false;
 
-        await this.broadcaster.broadcast('AfterTransactionRollback');
+        await this.broadcaster.broadcast("AfterTransactionRollback");
     }
 
     /**
@@ -791,7 +791,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         if (!tableNames) {
             const tablesSql = `SELECT * FROM "sqlite_master" WHERE "type" = 'table'`;
-            dbTables.push(...await this.query(tablesSql))
+            dbTables.push(...await this.query(tablesSql));
         } else {
             const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
             const tablesSql = `SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" IN (${tableNamesString})`;
@@ -917,7 +917,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
             // find unique constraints from CREATE TABLE sql
             let uniqueRegexResult;
-            const uniqueMappings: { name: string, columns: string[] }[] = []
+            const uniqueMappings: { name: string, columns: string[] }[] = [];
             const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE \((.*?)\)/g;
             while ((uniqueRegexResult = uniqueRegex.exec(sql)) !== null) {
                 uniqueMappings.push({
@@ -950,8 +950,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const foundMapping = uniqueMappings.find(mapping => {
                         return mapping!.columns.every(column =>
                             indexColumns.indexOf(column) !== -1
-                        )
-                    })
+                        );
+                    });
 
                     return new TableUnique({
                         name: foundMapping ? foundMapping.name : this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
@@ -1069,7 +1069,18 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         sql += `)`;
 
-        const tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
+        let tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
+        if (!tableMetadata && table.name.startsWith("temporary_")) {
+            // For sqlite, some schema migration operations require building an entirely new table and copying the data back. These new tables
+            // have an added prefix of `temporary_`... these completely new tables don't have an entry in the entityMetadatas, so we will accidentally
+            // miss the withoutRowid option if we don't check for it here.
+            const realTable = new Table({
+                ...table,
+                name: table.name.replace("temporary_", ""),
+            });
+            tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(realTable) === this.getTablePath(metadata));
+        }
+
         if (tableMetadata && tableMetadata.withoutRowid) {
             sql += " WITHOUT ROWID";
         }
