@@ -5,7 +5,7 @@ import { expect } from "chai";
 import { Category } from "./entity/Category";
 import { Post } from "./entity/Post";
 
-describe.only("persistence > delete orphans", () => {
+describe("persistence > delete orphans", () => {
 
     // -------------------------------------------------------------------------
     // Configuration
