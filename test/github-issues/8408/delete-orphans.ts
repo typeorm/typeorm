@@ -5,7 +5,7 @@ import { expect } from "chai";
 import { Category } from "./entity/Category";
 import { Post } from "./entity/Post";
 
-describe("persistence > delete orphans", () => {
+describe.only("persistence > delete orphans", () => {
 
     // -------------------------------------------------------------------------
     // Configuration
@@ -58,9 +58,11 @@ describe("persistence > delete orphans", () => {
             expect(category!.posts[0].id).to.equal(1);
         });
 
-        it("should delete the orphaned Post from the database", async () => {
+        it("should mark orphaned Post as soft-deleted", async () => {
             const postCount = await postRepository.count();
             expect(postCount).to.equal(1);
+            const postCountIncludeDeleted = await postRepository.count({withDeleted: true});
+            expect(postCountIncludeDeleted).to.equal(2);
         });
 
         it("should retain foreign keys on remaining Posts", async () => {
