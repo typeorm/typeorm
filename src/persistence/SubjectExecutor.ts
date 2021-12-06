@@ -18,6 +18,7 @@ import {ClosureSubjectExecutor} from "./tree/ClosureSubjectExecutor";
 import {MaterializedPathSubjectExecutor} from "./tree/MaterializedPathSubjectExecutor";
 import {OrmUtils} from "../util/OrmUtils";
 import { UpdateResult } from "../query-builder/result/UpdateResult";
+import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -607,8 +608,11 @@ export class SubjectExecutor {
                 } else { // in this case identifier is just conditions object to update by
                     softDeleteQueryBuilder.where(subject.identifier);
                 }
-
                 updateResult = await softDeleteQueryBuilder.execute();
+
+                for (const relation of subject.metadata.relations) {
+                    await this.executeSoftRemoveRecursive(relation, [subject.identifier.id]);
+                }
             }
 
             subject.generatedMap = updateResult.generatedMaps[0];
@@ -635,10 +639,32 @@ export class SubjectExecutor {
             // }
         }));
     }
-
     /**
      * Recovers all given subjects in the database.
      */
+
+    protected async executeSoftRemoveRecursive(relation: RelationMetadata, ids: string[]): Promise<void> {
+        if (relation.isCascadeSoftRemove){
+            let updateResult: UpdateResult;
+            let softDeleteQueryBuilder = this.queryRunner
+                .manager
+                .createQueryBuilder()
+                .softDelete()
+                .from(relation.inverseEntityMetadata.target)
+                .returning(relation.inverseEntityMetadata.primaryColumns[0].propertyName)
+                .updateEntity(this.options && this.options.reload === false ? false : true)
+                .callListeners(false);
+            softDeleteQueryBuilder.where(`${relation.inverseSidePropertyPath} in (:...ids)`, {ids: ids});
+            updateResult = await softDeleteQueryBuilder.execute();
+            const parentIds = updateResult.raw.map(({id}: {id: string}) => id);
+            if (parentIds.length) {
+                for (const subRelation of relation.inverseEntityMetadata.relations) {
+                    await this.executeSoftRemoveRecursive(subRelation, parentIds);
+                }
+            }
+        }
+    }
+
     protected async executeRecoverOperations(): Promise<void> {
         await Promise.all(this.recoverSubjects.map(async subject => {
 
