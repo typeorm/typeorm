@@ -611,7 +611,7 @@ export class SubjectExecutor {
                 updateResult = await softDeleteQueryBuilder.execute();
 
                 for (const relation of subject.metadata.relations) {
-                    await this.executeSoftRemoveRecursive(relation, [Reflect.get(subject.entity!, subject.metadata.primaryColumns[0].propertyName)]);
+                    await this.executeSoftRemoveRecursive(relation, [Reflect.get(subject.identifier, subject.metadata.primaryColumns[0].propertyName)]);
                 }
             }
 
