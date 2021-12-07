@@ -647,7 +647,6 @@ export class SubjectExecutor {
         if (relation.isCascadeSoftRemove){
             let primaryPropertyName = relation.inverseEntityMetadata.primaryColumns[0].propertyName;
             let updateResult: UpdateResult;
-            let parentIds: any[] = [];
             let softDeleteQueryBuilder = this.queryRunner
                 .manager
                 .createQueryBuilder()
@@ -658,9 +657,7 @@ export class SubjectExecutor {
                 .callListeners(false);
             softDeleteQueryBuilder.where(`${relation.inverseSidePropertyPath} in (:...ids)`, {ids: ids});
             updateResult = await softDeleteQueryBuilder.execute();
-            for (const row of updateResult.raw) {
-                parentIds.push(row[Object.keys(row)[0]]);
-            }
+            const parentIds = updateResult.raw.map((row: any) => row[Object.keys(row)[0]]);
             if (parentIds.length) {
                 for (const subRelation of relation.inverseEntityMetadata.relations) {
                     await this.executeSoftRemoveRecursive(subRelation, parentIds);
