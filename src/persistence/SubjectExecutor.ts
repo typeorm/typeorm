@@ -611,7 +611,7 @@ export class SubjectExecutor {
                 updateResult = await softDeleteQueryBuilder.execute();
 
                 for (const relation of subject.metadata.relations) {
-                    await this.executeSoftRemoveRecursive(relation, [subject.identifier.id]);
+                    await this.executeSoftRemoveRecursive(relation, [Reflect.get(subject.entity!, subject.metadata.primaryColumns[0].propertyName)]);
                 }
             }
 
@@ -643,20 +643,24 @@ export class SubjectExecutor {
      * Recovers all given subjects in the database.
      */
 
-    protected async executeSoftRemoveRecursive(relation: RelationMetadata, ids: string[]): Promise<void> {
+    protected async executeSoftRemoveRecursive(relation: RelationMetadata, ids: any[]): Promise<void> {
         if (relation.isCascadeSoftRemove){
+            let primaryPropertyName = relation.inverseEntityMetadata.primaryColumns[0].propertyName;
             let updateResult: UpdateResult;
+            let parentIds: any[] = [];
             let softDeleteQueryBuilder = this.queryRunner
                 .manager
                 .createQueryBuilder()
                 .softDelete()
                 .from(relation.inverseEntityMetadata.target)
-                .returning(relation.inverseEntityMetadata.primaryColumns[0].propertyName)
+                .returning(primaryPropertyName)
                 .updateEntity(this.options && this.options.reload === false ? false : true)
                 .callListeners(false);
             softDeleteQueryBuilder.where(`${relation.inverseSidePropertyPath} in (:...ids)`, {ids: ids});
             updateResult = await softDeleteQueryBuilder.execute();
-            const parentIds = updateResult.raw.map(({id}: {id: string}) => id);
+            for (const row of updateResult.raw) {
+                parentIds.push(row[Object.keys(row)[0]]);
+            }
             if (parentIds.length) {
                 for (const subRelation of relation.inverseEntityMetadata.relations) {
                     await this.executeSoftRemoveRecursive(subRelation, parentIds);
