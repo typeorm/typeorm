@@ -6,7 +6,7 @@ import { Category } from "./entity/Category";
 import { Post } from "./entity/Post";
 import {Author} from "./entity/Author";
 
-describe.only("Soft Delete Recursive cascade", () => {
+describe("Soft Delete Recursive cascade", () => {
 
     // -------------------------------------------------------------------------
     // Configuration
