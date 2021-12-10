@@ -168,7 +168,7 @@ const questions = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use leftJoinAndSelect to load the relation.
+With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use `leftJoinAndSelect` to load the relation.
 
 ## Bi-directional relations
 
