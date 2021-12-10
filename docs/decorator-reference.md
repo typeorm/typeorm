@@ -192,7 +192,7 @@ If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
-* `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's neccessary if you intend to use the same enum type in different tables.
+* `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's necessary if you intend to use the same enum type in different tables.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html)  and [Postgres (Only "STORED")](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
@@ -499,7 +499,7 @@ export class Post {
 
 Used for `many-to-many` relations and describes join columns of the "junction" table.
 Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
-You can change the name of the generated "junction" table and also the column names inside the junction table and their referenced columns with the `joinColumn`- and `inverseJoinColumn` attributes. 
+You can change the name of the generated "junction" table and also the column names inside the junction table and their referenced columns with the `joinColumn`- and `inverseJoinColumn` attributes.
 Example:
 
 ```typescript
