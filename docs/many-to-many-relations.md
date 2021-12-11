@@ -5,7 +5,7 @@
  * [Deleting many-to-many relations](#deleting-many-to-many-relations)
  * [Loading many-to-many relations](#loading-many-to-many-relations)
  * [Bi-directional relations](#bi-directional-relations)
- * [many-to-many relations with custom properties](#many-to-many-relations-with-custom-properties)
+ * [Many-to-many relations with custom properties](#many-to-many-relations-with-custom-properties)
 
 ## What are many-to-many relations
 
@@ -201,7 +201,6 @@ import { Category } from "./Category";
 
 @Entity()
 export class Question {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -214,7 +213,6 @@ export class Question {
     @ManyToMany(() => Category, category => category.questions)
     @JoinTable()
     categories: Category[];
-
 }
 ```
 
@@ -231,7 +229,7 @@ const categoriesWithQuestions = await connection
     .getMany();
 ```
 
-## many-to-many relations with custom properties
+## Many-to-many relations with custom properties
 
 In case you need to have additional properties in your many-to-many relationship, you have to create a new entity yourself.
 For example, if you would like entities `Post` and `Category` to have a many-to-many relationship with an additional `order` column, then you need to create an entity `PostToCategory` with two `ManyToOne` relations pointing in both directions and with custom columns in it:

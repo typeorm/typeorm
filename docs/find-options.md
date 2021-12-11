@@ -19,7 +19,7 @@ will execute following query:
 SELECT "firstName", "lastName" FROM "user"
 ```
 
--   `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for join and leftJoinAndSelect)
+-   `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for `join` and `leftJoinAndSelect`)
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });

@@ -2,7 +2,7 @@
 
 You can cache results selected by these `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne`  and `getCount`.
 
- You can also cache results selected by these `Repository` methods: `find`, `findAndCount`, `findByIds`, and `count`.
+You can also cache results selected by these `Repository` methods: `find`, `findAndCount`, `findByIds`, and `count`.
 
 To enable caching you need to explicitly enable it in your connection options:
 
@@ -233,7 +233,7 @@ class CustomQueryResultCache implements QueryResultCache {
 }
 ```
 
-If you wish to ignore cache errors and want the queries to pass through to database in case of cache errors, you can use ignoreErrors option. 
+If you wish to ignore cache errors and want the queries to pass through to database in case of cache errors, you can use ignoreErrors option.
 Example:
 
 ```typescript

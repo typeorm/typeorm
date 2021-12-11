@@ -42,13 +42,13 @@ You have thousands of posts in your database.
 Now you need to make a new release and rename `title` to `name`.
 What would you do?
 
-You need to create a new migration with the following sql query (postgres dialect):
+You need to create a new migration with the following SQL query (postgres dialect):
 
 ```sql
 ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name";
 ```
 
-Once you run this sql query your database schema is ready to work with your new codebase.
+Once you run this SQL query your database schema is ready to work with your new codebase.
 TypeORM provides a place where you can write such sql queries and run them when needed.
 This place is called "migrations".
 
@@ -217,7 +217,7 @@ module.exports = class PostRefactoringTIMESTAMP {
 ```
 
 See, you don't need to write the queries on your own.
-The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag. 
+The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
 
 ## Connection option
 If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
@@ -544,7 +544,7 @@ dropColumns(table: Table|string, columns: TableColumn[]|string[]): Promise<void>
 ```
 
 - `table` - Table object or name
-- `columns` - array of TableColumn objects or column names to be dropped 
+- `columns` - array of TableColumn objects or column names to be dropped
 
 Drops a columns in the table.
 

@@ -10,16 +10,16 @@ import {User} from "./User";
 
 @Entity()
 export class Photo {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     url: string;
-    
+
     @ManyToOne(() => User, user => user.photos)
     user: User;
-    
+
 }
 ```
 
@@ -29,16 +29,16 @@ import {Photo} from "./Photo";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @OneToMany(() => Photo, photo => photo.user)
     photos: Photo[];
-    
+
 }
 ```
 
@@ -105,7 +105,7 @@ await connection.manager.save(photo2);
 With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 To load a user with photos inside you must specify the relation in `FindOptions`:
- 
+
 ```typescript
 const userRepository = connection.getRepository(User);
 const users = await userRepository.find({ relations: ["photos"] });
@@ -134,4 +134,5 @@ const photos = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use leftJoinAndSelect to load the relation.
+With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically.
+If you use QueryBuilder eager relations are disabled, you have to use `leftJoinAndSelect` to load the relation.

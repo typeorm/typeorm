@@ -264,7 +264,7 @@ createQueryBuilder()
     .from(User, "user")
 ```
 
-Which will result in the following sql query:
+Which will result in the following SQL query:
 
 ```sql
 SELECT ... FROM users user
@@ -659,7 +659,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate following sql query:
+This will generate following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
@@ -676,7 +676,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate the following sql query:
+This will generate the following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
