@@ -403,17 +403,17 @@ export class Connection {
     }
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder(queryRunner?: QueryRunner): SelectQueryBuilder<any>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)

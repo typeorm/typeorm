@@ -113,7 +113,7 @@ export abstract class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     abstract getQuery(): string;
 
