@@ -10,7 +10,7 @@ import {Post} from "./Post";
 export class Author {
 
     @PrimaryGeneratedColumn()
-    idkey: number;
+    id: number;
 
     @Column()
     postId: string;

@@ -8,7 +8,7 @@ import {DeleteDateColumn} from "../../../../src";
 export class Category {
 
     @PrimaryGeneratedColumn()
-    idkey: number;
+    id: number;
 
     @OneToMany(() => Post, post => post.category, {
         cascade: true

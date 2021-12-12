@@ -11,7 +11,7 @@ import {Author} from "./Author";
 export class Post {
 
     @PrimaryGeneratedColumn()
-    idkey: number;
+    id: number;
 
     @Column()
     categoryId: string;
