@@ -645,7 +645,6 @@ export class SubjectExecutor {
 
     protected async executeSoftRemoveRecursive(relation: RelationMetadata, ids: any[]): Promise<void> {
         if (relation.isCascadeSoftRemove){
-            console.log(this.queryRunner.connection.driver.isReturningSqlSupported());
             let primaryPropertyName = relation.inverseEntityMetadata.primaryColumns[0].propertyName;
             let updateResult: UpdateResult;
             let softDeleteQueryBuilder = this.queryRunner
@@ -657,10 +656,15 @@ export class SubjectExecutor {
                 .updateEntity(this.options && this.options.reload === false ? false : true)
                 .callListeners(false);
             softDeleteQueryBuilder.where(`${relation.inverseSidePropertyPath} in (:...ids)`, {ids: ids});
-            console.log(softDeleteQueryBuilder.getQuery());
-            console.log(ids);
             updateResult = await softDeleteQueryBuilder.execute();
-            const parentIds = updateResult.raw.map((row: any) => row[Object.keys(row)[0]]);
+            let parentIds;
+            // Only in oracle the returning value is a list of the affected row primary keys and not list of dictionary
+            if (this.queryRunner.connection.driver instanceof OracleDriver){
+                parentIds = updateResult.raw[0];
+            }
+            else {
+                parentIds = updateResult.raw.map((row: any) => row[Object.keys(row)[0]]);
+            }
             if (parentIds.length) {
                 for (const subRelation of relation.inverseEntityMetadata.relations) {
                     await this.executeSoftRemoveRecursive(subRelation, parentIds);
