@@ -47,7 +47,7 @@ describe("Soft Delete Recursive cascade", () => {
                 new Author(),
                 new Author()
             ];
-            const categoryToInsert = await categoryRepository.save(new Category());
+            const categoryToInsert = new Category();
             categoryToInsert.posts = [
                 firstPost,
                 secondPost
