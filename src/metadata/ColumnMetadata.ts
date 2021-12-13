@@ -306,11 +306,6 @@ export class ColumnMetadata {
      */
     srid?: number;
 
-    /**
-     * Defines whether this column is used for MongoDB persistence.
-     */
-    isMongoColumn: boolean;
-
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -459,8 +454,6 @@ export class ColumnMetadata {
             this.isNestedSetRight = options.nestedSetRight;
         if (options.materializedPath)
             this.isMaterializedPath = options.materializedPath;
-
-        this.isMongoColumn = options.connection.driver instanceof MongoDriver;
     }
 
     // ---------------------------------------------------------------------
@@ -548,8 +541,9 @@ export class ColumnMetadata {
                 const propertyName = propertyNames.shift();
 
                 if (propertyName) {
-                    //MongoDb embedded arrays need to be extracted with additional recursive calls. Otherwise the arrays are not persisted
-                    if(this.isMongoColumn) {
+                    //MongoDb embedded arrays need to be extracted with additional recursive calls. Otherwise, the arrays are not persisted
+                    const isMongoColumn = this.entityMetadata.connection.options.type === "mongodb";
+                    if(isMongoColumn) {
                         if(Array.isArray(value)) {
                             const mappedArray: any = [];
 
