@@ -181,7 +181,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // await this.renameTables();
         await this.renameColumns();
         await this.createNewTables();
-        await this.dropRemovedColumns();
+        //await this.dropRemovedColumns();
         await this.addNewColumns();
         await this.updatePrimaryKeys();
         await this.updateExistColumns();
