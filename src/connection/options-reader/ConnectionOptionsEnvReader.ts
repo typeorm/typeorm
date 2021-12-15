@@ -29,6 +29,7 @@ export class ConnectionOptionsEnvReader {
             schema: PlatformTools.getEnvVariable("TYPEORM_SCHEMA"),
             extra: PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA") ? JSON.parse(PlatformTools.getEnvVariable("TYPEORM_DRIVER_EXTRA")) : undefined,
             synchronize: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_SYNCHRONIZE")),
+            synchronizeWithoutDrops: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_SYNCHRONIZE_WITHOUT_DROPS")),
             dropSchema: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_DROP_SCHEMA")),
             migrationsRun: OrmUtils.toBoolean(PlatformTools.getEnvVariable("TYPEORM_MIGRATIONS_RUN")),
             entities: this.stringToArray(PlatformTools.getEnvVariable("TYPEORM_ENTITIES")),

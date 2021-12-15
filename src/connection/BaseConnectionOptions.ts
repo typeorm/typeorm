@@ -84,6 +84,10 @@ export interface BaseConnectionOptions {
      * Instead, it syncs just by creating indices.
      */
     readonly synchronize?: boolean;
+    /**
+     * Indicates if synchronize could drop columns and tables
+     */
+    readonly synchronizeWithoutDrops?: boolean;
 
     /**
      * Indicates if migrations should be auto run on every application launch.

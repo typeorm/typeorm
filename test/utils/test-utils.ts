@@ -72,6 +72,10 @@ export interface TestingOptions {
      * Indicates if schema should be dropped on connection setup.
      */
     dropSchema?: boolean;
+    /**
+     * Indicates if synchronize could drop columns and tables
+     */
+    synchronizeWithoutDrops?: boolean;
 
     /**
      * Enables or disables logging.
@@ -151,6 +155,7 @@ export function setupSingleTestingConnection(driverType: DatabaseType, options: 
         subscribers: options.subscribers ? options.subscribers : [],
         dropSchema: options.dropSchema ? options.dropSchema : false,
         schemaCreate: options.schemaCreate ? options.schemaCreate : false,
+        synchronizeWithoutDrops: options.synchronizeWithoutDrops? options.synchronizeWithoutDrops : false,
         enabledDrivers: [driverType],
         cache: options.cache,
         schema: options.schema ? options.schema : undefined,
@@ -215,6 +220,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 migrations: options && options.migrations ? options.migrations : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
+                synchronizeWithoutDrops: options && options.synchronizeWithoutDrops !== undefined ? options.synchronizeWithoutDrops: false,
                 cache: options ? options.cache : undefined
             });
             if (options && options.driverSpecific)
