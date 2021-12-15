@@ -85,7 +85,7 @@ export interface BaseConnectionOptions {
      */
     readonly synchronize?: boolean;
     /**
-     * Indicates if synchronize could drop columns and tables
+     * Indicates if synchronize should not drop columns and tables
      */
     readonly synchronizeWithoutDrops?: boolean;
 

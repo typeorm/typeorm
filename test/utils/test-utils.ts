@@ -73,7 +73,7 @@ export interface TestingOptions {
      */
     dropSchema?: boolean;
     /**
-     * Indicates if synchronize could drop columns and tables
+     * Indicates if synchronize should not drop columns and tables
      */
     synchronizeWithoutDrops?: boolean;
 
