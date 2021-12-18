@@ -164,7 +164,6 @@ export class TableColumn {
             this.default = options.default;
             this.onUpdate = options.onUpdate;
             this.isNullable = options.isNullable || false;
-            this.isGenerated = options.isGenerated || false;
             this.generationStrategy = options.generationStrategy;
             this.generatedIdentity = options.generatedIdentity;
             this.isPrimary = options.isPrimary || false;
@@ -175,6 +174,7 @@ export class TableColumn {
             this.enumName = options.enumName;
             this.asExpression = options.asExpression;
             this.generatedType = options.generatedType;
+            this.isGenerated = !!(this.generationStrategy || this.generatedType) ? true : (options.isGenerated || false);
             this.spatialFeatureType = options.spatialFeatureType;
             this.srid = options.srid;
         }
