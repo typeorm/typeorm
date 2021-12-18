@@ -178,7 +178,10 @@ export class ReturningResultsEntityUpdator {
         // filter out the columns of which we need database inserted values to update our entity
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
             return  column.default !== undefined ||
-                    (needToCheckGenerated && column.isGenerated)  ||
+                    (needToCheckGenerated &&
+                        column.isGenerated ||
+                        !!column.asExpression
+                    ) ||
                     column.isCreateDate ||
                     column.isUpdateDate ||
                     column.isDeleteDate ||
