@@ -2511,7 +2511,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         // CHARACTER SET, COLLATE, NOT NULL and DEFAULT do not exist on generated (virtual) columns
         // Also, postgres only supports the stored generated column type
         if (column.generatedType === "STORED" && column.asExpression) {
-            c += ` ${column.type} GENERATED ALWAYS AS (${column.asExpression}) STORED`;
+            c += ` GENERATED ALWAYS AS (${column.asExpression}) STORED`;
         } else {
             if (column.charset)
                 c += " CHARACTER SET \"" + column.charset + "\"";
