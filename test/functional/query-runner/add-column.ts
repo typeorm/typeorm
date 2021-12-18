@@ -102,6 +102,7 @@ describe("query runner > add column", () => {
                 table = await queryRunner.getTable("post");
                 column3 = table!.findColumnByName("textAndTag")!;
                 column3.should.be.exist;
+                column3!.isGenerated!.should.be.true;
                 column3!.generatedType!.should.be.equals("STORED");
                 column3!.asExpression!.should.be.a("string");
 
@@ -110,6 +111,7 @@ describe("query runner > add column", () => {
                     table = await queryRunner.getTable("post");
                     column4 = table!.findColumnByName("textAndTag2")!;
                     column4.should.be.exist;
+                    column4!.isGenerated!.should.be.true;
                     column4!.generatedType!.should.be.equals("VIRTUAL");
                     column4!.asExpression!.should.be.a("string");
                 }
