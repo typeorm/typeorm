@@ -400,7 +400,6 @@ export class ColumnMetadata {
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression;
             this.generatedType = options.args.options.generatedType ? options.args.options.generatedType : "VIRTUAL";
-            this.isGenerated = true;
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType;
