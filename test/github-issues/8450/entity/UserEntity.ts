@@ -1,11 +1,11 @@
 import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
 import {Column} from "../../../../src/decorator/columns/Column";
 
 @Entity("user")
 export class UserEntity {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn("int")
     id: number;
 
     @Column({
