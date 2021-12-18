@@ -1936,6 +1936,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (dbColumn["is_generated"] === "ALWAYS" && dbColumn["generation_expression"]) {
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
+                        tableColumn.isGenerated = true;
                         // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                         const asExpressionQuery = `SELECT * FROM "typeorm_metadata" `
                             + ` WHERE "table" = '${dbTable["table_name"]}'`
@@ -2487,11 +2488,11 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected buildCreateColumnSql(table: Table, column: TableColumn) {
         let c = "\"" + column.name + "\"";
-        if (column.isGenerated === true && column.generationStrategy !== "uuid") {
+        if (column.isGenerated === true && !!column.generationStrategy && column.generationStrategy !== "uuid") {
             if (column.generationStrategy === "identity") { // Postgres 10+ Identity generated column
                 const generatedIdentityOrDefault = column.generatedIdentity || "BY DEFAULT";
                 c += ` ${column.type} GENERATED ${generatedIdentityOrDefault} AS IDENTITY`;
-            } else { // classic SERIAL primary column
+            } else if (column.generationStrategy) { // classic SERIAL primary column
                 if (column.type === "integer" || column.type === "int" || column.type === "int4")
                     c += " SERIAL";
                 if (column.type === "smallint" || column.type === "int2")
