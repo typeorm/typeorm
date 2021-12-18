@@ -1912,7 +1912,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (dbColumn.is_identity === "YES") { // Postgres 10+ Identity column
                         tableColumn.isGenerated = true;
                         tableColumn.generationStrategy = "identity";
-                        tableColumn.generatedIdentity = dbColumn.identity_generation;
+                        tableColumn.generatedIdentity = dbColumn["generated_identity"];
                     } else if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         const serialDefaultName = `nextval('${this.buildSequenceName(table, dbColumn["column_name"])}'::regclass)`;
                         const serialDefaultPath = `nextval('${this.buildSequencePath(table, dbColumn["column_name"])}'::regclass)`;
@@ -1933,7 +1933,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         }
                     }
 
-                    if (dbColumn["is_generated"] === "ALWAYS" && dbColumn["generation_expression"]) {
+                    if (dbColumn["generated_identity"] === "ALWAYS" && dbColumn["generation_expression"]) {
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
                         // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
