@@ -35,7 +35,7 @@ export class TableColumn {
     isNullable: boolean = false;
 
     /**
-     * Indicates if column is auto-generated sequence.
+     * Indicates if column is generated (auto increment or other `generationStrategy`).
      */
     isGenerated: boolean = false;
 

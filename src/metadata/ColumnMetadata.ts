@@ -81,7 +81,7 @@ export class ColumnMetadata {
     isPrimary: boolean = false;
 
     /**
-     * Indicates if this column is generated (auto increment or generated other way).
+     * Indicates if this column is generated (auto increment or other `generationStrategy`).
      */
     isGenerated: boolean = false;
 
