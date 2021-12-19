@@ -87,7 +87,7 @@ This option is useful during debug and development.
  Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
  Instead, it syncs just by creating indices.
 
-* `synchronizeWithoutDrops` - Indicates if synchronize should not drop columns and tables
+* `synchronizeWithoutDrops` - Indicates if synchronize should not drop columns, tables and more
 
 * `migrationsRun` - Indicates if migrations should be auto run on every application launch.
 As an alternative, you can use CLI and run migration:run command.
