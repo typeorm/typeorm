@@ -22,8 +22,6 @@ describe("github issues > #8450 Generated column not in RETURNING clause on save
 
         await connection.manager.save(user);
 
-        expect(user.id).not.to.be.undefined;
-        expect(user.id).to.be.a("number");
         expect(user.generated).to.be.a("number");
         expect(user.generated).to.be.equal(user.id * 2);
     })));
