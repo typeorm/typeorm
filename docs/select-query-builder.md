@@ -403,6 +403,24 @@ Which will produce the following SQL query:
 SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
 ```
 
+
+You can add a negated complex `WHERE` expression into an existing `WHERE` using `NotBrackets`
+
+```typescript
+createQueryBuilder("user")
+    .where("user.registered = :registered", { registered: true })
+    .andWhere(new NotBrackets(qb => {
+        qb.where("user.firstName = :firstName", { firstName: "Timber" })
+          .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.registered = true AND NOT((user.firstName = 'Timber' OR user.lastName = 'Saw'))
+```
+
 You can combine as many `AND` and `OR` expressions as you need.
 If you use `.where` more than once you'll override all previous `WHERE` expressions.
 
