@@ -100,6 +100,16 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             prepareDatabase
         } = this.options;
         const databaseConnection = this.sqlite(database, { readonly, fileMustExist, timeout, verbose });
+        // in the options, if encryption key for SQLCipher is setted.
+        // Must invoke key pragma before trying to do any other interaction with the database.
+        if (this.options.key) {
+            databaseConnection.exec(`PRAGMA key = ${JSON.stringify(this.options.key)}`);
+        }
+
+        // function to run before a database is used in typeorm.
+        if (typeof prepareDatabase === "function") {
+            prepareDatabase(databaseConnection);
+        }
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
@@ -107,15 +117,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
         // turn on WAL mode to enhance performance
         databaseConnection.exec(`PRAGMA journal_mode = WAL`);
-
-        // in the options, if encryption key for SQLCipher is setted.
-        if (this.options.key) {
-            databaseConnection.exec(`PRAGMA key = ${JSON.stringify(this.options.key)}`);
-        }
-
-        if (typeof prepareDatabase === "function") {
-            prepareDatabase(databaseConnection);
-        }
 
         return databaseConnection;
     }

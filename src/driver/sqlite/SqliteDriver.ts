@@ -107,6 +107,11 @@ export class SqliteDriver extends AbstractSqliteDriver {
                 });
             });
         }
+        // in the options, if encryption key for SQLCipher is setted.
+        // Must invoke key pragma before trying to do any other interaction with the database.
+        if (this.options.key) {
+            await run(`PRAGMA key = ${JSON.stringify(this.options.key)};`);
+        }
 
         if (this.options.enableWAL) {
             await run(`PRAGMA journal_mode = WAL;`);
@@ -115,11 +120,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
         await run(`PRAGMA foreign_keys = ON;`);
-
-        // in the options, if encryption key for SQLCipher is setted.
-        if (this.options.key) {
-            await run(`PRAGMA key = ${JSON.stringify(this.options.key)};`);
-        }
 
         return databaseConnection;
     }
