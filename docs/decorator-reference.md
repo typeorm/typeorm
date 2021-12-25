@@ -1,4 +1,4 @@
-# Decorators reference
+# Decorator reference
 
 * [Entity decorators](#entity-decorators)
     * [`@Entity`](#entity)
