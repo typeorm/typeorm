@@ -283,9 +283,9 @@ userRepository.save(users, {chunk: users.length / 1000});
 Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
 
 * `data` - Additional data to be passed with remove method. This data can be used in subscribers then.
-* `listener`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
+* `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
 * `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
-* `chunk`: number - Breaks save execution into multiple groups of chunks. For example, if you want to save 100.000 objects but you have issues saving them, you can break them into 10 groups of 10.000 objects, by setting `{ chunk: 10000 }`, and save each group separately. This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
+* `chunk`: number - Breaks removal execution into multiple groups of chunks. For example, if you want to remove 100.000 objects but you have issues doing so, you can break them into 10 groups of 10.000 objects, by setting `{ chunk: 10000 }`, and remove each group separately. This option is needed to perform very big deletions when you have issues with underlying driver parameter number limitation.
 
 Example:
 ```typescript
