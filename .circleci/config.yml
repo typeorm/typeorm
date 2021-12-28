@@ -85,6 +85,7 @@ jobs:
       - install-packages:
           cache-key: node12
       - run: npm run lint
+      - run: echo ${{ secrets.GITHUB_TOKEN }}
 
   build:
     working_directory: ~/typeorm

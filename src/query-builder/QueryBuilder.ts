@@ -234,7 +234,7 @@ export abstract class QueryBuilder<Entity> {
      * Creates DELETE query.
      */
     delete(): DeleteQueryBuilder<Entity> {
-        this.expressionMap.queryType = "delete";
+        this.expressionMap.queryType = "delete1";
 
         // loading it dynamically because of circular issue
         const DeleteQueryBuilderCls = require("./DeleteQueryBuilder").DeleteQueryBuilder;
