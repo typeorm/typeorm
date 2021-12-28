@@ -84,6 +84,7 @@ jobs:
       - checkout
       - install-packages:
           cache-key: node12
+      - run: echo ${{ secrets.GITHUB_TOKEN }}
       - run: npm run lint
 
   build:
