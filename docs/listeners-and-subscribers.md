@@ -9,11 +9,14 @@
     * [`@BeforeRemove`](#beforeremove)
     * [`@AfterRemove`](#afterremove)
 * [What is a Subscriber](#what-is-a-subscriber)
+    * [`Event Object`](#event-object)
 
 ## What is an Entity Listener
 
 Any of your entities can have methods with custom logic that listen to specific entity events.
 You must mark those methods with special decorators depending on what event you want to listen to.
+
+**Note:** Do not make any database calls within a listener, opt for [subscribers](#what-is-a-subscriber) instead.
 
 ### `@AfterLoad`
 
@@ -266,3 +269,15 @@ export class PostSubscriber implements EntitySubscriberInterface {
 ```
 
 Make sure your `subscribers` property is set in your [Connection Options](./connection-options.md#common-connection-options) so TypeORM loads your subscriber.
+
+### `Event Object`
+
+Excluding `listenTo`, all `EntitySubscriberInterface` methods are passed an event object that has the following base properties:
+
+- `connection: Connection` - Connection used in the event.
+- `queryRunner: QueryRunner` - QueryRunner used in the event transaction.
+- `manager: EntityManager` - EntityManager used in the event transaction.
+
+See each [Event's interface](https://github.com/typeorm/typeorm/tree/master/src/subscriber/event) for additional properties.
+
+**Note:** All database operations in the subscribed event listeners should be performed using the event object's `queryRunner` or `manager` instance.
