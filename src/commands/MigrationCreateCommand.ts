@@ -39,6 +39,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 type: "boolean",
                 default: false,
                 describe: "Generate a migration file on Javascript instead of Typescript",
+            })
+            .option("t", {
+                alias: "timestamp",
+                type: "number",
+                default: false,
+                describe: "Custom timestamp for the migration name",
             });
     }
 
@@ -48,7 +54,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
         }
 
         try {
-            const timestamp = new Date().getTime();
+            const timestamp = CommandUtils.getTimestamp(args.timestamp);
             const fileContent = args.outputJs ?
                 MigrationCreateCommand.getJavascriptTemplate(args.name as any, timestamp)
                 : MigrationCreateCommand.getTemplate(args.name as any, timestamp);
