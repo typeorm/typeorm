@@ -225,6 +225,16 @@ If you need to run/revert your migrations for another connection rather than the
 typeorm -c <your-config-name> migration:{run|revert}
 ```
 
+## Timestamp option
+If you need to specify a timestamp for the migration name, use the `-t` (alias for `--timestamp`) and pass the timestamp (should be a non-negative number)
+```
+typeorm -t <specific-timestamp> migration:{create|generate}
+```
+You can get a timestamp from:
+```js
+Date.now(); /* OR */ new Date().getTime();
+```
+
 ## Using migration API to write migrations
 
 In order to use an API to change a database schema you can use `QueryRunner`.

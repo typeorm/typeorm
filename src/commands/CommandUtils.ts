@@ -46,9 +46,9 @@ export class CommandUtils {
      * Gets migration timestamp and validates argument (if sent)
      */
     static getTimestamp(timestampOptionArgument: any): number {
-        if (timestampOptionArgument && isNaN(timestampOptionArgument)) {
-            throw new TypeORMError(`timestamp option should be a number. received: "${timestampOptionArgument}"`);
+        if (timestampOptionArgument && (isNaN(timestampOptionArgument) || timestampOptionArgument < 0)) {
+            throw new TypeORMError(`timestamp option should be a non-negative number. received: ${timestampOptionArgument}`);
         }
-        return (timestampOptionArgument ? new Date(Number(timestampOptionArgument)) : new Date()).getTime();
+        return timestampOptionArgument ? new Date(Number(timestampOptionArgument)).getTime() : Date.now();
     }
 }
