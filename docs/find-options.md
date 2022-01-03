@@ -266,6 +266,18 @@ userRepository.find({
 });
 ```
 
+If `undefined` is passed as an argument, find will return all items in the table, and findOne will return the first item in the table.
+```ts
+userRepository.find(undefined);
+
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "user"
+```
+
 ## Advanced options
 
 TypeORM provides a lot of built-in operators that can be used to create more complex comparisons:
