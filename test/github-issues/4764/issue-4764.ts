@@ -6,7 +6,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils";
+import { User } from "./entity/User";
 import { Cart } from "./entity/Cart";
+import { CartItems } from "./entity/CartItems";
 
 describe("mssql > add lock clause for MSSQL select with join clause", () => {
     // -------------------------------------------------------------------------
@@ -85,6 +87,54 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
                 console.log(selectQuery);
                 expect(countInstances(selectQuery, lock)).to.equal(2);
+
+                await connection.query(selectQuery);
+            })
+        );
+    });
+
+    it("should have three WITH (NOLOCK) clause", async () => {
+        Promise.all(
+            connections.map(async (connection) => {
+                const lock = " WITH (NOLOCK)";
+                const selectQuery = connection
+                    .createQueryBuilder()
+                    .select("cart")
+                    .from(Cart, "cart")
+                    .innerJoinAndSelect("cart.User", "user")
+                    .innerJoinAndSelect("cart.CartItems", "cartItems")
+                    .setLock("dirty_read")
+                    .where("1=1")
+                    .getQuery();
+
+                console.log(selectQuery);
+                expect(countInstances(selectQuery, lock)).to.equal(3);
+
+                await connection.query(selectQuery);
+            })
+        );
+    });
+
+    it("should have three WITH (NOLOCK) clause (without relation)", async () => {
+        Promise.all(
+            connections.map(async (connection) => {
+                const lock = " WITH (NOLOCK)";
+                const selectQuery = connection
+                    .createQueryBuilder()
+                    .select("cart")
+                    .from(Cart, "cart")
+                    .innerJoin(User, "user", "user.ID=cart.UNID")
+                    .innerJoin(
+                        CartItems,
+                        "cartItems",
+                        "cart.ID=cartItems.CartID"
+                    )
+                    .setLock("dirty_read")
+                    .where("cart.ID=1")
+                    .getQuery();
+
+                console.log(selectQuery);
+                expect(countInstances(selectQuery, lock)).to.equal(3);
 
                 await connection.query(selectQuery);
             })
