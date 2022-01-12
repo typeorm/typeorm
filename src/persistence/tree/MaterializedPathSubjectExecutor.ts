@@ -97,13 +97,13 @@ export class MaterializedPathSubjectExecutor {
             .execute();
     }
 
-    private getEntityPath(subject: Subject, id: ObjectLiteral): Promise<any> {
+    private getEntityPath(subject: Subject, id: ObjectLiteral): Promise<string> {
         return this.queryRunner.manager
             .createQueryBuilder()
             .select(subject.metadata.targetName + "." + subject.metadata.materializedPathColumn!.propertyPath, "path")
             .from(subject.metadata.target, subject.metadata.targetName)
             .whereInIds(id)
             .getRawOne()
-            .then(result => result ? result["path"] : undefined);
+            .then(result => result ? result["path"] : "");
     }
 }
