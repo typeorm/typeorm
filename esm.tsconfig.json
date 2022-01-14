@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+      "lib": ["es2020"],
+      "outDir": "build/compiled/esm",
+      "target": "es2019",
+      "module": "es2020",
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true
+  },
+  "include": [
+    "sample",
+    "src",
+    "test"
+  ],
+  "exclude": [
+      "tmp",
+      "temp",
+      "build",
+      "node_modules"
+  ]
+}
