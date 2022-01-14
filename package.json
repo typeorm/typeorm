@@ -9,8 +9,14 @@
     "name": "Umed Khudoiberdiev",
     "email": "pleerock.me@gmail.com"
   },
-  "main": "./build/compiled/src/index.js",
-  "module": "./build/compiled/esm/src/index.js",
+  "type": "module",
+  "exports": {
+    "node": {
+      "module": "./build/compiled/esm/src/index.js",
+      "require": "./build/compiled/src/index.js"
+    },
+    "default": "./build/compiled/esm/src/index.js"
+  },
   "types": "./build/compiled/src/index.d.js",
   "browser": {
     "./browser/driver/aurora-data-api/AuroraDataApiDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
