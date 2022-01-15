@@ -4,6 +4,7 @@ import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { DriverUtils } from "../DriverUtils"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import { CockroachConnectionOptions } from "./CockroachConnectionOptions"
 import { DateUtils } from "../../util/DateUtils"
@@ -229,6 +230,13 @@ export class CockroachDriver implements Driver {
      * for CockroarchDb.
      */
     maxAliasLength?: number
+
+    cteCapabilities: CteCapabilities = {
+        enabled: true,
+        writable: true,
+        materializedHint: true,
+        requiresRecursiveHint: true,
+    }
 
     // -------------------------------------------------------------------------
     // Constructor

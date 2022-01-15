@@ -2,6 +2,7 @@ import { Driver, ReturningType } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { DriverUtils } from "../DriverUtils"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { MysqlQueryRunner } from "./MysqlQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
@@ -309,6 +310,11 @@ export class MysqlDriver implements Driver {
      */
     maxAliasLength = 63
 
+    cteCapabilities: CteCapabilities = {
+        enabled: false,
+        requiresRecursiveHint: true,
+    }
+
     /**
      * Supported returning types
      */
@@ -391,17 +397,24 @@ export class MysqlDriver implements Driver {
             await queryRunner.release()
         }
 
-        if (this.options.type === "mariadb") {
-            const result = (await this.createQueryRunner("master").query(
-                `SELECT VERSION() AS \`version\``,
-            )) as { version: string }[]
-            const dbVersion = result[0].version
+        const result = (await this.createQueryRunner("master").query(
+            `SELECT VERSION() AS \`version\``,
+        )) as { version: string }[]
+        const dbVersion = result[0].version
 
+        if (this.options.type === "mariadb") {
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.0.5")) {
                 this._isReturningSqlSupported.delete = true
             }
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
                 this._isReturningSqlSupported.insert = true
+            }
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.2.0")) {
+                this.cteCapabilities.enabled = true
+            }
+        } else if (this.options.type === "mysql") {
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
+                this.cteCapabilities.enabled = true
             }
         }
     }

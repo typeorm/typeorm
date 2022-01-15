@@ -13,6 +13,7 @@ import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Driver } from "../Driver"
 import { ColumnType } from "../types/ColumnTypes"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
@@ -271,6 +272,13 @@ export class PostgresDriver implements Driver {
     maxAliasLength = 63
 
     isGeneratedColumnsSupported: boolean = false
+
+    cteCapabilities: CteCapabilities = {
+        enabled: true,
+        writable: true,
+        requiresRecursiveHint: true,
+        materializedHint: true,
+    }
 
     // -------------------------------------------------------------------------
     // Constructor

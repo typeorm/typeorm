@@ -39,6 +39,7 @@ export class DeleteQueryBuilder<Entity>
      */
     getQuery(): string {
         let sql = this.createComment()
+        sql += this.createCteExpression()
         sql += this.createDeleteExpression()
         return sql.trim()
     }

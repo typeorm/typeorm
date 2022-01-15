@@ -1,6 +1,7 @@
 import { Driver } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { MongoQueryRunner } from "./MongoQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
@@ -211,6 +212,10 @@ export class MongoDriver implements Driver {
         "autoEncryption",
         "retryWrites",
     ]
+
+    cteCapabilities: CteCapabilities = {
+        enabled: false,
+    }
 
     // -------------------------------------------------------------------------
     // Constructor

@@ -46,6 +46,7 @@ export class SoftDeleteQueryBuilder<Entity>
      */
     getQuery(): string {
         let sql = this.createUpdateExpression()
+        sql += this.createCteExpression()
         sql += this.createOrderByExpression()
         sql += this.createLimitExpression()
         return sql.trim()

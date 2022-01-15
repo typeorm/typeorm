@@ -33,6 +33,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     getQuery(): string {
         let sql = this.createComment()
+        sql += this.createCteExpression()
         sql += this.createInsertExpression()
         return sql.trim()
     }

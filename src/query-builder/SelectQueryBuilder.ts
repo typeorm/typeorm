@@ -80,6 +80,7 @@ export class SelectQueryBuilder<Entity>
      */
     getQuery(): string {
         let sql = this.createComment()
+        sql += this.createCteExpression()
         sql += this.createSelectExpression()
         sql += this.createJoinExpression()
         sql += this.createWhereExpression()

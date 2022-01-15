@@ -1,6 +1,7 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { DataSource } from "../data-source/DataSource"
+import { QueryBuilderCteOptions } from "./QueryBuilderCte"
 import { QueryExpressionMap } from "./QueryExpressionMap"
 import { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { UpdateQueryBuilder } from "./UpdateQueryBuilder"
@@ -596,6 +597,22 @@ export abstract class QueryBuilder<Entity> {
         return this
     }
 
+    /**
+     * Adds CTE to query
+     */
+    addCommonTableExpression(
+        queryBuilder: QueryBuilder<any> | string,
+        alias: string,
+        options?: QueryBuilderCteOptions,
+    ): this {
+        this.expressionMap.commonTableExpressions.push({
+            queryBuilder,
+            alias,
+            options: options || {},
+        })
+        return this
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -1048,6 +1065,80 @@ export abstract class QueryBuilder<Entity> {
         )
     }
 
+    protected createCteExpression(): string {
+        if (!this.hasCommonTableExpressions()) {
+            return ""
+        }
+        const databaseRequireRecusiveHint =
+            this.connection.driver.cteCapabilities.requiresRecursiveHint
+
+        const cteStrings = this.expressionMap.commonTableExpressions.map(
+            (cte) => {
+                const cteBodyExpression =
+                    typeof cte.queryBuilder === "string"
+                        ? cte.queryBuilder
+                        : cte.queryBuilder.getQuery()
+                if (typeof cte.queryBuilder !== "string") {
+                    if (cte.queryBuilder.hasCommonTableExpressions()) {
+                        throw new TypeORMError(
+                            `Nested CTEs aren't supported (CTE: ${cte.alias})`,
+                        )
+                    }
+                    if (
+                        !this.connection.driver.cteCapabilities.writable &&
+                        !InstanceChecker.isSelectQueryBuilder(cte.queryBuilder)
+                    ) {
+                        throw new TypeORMError(
+                            `Only select queries are supported in CTEs in ${this.connection.options.type} (CTE: ${cte.alias})`,
+                        )
+                    }
+                    this.setParameters(cte.queryBuilder.getParameters())
+                }
+                let cteHeader = this.escape(cte.alias)
+                if (cte.options.columnNames) {
+                    const escapedColumnNames = cte.options.columnNames.map(
+                        (column) => this.escape(column),
+                    )
+                    if (
+                        InstanceChecker.isSelectQueryBuilder(cte.queryBuilder)
+                    ) {
+                        if (
+                            cte.queryBuilder.expressionMap.selects.length &&
+                            cte.options.columnNames.length !==
+                                cte.queryBuilder.expressionMap.selects.length
+                        ) {
+                            throw new TypeORMError(
+                                `cte.options.columnNames length (${cte.options.columnNames.length}) doesn't match subquery select list length ${cte.queryBuilder.expressionMap.selects.length} (CTE: ${cte.alias})`,
+                            )
+                        }
+                    }
+                    cteHeader += `(${escapedColumnNames.join(", ")})`
+                }
+                const recursiveClause =
+                    cte.options.recursive && databaseRequireRecusiveHint
+                        ? "RECURSIVE"
+                        : ""
+                const materializeClause =
+                    cte.options.materialized &&
+                    this.connection.driver.cteCapabilities.materializedHint
+                        ? "MATERIALIZED"
+                        : ""
+
+                return [
+                    recursiveClause,
+                    cteHeader,
+                    materializeClause,
+                    "AS",
+                    `(${cteBodyExpression})`,
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+            },
+        )
+
+        return "WITH " + cteStrings.join(", ") + " "
+    }
+
     /**
      * Creates "WHERE" condition for an in-ids condition.
      */
@@ -1458,5 +1549,9 @@ export abstract class QueryBuilder<Entity> {
      */
     protected obtainQueryRunner() {
         return this.queryRunner || this.connection.createQueryRunner()
+    }
+
+    protected hasCommonTableExpressions(): boolean {
+        return this.expressionMap.commonTableExpressions.length > 0
     }
 }
