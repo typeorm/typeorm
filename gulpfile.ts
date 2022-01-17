@@ -4,6 +4,8 @@
 
 import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
 
+const fs = require("fs");
+const path = require("path");
 const gulp = require("gulp");
 const del = require("del");
 const shell = require("gulp-shell");
@@ -116,7 +118,7 @@ export class Gulpfile {
                 "cd ./build/package && npm publish"
             ]));
     }
-    
+
     /**
      * Packs a .tgz from ./build/package directory.
      */
@@ -162,11 +164,61 @@ export class Gulpfile {
     }
 
     /**
+     * Copies all sources to the package directory.
+     */
+    @MergedTask()
+    esmIndexPackageCompile() {
+        const tsProject = ts.createProject("tsconfig.esm.json", {
+            typescript: require("typescript")
+        });
+        const tsResult = gulp.src([
+            "./src/**/*.ts"
+        ])
+            .pipe(sourcemaps.init())
+            .pipe(tsProject());
+
+        return [
+            tsResult.dts.pipe(gulp.dest("./build/package.esm")),
+            tsResult.js
+                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
+                .pipe(gulp.dest("./build/package.esm"))
+        ];
+    }
+
+    /**
      * Moves all compiled files to the final package directory.
      */
     @Task()
     packageMoveCompiledFiles() {
         return gulp.src("./build/package/src/**/*")
+            .pipe(gulp.dest("./build/package"));
+    }
+
+    /**
+     * Moves all compiled files to the final package directory.
+     */
+    @Task()
+    esmIndexPackageMoveIndex() {
+        const esmBuildDir = "./build/package.esm";
+        return gulp.src([`${esmBuildDir}/index.js`, `${esmBuildDir}/index.js.map`])
+            .pipe(rename((path: any) => {
+                if (path.basename.endsWith(".js"))
+                    path.basename = path.basename.slice(0, - (".js").length) + ".mjs";
+                else
+                    path.extname = ".mjs";
+            }))
+            // add .js to file imports
+            .pipe(replace(/((import|export)(\s.+\sfrom)?\s['"]\.\/)([^'"]+)((?!\.js)['"])/g,
+                (match: string, start: string, p2: string, p3: string, importPath: string, end: string) => {
+                    try {
+                        if (fs.lstatSync(path.join(esmBuildDir, importPath)).isDirectory())
+                            return start + importPath + "/index.js" + end;
+                    } catch (err) {}
+
+                    return start + importPath + ".js" + end;
+                })
+            )
+            .pipe(replace("//# sourceMappingURL=index.js.map", "//# sourceMappingURL=index.mjs.map"))
             .pipe(gulp.dest("./build/package"));
     }
 
@@ -228,8 +280,8 @@ export class Gulpfile {
         return [
             "clean",
             ["browserCopySources", "browserCopyTemplates"],
-            ["packageCompile", "browserCompile"],
-            "packageMoveCompiledFiles",
+            ["packageCompile", "esmIndexPackageCompile", "browserCompile"],
+            ["packageMoveCompiledFiles", "esmIndexPackageMoveIndex"],
             [
                 "browserClearPackageDirectory",
                 "packageClearPackageDirectory",

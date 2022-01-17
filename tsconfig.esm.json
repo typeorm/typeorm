@@ -1,0 +1,10 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "lib": ["es2020"],
+        "outDir": "build/compiled.esm",
+        "module": "es2020",
+        "importHelpers": false,
+        "declaration": false,
+    }
+}
