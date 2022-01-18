@@ -117,7 +117,7 @@ export class Gulpfile {
                 "cd ./build/package && npm publish"
             ]));
     }
-
+    
     /**
      * Packs a .tgz from ./build/package directory.
      */
