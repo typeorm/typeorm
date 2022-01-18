@@ -3,7 +3,7 @@ import path from "path";
 
 export async function importOrRequireFile(filePath: string): Promise<[result: any, moduleType: "esm" | "commonjs"]> {
     const tryToImport = async (): Promise<[any, "esm"]> => {
-        // `Function` is required to make sure `import` statement wil stay `import` after
+        // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
         return [await Function("return filePath => import(filePath)")()(filePath), "esm"];
     };
@@ -27,13 +27,8 @@ export async function importOrRequireFile(filePath: string): Promise<[result: an
                 return tryToImport();
             else
                 return tryToRequire();
-        } else {
-            try {
-                return tryToRequire();
-            } catch (err) {
-                return tryToImport();
-            }
-        }
+        } else
+            return tryToRequire();
     }
 
     return tryToRequire();
