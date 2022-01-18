@@ -4,6 +4,13 @@ import path from "path";
 import {importOrRequireFile} from "../../../src/util/ImportUtils";
 
 describe("ImportUtils.importOrRequireFile", () => {
+    const rmdirSync = (dir: string) => {
+        if (fs.rmSync != null)
+            fs.rmSync(dir, {recursive: true});
+        else
+            fs.rmdirSync(dir, {recursive: true});
+    };
+
     it("should import .js file as ESM", async () => {
         const testDir = path.join(__dirname, "testJsEsm");
         const srcDir = path.join(testDir, "src");
@@ -19,7 +26,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `;
 
         if (fs.existsSync(testDir))
-            fs.rmSync(testDir, {recursive: true});
+            rmdirSync(testDir);
 
         fs.mkdirSync(srcDir, {recursive: true});
 
@@ -33,7 +40,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.default).to.be.a("function");
         expect(exports.number).to.be.eq(6);
 
-        fs.rmSync(testDir, {recursive: true});
+        rmdirSync(testDir);
     });
 
     it("should import .js file as CommonJS", async () => {
@@ -53,7 +60,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `;
 
         if (fs.existsSync(testDir))
-            fs.rmSync(testDir, {recursive: true});
+            rmdirSync(testDir);
 
         fs.mkdirSync(srcDir, {recursive: true});
 
@@ -67,7 +74,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.test).to.be.a("function");
         expect(exports.number).to.be.eq(6);
 
-        fs.rmSync(testDir, {recursive: true});
+        rmdirSync(testDir);
     });
 
     it("should import .mjs file as ESM", async () => {
@@ -82,7 +89,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `;
 
         if (fs.existsSync(testDir))
-            fs.rmSync(testDir, {recursive: true});
+            rmdirSync(testDir);
 
         fs.mkdirSync(srcDir, {recursive: true});
 
@@ -95,7 +102,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.default).to.be.a("function");
         expect(exports.number).to.be.eq(6);
 
-        fs.rmSync(testDir, {recursive: true});
+        rmdirSync(testDir);
     });
 
     it("should import .cjs file as CommonJS", async () => {
@@ -112,7 +119,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `;
 
         if (fs.existsSync(testDir))
-            fs.rmSync(testDir, {recursive: true});
+            rmdirSync(testDir);
 
         fs.mkdirSync(srcDir, {recursive: true});
 
@@ -125,7 +132,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.test).to.be.a("function");
         expect(exports.number).to.be.eq(6);
 
-        fs.rmSync(testDir, {recursive: true});
+        rmdirSync(testDir);
     });
 
     it("should import .json file as CommonJS", async () => {
@@ -135,7 +142,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         const jsonFileContent = {test: 6};
 
         if (fs.existsSync(testDir))
-            fs.rmSync(testDir, {recursive: true});
+            rmdirSync(testDir);
 
         fs.mkdirSync(testDir, {recursive: true});
 
@@ -147,6 +154,6 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(moduleType).to.be.eq("commonjs");
         expect(exports.test).to.be.eq(6);
 
-        fs.rmSync(testDir, {recursive: true});
+        rmdirSync(testDir);
     });
 });
