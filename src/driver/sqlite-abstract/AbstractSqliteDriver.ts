@@ -74,6 +74,11 @@ export abstract class AbstractSqliteDriver implements Driver {
     treeSupport = true;
 
     /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport: "simple" | "nested" | "none" = "none";
+
+    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm

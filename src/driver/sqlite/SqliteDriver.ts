@@ -16,6 +16,11 @@ import {ReplicationMode} from "../types/ReplicationMode";
  */
 export class SqliteDriver extends AbstractSqliteDriver {
 
+    /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "nested" as const;
+    
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------

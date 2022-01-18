@@ -95,6 +95,11 @@ export class SqlServerDriver implements Driver {
     treeSupport = true;
 
     /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "simple" as const;
+
+    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql

@@ -28,6 +28,11 @@ export class NativescriptDriver extends AbstractSqliteDriver {
      */
     driver: any;
 
+    /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "nested" as const;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

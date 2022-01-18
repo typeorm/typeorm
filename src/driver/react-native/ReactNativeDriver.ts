@@ -10,6 +10,11 @@ import {ReplicationMode} from "../types/ReplicationMode";
 export class ReactNativeDriver extends AbstractSqliteDriver {
     options: ReactNativeConnectionOptions;
 
+    /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "nested" as const;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

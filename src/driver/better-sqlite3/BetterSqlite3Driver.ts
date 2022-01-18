@@ -16,6 +16,11 @@ import {ReplicationMode} from "../types/ReplicationMode";
  */
 export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
+    /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "nested" as const;
+
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------

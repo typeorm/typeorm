@@ -1,7 +1,6 @@
 import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
@@ -50,6 +49,12 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      */
     protected databaseConnectionPromise: Promise<any>;
 
+    /**
+     * current depth of transaction.
+     * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
+     */
+    private transactionDepth = 0;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -89,13 +94,15 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Starts transaction on the current connection.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-
         await this.broadcaster.broadcast('BeforeTransactionStart');
 
-        this.isTransactionActive = true;
-        await this.client.startTransaction();
+        if (this.transactionDepth === 0) {
+            this.isTransactionActive = true;
+            await this.client.startTransaction();
+        } else {
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
+        this.transactionDepth++;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -110,8 +117,13 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        await this.client.commitTransaction();
-        this.isTransactionActive = false;
+        this.transactionDepth--;
+        if (this.transactionDepth === 0) {
+            await this.client.commitTransaction();
+            this.isTransactionActive = false;
+        } else {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -126,9 +138,13 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        await this.client.rollbackTransaction();
-
-        this.isTransactionActive = false;
+        this.transactionDepth--;
+        if (this.transactionDepth === 0) {
+            await this.client.rollbackTransaction();
+            this.isTransactionActive = false;
+        } else {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }

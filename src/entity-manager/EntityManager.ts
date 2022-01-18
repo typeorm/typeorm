@@ -20,7 +20,6 @@ import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
@@ -120,13 +119,13 @@ export class EntityManager {
             throw new TypeORMError(`Transaction method requires callback in second paramter if isolation level is supplied.`);
         }
 
-        if (this.connection.driver instanceof MongoDriver)
-            throw new TypeORMError(`Transactions aren't supported by MongoDB.`);
+        if (this.connection.driver.transactionSupport === "none")
+            throw new TypeORMError(`Transactions aren't supported by ${this.connection.driver.constructor.name}.`);
 
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
-        if (this.queryRunner && this.queryRunner.isTransactionActive)
+        if (this.queryRunner && this.queryRunner.isTransactionActive && this.connection.driver.transactionSupport === "simple")
             throw new TypeORMError(`Cannot start transaction because its already started`);
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection

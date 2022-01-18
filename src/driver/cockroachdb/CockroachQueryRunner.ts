@@ -1,7 +1,6 @@
 import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
@@ -63,6 +62,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Indicates if running queries must be stored
      */
     protected storeQueries: boolean = false;
+
+    /**
+     * current depth of transaction.
+     * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
+     */
+    private transactionDepth = 0;
+
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -130,17 +136,19 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Starts transaction.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-
         await this.broadcaster.broadcast('BeforeTransactionStart');
 
-        this.isTransactionActive = true;
-        await this.query("START TRANSACTION");
-        await this.query("SAVEPOINT cockroach_restart");
+        if (this.transactionDepth === 0) {
+            this.isTransactionActive = true;
+            await this.query("START TRANSACTION");
+            await this.query("SAVEPOINT cockroach_restart");
+        } else {
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+        }
         if (isolationLevel) {
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         }
+        this.transactionDepth++;
         this.storeQueries = true;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
@@ -156,22 +164,26 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.storeQueries = false;
+        this.transactionDepth--;
+        if (this.transactionDepth === 0) {
+            this.storeQueries = false;
+            try {
+                await this.query("RELEASE SAVEPOINT cockroach_restart");
+                await this.query("COMMIT");
+                this.queries = [];
+                this.isTransactionActive = false;
 
-        try {
-            await this.query("RELEASE SAVEPOINT cockroach_restart");
-            await this.query("COMMIT");
-            this.queries = [];
-            this.isTransactionActive = false;
-
-        } catch (e) {
-            if (e.code === "40001") {
-                await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
-                for (const q of this.queries) {
-                    await this.query(q.query, q.parameters);
+            } catch (e) {
+                if (e.code === "40001") {
+                    await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
+                    for (const q of this.queries) {
+                        await this.query(q.query, q.parameters);
+                    }
+                    await this.commitTransaction();
                 }
-                await this.commitTransaction();
             }
+        } else {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth}`);
         }
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
@@ -187,11 +199,15 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.storeQueries = false;
-        await this.query("ROLLBACK");
-        this.queries = [];
-        this.isTransactionActive = false;
-
+        this.transactionDepth--;
+        if (this.transactionDepth === 0){
+            this.storeQueries = false;
+            await this.query("ROLLBACK");
+            this.queries = [];
+            this.isTransactionActive = false;
+        } else {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
