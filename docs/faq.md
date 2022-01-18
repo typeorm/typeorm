@@ -9,6 +9,7 @@
 * [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
 * [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
 * [How to use Webpack for the backend](#how-to-use-webpack-for-the-backend)
+* [How to use TypeORM in ESM projects?](#how-to-use-typeorm-in-esm-projects)
 
 
 ## How do I update a database schema?
@@ -277,3 +278,25 @@ module.exports = {
   ],
 };
 ```
+
+## How to use TypeORM in ESM projects?
+
+Make sure to add `"type": "module"` in the `package.json` of your project so TypeORM will know to use `import( ... )` on files.
+
+To avoid circular dependency import issues use the `Related` wrapper type for relation type definitions in entities:
+
+```typescript
+@Entity()
+export class User {
+
+    @OneToOne(() => Profile, profile => profile.user)
+    profile: Related<Profile>;
+
+}
+```
+
+Doing this prevents the type of the key from being saved in the transpiled code in the key metadata, preventing circular dependency imports.
+
+Since the type of the column is already defined using the `@OneToOne` decorator, there's no use of the additional type metadata saved by TypeScript.
+
+> Important: Do not use `Related` on non-relation column types
