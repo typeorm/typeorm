@@ -9,9 +9,9 @@ import {FindConditions} from "./FindConditions";
 export interface FindOneOptions<Entity = any> {
 
     /**
-     * Includes a Query comment generated query.  This is helpful for debugging
-     * purposes, such as finding a specific query in the database server's logs,
-     * or for categorization using an APM product.
+     * Adds a comment with the supplied string in the generated query.  This is
+     * helpful for debugging purposes, such as finding a specific query in the
+     * database server's logs, or for categorization using an APM product.
      */
     comment?: string;
 
