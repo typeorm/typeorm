@@ -41,6 +41,12 @@ export class InitCommand implements yargs.CommandModule {
                 choices: ["npm", "yarn"],
                 default: "npm",
                 describe: "Install packages, expected values are npm or yarn."
+            })
+            .option("ms", {
+                alias: "module",
+                choices: ["commonjs", "esm"],
+                default: "commonjs",
+                describe: "Module system to use for project, expected values are commonjs or esm."
             });
     }
 
@@ -52,25 +58,26 @@ export class InitCommand implements yargs.CommandModule {
             const basePath = process.cwd() + (args.name ? ("/" + args.name) : "");
             const projectName = args.name ? path.basename(args.name as any) : undefined;
             const installNpm = args.pm === "yarn" ? false : true;
-            await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName), false);
+            const projectIsEsm = args.ms === "esm";
+            await CommandUtils.createFile(basePath + "/package.json", InitCommand.getPackageJsonTemplate(projectName, projectIsEsm), false);
             if (isDocker)
                 await CommandUtils.createFile(basePath + "/docker-compose.yml", InitCommand.getDockerComposeTemplate(database), false);
             await CommandUtils.createFile(basePath + "/.gitignore", InitCommand.getGitIgnoreFile());
             await CommandUtils.createFile(basePath + "/README.md", InitCommand.getReadmeTemplate({ docker: isDocker }), false);
-            await CommandUtils.createFile(basePath + "/tsconfig.json", InitCommand.getTsConfigTemplate());
+            await CommandUtils.createFile(basePath + "/tsconfig.json", InitCommand.getTsConfigTemplate(projectIsEsm));
             await CommandUtils.createFile(basePath + "/ormconfig.json", InitCommand.getOrmConfigTemplate(database));
             await CommandUtils.createFile(basePath + "/src/entity/User.ts", InitCommand.getUserEntityTemplate(database));
-            await CommandUtils.createFile(basePath + "/src/index.ts", InitCommand.getAppIndexTemplate(isExpress));
+            await CommandUtils.createFile(basePath + "/src/index.ts", InitCommand.getAppIndexTemplate(isExpress, projectIsEsm));
             await CommandUtils.createDirectories(basePath + "/src/migration");
 
             // generate extra files for express application
             if (isExpress) {
-                await CommandUtils.createFile(basePath + "/src/routes.ts", InitCommand.getRoutesTemplate());
-                await CommandUtils.createFile(basePath + "/src/controller/UserController.ts", InitCommand.getControllerTemplate());
+                await CommandUtils.createFile(basePath + "/src/routes.ts", InitCommand.getRoutesTemplate(projectIsEsm));
+                await CommandUtils.createFile(basePath + "/src/controller/UserController.ts", InitCommand.getControllerTemplate(projectIsEsm));
             }
 
             const packageJsonContents = await CommandUtils.readFile(basePath + "/package.json");
-            await CommandUtils.createFile(basePath + "/package.json", InitCommand.appendPackageJson(packageJsonContents, database, isExpress));
+            await CommandUtils.createFile(basePath + "/package.json", InitCommand.appendPackageJson(packageJsonContents, database, isExpress, projectIsEsm));
 
             if (args.name) {
                 console.log(chalk.green(`Project created inside ${chalk.blue(basePath)} directory.`));
@@ -80,9 +87,9 @@ export class InitCommand implements yargs.CommandModule {
             }
 
             if (args.pm && installNpm) {
-                await InitCommand.executeCommand("npm install");
+                await InitCommand.executeCommand("npm install", basePath);
             } else {
-                await InitCommand.executeCommand("yarn install");
+                await InitCommand.executeCommand("yarn install", basePath);
             }
 
         } catch (err) {
@@ -96,9 +103,9 @@ export class InitCommand implements yargs.CommandModule {
     // Protected Static Methods
     // -------------------------------------------------------------------------
 
-    protected static executeCommand(command: string) {
+    protected static executeCommand(command: string, cwd: string) {
         return new Promise<string>((ok, fail) => {
-            exec(command, (error: any, stdout: any, stderr: any) => {
+            exec(command, {cwd}, (error: any, stdout: any, stderr: any) => {
                 if (stdout) return ok(stdout);
                 if (stderr) return fail(stderr);
                 if (error) return fail(error);
@@ -215,20 +222,36 @@ export class InitCommand implements yargs.CommandModule {
     /**
      * Gets contents of the ormconfig file.
      */
-    protected static getTsConfigTemplate(): string {
-        return JSON.stringify({
-            compilerOptions: {
-                lib: ["es5", "es6"],
-                target: "es5",
-                module: "commonjs",
-                moduleResolution: "node",
-                outDir: "./build",
-                emitDecoratorMetadata: true,
-                experimentalDecorators: true,
-                sourceMap: true
+    protected static getTsConfigTemplate(esmModule: boolean): string {
+        if (esmModule)
+            return JSON.stringify({
+                compilerOptions: {
+                    lib: ["es2021"],
+                    target: "es2021",
+                    module: "es2022",
+                    moduleResolution: "node",
+                    allowSyntheticDefaultImports: true,
+                    outDir: "./build",
+                    emitDecoratorMetadata: true,
+                    experimentalDecorators: true,
+                    sourceMap: true
+                }
             }
-        }
-        , undefined, 3);
+            , undefined, 3);
+        else
+            return JSON.stringify({
+                compilerOptions: {
+                    lib: ["es5", "es6"],
+                    target: "es5",
+                    module: "commonjs",
+                    moduleResolution: "node",
+                    outDir: "./build",
+                    emitDecoratorMetadata: true,
+                    experimentalDecorators: true,
+                    sourceMap: true
+                }
+            }
+            , undefined, 3);
     }
 
     /**
@@ -271,8 +294,8 @@ export class User {
     /**
      * Gets contents of the route file (used when express is enabled).
      */
-    protected static getRoutesTemplate(): string {
-        return `import {UserController} from "./controller/UserController";
+    protected static getRoutesTemplate(isEsm: boolean): string {
+        return `import {UserController} from "./controller/UserController${isEsm ? ".js" : ""}";
 
 export const Routes = [{
     method: "get",
@@ -300,10 +323,10 @@ export const Routes = [{
     /**
      * Gets contents of the user controller file (used when express is enabled).
      */
-    protected static getControllerTemplate(): string {
+    protected static getControllerTemplate(isEsm: boolean): string {
         return `import {getRepository} from "typeorm";
 import {NextFunction, Request, Response} from "express";
-import {User} from "../entity/User";
+import {User} from "../entity/User${isEsm ? ".js" : ""}";
 
 export class UserController {
 
@@ -332,15 +355,15 @@ export class UserController {
     /**
      * Gets contents of the main (index) application file.
      */
-    protected static getAppIndexTemplate(express: boolean): string {
+    protected static getAppIndexTemplate(express: boolean, isEsm: boolean): string {
         if (express) {
             return `import "reflect-metadata";
 import {createConnection} from "typeorm";
-import * as express from "express";
-import * as bodyParser from "body-parser";
+import ${!isEsm ? "* as " : ""}express from "express";
+import ${!isEsm ? "* as " : ""}bodyParser from "body-parser";
 import {Request, Response} from "express";
-import {Routes} from "./routes";
-import {User} from "./entity/User";
+import {Routes} from "./routes${isEsm ? ".js" : ""}";
+import {User} from "./entity/User${isEsm ? ".js" : ""}";
 
 createConnection().then(async connection => {
 
@@ -387,7 +410,7 @@ createConnection().then(async connection => {
         } else {
             return `import "reflect-metadata";
 import {createConnection} from "typeorm";
-import {User} from "./entity/User";
+import {User} from "./entity/User${isEsm ? ".js" : ""}";
 
 createConnection().then(async connection => {
 
@@ -413,11 +436,12 @@ createConnection().then(async connection => {
     /**
      * Gets contents of the new package.json file.
      */
-    protected static getPackageJsonTemplate(projectName?: string): string {
+    protected static getPackageJsonTemplate(projectName?: string, projectIsEsm?: boolean): string {
         return JSON.stringify({
             name: projectName || "new-typeorm-project",
             version: "0.0.1",
             description: "Awesome project developed with TypeORM.",
+            type: projectIsEsm ? "module" : "commonjs",
             devDependencies: {
             },
             dependencies: {
@@ -551,20 +575,20 @@ Steps to run this project:
     /**
      * Appends to a given package.json template everything needed.
      */
-    protected static appendPackageJson(packageJsonContents: string, database: string, express: boolean /*, docker: boolean*/): string {
+    protected static appendPackageJson(packageJsonContents: string, database: string, express: boolean, projectIsEsm: boolean /*, docker: boolean*/): string {
         const packageJson = JSON.parse(packageJsonContents);
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {};
         Object.assign(packageJson.devDependencies, {
-            "ts-node": "3.3.0",
-            "@types/node": "^8.0.29",
-            "typescript": "3.3.3333"
+            "ts-node": "10.4.0",
+            "@types/node": "^16.11.10",
+            "typescript": "4.5.2"
         });
 
         if (!packageJson.dependencies) packageJson.dependencies = {};
         Object.assign(packageJson.dependencies, {
             "typeorm": require("../package.json").version,
-            "reflect-metadata": "^0.1.10"
+            "reflect-metadata": "^0.1.13"
         });
 
         switch (database) {
@@ -594,15 +618,23 @@ Steps to run this project:
         }
 
         if (express) {
-            packageJson.dependencies["express"] = "^4.15.4";
-            packageJson.dependencies["body-parser"] = "^1.18.1";
+            packageJson.dependencies["express"] = "^4.17.2";
+            packageJson.dependencies["body-parser"] = "^1.19.1";
         }
 
         if (!packageJson.scripts) packageJson.scripts = {};
-        Object.assign(packageJson.scripts, {
-            start: /*(docker ? "docker-compose up && " : "") + */"ts-node src/index.ts",
-            typeorm: "node --require ts-node/register ./node_modules/typeorm/cli.js"
-        });
+
+        if (projectIsEsm)
+            Object.assign(packageJson.scripts, {
+                start: /*(docker ? "docker-compose up && " : "") + */"node --loader ts-node/esm src/index.ts",
+                typeorm: "node --loader ts-node/esm ./node_modules/typeorm/cli.js"
+            });
+        else
+            Object.assign(packageJson.scripts, {
+                start: /*(docker ? "docker-compose up && " : "") + */"ts-node src/index.ts",
+                typeorm: "node --require ts-node/register ./node_modules/typeorm/cli.js"
+            });
+
         return JSON.stringify(packageJson, undefined, 3);
     }
 

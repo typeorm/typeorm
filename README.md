@@ -321,6 +321,9 @@ That's it, your application should successfully run and insert a new user into t
 You can continue to work with this project and integrate other modules you need and start
 creating more entities.
 
+> You can generate an ESM project by running
+`typeorm init --name MyProject --database postgres --module esm` command.
+
 > You can generate an even more advanced project with express installed by running
 `typeorm init --name MyProject --database mysql --express` command.
 

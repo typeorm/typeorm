@@ -99,6 +99,12 @@ To specify a specific database you use you can use `--database`:
 typeorm init --database mssql
 ```
 
+To generate an ESM base project you can use `--module esm`:
+
+```
+typeorm init --name my-project --module esm
+```
+
 You can also generate a base project with Express:
 
 ```
