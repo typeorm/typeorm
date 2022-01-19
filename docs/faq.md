@@ -183,6 +183,12 @@ Also, if you want to use the ts-node CLI, you can execute TypeORM the following 
 ts-node ./node_modules/.bin/typeorm schema:sync
 ```
 
+For ESM projects use this instead:
+
+```
+node --loader ts-node/esm ./node_modules/.bin/typeorm schema:sync
+```
+
 ## How to use Webpack for the backend?
 
 Webpack produces warnings due to what it views as missing require statements -- require statements for all drivers supported by TypeORM. To suppress these warnings for unused drivers, you will need to edit your webpack config file.
