@@ -7,8 +7,9 @@ import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 import {Photo} from "./entity/Photo";
 import sinon from "sinon";
-import { FileLogger } from "../../../../src";
-import { readFile, unlink } from "fs/promises";
+import {FileLogger} from "../../../../src";
+import {promisify} from "util";
+import {readFile, unlink} from "fs";
 
 describe("repository > find options", () => {
 
@@ -210,14 +211,14 @@ describe("repository > find options > comment", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(async () => {
         closeTestingConnections(connections);
-        await unlink(logPath);
+        await promisify(unlink)(logPath);
     });
 
     it("repository should insert comment", () => Promise.all(connections.map(async connection => {
         await connection.getRepository(User)
             .find({comment: "This is a query comment."});
 
-        const logs = await readFile(logPath);
+        const logs = await promisify(readFile)(logPath);
         const lines = logs.toString().split("\n");
         const lastLine = lines[lines.length - 2]; // last line is blank after newline
         // remove timestamp and prefix
