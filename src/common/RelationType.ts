@@ -7,8 +7,8 @@
  * export default class User {
  *
  *     @OneToOne(() => Profile, profile => profile.user)
- *     profile: Related<Profile>;
+ *     profile: Relation<Profile>;
  *
  * }
  */
-export type Related<T> = T;
+export type Relation<T> = T;

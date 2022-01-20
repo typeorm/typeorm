@@ -296,7 +296,7 @@ To avoid circular dependency import issues use the `Related` wrapper type for re
 export class User {
 
     @OneToOne(() => Profile, profile => profile.user)
-    profile: Related<Profile>;
+    profile: Relation<Profile>;
 
 }
 ```
