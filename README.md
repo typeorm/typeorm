@@ -71,6 +71,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 * Supports MongoDB NoSQL database.
 * Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
 * TypeScript and JavaScript support.
+* ESM and CommonJS support.
 * Produced code is performant, flexible, clean and maintainable.
 * Follows all possible best practices.
 * CLI.
