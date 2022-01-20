@@ -953,6 +953,40 @@ Note that we should use the `@JoinColumn` decorator only on one side of a relati
 Whichever side you put this decorator on will be the owning side of the relationship.
 The owning side of a relationship contains a column with a foreign key in the database.
 
+### Relations in ESM projects
+
+If you use ESM in your TypeScript project, you should use the `Relation` wrapper type in relation properties to avoid circular dependency issues.
+Let's modify our entities:
+
+```typescript
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn, Relation } from "typeorm";
+import { Photo } from "./Photo";
+
+@Entity()
+export class PhotoMetadata {
+
+    /* ... other columns */
+
+    @OneToOne(type => Photo, photo => photo.metadata)
+    @JoinColumn()
+    photo: Relation<Photo>;
+}
+```
+
+```typescript
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, Relation } from "typeorm";
+import { PhotoMetadata } from "./PhotoMetadata";
+
+@Entity()
+export class Photo {
+
+    /* ... other columns */
+
+    @OneToOne(type => PhotoMetadata, photoMetadata => photoMetadata.photo)
+    metadata: Relation<PhotoMetadata>;
+}
+```
+
 ### Loading objects with their relations
 
 Now let's load our photo and its photo metadata in a single query.
