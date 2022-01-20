@@ -301,7 +301,7 @@ export class User {
 }
 ```
 
-Doing this prevents the type of the property from being saved in the transpiled code in the property metadata, preventing circular dependency imports.
+Doing this prevents the type of the property from being saved in the transpiled code in the property metadata, preventing circular dependency issues.
 
 Since the type of the column is already defined using the `@OneToOne` decorator, there's no use of the additional type metadata saved by TypeScript.
 
