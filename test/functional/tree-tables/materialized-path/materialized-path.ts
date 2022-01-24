@@ -573,7 +573,7 @@ describe("tree tables > materialized-path", () => {
         });
     })));
 
-    it.only("should compute path correctly when tree is implicitly saved (cascade: true) through related entity", () => Promise.all(connections.map(async connection => {
+    it("should compute path correctly when tree is implicitly saved (cascade: true) through related entity", () => Promise.all(connections.map(async connection => {
         const categoryRepository = connection.getRepository(Category);
         const productRepository = connection.getRepository(Product);
 
