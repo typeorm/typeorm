@@ -600,7 +600,7 @@ describe("tree tables > materialized-path", () => {
         const pathResult = await connection.createQueryBuilder()
             .select("mpath", "path")
             .from("categories", "categories")
-            .where({ productId: savedProduct.id })
+            .where({ product: { id: savedProduct.id } })
             .getRawOne();
 
         pathResult.path.should.not.match(/^undefined/);

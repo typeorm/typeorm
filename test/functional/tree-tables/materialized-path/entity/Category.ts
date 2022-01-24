@@ -31,7 +31,4 @@ export class Category {
     @JoinColumn()
     product: Product;
 
-    @Column({ nullable: true })
-    productId: number;
-
 }
