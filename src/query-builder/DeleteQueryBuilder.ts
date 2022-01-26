@@ -144,7 +144,9 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Adds new AND WHERE with conditions for the given ids.
+     * Sets WHERE condition in the query builder with a condition for the given ids.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
      */
     whereInIds(ids: any|any[]): this {
         return this.where(this.getWhereInIdsCondition(ids));
