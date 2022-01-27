@@ -653,6 +653,19 @@ export class MysqlDriver implements Driver {
     }
 
     /**
+     * Return undefined in case the "default" value of a table column is 'NULL'
+     */
+    nullDefault(tableMetadata: Pick<TableColumn, 'default'>): TableColumn['default'] | undefined {
+      const defaultValue = tableMetadata.default;
+
+      if (defaultValue === "'NULL'") {
+        return undefined;
+      }
+
+      return defaultValue;
+    }
+
+    /**
      * Normalizes "default" value of the column.
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
@@ -833,7 +846,7 @@ export class MysqlDriver implements Driver {
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
                 || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
-                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
+                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), this.nullDefault(tableColumn))
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== this.normalizeDatetimeFunction(columnMetadata.onUpdate)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
@@ -857,7 +870,7 @@ export class MysqlDriver implements Driver {
             //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
             //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
             //     console.log("enum:", tableColumn.enum, columnMetadata.enum);
-            //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
+            //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), this.nullDefault(tableColumn.default)));
             //     console.log("onUpdate:", tableColumn.onUpdate, this.normalizeOnUpdate(columnMetadata.onUpdate));
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
