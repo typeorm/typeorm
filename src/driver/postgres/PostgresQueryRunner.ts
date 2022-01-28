@@ -418,35 +418,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             }
         }
 
-        // if table have column with generated type, we must add the expression to the metadata table
-        const generatedColumns = table.columns.filter(column => column.generatedType === "STORED" && column.asExpression)
-        for (const column of generatedColumns) {
-            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
-            const tableName = tableNameWithSchema[1];
-            const schema = tableNameWithSchema[0];
-
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression
-            })
-
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name
-            })
-
-            upQueries.push(deleteQuery);
-            upQueries.push(insertQuery);
-            downQueries.push(deleteQuery);
-        }
-
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
 
@@ -687,33 +658,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
         }
 
-        if (column.generatedType === "STORED" && column.asExpression) {
-            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
-            const tableName = tableNameWithSchema[1];
-            const schema = tableNameWithSchema[0];
-
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression
-            })
-
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name
-            })
-
-            upQueries.push(deleteQuery);
-            upQueries.push(insertQuery);
-            downQueries.push(deleteQuery);
-        }
-
         // create column's comment
         if (column.comment) {
             upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
@@ -771,6 +715,28 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!oldColumn)
             throw new TypeORMError(`Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`);
 
+        // We need to convert the user supplied as expression to a postgres formatted expression
+        if (newColumn.generatedType === 'STORED' && newColumn.asExpression) {
+            const cloneTableName = `__cloned__table__${table.name}`;
+
+            const clonedColumnName = `__cloned__column__${newColumn.name}`;
+
+            try {
+                await this.query(`CREATE TABLE ${table.schema ? `${table.schema}.` : ''}${cloneTableName} AS (SELECT * FROM ${table.schema ? `${table.schema}.` : ''}${table.name}) WITH NO DATA;`);
+
+                await this.query(`ALTER TABLE ${table.schema ? `${table.schema}.` : ''}${cloneTableName} ADD ${clonedColumnName} ${newColumn.type} GENERATED ALWAYS AS (${newColumn.asExpression}) STORED;`)
+
+                const asExpressionResult: ObjectLiteral[] = await this.query(`SELECT generation_expression FROM information_schema.columns WHERE table_name = '${table.name}' ${table.schema ? `AND table_schema = '${table.schema}' ` : ''}AND column_name = '${clonedColumnName}';`)
+
+                if (asExpressionResult[0] && asExpressionResult[0].generation_expression) {
+                    newColumn.asExpression = asExpressionResult[0].generation_expression;
+                }
+            } catch (e) {
+                throw e;
+            } finally {
+                await this.query(`DROP TABLE ${cloneTableName}`);
+            }
+        }
 
         if (oldColumn.type !== newColumn.type
             || oldColumn.length !== newColumn.length
@@ -1066,39 +1032,14 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 // Convert generated column data to normal column
                 if (!newColumn.generatedType || newColumn.generatedType === "VIRTUAL") {
                     // We can copy the generated data to the new column
-                    const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
-                    const tableName = tableNameWithSchema[1];
-                    const schema = tableNameWithSchema[0];
 
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${oldColumn.name}" TO "TEMP_OLD_${oldColumn.name}"`));
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, newColumn)}`));
                     upQueries.push(new Query(`UPDATE ${this.escapePath(table)} SET "${newColumn.name}" = "TEMP_OLD_${oldColumn.name}"`));
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`));
-                    upQueries.push(this.deleteTypeormMetadataSql({
-                        database: this.driver.database,
-                        schema,
-                        table: tableName,
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        name: oldColumn.name
-                    }));
                     // However, we can't copy it back on downgrade. It needs to regenerate.
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${newColumn.name}"`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(table, oldColumn)}`));
-                    downQueries.push(this.deleteTypeormMetadataSql({
-                        database: this.driver.database,
-                        schema,
-                        table: tableName,
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        name: newColumn.name
-                    }));
-                    downQueries.push(this.insertTypeormMetadataSql({
-                        database: this.driver.database,
-                        schema,
-                        table: tableName,
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        name: oldColumn.name,
-                        value: oldColumn.asExpression
-                    }));
                 }
             }
 
@@ -1186,30 +1127,6 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 upQueries.push(this.dropEnumTypeSql(table, column, escapedEnumName));
                 downQueries.push(this.createEnumTypeSql(table, column, escapedEnumName));
             }
-        }
-
-        if (column.generatedType === "STORED") {
-            const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
-            const tableName = tableNameWithSchema[1];
-            const schema = tableNameWithSchema[0];
-            const insertQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name
-            })
-            const deleteQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression
-            })
-
-            upQueries.push(insertQuery);
-            downQueries.push(deleteQuery);
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -1936,17 +1853,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (dbColumn["is_generated"] === "ALWAYS" && dbColumn["generation_expression"]) {
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
-                        // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                        const asExpressionQuery = `SELECT * FROM "typeorm_metadata" `
-                            + ` WHERE "table" = '${dbTable["table_name"]}'`
-                            + ` AND "name" = '${tableColumn.name}'`
-                            + ` AND "schema" = '${dbTable["table_schema"]}'`
-                            + ` AND "database" = '${this.driver.database}'`
-                            + ` AND "type" = '${MetadataTableType.GENERATED_COLUMN}'`;
+
+                        const asExpressionQuery = `SELECT generation_expression FROM information_schema.columns WHERE table_name = '${dbTable["table_name"]}' AND table_schema = '${dbTable["table_schema"]}' AND column_name = '${tableColumn.name}';`
 
                         const results: ObjectLiteral[] = await this.query(asExpressionQuery);
-                        if (results[0] && results[0].value) {
-                            tableColumn.asExpression = results[0].value;
+
+                        if (results[0] && results[0].generation_expression) {
+                            tableColumn.asExpression = results[0].generation_expression;
                         } else {
                             tableColumn.asExpression = "";
                         }

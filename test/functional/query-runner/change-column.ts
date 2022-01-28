@@ -162,7 +162,7 @@ describe("query runner > change column", () => {
 
         generatedColumn = table!.findColumnByName("generated")!;
         generatedColumn!.generatedType!.should.be.equals("STORED");
-        generatedColumn!.asExpression!.should.be.equals("text || tag");
+        generatedColumn!.asExpression!.should.be.equals("((text)::text || (tag)::text)");
 
         let changedGeneratedColumn = generatedColumn.clone();
         changedGeneratedColumn.asExpression = "text || tag || name";
@@ -172,7 +172,7 @@ describe("query runner > change column", () => {
         table = await queryRunner.getTable("post");
         generatedColumn = table!.findColumnByName("generated")!;
         generatedColumn!.generatedType!.should.be.equals("STORED");
-        generatedColumn!.asExpression!.should.be.equals("text || tag || name");
+        generatedColumn!.asExpression!.should.be.equals("(((text)::text || (tag)::text) || (name)::text)");
 
         changedGeneratedColumn = generatedColumn.clone();
         delete changedGeneratedColumn.generatedType;
@@ -191,6 +191,6 @@ describe("query runner > change column", () => {
         table = await queryRunner.getTable("post");
         generatedColumn = table!.findColumnByName("generated")!;
         generatedColumn!.generatedType!.should.be.equals("STORED");
-        generatedColumn!.asExpression!.should.be.equals("text || tag || name");
+        generatedColumn!.asExpression!.should.be.equals("(((text)::text || (tag)::text) || (name)::text)");
     })));
 });
