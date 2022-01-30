@@ -265,7 +265,6 @@ export class Connection {
                     databases.push(this.driver.database);
                 };
 
-                // await queryRunner.clearDatabase();
                 if (databases.length === 0) {
                     await queryRunner.clearDatabase();
                 }

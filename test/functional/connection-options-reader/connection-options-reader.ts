@@ -11,11 +11,8 @@ async function createDotenvFiles() {
 }
 
 async function createYamlFiles() {
-  try {
-    await fs.mkdir(path.join(__dirname, "configs/yaml"));
-    await fs.writeFile(path.join(__dirname, "configs/yaml/test-yaml.yaml"), "- type: \"sqlite\"\n  name: \"file\"\n  database: \"test-yaml\"");
-  }
-  catch (e) {}
+  await fs.mkdir(path.join(__dirname, "configs/yaml"));
+  await fs.writeFile(path.join(__dirname, "configs/yaml/test-yaml.yaml"), "- type: \"sqlite\"\n  name: \"file\"\n  database: \"test-yaml\"");
 }
 
 describe("ConnectionOptionsReader", () => {

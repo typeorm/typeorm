@@ -116,7 +116,8 @@ export interface BaseConnectionOptions {
     readonly extra?: any;
 
     /**
-     * The directory where ormconfig has been read from
+     * Holds reference to the baseDirectory where configuration file are expected
+     * @internal
      */
      baseDirectory?: string;
 
