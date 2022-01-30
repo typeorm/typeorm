@@ -6,16 +6,34 @@ import { InternalUser } from "./entity/InternalUser";
 import { InternalRole } from "./entity/InternalRole";
 import { User } from "./entity/User";
 import { Role } from "./entity/Role";
-import { BaseEntity, TypeORMError } from "../../../src";
+import { BaseEntity, getConnectionManager, TypeORMError } from "../../../src";
 import { ClientRole } from "./entity/ClientRole";
 import { afterEach } from "mocha";
+import {SqliteDriver} from "../../../src/driver/sqlite/SqliteDriver";
 
 describe("github issues > #8522 Single table inheritance returns the same discriminator value error for unrelated tables where their parents extend from the same entity", () => {
     let connections: Connection[];
 
-    after(() => closeTestingConnections(connections));
+    after(async () => {
+        await closeTestingConnections(connections);
+        // Force close all connections.
+        // Sometimes a connection stays open after the test "Should throw error when related tables have the same discriminator"
+        // This results in an unrelated error for other tests
+        await Promise.all(getConnectionManager().connections.map(async connection => {
+            if (connection.isConnected) {
+                try {
+                    await connection.close()
+                } catch (e) {
+                    // We can't detect whether the sqlite handler is already closed, so just ignore the error
+                    if (!(connection.driver instanceof SqliteDriver) && e.message !== "SQLITE_MISUSE: Database handle is closed") {
+                        throw e;
+                    }
+                }
+            }
+        }))
+    });
     afterEach(() => closeTestingConnections(connections));
-    
+
     describe("Unrelated tables",()=>{
         before(
             async () =>
@@ -26,14 +44,14 @@ describe("github issues > #8522 Single table inheritance returns the same discri
                 }))
         );
         beforeEach(() => reloadTestingDatabases(connections));
-    
+
         it("should loads internal user and internal role", () => Promise.all(connections.map(async connection => {
             const id = 1;
             const date = new Date();
-        
+
             const firstName = "Jane";
             const lastName = "Walker";
-        
+
             const name = "admin";
             const description = "All permissions";
 
@@ -58,7 +76,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
             let users = await connection.manager
             .createQueryBuilder(User, "user")
             .getMany();
-    
+
             expect(users[0].id).to.be.equal(id);
             expect(users[0].firstName).to.be.equal(firstName);
             expect(users[0].lastName).to.be.equal(lastName);
@@ -68,7 +86,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
             let roles = await connection.manager
             .createQueryBuilder(Role, "role")
             .getMany();
-    
+
             expect(roles[0].id).to.be.equal(id);
             expect(roles[0].name).to.be.equal(name);
             expect(roles[0].description).to.be.equal(description);
