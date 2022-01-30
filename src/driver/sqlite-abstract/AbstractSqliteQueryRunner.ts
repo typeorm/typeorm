@@ -729,9 +729,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     async clearDatabase(database?: string): Promise<void> {
 
-        let dbPath: string | false = false;
-        if (database && this.driver.hasAttachedDatabase(database)) {
-            dbPath = this.driver.attachedDatabases[database].attachHandle;
+        let dbPath: string | undefined = undefined;
+        if (database && this.driver.getAttachedDatabaseHandleByRelativePath(database)) {
+            dbPath = this.driver.getAttachedDatabaseHandleByRelativePath(database);
         }
 
         await this.query(`PRAGMA foreign_keys = OFF;`);
@@ -785,8 +785,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
     }
 
     protected async loadTableRecords(tablePath: string, tableOrIndex: "table" | "index") {
-        const [database, tableName] = this.splitTablePath(tablePath);
-        const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, * FROM ${database ? `"${database}".` : ""}${this.escapePath(`sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === "table" ? "name" : "tbl_name"}" IN ('${tableName}')`);
+        let database: string | undefined = undefined
+        const [schema, tableName] = this.splitTablePath(tablePath);
+        if (schema && this.driver.getAttachedDatabasePathRelativeByHandle(schema)) {
+            database = this.driver.getAttachedDatabasePathRelativeByHandle(schema)
+        }
+        const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, ${schema ? `'${schema}'` : null} as schema, * FROM ${schema ? `"${schema}".` : ""}${this.escapePath(`sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === "table" ? "name" : "tbl_name"}" IN ('${tableName}')`);
         return res;
     }
     protected async loadPragmaRecords(tablePath: string, pragma: string) {
@@ -825,7 +829,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const tablePath = `${dbTable["database"] ? `${dbTable["database"]}.` : ""}${dbTable["name"]}`;
+            const tablePath = dbTable['database'] && this.driver.getAttachedDatabaseHandleByRelativePath(dbTable['database']) ? `${this.driver.getAttachedDatabaseHandleByRelativePath(dbTable['database'])}.${dbTable['name']}` : dbTable['name']
             const table = new Table({name: tablePath});
 
             const sql = dbTable["sql"];

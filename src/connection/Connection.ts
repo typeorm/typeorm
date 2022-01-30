@@ -275,7 +275,6 @@ export class Connection {
                     }
                 }
             } else {
-                console.log(`this.driver :>> `, this.driver)
                 await queryRunner.clearDatabase();
             }
         } finally {

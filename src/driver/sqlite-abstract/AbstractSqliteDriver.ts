@@ -22,7 +22,8 @@ import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
 
 type DatabasesMap = Record<string, {
-    attachFilepath: string
+    attachFilepathAbsolute: string
+    attachFilepathRelative: string
     attachHandle: string
 }>;
 
@@ -276,8 +277,12 @@ export abstract class AbstractSqliteDriver implements Driver {
         return !!Object.keys(this.attachedDatabases).length;
     }
 
-    hasAttachedDatabase(database: string): boolean {
-        return !!this.attachedDatabases[database];
+    getAttachedDatabaseHandleByRelativePath(path: string): string | undefined {
+        return this.attachedDatabases?.[path]?.attachHandle
+    }
+
+    getAttachedDatabasePathRelativeByHandle(handle: string): string | undefined {
+        return Object.values(this.attachedDatabases).find(({attachHandle}) => handle === attachHandle)?.attachFilepathRelative
     }
 
     /**
@@ -452,7 +457,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         const driverSchema = undefined
 
         if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
+            const parsed = this.parseTableName(target.schema ? `"${target.schema}"."${target.name}"` : target.name);
 
             return {
                 database: target.database || parsed.database || driverDatabase,
@@ -491,8 +496,9 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableName: parts[2]
             };
         } else if (parts.length === 2) {
+            const database = this.getAttachedDatabasePathRelativeByHandle(parts[0]) ?? driverDatabase
             return {
-                database: driverDatabase,
+                database: database,
                 schema: parts[0],
                 tableName: parts[1]
             };

@@ -90,7 +90,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     buildTableName(tableName: string, _schema?: string, database?: string): string {
 
         if (!database) return tableName;
-        if (this.attachedDatabases[database]) return `${this.attachedDatabases[database].attachHandle}.${tableName}`;
+        if (this.getAttachedDatabaseHandleByRelativePath(database)) return `${this.getAttachedDatabaseHandleByRelativePath(database)}.${tableName}`;
 
         if (database === this.options.database) return tableName;
 
@@ -100,7 +100,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         const absFilepath = isAbsolute(database) ? database : path.join(this.getMainDatabasePath(), database);
 
         this.attachedDatabases[database] = {
-            attachFilepath: absFilepath,
+            attachFilepathAbsolute: absFilepath,
+            attachFilepathRelative: database,
             attachHandle: identifierHash,
         };
 
@@ -177,9 +178,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     protected async attachDatabases() {
 
         // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
-        for await (const {attachHandle, attachFilepath} of Object.values(this.attachedDatabases)) {
-            await this.createDatabaseDirectory(path.dirname(attachFilepath));
-            await this.connection.query(`ATTACH "${attachFilepath}" AS "${attachHandle}"`);
+        for await (const {attachHandle, attachFilepathAbsolute} of Object.values(this.attachedDatabases)) {
+            await this.createDatabaseDirectory(path.dirname(attachFilepathAbsolute));
+            await this.connection.query(`ATTACH "${attachFilepathAbsolute}" AS "${attachHandle}"`);
         }
     }
 
