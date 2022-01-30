@@ -139,8 +139,6 @@ describe("multi-database > basic-functionality", () => {
             const tablePost = (await queryRunner.getTable(tablePathPost))!;
             await queryRunner.release();
 
-            queryRunner.release();
-
             expect(tableCategory.foreignKeys.length).to.eq(1);
             expect(tableCategory.foreignKeys[0].columnNames.length).to.eq(1);  // before the fix this was 2, one for each schema
             expect(tableCategory.foreignKeys[0].columnNames[0]).to.eq("postId");
