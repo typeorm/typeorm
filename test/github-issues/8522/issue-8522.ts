@@ -6,36 +6,14 @@ import { InternalUser } from "./entity/InternalUser";
 import { InternalRole } from "./entity/InternalRole";
 import { User } from "./entity/User";
 import { Role } from "./entity/Role";
-import { BaseEntity, getConnectionManager, TypeORMError } from "../../../src";
+import { BaseEntity, TypeORMError } from "../../../src";
 import { ClientRole } from "./entity/ClientRole";
 import { afterEach } from "mocha";
-import {SqliteDriver} from "../../../src/driver/sqlite/SqliteDriver";
 
 describe("github issues > #8522 Single table inheritance returns the same discriminator value error for unrelated tables where their parents extend from the same entity", () => {
     let connections: Connection[];
 
-    after(async () => {
-        await closeTestingConnections(connections);
-        // Force close all connections.
-        // Sometimes a connection stays open after the test "Should throw error when related tables have the same discriminator"
-        // This results in an unrelated error for other tests
-        await Promise.all(getConnectionManager().connections.map(async connection => {
-            if (connection.isConnected) {
-                try {
-                    await connection.close()
-                } catch (e) {
-                    // We can't detect whether the sqlite handler is already closed, so just ignore the error
-                    if (!(connection.driver instanceof SqliteDriver) && e.message !== "SQLITE_MISUSE: Database handle is closed") {
-                        throw e;
-                    } else {
-                        // Force set isConnected to false, because close() has thrown an error for sqlite
-                        // @ts-ignore
-                        connection['isConnected'] = false;
-                    }
-                }
-            }
-        }))
-    });
+    after(() => closeTestingConnections(connections));
     afterEach(() => closeTestingConnections(connections));
 
     describe("Unrelated tables",()=>{
@@ -106,7 +84,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
                 entities: [BaseEntity, ClientRole, InternalRole, Role, User],
                 schemaCreate: true,
                 dropSchema: true,
-            }).should.be.rejectedWith(TypeORMError,`Entities ClientRole and InternalRole have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
+            }).should.be.rejectedWith(TypeORMError,`Entities InternalRole and ClientRole have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
         });
     });
 });
