@@ -27,6 +27,10 @@ describe("github issues > #8522 Single table inheritance returns the same discri
                     // We can't detect whether the sqlite handler is already closed, so just ignore the error
                     if (!(connection.driver instanceof SqliteDriver) && e.message !== "SQLITE_MISUSE: Database handle is closed") {
                         throw e;
+                    } else {
+                        // Force set isConnected to false, because close() has thrown an error for sqlite
+                        // @ts-ignore
+                        connection['isConnected'] = false;
                     }
                 }
             }
