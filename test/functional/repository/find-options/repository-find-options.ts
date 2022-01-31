@@ -7,6 +7,9 @@ import {Category} from "./entity/Category";
 import {Post} from "./entity/Post";
 import {Photo} from "./entity/Photo";
 import sinon from "sinon";
+import {FileLogger} from "../../../../src";
+import {promisify} from "util";
+import {readFile, unlink} from "fs";
 
 describe("repository > find options", () => {
 
@@ -190,6 +193,38 @@ describe("repository > find options", () => {
 
     })));
 
+});
+
+describe("repository > find options > comment", () => {
+    let connections: Connection[];
+    const logPath = "find_comment_test.log";
+
+    before(async () => {
+        // TODO: would be nice to be able to do this in memory with some kind of
+        // test logger that buffers messages.
+        const logger = new FileLogger(["query"], { logPath });
+        connections = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            createLogger: () => logger,
+        });
+    });
+    beforeEach(() => reloadTestingDatabases(connections));
+    after(async () => {
+        closeTestingConnections(connections);
+        await promisify(unlink)(logPath);
+    });
+
+    it("repository should insert comment", () => Promise.all(connections.map(async connection => {
+        await connection.getRepository(User)
+            .find({comment: "This is a query comment."});
+
+        const logs = await promisify(readFile)(logPath);
+        const lines = logs.toString().split("\n");
+        const lastLine = lines[lines.length - 2]; // last line is blank after newline
+        // remove timestamp and prefix
+        const sql = lastLine.replace(/^.*\[QUERY\]\: /, "");
+        expect(sql).to.match(/^\/\* This is a query comment. \*\//);
+    })));
 });
 
 

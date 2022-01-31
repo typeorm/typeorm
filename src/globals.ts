@@ -88,7 +88,11 @@ export async function createConnections(options?: ConnectionOptions[]): Promise<
     if (!options)
         options = await new ConnectionOptionsReader().all();
     const connections = options.map(options => getConnectionManager().create(options));
-    return Promise.all(connections.map(connection => connection.connect()));
+    // Do not use Promise.all or test 8522 will produce a dangling sqlite connection
+    for (const connection of connections) {
+        await connection.connect()
+    }
+    return connections;
 }
 
 /**

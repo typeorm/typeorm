@@ -28,9 +28,9 @@ This CLI tool is written in javascript and to be run on node. If your entity fil
 
 You may setup ts-node in your project to ease the operation as follows:
 
-Install ts-node globally:
+Install ts-node:
 ```
-npm install -g ts-node
+npm install ts-node --save-dev
 ```
 
 Add typeorm command under scripts section in package.json
@@ -38,6 +38,14 @@ Add typeorm command under scripts section in package.json
 "scripts": {
     ...
     "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js"
+}
+```
+
+For ESM projects add this instead:
+```
+"scripts": {
+    ...
+    "typeorm": "node --loader ts-node/esm ./node_modules/typeorm/cli.js"
 }
 ```
 
@@ -89,6 +97,12 @@ To specify a specific database you use you can use `--database`:
 
 ```
 typeorm init --database mssql
+```
+
+To generate an ESM base project you can use `--module esm`:
+
+```
+typeorm init --name my-project --module esm
 ```
 
 You can also generate a base project with Express:

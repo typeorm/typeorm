@@ -1,15 +1,15 @@
 import sinon from "sinon";
-import { ConnectionOptions, ConnectionOptionsReader, DatabaseType } from "../../../src";
-import { 
-    setupTestingConnections, 
-    createTestingConnections, 
-    closeTestingConnections, 
-    reloadTestingDatabases 
+import {ConnectionOptions, ConnectionOptionsReader, DatabaseType} from "../../../src";
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+    setupTestingConnections
 } from "../../utils/test-utils";
-import { CommandUtils } from "../../../src/commands/CommandUtils";
-import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCommand";
-import { Post } from "./entity/Post";
-import { resultsTemplates } from "./templates/result-templates-create";
+import {CommandUtils} from "../../../src/commands/CommandUtils";
+import {MigrationCreateCommand} from "../../../src/commands/MigrationCreateCommand";
+import {Post} from "./entity/Post";
+import {resultsTemplates} from "./templates/result-templates-create";
 
 describe("commands - migration create", () => {
     let connectionOptions: ConnectionOptions[];
@@ -114,6 +114,32 @@ describe("commands - migration create", () => {
                 createFileStub,
                 sinon.match(/test-directory.*test-migration.js/),
                 sinon.match(resultsTemplates.javascript)
+            );
+
+            getConnectionOptionsStub.restore();
+        }
+    });
+
+    it("should use custom timestamp when option is passed", async () => {
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory();
+
+            baseConnectionOptions = await connectionOptionsReader.get(connectionOption.name as string);
+            getConnectionOptionsStub = sinon.stub(ConnectionOptionsReader.prototype, "get").resolves({
+                ...baseConnectionOptions,
+                entities: [Post]
+            });
+
+            await migrationCreateCommand.handler(testHandlerArgs({
+                "connection": connectionOption.name,
+                "timestamp": "1641163894670",
+            }));
+
+            // compare against control test strings in results-templates.ts
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match("test-directory/1641163894670-test-migration.ts"),
+                sinon.match(resultsTemplates.timestamp)
             );
 
             getConnectionOptionsStub.restore();

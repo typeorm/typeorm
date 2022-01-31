@@ -151,6 +151,11 @@ Example with `ts-node`:
 ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run
 ```
 
+Example with `ts-node` in ESM projects:
+```
+node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run
+```
+
 Example `ts-node` not using `node_modules` directly:
 ```
 ts-node $(yarn bin typeorm) migration:run
@@ -223,6 +228,16 @@ The rule of thumb for generating migrations is that you generate them after **ea
 If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
 ```
 typeorm -c <your-config-name> migration:{run|revert}
+```
+
+## Timestamp option
+If you need to specify a timestamp for the migration name, use the `-t` (alias for `--timestamp`) and pass the timestamp (should be a non-negative number)
+```
+typeorm -t <specific-timestamp> migration:{create|generate}
+```
+You can get a timestamp from:
+```js
+Date.now(); /* OR */ new Date().getTime();
 ```
 
 ## Using migration API to write migrations

@@ -1853,7 +1853,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (dbColumn["is_generated"] === "ALWAYS" && dbColumn["generation_expression"]) {
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
-
+                      
                         const asExpressionQuery = `SELECT generation_expression FROM information_schema.columns WHERE table_name = '${dbTable["table_name"]}' AND table_schema = '${dbTable["table_schema"]}' AND column_name = '${tableColumn.name}';`
 
                         const results: ObjectLiteral[] = await this.query(asExpressionQuery);

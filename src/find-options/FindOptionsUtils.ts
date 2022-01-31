@@ -32,6 +32,7 @@ export class FindOptionsUtils {
                 possibleOptions.cache instanceof Object ||
                 typeof possibleOptions.cache === "boolean" ||
                 typeof possibleOptions.cache === "number" ||
+                typeof possibleOptions.comment === "string" ||
                 possibleOptions.lock instanceof Object ||
                 possibleOptions.loadRelationIds instanceof Object ||
                 typeof possibleOptions.loadRelationIds === "boolean" ||
@@ -97,6 +98,10 @@ export class FindOptionsUtils {
         const metadata = qb.expressionMap.mainAlias!.metadata;
 
         // apply all options from FindOptions
+        if (options.comment) {
+            qb.comment(options.comment);
+        }
+
         if (options.withDeleted) {
             qb.withDeleted();
         }

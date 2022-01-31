@@ -6,7 +6,7 @@ import {expect} from "chai";
 
 describe("relations > eager relations > circular eager relations", () => {
 
-    it("should throw error if eager: true is set on both sides of relationship", () => {
+    it("should throw error if eager: true is set on both sides of relationship", async () => {
         const connection = new Connection({ // dummy connection options, connection won't be established anyway
             type: "mysql",
             host: "localhost",
@@ -16,7 +16,7 @@ describe("relations > eager relations > circular eager relations", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"]
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
+        const entityMetadatas = await connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
     });

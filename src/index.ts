@@ -12,6 +12,7 @@ export * from "./common/EntityTarget";
 export * from "./common/ObjectType";
 export * from "./common/ObjectLiteral";
 export * from "./common/DeepPartial";
+export * from "./common/RelationType";
 export * from "./error";
 export * from "./decorator/columns/Column";
 export * from "./decorator/columns/CreateDateColumn";

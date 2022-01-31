@@ -9,6 +9,7 @@
 * [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
 * [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
 * [How to use Webpack for the backend](#how-to-use-webpack-for-the-backend)
+* [How to use TypeORM in ESM projects?](#how-to-use-typeorm-in-esm-projects)
 
 
 ## How do I update a database schema?
@@ -182,6 +183,12 @@ Also, if you want to use the ts-node CLI, you can execute TypeORM the following 
 ts-node ./node_modules/.bin/typeorm schema:sync
 ```
 
+For ESM projects use this instead:
+
+```
+node --loader ts-node/esm ./node_modules/.bin/typeorm schema:sync
+```
+
 ## How to use Webpack for the backend?
 
 Webpack produces warnings due to what it views as missing require statements -- require statements for all drivers supported by TypeORM. To suppress these warnings for unused drivers, you will need to edit your webpack config file.
@@ -277,3 +284,25 @@ module.exports = {
   ],
 };
 ```
+
+## How to use TypeORM in ESM projects?
+
+Make sure to add `"type": "module"` in the `package.json` of your project so TypeORM will know to use `import( ... )` on files.
+
+To avoid circular dependency import issues use the `Related` wrapper type for relation type definitions in entities:
+
+```typescript
+@Entity()
+export class User {
+
+    @OneToOne(() => Profile, profile => profile.user)
+    profile: Relation<Profile>;
+
+}
+```
+
+Doing this prevents the type of the property from being saved in the transpiled code in the property metadata, preventing circular dependency issues.
+
+Since the type of the column is already defined using the `@OneToOne` decorator, there's no use of the additional type metadata saved by TypeScript.
+
+> Important: Do not use `Related` on non-relation column types

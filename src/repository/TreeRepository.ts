@@ -137,7 +137,7 @@ export class TreeRepository<Entity> extends Repository<Entity> {
                     if (this.manager.connection.driver instanceof AbstractSqliteDriver) {
                         return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE ${subQuery.getQuery()} || '%'`;
                     } else {
-                        return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE CONCAT(${subQuery.getQuery()}, '%')`;
+                        return `${alias}.${this.metadata.materializedPathColumn!.propertyPath} LIKE NULLIF(CONCAT(${subQuery.getQuery()}, '%'), '%')`;
                     }
                 });
         }

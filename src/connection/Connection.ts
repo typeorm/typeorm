@@ -82,6 +82,11 @@ export class Connection {
     readonly namingStrategy: NamingStrategyInterface;
 
     /**
+     * Name for the metadata table
+     */
+    readonly metadataTableName: string;
+
+    /**
      * Logger used to log orm events.
      */
     readonly logger: Logger;
@@ -122,6 +127,7 @@ export class Connection {
         this.driver = new DriverFactory().create(this);
         this.manager = this.createEntityManager();
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
+        this.metadataTableName = options.metadataTableName || "typeorm_metadata";
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
         this.isConnected = false;
@@ -183,7 +189,7 @@ export class Connection {
         try {
 
             // build all metadatas registered in the current connection
-            this.buildMetadatas();
+            await this.buildMetadatas();
 
             await this.driver.afterConnect();
 
@@ -497,21 +503,21 @@ export class Connection {
     /**
      * Builds metadatas for all registered classes inside this connection.
      */
-    protected buildMetadatas(): void {
+    protected async buildMetadatas(): Promise<void> {
 
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(this);
         const entityMetadataValidator = new EntityMetadataValidator();
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
-        const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
+        const subscribers = await connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
         ObjectUtils.assign(this, { subscribers: subscribers });
 
         // build entity metadatas
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
+        const entityMetadatas = await connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
         ObjectUtils.assign(this, { entityMetadatas: entityMetadatas });
 
         // create migration instances
-        const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
+        const migrations = await connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct
