@@ -172,5 +172,8 @@ export class Post {
 }
 ```
 
+## Concurrent index creation
+For Postgres, TypeORM does not support building indices concurrently. To learn more about concurrent index building in Postgres, see [the Postgres docs](https://www.postgresql.org/docs/13/sql-createindex.html).
+
 
 
