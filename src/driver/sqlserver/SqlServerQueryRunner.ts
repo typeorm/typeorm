@@ -268,7 +268,6 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         this.driver.connection.logger.logQuery(query, parameters, this);
         const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
         const request = new this.driver.mssql.Request(this.isTransactionActive ? this.databaseConnection : pool);
-        request.stream = true;
         if (parameters && parameters.length) {
             parameters.forEach((parameter, index) => {
                 const parameterName = index.toString();
@@ -282,28 +281,26 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         request.query(query);
 
-        // Any event should release the lock.
-        request.once("row", release);
-        request.once("rowsaffected", release);
-        request.once("done", release);
-        request.once("error", release);
+        const streamRequest = request.toReadableStream();
 
-        request.on("error", (err: any) => {
+        streamRequest.on("error", (err: any) => {
+            release();
             this.driver.connection.logger.logQueryError(err, query, parameters, this);
         });
 
+        streamRequest.on("end", () => {
+            release();
+        });
+
         if (onEnd) {
-            request.on("done", onEnd);
+            streamRequest.on("end", onEnd);
         }
 
         if (onError) {
-            request.on("error", onError);
+            streamRequest.on("error", onError);
         }
 
-        // This can be done with request.getReadStream() in node-mssql 7.0.0
-        // Also, use `require` here to prevent importing it unless we actually need it.
-        const { PassThrough } = require("stream");
-        return request.pipe(new PassThrough({ objectMode: true }));
+        return streamRequest;
     }
 
     /**
