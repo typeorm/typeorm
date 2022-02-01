@@ -125,21 +125,21 @@
     "typescript": "^4.2.2"
   },
   "peerDependencies": {
-    "@sap/hana-client": "*",
-    "better-sqlite3": "*",
-    "hdb-pool": "*",
-    "ioredis": "*",
+    "@sap/hana-client": "^2.11.14",
+    "better-sqlite3": "^7.1.2",
+    "hdb-pool": "^0.1.6",
+    "ioredis": "^4.28.3",
     "mongodb": "^3.6.0",
-    "mssql": "*",
-    "mysql2": "*",
-    "oracledb": "*",
-    "pg": "*",
-    "pg-native": "*",
-    "pg-query-stream": "*",
-    "redis": "*",
-    "sql.js": "*",
-    "sqlite3": "*",
-    "typeorm-aurora-data-api-driver": "*"
+    "mssql": "^6.3.1",
+    "mysql2": "^2.2.5",
+    "oracledb": "^5.1.0",
+    "pg": "^8.5.1",
+    "pg-native": "^3.0.0",
+    "pg-query-stream": "^4.0.0",
+    "redis": "^3.1.1",
+    "sql.js": "^1.4.0",
+    "sqlite3": "^5.0.2",
+    "typeorm-aurora-data-api-driver": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "@sap/hana-client": {
