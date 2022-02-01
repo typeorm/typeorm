@@ -51,7 +51,7 @@ export class SchemaSyncCommand implements yargs.CommandModule {
         } catch (err) {
             if (connection) await (connection as Connection).close();
 
-            PlatformTools.logCmdErr('Error during schema synchronization:', err)
+            PlatformTools.logCmdErr("Error during schema synchronization:", err);
             process.exit(1);
         }
     }

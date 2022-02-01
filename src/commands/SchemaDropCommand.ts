@@ -51,7 +51,7 @@ export class SchemaDropCommand implements yargs.CommandModule {
 
         } catch (err) {
             if (connection) await (connection as Connection).close();
-            PlatformTools.logCmdErr('Error during schema drop:', err);
+            PlatformTools.logCmdErr("Error during schema drop:", err);
             process.exit(1);
         }
     }

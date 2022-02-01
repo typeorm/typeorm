@@ -94,7 +94,7 @@ export class InitCommand implements yargs.CommandModule {
             }
 
         } catch (err) {
-            PlatformTools.logCmdErr('Error during project initialization:', err);
+            PlatformTools.logCmdErr("Error during project initialization:", err);
             process.exit(1);
         }
     }

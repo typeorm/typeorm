@@ -164,7 +164,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
             }
         } catch (err) {
-            PlatformTools.logCmdErr('Error during migration generation:', err);
+            PlatformTools.logCmdErr("Error during migration generation:", err);
             process.exit(1);
         }
     }

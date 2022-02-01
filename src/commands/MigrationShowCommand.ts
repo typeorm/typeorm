@@ -3,7 +3,6 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as process from "process";
 import * as yargs from "yargs";
-import chalk from "chalk";
 import { PlatformTools } from "../platform/PlatformTools";
 
 /**
@@ -52,7 +51,7 @@ export class MigrationShowCommand implements yargs.CommandModule {
 
     } catch (err) {
       if (connection) await (connection as Connection).close();
-      PlatformTools.logCmdErr('Error during migration show:', err);
+      PlatformTools.logCmdErr("Error during migration show:", err);
       process.exit(1);
     }
   }

@@ -64,7 +64,7 @@ export class EntityCreateCommand implements yargs.CommandModule {
             console.log(chalk.green(`Entity ${chalk.blue(path)} has been created successfully.`));
 
         } catch (err) {
-            PlatformTools.logCmdErr('Error during entity creation:', err);
+            PlatformTools.logCmdErr("Error during entity creation:", err);
             process.exit(1);
         }
     }

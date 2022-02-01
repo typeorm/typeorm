@@ -61,7 +61,7 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
             console.log(chalk.green(`Subscriber ${chalk.blue(path)} has been created successfully.`));
 
         } catch (err) {
-            PlatformTools.logCmdErr('Error during subscriber creation:')
+            PlatformTools.logCmdErr("Error during subscriber creation:");
             process.exit(1);
         }
     }

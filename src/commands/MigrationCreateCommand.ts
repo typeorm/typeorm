@@ -83,7 +83,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             console.log(`Migration ${chalk.blue(path)} has been generated successfully.`);
 
         } catch (err) {
-            PlatformTools.logCmdErr('Error during migration creation:', err);
+            PlatformTools.logCmdErr("Error during migration creation:", err);
             process.exit(1);
         }
     }
