@@ -74,6 +74,8 @@ export class MigrationRevertCommand implements yargs.CommandModule {
 
             await connection.undoLastMigration(options);
             await connection.close();
+            // exit process if no errors
+            process.exit(0);
 
         } catch (err) {
             if (connection) await (connection as Connection).close();
