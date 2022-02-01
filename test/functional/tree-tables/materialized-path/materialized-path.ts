@@ -574,6 +574,8 @@ describe("tree tables > materialized-path", () => {
     })));
 
     it("should compute path correctly when tree is implicitly saved (cascade: true) through related entity", () => Promise.all(connections.map(async connection => {
+        const categoryMetadata = connection.getMetadata(Category);
+        const mpathColumn = categoryMetadata.materializedPathColumn!.databasePath;
         const categoryRepository = connection.getRepository(Category);
         const productRepository = connection.getRepository(Product);
 
@@ -596,9 +598,8 @@ describe("tree tables > materialized-path", () => {
 
         // save it alongside its categories ( cascade )
         const savedProduct = await productRepository.save(product);
-
         const pathResult = await connection.createQueryBuilder()
-            .select("mpath", "path")
+            .select(mpathColumn, "path")
             .from("categories", "categories")
             .where({ product: { id: savedProduct.id } })
             .getRawOne();
