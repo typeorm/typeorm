@@ -3,6 +3,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Reverts last migration command.
@@ -78,8 +79,7 @@ export class MigrationRevertCommand implements yargs.CommandModule {
         } catch (err) {
             if (connection) await (connection as Connection).close();
 
-            console.log(chalk.black.bgRed("Error during migration revert:"));
-            console.error(err);
+            PlatformTools.logCmdErr('Error during migration revert:', err);
             process.exit(1);
         }
     }

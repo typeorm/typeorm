@@ -4,6 +4,7 @@ import {Connection} from "../connection/Connection";
 import * as process from "process";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Runs migration command.
@@ -81,8 +82,7 @@ export class MigrationRunCommand implements yargs.CommandModule {
         } catch (err) {
             if (connection) await (connection as Connection).close();
 
-            console.log(chalk.black.bgRed("Error during migration run:"));
-            console.error(err);
+            PlatformTools.logCmdErr('Error during migration run:', err);
             process.exit(1);
         }
     }
