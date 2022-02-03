@@ -137,6 +137,7 @@ export class EntitySchemaTransformer {
                             onUpdate: relationSchema.onUpdate,
                             deferrable: relationSchema.deferrable,
                             primary: relationSchema.primary,
+                            createForeignKeyConstraints: relationSchema.createForeignKeyConstraints,
                             persistence: relationSchema.persistence,
                             orphanedRowAction: relationSchema.orphanedRowAction
                         }
