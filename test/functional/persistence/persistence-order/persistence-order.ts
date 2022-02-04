@@ -11,7 +11,7 @@ describe("persistence > order of persistence execution operations", () => {
 
     describe("should throw exception when non-resolvable circular relations found", function() {
 
-        it("should throw CircularRelationsError", () => {
+        it("should throw CircularRelationsError", async () => {
             const connection = new Connection({ // dummy connection options, connection won't be established anyway
                 type: "mysql",
                 host: "localhost",
@@ -21,7 +21,7 @@ describe("persistence > order of persistence execution operations", () => {
                 entities: [__dirname + "/entity/*{.js,.ts}"]
             });
             const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-            const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
+            const entityMetadatas = await connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
             const entityMetadataValidator = new EntityMetadataValidator();
             expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
         });

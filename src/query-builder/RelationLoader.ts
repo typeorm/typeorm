@@ -2,6 +2,7 @@ import {Connection} from "../connection/Connection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {RelationMetadata} from "../metadata/RelationMetadata";
+import { FindOptionsUtils } from "..";
 
 /**
  * Wraps entities and creates getters/setters for their relations
@@ -77,6 +78,8 @@ export class RelationLoader {
             qb.where(condition);
         }
 
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
+
         return qb.getMany();
         // return qb.getOne(); todo: fix all usages
     }
@@ -111,6 +114,9 @@ export class RelationLoader {
             }).map(condition => "(" + condition + ")").join(" OR ");
             qb.where(condition);
         }
+
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
+
         return qb.getMany();
         // return relation.isOneToMany ? qb.getMany() : qb.getOne(); todo: fix all usages
     }
@@ -139,13 +145,16 @@ export class RelationLoader {
             return parameters;
         }, {} as ObjectLiteral);
 
-        return this.connection
+        const qb = this.connection
             .createQueryBuilder(queryRunner)
             .select(mainAlias)
             .from(relation.type, mainAlias)
             .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))
-            .setParameters(parameters)
-            .getMany();
+            .setParameters(parameters);
+
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
+        
+        return qb.getMany();
     }
 
     /**
@@ -172,13 +181,16 @@ export class RelationLoader {
             return parameters;
         }, {} as ObjectLiteral);
 
-        return this.connection
+        const qb = this.connection
             .createQueryBuilder(queryRunner)
             .select(mainAlias)
             .from(relation.type, mainAlias)
             .innerJoin(joinAlias, joinAlias, [...joinColumnConditions, ...inverseJoinColumnConditions].join(" AND "))
-            .setParameters(parameters)
-            .getMany();
+            .setParameters(parameters);
+
+        FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
+
+        return qb.getMany();
     }
 
     /**

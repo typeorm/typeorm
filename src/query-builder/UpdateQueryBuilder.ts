@@ -41,7 +41,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
         let sql = this.createComment();
@@ -197,7 +197,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Adds new AND WHERE with conditions for the given ids.
+     * Sets WHERE condition in the query builder with a condition for the given ids.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
      */
     whereInIds(ids: any|any[]): this {
         return this.where(this.getWhereInIdsCondition(ids));
@@ -441,11 +443,13 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 });
             });
 
-            if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
-                updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
-
+            // Don't allow calling update only with columns that are `update: false`
+            if (updateColumnAndValues.length > 0 || Object.keys(valuesSet).length === 0) {
+                if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
+                    updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
+                if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
+                    updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+            }
         } else {
             Object.keys(valuesSet).map(key => {
                 let value = valuesSet[key];

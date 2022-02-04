@@ -9,16 +9,16 @@ import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 
 @Entity()
 export class Profile {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     gender: string;
-    
+
     @Column()
     photo: string;
-    
+
 }
 ```
 
@@ -28,17 +28,17 @@ import {Profile} from "./Profile";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @OneToOne(() => Profile)
     @JoinColumn()
     profile: Profile;
-    
+
 }
 ```
 
@@ -85,7 +85,7 @@ await connection.manager.save(user);
 With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 To load user with profile inside you must specify relation in `FindOptions`:
- 
+
 ```typescript
 const userRepository = connection.getRepository(User);
 const users = await userRepository.find({ relations: ["profile"] });
@@ -101,9 +101,9 @@ const users = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use leftJoinAndSelect to load the relation.
+With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use `leftJoinAndSelect` to load the relation.
 
-Relations can be uni-directional and bi-directional. 
+Relations can be uni-directional and bi-directional.
 Uni-directional are relations with a relation decorator only on one side.
 Bi-directional are relations with decorators on both sides of a relation.
 
@@ -115,19 +115,19 @@ import {User} from "./User";
 
 @Entity()
 export class Profile {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     gender: string;
-    
+
     @Column()
     photo: string;
-    
+
     @OneToOne(() => User, user => user.profile) // specify inverse side as a second parameter
     user: User;
-    
+
 }
 ```
 
@@ -137,24 +137,24 @@ import {Profile} from "./Profile";
 
 @Entity()
 export class User {
-    
+
     @PrimaryGeneratedColumn()
     id: number;
-    
+
     @Column()
     name: string;
-    
+
     @OneToOne(() => Profile, profile => profile.user) // specify inverse side as a second parameter
     @JoinColumn()
     profile: Profile;
-    
+
 }
 ```
 
 We just made our relation bi-directional. Note, inverse relation does not have a `@JoinColumn`.
 `@JoinColumn` must only be on one side of the relation -  on the table that will own the foreign key.
 
-Bi-directional relations allow you to join relations from both sides using `QueryBuilder`: 
+Bi-directional relations allow you to join relations from both sides using `QueryBuilder`:
 
 ```typescript
 const profiles = await connection

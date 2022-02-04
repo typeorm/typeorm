@@ -4,8 +4,8 @@
  * [Saving many-to-many relations](#saving-many-to-many-relations)
  * [Deleting many-to-many relations](#deleting-many-to-many-relations)
  * [Loading many-to-many relations](#loading-many-to-many-relations)
- * [bi-directional relations](#bi-directional-relations)
- * [many-to-many relations with custom properties](#many-to-many-relations-with-custom-properties)
+ * [Bi-directional relations](#bi-directional-relations)
+ * [Many-to-many relations with custom properties](#many-to-many-relations-with-custom-properties)
 
 ## What are many-to-many relations
 
@@ -14,27 +14,24 @@ Let's take for example `Question` and `Category` entities.
 A question can have multiple categories, and each category can have multiple questions.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class Category {
-
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column()
     name: string;
-
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Category } from "./Category";
 
 @Entity()
 export class Question {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -47,7 +44,6 @@ export class Question {
     @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[];
-
 }
 ```
 
@@ -129,7 +125,7 @@ category2.name = "zoo";
 
 const question = new Question();
 question.categories = [category1, category2];
-const newQuestion =  await connection.manager.save(question);
+const newQuestion = await connection.manager.save(question);
 
 await connection.manager.softRemove(newQuestion);
 ```
@@ -137,12 +133,11 @@ await connection.manager.softRemove(newQuestion);
 In this example we did not call save or softRemove for category1 and category2, but they will be automatically saved and soft-deleted when the cascade of relation options is set to true like this:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Category } from "./Category";
 
 @Entity()
 export class Question {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -151,7 +146,6 @@ export class Question {
     })
     @JoinTable()
     categories: Category[];
-
 }
 ```
 
@@ -174,9 +168,9 @@ const questions = await connection
     .getMany();
 ```
 
-With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use leftJoinAndSelect to load the relation.
+With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use `leftJoinAndSelect` to load the relation.
 
-## bi-directional relations
+## Bi-directional relations
 
 Relations can be uni-directional and bi-directional.
 Uni-directional relations are relations with a relation decorator only on one side.
@@ -185,12 +179,11 @@ Bi-directional relations are relations with decorators on both sides of a relati
 We just created a uni-directional relation. Let's make it bi-directional:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
-import {Question} from "./Question";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm";
+import { Question } from "./Question";
 
 @Entity()
 export class Category {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -199,17 +192,15 @@ export class Category {
 
     @ManyToMany(() => Question, question => question.categories)
     questions: Question[];
-
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Category } from "./Category";
 
 @Entity()
 export class Question {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -222,7 +213,6 @@ export class Question {
     @ManyToMany(() => Category, category => category.questions)
     @JoinTable()
     categories: Category[];
-
 }
 ```
 
@@ -239,7 +229,7 @@ const categoriesWithQuestions = await connection
     .getMany();
 ```
 
-## many-to-many relations with custom properties
+## Many-to-many relations with custom properties
 
 In case you need to have additional properties in your many-to-many relationship, you have to create a new entity yourself.
 For example, if you would like entities `Post` and `Category` to have a many-to-many relationship with an additional `order` column, then you need to create an entity `PostToCategory` with two `ManyToOne` relations pointing in both directions and with custom columns in it:

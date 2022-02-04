@@ -7,7 +7,7 @@ import * as yargs from "yargs";
 import chalk from "chalk";
 
 /**
- * Executes an sql query on the given connection.
+ * Executes an SQL query on the given connection.
  */
 export class QueryCommand implements yargs.CommandModule {
     command = "query [query]";

@@ -3,6 +3,7 @@ import {PrimaryGeneratedColumnNumericOptions} from "../options/PrimaryGeneratedC
 import {PrimaryGeneratedColumnUUIDOptions} from "../options/PrimaryGeneratedColumnUUIDOptions";
 import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
 import { ColumnOptions } from "../options/ColumnOptions";
+import { PrimaryGeneratedColumnIdentityOptions } from "../options/PrimaryGeneratedColumnIdentityOptions";
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -29,15 +30,15 @@ export function PrimaryGeneratedColumn(strategy: "uuid", options?: PrimaryGenera
  */
 export function PrimaryGeneratedColumn(strategy: "rowid", options?: PrimaryGeneratedColumnUUIDOptions): PropertyDecorator;
 
-export function PrimaryGeneratedColumn(strategy: "identity", options?: PrimaryGeneratedColumnUUIDOptions): PropertyDecorator;
+export function PrimaryGeneratedColumn(strategy: "identity", options?: PrimaryGeneratedColumnIdentityOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * This column creates an integer PRIMARY COLUMN with generated set to true.
  */
-export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|"rowid"|"identity"|PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions,
-                                       maybeOptions?: PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions): PropertyDecorator {
+export function PrimaryGeneratedColumn(strategyOrOptions?: "increment"|"uuid"|"rowid"|"identity"|PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions|PrimaryGeneratedColumnIdentityOptions,
+                                       maybeOptions?: PrimaryGeneratedColumnNumericOptions|PrimaryGeneratedColumnUUIDOptions|PrimaryGeneratedColumnIdentityOptions): PropertyDecorator {
 
     // normalize parameters
     const options: ColumnOptions = {};

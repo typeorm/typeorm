@@ -60,7 +60,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a new query builder for the repository's entity that can be used to build a sql query.
+     * Creates a new query builder for the repository's entity that can be used to build a SQL query.
      * If current repository does not manage any entity, then exception will be thrown.
      */
     protected createQueryBuilder(alias: string): SelectQueryBuilder<Entity> {
@@ -72,7 +72,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Creates a new query builder for the given entity that can be used to build a sql query.
+     * Creates a new query builder for the given entity that can be used to build a SQL query.
      */
     protected createQueryBuilderFor<T>(entity: ObjectType<T>, alias: string): SelectQueryBuilder<T> {
         return this.getRepositoryFor(entity).createQueryBuilder(alias);

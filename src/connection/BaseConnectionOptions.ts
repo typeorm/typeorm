@@ -55,6 +55,12 @@ export interface BaseConnectionOptions {
     readonly migrationsTransactionMode?: "all" | "none" | "each";
 
     /**
+     * Typeorm metadata table name, in case of different name from "typeorm_metadata".
+     * Accepts single string name.
+     */
+    readonly metadataTableName?: string;
+
+    /**
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface;

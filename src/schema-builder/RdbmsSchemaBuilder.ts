@@ -833,7 +833,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema;
         const database = this.currentDatabase;
-        const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", schema, database);
+        const typeormMetadataTable = this.connection.driver.buildTableName(this.connection.metadataTableName, schema, database);
 
         await queryRunner.createTable(new Table(
             {

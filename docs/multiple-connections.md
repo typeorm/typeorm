@@ -36,7 +36,7 @@ const connections = await createConnections([{
 }]);
 ```
 
-This approach allows you to connect to any number of databases you have 
+This approach allows you to connect to any number of databases you have
 and each database will have its own configuration, own entities and overall ORM scope and settings.
 
 For each connection a new `Connection` instance will be created.
@@ -71,11 +71,11 @@ const db2Connection = getConnection("db2Connection");
 
 Benefit of using this approach is that you can configure multiple connections with different login credentials,
 host, port and even database type itself.
-Downside for might be that you'll need to manage and work with multiple connection instances. 
+Downside for might be that you'll need to manage and work with multiple connection instances.
 
 ## Using multiple databases in a single connection
 
-If you don't want to create multiple connections, 
+If you don't want to create multiple connections,
 but want to use multiple databases in a single connection,
 you can specify database name per-entity you use:
 
@@ -127,10 +127,10 @@ const users = await connection
     .getMany(); // userId is not a foreign key since its cross-database request
 ```
 
-This code will produce following sql query (depend on database type):
+This code will produce following SQL query (depend on database type):
 
 ```sql
-SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo" 
+SELECT * FROM "secondDB"."user" "user", "thirdDB"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -200,10 +200,10 @@ const users = await connection
     .getMany(); // userId is not a foreign key since its cross-database request
 ```
 
-This code will produce following sql query (depend on database type):
+This code will produce following SQL query (depend on database type):
 
 ```sql
-SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo" 
+SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 
@@ -289,7 +289,7 @@ try {
 } finally {
       await masterQueryRunner.release();
 }
-        
+
 ```
 
 If you want to use `slave` in raw queries, you also need to explicitly specify the query runner.
@@ -333,7 +333,7 @@ Mysql supports deep configuration:
       password: "test",
       database: "test"
     }],
-    
+
     /**
     * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
     */

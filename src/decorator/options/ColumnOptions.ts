@@ -144,6 +144,11 @@ export interface ColumnOptions extends ColumnCommonOptions {
     generatedType?: "VIRTUAL"|"STORED";
 
     /**
+     * Identity column type. Supports only in Postgres 10+.
+     */
+    generatedIdentity?: "ALWAYS"|"BY DEFAULT";
+
+    /**
      * Return type of HSTORE column.
      * Returns value as string or as object.
      */

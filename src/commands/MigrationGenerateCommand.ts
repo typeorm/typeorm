@@ -60,6 +60,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 type: "boolean",
                 default: false,
                 describe: "Verifies that the current database is up to date and that no migrations are needed. Otherwise exits with code 1.",
+            })
+            .option("t", {
+                alias: "timestamp",
+                type: "number",
+                default: false,
+                describe: "Custom timestamp for the migration name",
             });
     }
 
@@ -68,7 +74,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             console.log("'migrations:generate' is deprecated, please use 'migration:generate' instead");
         }
 
-        const timestamp = new Date().getTime();
+        const timestamp = CommandUtils.getTimestamp(args.timestamp);
         const extension = args.outputJs ? ".js" : ".ts";
         const filename = timestamp + "-" + args.name + extension;
         let directory = args.dir as string | undefined;

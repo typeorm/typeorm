@@ -91,6 +91,12 @@ export interface TestingOptions {
     namingStrategy?: NamingStrategyInterface;
 
     /**
+     * Typeorm metadata table name, in case of different name from "typeorm_metadata".
+     * Accepts single string name.
+     */
+    metadataTableName?: string;
+
+    /**
      * Schema name used for postgres driver.
      */
     cache?: boolean | {
@@ -238,8 +244,11 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.migrations = [options.__dirname + "/migration/*{.js,.ts}"];
             if (options && options.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy;
+            if (options && options.metadataTableName)
+                newOptions.metadataTableName = options.metadataTableName;
 
             newOptions.baseDirectory = path.dirname(getOrmFilepath());
+      
             return newOptions;
         });
 }

@@ -264,7 +264,7 @@ createQueryBuilder()
     .from(User, "user")
 ```
 
-Which will result in the following sql query:
+Which will result in the following SQL query:
 
 ```sql
 SELECT ... FROM users user
@@ -401,6 +401,24 @@ Which will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
+```
+
+
+You can add a negated complex `WHERE` expression into an existing `WHERE` using `NotBrackets`
+
+```typescript
+createQueryBuilder("user")
+    .where("user.registered = :registered", { registered: true })
+    .andWhere(new NotBrackets(qb => {
+        qb.where("user.firstName = :firstName", { firstName: "Timber" })
+          .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.registered = true AND NOT((user.firstName = 'Timber' OR user.lastName = 'Saw'))
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
@@ -659,7 +677,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate following sql query:
+This will generate following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
@@ -676,7 +694,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate the following sql query:
+This will generate the following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user

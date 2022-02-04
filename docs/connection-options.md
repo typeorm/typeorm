@@ -95,6 +95,9 @@ By default this table is called "migrations".
 
 * `migrationsTransactionMode` - Control transactions for migrations (default: `all`), can be one of `all` | `none` | `each`
 
+* `metadataTableName` - Name of the table in the database which is going to contain information about table metadata.
+By default this table is called "typeorm_metadata".
+
 * `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
 Read more about caching [here](./caching.md).
 

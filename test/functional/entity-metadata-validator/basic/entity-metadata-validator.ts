@@ -6,7 +6,7 @@ import {expect} from "chai";
 
 describe("entity-metadata-validator", () => {
 
-    it("should throw error if relation count decorator used with ManyToOne or OneToOne relations", () => {
+    it("should throw error if relation count decorator used with ManyToOne or OneToOne relations", async () => {
         const connection = new Connection({ // dummy connection options, connection won't be established anyway
             type: "mysql",
             host: "localhost",
@@ -16,7 +16,7 @@ describe("entity-metadata-validator", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"]
         });
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(connection);
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
+        const entityMetadatas = await connectionMetadataBuilder.buildEntityMetadatas([__dirname + "/entity/*{.js,.ts}"]);
         const entityMetadataValidator = new EntityMetadataValidator();
         expect(() => entityMetadataValidator.validateMany(entityMetadatas, connection.driver)).to.throw(Error);
     });

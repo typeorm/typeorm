@@ -7,6 +7,7 @@ import {ConnectionOptionsYmlReader} from "./options-reader/ConnectionOptionsYmlR
 import {ConnectionOptionsXmlReader} from "./options-reader/ConnectionOptionsXmlReader";
 import { TypeORMError } from "../error";
 import { isAbsolute } from "../util/PathUtils";
+import {importOrRequireFile} from "../util/ImportUtils";
 
 /**
  * Reads connection options from the ormconfig.
@@ -84,7 +85,7 @@ export class ConnectionOptionsReader {
     protected async load(): Promise<ConnectionOptions[]|undefined> {
         let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
 
-        const fileFormats = ["env", "js", "cjs", "ts", "json", "yml", "yaml", "xml"];
+        const fileFormats = ["env", "js", "mjs", "cjs", "ts", "mts", "cts", "json", "yml", "yaml", "xml"];
 
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
@@ -109,10 +110,14 @@ export class ConnectionOptionsReader {
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
             connectionOptions = await new ConnectionOptionsEnvReader().read();
 
-        } else if (foundFileFormat === "js" || foundFileFormat === "cjs" || foundFileFormat === "ts") {
-            const configModule = await require(configFile);
+        } else if (
+            foundFileFormat === "js" || foundFileFormat === "mjs" || foundFileFormat === "cjs" ||
+            foundFileFormat === "ts" || foundFileFormat === "mts" || foundFileFormat === "cts"
+        ) {
+            const [importOrRequireResult, moduleSystem] = await importOrRequireFile(configFile);
+            const configModule = await importOrRequireResult;
 
-            if (configModule && "__esModule" in configModule && "default" in configModule) {
+            if (moduleSystem === "esm" || (configModule && "__esModule" in configModule && "default" in configModule)) {
                 connectionOptions = configModule.default;
             } else {
                 connectionOptions = configModule;
