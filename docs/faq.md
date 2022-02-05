@@ -289,7 +289,7 @@ module.exports = {
 
 Make sure to add `"type": "module"` in the `package.json` of your project so TypeORM will know to use `import( ... )` on files.
 
-To avoid circular dependency import issues use the `Related` wrapper type for relation type definitions in entities:
+To avoid circular dependency import issues use the `Relation` wrapper type for relation type definitions in entities:
 
 ```typescript
 @Entity()
@@ -305,4 +305,4 @@ Doing this prevents the type of the property from being saved in the transpiled 
 
 Since the type of the column is already defined using the `@OneToOne` decorator, there's no use of the additional type metadata saved by TypeScript.
 
-> Important: Do not use `Related` on non-relation column types
+> Important: Do not use `Relation` on non-relation column types
