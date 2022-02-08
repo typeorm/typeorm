@@ -197,7 +197,7 @@ Question {
 
 Now when you save this object `categories` inside it won't be touched - because it is unset.
 
-But if you have initializer, the loaded object will look like as follow:
+But if you have an initializer, the loaded object will look as follows:
 
 ```javascript
 Question {
