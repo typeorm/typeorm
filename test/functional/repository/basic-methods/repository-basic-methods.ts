@@ -14,6 +14,7 @@ import { ExternalIdPrimaryKeyEntity } from "./entity/ExternalIdPrimaryKeyEntity"
 import { EmbeddedUniqueConstraintEntity } from "./entity/EmbeddedUniqueConstraintEntity";
 import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey";
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns";
+import { OneToOneRelationEntity } from "./entity/OneToOneRelation";
 
 describe("repository > basic methods", () => {
 
@@ -41,7 +42,8 @@ describe("repository > basic methods", () => {
                     ExternalIdPrimaryKeyEntity,
                     EmbeddedUniqueConstraintEntity,
                     RelationAsPrimaryKey,
-                    TwoUniqueColumnsEntity
+                    TwoUniqueColumnsEntity,
+                    OneToOneRelationEntity
                 ],
             }))
     );
@@ -500,6 +502,31 @@ describe("repository > basic methods", () => {
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar1" } })).embedded.value.should.be.equal("foo 1");
             await embeddedConstraintObjects.upsert({ embedded: { id: "bar1", value: "foo 2" } }, ["embedded.id"]);
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar1" } })).embedded.value.should.be.equal("foo 2");
+        })));
+        it("should upsert on one-to-one relation", () => Promise.all(connections.map(async (connection) => {
+            if (connection.driver.supportedUpsertType == null) return;
+
+            const oneToOneRepository = connection.getRepository(OneToOneRelationEntity);
+            const categoryRepository = connection.getRepository(Category);
+
+            const category = await categoryRepository.save({
+                name: "Category"
+            });
+
+            await oneToOneRepository.upsert({
+                category,
+                order: 1
+            }, ["category.id"]);
+
+            (await oneToOneRepository.findOneOrFail({ category }))!.order.should.be.equal(1);
+
+            await oneToOneRepository.upsert({
+                category,
+                order: 2
+            }, ["category.id"]);
+
+            (await oneToOneRepository.findOneOrFail({ category }))!.order.should.be.equal(2);
+
         })));
         it("should bulk upsert with embedded columns", () => Promise.all(connections.map(async (connection) => {
             if (connection.driver.supportedUpsertType == null) return;

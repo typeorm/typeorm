@@ -39,6 +39,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {getMetadataArgsStorage} from "../globals";
 import {TypeORMError} from "../error";
 import {UpsertOptions} from "../repository/UpsertOptions";
+import { OrmUtils } from "../util/OrmUtils";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -495,10 +496,16 @@ export class EntityManager {
             options = conflictPathsOrOptions;
         }
 
+        const relationMetadatas = metadata.relations.map(relation => (relation.embeddedMetadata ?? relation.entityMetadata));
+
         const uniqueColumnConstraints = [
             metadata.primaryColumns,
             ...metadata.indices.filter(ix => ix.isUnique).map(ix => ix.columns),
-            ...metadata.uniques.map(uq => uq.columns)
+            ...metadata.uniques.map(uq => uq.columns),
+            ...OrmUtils.flatten([
+                ...relationMetadatas.map(rel => rel.indices.filter(ix => ix.isUnique).map(ix => ix.columns)),
+                ...relationMetadatas.map(rel => rel.uniques.map(ix => ix.columns)),
+            ])
         ];
 
         const useIndex = uniqueColumnConstraints.find((ix) =>
