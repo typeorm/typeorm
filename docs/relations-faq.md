@@ -136,7 +136,7 @@ User {
 The easiest way to load your entity relations is to use `relations` option in `FindOptions`:
  
 ```typescript
-const users = await connection.getRepository(User).find({ relations: ["profile", "photos", "videos"] });
+const users = await connection.getRepository(User).find({ relations: { profile: true, photos: true, videos: true] });
 ```
 
 Alternative and more flexible way is to use `QueryBuilder`:
