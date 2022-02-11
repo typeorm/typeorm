@@ -88,7 +88,11 @@ To load user with profile inside you must specify relation in `FindOptions`:
 
 ```typescript
 const userRepository = connection.getRepository(User);
-const users = await userRepository.find({ relations: {profile: true});
+const users = await userRepository.find({ 
+  relations: {
+    profile: true
+  }
+);
 ```
 
 Or using `QueryBuilder` you can join them:
