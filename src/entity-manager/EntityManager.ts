@@ -496,27 +496,6 @@ export class EntityManager {
             options = conflictPathsOrOptions;
         }
 
-        const relationMetadatas = metadata.relations.map(relation => (relation.embeddedMetadata ?? relation.entityMetadata));
-
-        const uniqueColumnConstraints = [
-            metadata.primaryColumns,
-            ...metadata.indices.filter(ix => ix.isUnique).map(ix => ix.columns),
-            ...metadata.uniques.map(uq => uq.columns),
-            ...OrmUtils.flatten([
-                ...relationMetadatas.map(rel => rel.indices.filter(ix => ix.isUnique).map(ix => ix.columns)),
-                ...relationMetadatas.map(rel => rel.uniques.map(ix => ix.columns)),
-            ])
-        ];
-
-        const useIndex = uniqueColumnConstraints.find((ix) =>
-            ix.length === options.conflictPaths.length &&
-            options.conflictPaths.every((conflictPropertyPath) => ix.some((col) => col.propertyPath === conflictPropertyPath))
-        );
-
-        if (useIndex == null) {
-            throw new TypeORMError(`An upsert requires conditions that have a unique constraint but none was found for conflict properties: ${options.conflictPaths.join(", ")}`);
-        }
-
         let entities: QueryDeepPartialEntity<Entity>[];
 
         if (!Array.isArray(entityOrEntities)) {
