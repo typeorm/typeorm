@@ -39,7 +39,6 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {getMetadataArgsStorage} from "../globals";
 import {TypeORMError} from "../error";
 import {UpsertOptions} from "../repository/UpsertOptions";
-import { OrmUtils } from "../util/OrmUtils";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,

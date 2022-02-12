@@ -15,10 +15,6 @@ export class OrmUtils {
         });
     }
 
-    static flatten<T>(deepArray: T[][]): T[] {
-        return ([] as T[]).concat(...deepArray);
-    }
-
     static splitClassesAndStrings<T>(clsesAndStrings: (string | T)[]): [T[], string[]] {
         return [
             (clsesAndStrings).filter((cls): cls is T => typeof cls !== "string"),
