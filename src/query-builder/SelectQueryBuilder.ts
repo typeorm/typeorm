@@ -49,7 +49,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
         let sql = this.createComment();
@@ -967,6 +967,17 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Set certain index to be used by the query.
+     *
+     * @param index Name of index to be used.
+     */
+    useIndex(index: string): this {
+        this.expressionMap.useIndex = index;
+
+        return this;
+    }
+
+    /**
      * Sets locking mode.
      */
     setLock(lockMode: "optimistic", lockVersion: number | Date): this;
@@ -1199,6 +1210,10 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.expressionMap.queryEntity = true;
             const entitiesAndRaw = await this.executeEntitiesAndRawResults(queryRunner);
             this.expressionMap.queryEntity = false;
+            const cacheId = this.expressionMap.cacheId;
+            // Creates a new cacheId for the count query, or it will retreive the above query results
+            // and count will return 0.
+            this.expressionMap.cacheId = (cacheId) ? `${cacheId}-count` : cacheId;
             const count = await this.executeCountQuery(queryRunner);
             const results: [Entity[], number] = [entitiesAndRaw.entities, count];
 
@@ -1422,18 +1437,11 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         if (allSelects.length === 0)
             allSelects.push({ selection: "*" });
 
-        let lock: string = "";
-        if (this.connection.driver instanceof SqlServerDriver) {
-            switch (this.expressionMap.lockMode) {
-                case "pessimistic_read":
-                    lock = " WITH (HOLDLOCK, ROWLOCK)";
-                    break;
-                case "pessimistic_write":
-                    lock = " WITH (UPDLOCK, ROWLOCK)";
-                    break;
-                case "dirty_read":
-                    lock = " WITH (NOLOCK)";
-                    break;
+        // Use certain index
+        let useIndex: string = "";
+        if (this.expressionMap.useIndex) {
+            if (this.connection.driver instanceof MysqlDriver) {
+                useIndex = ` USE INDEX (${this.expressionMap.useIndex})`;
             }
         }
 
@@ -1450,7 +1458,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const select = this.createSelectDistinctExpression();
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
 
-        return select + selection + " FROM " + froms.join(", ") + lock;
+        return select + selection + " FROM " + froms.join(", ") + this.createTableLockExpression() + useIndex;
     }
 
     /**
@@ -1505,7 +1513,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             // table to join, without junction table involved. This means we simply join direct table.
             if (!parentAlias || !relation) {
                 const destinationJoin = joinAttr.alias.subQuery ? joinAttr.alias.subQuery : this.getTableName(destinationTableName);
-                return " " + joinAttr.direction + " JOIN " + destinationJoin + " " + this.escape(destinationTableAlias) +
+                return " " + joinAttr.direction + " JOIN " + destinationJoin + " " + this.escape(destinationTableAlias) + this.createTableLockExpression() +
                     (joinAttr.condition ? " ON " + this.replacePropertyNames(joinAttr.condition) : "");
             }
 
@@ -1518,7 +1526,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         parentAlias + "." + relation.propertyPath + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
-                return " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
+                return " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + this.createTableLockExpression() + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
 
@@ -1532,7 +1540,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         parentAlias + "." + joinColumn.referencedColumn!.propertyPath;
                 }).join(" AND ");
 
-                return " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(condition + appendedCondition);
+                return " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + this.createTableLockExpression() + " ON " + this.replacePropertyNames(condition + appendedCondition);
 
             } else { // means many-to-many
                 const junctionTableName = relation.junctionEntityMetadata!.tablePath;
@@ -1564,8 +1572,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     }).join(" AND ");
                 }
 
-                return " " + joinAttr.direction + " JOIN " + this.getTableName(junctionTableName) + " " + this.escape(junctionAlias) + " ON " + this.replacePropertyNames(junctionCondition) +
-                    " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
+                return " " + joinAttr.direction + " JOIN " + this.getTableName(junctionTableName) + " " + this.escape(junctionAlias) + this.createTableLockExpression() + " ON "  + this.replacePropertyNames(junctionCondition) +
+                    " " + joinAttr.direction + " JOIN " + this.getTableName(destinationTableName) + " " + this.escape(destinationTableAlias) + this.createTableLockExpression() + " ON " + this.replacePropertyNames(destinationCondition + appendedCondition);
 
             }
         });
@@ -1671,6 +1679,29 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
+     * Creates "LOCK" part of SELECT Query after table Clause
+     * ex.
+     *  SELECT 1
+     *  FROM USER U WITH (NOLOCK)
+     *  JOIN ORDER O WITH (NOLOCK)
+     *      ON U.ID=O.OrderID
+     */
+    private createTableLockExpression(): string {
+        if(this.connection.driver instanceof SqlServerDriver) {
+            switch (this.expressionMap.lockMode) {
+                case "pessimistic_read":
+                    return " WITH (HOLDLOCK, ROWLOCK)";
+                case "pessimistic_write":
+                    return " WITH (UPDLOCK, ROWLOCK)";
+                case "dirty_read":
+                    return " WITH (NOLOCK)";
+            }
+        }
+
+        return "";
+    }
+
+    /**
      * Creates "LOCK" part of SQL query.
      */
     protected createLockExpression(): string {
@@ -1679,7 +1710,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         let lockTablesClause = "";
 
         if (this.expressionMap.lockTables) {
-            if (!(driver instanceof PostgresDriver)) {
+            if (!(driver instanceof PostgresDriver || driver instanceof CockroachDriver)) {
                 throw new TypeORMError("Lock tables not supported in selected driver");
             }
             if (this.expressionMap.lockTables.length < 1) {
@@ -1710,7 +1741,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     return " FOR UPDATE";
 
                 }
-                else if (driver instanceof PostgresDriver ) {
+                else if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR UPDATE" + lockTablesClause;
 
                 } else if (driver instanceof SqlServerDriver) {
@@ -1730,7 +1761,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                     throw new LockNotSupportedOnGivenDriverError();
                 }
             case "pessimistic_write_or_fail":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR UPDATE" + lockTablesClause + " NOWAIT";
 
                 } else if (driver instanceof MysqlDriver) {
@@ -1741,7 +1772,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
 
             case "for_no_key_update":
-                if (driver instanceof PostgresDriver) {
+                if (driver instanceof PostgresDriver || driver instanceof CockroachDriver) {
                     return " FOR NO KEY UPDATE" + lockTablesClause;
                 } else {
                     throw new LockNotSupportedOnGivenDriverError();

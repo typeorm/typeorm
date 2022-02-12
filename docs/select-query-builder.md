@@ -22,6 +22,7 @@
 * [Streaming result data](#streaming-result-data)
 * [Using pagination](#using-pagination)
 * [Set locking](#set-locking)
+* [Use custom index](#use-custom-index)
 * [Max execution time](#max-execution-time)
 * [Partial selection](#partial-selection)
 * [Using subqueries](#using-subqueries)
@@ -263,7 +264,7 @@ createQueryBuilder()
     .from(User, "user")
 ```
 
-Which will result in the following sql query:
+Which will result in the following SQL query:
 
 ```sql
 SELECT ... FROM users user
@@ -400,6 +401,24 @@ Which will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
+```
+
+
+You can add a negated complex `WHERE` expression into an existing `WHERE` using `NotBrackets`
+
+```typescript
+createQueryBuilder("user")
+    .where("user.registered = :registered", { registered: true })
+    .andWhere(new NotBrackets(qb => {
+        qb.where("user.firstName = :firstName", { firstName: "Timber" })
+          .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.registered = true AND NOT((user.firstName = 'Timber' OR user.lastName = 'Saw'))
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
@@ -658,7 +677,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate following sql query:
+This will generate following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
@@ -675,7 +694,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate the following sql query:
+This will generate the following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
@@ -916,9 +935,20 @@ const users = await getRepository(User)
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
 
+## Use custom index
+
+You can provide a certain index for database server to use in some cases. This feature is only supported in MySQL.
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .useIndex("my_index") // name of index
+    .getMany();
+```
+
 ## Max execution time
 
-We can drop slow query to avoid crashing the server. Only MySQL driver is supported at the moment:
+We can drop slow query to avoid crashing the server.
 
 ```typescript
 const users = await getRepository(User)

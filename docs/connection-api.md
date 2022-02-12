@@ -66,16 +66,16 @@ const connection = getConnection();
 const secondaryConnection = getConnection("secondary-connection");
 ```
 
-* `getEntityManager()` - Gets `EntityManager` from connection. 
+* `getManager()` - Gets `EntityManager` from connection. 
 Connection name can be specified to indicate what connection's entity manager should be taken.
 
 ```typescript
-import {getEntityManager} from "typeorm";
+import {getManager} from "typeorm";
 
-const manager = getEntityManager();
+const manager = getManager();
 // you can use manager methods now
 
-const secondaryManager = getEntityManager("secondary-connection");
+const secondaryManager = getManager("secondary-connection");
 // you can use secondary connection manager methods
 ```
 
@@ -313,7 +313,7 @@ await queryRunner.release();
 
 ## `ConnectionManager` API
 
-* `create` - Creates a new connection and register it in the manager.
+* `create` - Creates a new connection and registers it in the manager.
 
 ```typescript
 const connection = connectionManager.create({

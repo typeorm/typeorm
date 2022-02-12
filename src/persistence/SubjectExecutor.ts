@@ -475,15 +475,15 @@ export class SubjectExecutor {
         }
 
         // Run nested set updates one by one
-        const nestedSetPromise = new Promise<void>(async (resolve, reject) => {
+        const nestedSetPromise = new Promise<void>(async (ok, fail) => {
             for (const subject of nestedSetSubjects) {
                 try {
                     await updateSubject(subject);
                 } catch (error) {
-                    reject(error);
+                    fail(error);
                 }
             }
-            resolve();
+            ok();
         });
 
         // Run all remaning subjects in parallel
@@ -735,11 +735,11 @@ export class SubjectExecutor {
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.updateSubjects);
 
         // update soft-removed entity properties
-        if (this.updateSubjects.length)
+        if (this.softRemoveSubjects.length)
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.softRemoveSubjects);
 
         // update recovered entity properties
-        if (this.updateSubjects.length)
+        if (this.recoverSubjects.length)
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.recoverSubjects);
 
         // remove ids from the entities that were removed

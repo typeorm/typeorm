@@ -13,7 +13,7 @@
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
--   `relations` - 关系需要加载主体。 也可以加载子关系（join 和 leftJoinAndSelect 的简写）
+-   `relations` - 关系需要加载主体。 也可以加载子关系（`join` 和 `leftJoinAndSelect` 的简写）
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });

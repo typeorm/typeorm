@@ -17,6 +17,7 @@ import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
+import {ViewUtils} from "./util/ViewUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 
 /**
@@ -76,12 +77,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         }
 
         try {
-            if (this.viewEntityToSyncMetadatas.length > 0) {
-                await this.createTypeormMetadataTable();
-            }
-
+            await this.createMetadataTableIfNecessary(this.queryRunner);
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
+
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
 
@@ -110,18 +109,20 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
+     */
+    async createMetadataTableIfNecessary(queryRunner: QueryRunner): Promise<void> {
+        if (this.viewEntityToSyncMetadatas.length > 0 || (this.connection.driver instanceof PostgresDriver && this.connection.driver.isGeneratedColumnsSupported)) {
+            await this.createTypeormMetadataTable(queryRunner);
+        }
+    }
+
+    /**
      * Returns sql queries to be executed by schema builder.
      */
     async log(): Promise<SqlInMemory> {
         this.queryRunner = this.connection.createQueryRunner();
         try {
-
-            // TODO: typeorm_metadata table needs only for Views for now.
-            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
-            if (this.viewEntityToSyncMetadatas.length > 0) {
-                await this.createTypeormMetadataTable();
-            }
-
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
             await this.queryRunner.getTables(tablePaths);
@@ -160,7 +161,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns only entities that should be synced in the database.
      */
     protected get viewEntityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => metadata.tableType === "view" && metadata.synchronize);
+        return this.connection.entityMetadatas
+            .filter(metadata => metadata.tableType === "view" && metadata.synchronize)
+            // sort views in creation order by dependencies
+            .sort(ViewUtils.viewMetadataCmp);
     }
 
     /**
@@ -426,24 +430,85 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async dropOldViews(): Promise<void> {
-        const droppedViews: Set<View> = new Set();
+        const droppedViews: Array<View> = [];
+        const viewEntityToSyncMetadatas = this.viewEntityToSyncMetadatas;
+        // BuIld lookup cache for finding views metadata
+        const viewToMetadata = new Map<View, EntityMetadata>();
         for (const view of this.queryRunner.loadedViews) {
-            const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
-                const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-                const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
-                return this.getTablePath(view) === this.getTablePath(metadata) && viewExpression === metadataExpression;
+            const viewMetadata = viewEntityToSyncMetadatas.find(metadata => {
+                return this.getTablePath(view) === this.getTablePath(metadata);
             });
+            if(viewMetadata){
+                viewToMetadata.set(view, viewMetadata);
+            }
+        }
+        // Gather all changed view, that need a drop
+        for (const view of this.queryRunner.loadedViews) {
+            const viewMetadata = viewToMetadata.get(view);
+            if(!viewMetadata){
+                continue;
+            }
+            const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+            const metadataExpression = typeof viewMetadata.expression === "string" ? viewMetadata.expression.trim() : viewMetadata.expression!(this.connection).getQuery();
 
-            if (existViewMetadata)
+            if (viewExpression === metadataExpression)
                 continue;
 
             this.connection.logger.logSchemaBuild(`dropping an old view: ${view.name}`);
 
-            // drop an old view
-            await this.queryRunner.dropView(view);
-            droppedViews.add(view);
+            // Collect view to be dropped
+            droppedViews.push(view);
         }
-        this.queryRunner.loadedViews = this.queryRunner.loadedViews.filter(view => !droppedViews.has(view));
+
+        // Helper function that for a given view, will recursively return list of the view and all views that depend on it
+        const viewDependencyChain = (view: View): View[] => {
+            // Get the view metadata
+            const viewMetadata = viewToMetadata.get(view);
+            let viewWithDependencies = [view];
+            // If no metadata is known for the view, simply return the view itself
+            if(!viewMetadata){
+                return viewWithDependencies;
+            }
+            // Iterate over all known views
+            for(const [currentView, currentMetadata] of viewToMetadata.entries()){
+                // Ignore self reference
+                if(currentView === view) {
+                    continue;
+                }
+                // If the currently iterated view depends on the passed in view
+                if(currentMetadata.dependsOn && (
+                    currentMetadata.dependsOn.has(viewMetadata.target) ||
+                    currentMetadata.dependsOn.has(viewMetadata.name)
+                )){
+                    // Recursively add currently iterate view and its dependents
+                    viewWithDependencies = viewWithDependencies.concat(viewDependencyChain(currentView));
+                }
+            }
+            // Return all collected views
+            return viewWithDependencies;
+        };
+
+        // Collect final list of views to be dropped in a Set so there are no duplicates
+        const droppedViewsWithDependencies: Set<View> = new Set(
+            // Collect all dropped views, and their dependencies
+            droppedViews.map(view => viewDependencyChain(view))
+            // Flattened to single Array ( can be replaced with flatMap, once supported)
+            .reduce((all, segment) => {
+                return all.concat(segment);
+            }, [])
+            // Sort the views to be dropped in creation order
+            .sort((a, b)=> {
+                return ViewUtils.viewMetadataCmp(viewToMetadata.get(a), viewToMetadata.get(b));
+            })
+            // reverse order to get drop order
+            .reverse()
+        );
+
+        // Finally emit all drop views
+        for(const view of droppedViewsWithDependencies){
+            await this.queryRunner.dropView(view);
+        }
+        this.queryRunner.loadedViews = this.queryRunner.loadedViews.filter(view => !droppedViewsWithDependencies.has(view));
     }
 
     /**
@@ -765,12 +830,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates typeorm service table for storing user defined Views.
      */
-    protected async createTypeormMetadataTable() {
+    protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema;
         const database = this.currentDatabase;
-        const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", schema, database);
+        const typeormMetadataTable = this.connection.driver.buildTableName(this.connection.metadataTableName, schema, database);
 
-        await this.queryRunner.createTable(new Table(
+        await queryRunner.createTable(new Table(
             {
                 database: database,
                 schema: schema,
@@ -810,5 +875,4 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             },
         ), true);
     }
-
 }

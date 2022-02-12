@@ -394,13 +394,13 @@ export class SqlServerDriver implements Driver {
 
         if (database) {
             if (!schema) {
-                tablePath.unshift('')
+                tablePath.unshift("");
             }
 
             tablePath.unshift(database);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -437,7 +437,7 @@ export class SqlServerDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
@@ -606,9 +606,9 @@ export class SqlServerDriver implements Driver {
         if (typeof defaultValue === "function") {
             const value = defaultValue();
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
-                return "getdate()"
+                return "getdate()";
             }
-            return value
+            return value;
         }
 
         if (typeof defaultValue === "string") {
@@ -745,7 +745,7 @@ export class SqlServerDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged
+            return isColumnChanged;
         });
     }
     private lowerDefaultValueIfNecessary(value: string | undefined) {
@@ -866,7 +866,8 @@ export class SqlServerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.mssql = PlatformTools.load("mssql");
+            const mssql = this.options.driver || PlatformTools.load("mssql");
+            this.mssql = mssql;
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SQL Server", "mssql");
@@ -912,7 +913,7 @@ export class SqlServerDriver implements Driver {
             Object.assign(
                 connectionOptions.options,
                 { useUTC: false }
-            )
+            );
         }
 
         // Match the next release of tedious for configuration options
@@ -920,7 +921,7 @@ export class SqlServerDriver implements Driver {
         Object.assign(
             connectionOptions.options,
             { enableArithAbort: true }
-        )
+        );
 
         // pooling is enabled either when its set explicitly to true,
         // either when its not defined at all (e.g. enabled by default)
@@ -930,9 +931,9 @@ export class SqlServerDriver implements Driver {
             const { logger } = this.connection;
 
             const poolErrorHandler = (options.pool && options.pool.errorHandler) || ((error: any) => logger.log("warn", `MSSQL pool raised an error. ${error}`));
-            /*
-              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
-              cause the hosting app to crash.
+            /**
+             * Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+             * cause the hosting app to crash.
              */
             pool.on("error", poolErrorHandler);
 
@@ -944,4 +945,3 @@ export class SqlServerDriver implements Driver {
     }
 
 }
-

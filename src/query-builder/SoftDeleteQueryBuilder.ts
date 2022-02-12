@@ -39,7 +39,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
         let sql = this.createUpdateExpression();
@@ -73,7 +73,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
             if (this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata &&
                 this.expressionMap.whereEntities.length > 0) {
-                this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getUpdationReturningColumns();
+                this.expressionMap.extraReturningColumns = returningResultsEntityUpdator.getSoftDeletionReturningColumns();
             }
 
             // execute update query

@@ -4,6 +4,7 @@
 
 import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
 
+const fs = require("fs");
 const gulp = require("gulp");
 const del = require("del");
 const shell = require("gulp-shell");
@@ -116,6 +117,17 @@ export class Gulpfile {
                 "cd ./build/package && npm publish"
             ]));
     }
+    
+    /**
+     * Packs a .tgz from ./build/package directory.
+     */
+    @Task()
+    packagePack() {
+        return gulp.src("package.json", { read: false })
+            .pipe(shell([
+                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
+            ]));
+    }
 
     /**
      * Publishes a package to npm from ./build/package directory with @next tag.
@@ -157,6 +169,24 @@ export class Gulpfile {
     packageMoveCompiledFiles() {
         return gulp.src("./build/package/src/**/*")
             .pipe(gulp.dest("./build/package"));
+    }
+
+    /**
+     * Create ESM index file in the final package directory.
+     */
+    @Task()
+    async packageCreateEsmIndex() {
+        const buildDir = "./build/package";
+        const cjsIndex = require(`${buildDir}/index.js`);
+        const cjsKeys = Object.keys(cjsIndex).filter(key => key !== "default" && !key.startsWith("__"));
+
+        const indexMjsContent =
+            'import TypeORM from "./index.js";\n' +
+            `const {\n    ${cjsKeys.join(",\n    ")}\n} = TypeORM;\n` +
+            `export {\n    ${cjsKeys.join(",\n    ")}\n};\n` +
+            'export default TypeORM;\n';
+
+        fs.writeFileSync(`${buildDir}/index.mjs`, indexMjsContent, "utf8");
     }
 
     /**
@@ -219,6 +249,7 @@ export class Gulpfile {
             ["browserCopySources", "browserCopyTemplates"],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
+            "packageCreateEsmIndex",
             [
                 "browserClearPackageDirectory",
                 "packageClearPackageDirectory",
@@ -228,6 +259,14 @@ export class Gulpfile {
                 "packageCopyShims"
             ],
         ];
+    }
+
+    /**
+     * Creates a package .tgz
+     */
+    @SequenceTask()
+    pack() {
+        return ["package", "packagePack"];
     }
 
     /**

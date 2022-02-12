@@ -12,6 +12,8 @@ import {ReplicationMode} from "../driver/types/ReplicationMode";
 import { TypeORMError } from "../error/TypeORMError";
 import { EntityMetadata } from "../metadata/EntityMetadata";
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
+import { OrmUtils } from "../util/OrmUtils";
+import {MetadataTableType} from "../driver/types/MetadataTableType";
 
 export abstract class BaseQueryRunner {
 
@@ -201,6 +203,10 @@ export abstract class BaseQueryRunner {
         }
     }
 
+    getReplicationMode(): ReplicationMode {
+        return this.mode;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -293,7 +299,73 @@ export abstract class BaseQueryRunner {
 
     protected getTypeormMetadataTableName(): string {
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        return this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
+        return this.connection.driver.buildTableName(this.connection.metadataTableName, options.schema, options.database);
+    }
+
+    /**
+     * Generates SQL query to insert a record into typeorm metadata table.
+     */
+    protected insertTypeormMetadataSql({
+        database,
+        schema,
+        table,
+        type,
+        name,
+        value
+    }: {
+        database?: string,
+        schema?: string,
+        table?: string,
+        type: MetadataTableType
+        name: string,
+        value?: string
+    }): Query {
+        const [query, parameters] = this.connection.createQueryBuilder()
+            .insert()
+            .into(this.getTypeormMetadataTableName())
+            .values({ database: database, schema: schema, table: table, type: type, name: name, value: value })
+            .getQueryAndParameters();
+
+        return new Query(query, parameters);
+    }
+
+    /**
+     * Generates SQL query to delete a record from typeorm metadata table.
+     */
+    protected deleteTypeormMetadataSql({
+        database,
+        schema,
+        table,
+        type,
+        name
+    }: {
+        database?: string,
+        schema?: string,
+        table?: string,
+        type: MetadataTableType,
+        name: string
+    }): Query {
+
+        const qb = this.connection.createQueryBuilder();
+        const deleteQb = qb.delete()
+            .from(this.getTypeormMetadataTableName())
+            .where(`${qb.escape("type")} = :type`, { type })
+            .andWhere(`${qb.escape("name")} = :name`, { name });
+
+        if (database) {
+            deleteQb.andWhere(`${qb.escape("database")} = :database`, { database });
+        }
+
+        if (schema) {
+            deleteQb.andWhere(`${qb.escape("schema")} = :schema`, { schema });
+        }
+
+        if (table) {
+            deleteQb.andWhere(`${qb.escape("table")} = :table`, { table });
+        }
+
+        const [query, parameters] = deleteQb.getQueryAndParameters();
+        return new Query(query, parameters);
     }
 
     /**
@@ -325,7 +397,7 @@ export abstract class BaseQueryRunner {
         // console.log((checkComment && oldColumn.comment !== newColumn.comment));
         // console.log(oldColumn.comment, newColumn.comment);
         // console.log("enum ---------------");
-        // console.log(oldColumn.enum !== newColumn.enum);
+        // console.log(!OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []));
         // console.log(oldColumn.enum, newColumn.enum);
 
         return oldColumn.charset !== newColumn.charset
@@ -340,7 +412,7 @@ export abstract class BaseQueryRunner {
             || oldColumn.onUpdate !== newColumn.onUpdate // MySQL only
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)
-            || oldColumn.enum !== newColumn.enum;
+            || !OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || []);
     }
 
     /**

@@ -43,7 +43,7 @@ export class TableColumn {
      * Specifies generation strategy if this column will use auto increment.
      * `rowid` option supported only in CockroachDB.
      */
-    generationStrategy?: "uuid"|"increment"|"rowid";
+    generationStrategy?: "uuid"|"increment"|"rowid"|"identity";
 
     /**
      * Indicates if column is a primary key.
@@ -131,6 +131,11 @@ export class TableColumn {
     generatedType?: "VIRTUAL"|"STORED";
 
     /**
+     * Identity column type. Supports only in Postgres 10+.
+     */
+    generatedIdentity?: "ALWAYS"|"BY DEFAULT";
+
+    /**
      * Spatial Feature Type (Geometry, Point, Polygon, etc.)
      */
     spatialFeatureType?: string;
@@ -161,6 +166,7 @@ export class TableColumn {
             this.isNullable = options.isNullable || false;
             this.isGenerated = options.isGenerated || false;
             this.generationStrategy = options.generationStrategy;
+            this.generatedIdentity = options.generatedIdentity;
             this.isPrimary = options.isPrimary || false;
             this.isUnique = options.isUnique || false;
             this.isArray = options.isArray || false;
@@ -202,6 +208,7 @@ export class TableColumn {
             isNullable: this.isNullable,
             isGenerated: this.isGenerated,
             generationStrategy: this.generationStrategy,
+            generatedIdentity: this.generatedIdentity,
             isPrimary: this.isPrimary,
             isUnique: this.isUnique,
             isArray: this.isArray,

@@ -26,6 +26,7 @@ import {SqlServerDriver} from "./SqlServerDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
 import { TypeORMError } from "../../error";
 import { QueryLock } from "../../query-runner/QueryLock";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1521,7 +1522,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         const query = dbNames.map(dbName => {
             return `SELECT "T".*, "V"."CHECK_OPTION" FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
-                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."VIEWS" "V" ON "V"."TABLE_SCHEMA" = "T"."SCHEMA" AND "v"."TABLE_NAME" = "T"."NAME" WHERE "T"."TYPE" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+                `INNER JOIN "${dbName}"."INFORMATION_SCHEMA"."VIEWS" "V" ON "V"."TABLE_SCHEMA" = "T"."SCHEMA" AND "v"."TABLE_NAME" = "T"."NAME" WHERE "T"."TYPE" = '${MetadataTableType.VIEW}' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         }).join(" UNION ALL ");
 
         const dbViews = await this.query(query);
@@ -1671,7 +1672,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             return `SELECT "TABLE_CATALOG", "TABLE_SCHEMA", "COLUMN_NAME", "TABLE_NAME" ` +
                 `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
                 `WHERE ` +
-                `EXISTS(SELECT 1 FROM "${TABLE_CATALOG}"."SYS"."COLUMNS" "S" WHERE OBJECT_ID("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME") = "S"."OBJECT_ID" AND "COLUMN_NAME" = "S"."NAME" AND "S"."is_identity" = 1) AND ` +
+                `EXISTS(SELECT 1 FROM "${TABLE_CATALOG}"."sys"."columns" "S" WHERE OBJECT_ID("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME") = "S"."OBJECT_ID" AND "COLUMN_NAME" = "S"."NAME" AND "S"."is_identity" = 1) AND ` +
                 `(${conditions})`;
         }).join(" UNION ALL ");
 
@@ -1744,14 +1745,14 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         dbConstraint["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
                     ));
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["CONSTRAINT_TYPE"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => dbConstraint["CONSTRAINT_TYPE"] === "UNIQUE"
                             && dbConstraint["CONSTRAINT_NAME"] === uniqueConstraint["CONSTRAINT_NAME"]
                             && dbConstraint["TABLE_SCHEMA"] === dbColumn["TABLE_SCHEMA"]
                             && dbConstraint["TABLE_CATALOG"] === dbColumn["TABLE_CATALOG"]
                             && dbConstraint["COLUMN_NAME"] !== dbColumn["COLUMN_NAME"])
-                        : false;
+                    })
 
                     const isPrimary = !!columnConstraints.find(constraint =>  constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY");
                     const isGenerated = !!dbIdentityColumns.find(column => (
@@ -1808,7 +1809,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                         : undefined;
                     tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES";
                     tableColumn.isPrimary = isPrimary;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
                     tableColumn.isGenerated = isGenerated;
                     if (isGenerated)
                         tableColumn.generationStrategy = "increment";
@@ -2016,13 +2017,13 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", database: parsedTableName.database, schema: parsedTableName.schema, name: parsedTableName.tableName, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            database: parsedTableName.database,
+            schema: parsedTableName.schema,
+            name: parsedTableName.tableName,
+            value: expression
+        });
     }
 
     /**
@@ -2042,16 +2043,12 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             parsedTableName.schema = await this.getCurrentSchema();
         }
 
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("database")} = :database`, { database: parsedTableName.database })
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema: parsedTableName.schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name: parsedTableName.tableName })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            database: parsedTableName.database,
+            schema: parsedTableName.schema,
+            name: parsedTableName.tableName
+        });
     }
 
     /**

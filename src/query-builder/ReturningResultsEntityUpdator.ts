@@ -50,7 +50,7 @@ export class ReturningResultsEntityUpdator {
             } else {
 
                 // for driver which do not support returning/output statement we need to perform separate query and load what we need
-                const updationColumns = this.getUpdationReturningColumns();
+                const updationColumns = this.expressionMap.extraReturningColumns;
                 if (updationColumns.length > 0) {
 
                     // get entity id by which we will get needed data
@@ -62,9 +62,10 @@ export class ReturningResultsEntityUpdator {
                     const loadedReturningColumns = await this.queryRunner.manager
                         .createQueryBuilder()
                         .select(metadata.primaryColumns.map(column => metadata.targetName + "." + column.propertyPath))
-                        .addSelect(this.getUpdationReturningColumns().map(column => metadata.targetName + "." + column.propertyPath))
+                        .addSelect(updationColumns.map(column => metadata.targetName + "." + column.propertyPath))
                         .from(metadata.target, metadata.targetName)
                         .where(entityId)
+                        .withDeleted()
                         .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
                         .getOne() as any;
 
@@ -191,6 +192,15 @@ export class ReturningResultsEntityUpdator {
     getUpdationReturningColumns(): ColumnMetadata[] {
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
             return column.isUpdateDate || column.isVersion;
+        });
+    }
+
+    /**
+     * Columns we need to be returned from the database when we soft delete and restore entity.
+     */
+    getSoftDeletionReturningColumns(): ColumnMetadata[] {
+        return this.expressionMap.mainAlias!.metadata.columns.filter(column => {
+            return column.isUpdateDate || column.isVersion || column.isDeleteDate;
         });
     }
 

@@ -237,6 +237,14 @@ export class OrmUtils {
         });
     }
 
+    static areMutuallyExclusive<T>(...lists: T[][]): boolean {
+        const haveSharedObjects = lists.some(list => {
+            const otherLists = lists.filter(otherList => otherList !== list);
+            return list.some(item => otherLists.some(otherList => otherList.includes(item)));
+        });
+        return !haveSharedObjects;
+    }
+
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------

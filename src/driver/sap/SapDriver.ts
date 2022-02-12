@@ -373,7 +373,7 @@ export class SapDriver implements Driver {
             tablePath.unshift(schema);
         }
 
-        return tablePath.join('.');
+        return tablePath.join(".");
     }
 
     /**
@@ -390,7 +390,7 @@ export class SapDriver implements Driver {
                 database: target.database || parsed.database || driverDatabase,
                 schema: target.schema || parsed.schema || driverSchema,
                 tableName: parsed.tableName
-            }
+            };
         }
 
         if (target instanceof TableForeignKey) {
@@ -410,11 +410,11 @@ export class SapDriver implements Driver {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
                 tableName: target.tableName
-            }
+            };
 
         }
 
-        const parts = target.split(".")
+        const parts = target.split(".");
 
         return {
             database: driverDatabase,
@@ -739,14 +739,17 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            this.client = PlatformTools.load("hdb-pool");
+            const client = this.options.driver || PlatformTools.load("hdb-pool");
+            this.client = client;
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SAP Hana", "hdb-pool");
         }
 
         try {
-            PlatformTools.load("@sap/hana-client");
+            if (!this.options.hanaClientDriver) {
+                PlatformTools.load("@sap/hana-client");
+            }
 
         } catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SAP Hana", "@sap/hana-client");

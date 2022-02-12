@@ -24,6 +24,7 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
 import { TypeORMError } from "../../error";
+import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -197,86 +198,86 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        return new Promise<QueryResult>(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const queryStartTime = +new Date();
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const queryStartTime = +new Date();
 
-                databaseConnection.query(query, parameters, (err: any, raw: any) => {
-                    if (this.isTransactionActive && this.storeQueries)
-                        this.queries.push({ query, parameters });
+        if (this.isTransactionActive && this.storeQueries) {
+            this.queries.push({ query, parameters });
+        }
 
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
-                    const queryEndTime = +new Date();
-                    const queryExecutionTime = queryEndTime - queryStartTime;
-                    if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                        this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+        try {
+            const raw = await new Promise<any>((ok, fail) => {
+                databaseConnection.query(query, parameters, (err: any, raw: any) => err ? fail(err) : ok(raw))
+            });
 
-                    if (err) {
-                        if (err.code !== "40001")
-                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                        fail(new QueryFailedError(query, parameters, err));
-                    } else {
-                        const result = new QueryResult();
-
-                        if (raw.hasOwnProperty('rowCount')) {
-                            result.affected = raw.rowCount;
-                        }
-
-                        if (raw.hasOwnProperty('rows')) {
-                            result.records = raw.rows;
-                        }
-
-                        switch (raw.command) {
-                            case "DELETE":
-                                // for DELETE query additionally return number of affected rows
-                                result.raw = [raw.rows, raw.rowCount]
-                                break;
-                            default:
-                                result.raw = raw.rows;
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result);
-                        } else {
-                            ok(result.raw);
-                        }
-                    }
-                });
-
-            } catch (err) {
-                fail(err);
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
+                this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
             }
-        });
+
+            const result = new QueryResult();
+
+            if (raw.hasOwnProperty('rowCount')) {
+                result.affected = raw.rowCount;
+            }
+
+            if (raw.hasOwnProperty('rows')) {
+                result.records = raw.rows;
+            }
+
+            switch (raw.command) {
+                case "DELETE":
+                    // for DELETE query additionally return number of affected rows
+                    result.raw = [raw.rows, raw.rowCount]
+                    break;
+                default:
+                    result.raw = raw.rows;
+            }
+
+            if (useStructuredResult) {
+                return result;
+            } else {
+                return result.raw;
+            }
+        } catch (err) {
+            if (err.code !== "40001") {
+                this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            }
+
+            throw new QueryFailedError(query, parameters, err);
+        }
     }
 
     /**
      * Returns raw data stream.
      */
-    stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
+    async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
         const QueryStream = this.driver.loadStreamDependency();
-        if (this.isReleased)
+        if (this.isReleased) {
             throw new QueryRunnerAlreadyReleasedError();
+        }
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect();
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const stream = databaseConnection.query(new QueryStream(query, parameters));
-                if (onEnd) stream.on("end", onEnd);
-                if (onError) stream.on("error", onError);
-                ok(stream);
+        const databaseConnection = await this.connect();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const stream = databaseConnection.query(new QueryStream(query, parameters));
 
-            } catch (err) {
-                fail(err);
-            }
-        });
+        if (onEnd) {
+            stream.on("end", onEnd);
+        }
+
+        if (onError) {
+            stream.on("error", onError);
+        }
+
+        return stream;
     }
 
     /**
@@ -1289,7 +1290,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index ${indexOrName} was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
@@ -1380,7 +1381,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }).join(" OR ");
 
         const query = `SELECT "t".*, "v"."check_option" FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
-            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" = 'VIEW' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
+            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" = '${MetadataTableType.VIEW}' ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
@@ -1555,13 +1556,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     tableColumn.isNullable = dbColumn["is_nullable"] === "YES";
                     tableColumn.isPrimary = !!columnConstraints.find(constraint => constraint["constraint_type"] === "PRIMARY");
 
-                    const uniqueConstraint = columnConstraints.find(constraint => constraint["constraint_type"] === "UNIQUE");
-                    const isConstraintComposite = uniqueConstraint
-                        ? !!dbConstraints.find(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
+                    const uniqueConstraints = columnConstraints.filter(constraint => constraint["constraint_type"] === "UNIQUE");
+                    const isConstraintComposite = uniqueConstraints.every((uniqueConstraint) => {
+                        return dbConstraints.some(dbConstraint => dbConstraint["constraint_type"] === "UNIQUE"
                             && dbConstraint["constraint_name"] === uniqueConstraint["constraint_name"]
                             && dbConstraint["column_name"] !== dbColumn["column_name"])
-                        : false;
-                    tableColumn.isUnique = !!uniqueConstraint && !isConstraintComposite;
+                    })
+                    tableColumn.isUnique = uniqueConstraints.length > 0 && !isConstraintComposite;
 
                     if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         if (dbColumn["column_default"] === "unique_rowid()") {
@@ -1577,7 +1578,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                             tableColumn.generationStrategy = "uuid";
 
                         } else  {
-                            tableColumn.default = dbColumn["column_default"].replace(/:::.*/, "");
+                            tableColumn.default = dbColumn["column_default"].replace(/:::[\w\s\[\]\"]+/g, "");
                             tableColumn.default = tableColumn.default.replace(/^(-?[\d\.]+)$/, "($1)");
                         }
                     }
@@ -1798,13 +1799,12 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         }
 
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-        const [query, parameters] = this.connection.createQueryBuilder()
-            .insert()
-            .into(this.getTypeormMetadataTableName())
-            .values({ type: "VIEW", schema: schema, name: name, value: expression })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.insertTypeormMetadataSql({
+            type: MetadataTableType.VIEW,
+            schema: schema,
+            name: name,
+            value: expression
+        });
     }
 
     /**
@@ -1826,15 +1826,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             schema = currentSchema;
         }
 
-        const qb = this.connection.createQueryBuilder();
-        const [query, parameters] = qb.delete()
-            .from(this.getTypeormMetadataTableName())
-            .where(`${qb.escape("type")} = 'VIEW'`)
-            .andWhere(`${qb.escape("schema")} = :schema`, { schema })
-            .andWhere(`${qb.escape("name")} = :name`, { name })
-            .getQueryAndParameters();
-
-        return new Query(query, parameters);
+        return this.deleteTypeormMetadataSql({ type: MetadataTableType.VIEW, schema, name });
     }
 
     /**

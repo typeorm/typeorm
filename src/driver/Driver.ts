@@ -12,6 +12,7 @@ import {ReplicationMode} from "./types/ReplicationMode";
 import { Table } from "../schema-builder/table/Table";
 import { View } from "../schema-builder/view/View";
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
+import { UpsertType } from "./types/UpsertType";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -49,6 +50,11 @@ export interface Driver {
      * Gets list of supported column data types by a driver.
      */
     supportedDataTypes: ColumnType[];
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertType?: UpsertType;
 
     /**
      * Default values of length, precision and scale depends on column data type.

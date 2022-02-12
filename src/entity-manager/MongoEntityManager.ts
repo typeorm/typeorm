@@ -683,7 +683,8 @@ export class MongoEntityManager extends EntityManager {
      * Overrides cursor's toArray and next methods to convert results to entity automatically.
      */
     protected applyEntityTransformationToCursor<Entity>(metadata: EntityMetadata, cursor: Cursor<Entity> | AggregationCursor<Entity>) {
-        const ParentCursor = PlatformTools.load("mongodb").Cursor;
+        // mongdb-3.7 exports Cursor, mongodb-4.2 exports FindCursor, provide support for both.
+        const ParentCursor = PlatformTools.load("mongodb").Cursor || PlatformTools.load("mongodb").FindCursor;
         const queryRunner = this.mongoQueryRunner;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {

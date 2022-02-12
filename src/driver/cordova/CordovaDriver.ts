@@ -12,7 +12,7 @@ interface Window {
     sqlitePlugin: any;
 }
 
-declare var window: Window;
+declare let window: Window;
 
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions;
@@ -48,8 +48,9 @@ export class CordovaDriver extends AbstractSqliteDriver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
+        this.queryRunner = undefined;
+
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
             this.databaseConnection.close(ok, fail);
         });
     }
@@ -71,27 +72,28 @@ export class CordovaDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with the database.
      */
-    protected createDatabaseConnection() {
-        return new Promise<void>((ok, fail) => {
-            const options = Object.assign({}, {
-                name: this.options.database,
-                location: this.options.location,
-            }, this.options.extra || {});
+    protected async createDatabaseConnection() {
+        const options = Object.assign({}, {
+            name: this.options.database,
+            location: this.options.location,
+        }, this.options.extra || {});
 
-            this.sqlite.openDatabase(options, (db: any) => {
-                const databaseConnection = db;
+        const connection = await new Promise<any>((resolve) => {
+            this.sqlite.openDatabase(options, (db: any) => resolve(db))
+        })
 
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                databaseConnection.executeSql(`PRAGMA foreign_keys = ON;`, [], (result: any) => {
-                    ok(databaseConnection);
-                }, (error: any) => {
-                    fail(error);
-                });
-            }, (error: any) => {
-                fail(error);
-            });
-        });
+        await new Promise<void>((ok, fail) => {
+            // we need to enable foreign keys in sqlite to make sure all foreign key related features
+            // working properly. this also makes onDelete to work with sqlite.
+            connection.executeSql(
+                `PRAGMA foreign_keys = ON;`,
+                [],
+                () => ok(),
+                (err: any) => fail(err)
+            );
+        })
+
+        return connection;
     }
 
     /**
@@ -99,7 +101,8 @@ export class CordovaDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            this.sqlite = window.sqlitePlugin;
+            const sqlite = this.options.driver || window.sqlitePlugin;
+            this.sqlite = sqlite;
 
         } catch (e) {
             throw new DriverPackageNotInstalledError("Cordova-SQLite", "cordova-sqlite-storage");

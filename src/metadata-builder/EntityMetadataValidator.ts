@@ -69,6 +69,7 @@ export class EntityMetadataValidator {
             const sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(metadata => {
                 return metadata !== entityMetadata
                     && (metadata.inheritancePattern === "STI" || metadata.tableType === "entity-child")
+                    && metadata.tableName === entityMetadata.tableName
                     && metadata.discriminatorValue === entityMetadata.discriminatorValue
                     && metadata.inheritanceTree.some(parent => entityMetadata.inheritanceTree.indexOf(parent) !== -1);
             });

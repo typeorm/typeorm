@@ -4,6 +4,7 @@ import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterfac
 import {ColumnMetadata} from "./ColumnMetadata";
 import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
 import { TypeORMError } from "../error";
+import { DeferrableType } from "./types/DeferrableType";
 
 /**
  * Unique metadata contains all information about table's unique constraints.
@@ -33,6 +34,11 @@ export class UniqueMetadata {
      * Unique columns.
      */
     columns: ColumnMetadata[] = [];
+
+    /**
+       * Indicate if unique constraints can be deferred.
+       */
+    deferrable?: DeferrableType;
 
     /**
      * User specified unique constraint name.
@@ -76,6 +82,7 @@ export class UniqueMetadata {
             this.target = options.args.target;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
+            this.deferrable = options.args.deferrable;
         }
     }
 

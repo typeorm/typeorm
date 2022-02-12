@@ -16,6 +16,12 @@ export interface SqljsConnectionOptions extends BaseConnectionOptions {
     readonly database?: Uint8Array;
 
     /**
+     * The driver object
+     * This defaults to require("sql.js")
+     */
+    readonly driver?: any;
+
+    /**
      * Config that's used to initialize sql.js.
      */
     readonly sqlJsConfig?: any;
