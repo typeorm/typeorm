@@ -551,14 +551,6 @@ describe("repository > basic methods", () => {
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar2" } })).embedded.value.should.be.equal("value2 2");
             (await embeddedConstraintObjects.findOneOrFail({ embedded: { id: "bar3" } })).embedded.value.should.be.equal("value3 2");
         })));
-        it("should throw if attempting to conflict on properties with no unique constraint", () => Promise.all(connections.map(async (connection) => {
-            if (connection.driver.supportedUpsertType == null) return;
-            
-            const externalIdObjects = connection.getRepository(ExternalIdPrimaryKeyEntity);
-            // cannot conflict on a column with no unique index
-            await externalIdObjects.upsert({ title: "foo"}, ["title"])
-                .should.be.rejectedWith(TypeORMError);
-        })));
         it("should throw if using an unsupported driver", () => Promise.all(connections.map(async (connection) => {
             if (connection.driver.supportedUpsertType != null) return;
             
