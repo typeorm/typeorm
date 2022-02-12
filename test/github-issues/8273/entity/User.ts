@@ -10,6 +10,13 @@ export class User {
     uuid: string;
 
     @Column({ type: "uuid" })
-    @Generated()
+    @Generated("uuid")
     uuidWithGenerated: string;
+
+    @Column()
+    increment: number;
+
+    @Column()
+    @Generated("increment")
+    incrementWithGenerated: number;
 }
