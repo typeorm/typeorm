@@ -162,4 +162,5 @@ export {EntitySchema} from "./entity-schema/EntitySchema";
 export {EntitySchemaColumnOptions} from "./entity-schema/EntitySchemaColumnOptions";
 export {EntitySchemaIndexOptions} from "./entity-schema/EntitySchemaIndexOptions";
 export {EntitySchemaRelationOptions} from "./entity-schema/EntitySchemaRelationOptions";
+export {EntitySchemaEmbeddedColumnOptions} from "./entity-schema/EntitySchemaEmbeddedColumnOptions";
 export {ColumnType} from "./driver/types/ColumnTypes";

@@ -199,5 +199,4 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer|ValueTransformer[];
-
 }

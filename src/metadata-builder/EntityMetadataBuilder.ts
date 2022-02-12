@@ -579,7 +579,9 @@ export class EntityMetadataBuilder {
     protected createEmbeddedsRecursively(entityMetadata: EntityMetadata, embeddedArgs: EmbeddedMetadataArgs[]): EmbeddedMetadata[] {
         return embeddedArgs.map(embeddedArgs => {
             const embeddedMetadata = new EmbeddedMetadata({ entityMetadata: entityMetadata, args: embeddedArgs });
-            const targets = MetadataUtils.getInheritanceTree(embeddedMetadata.type);
+            const targets: any[] = embeddedMetadata.type instanceof Function
+                ? MetadataUtils.getInheritanceTree(embeddedMetadata.type)
+                : [embeddedMetadata.type]; // todo: implement later here inheritance for string-targets
 
             embeddedMetadata.columns = this.metadataArgsStorage.filterColumns(targets).map(args => {
                 return new ColumnMetadata({ connection: this.connection, entityMetadata, embeddedMetadata, args});
