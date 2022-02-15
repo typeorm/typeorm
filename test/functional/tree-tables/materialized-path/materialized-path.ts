@@ -597,7 +597,7 @@ describe("tree tables > materialized-path", () => {
         // save it alongside its categories ( cascade )
         const savedProduct = await productRepository.save(product);
         const pathResult = await connection.createQueryBuilder()
-            .select("category.path", "mpath")
+            .select("category.mpath", "mpath")
             .from("categories", "category")
             .where("category.product = :id")
             .setParameters({ id: savedProduct.id })
