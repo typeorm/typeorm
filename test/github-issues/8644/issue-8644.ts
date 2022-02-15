@@ -13,6 +13,9 @@ describe("github issues > #8644 BUG - Special keyword column name for simple-enu
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["sqlite", "better-sqlite3"],
+                schemaCreate: true,
+                dropSchema: true,
             }))
     );
     beforeEach(() => reloadTestingDatabases(connections));
