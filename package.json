@@ -80,6 +80,7 @@
     "@types/sha.js": "^2.4.0",
     "@types/sinon": "^9.0.10",
     "@types/source-map-support": "^0.5.3",
+    "@types/uuid": "^8.3.4",
     "@types/xml2js": "^0.4.8",
     "@types/yargs": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
@@ -202,6 +203,7 @@
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
     "tslib": "^2.1.0",
+    "uuid": "^8.3.2",
     "xml2js": "^0.4.23",
     "yargs": "^17.0.1",
     "zen-observable-ts": "^1.0.0"
