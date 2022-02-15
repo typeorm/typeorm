@@ -43,7 +43,7 @@ export class MigrationShowCommand implements yargs.CommandModule {
         logging: ["query", "error", "schema"]
       });
       connection = await createConnection(connectionOptions);
-      const unappliedMigrations = await connection.showMigrations();
+      await connection.showMigrations();
       await connection.close();
 
       process.exit(0);
