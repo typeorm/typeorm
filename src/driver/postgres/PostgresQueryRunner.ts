@@ -1020,23 +1020,45 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
             }
 
-            if (oldColumn.isGenerated !== newColumn.isGenerated &&
-                newColumn.generationStrategy !== "uuid" &&
-                newColumn.generationStrategy !== "identity"
-            ) {
-                if (newColumn.isGenerated === true) {
-                    upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
-                    downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+            if (oldColumn.isGenerated !== newColumn.isGenerated) {
+                // if old column was "generated", we should clear defaults
+                if (oldColumn.isGenerated) {
+                    if (oldColumn.generationStrategy === "uuid") {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    } else if (oldColumn.generationStrategy === "increment") {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
 
-                } else {
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
+                        upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+                        downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                    }
+                }
 
-                    upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
-                    downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                if (newColumn.generationStrategy === "uuid") {
+                    if (newColumn.isGenerated === true) {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    } else {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
+                    }
+                } else if (newColumn.generationStrategy === "increment") {
+                    if (newColumn.isGenerated === true) {
+                        upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                        downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+
+                    } else {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
+
+                        upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+                        downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                    }
                 }
             }
 
@@ -2030,6 +2052,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 return new TableForeignKey({
                     name: dbForeignKey["constraint_name"],
                     columnNames: foreignKeys.map(dbFk => dbFk["column_name"]),
+                    referencedSchema: dbForeignKey["referenced_table_schema"],
                     referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
                     onDelete: dbForeignKey["on_delete"],

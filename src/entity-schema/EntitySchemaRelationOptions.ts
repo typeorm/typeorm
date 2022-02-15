@@ -49,6 +49,13 @@ export interface EntitySchemaRelationOptions {
     primary?: boolean;
 
     /**
+     * Indicates whether foreign key constraints will be created for join columns.
+     * Can be used only for many-to-one and owner one-to-one relations.
+     * Defaults to true.
+     */
+    createForeignKeyConstraints?: boolean;
+
+    /**
      * Join table options of this column. If set to true then it simply means that it has a join table.
      */
     joinTable?: boolean|JoinTableOptions|JoinTableMultipleColumnsOptions;

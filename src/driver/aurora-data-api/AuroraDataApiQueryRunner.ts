@@ -1331,7 +1331,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
 
-                    tableColumn.comment = dbColumn["COLUMN_COMMENT"];
+                    tableColumn.comment = (typeof dbColumn["COLUMN_COMMENT"] === "string" && dbColumn["COLUMN_COMMENT"].length === 0) ? undefined : dbColumn["COLUMN_COMMENT"];
                     if (dbColumn["CHARACTER_SET_NAME"])
                         tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
                     if (dbColumn["COLLATION_NAME"])

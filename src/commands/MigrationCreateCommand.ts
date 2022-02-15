@@ -3,6 +3,7 @@ import {CommandUtils} from "./CommandUtils";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Creates a new migration file.
@@ -82,8 +83,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             console.log(`Migration ${chalk.blue(path)} has been generated successfully.`);
 
         } catch (err) {
-            console.log(chalk.black.bgRed("Error during migration creation:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during migration creation:", err);
             process.exit(1);
         }
     }

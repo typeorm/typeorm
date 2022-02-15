@@ -3,6 +3,7 @@ import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Drops all tables of the database from the given connection.
@@ -50,9 +51,7 @@ export class SchemaDropCommand implements yargs.CommandModule {
 
         } catch (err) {
             if (connection) await (connection as Connection).close();
-
-            console.log(chalk.black.bgRed("Error during schema drop:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during schema drop:", err);
             process.exit(1);
         }
     }

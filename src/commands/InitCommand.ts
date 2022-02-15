@@ -5,6 +5,7 @@ import * as yargs from "yargs";
 import chalk from "chalk";
 import { exec } from "child_process";
 import { TypeORMError } from "../error/TypeORMError";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Generates a new project with TypeORM.
@@ -93,8 +94,7 @@ export class InitCommand implements yargs.CommandModule {
             }
 
         } catch (err) {
-            console.log(chalk.black.bgRed("Error during project initialization:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during project initialization:", err);
             process.exit(1);
         }
     }

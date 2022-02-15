@@ -5,6 +5,7 @@ import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
 import chalk from "chalk";
 import { format } from "@sqltools/formatter/lib/sqlFormatter";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
@@ -163,8 +164,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
             }
         } catch (err) {
-            console.log(chalk.black.bgRed("Error during migration generation:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during migration generation:", err);
             process.exit(1);
         }
     }

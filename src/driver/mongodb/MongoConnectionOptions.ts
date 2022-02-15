@@ -73,7 +73,7 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Array of valid certificates either as Buffers or Strings
      * (needs to have a mongod server with ssl support, 2.4 or higher).
      */
-    readonly sslCA?: string[]|Buffer[];
+    readonly sslCA?: string|Buffer;
 
     /**
      * String or buffer containing the certificate we wish to present

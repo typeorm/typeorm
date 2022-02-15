@@ -242,4 +242,9 @@ export class PlatformTools {
     static warn(message: string) {
         return chalk.yellow(message);
     }
+
+    static logCmdErr(prefix: string, err?: any) {
+        console.log(chalk.black.bgRed(prefix));
+        if (err) console.error(err);
+    }
 }

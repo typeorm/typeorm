@@ -2,6 +2,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Generates a new entity.
@@ -63,8 +64,7 @@ export class EntityCreateCommand implements yargs.CommandModule {
             console.log(chalk.green(`Entity ${chalk.blue(path)} has been created successfully.`));
 
         } catch (err) {
-            console.log(chalk.black.bgRed("Error during entity creation:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during entity creation:", err);
             process.exit(1);
         }
     }
