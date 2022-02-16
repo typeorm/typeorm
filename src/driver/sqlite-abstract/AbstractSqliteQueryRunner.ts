@@ -859,7 +859,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
                 if (tableColumn.type === "varchar") {
                     // Check if this is an enum
-                    const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\\1\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
+                    const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
                     if (enumMatch) {
                         // This is an enum
                         tableColumn.enum = enumMatch[2].substr(1, enumMatch[2].length - 2).split("','");
@@ -1147,7 +1147,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
 
         if (column.enum)
-            c += ' CHECK( "' + column.name + '" IN (' + column.enum.map(val => "'" + val + "'").join(",") + ") )";
+            c += " CHECK( \"" + column.name + "\" IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
         if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
