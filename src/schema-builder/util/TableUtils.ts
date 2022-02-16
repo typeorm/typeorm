@@ -7,7 +7,7 @@ export class TableUtils {
     static createTableColumnOptions(columnMetadata: ColumnMetadata, driver: Driver): TableColumnOptions {
         return {
             name: columnMetadata.databaseName,
-            length: columnMetadata.length,
+            length: driver.getColumnLength(columnMetadata),
             width: columnMetadata.width,
             charset: columnMetadata.charset,
             collation: columnMetadata.collation,
@@ -22,6 +22,7 @@ export class TableUtils {
             comment: columnMetadata.comment,
             isGenerated: columnMetadata.isGenerated,
             generationStrategy: columnMetadata.generationStrategy,
+            generatedIdentity: columnMetadata.generatedIdentity,
             isNullable: columnMetadata.isNullable,
             type: driver.normalizeType(columnMetadata),
             isPrimary: columnMetadata.isPrimary,

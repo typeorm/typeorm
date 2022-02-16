@@ -128,7 +128,7 @@ const connectionName: string = connection.name;
 ```
 
 * `options` - 用于创建此连接的连接选项。
-了解有关[连接选项](./ connection-options.md)的更多信息。
+了解有关[连接选项](./connection-options.md)的更多信息。
 
 ```typescript
 const connectionOptions: ConnectionOptions = connection.options;

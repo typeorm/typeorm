@@ -4,15 +4,22 @@ import {Connection} from "../../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
 import {PostWithoutTypes} from "./entity/PostWithoutTypes";
 import {Post} from "./entity/Post";
+import {PostgresDriver} from "../../../../../src/driver/postgres/PostgresDriver";
 
 describe("database schema > column types > postgres", () => {
-
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         });
+
+        for (const connection of connections) {
+            if (connection.driver instanceof PostgresDriver) {
+                // We want to have UTC as timezone
+                await connection.query("SET TIME ZONE 'UTC';");
+            }
+        }
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));

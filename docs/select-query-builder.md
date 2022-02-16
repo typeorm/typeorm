@@ -22,10 +22,12 @@
 * [Streaming result data](#streaming-result-data)
 * [Using pagination](#using-pagination)
 * [Set locking](#set-locking)
+* [Use custom index](#use-custom-index)
 * [Max execution time](#max-execution-time)
 * [Partial selection](#partial-selection)
 * [Using subqueries](#using-subqueries)
 * [Hidden Columns](#hidden-columns)
+* [Querying Deleted rows](#querying-deleted-rows)
 
 ## What is `QueryBuilder`
 
@@ -262,7 +264,7 @@ createQueryBuilder()
     .from(User, "user")
 ```
 
-Which will result in the following sql query:
+Which will result in the following SQL query:
 
 ```sql
 SELECT ... FROM users user
@@ -399,6 +401,24 @@ Which will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
+```
+
+
+You can add a negated complex `WHERE` expression into an existing `WHERE` using `NotBrackets`
+
+```typescript
+createQueryBuilder("user")
+    .where("user.registered = :registered", { registered: true })
+    .andWhere(new NotBrackets(qb => {
+        qb.where("user.firstName = :firstName", { firstName: "Timber" })
+          .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.registered = true AND NOT((user.firstName = 'Timber' OR user.lastName = 'Saw'))
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
@@ -657,7 +677,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate following sql query:
+This will generate following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
@@ -674,7 +694,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate the following sql query:
+This will generate the following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
@@ -749,7 +769,7 @@ const user = await createQueryBuilder("user")
 Add `profilePhoto` to `User` entity and you can map any data into that property using `QueryBuilder`:
 
 ```typescript
-export class User {    
+export class User {
     /// ...
     profilePhoto: Photo;
 
@@ -915,9 +935,20 @@ const users = await getRepository(User)
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
 
+## Use custom index
+
+You can provide a certain index for database server to use in some cases. This feature is only supported in MySQL.
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .useIndex("my_index") // name of index
+    .getMany();
+```
+
 ## Max execution time
 
-We can drop slow query to avoid crashing the server. Only MySQL driver is supported at the moment:
+We can drop slow query to avoid crashing the server.
 
 ```typescript
 const users = await getRepository(User)
@@ -1069,3 +1100,40 @@ const users = await connection.getRepository(User)
 ```
 
 You will get the property `password` in your query.
+
+
+## Querying Deleted rows
+
+If the model you are querying has a column with the attribute `@DeleteDateColumn` set, the query builder will automatically query rows which are 'soft deleted'.
+
+Let's say you have the following entity:
+
+```typescript
+import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+
+@Entity()
+export class User {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    name: string;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
+}
+```
+
+Using a standard `find` or query, you will not receive the rows which have a value in that row. However, if you do the following:
+
+```typescript
+const users = await connection.getRepository(User)
+    .createQueryBuilder()
+    .select("user.id", "id")
+    .withDeleted()
+    .getMany();
+```
+
+You will get all the rows, including the ones which are deleted.
+

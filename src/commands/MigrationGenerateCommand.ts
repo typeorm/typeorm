@@ -1,12 +1,11 @@
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
-import {createConnection} from "../index";
-import {MysqlDriver} from "../driver/mysql/MysqlDriver";
+import {createConnection} from "../globals";
 import {camelCase} from "../util/StringUtils";
 import * as yargs from "yargs";
-import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import chalk from "chalk";
 import { format } from "@sqltools/formatter/lib/sqlFormatter";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
@@ -62,6 +61,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 type: "boolean",
                 default: false,
                 describe: "Verifies that the current database is up to date and that no migrations are needed. Otherwise exits with code 1.",
+            })
+            .option("t", {
+                alias: "timestamp",
+                type: "number",
+                default: false,
+                describe: "Custom timestamp for the migration name",
             });
     }
 
@@ -70,7 +75,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             console.log("'migrations:generate' is deprecated, please use 'migration:generate' instead");
         }
 
-        const timestamp = new Date().getTime();
+        const timestamp = CommandUtils.getTimestamp(args.timestamp);
         const extension = args.outputJs ? ".js" : ".ts";
         const filename = timestamp + "-" + args.name + extension;
         let directory = args.dir as string | undefined;
@@ -115,23 +120,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     });
                 }
 
-                // mysql is exceptional here because it uses ` character in to escape names in queries, that's why for mysql
-                // we are using simple quoted string instead of template string syntax
-                if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver) {
-                    sqlInMemory.upQueries.forEach(upQuery => {
-                        upSqls.push("        await queryRunner.query(\"" + upQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
-                    });
-                    sqlInMemory.downQueries.forEach(downQuery => {
-                        downSqls.push("        await queryRunner.query(\"" + downQuery.query.replace(new RegExp(`"`, "g"), `\\"`) + "\"" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
-                    });
-                } else {
-                    sqlInMemory.upQueries.forEach(upQuery => {
-                        upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
-                    });
-                    sqlInMemory.downQueries.forEach(downQuery => {
-                        downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
-                    });
-                }
+                sqlInMemory.upQueries.forEach(upQuery => {
+                    upSqls.push("        await queryRunner.query(`" + upQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(upQuery.parameters) + ");");
+                });
+                sqlInMemory.downQueries.forEach(downQuery => {
+                    downSqls.push("        await queryRunner.query(`" + downQuery.query.replace(new RegExp("`", "g"), "\\`") + "`" + MigrationGenerateCommand.queryParams(downQuery.parameters) + ");");
+                });
             } finally {
                 await connection.close();
             }
@@ -170,8 +164,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 console.log(chalk.green(`Migration ${chalk.blue(path)} has been generated successfully.`));
             }
         } catch (err) {
-            console.log(chalk.black.bgRed("Error during migration generation:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during migration generation:", err);
             process.exit(1);
         }
     }

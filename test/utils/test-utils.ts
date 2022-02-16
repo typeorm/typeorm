@@ -1,14 +1,12 @@
 import {Connection} from "../../src/connection/Connection";
 import {ConnectionOptions} from "../../src/connection/ConnectionOptions";
-import {PostgresDriver} from "../../src/driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../../src/driver/sqlserver/SqlServerDriver";
 import {DatabaseType} from "../../src/driver/types/DatabaseType";
 import {EntitySchema} from "../../src/entity-schema/EntitySchema";
 import {createConnections} from "../../src/index";
 import {NamingStrategyInterface} from "../../src/naming-strategy/NamingStrategyInterface";
 import {QueryResultCache} from "../../src/cache/QueryResultCache";
 import {Logger} from "../../src/logger/Logger";
-import {CockroachDriver} from "../../src/driver/cockroachdb/CockroachDriver.js";
+import {CockroachDriver} from "../../src/driver/cockroachdb/CockroachDriver";
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -92,6 +90,12 @@ export interface TestingOptions {
     namingStrategy?: NamingStrategyInterface;
 
     /**
+     * Typeorm metadata table name, in case of different name from "typeorm_metadata".
+     * Accepts single string name.
+     */
+    metadataTableName?: string;
+
+    /**
      * Schema name used for postgres driver.
      */
     cache?: boolean | {
@@ -172,10 +176,12 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
     try {
 
         try {
-            return require(__dirname + "/../../../../ormconfig.json");
-
-        } catch (err) {
+            // first checks build/compiled
+            // useful for docker containers in order to provide a custom config
             return require(__dirname + "/../../ormconfig.json");
+        } catch (err) {
+            // fallbacks to the root config
+            return require(__dirname + "/../../../../ormconfig.json");
         }
 
     } catch (err) {
@@ -215,7 +221,7 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 migrations: options && options.migrations ? options.migrations : [],
                 subscribers: options && options.subscribers ? options.subscribers : [],
                 dropSchema: options && options.dropSchema !== undefined ? options.dropSchema : false,
-                cache: options ? options.cache : undefined,
+                cache: options ? options.cache : undefined
             });
             if (options && options.driverSpecific)
                 newOptions = Object.assign({}, options.driverSpecific, newOptions);
@@ -233,6 +239,8 @@ export function setupTestingConnections(options?: TestingOptions): ConnectionOpt
                 newOptions.migrations = [options.__dirname + "/migration/*{.js,.ts}"];
             if (options && options.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy;
+            if (options && options.metadataTableName)
+                newOptions.metadataTableName = options.metadataTableName;
             return newOptions;
         });
 }
@@ -272,22 +280,33 @@ export async function createTestingConnections(options?: TestingOptions): Promis
         }
 
         // create new schemas
-        if (connection.driver instanceof PostgresDriver || connection.driver instanceof SqlServerDriver) {
-            const schemaPaths: string[] = [];
-            connection.entityMetadatas
-                .filter(entityMetadata => !!entityMetadata.schemaPath)
-                .forEach(entityMetadata => {
-                    const existSchemaPath = schemaPaths.find(path => path === entityMetadata.schemaPath);
-                    if (!existSchemaPath)
-                        schemaPaths.push(entityMetadata.schemaPath!);
-                });
+        const schemaPaths: Set<string> = new Set();
+        connection.entityMetadatas
+            .filter(entityMetadata => !!entityMetadata.schema)
+            .forEach(entityMetadata => {
+                let schema = entityMetadata.schema!;
 
-            const schema = connection.driver.options.schema;
-            if (schema && schemaPaths.indexOf(schema) === -1)
-                schemaPaths.push(schema);
+                if (entityMetadata.database) {
+                    schema = `${entityMetadata.database}.${schema}`;
+                }
 
-            for (const schemaPath of schemaPaths) {
+                schemaPaths.add(schema);
+            });
+
+        const schema =
+            connection.driver.options?.hasOwnProperty("schema") ?
+                (connection.driver.options as any).schema :
+                undefined;
+
+        if (schema) {
+            schemaPaths.add(schema);
+        }
+
+        for (const schemaPath of schemaPaths) {
+            try {
                 await queryRunner.createSchema(schemaPath, true);
+            } catch (e) {
+                // Do nothing
             }
         }
 

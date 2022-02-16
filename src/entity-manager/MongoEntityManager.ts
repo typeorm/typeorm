@@ -51,8 +51,8 @@ import { InsertResult } from "../query-builder/result/InsertResult";
 import { UpdateResult } from "../query-builder/result/UpdateResult";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import { EntityMetadata } from "../metadata/EntityMetadata";
-import { FindConditions } from "../index";
-import { BroadcasterResult } from "../subscriber/BroadcasterResult";
+import { FindConditions } from "../find-options/FindConditions";
+import { ColumnMetadata } from "../metadata/ColumnMetadata";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -84,6 +84,8 @@ export class MongoEntityManager extends EntityManager {
     async find<Entity>(entityClassOrName: EntityTarget<Entity>, optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<Entity[]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
+        const deleteDateColumn = this.connection.getMetadata(entityClassOrName).deleteDateColumn;
+
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
@@ -93,6 +95,11 @@ export class MongoEntityManager extends EntityManager {
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+            if (deleteDateColumn && !optionsOrConditions.withDeleted) {
+                this.filterSoftDeleted(cursor, deleteDateColumn);
+            }
+        } else if(deleteDateColumn) {
+            this.filterSoftDeleted(cursor, deleteDateColumn);
         }
         return cursor.toArray();
     }
@@ -105,6 +112,8 @@ export class MongoEntityManager extends EntityManager {
     async findAndCount<Entity>(entityClassOrName: EntityTarget<Entity>, optionsOrConditions?: FindManyOptions<Entity> | Partial<Entity>): Promise<[Entity[], number]> {
         const query = this.convertFindManyOptionsOrConditionsToMongodbQuery(optionsOrConditions);
         const cursor = await this.createEntityCursor(entityClassOrName, query);
+        const deleteDateColumn = this.connection.getMetadata(entityClassOrName).deleteDateColumn;
+
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
@@ -114,7 +123,11 @@ export class MongoEntityManager extends EntityManager {
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
-
+            if (deleteDateColumn && !optionsOrConditions.withDeleted) {
+                this.filterSoftDeleted(cursor, deleteDateColumn);
+            }
+        } else if(deleteDateColumn) {
+            this.filterSoftDeleted(cursor, deleteDateColumn);
         }
         const [results, count] = await Promise.all<any>([
             cursor.toArray(),
@@ -133,14 +146,26 @@ export class MongoEntityManager extends EntityManager {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID;
         query["_id"] = {
             $in: ids.map(id => {
-                if (id instanceof objectIdInstance)
-                    return id;
+                if (typeof id === "string") {
+                    return new objectIdInstance(id);
+                }
 
-                return id[metadata.objectIdColumn!.propertyName];
+                if (typeof id === "object") {
+                    if (id instanceof objectIdInstance) {
+                        return id;
+                    }
+
+                    const propertyName = metadata.objectIdColumn!.propertyName;
+
+                    if (id[propertyName] instanceof objectIdInstance) {
+                        return id[propertyName];
+                    }
+                }
             })
         };
 
         const cursor = await this.createEntityCursor(entityClassOrName, query);
+        const deleteDateColumn = this.connection.getMetadata(entityClassOrName).deleteDateColumn;
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
             if (optionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(optionsOrConditions.select));
@@ -150,6 +175,11 @@ export class MongoEntityManager extends EntityManager {
                 cursor.limit(optionsOrConditions.take);
             if (optionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(optionsOrConditions.order));
+            if (deleteDateColumn && !optionsOrConditions.withDeleted) {
+                this.filterSoftDeleted(cursor, deleteDateColumn);
+            }
+        } else if(deleteDateColumn) {
+            this.filterSoftDeleted(cursor, deleteDateColumn);
         }
         return await cursor.toArray();
     }
@@ -168,11 +198,17 @@ export class MongoEntityManager extends EntityManager {
             query["_id"] = (id instanceof objectIdInstance) ? id : new objectIdInstance(id);
         }
         const cursor = await this.createEntityCursor(entityClassOrName, query);
+        const deleteDateColumn = this.connection.getMetadata(entityClassOrName).deleteDateColumn;
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
             if (findOneOptionsOrConditions.select)
                 cursor.project(this.convertFindOptionsSelectToProjectCriteria(findOneOptionsOrConditions.select));
             if (findOneOptionsOrConditions.order)
                 cursor.sort(this.convertFindOptionsOrderToOrderCriteria(findOneOptionsOrConditions.order));
+            if (deleteDateColumn && !findOneOptionsOrConditions.withDeleted) {
+                this.filterSoftDeleted(cursor, deleteDateColumn);
+            }
+        } else if(deleteDateColumn) {
+            this.filterSoftDeleted(cursor, deleteDateColumn);
         }
 
         // const result = await cursor.limit(1).next();
@@ -214,17 +250,26 @@ export class MongoEntityManager extends EntityManager {
      * Does not check if entity exist in the database.
      */
     async update<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
+        const result = new UpdateResult();
+
         if (Array.isArray(criteria)) {
-            await Promise.all((criteria as any[]).map(criteriaItem => {
+            const updateResults = await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.update(target, criteriaItem, partialEntity);
             }));
 
+            result.raw = updateResults.map(r => r.raw);
+            result.affected = updateResults.map(r => (r.affected || 0)).reduce(( c, r) => c + r, 0);
+            result.generatedMaps = updateResults.reduce((c, r) => c.concat(r.generatedMaps), [] as ObjectLiteral[]);
+
         } else {
             const metadata = this.connection.getMetadata(target);
-            await this.updateOne(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
+            const mongoResult = await this.updateMany(target, this.convertMixedCriteria(metadata, criteria), { $set: partialEntity });
+
+            result.raw = mongoResult;
+            result.affected = mongoResult.modifiedCount;
         }
 
-        return new UpdateResult();
+        return result;
     }
 
     /**
@@ -234,16 +279,24 @@ export class MongoEntityManager extends EntityManager {
      * Does not check if entity exist in the database.
      */
     async delete<Entity>(target: EntityTarget<Entity>, criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>): Promise<DeleteResult> {
+        const result = new DeleteResult();
+
         if (Array.isArray(criteria)) {
-            await Promise.all((criteria as any[]).map(criteriaItem => {
+            const deleteResults = await Promise.all((criteria as any[]).map(criteriaItem => {
                 return this.delete(target, criteriaItem);
             }));
 
+            result.raw = deleteResults.map(r => r.raw);
+            result.affected = deleteResults.map(r => (r.affected || 0)).reduce((c, r) => c + r, 0);
+
         } else {
-            await this.deleteOne(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+            const mongoResult = await this.deleteMany(target, this.convertMixedCriteria(this.connection.getMetadata(target), criteria));
+
+            result.raw = mongoResult;
+            result.affected = mongoResult.deletedCount;
         }
 
-        return new DeleteResult();
+        return result;
     }
 
     // -------------------------------------------------------------------------
@@ -656,7 +709,8 @@ export class MongoEntityManager extends EntityManager {
      * Overrides cursor's toArray and next methods to convert results to entity automatically.
      */
     protected applyEntityTransformationToCursor<Entity>(metadata: EntityMetadata, cursor: Cursor<Entity> | AggregationCursor<Entity>) {
-        const ParentCursor = PlatformTools.load("mongodb").Cursor;
+        // mongdb-3.7 exports Cursor, mongodb-4.2 exports FindCursor, provide support for both.
+        const ParentCursor = PlatformTools.load("mongodb").Cursor || PlatformTools.load("mongodb").FindCursor;
         const queryRunner = this.mongoQueryRunner;
         cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
             if (callback) {
@@ -670,10 +724,8 @@ export class MongoEntityManager extends EntityManager {
                     const entities = transformer.transformAll(results, metadata);
 
                     // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
-
-                    Promise.all(broadcastResult.promises).then(() => callback(error, entities));
+                    queryRunner.broadcaster.broadcast("Load", metadata, entities)
+                        .then(() => callback(error, entities));
                 });
             } else {
                 return ParentCursor.prototype.toArray.call(this).then((results: Entity[]) => {
@@ -681,10 +733,8 @@ export class MongoEntityManager extends EntityManager {
                     const entities = transformer.transformAll(results, metadata);
 
                     // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, entities);
-
-                    return Promise.all(broadcastResult.promises).then(() => entities);
+                    return queryRunner.broadcaster.broadcast("Load", metadata, entities)
+                        .then(() => entities);
                 });
             }
         };
@@ -700,10 +750,9 @@ export class MongoEntityManager extends EntityManager {
                     const entity = transformer.transform(result, metadata);
 
                     // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
 
-                    Promise.all(broadcastResult.promises).then(() => callback(error, entity));
+                    queryRunner.broadcaster.broadcast("Load", metadata, [entity])
+                        .then(() => callback(error, entity));
                 });
             } else {
                 return ParentCursor.prototype.next.call(this).then((result: Entity) => {
@@ -712,14 +761,17 @@ export class MongoEntityManager extends EntityManager {
                     const transformer = new DocumentToEntityTransformer();
                     const entity = transformer.transform(result, metadata);
 
-                    // broadcast "load" events
-                    const broadcastResult = new BroadcasterResult();
-                    queryRunner.broadcaster.broadcastLoadEventsForAll(broadcastResult, metadata, [entity]);
 
-                    return Promise.all(broadcastResult.promises).then(() => entity);
+                    // broadcast "load" events
+                    return queryRunner.broadcaster.broadcast("Load", metadata, [entity])
+                        .then(() => entity);
                 });
             }
         };
+    }
+
+    protected filterSoftDeleted<Entity>(cursor: Cursor<Entity>, deleteDateColumn: ColumnMetadata) {
+        cursor.filter({$where: `this.${deleteDateColumn.propertyName}==null`});
     }
 
 }

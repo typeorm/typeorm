@@ -15,6 +15,16 @@ export interface TableOptions {
     // -------------------------------------------------------------------------
 
     /**
+     * Table schema.
+     */
+    schema?: string;
+
+    /**
+     * Table database.
+     */
+    database?: string;
+
+    /**
      * Table name.
      */
     name: string;

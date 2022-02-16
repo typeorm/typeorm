@@ -2,7 +2,7 @@
 
 You can cache results selected by these `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne`  and `getCount`.
 
- You can also cache results selected by these `Repository` methods: `find`, `findAndCount`, `findByIds`, and `count`.
+You can also cache results selected by these `Repository` methods: `find`, `findAndCount`, `findByIds`, and `count`.
 
 To enable caching you need to explicitly enable it in your connection options:
 
@@ -149,8 +149,7 @@ Example:
 }
 ```
 
-"options" can be [node_redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
-
+"options" can be [node_redis specific options](https://github.com/redis/node-redis/blob/master/docs/client-configuration.md) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
 
 In case you want to connect to a redis-cluster using IORedis's cluster functionality, you can do that as well by doing the following:
 
@@ -234,7 +233,7 @@ class CustomQueryResultCache implements QueryResultCache {
 }
 ```
 
-If you wish to ignore cache errors and want the queries to pass through to database in case of cache errors, you can use ignoreErrors option. 
+If you wish to ignore cache errors and want the queries to pass through to database in case of cache errors, you can use ignoreErrors option.
 Example:
 
 ```typescript

@@ -21,7 +21,7 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Database host.
      */
     readonly host?: string;
-    
+
     /**
      * Database host replica set.
      */
@@ -48,6 +48,12 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
     readonly database?: string;
 
     /**
+     * The driver object
+     * This defaults to require("mongodb")
+     */
+    readonly driver?: any;
+
+    /**
      * Set the maximum poolSize for each individual server or proxy connection.
      */
     readonly poolSize?: number;
@@ -67,7 +73,7 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * Array of valid certificates either as Buffers or Strings
      * (needs to have a mongod server with ssl support, 2.4 or higher).
      */
-    readonly sslCA?: string[]|Buffer[];
+    readonly sslCA?: string|Buffer;
 
     /**
      * String or buffer containing the certificate we wish to present
@@ -332,9 +338,14 @@ export interface MongoConnectionOptions extends BaseConnectionOptions {
      * https://github.com/mongodb/node-mongodb-native/releases/tag/v3.2.1
      */
     readonly useUnifiedTopology?: boolean;
-    
+
     /**
      * Automatic Client-Side Field Level Encryption configuration.
      */
     readonly autoEncryption?: any;
+
+    /**
+     * Enables or disables the ability to retry writes upon encountering transient network errors.
+     */
+    readonly retryWrites?: boolean;
 }

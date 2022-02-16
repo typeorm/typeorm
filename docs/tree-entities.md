@@ -135,7 +135,7 @@ You can specify closure table name and / or closure table columns names by setti
 
 ## Working with tree entities
 
-To make bind tree entities to each other its important to set to children entities their parent and save them,
+To bind tree entities to each other, it is required to set the parent in the child entity and then save them.
 for example:
 
 ```typescript
@@ -203,6 +203,9 @@ There are other special methods to work with tree entities through `TreeReposito
 ```typescript
 const treeCategories = await repository.findTrees();
 // returns root categories with sub categories inside
+
+const treeCategoriesWithLimitedDepth = await repository.findTrees({ depth: 2 });
+// returns root categories with sub categories inside, up to depth 2
 ```
 
 * `findRoots` - Roots are entities that have no ancestors. Finds them all.
@@ -225,6 +228,8 @@ const children = await repository.findDescendants(parentCategory);
 ```typescript
 const childrenTree = await repository.findDescendantsTree(parentCategory);
 // returns all direct subcategories (with its nested categories) of a parentCategory
+const childrenTreeWithLimitedDepth = await repository.findDescendantsTree(parentCategory, { depth: 2 });
+// returns all direct subcategories (with its nested categories) of a parentCategory, up to depth 2
 ```
 
 * `createDescendantsQueryBuilder` - Creates a query builder used to get descendants of the entities in a tree.
@@ -269,4 +274,24 @@ const parents = await repository
 
 ```typescript
 const parentsCount = await repository.countAncestors(childCategory);
+```
+
+For the following methods, options can be passed:
+* findTrees
+* findRoots
+* findDescendants
+* findDescendantsTree
+* findAncestors
+* findAncestorsTree
+
+The following options are available:
+* `relations` - Indicates what relations of entity should be loaded (simplified left join form).
+
+Examples:
+```typescript
+const treeCategoriesWithRelations = await repository.findTrees({ relations: ["sites"] });
+// automatically joins the sites relation
+
+const parentsWithRelations = await repository.findAncestors(childCategory, { relations: ["members"] });
+// returns all direct childCategory's parent categories (without "parent of parents") and joins the 'members' relation
 ```

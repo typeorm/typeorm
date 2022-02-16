@@ -9,6 +9,7 @@ import {DeferrableType} from "./types/DeferrableType";
 import {OnUpdateType} from "./types/OnUpdateType";
 import {OnDeleteType} from "./types/OnDeleteType";
 import {PropertyTypeFactory} from "./types/PropertyTypeInFunction";
+import { TypeORMError } from "../error";
 
 /**
  * Contains all information about some entity's relation.
@@ -112,7 +113,7 @@ export class RelationMetadata {
     /**
      * When a child row is removed from its parent, determines if the child row should be orphaned (default) or deleted.
      */
-    orphanedRowAction?: "nullify" | "delete";
+    orphanedRowAction?: "nullify" | "delete" | "soft-delete";
 
     /**
      * If set to true then related objects are allowed to be inserted to the database.
@@ -353,7 +354,7 @@ export class RelationMetadata {
         const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn!);
 
         if (referencedColumns.length > 1)
-            throw new Error(`Cannot create relation id map for a single value because relation contains multiple referenced columns.`);
+            throw new TypeORMError(`Cannot create relation id map for a single value because relation contains multiple referenced columns.`);
 
         return referencedColumns[0].createValueMap(id);
     }

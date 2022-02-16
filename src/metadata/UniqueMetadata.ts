@@ -3,6 +3,8 @@ import {EntityMetadata} from "./EntityMetadata";
 import {NamingStrategyInterface} from "../naming-strategy/NamingStrategyInterface";
 import {ColumnMetadata} from "./ColumnMetadata";
 import {UniqueMetadataArgs} from "../metadata-args/UniqueMetadataArgs";
+import { TypeORMError } from "../error";
+import { DeferrableType } from "./types/DeferrableType";
 
 /**
  * Unique metadata contains all information about table's unique constraints.
@@ -32,6 +34,11 @@ export class UniqueMetadata {
      * Unique columns.
      */
     columns: ColumnMetadata[] = [];
+
+    /**
+       * Indicate if unique constraints can be deferred.
+       */
+    deferrable?: DeferrableType;
 
     /**
      * User specified unique constraint name.
@@ -75,6 +82,7 @@ export class UniqueMetadata {
             this.target = options.args.target;
             this.givenName = options.args.name;
             this.givenColumnNames = options.args.columns;
+            this.deferrable = options.args.deferrable;
         }
     }
 
@@ -124,7 +132,7 @@ export class UniqueMetadata {
                 }
                 const indexName = this.givenName ? "\"" + this.givenName + "\" " : "";
                 const entityName = this.entityMetadata.targetName;
-                throw new Error(`Unique constraint ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyName);
+                throw new TypeORMError(`Unique constraint ${indexName}contains column that is missing in the entity (${entityName}): ` + propertyName);
             })
             .reduce((a, b) => a.concat(b));
         }
@@ -137,7 +145,7 @@ export class UniqueMetadata {
             return updatedMap;
         }, {} as { [key: string]: number });
 
-        this.name = this.givenName ? this.givenName : namingStrategy.uniqueConstraintName(this.entityMetadata.tablePath, this.columns.map(column => column.databaseName));
+        this.name = this.givenName ? this.givenName : namingStrategy.uniqueConstraintName(this.entityMetadata.tableName, this.columns.map(column => column.databaseName));
         return this;
     }
 

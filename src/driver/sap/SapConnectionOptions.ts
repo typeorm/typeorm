@@ -17,6 +17,18 @@ export interface SapConnectionOptions extends BaseConnectionOptions, SapConnecti
     readonly schema?: string;
 
     /**
+     * The driver objects
+     * This defaults to require("hdb-pool")
+     */
+    readonly driver?: any;
+
+    /**
+     * The driver objects
+     * This defaults to require("@sap/hana-client")
+     */
+    readonly hanaClientDriver?: any;
+
+    /**
      * Pool options.
      */
     readonly pool?: {
@@ -34,19 +46,19 @@ export interface SapConnectionOptions extends BaseConnectionOptions, SapConnecti
         /**
         * Maximum number of waiting requests allowed. (default=0, no limit).
         */
-       readonly maxWaitingRequests?: number;
-       /**
+        readonly maxWaitingRequests?: number;
+        /**
         * Max milliseconds a request will wait for a resource before timing out. (default=5000)
         */
-       readonly requestTimeout?: number;
-       /**
+        readonly requestTimeout?: number;
+        /**
         * How often to run resource timeout checks. (default=0, disabled)
         */
-       readonly checkInterval?: number;
-       /**
+        readonly checkInterval?: number;
+        /**
         * Idle timeout
         */
-       readonly idleTimeout?: number;
+        readonly idleTimeout?: number;
 
         /**
         * Function handling errors thrown by drivers pool.

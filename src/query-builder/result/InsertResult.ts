@@ -1,9 +1,15 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
+import {QueryResult} from "../../query-runner/QueryResult";
 
 /**
  * Result object returned by InsertQueryBuilder execution.
  */
 export class InsertResult {
+    static from(queryResult: QueryResult) {
+        const result = new this();
+        result.raw = queryResult.raw;
+        return result;
+    }
 
     /**
      * Contains inserted entity id.

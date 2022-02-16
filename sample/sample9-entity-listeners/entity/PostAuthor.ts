@@ -7,6 +7,10 @@ import {AfterUpdate} from "../../../src/decorator/listeners/AfterUpdate";
 import {BeforeUpdate} from "../../../src/decorator/listeners/BeforeUpdate";
 import {AfterInsert} from "../../../src/decorator/listeners/AfterInsert";
 import {BeforeInsert} from "../../../src/decorator/listeners/BeforeInsert";
+import {AfterRecover} from "../../../src/decorator/listeners/AfterRecover";
+import {BeforeRecover} from "../../../src/decorator/listeners/BeforeRecover";
+import {AfterSoftRemove} from "../../../src/decorator/listeners/AfterSoftRemove";
+import {BeforeSoftRemove} from "../../../src/decorator/listeners/BeforeSoftRemove";
 
 @Entity("sample9_post_author")
 export class PostAuthor {
@@ -47,6 +51,26 @@ export class PostAuthor {
 
     @AfterRemove()
     doSomethingAfterRemove() {
+        console.log("event: PostAuthor entity has been removed and callback executed");
+    }
+
+    @BeforeSoftRemove()
+    doSomethingBeforeSoftRemove() {
+        console.log("event: PostAuthor entity will be removed so soon...");
+    }
+
+    @AfterSoftRemove()
+    doSomethingAfterSoftRemove() {
+        console.log("event: PostAuthor entity has been removed and callback executed");
+    }
+
+    @BeforeRecover()
+    doSomethingBeforeRecover() {
+        console.log("event: PostAuthor entity will be removed so soon...");
+    }
+
+    @AfterRecover()
+    doSomethingAfterRecover() {
         console.log("event: PostAuthor entity has been removed and callback executed");
     }
 

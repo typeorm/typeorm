@@ -1,10 +1,9 @@
-export class NestedSetMultipleRootError extends Error {
-    name = "NestedSetMultipleRootError";
+import {TypeORMError} from "./TypeORMError";
 
+export class NestedSetMultipleRootError extends TypeORMError {
     constructor() {
-        super();
-        Object.setPrototypeOf(this, NestedSetMultipleRootError.prototype);
-        this.message = `Nested sets do not support multiple root entities.`;
+        super(
+            `Nested sets do not support multiple root entities.`
+        );
     }
-
 }

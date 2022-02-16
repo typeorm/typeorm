@@ -53,8 +53,10 @@ export class EntityPersistExecutor {
 
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
-        if (this.options && this.options.data)
+        let oldQueryRunnerData = queryRunner.data;
+        if (this.options && this.options.data) {
             queryRunner.data = this.options.data;
+        }
 
         try {
 
@@ -166,6 +168,7 @@ export class EntityPersistExecutor {
             }
 
         } finally {
+            queryRunner.data = oldQueryRunnerData;
 
             // release query runner only if its created by us
             if (!this.queryRunner)

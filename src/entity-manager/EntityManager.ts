@@ -16,7 +16,6 @@ import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 import {PlainObjectToNewEntityTransformer} from "../query-builder/transformer/PlainObjectToNewEntityTransformer";
 import {PlainObjectToDatabaseEntityTransformer} from "../query-builder/transformer/PlainObjectToDatabaseEntityTransformer";
 import {CustomRepositoryNotFoundError} from "../error/CustomRepositoryNotFoundError";
-import {EntitySchema, getMetadataArgsStorage, ObjectLiteral} from "../index";
 import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
@@ -35,6 +34,11 @@ import {DeleteResult} from "../query-builder/result/DeleteResult";
 import {FindConditions} from "../find-options/FindConditions";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {ObjectUtils} from "../util/ObjectUtils";
+import {EntitySchema} from "../entity-schema/EntitySchema";
+import {ObjectLiteral} from "../common/ObjectLiteral";
+import {getMetadataArgsStorage} from "../globals";
+import {TypeORMError} from "../error";
+import {UpsertOptions} from "../repository/UpsertOptions";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -113,17 +117,17 @@ export class EntityManager {
         const runInTransaction = typeof isolationOrRunInTransaction === "function" ? isolationOrRunInTransaction : runInTransactionParam;
 
         if (!runInTransaction) {
-            throw new Error(`Transaction method requires callback in second paramter if isolation level is supplied.`);
+            throw new TypeORMError(`Transaction method requires callback in second paramter if isolation level is supplied.`);
         }
 
         if (this.connection.driver instanceof MongoDriver)
-            throw new Error(`Transactions aren't supported by MongoDB.`);
+            throw new TypeORMError(`Transactions aren't supported by MongoDB.`);
 
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
 
         if (this.queryRunner && this.queryRunner.isTransactionActive)
-            throw new Error(`Cannot start transaction because its already started`);
+            throw new TypeORMError(`Cannot start transaction because its already started`);
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
@@ -159,17 +163,17 @@ export class EntityManager {
     }
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder(queryRunner?: QueryRunner): SelectQueryBuilder<any>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityClass?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (alias) {
@@ -243,7 +247,7 @@ export class EntityManager {
             return metadata.create(this.queryRunner);
 
         if (Array.isArray(plainObjectOrObjects))
-            return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass as any, plainEntityLike));
+            return (plainObjectOrObjects as DeepPartial<Entity>[]).map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
         const mergeIntoEntity = metadata.create(this.queryRunner);
         this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
@@ -475,6 +479,46 @@ export class EntityManager {
             .execute();
     }
 
+    async upsert<Entity>(
+        target: EntityTarget<Entity>,
+        entityOrEntities: QueryDeepPartialEntity<Entity> | (QueryDeepPartialEntity<Entity>[]),
+        conflictPathsOrOptions: string[] | UpsertOptions<Entity>): Promise<InsertResult> {
+        const metadata = this.connection.getMetadata(target);
+
+        let options: UpsertOptions<Entity>;
+
+        if (Array.isArray(conflictPathsOrOptions)) {
+            options = {
+                conflictPaths: conflictPathsOrOptions
+            };
+        } else {
+            options = conflictPathsOrOptions;
+        }
+
+        let entities: QueryDeepPartialEntity<Entity>[];
+
+        if (!Array.isArray(entityOrEntities)) {
+            entities = [entityOrEntities];
+        } else {
+            entities = entityOrEntities;
+        }
+
+        const conflictColumns = metadata.mapPropertyPathsToColumns(options.conflictPaths);
+
+        const overwriteColumns = metadata.columns
+            .filter((col) => (!conflictColumns.includes(col)) && entities.some(entity => typeof col.getEntityValue(entity) !== "undefined"));
+
+        return this.createQueryBuilder()
+            .insert()
+            .into(target)
+            .values(entities)
+            .orUpdate(
+                [...conflictColumns, ...overwriteColumns].map((col) => col.databaseName),
+                conflictColumns.map((col) => col.databaseName)
+            )
+            .execute();
+    }
+
     /**
      * Updates entity partially. Entity can be found by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
@@ -490,7 +534,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the update method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the update method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -528,7 +572,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the delete method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -566,7 +610,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the delete method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -604,7 +648,7 @@ export class EntityManager {
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0)) {
 
-            return Promise.reject(new Error(`Empty criteria(s) are not allowed for the delete method.`));
+            return Promise.reject(new TypeORMError(`Empty criteria(s) are not allowed for the delete method.`));
         }
 
         if (typeof criteria === "string" ||
@@ -671,11 +715,12 @@ export class EntityManager {
     async find<Entity>(entityClass: EntityTarget<Entity>, optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder<Entity>(entityClass as any, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
 
         if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
 
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getMany();
+        return qb.getMany();
     }
 
     /**
@@ -700,11 +745,12 @@ export class EntityManager {
     async findAndCount<Entity>(entityClass: EntityTarget<Entity>, optionsOrConditions?: FindConditions<Entity>|FindManyOptions<Entity>): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass);
         const qb = this.createQueryBuilder<Entity>(entityClass as any, FindOptionsUtils.extractFindManyOptionsAlias(optionsOrConditions) || metadata.name);
+        FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions);
 
         if (!FindOptionsUtils.isFindManyOptions(optionsOrConditions) || optionsOrConditions.loadEagerRelations !== false)
             FindOptionsUtils.joinEagerRelations(qb, qb.alias, metadata);
 
-        return FindOptionsUtils.applyFindManyOptionsOrConditionsToQueryBuilder(qb, optionsOrConditions).getManyAndCount();
+        return qb.getManyAndCount();
     }
 
     /**
@@ -779,9 +825,6 @@ export class EntityManager {
         }
         const qb = this.createQueryBuilder<Entity>(entityClass as any, alias);
 
-        if (!findOptions || findOptions.loadEagerRelations !== false)
-            FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
-
         const passedId = typeof idOrOptionsOrConditions === "string" || typeof idOrOptionsOrConditions === "number" || (idOrOptionsOrConditions as any) instanceof Date;
 
         if (!passedId) {
@@ -792,6 +835,10 @@ export class EntityManager {
         }
 
         FindOptionsUtils.applyOptionsToQueryBuilder(qb, findOptions);
+
+        if (!findOptions || findOptions.loadEagerRelations !== false) {
+            FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
+        }
 
         if (options) {
             qb.where(options);
@@ -859,10 +906,10 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
-            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+            throw new TypeORMError(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
         if (isNaN(Number(value)))
-            throw new Error(`Value "${value}" is not a number.`);
+            throw new TypeORMError(`Value "${value}" is not a number.`);
 
         // convert possible embeded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
@@ -891,10 +938,10 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass);
         const column = metadata.findColumnWithPropertyPath(propertyPath);
         if (!column)
-            throw new Error(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
+            throw new TypeORMError(`Column ${propertyPath} was not found in ${metadata.targetName} entity.`);
 
         if (isNaN(Number(value)))
-            throw new Error(`Value "${value}" is not a number.`);
+            throw new TypeORMError(`Value "${value}" is not a number.`);
 
         // convert possible embeded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath

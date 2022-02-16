@@ -1,4 +1,4 @@
-import {createConnection} from "../index";
+import {createConnection} from "../globals";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
@@ -7,7 +7,7 @@ import * as yargs from "yargs";
 import chalk from "chalk";
 
 /**
- * Executes an sql query on the given connection.
+ * Executes an SQL query on the given connection.
  */
 export class QueryCommand implements yargs.CommandModule {
     command = "query [query]";
@@ -70,9 +70,8 @@ export class QueryCommand implements yargs.CommandModule {
         } catch (err) {
             if (queryRunner) await (queryRunner as QueryRunner).release();
             if (connection) await (connection as Connection).close();
-
-            console.log(chalk.black.bgRed("Error during query execution:"));
-            console.error(err);
+            
+            PlatformTools.logCmdErr("Error during query execution:", err);
             process.exit(1);
         }
     }

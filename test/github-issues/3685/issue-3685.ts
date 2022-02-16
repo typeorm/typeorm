@@ -16,27 +16,26 @@ describe("github issues > #3685 Brackets syntax failed when use where with objec
 
     it("should accept objects in .where method (github issue #3685)", () => Promise.all(connections.map(async connection => {
 
-        await Promise.all([
-            connection.manager.save(Object.assign(new User(), {
-                firstName: "Jean",
-                lastName: "Doe",
-            })),
 
-            connection.manager.save(Object.assign(new User(), {
-                firstName: "John",
-                lastName: "Doe",
-            })),
+        await connection.manager.save(Object.assign(new User(), {
+            firstName: "Jean",
+            lastName: "Doe",
+        }));
 
-            connection.manager.save(Object.assign(new User(), {
-                firstName: "John",
-                lastName: "Dupont",
-            })),
+        await connection.manager.save(Object.assign(new User(), {
+            firstName: "John",
+            lastName: "Doe",
+        }));
 
-            connection.manager.save(Object.assign(new User(), {
-                firstName: "Fred",
-                lastName: "Doe",
-            }))
-        ]);
+        await connection.manager.save(Object.assign(new User(), {
+            firstName: "John",
+            lastName: "Dupont",
+        }));
+
+        await connection.manager.save(Object.assign(new User(), {
+            firstName: "Fred",
+            lastName: "Doe",
+        }));
 
         const qb = connection.createQueryBuilder(User, "u")
             .where(new Brackets(qb => {

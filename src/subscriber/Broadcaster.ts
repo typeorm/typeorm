@@ -6,6 +6,33 @@ import {BroadcasterResult} from "./BroadcasterResult";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {RelationMetadata} from "../metadata/RelationMetadata";
 
+interface BroadcasterEvents {
+    "BeforeTransactionCommit": () => void;
+    "AfterTransactionCommit": () => void;
+    "BeforeTransactionStart": () => void;
+    "AfterTransactionStart": () => void;
+    "BeforeTransactionRollback": () => void;
+    "AfterTransactionRollback": () => void;
+
+    "BeforeUpdate": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]) => void;
+    "AfterUpdate": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]) => void;
+
+    "BeforeInsert": (metadata: EntityMetadata, entity: ObjectLiteral | undefined) => void;
+    "AfterInsert": (metadata: EntityMetadata, entity: ObjectLiteral | undefined) => void;
+
+    "BeforeRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+    "AfterRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+
+    "BeforeSoftRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+    "AfterSoftRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+
+    "BeforeRecover": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+    "AfterRecover": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+
+    "Load": (metadata: EntityMetadata, entities: ObjectLiteral[]) => void;
+}
+
+
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
@@ -22,6 +49,22 @@ export class Broadcaster {
     // Public Methods
     // -------------------------------------------------------------------------
 
+    async broadcast<U extends keyof BroadcasterEvents>(event: U, ...args: Parameters<BroadcasterEvents[U]>): Promise<void> {
+        const result = new BroadcasterResult();
+
+        const broadcastFunction = this[`broadcast${event}Event` as keyof this];
+
+        if (typeof broadcastFunction === "function") {
+            (broadcastFunction as any).call(
+                this,
+                result,
+                ...args
+            );
+        }
+
+        await result.wait();
+    }
+
     /**
      * Broadcasts "BEFORE_INSERT" event.
      * Before insert event is executed before entity is being inserted to the database for the first time.
@@ -30,7 +73,7 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral): void {
+    broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity: undefined | ObjectLiteral): void {
 
         if (entity && metadata.beforeInsertListeners.length) {
             metadata.beforeInsertListeners.forEach(listener => {
@@ -126,6 +169,86 @@ export class Broadcaster {
             this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove) {
                     const executionResult = subscriber.beforeRemove({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                        entity: entity,
+                        metadata: metadata,
+                        databaseEntity: databaseEntity,
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "BEFORE_SOFT_REMOVE" event.
+     * Before soft remove event is executed before entity is being soft removed from the database.
+     * All subscribers and entity listeners who listened to this event will be executed at this point.
+     * Subscribers and entity listeners can return promises, it will wait until they are resolved.
+     *
+     * Note: this method has a performance-optimized code organization, do not change code structure.
+     */
+    broadcastBeforeSoftRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+        if (entity && metadata.beforeSoftRemoveListeners.length) {
+            metadata.beforeSoftRemoveListeners.forEach(listener => {
+                if (listener.isAllowed(entity)) {
+                    const executionResult = listener.execute(entity);
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeSoftRemove) {
+                    const executionResult = subscriber.beforeSoftRemove({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                        entity: entity,
+                        metadata: metadata,
+                        databaseEntity: databaseEntity,
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "BEFORE_RECOVER" event.
+     * Before recover event is executed before entity is being recovered in the database.
+     * All subscribers and entity listeners who listened to this event will be executed at this point.
+     * Subscribers and entity listeners can return promises, it will wait until they are resolved.
+     *
+     * Note: this method has a performance-optimized code organization, do not change code structure.
+     */
+    broadcastBeforeRecoverEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+        if (entity && metadata.beforeRecoverListeners.length) {
+            metadata.beforeRecoverListeners.forEach(listener => {
+                if (listener.isAllowed(entity)) {
+                    const executionResult = listener.execute(entity);
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRecover) {
+                    const executionResult = subscriber.beforeRecover({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
@@ -385,6 +508,95 @@ export class Broadcaster {
     }
 
     /**
+     * Broadcasts "AFTER_SOFT_REMOVE" event.
+     * After soft remove event is executed after entity is being soft removed from the database.
+     * All subscribers and entity listeners who listened to this event will be executed at this point.
+     * Subscribers and entity listeners can return promises, it will wait until they are resolved.
+     *
+     * Note: this method has a performance-optimized code organization, do not change code structure.
+     */
+    broadcastAfterSoftRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+
+        if (entity && metadata.afterSoftRemoveListeners.length) {
+            metadata.afterSoftRemoveListeners.forEach(listener => {
+                if (listener.isAllowed(entity)) {
+                    const executionResult = listener.execute(entity);
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterSoftRemove) {
+                    const executionResult = subscriber.afterSoftRemove({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                        entity: entity,
+                        metadata: metadata,
+                        databaseEntity: databaseEntity,
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * Broadcasts "AFTER_RECOVER" event.
+     * After recover event is executed after entity is being recovered in the database.
+     * All subscribers and entity listeners who listened to this event will be executed at this point.
+     * Subscribers and entity listeners can return promises, it will wait until they are resolved.
+     *
+     * Note: this method has a performance-optimized code organization, do not change code structure.
+     */
+    broadcastAfterRecoverEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+
+        if (entity && metadata.afterRecoverListeners.length) {
+            metadata.afterRecoverListeners.forEach(listener => {
+                if (listener.isAllowed(entity)) {
+                    const executionResult = listener.execute(entity);
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRecover) {
+                    const executionResult = subscriber.afterRecover({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                        entity: entity,
+                        metadata: metadata,
+                        databaseEntity: databaseEntity,
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
+                    });
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult);
+                    result.count++;
+                }
+            });
+        }
+    }
+
+    /**
+     * @deprecated Use `broadcastLoadForAllEvent`
+     */
+    broadcastLoadEventsForAll(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
+        return this.broadcastLoadEvent(result, metadata, entities);
+    }
+
+    /**
      * Broadcasts "AFTER_LOAD" event for all given entities, and their sub-entities.
      * After load event is executed after entity has been loaded from the database.
      * All subscribers and entity listeners who listened to this event will be executed at this point.
@@ -392,7 +604,7 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastLoadEventsForAll(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
+    broadcastLoadEvent(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
         entities.forEach(entity => {
             if (entity instanceof Promise) // todo: check why need this?
                 return;
@@ -407,7 +619,7 @@ export class Broadcaster {
 
                     const value = relation.getEntityValue(entity);
                     if (value instanceof Object)
-                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
+                        this.broadcastLoadEvent(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
                 });
             }
 

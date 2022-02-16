@@ -55,6 +55,12 @@ export interface BaseConnectionOptions {
     readonly migrationsTransactionMode?: "all" | "none" | "each";
 
     /**
+     * Typeorm metadata table name, in case of different name from "typeorm_metadata".
+     * Accepts single string name.
+     */
+    readonly metadataTableName?: string;
+
+    /**
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface;
@@ -102,6 +108,11 @@ export interface BaseConnectionOptions {
      * Prefix to use on all tables (collections) of this connection in the database.
      */
     readonly entityPrefix?: string;
+
+    /**
+     * When creating new Entity instances, skip all constructors when true.
+     */
+    readonly entitySkipConstructor?: boolean;
 
     /**
      * Extra connection options to be passed to the underlying driver.

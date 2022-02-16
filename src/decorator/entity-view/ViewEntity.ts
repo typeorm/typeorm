@@ -1,4 +1,4 @@
-import {getMetadataArgsStorage} from "../../";
+import {getMetadataArgsStorage} from "../../globals";
 import {TableMetadataArgs} from "../../metadata-args/TableMetadataArgs";
 import {ViewEntityOptions} from "../options/ViewEntityOptions";
 
@@ -27,6 +27,7 @@ export function ViewEntity(nameOrOptions?: string|ViewEntityOptions, maybeOption
             target: target,
             name: name,
             expression: options.expression,
+            dependsOn: options.dependsOn ? new Set(options.dependsOn) : undefined,
             type: "view",
             database: options.database ? options.database : undefined,
             schema: options.schema ? options.schema : undefined,

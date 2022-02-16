@@ -91,6 +91,7 @@ describe("query builder > soft-delete", () => {
         loadedPhoto2!.should.be.eql({
             id: 2,
             url: "2.jpg",
+            deletedAt: null,
             counters: {
                 likes: 0,
                 favorites: 1,
@@ -114,6 +115,7 @@ describe("query builder > soft-delete", () => {
         restoredPhoto2!.should.be.eql({
             id: 1,
             url: "1.jpg",
+            deletedAt: null,
             counters: {
                 likes: 2,
                 favorites: 1,
@@ -235,4 +237,44 @@ describe("query builder > soft-delete", () => {
 
     })));
 
+    it("should find with soft deleted relations", () => Promise.all(connections.map(async connection => {
+        const photoRepository = connection.getRepository(Photo);
+        const userRepository = connection.getRepository(User);
+          
+        const photo1 = new Photo();
+        photo1.url = "image-1.jpg";
+
+        const photo2 = new Photo();
+        photo2.url = "image-2.jpg";
+
+        const user1 = new User();
+        user1.name = "user-1";
+        user1.picture = photo1;
+
+        const user2 = new User();
+        user2.name = "user-2";
+        user2.picture = photo2;
+
+        await photoRepository.save(photo1);
+        await photoRepository.save(photo2);
+        await userRepository.save(user1);
+        await userRepository.save(user2);
+
+        const users = await userRepository.find({
+            relations: ["picture"]
+        });
+
+        expect(users[0].picture.deletedAt).to.equal(null);
+        expect(users[1].picture.deletedAt).to.equal(null);
+
+        await photoRepository.softDelete(photo1);
+
+        const usersWithSoftDelete = await userRepository.find({
+            withDeleted: true,
+            relations: ["picture"]
+        });
+
+        expect(usersWithSoftDelete[0].picture.deletedAt).to.not.equal(null);
+        expect(usersWithSoftDelete[1].picture.deletedAt).to.equal(null);
+    })));
 });

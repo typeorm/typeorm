@@ -5,7 +5,7 @@ import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStar
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ExpoDriver} from "./ExpoDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
-import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
+import { QueryResult } from "../../query-runner/QueryResult";
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -67,15 +67,11 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isTransactionActive && typeof this.transaction !== "undefined")
             throw new TransactionAlreadyStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionStart');
 
         this.isTransactionActive = true;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -90,16 +86,12 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         if (!this.isTransactionActive && typeof this.transaction === "undefined")
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionCommit');
 
         this.isTransactionActive = false;
         this.transaction = undefined;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionCommit');
     }
 
     /**
@@ -113,22 +105,18 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         if (!this.isTransactionActive && typeof this.transaction === "undefined")
             throw new TransactionNotStartedError();
 
-        const beforeBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
-        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+        await this.broadcaster.broadcast('BeforeTransactionRollback');
 
         this.isTransactionActive = false;
         this.transaction = undefined;
 
-        const afterBroadcastResult = new BroadcasterResult();
-        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
-        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
+        await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 
     /**
      * Executes a given SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
@@ -142,25 +130,40 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     this.startTransaction();
                     this.transaction = transaction;
                 }
-                this.transaction.executeSql(query, parameters, (t: ITransaction, result: IResultSet) => {
+                this.transaction.executeSql(query, parameters, (t: ITransaction, raw: IResultSet) => {
                     // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+                    const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
                     const queryEndTime = +new Date();
                     const queryExecutionTime = queryEndTime - queryStartTime;
                     if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime) {
                         this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
                     }
 
+                    const result = new QueryResult();
+
                     // return id of inserted row, if query was insert statement.
                     if (query.substr(0, 11) === "INSERT INTO") {
-                        ok(result.insertId);
+                        result.raw = raw.insertId;
                     }
-                    else {
+
+                    if (raw?.hasOwnProperty('rowsAffected')) {
+                        result.affected = raw.rowsAffected;
+                    }
+
+                    if (raw?.hasOwnProperty('rows')) {
                         let resultSet = [];
-                        for (let i = 0; i < result.rows.length; i++) {
-                            resultSet.push(result.rows.item(i));
+                        for (let i = 0; i < raw.rows.length; i++) {
+                            resultSet.push(raw.rows.item(i));
                         }
-                        ok(resultSet);
+
+                        result.raw = resultSet;
+                        result.records = resultSet;
+                    }
+
+                    if (useStructuredResult) {
+                        ok(result);
+                    } else {
+                        ok(result.raw);
                     }
                 }, (t: ITransaction, err: any) => {
                     this.driver.connection.logger.logQueryError(err, query, parameters, this);

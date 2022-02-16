@@ -1,7 +1,4 @@
 import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
-import {SapDriver} from "../driver/sap/SapDriver";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
 import {Table} from "./table/Table";
 import {TableColumn} from "./table/TableColumn";
 import {TableForeignKey} from "./table/TableForeignKey";
@@ -15,14 +12,13 @@ import {SqlInMemory} from "../driver/SqlInMemory";
 import {TableUtils} from "./util/TableUtils";
 import {TableColumnOptions} from "./options/TableColumnOptions";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
-import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {TableUnique} from "./table/TableUnique";
 import {TableCheck} from "./table/TableCheck";
 import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
+import {ViewUtils} from "./util/ViewUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -39,15 +35,14 @@ import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata";
  * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore
  */
 export class RdbmsSchemaBuilder implements SchemaBuilder {
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
     /**
      * Used to execute schema creation queries in a single connection.
      */
     protected queryRunner: QueryRunner;
+
+    private currentDatabase?: string;
+
+    private currentSchema?: string;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -65,32 +60,46 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     async build(): Promise<void> {
         this.queryRunner = this.connection.createQueryRunner();
+
+        // this.connection.driver.database || this.currentDatabase;
+        this.currentDatabase = this.connection.driver.database;
+        this.currentSchema = this.connection.driver.schema;
+
         // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
         // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
-        if (!(this.connection.driver instanceof CockroachDriver))
+        const isUsingTransactions = (
+            !(this.connection.driver instanceof CockroachDriver) &&
+            this.connection.options.migrationsTransactionMode !== "none"
+        );
+
+        if (isUsingTransactions) {
             await this.queryRunner.startTransaction();
+        }
+
         try {
-            const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
-            // TODO: typeorm_metadata table needs only for Views for now.
-            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
-            if (this.viewEntityToSyncMetadatas.length > 0)
-                await this.createTypeormMetadataTable();
+            await this.createMetadataTableIfNecessary(this.queryRunner);
+            // Flush the queryrunner table & view cache
+            const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
+
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
+
             await this.executeSchemaSyncOperationsInProperOrder();
 
             // if cache is enabled then perform cache-synchronization as well
             if (this.connection.queryResultCache)
                 await this.connection.queryResultCache.synchronize(this.queryRunner);
 
-            if (!(this.connection.driver instanceof CockroachDriver))
+            if (isUsingTransactions) {
                 await this.queryRunner.commitTransaction();
+            }
 
         } catch (error) {
 
             try { // we throw original error even if rollback thrown an error
-                if (!(this.connection.driver instanceof CockroachDriver))
+                if (isUsingTransactions) {
                     await this.queryRunner.rollbackTransaction();
+                }
             } catch (rollbackError) { }
             throw error;
 
@@ -100,18 +109,25 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
+     */
+    async createMetadataTableIfNecessary(queryRunner: QueryRunner): Promise<void> {
+        if (this.viewEntityToSyncMetadatas.length > 0 || (this.connection.driver instanceof PostgresDriver && this.connection.driver.isGeneratedColumnsSupported)) {
+            await this.createTypeormMetadataTable(queryRunner);
+        }
+    }
+
+    /**
      * Returns sql queries to be executed by schema builder.
      */
     async log(): Promise<SqlInMemory> {
         this.queryRunner = this.connection.createQueryRunner();
         try {
-            const tablePaths = this.entityToSyncMetadatas.map(metadata => metadata.tablePath);
-            // TODO: typeorm_metadata table needs only for Views for now.
-            //  Remove condition or add new conditions if necessary (for CHECK constraints for example).
-            if (this.viewEntityToSyncMetadatas.length > 0)
-                await this.createTypeormMetadataTable();
+            // Flush the queryrunner table & view cache
+            const tablePaths = this.entityToSyncMetadatas.map(metadata => this.getTablePath(metadata));
             await this.queryRunner.getTables(tablePaths);
             await this.queryRunner.getViews([]);
+
             this.queryRunner.enableSqlMemory();
             await this.executeSchemaSyncOperationsInProperOrder();
 
@@ -145,7 +161,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns only entities that should be synced in the database.
      */
     protected get viewEntityToSyncMetadatas(): EntityMetadata[] {
-        return this.connection.entityMetadatas.filter(metadata => metadata.tableType === "view" && metadata.synchronize);
+        return this.connection.entityMetadatas
+            .filter(metadata => metadata.tableType === "view" && metadata.synchronize)
+            // sort views in creation order by dependencies
+            .sort(ViewUtils.viewMetadataCmp);
     }
 
     /**
@@ -174,18 +193,31 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createViews();
     }
 
+    private getTablePath(target: EntityMetadata | Table | View | TableForeignKey | string): string {
+        const parsed = this.connection.driver.parseTableName(target);
+
+        return this.connection.driver.buildTableName(
+            parsed.tableName,
+            parsed.schema || this.currentSchema,
+            parsed.database || this.currentDatabase
+        );
+    }
+
     /**
      * Drops all (old) foreign keys that exist in the tables, but do not exist in the entity metadata.
      */
     protected async dropOldForeignKeys(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
             // find foreign keys that exist in the schemas but does not exist in the entity metadata
             const tableForeignKeysToDrop = table.foreignKeys.filter(tableForeignKey => {
-                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => foreignKeysMatch(tableForeignKey, metadataForeignKey));
+                const metadataFK = metadata.foreignKeys.find(metadataForeignKey => (
+                    (tableForeignKey.name === metadataForeignKey.name) &&
+                    (this.getTablePath(tableForeignKey) === this.getTablePath(metadataForeignKey.referencedEntityMetadata))
+                ));
                 return !metadataFK
                     || (metadataFK.onDelete && metadataFK.onDelete !== tableForeignKey.onDelete)
                     || (metadataFK.onUpdate && metadataFK.onUpdate !== tableForeignKey.onUpdate);
@@ -205,7 +237,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async renameTables(): Promise<void> {
         // for (const metadata of this.entityToSyncMetadatas) {
-        //     const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+        //     const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
         // }
     }
 
@@ -216,7 +248,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async renameColumns(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -257,7 +289,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async dropOldIndices(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -300,7 +332,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             return;
 
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -318,7 +350,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async dropCompositeUniqueConstraints(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -340,7 +372,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             return;
 
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -362,22 +394,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Primary key only can be created in conclusion with auto generated column.
      */
     protected async createNewTables(): Promise<void> {
-        const currentSchema = await this.queryRunner.getCurrentSchema();
         for (const metadata of this.entityToSyncMetadatas) {
             // check if table does not exist yet
-            const existTable = this.queryRunner.loadedTables.find(table => {
-                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                let schema = metadata.schema || (<SqlServerDriver|PostgresDriver|SapDriver>this.connection.driver).options.schema;
-                // if schema is default db schema (e.g. "public" in PostgreSQL), skip it.
-                schema = schema === currentSchema ? undefined : schema;
-                const fullTableName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
-
-                return table.name === fullTableName;
-            });
+            const existTable = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (existTable)
                 continue;
 
-            this.connection.logger.logSchemaBuild(`creating a new table: ${metadata.tablePath}`);
+            this.connection.logger.logSchemaBuild(`creating a new table: ${this.getTablePath(metadata)}`);
 
             // create a new table and sync it in the database
             const table = Table.create(metadata, this.connection.driver);
@@ -390,17 +413,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         for (const metadata of this.viewEntityToSyncMetadatas) {
             // check if view does not exist yet
             const existView = this.queryRunner.loadedViews.find(view => {
-                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
-                const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
                 const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
                 const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
-                return view.name === fullViewName && viewExpression === metadataExpression;
+                return this.getTablePath(view) === this.getTablePath(metadata) && viewExpression === metadataExpression;
             });
             if (existView)
                 continue;
 
-            this.connection.logger.logSchemaBuild(`creating a new view: ${metadata.tablePath}`);
+            this.connection.logger.logSchemaBuild(`creating a new view: ${this.getTablePath(metadata)}`);
 
             // create a new view and sync it in the database
             const view = View.create(metadata, this.connection.driver);
@@ -410,27 +430,85 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async dropOldViews(): Promise<void> {
-        const droppedViews: Set<View> = new Set();
+        const droppedViews: Array<View> = [];
+        const viewEntityToSyncMetadatas = this.viewEntityToSyncMetadatas;
+        // BuIld lookup cache for finding views metadata
+        const viewToMetadata = new Map<View, EntityMetadata>();
         for (const view of this.queryRunner.loadedViews) {
-            const existViewMetadata = this.viewEntityToSyncMetadatas.find(metadata => {
-                const database = metadata.database && metadata.database !== this.connection.driver.database ? metadata.database : undefined;
-                const schema = metadata.schema || (<SqlServerDriver|PostgresDriver>this.connection.driver).options.schema;
-                const fullViewName = this.connection.driver.buildTableName(metadata.tableName, schema, database);
-                const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
-                const metadataExpression = typeof metadata.expression === "string" ? metadata.expression.trim() : metadata.expression!(this.connection).getQuery();
-                return view.name === fullViewName && viewExpression === metadataExpression;
+            const viewMetadata = viewEntityToSyncMetadatas.find(metadata => {
+                return this.getTablePath(view) === this.getTablePath(metadata);
             });
+            if(viewMetadata){
+                viewToMetadata.set(view, viewMetadata);
+            }
+        }
+        // Gather all changed view, that need a drop
+        for (const view of this.queryRunner.loadedViews) {
+            const viewMetadata = viewToMetadata.get(view);
+            if(!viewMetadata){
+                continue;
+            }
+            const viewExpression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
+            const metadataExpression = typeof viewMetadata.expression === "string" ? viewMetadata.expression.trim() : viewMetadata.expression!(this.connection).getQuery();
 
-            if (existViewMetadata)
+            if (viewExpression === metadataExpression)
                 continue;
 
             this.connection.logger.logSchemaBuild(`dropping an old view: ${view.name}`);
 
-            // drop an old view
-            await this.queryRunner.dropView(view);
-            droppedViews.add(view);
+            // Collect view to be dropped
+            droppedViews.push(view);
         }
-        this.queryRunner.loadedViews = this.queryRunner.loadedViews.filter(view => !droppedViews.has(view));
+
+        // Helper function that for a given view, will recursively return list of the view and all views that depend on it
+        const viewDependencyChain = (view: View): View[] => {
+            // Get the view metadata
+            const viewMetadata = viewToMetadata.get(view);
+            let viewWithDependencies = [view];
+            // If no metadata is known for the view, simply return the view itself
+            if(!viewMetadata){
+                return viewWithDependencies;
+            }
+            // Iterate over all known views
+            for(const [currentView, currentMetadata] of viewToMetadata.entries()){
+                // Ignore self reference
+                if(currentView === view) {
+                    continue;
+                }
+                // If the currently iterated view depends on the passed in view
+                if(currentMetadata.dependsOn && (
+                    currentMetadata.dependsOn.has(viewMetadata.target) ||
+                    currentMetadata.dependsOn.has(viewMetadata.name)
+                )){
+                    // Recursively add currently iterate view and its dependents
+                    viewWithDependencies = viewWithDependencies.concat(viewDependencyChain(currentView));
+                }
+            }
+            // Return all collected views
+            return viewWithDependencies;
+        };
+
+        // Collect final list of views to be dropped in a Set so there are no duplicates
+        const droppedViewsWithDependencies: Set<View> = new Set(
+            // Collect all dropped views, and their dependencies
+            droppedViews.map(view => viewDependencyChain(view))
+            // Flattened to single Array ( can be replaced with flatMap, once supported)
+            .reduce((all, segment) => {
+                return all.concat(segment);
+            }, [])
+            // Sort the views to be dropped in creation order
+            .sort((a, b)=> {
+                return ViewUtils.viewMetadataCmp(viewToMetadata.get(a), viewToMetadata.get(b));
+            })
+            // reverse order to get drop order
+            .reverse()
+        );
+
+        // Finally emit all drop views
+        for(const view of droppedViewsWithDependencies){
+            await this.queryRunner.dropView(view);
+        }
+        this.queryRunner.loadedViews = this.queryRunner.loadedViews.filter(view => !droppedViewsWithDependencies.has(view));
     }
 
     /**
@@ -439,7 +517,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async dropRemovedColumns(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -463,7 +541,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async addNewColumns(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -491,7 +569,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async updatePrimaryKeys(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -512,7 +590,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async updateExistColumns(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -522,19 +600,19 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop all foreign keys that point to this column
             for (const changedColumn of changedColumns) {
-                await this.dropColumnReferencedForeignKeys(metadata.tablePath, changedColumn.databaseName);
+                await this.dropColumnReferencedForeignKeys(this.getTablePath(metadata), changedColumn.databaseName);
             }
 
             // drop all composite indices related to this column
             for (const changedColumn of changedColumns) {
-                await this.dropColumnCompositeIndices(metadata.tablePath, changedColumn.databaseName);
+                await this.dropColumnCompositeIndices(this.getTablePath(metadata), changedColumn.databaseName);
             }
 
             // drop all composite uniques related to this column
             // Mysql does not support unique constraints.
             if (!(this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)) {
                 for (const changedColumn of changedColumns) {
-                    await this.dropColumnCompositeUniques(metadata.tablePath, changedColumn.databaseName);
+                    await this.dropColumnCompositeUniques(this.getTablePath(metadata), changedColumn.databaseName);
                 }
             }
 
@@ -563,7 +641,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async createNewIndices(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -585,7 +663,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             return;
 
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -606,7 +684,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async createCompositeUniqueConstraints(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -631,7 +709,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             return;
 
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
@@ -652,18 +730,21 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async createForeignKeys(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
-            const table = this.queryRunner.loadedTables.find(table => table.name === metadata.tablePath);
+            const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === this.getTablePath(metadata));
             if (!table)
                 continue;
 
             const newKeys = metadata.foreignKeys
                 .filter(foreignKey => {
-                return !table.foreignKeys.find(dbForeignKey => foreignKeysMatch(dbForeignKey, foreignKey));
+                return !table.foreignKeys.find(dbForeignKey => (
+                    (dbForeignKey.name === foreignKey.name) &&
+                    (this.getTablePath(dbForeignKey) === this.getTablePath(foreignKey.referencedEntityMetadata))
+                ));
             });
             if (newKeys.length === 0)
                 continue;
 
-            const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata));
+            const dbForeignKeys = newKeys.map(foreignKeyMetadata => TableForeignKey.create(foreignKeyMetadata, this.connection.driver));
             this.connection.logger.logSchemaBuild(`creating a foreign keys: ${newKeys.map(key => key.name).join(", ")} on table "${table.name}"`);
             await this.queryRunner.createForeignKeys(table, dbForeignKeys);
         }
@@ -673,7 +754,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Drops all foreign keys where given column of the given table is being used.
      */
     protected async dropColumnReferencedForeignKeys(tablePath: string, columnName: string): Promise<void> {
-        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
+        const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === tablePath);
         if (!table)
             return;
 
@@ -686,9 +767,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             table.removeForeignKey(columnForeignKey);
         }
 
-        this.queryRunner.loadedTables.forEach(loadedTable => {
+        for (const loadedTable of this.queryRunner.loadedTables) {
             const dependForeignKeys = loadedTable.foreignKeys.filter(foreignKey => {
-                return foreignKey.referencedTableName === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
+                return this.getTablePath(foreignKey) === tablePath && foreignKey.referencedColumnNames.indexOf(columnName) !== -1;
             });
 
             if (dependForeignKeys.length > 0) {
@@ -697,7 +778,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 tablesWithFK.push(clonedTable);
                 dependForeignKeys.forEach(dependForeignKey => loadedTable.removeForeignKey(dependForeignKey));
             }
-        });
+        }
 
         if (tablesWithFK.length > 0) {
             for (const tableWithFK of tablesWithFK) {
@@ -711,7 +792,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Drops all composite indices, related to given column.
      */
     protected async dropColumnCompositeIndices(tablePath: string, columnName: string): Promise<void> {
-        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
+        const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === tablePath);
         if (!table)
             return;
 
@@ -727,7 +808,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Drops all composite uniques, related to given column.
      */
     protected async dropColumnCompositeUniques(tablePath: string, columnName: string): Promise<void> {
-        const table = this.queryRunner.loadedTables.find(table => table.name === tablePath);
+        const table = this.queryRunner.loadedTables.find(table => this.getTablePath(table) === tablePath);
         if (!table)
             return;
 
@@ -749,12 +830,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates typeorm service table for storing user defined Views.
      */
-    protected async createTypeormMetadataTable() {
-        const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
-        const typeormMetadataTable = this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
+    protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
+        const schema = this.currentSchema;
+        const database = this.currentDatabase;
+        const typeormMetadataTable = this.connection.driver.buildTableName(this.connection.metadataTableName, schema, database);
 
-        await this.queryRunner.createTable(new Table(
+        await queryRunner.createTable(new Table(
             {
+                database: database,
+                schema: schema,
                 name: typeormMetadataTable,
                 columns: [
                     {
@@ -791,12 +875,4 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             },
         ), true);
     }
-
-}
-
-function foreignKeysMatch(
-    tableForeignKey: TableForeignKey, metadataForeignKey: ForeignKeyMetadata
-): boolean {
-    return (tableForeignKey.name === metadataForeignKey.name)
-        && (tableForeignKey.referencedTableName === metadataForeignKey.referencedTablePath);
 }

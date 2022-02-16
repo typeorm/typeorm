@@ -13,6 +13,8 @@ import {Broadcaster} from "../subscriber/Broadcaster";
 import {TableCheck} from "../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
 import {TableExclusion} from "../schema-builder/table/TableExclusion";
+import {QueryResult} from "./QueryResult";
+import {ReplicationMode} from "../driver/types/ReplicationMode";
 
 /**
  * Runs queries on a single database connection.
@@ -53,11 +55,15 @@ export interface QueryRunner {
 
     /**
      * All synchronized tables in the database.
+     *
+     * @deprecated Call `getTables()`
      */
     loadedTables: Table[];
 
     /**
      * All synchronized views in the database.
+     *
+     * @deprecated Call `getViews()`
      */
     loadedViews: View[];
 
@@ -100,6 +106,11 @@ export interface QueryRunner {
     /**
      * Executes a given SQL query and returns raw database results.
      */
+    query(query: string, parameters: any[] | undefined, useStructuredResult: true): Promise<QueryResult>;
+
+    /**
+     * Executes a given SQL query and returns raw database results.
+     */
     query(query: string, parameters?: any[]): Promise<any>;
 
     /**
@@ -126,10 +137,8 @@ export interface QueryRunner {
 
     /**
      * Loads all tables from the database and returns them.
-     *
-     * todo: make tablePaths optional
      */
-    getTables(tablePaths: string[]): Promise<Table[]>;
+    getTables(tablePaths?: string[]): Promise<Table[]>;
 
     /**
      * Loads a view by a given name from the database.
@@ -139,7 +148,12 @@ export interface QueryRunner {
     /**
      * Loads all views from the database and returns them.
      */
-    getViews(viewPaths: string[]): Promise<View[]>;
+    getViews(viewPaths?: string[]): Promise<View[]>;
+
+    /**
+     * Returns replication mode (ex: `master` or `slave`).
+     */
+    getReplicationMode(): ReplicationMode;
 
     /**
      * Checks if a database with the given name exist.
@@ -251,7 +265,7 @@ export interface QueryRunner {
     /**
      * Drops columns in the table.
      */
-    dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>;
+    dropColumns(table: Table|string, columns: TableColumn[]|string[]): Promise<void>;
 
     /**
      * Creates a new primary key.
