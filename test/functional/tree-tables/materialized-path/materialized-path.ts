@@ -603,6 +603,6 @@ describe("tree tables > materialized-path", () => {
             .setParameters({ id: savedProduct.id })
             .getRawOne();
 
-        pathResult.path.should.not.match(/^undefined/);
+        pathResult.mpath.should.not.match(/^undefined/);
     })));
 });
