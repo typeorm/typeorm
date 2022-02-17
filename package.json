@@ -14,7 +14,12 @@
       "import": "./index.mjs",
       "require": "./index.js"
     },
-    "./*": "./*"
+    "./browser": "./browser/index.js",
+    "./*.js": "./*.js",
+    "./*": {
+      "require": "./*.js",
+      "import": "./*"
+    }
   },
   "main": "./index.js",
   "module": "./index.mjs",
