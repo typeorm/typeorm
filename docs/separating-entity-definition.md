@@ -213,7 +213,7 @@ export interface User {
 }
 
 export const UserEntitySchema = new EntitySchema<User>({
-    name: User.name,
+    name: "user",
     columns: {
         id: {
             primary: true,
