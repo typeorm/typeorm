@@ -18,7 +18,6 @@ import {ClosureSubjectExecutor} from "./tree/ClosureSubjectExecutor";
 import {MaterializedPathSubjectExecutor} from "./tree/MaterializedPathSubjectExecutor";
 import {OrmUtils} from "../util/OrmUtils";
 import { UpdateResult } from "../query-builder/result/UpdateResult";
-import {RelationMetadata} from "../metadata/RelationMetadata";
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -608,12 +607,8 @@ export class SubjectExecutor {
                 } else { // in this case identifier is just conditions object to update by
                     softDeleteQueryBuilder.where(subject.identifier);
                 }
+
                 updateResult = await softDeleteQueryBuilder.execute();
-                // Move throw all the relation of the subject
-                for (const relation of subject.metadata.relations) {
-                    // Call recursive function that get the parents primary keys that in used on the inverse side in all one to many relations
-                    await this.executeSoftRemoveRecursive(relation, [Reflect.get(subject.identifier, subject.metadata.primaryColumns[0].propertyName)]);
-                }
             }
 
             subject.generatedMap = updateResult.generatedMaps[0];
@@ -640,45 +635,10 @@ export class SubjectExecutor {
             // }
         }));
     }
+
     /**
      * Recovers all given subjects in the database.
      */
-
-    protected async executeSoftRemoveRecursive(relation: RelationMetadata, ids: any[]): Promise<void> {
-        // We want to delete the entities just when the relation is cascade soft remove
-        if (relation.isCascadeSoftRemove){
-
-            let primaryPropertyName = relation.inverseEntityMetadata.primaryColumns[0].propertyName;
-            let updateResult: UpdateResult;
-            let softDeleteQueryBuilder = this.queryRunner
-                .manager
-                .createQueryBuilder()
-                .softDelete()
-                .from(relation.inverseEntityMetadata.target)
-                // We get back list of the affected rows primary keys for call again
-                .returning([primaryPropertyName])
-                .updateEntity(this.options && this.options.reload === false ? false : true)
-                .callListeners(false);
-            // soft remove only where parent id is in the list
-            softDeleteQueryBuilder.where(`${relation.inverseSidePropertyPath} in (:...ids)`, {ids: ids});
-            updateResult = await softDeleteQueryBuilder.execute();
-            let parentIds;
-            // Only in oracle the returning value is a list of the affected row primary keys and not list of dictionary
-            if (this.queryRunner.connection.driver instanceof OracleDriver){
-                parentIds = updateResult.raw[0];
-            }
-            else {
-                parentIds = updateResult.raw.map((row: any) => row[Object.keys(row)[0]]);
-            }
-            if (parentIds.length) {
-                // This is the recursive - check the relations of the relation
-                for (const subRelation of relation.inverseEntityMetadata.relations) {
-                    await this.executeSoftRemoveRecursive(subRelation, parentIds);
-                }
-            }
-        }
-    }
-
     protected async executeRecoverOperations(): Promise<void> {
         await Promise.all(this.recoverSubjects.map(async subject => {
 
