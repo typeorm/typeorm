@@ -1,11 +1,14 @@
 import fs from "fs";
 import path from "path";
+import {pathToFileURL} from "url";
 
 export async function importOrRequireFile(filePath: string): Promise<[result: any, moduleType: "esm" | "commonjs"]> {
     const tryToImport = async (): Promise<[any, "esm"]> => {
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
-        return [await Function("return filePath => import(filePath)")()(filePath), "esm"];
+        return [await Function("return filePath => import(filePath)")()(
+            filePath.startsWith("file://") ? filePath : pathToFileURL(filePath).toString()
+        ), "esm"];
     };
     const tryToRequire = async (): Promise<[any, "commonjs"]> => {
         return [require(filePath), "commonjs"];
