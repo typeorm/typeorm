@@ -9,23 +9,6 @@ describe("transaction > nested transaction", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
-        enabledDrivers: [
-            "mysql",
-            "postgres",
-            "cockroachdb",
-            "mariadb",
-            "sqlite",
-            "react-native",
-            "nativescript",
-            "sqljs",
-            "oracle",
-            // "mssql",
-            "aurora-data-api",
-            "aurora-data-api-pg",
-            "expo",
-            "better-sqlite3",
-            "capacitor",
-        ]
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
