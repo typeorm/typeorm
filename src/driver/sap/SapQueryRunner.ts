@@ -101,7 +101,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (this.isTransactionActive)
+        if (this.isTransactionActive && this.driver.transactionSupport === "simple")
             throw new TransactionAlreadyStartedError();
 
         await this.broadcaster.broadcast('BeforeTransactionStart');

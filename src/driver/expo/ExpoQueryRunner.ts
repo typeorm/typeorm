@@ -63,14 +63,18 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
      * transaction.
      */
     async startTransaction(): Promise<void> {
-        await this.broadcaster.broadcast('BeforeTransactionStart');
+        this.isTransactionActive = true;
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
+        }
 
-        if (this.transactionDepth === 0) {
-            this.isTransactionActive = true;
-        } else {
+        if (this.transactionDepth > 0) {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
         }
-        this.transactionDepth++;
+        this.transactionDepth += 1;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -89,13 +93,13 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
-            this.isTransactionActive = false;
-            this.transaction = undefined;
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
         } else {
-            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth}`);
+            this.transaction = undefined;
+            this.isTransactionActive = false;
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -113,13 +117,13 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0){
-            this.isTransactionActive = false;
-            this.transaction = undefined;
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
         } else {
-            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`);
+            this.transaction = undefined;
+            this.isTransactionActive = false;
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }

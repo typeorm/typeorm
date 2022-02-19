@@ -119,25 +119,15 @@ export class EntityManager {
             throw new TypeORMError(`Transaction method requires callback in second paramter if isolation level is supplied.`);
         }
 
-        if (this.connection.driver.transactionSupport === "none")
-            throw new TypeORMError(`Transactions aren't supported by ${this.connection.driver.constructor.name}.`);
-
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
-
-        if (this.queryRunner && this.queryRunner.isTransactionActive && this.connection.driver.transactionSupport === "simple")
-            throw new TypeORMError(`Cannot start transaction because its already started`);
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
 
         try {
-            if (isolation) {
-                await queryRunner.startTransaction(isolation);
-              } else {
-                await queryRunner.startTransaction();
-              }
+            await queryRunner.startTransaction(isolation);
             const result = await runInTransaction(queryRunner.manager);
             await queryRunner.commitTransaction();
             return result;

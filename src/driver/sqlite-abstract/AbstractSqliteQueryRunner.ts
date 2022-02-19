@@ -17,7 +17,7 @@ import {OrmUtils} from "../../util/OrmUtils";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
-import { TypeORMError } from "../../error";
+import {TransactionAlreadyStartedError, TypeORMError} from "../../error";
 import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
@@ -34,11 +34,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     driver: AbstractSqliteDriver;
 
-    /**
-     * current depth of transaction.
-     * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
-     */
-    protected transactionDepth = 0;
+    protected transactionPromise: Promise<any> | null = null;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -74,27 +70,36 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Starts transaction.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (isolationLevel) {
-            if (isolationLevel !== "READ UNCOMMITTED" && isolationLevel !== "SERIALIZABLE") {
-                throw new TypeORMError(`SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`);
-            }
+        if (this.driver.transactionSupport === "none")
+            throw new TypeORMError(`Transactions aren't supported by ${this.connection.driver.options.type}.`);
 
-            if (isolationLevel === "READ UNCOMMITTED") {
-                await this.query("PRAGMA read_uncommitted = true");
-            } else {
-                await this.query("PRAGMA read_uncommitted = false");
-            }
+        if (this.isTransactionActive && this.driver.transactionSupport === "simple")
+            throw new TransactionAlreadyStartedError();
+
+        if (isolationLevel && isolationLevel !== "READ UNCOMMITTED" && isolationLevel !== "SERIALIZABLE")
+            throw new TypeORMError(`SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`);
+
+        this.isTransactionActive = true;
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
         }
 
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
         if (this.transactionDepth === 0) {
-            this.isTransactionActive = true;
+            if (isolationLevel) {
+                if (isolationLevel === "READ UNCOMMITTED") {
+                    await this.query("PRAGMA read_uncommitted = true");
+                } else {
+                    await this.query("PRAGMA read_uncommitted = false");
+                }
+            }
             await this.query("BEGIN TRANSACTION");
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
         }
-        this.transactionDepth++;
+        this.transactionDepth += 1;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -109,13 +114,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
-            this.isTransactionActive = false;
-            await this.query("COMMIT");
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
         } else {
-            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth}`);
+            await this.query("COMMIT");
+            this.isTransactionActive = false;
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -130,13 +135,13 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
             await this.query("ROLLBACK");
             this.isTransactionActive = false;
-        } else {
-            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`);
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }

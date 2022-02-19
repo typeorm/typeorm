@@ -22,7 +22,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
-import { TypeORMError } from "../../error";
+import {TypeORMError} from "../../error";
 import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
@@ -62,13 +62,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Indicates if running queries must be stored
      */
     protected storeQueries: boolean = false;
-
-    /**
-     * current depth of transaction.
-     * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
-     */
-    private transactionDepth = 0;
-
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -136,19 +129,25 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Starts transaction.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        await this.broadcaster.broadcast('BeforeTransactionStart');
+        this.isTransactionActive = true;
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
+        }
 
         if (this.transactionDepth === 0) {
-            this.isTransactionActive = true;
             await this.query("START TRANSACTION");
             await this.query("SAVEPOINT cockroach_restart");
+            if (isolationLevel) {
+                await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+            }
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
-        if (isolationLevel) {
-            await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
-        }
-        this.transactionDepth++;
+
+        this.transactionDepth += 1;
         this.storeQueries = true;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
@@ -164,14 +163,17 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+            this.transactionDepth -= 1;
+        } else {
             this.storeQueries = false;
             try {
                 await this.query("RELEASE SAVEPOINT cockroach_restart");
                 await this.query("COMMIT");
                 this.queries = [];
                 this.isTransactionActive = false;
+                this.transactionDepth -= 1;
 
             } catch (e) {
                 if (e.code === "40001") {
@@ -182,8 +184,6 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
                     await this.commitTransaction();
                 }
             }
-        } else {
-            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth}`);
         }
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
@@ -199,15 +199,16 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0){
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
             this.storeQueries = false;
             await this.query("ROLLBACK");
             this.queries = [];
             this.isTransactionActive = false;
-        } else {
-            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`);
         }
+        this.transactionDepth -= 1;
+
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }
 

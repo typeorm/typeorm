@@ -36,7 +36,7 @@ export class AuroraDataApiPostgresDriver extends PostgresWrapper implements Driv
     /**
      * Represent transaction support by this driver
      */
-    transactionSupport = "simple" as const;
+    transactionSupport = "nested" as const;
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties

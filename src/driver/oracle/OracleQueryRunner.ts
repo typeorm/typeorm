@@ -20,7 +20,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
-import { TypeORMError } from "../../error";
+import {TypeORMError} from "../../error";
 import { QueryResult } from "../../query-runner/QueryResult";
 import {MetadataTableType} from "../types/MetadataTableType";
 
@@ -46,12 +46,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Promise used to obtain a database connection for a first time.
      */
     protected databaseConnectionPromise: Promise<any>;
-
-    /**
-     * current depth of transaction.
-     * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
-     */
-    private transactionDepth = 0;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -122,17 +116,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(`Oracle only supports SERIALIZABLE and READ COMMITTED isolation`);
         }
 
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
         this.isTransactionActive = true;
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
+        }
 
         if (this.transactionDepth === 0) {
-            this.isTransactionActive = true;
             await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
         }
-        this.transactionDepth++;
+        this.transactionDepth += 1;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -147,11 +144,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
-            this.isTransactionActive = false;
+        if (this.transactionDepth === 1) {
             await this.query("COMMIT");
+            this.isTransactionActive = false;
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -166,13 +163,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
             await this.query("ROLLBACK");
             this.isTransactionActive = false;
-        } else {
-            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`);
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }

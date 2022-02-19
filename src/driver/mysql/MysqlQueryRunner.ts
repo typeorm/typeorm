@@ -23,7 +23,7 @@ import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {VersionUtils} from "../../util/VersionUtils";
 import {ReplicationMode} from "../types/ReplicationMode";
-import { TypeORMError } from "../../error";
+import {TypeORMError} from "../../error";
 import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
@@ -48,12 +48,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Promise used to obtain a database connection from a pool for a first time.
      */
     protected databaseConnectionPromise: Promise<any>;
-
-    /**
-     * current depth of transaction.
-     * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
-     */
-    private transactionDepth = 0;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -114,19 +108,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Starts transaction on the current connection.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
         this.isTransactionActive = true;
-        if (isolationLevel) {
-            await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
         }
         if (this.transactionDepth === 0) {
-            this.isTransactionActive = true;
+            if (isolationLevel) {
+                await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+            }
             await this.query("START TRANSACTION");
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
         }
-        this.transactionDepth++;
+        this.transactionDepth += 1;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -141,13 +138,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
-            this.isTransactionActive = false;
-            await this.query("COMMIT");
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
         } else {
-            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth}`);
+            await this.query("COMMIT");
+            this.isTransactionActive = false;
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -162,13 +159,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.transactionDepth--;
-        if (this.transactionDepth === 0) {
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
             await this.query("ROLLBACK");
             this.isTransactionActive = false;
-        } else {
-            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`);
         }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }
