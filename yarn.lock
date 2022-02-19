@@ -4998,6 +4998,11 @@
     "type-check" "^0.4.0"
     "word-wrap" "^1.2.3"
 
+"oracledb@^5.1.0":
+  "integrity" "sha512-gHOWTM6ILKOGVH3Z+11Cnpls8XWW7sZUoBrbQWvspYOGpkvJ+TKRr1OdVS21EyeAtfMzXePDrSvG/Mlp/fxOVA=="
+  "resolved" "https://registry.npmjs.org/oracledb/-/oracledb-5.2.0.tgz"
+  "version" "5.2.0"
+
 "ordered-read-streams@^1.0.0":
   "integrity" "sha1-d8DLN8QVJdZBZtmQ/61+xqDhNj4="
   "resolved" "https://registry.npmjs.org/ordered-read-streams/-/ordered-read-streams-1.0.1.tgz"
