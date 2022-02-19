@@ -6,7 +6,7 @@ export interface EmbeddedMetadataArgs {
     /**
      * Class to which this column is applied.
      */
-    target: Function;
+    target: Function | string;
 
     /**
      * Class's property name to which this column is applied.
@@ -27,6 +27,6 @@ export interface EmbeddedMetadataArgs {
     /**
      * Type of the class to be embedded.
      */
-    type: ((type?: any) => Function);
+    type: ((type?: any) => Function|string);
 
 }

@@ -122,6 +122,20 @@ export class MongoQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        // Do nothing
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        // Do nothing
+    }
+
+    /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
     cursor(collectionName: string, query?: ObjectLiteral): Cursor<any> {

@@ -1,4 +1,4 @@
-import {Connection, SelectQueryBuilder} from "..";
+import {Connection, EntitySchemaEmbeddedColumnOptions, SelectQueryBuilder} from "..";
 import {EntitySchemaIndexOptions} from "./EntitySchemaIndexOptions";
 import {EntitySchemaColumnOptions} from "./EntitySchemaColumnOptions";
 import {EntitySchemaRelationOptions} from "./EntitySchemaRelationOptions";
@@ -88,6 +88,13 @@ export class EntitySchemaOptions<T> {
     exclusions?: EntitySchemaExclusionOptions[];
 
     /**
+     * Embedded Entities options
+     */
+    embeddeds?: {
+        [P in keyof Partial<T>]: EntitySchemaEmbeddedColumnOptions;
+    };
+
+    /**
      * Indicates if schema synchronization is enabled or disabled for this entity.
      * If it will be set to false then schema sync will and migrations ignore this entity.
      * By default schema synchronization is enabled for all entities.
@@ -96,8 +103,8 @@ export class EntitySchemaOptions<T> {
 
     /**
      * If set to 'true' this option disables Sqlite's default behaviour of secretly creating
-     * an integer primary key column named 'rowid' on table creation. 
-     * @see https://www.sqlite.org/withoutrowid.html. 
+     * an integer primary key column named 'rowid' on table creation.
+     * @see https://www.sqlite.org/withoutrowid.html.
      */
     withoutRowid?: boolean;
 

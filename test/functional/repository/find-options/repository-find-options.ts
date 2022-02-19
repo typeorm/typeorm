@@ -210,7 +210,7 @@ describe("repository > find options > comment", () => {
     });
     beforeEach(() => reloadTestingDatabases(connections));
     after(async () => {
-        closeTestingConnections(connections);
+        await closeTestingConnections(connections);
         await promisify(unlink)(logPath);
     });
 

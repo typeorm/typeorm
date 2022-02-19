@@ -33,7 +33,7 @@ export class RelationIdLoader {
                 if (relationIdAttr.queryBuilderFactory)
                     throw new TypeORMError("Additional condition can not be used with ManyToOne or OneToOne owner relations.");
 
-                const duplicates: Array<string> = [];
+                const duplicates: {[duplicateKey: string]: boolean} = {};
                 const results = rawEntities.map(rawEntity => {
                     const result: ObjectLiteral = {};
                     const duplicateParts: Array<string> = [];
@@ -55,10 +55,10 @@ export class RelationIdLoader {
 
                     duplicateParts.sort();
                     const duplicate = duplicateParts.join("::");
-                    if (duplicates.indexOf(duplicate) !== -1) {
+                    if (duplicates[duplicate]) {
                         return null;
                     }
-                    duplicates.push(duplicate);
+                    duplicates[duplicate] = true;
                     return result;
                 }).filter(v => v);
 
@@ -78,7 +78,7 @@ export class RelationIdLoader {
                 const tableName = relation.inverseEntityMetadata.tableName; // category
                 const tableAlias = relationIdAttr.alias || tableName; // if condition (custom query builder factory) is set then relationIdAttr.alias defined
 
-                const duplicates: Array<string> = [];
+                const duplicates: {[duplicateKey: string]: boolean} = {};
                 const parameters: ObjectLiteral = {};
                 const condition = rawEntities.map((rawEntity, index) => {
                     const duplicateParts: Array<string> = [];
@@ -96,10 +96,10 @@ export class RelationIdLoader {
                     }).filter(v => v).join(" AND ");
                     duplicateParts.sort();
                     const duplicate = duplicateParts.join("::");
-                    if (duplicates.indexOf(duplicate) !== -1) {
+                    if (duplicates[duplicate]) {
                         return "";
                     }
-                    duplicates.push(duplicate);
+                    duplicates[duplicate] = true;
                     Object.assign(parameters, parameterParts);
                     return queryPart;
                 }).filter(v => v).map(condition => "(" + condition + ")")
@@ -174,7 +174,7 @@ export class RelationIdLoader {
                     return { relationIdAttribute: relationIdAttr, results: [] };
 
                 const parameters: ObjectLiteral = {};
-                const duplicates: Array<string> = [];
+                const duplicates: {[duplicateKey: string]: boolean} = {};
                 const joinColumnConditions = mappedColumns.map((mappedColumn, index) => {
                     const duplicateParts: Array<string> = [];
                     const parameterParts: ObjectLiteral = {};
@@ -191,10 +191,10 @@ export class RelationIdLoader {
                     }).filter(s => s).join(" AND ");
                     duplicateParts.sort();
                     const duplicate = duplicateParts.join("::");
-                    if (duplicates.indexOf(duplicate) !== -1) {
+                    if (duplicates[duplicate]) {
                         return "";
                     }
-                    duplicates.push(duplicate);
+                    duplicates[duplicate] = true;
                     Object.assign(parameters, parameterParts);
                     return queryPart;
                 }).filter(s => s);

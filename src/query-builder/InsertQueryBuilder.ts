@@ -7,7 +7,6 @@ import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {RandomGenerator} from "../util/RandomGenerator";
 import {InsertResult} from "./result/InsertResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {InsertValuesMissingError} from "../error/InsertValuesMissingError";
@@ -19,6 +18,7 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import { TypeORMError } from "../error";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -484,6 +484,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     if (columnIndex === 0) {
                         if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                             expression += " SELECT ";
+                        } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " SELECT ";
                         } else {
                             expression += "(";
                         }
@@ -535,7 +537,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
                     } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
 
-                        value = RandomGenerator.uuid4();
+                        value = uuidv4();
                         expression += this.createParameter(value);
 
                         if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
@@ -597,12 +599,16 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         if (valueSetIndex === valueSets.length - 1) {
                             if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                                 expression += " FROM DUAL ";
+                            } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " FROM dummy ";
                             } else {
                                 expression += ")";
                             }
                         } else {
                             if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                                 expression += " FROM DUAL UNION ALL ";
+                            } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " FROM dummy UNION ALL ";
                             } else {
                                 expression += "), ";
                             }

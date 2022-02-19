@@ -297,4 +297,40 @@ describe("schema builder > change column", () => {
         expect(teacherTableB!.findColumnByName("id")!.comment).to.be.undefined;
 
     })));
+
+    it("should correctly change column type when FK relationships impact it", () => Promise.all(connections.map(async connection => {
+        await connection.getRepository(Post)
+            .insert({
+                id: 1234,
+                version: '5',
+                text: 'a',
+                tag: 'b',
+                likesCount: 45
+            });
+
+        const post = await connection.getRepository(Post).findOneOrFail(1234);
+
+        await connection.getRepository(PostVersion)
+            .insert({
+                id: 1,
+                post,
+                details: 'Example'
+            })
+
+        const postMetadata = connection.getMetadata(Post);
+        const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
+        nameColumn.length = "500";
+
+        await connection.synchronize();
+
+        const queryRunner = connection.createQueryRunner();
+        const postVersionTable = await queryRunner.getTable("post_version");
+        await queryRunner.release();
+
+        postVersionTable!.foreignKeys.length.should.be.equal(1);
+
+        // revert changes
+        nameColumn.length = "255";
+    })));
+
 });

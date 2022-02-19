@@ -33,9 +33,9 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     findRoots(options?: FindTreeOptions): Promise<Entity[]> {
         const escapeAlias = (alias: string) => this.manager.connection.driver.escape(alias);
         const escapeColumn = (column: string) => this.manager.connection.driver.escape(column);
-        const parentPropertyName = this.manager.connection.namingStrategy.joinColumnName(
-            this.metadata.treeParentRelation!.propertyName, this.metadata.primaryColumns[0].propertyName
-        );
+
+        const joinColumn = this.metadata.treeParentRelation!.joinColumns[0];
+        const parentPropertyName = joinColumn.givenDatabaseName || joinColumn.databaseName;
 
         const qb = this.createQueryBuilder("treeEntity");
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options);

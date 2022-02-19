@@ -4,6 +4,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {highlight} from "cli-highlight";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Shows sql to be executed by schema:sync command.
@@ -66,9 +67,8 @@ export class SchemaLogCommand implements yargs.CommandModule {
 
         } catch (err) {
             if (connection)
-
-            console.log(chalk.black.bgRed("Error during schema synchronization:"));
-            console.error(err);
+            
+            PlatformTools.logCmdErr("Error during schema synchronization:", err);
             process.exit(1);
         }
     }

@@ -3,6 +3,7 @@ import {Connection} from "../connection/Connection";
 import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Synchronizes database schema with entities.
@@ -50,8 +51,7 @@ export class SchemaSyncCommand implements yargs.CommandModule {
         } catch (err) {
             if (connection) await (connection as Connection).close();
 
-            console.log(chalk.black.bgRed("Error during schema synchronization:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during schema synchronization:", err);
             process.exit(1);
         }
     }

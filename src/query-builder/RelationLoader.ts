@@ -2,7 +2,7 @@ import {Connection} from "../connection/Connection";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {RelationMetadata} from "../metadata/RelationMetadata";
-import { FindOptionsUtils } from "..";
+import {FindOptionsUtils} from "../find-options/FindOptionsUtils";
 
 /**
  * Wraps entities and creates getters/setters for their relations
@@ -153,7 +153,7 @@ export class RelationLoader {
             .setParameters(parameters);
 
         FindOptionsUtils.joinEagerRelations(qb, qb.alias, qb.expressionMap.mainAlias!.metadata);
-        
+
         return qb.getMany();
     }
 

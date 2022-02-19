@@ -30,22 +30,22 @@ describe("github issues > #7079 Error when sorting by an embedded entity while u
                 id: 1,
                 text: "Happy Holidays",
                 userId: 1,
-                blog: { date: new Date().toISOString() },
-                newsletter: { date: new Date().toISOString() }
+                blog: { date: new Date() },
+                newsletter: { date: new Date() }
             },
             {
                 id: 2,
                 text: "My Vacation",
                 userId: 1,
-                blog: { date: new Date().toISOString() },
-                newsletter: { date: new Date().toISOString() }
+                blog: { date: new Date() },
+                newsletter: { date: new Date() }
             },
             {
                 id: 3,
                 text: "Working with TypeORM",
                 userId: 2,
-                blog: { date: new Date().toISOString() },
-                newsletter: { date: new Date().toISOString() }
+                blog: { date: new Date() },
+                newsletter: { date: new Date() }
             }
         ]
         await postRepo.save(posts);

@@ -3,6 +3,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Clear cache command.
@@ -45,7 +46,7 @@ export class CacheClearCommand implements yargs.CommandModule {
             connection = await createConnection(connectionOptions);
 
             if (!connection.queryResultCache) {
-                console.log(chalk.black.bgRed("Cache is not enabled. To use cache enable it in connection configuration."));
+                PlatformTools.logCmdErr("Cache is not enabled. To use cache enable it in connection configuration.");
                 return;
             }
 
@@ -57,8 +58,8 @@ export class CacheClearCommand implements yargs.CommandModule {
         } catch (err) {
             if (connection) await (connection as Connection).close();
 
-            console.log(chalk.black.bgRed("Error during cache clear:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during cache clear.", err);
+
             process.exit(1);
         }
     }

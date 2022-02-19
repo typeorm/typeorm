@@ -113,6 +113,20 @@ export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        // Do nothing
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        // Do nothing
+    }
+
+    /**
      * Loads given table's data from the database.
      */
     async getTable(tablePath: string): Promise<Table|undefined> {

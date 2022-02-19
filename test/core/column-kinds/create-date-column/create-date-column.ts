@@ -75,6 +75,7 @@ describe("column kinds > create date column", () => {
         expect(loadedPostAfterUpdate!.createdAt.toString()).to.be.eql(loadedPostBeforeUpdate!.createdAt.toString());
     })));
 
+
     it("create date column should set a custom date when specified", () => Promise.all(connections.map(async connection => {
         const postRepository = connection.getRepository(Post);
 

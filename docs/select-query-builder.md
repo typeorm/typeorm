@@ -188,6 +188,17 @@ There are 5 different `QueryBuilder` types available:
     ```
 
 * `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD].
+Example:
+
+    ```typescript
+    import {getConnection} from "typeorm";
+
+    await getConnection()
+        .createQueryBuilder()
+        .relation(User,"photos")
+        .of(id)
+        .loadMany();
+    ```
 
 You can switch between different types of query builder within any of them,
 once you do, you will get a new instance of query builder (unlike all other methods).

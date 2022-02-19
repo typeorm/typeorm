@@ -2,12 +2,14 @@ import "reflect-metadata";
 import {Category} from "./entity/Category";
 import {Connection} from "../../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
+import {Product} from "./entity/Product";
 
 describe("tree tables > materialized-path", () => {
 
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
-        entities: [Category],
+        entities: [Product, Category],
+        logging: true,
     }));
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
@@ -569,5 +571,38 @@ describe("tree tables > materialized-path", () => {
                 }
             ]
         });
+    })));
+
+    it("should compute path correctly when tree is implicitly saved (cascade: true) through related entity", () => Promise.all(connections.map(async connection => {
+        const categoryRepository = connection.getRepository(Category);
+        const productRepository = connection.getRepository(Product);
+
+        // first increment the category primary id once by saving and removing an item
+        // this is necessary to reproduce the bug behaviour
+        const existingCategory = new Category();
+        existingCategory.name = "irrelevant";
+        await categoryRepository.save(existingCategory);
+        await categoryRepository.delete(existingCategory);
+
+        // set up a product with category tree `{name: "My product", categories: [{name: "root", children: [{name: "child"}]}]}`
+        const childCategory = new Category();
+        childCategory.name = "child";
+        const rootCategory = new Category();
+        rootCategory.name = "root";
+        rootCategory.childCategories = [childCategory];
+        const product = new Product();
+        product.name = "My product";
+        product.categories = [rootCategory];
+
+        // save it alongside its categories ( cascade )
+        const savedProduct = await productRepository.save(product);
+        const pathResult = await connection.createQueryBuilder()
+            .select("category.mpath", "mpath")
+            .from("categories", "category")
+            .where("category.product = :id")
+            .setParameters({ id: savedProduct.id })
+            .getRawOne();
+
+        pathResult.mpath.should.not.match(/^undefined/);
     })));
 });

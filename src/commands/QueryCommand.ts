@@ -70,9 +70,8 @@ export class QueryCommand implements yargs.CommandModule {
         } catch (err) {
             if (queryRunner) await (queryRunner as QueryRunner).release();
             if (connection) await (connection as Connection).close();
-
-            console.log(chalk.black.bgRed("Error during query execution:"));
-            console.error(err);
+            
+            PlatformTools.logCmdErr("Error during query execution:", err);
             process.exit(1);
         }
     }

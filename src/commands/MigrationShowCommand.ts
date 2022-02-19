@@ -3,7 +3,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {Connection} from "../connection/Connection";
 import * as process from "process";
 import * as yargs from "yargs";
-import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Runs migration command.
@@ -43,17 +43,14 @@ export class MigrationShowCommand implements yargs.CommandModule {
         logging: ["query", "error", "schema"]
       });
       connection = await createConnection(connectionOptions);
-      const unappliedMigrations = await connection.showMigrations();
+      await connection.showMigrations();
       await connection.close();
 
-      // return error code if there are unapplied migrations for CI
-      process.exit(unappliedMigrations ? 1 : 0);
+      process.exit(0);
 
     } catch (err) {
       if (connection) await (connection as Connection).close();
-
-      console.log(chalk.black.bgRed("Error during migration show:"));
-      console.error(err);
+      PlatformTools.logCmdErr("Error during migration show:", err);
       process.exit(1);
     }
   }

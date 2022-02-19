@@ -206,7 +206,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const sql = `PRAGMA table_info("${tableName}")`;
+        const sql = `PRAGMA table_info(${this.escapePath(tableName)})`;
         const columns: ObjectLiteral[] = await this.query(sql);
         return !!columns.find(column => column["name"] === columnName);
     }
@@ -335,8 +335,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         newTable.name = newTableName;
 
         // rename table
-        const up = new Query(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTableName}"`);
-        const down = new Query(`ALTER TABLE "${newTableName}" RENAME TO "${oldTable.name}"`);
+        const up = new Query(`ALTER TABLE ${this.escapePath(oldTable.name)} RENAME TO ${this.escapePath(newTableName)}`);
+        const down = new Query(`ALTER TABLE ${this.escapePath(newTableName)} RENAME TO ${this.escapePath(oldTable.name)}`);
         await this.executeQueries(up, down);
 
         // rename old table;
@@ -737,21 +737,27 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
     async clearTable(tableName: string): Promise<void> {
-        await this.query(`DELETE FROM "${tableName}"`);
+        await this.query(`DELETE FROM ${this.escapePath(tableName)}`);
     }
 
     /**
      * Removes all tables from the currently connected database.
      */
-    async clearDatabase(): Promise<void> {
+    async clearDatabase(database?: string): Promise<void> {
+
+        let dbPath: string | undefined = undefined;
+        if (database && this.driver.getAttachedDatabaseHandleByRelativePath(database)) {
+            dbPath = this.driver.getAttachedDatabaseHandleByRelativePath(database);
+        }
+
         await this.query(`PRAGMA foreign_keys = OFF;`);
         await this.startTransaction();
         try {
-            const selectViewDropsQuery = `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`;
+            const selectViewDropsQuery = dbPath ? `SELECT 'DROP VIEW "${dbPath}"."' || name || '";' as query FROM "${dbPath}"."sqlite_master" WHERE "type" = 'view'` : `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`;
             const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
             await Promise.all(dropViewQueries.map(q => this.query(q["query"])));
 
-            const selectTableDropsQuery = `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`;
+            const selectTableDropsQuery = dbPath ? `SELECT 'DROP TABLE "${dbPath}"."' || name || '";' as query FROM "${dbPath}"."sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'` : `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`;
             const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
             await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
             await this.commitTransaction();
@@ -794,6 +800,21 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         });
     }
 
+    protected async loadTableRecords(tablePath: string, tableOrIndex: "table" | "index") {
+        let database: string | undefined = undefined
+        const [schema, tableName] = this.splitTablePath(tablePath);
+        if (schema && this.driver.getAttachedDatabasePathRelativeByHandle(schema)) {
+            database = this.driver.getAttachedDatabasePathRelativeByHandle(schema)
+        }
+        const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, ${schema ? `'${schema}'` : null} as schema, * FROM ${schema ? `"${schema}".` : ""}${this.escapePath(`sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === "table" ? "name" : "tbl_name"}" IN ('${tableName}')`);
+        return res;
+    }
+    protected async loadPragmaRecords(tablePath: string, pragma: string) {
+        const [, tableName] = this.splitTablePath(tablePath);
+        const res = await this.query(`PRAGMA ${pragma}("${tableName}")`);
+        return res;
+    }
+
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      */
@@ -803,15 +824,18 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             return [];
         }
 
-        const dbTables: { name: string, sql: string }[] = [];
+        let dbTables: { database?: string, name: string, sql: string }[] = [];
+        let dbIndicesDef: ObjectLiteral[];
 
         if (!tableNames) {
             const tablesSql = `SELECT * FROM "sqlite_master" WHERE "type" = 'table'`;
-            dbTables.push(...await this.query(tablesSql))
-        } else {
-            const tableNamesString = tableNames.map(tableName => `'${tableName}'`).join(", ");
-            const tablesSql = `SELECT * FROM "sqlite_master" WHERE "type" = 'table' AND "name" IN (${tableNamesString})`;
             dbTables.push(...await this.query(tablesSql));
+
+            const tableNamesString = dbTables.map(({ name }) => `'${name}'`).join(", ");
+            dbIndicesDef = await this.query(`SELECT * FROM "sqlite_master" WHERE "type" = 'index' AND "tbl_name" IN (${tableNamesString})`);
+        } else {
+            dbTables = (await Promise.all(tableNames.map(tableName => this.loadTableRecords(tableName, "table")))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean);
+            dbIndicesDef = (await Promise.all((tableNames ?? []).map(tableName => this.loadTableRecords(tableName, "index")))).reduce((acc, res) => ([...acc, ...res]), []).filter(Boolean);
         }
 
         // if tables were not found in the db, no need to proceed
@@ -819,23 +843,18 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             return [];
         }
 
-        // load indices
-        const tableNamesString = dbTables.map(({ name }) => `'${name}'`).join(", ");
-        const dbIndicesDef: ObjectLiteral[] = await this.query(`SELECT * FROM "sqlite_master" WHERE "type" = 'index' AND "tbl_name" IN (${tableNamesString})`);
-
         // create table schemas for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
-            const table = new Table();
-
-            table.name = dbTable["name"];
+            const tablePath = dbTable['database'] && this.driver.getAttachedDatabaseHandleByRelativePath(dbTable['database']) ? `${this.driver.getAttachedDatabaseHandleByRelativePath(dbTable['database'])}.${dbTable['name']}` : dbTable['name']
+            const table = new Table({name: tablePath});
 
             const sql = dbTable["sql"];
 
             // load columns and indices
             const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
-                this.query(`PRAGMA table_info("${dbTable["name"]}")`),
-                this.query(`PRAGMA index_list("${dbTable["name"]}")`),
-                this.query(`PRAGMA foreign_key_list("${dbTable["name"]}")`),
+                this.loadPragmaRecords(tablePath, `table_info`),
+                this.loadPragmaRecords(tablePath, `index_list`),
+                this.loadPragmaRecords(tablePath, `foreign_key_list`),
             ]);
 
             // find column name with auto increment
@@ -875,7 +894,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
                 if (tableColumn.type === "varchar") {
                     // Check if this is an enum
-                    const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\\1\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
+                    const enumMatch = sql.match(new RegExp("\"(" + tableColumn.name + ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)"));
                     if (enumMatch) {
                         // This is an enum
                         tableColumn.enum = enumMatch[2].substr(1, enumMatch[2].length - 2).split("','");
@@ -953,7 +972,6 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const indexColumns = indexInfos
                         .sort((indexInfo1, indexInfo2) => parseInt(indexInfo1["seqno"]) - parseInt(indexInfo2["seqno"]))
                         .map(indexInfo => indexInfo["name"]);
-
                     if (indexColumns.length === 1) {
                         const column = table.columns.find(column => {
                             return !!indexColumns.find(indexColumn => indexColumn === column.name);
@@ -966,8 +984,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const foundMapping = uniqueMappings.find(mapping => {
                         return mapping!.columns.every(column =>
                             indexColumns.indexOf(column) !== -1
-                        )
-                    })
+                        );
+                    });
 
                     return new TableUnique({
                         name: foundMapping ? foundMapping.name : this.connection.namingStrategy.uniqueConstraintName(table, indexColumns),
@@ -997,11 +1015,12 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                     const indexColumns = indexInfos
                         .sort((indexInfo1, indexInfo2) => parseInt(indexInfo1["seqno"]) - parseInt(indexInfo2["seqno"]))
                         .map(indexInfo => indexInfo["name"]);
+                    const dbIndexPath = `${dbTable["database"] ? `${dbTable["database"]}.` : ''}${dbIndex!["name"]}`;
 
                     const isUnique = dbIndex!["unique"] === "1" || dbIndex!["unique"] === 1;
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
-                        name: dbIndex!["name"],
+                        name: dbIndexPath,
                         columnNames: indexColumns,
                         isUnique: isUnique,
                         where: condition ? condition[1] : undefined
@@ -1026,7 +1045,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
             throw new TypeORMError(`Sqlite does not support AUTOINCREMENT on composite primary key`);
 
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column, skipPrimary)).join(", ");
-        let sql = `CREATE TABLE "${table.name}" (${columnDefinitions}`;
+        const [database] = this.splitTablePath(table.name);
+        let sql = `CREATE TABLE ${this.escapePath(table.name)} (${columnDefinitions}`;
 
         // need for `addColumn()` method, because it recreates table.
         table.columns
@@ -1060,13 +1080,21 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
 
         if (table.foreignKeys.length > 0 && createForeignKeys) {
-            const foreignKeysSql = table.foreignKeys.map(fk => {
+            const foreignKeysSql = table.foreignKeys.filter(fk => {
+                const [referencedDatabase] = this.splitTablePath(fk.referencedTableName);
+                if (referencedDatabase !== database) {
+                    return false;
+                }
+                return true;
+            })
+            .map(fk => {
+                const [, referencedTable] = this.splitTablePath(fk.referencedTableName);
                 const columnNames = fk.columnNames.map(columnName => `"${columnName}"`).join(", ");
                 if (!fk.name)
                     fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, this.getTablePath(fk), fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `"${columnName}"`).join(", ");
 
-                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${fk.referencedTableName}" (${referencedColumnNames})`;
+                let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${referencedTable}" (${referencedColumnNames})`;
                 if (fk.onDelete)
                     constraint += ` ON DELETE ${fk.onDelete}`;
                 if (fk.onUpdate)
@@ -1098,7 +1126,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected dropTableSql(tableOrName: Table|string, ifExist?: boolean): Query {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
-        const query = ifExist ? `DROP TABLE IF EXISTS "${tableName}"` : `DROP TABLE "${tableName}"`;
+        const query = ifExist ? `DROP TABLE IF EXISTS ${this.escapePath(tableName)}` : `DROP TABLE ${this.escapePath(tableName)}`;
         return new Query(query);
     }
 
@@ -1140,7 +1168,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${index.name}" ON "${table.name}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
+        const [database, tableName] = this.splitTablePath(table.name);
+        return new Query(`CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX ${database ? `"${database}".` : ""}${this.escapePath(index.name!)} ON "${tableName}" (${columns}) ${index.where ? "WHERE " + index.where : ""}`);
     }
 
     /**
@@ -1148,7 +1177,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
      */
     protected dropIndexSql(indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return new Query(`DROP INDEX "${indexName}"`);
+        return new Query(`DROP INDEX ${this.escapePath(indexName!)}`);
     }
 
     /**
@@ -1163,7 +1192,7 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         }
 
         if (column.enum)
-            c += " CHECK( " + column.name + " IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
+            c += " CHECK( \"" + column.name + "\" IN (" + column.enum.map(val => "'" + val + "'").join(",") + ") )";
         if (column.isPrimary && !skipPrimary)
             c += " PRIMARY KEY";
         if (column.isGenerated === true && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
@@ -1189,7 +1218,9 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         });
 
         // change table name into 'temporary_table'
-        newTable.name = "temporary_" + newTable.name;
+        let [databaseNew, tableNameNew] = this.splitTablePath(newTable.name);
+        let [, tableNameOld] = this.splitTablePath(oldTable.name);
+        newTable.name = tableNameNew = `${databaseNew ? `${databaseNew}.` : ""}temporary_${tableNameNew}`;
 
         // create new table
         upQueries.push(this.createTableSql(newTable, true));
@@ -1210,8 +1241,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
                 }).map(column => `"${column.name}"`).join(", ");
             }
 
-            upQueries.push(new Query(`INSERT INTO "${newTable.name}"(${newColumnNames}) SELECT ${oldColumnNames} FROM "${oldTable.name}"`));
-            downQueries.push(new Query(`INSERT INTO "${oldTable.name}"(${oldColumnNames}) SELECT ${newColumnNames} FROM "${newTable.name}"`));
+            upQueries.push(new Query(`INSERT INTO ${this.escapePath(newTable.name)}(${newColumnNames}) SELECT ${oldColumnNames} FROM ${this.escapePath(oldTable.name)}`));
+            downQueries.push(new Query(`INSERT INTO ${this.escapePath(oldTable.name)}(${oldColumnNames}) SELECT ${newColumnNames} FROM ${this.escapePath(newTable.name)}`));
         }
 
         // drop old table
@@ -1219,8 +1250,8 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
         downQueries.push(this.createTableSql(oldTable, true));
 
         // rename old table
-        upQueries.push(new Query(`ALTER TABLE "${newTable.name}" RENAME TO "${oldTable.name}"`));
-        downQueries.push(new Query(`ALTER TABLE "${oldTable.name}" RENAME TO "${newTable.name}"`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable.name)} RENAME TO ${this.escapePath(tableNameOld)}`));
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(oldTable.name)} RENAME TO ${this.escapePath(tableNameNew)}`));
 
         newTable.name = oldTable.name;
 
@@ -1235,6 +1266,21 @@ export abstract class AbstractSqliteQueryRunner extends BaseQueryRunner implemen
 
         await this.executeQueries(upQueries, downQueries);
         this.replaceCachedTable(oldTable, newTable);
+    }
+
+    /**
+     * tablePath e.g. "myDB.myTable", "myTable"
+     */
+    protected splitTablePath(tablePath: string): [string | undefined, string] {
+        return ((tablePath.indexOf(".") !== -1) ? tablePath.split(".") : [undefined, tablePath]) as [string | undefined, string];
+    }
+
+    /**
+     * Escapes given table or view path. Tolerates leading/trailing dots
+     */
+    protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
+        const tableName = target instanceof Table || target instanceof View ? target.name : target;
+        return tableName.replace(/^\.+|\.+$/g, "").split(".").map(i => disableEscape ? i : `"${i}"`).join(".");
     }
 
 }

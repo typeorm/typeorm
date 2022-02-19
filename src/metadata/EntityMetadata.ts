@@ -480,9 +480,29 @@ export class EntityMetadata {
     beforeRemoveListeners: EntityListenerMetadata[] = [];
 
     /**
+     * Listener metadatas with "BEFORE SOFT REMOVE" type.
+     */
+    beforeSoftRemoveListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "BEFORE RECOVER" type.
+     */
+    beforeRecoverListeners: EntityListenerMetadata[] = [];
+
+    /**
      * Listener metadatas with "AFTER REMOVE" type.
      */
     afterRemoveListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER SOFT REMOVE" type.
+     */
+    afterSoftRemoveListeners: EntityListenerMetadata[] = [];
+
+    /**
+     * Listener metadatas with "AFTER RECOVER" type.
+     */
+    afterRecoverListeners: EntityListenerMetadata[] = [];
 
     /**
      * Map of columns and relations of the entity.
