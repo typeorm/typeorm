@@ -83,7 +83,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Represent transaction support by this driver
      */
-    transactionSupport: "simple" | "nested" | "none" = "none";
+    transactionSupport: "simple" | "nested" | "none" = "nested";
 
     /**
      * Gets list of supported column data types by a driver.

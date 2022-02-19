@@ -18,11 +18,6 @@ import {filepathToName, isAbsolute} from "../../util/PathUtils";
  */
 export class SqliteDriver extends AbstractSqliteDriver {
 
-    /**
-     * Represent transaction support by this driver
-     */
-    transactionSupport = "nested" as const;
-    
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------

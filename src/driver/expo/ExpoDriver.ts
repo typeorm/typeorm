@@ -9,11 +9,6 @@ import {ReplicationMode} from "../types/ReplicationMode";
 export class ExpoDriver extends AbstractSqliteDriver {
     options: ExpoConnectionOptions;
 
-    /**
-     * Represent transaction support by this driver
-     */
-    transactionSupport = "nested" as const;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

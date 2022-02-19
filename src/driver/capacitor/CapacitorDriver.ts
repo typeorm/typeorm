@@ -13,11 +13,6 @@ export class CapacitorDriver extends AbstractSqliteDriver {
     driver: any;
     options: CapacitorConnectionOptions;
 
-    /**
-     * Represent transaction support by this driver
-     */
-    transactionSupport = "nested" as const;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

@@ -23,11 +23,6 @@ export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
     options: SqljsConnectionOptions;
 
-    /**
-     * Represent transaction support by this driver
-     */
-    transactionSupport = "simple" as const;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

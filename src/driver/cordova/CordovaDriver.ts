@@ -17,11 +17,6 @@ declare let window: Window;
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions;
 
-    /**
-     * Represent transaction support by this driver
-     */
-    transactionSupport = "none" as const;
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

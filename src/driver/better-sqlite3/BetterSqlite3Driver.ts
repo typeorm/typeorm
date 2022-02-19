@@ -17,11 +17,6 @@ import { filepathToName, isAbsolute } from "../../util/PathUtils";
  */
 export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
-    /**
-     * Represent transaction support by this driver
-     */
-    transactionSupport = "nested" as const;
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
