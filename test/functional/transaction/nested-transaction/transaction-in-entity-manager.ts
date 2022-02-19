@@ -140,7 +140,7 @@ describe("transaction > nested transaction", () => {
         }
     })));
 
-    it("should fial operations when first transaction fails", () => Promise.all(connections.map(async connection => {
+    it("should fail operations when first transaction fails", () => Promise.all(connections.map(async connection => {
         const conditions: { id: number; title: string; }[] = [];
 
         try {

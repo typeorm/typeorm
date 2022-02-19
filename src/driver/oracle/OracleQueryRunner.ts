@@ -151,8 +151,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.transactionDepth === 0) {
             this.isTransactionActive = false;
             await this.query("COMMIT");
-        } else {
-            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth}`);
         }
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
