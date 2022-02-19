@@ -19,10 +19,10 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
-import { TypeORMError } from "../../error";
-import { Table } from "../../schema-builder/table/Table";
-import { View } from "../../schema-builder/view/View";
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import {TypeORMError} from "../../error";
+import {Table} from "../../schema-builder/table/Table";
+import {View} from "../../schema-builder/view/View";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -875,7 +875,8 @@ export class MysqlDriver implements Driver {
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(): boolean {
-        return false;
+        const isMariaDb = this.connection.driver.options.type === "mariadb";
+        return isMariaDb;
     }
 
     /**
@@ -961,8 +962,8 @@ export class MysqlDriver implements Driver {
             socketPath: credentials.socketPath
         },
         options.acquireTimeout === undefined
-          ? {}
-          : { acquireTimeout: options.acquireTimeout },
+            ? {}
+            : { acquireTimeout: options.acquireTimeout },
         options.extra || {});
     }
 
@@ -994,8 +995,8 @@ export class MysqlDriver implements Driver {
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection;
         /*
-          Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
-          cause the hosting app to crash.
+         * Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
+         * cause the hosting app to crash.
          */
         if (connection.listeners("error").length === 0) {
             connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));

@@ -6,6 +6,7 @@ import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
+import {MysqlDriver} from "./../driver/mysql/MysqlDriver";
 import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {DeleteResult} from "./result/DeleteResult";
@@ -231,9 +232,13 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const whereExpression = this.createWhereExpression();
         const returningExpression = this.createReturningExpression();
 
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof CockroachDriver)) {
+        if (
+            returningExpression &&
+            (this.connection.driver instanceof PostgresDriver ||
+                this.connection.driver instanceof CockroachDriver ||
+                this.connection.driver instanceof MysqlDriver)
+        ) {
             return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`;
-
         } else if (returningExpression !== "" && this.connection.driver instanceof SqlServerDriver) {
             return `DELETE FROM ${tableName} OUTPUT ${returningExpression}${whereExpression}`;
 
