@@ -19,7 +19,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {TypeORMError} from "../error";
 import {v4 as uuidv4} from "uuid";
-import { InsertOrUpdateOptions } from "../repository/InsertOrUpdateOptions";
+import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
