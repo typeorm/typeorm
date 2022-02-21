@@ -1,8 +1,10 @@
 # Repository APIs
 
-* [Repository API](#repository-api)
-* [TreeRepository API](#treerepository-api)
-* [MongoRepository API](#mongorepository-api)
+- [Repository APIs](#repository-apis)
+  - [`Repository` API](#repository-api)
+    - [Additional Options](#additional-options)
+  - [`TreeRepository` API](#treerepository-api)
+  - [`MongoRepository` API](#mongorepository-api)
 
 ## `Repository` API
 
@@ -167,6 +169,25 @@ await repository.upsert([
  *      (externalId = abc123, firstName = Rizzrak),
  *      (externalId = cba321, firstName = Karzzir),
  *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
+ **/
+```
+
+```typescript
+await repository.upsert([
+    { externalId:"abc123", firstName: "Rizzrak" },
+    { externalId:"bca321", firstName: "Karzzir" },
+], {
+    conflictPaths: ["externalId"],
+    skipUpdateIfNoValuesChanged: true // supported by postgres, skips update if it would not change row values
+});
+/** executes 
+ *  INSERT INTO user 
+ *  VALUES 
+ *      (externalId = abc123, firstName = Rizzrak),
+ *      (externalId = cba321, firstName = Karzzir),
+ *  ON CONFLICT (externalId) DO UPDATE 
+ *  SET firstName = EXCLUDED.firstName 
+ *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName
  **/
 ```
 
