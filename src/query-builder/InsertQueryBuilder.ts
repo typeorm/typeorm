@@ -387,7 +387,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     query += " ";
                 }
 
-                if (Array.isArray(overwrite) && skipUpdateIfNoValuesChanged) {
+                if (Array.isArray(overwrite) && skipUpdateIfNoValuesChanged && this.connection.driver instanceof PostgresDriver) {
                     query += ` WHERE (`;
                     query += overwrite.map(column => `${tableName}.${this.escape(column)} IS DISTINCT FROM EXCLUDED.${this.escape(column)}`).join(" OR ");
                     query += ") ";
