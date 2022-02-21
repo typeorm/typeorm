@@ -16,6 +16,7 @@ import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey";
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns";
 import { OneToOneRelationEntity } from "./entity/OneToOneRelation";
 import { UpsertOptions } from "../../../../src/repository/UpsertOptions";
+import { PostgresDriver } from "../../../../src/driver/postgres/PostgresDriver";
 
 describe("repository > basic methods", () => {
 
@@ -483,7 +484,7 @@ describe("repository > basic methods", () => {
             (await postObjects.findOneOrFail(({ externalId }))).title.should.equal("title updated");
         })));
         it("should skip update when nothing has changed", () => Promise.all(connections.map(async (connection) => {
-            if (connection.driver.supportedUpsertType !== "on-conflict-do-update") return;
+            if (!(connection.driver instanceof PostgresDriver)) return;
             
             const postObjects = connection.getRepository(Post);
             const externalId1 = "external-skip-update-nothing-changed1";
