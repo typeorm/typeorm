@@ -335,6 +335,10 @@ export class MongoDriver implements Driver {
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
+
+        if (columnMetadata.rawTransformer?.to)
+            value = columnMetadata.rawTransformer.to(value);
+
         return value;
     }
 
@@ -342,8 +346,12 @@ export class MongoDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.rawTransformer?.from)
+            value = columnMetadata.rawTransformer.from(value);
+
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
+
         return value;
     }
 

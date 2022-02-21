@@ -430,6 +430,9 @@ export class SapDriver implements Driver {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
+        if (columnMetadata.rawTransformer?.to)
+            return columnMetadata.rawTransformer.to(value);
+
         if (value === null || value === undefined)
             return value;
 
@@ -469,6 +472,13 @@ export class SapDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.rawTransformer?.from) {
+            value = columnMetadata.rawTransformer.from(value);
+            if (columnMetadata.transformer)
+                value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
+            return value;
+        }
+
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 

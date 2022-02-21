@@ -6,6 +6,7 @@ import {ObjectLiteral} from "../common/ObjectLiteral";
 import {ColumnMetadataArgs} from "../metadata-args/ColumnMetadataArgs";
 import {Connection} from "../connection/Connection";
 import {OrmUtils} from "../util/OrmUtils";
+import {RawValueTransformer} from "../decorator/options/RawValueTransformer";
 import {ValueTransformer} from "../decorator/options/ValueTransformer";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {FindOperator} from "../find-options/FindOperator";
@@ -278,6 +279,15 @@ export class ColumnMetadata {
     transformer?: ValueTransformer|ValueTransformer[];
 
     /**
+     * Specifies a raw value transformer that is to be used to (un)marshal
+     * this column when reading or writing to the database.
+     *
+     * The raw transformer is expected to take and give SQL-compatible values,
+     * instead of JavaScript objects.
+     */
+    rawTransformer?: RawValueTransformer;
+
+    /**
      * Column type in the case if this column is in the closure table.
      * Column can be ancestor or descendant in the closure tables.
      */
@@ -414,6 +424,8 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version";
             this.isObjectId = options.args.mode === "objectId";
         }
+        if (options.args.options.rawTransformer)
+            this.rawTransformer = options.args.options.rawTransformer;
         if (options.args.options.transformer)
             this.transformer = options.args.options.transformer;
         if (options.args.options.spatialFeatureType)

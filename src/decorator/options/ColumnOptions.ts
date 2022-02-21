@@ -1,4 +1,5 @@
 import {ColumnType} from "../../driver/types/ColumnTypes";
+import {RawValueTransformer} from "./RawValueTransformer";
 import {ValueTransformer} from "./ValueTransformer";
 import {ColumnCommonOptions} from "./ColumnCommonOptions";
 
@@ -166,6 +167,15 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer|ValueTransformer[];
+
+    /**
+     * Specifies a raw value transformer that is to be used to (un)marshal
+     * this column when reading or writing to the database.
+     *
+     * The raw transformer is expected to take and give SQL-compatible values,
+     * instead of JavaScript objects.
+     */
+     rawTransformer?: RawValueTransformer;
 
     /**
      * Spatial Feature Type (Geometry, Point, Polygon, etc.)
