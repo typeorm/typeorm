@@ -1,11 +1,9 @@
-import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {QueryBuilder} from "./QueryBuilder";
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityTarget} from "../common/EntityTarget";
 import {Connection} from "../connection/Connection";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
-import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {WhereExpressionBuilder} from "./WhereExpressionBuilder";
 import {Brackets} from "./Brackets";
 import {UpdateResult} from "./result/UpdateResult";
@@ -15,10 +13,9 @@ import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {LimitOnUpdateNotSupportedError} from "../error/LimitOnUpdateNotSupportedError";
 import {MissingDeleteDateColumnError} from "../error/MissingDeleteDateColumnError";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntitySchema} from "../entity-schema/EntitySchema";
-import { TypeORMError } from "../error";
+import {TypeORMError} from "../error";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -241,8 +238,9 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
     returning(returning: string|string[]): this {
 
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
+        if (!this.connection.driver.isReturningSqlSupported("update")) {
             throw new ReturningStatementNotSupportedError();
+        }
 
         this.expressionMap.returning = returning;
         return this;
@@ -386,18 +384,15 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
 
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression();
-        const returningExpression = this.createReturningExpression();
+        const returningExpression = this.createReturningExpression("update");
 
-        // generate and return sql update query
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
-
-        } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
-
-        } else {
+        if (returningExpression === "") {
             return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
+        if (this.connection.driver instanceof SqlServerDriver) {
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
+        }
+        return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
     }
 
     /**

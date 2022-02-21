@@ -244,8 +244,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     returning(returning: string|string[]): this {
 
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
+        if (!this.connection.driver.isReturningSqlSupported("insert")) {
             throw new ReturningStatementNotSupportedError();
+        }
 
         this.expressionMap.returning = returning;
         return this;
@@ -316,7 +317,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() {
         const tableName = this.getTableName(this.getMainTableName());
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const returningExpression = (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) ? null : this.createReturningExpression(); // oracle doesnt support returning with multi-row insert
+        const returningExpression =
+            (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1)
+                ? null
+                : this.createReturningExpression("insert"); // oracle doesnt support returning with multi-row insert
         const columnsExpression = this.createColumnNamesExpression();
         let query = "INSERT ";
 

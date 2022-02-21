@@ -832,7 +832,8 @@ export class SubjectExecutor {
     protected groupBulkSubjects(subjects: Subject[], type: "insert" | "delete"): [{ [key: string]: Subject[] }, string[]] {
         const group: { [key: string]: Subject[] } = {};
         const keys: string[] = [];
-        const groupingAllowed = type === "delete" || this.queryRunner.connection.driver.isReturningSqlSupported();
+        const groupingAllowed = type === "delete" ||
+            this.queryRunner.connection.driver.isReturningSqlSupported("insert");
 
         subjects.forEach((subject, index) => {
             const key = groupingAllowed || subject.metadata.isJunction ? subject.metadata.name : subject.metadata.name + "_" + index;

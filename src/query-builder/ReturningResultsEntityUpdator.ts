@@ -5,7 +5,7 @@ import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {UpdateResult} from "./result/UpdateResult";
 import {InsertResult} from "./result/InsertResult";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
-import { TypeORMError } from "../error";
+import {TypeORMError} from "../error";
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -33,7 +33,7 @@ export class ReturningResultsEntityUpdator {
         await Promise.all(entities.map(async (entity, entityIndex) => {
 
             // if database supports returning/output statement then we already should have updating values in the raw data returned by insert query
-            if (this.queryRunner.connection.driver.isReturningSqlSupported()) {
+            if (this.queryRunner.connection.driver.isReturningSqlSupported("update")) {
                 if (this.queryRunner.connection.driver instanceof OracleDriver && Array.isArray(updateResult.raw) && this.expressionMap.extraReturningColumns.length > 0) {
                     updateResult.raw = updateResult.raw.reduce((newRaw, rawItem, rawItemIndex) => {
                         newRaw[this.expressionMap.extraReturningColumns[rawItemIndex].databaseName] = rawItem[0];
@@ -116,7 +116,10 @@ export class ReturningResultsEntityUpdator {
 
         // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
         // for other drivers we have to re-select this data from the database
-        if (this.queryRunner.connection.driver.isReturningSqlSupported() === false && insertionColumns.length > 0) {
+        if (
+            insertionColumns.length > 0 &&
+            !this.queryRunner.connection.driver.isReturningSqlSupported("insert")
+        ) {
             const entityIds = entities.map((entity) => {
                 const entityId = metadata.getEntityIdMap(entity)!;
 
@@ -173,7 +176,7 @@ export class ReturningResultsEntityUpdator {
 
         // for databases which support returning statement we need to return extra columns like id
         // for other databases we don't need to return id column since its returned by a driver already
-        const needToCheckGenerated = this.queryRunner.connection.driver.isReturningSqlSupported();
+        const needToCheckGenerated = this.queryRunner.connection.driver.isReturningSqlSupported("insert");
 
         // filter out the columns of which we need database inserted values to update our entity
         return this.expressionMap.mainAlias!.metadata.columns.filter(column => {

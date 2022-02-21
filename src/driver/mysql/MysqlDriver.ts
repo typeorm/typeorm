@@ -1,4 +1,4 @@
-import {Driver} from "../Driver";
+import {Driver, ReturningType} from "../Driver";
 import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
@@ -23,6 +23,7 @@ import {TypeORMError} from "../../error";
 import {Table} from "../../schema-builder/table/Table";
 import {View} from "../../schema-builder/view/View";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {VersionUtils} from "../../util/VersionUtils";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -304,6 +305,16 @@ export class MysqlDriver implements Driver {
      */
     maxAliasLength = 63;
 
+
+    /**
+     * Supported returning types
+     */
+    private readonly _isReturningSqlSupported: Record<ReturningType, boolean> = {
+        delete: false,
+        insert: false,
+        update: false,
+    };
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -359,6 +370,19 @@ export class MysqlDriver implements Driver {
             this.database = await queryRunner.getCurrentDatabase();
 
             await queryRunner.release();
+        }
+
+        if (this.options.type === "mariadb") {
+            const result = await this.createQueryRunner("master")
+                .query(`SELECT VERSION() AS \`version\``) as { version: string; }[];
+            const dbVersion = result[0].version;
+
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.0.5")) {
+                this._isReturningSqlSupported.delete = true;
+            }
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
+                this._isReturningSqlSupported.insert = true;
+            }
         }
     }
 
@@ -889,9 +913,8 @@ export class MysqlDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
-        const isMariaDb = this.connection.driver.options.type === "mariadb";
-        return isMariaDb;
+    isReturningSqlSupported(returningType: ReturningType): boolean {
+        return this._isReturningSqlSupported[returningType];
     }
 
     /**
