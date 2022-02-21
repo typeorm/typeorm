@@ -795,6 +795,21 @@ export class MysqlDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex: number) {
+        if (!insertResult) {
+            return undefined;
+        }
+
+        if (insertResult.insertId === undefined) {
+            return Object.keys(insertResult).reduce((map, key) => {
+                const column = metadata.findColumnWithDatabaseName(key);
+                if (column) {
+                    OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                    // OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column))); // TODO: probably should be like there, but fails on enums, fix later
+                }
+                return map;
+            }, {} as ObjectLiteral);
+        }
+
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
