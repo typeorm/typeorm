@@ -337,7 +337,7 @@ export class MongoDriver implements Driver {
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (columnMetadata.rawTransformer?.to)
-            value = columnMetadata.rawTransformer.to(value);
+            value = columnMetadata.rawTransformer.to(value, this.options.type);
 
         return value;
     }
@@ -347,7 +347,7 @@ export class MongoDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.rawTransformer?.from)
-            value = columnMetadata.rawTransformer.from(value);
+            value = columnMetadata.rawTransformer.from(value, this.options.type);
 
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);

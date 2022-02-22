@@ -503,7 +503,7 @@ export class AuroraDataApiDriver implements Driver {
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (columnMetadata.rawTransformer?.to)
-            return columnMetadata.rawTransformer.to(value);
+            return columnMetadata.rawTransformer.to(value, this.options.type);
 
         if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
             return this.client.preparePersistentValue(value, columnMetadata);
@@ -545,7 +545,7 @@ export class AuroraDataApiDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.rawTransformer?.from) {
-            value = columnMetadata.rawTransformer.from(value);
+            value = columnMetadata.rawTransformer.from(value, this.options.type);
             if (columnMetadata.transformer)
                 value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
             return value;

@@ -542,7 +542,7 @@ export class MysqlDriver implements Driver {
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (columnMetadata.rawTransformer?.to)
-            return columnMetadata.rawTransformer.to(value);
+            return columnMetadata.rawTransformer.to(value, this.options.type);
 
         if (value === null || value === undefined)
             return value;
@@ -583,7 +583,7 @@ export class MysqlDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.rawTransformer?.from) {
-            value = columnMetadata.rawTransformer.from(value);
+            value = columnMetadata.rawTransformer.from(value, this.options.type);
             if (columnMetadata.transformer)
                 value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
             return value;
