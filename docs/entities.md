@@ -575,6 +575,7 @@ You can change it by specifying your own name.
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 * `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 * `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
+* `rawTransformer: { from?(value: any, type: DatabaseType): any, to?(value: any, type: DatabaseType): any } ` - Similar to `transformer`, but accepts only a single transformer which will be called last when writing, and first when reading. The written/read value must be SQL-compatible.
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 

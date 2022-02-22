@@ -14,7 +14,7 @@ describe("github issues > #8652 Custom transformer overwritten for certain colum
     entities: [__dirname + "/entity/*{.js,.ts}"],
     schemaCreate: true,
     dropSchema: true,
-  }));
+ }));
   beforeEach(() => reloadTestingDatabases(connections));
   after(() => closeTestingConnections(connections));
 
@@ -28,10 +28,13 @@ describe("github issues > #8652 Custom transformer overwritten for certain colum
           sample: new Date(0),
         });
 
+      const queryStr = query.getQuery();
       const param = query.getQueryAndParameters()[1][0];
       if (connection.options.type === 'mssql') {
         expect(param).to.be.instanceOf(MssqlParameter);
         expect((param as MssqlParameter).value).to.equal('1970-01-02 00:00:00 +0000');
+      } else if (connection.options.type === 'oracle') {
+        expect(queryStr).to.contain(`TO_DATE('1970-01-02 00:00:00', 'YYYY-MM-DD HH24:MI:SS')`);
       } else
         expect(query.getQueryAndParameters()[1][0]).to.equal('1970-01-02 00:00:00');
     })),
