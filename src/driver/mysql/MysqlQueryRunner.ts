@@ -1420,6 +1420,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     \`rc\`.\`TABLE_NAME\` = \`kcu\`.\`TABLE_NAME\`
                     AND
                     \`rc\`.\`CONSTRAINT_NAME\` = \`kcu\`.\`CONSTRAINT_NAME\`
+                    WHERE
+                          \`rc\`.\`CONSTRAINT_SCHEMA\` = '${dbTables[0]["TABLE_SCHEMA"]}'
             `;
 
         const [dbColumns, dbPrimaryKeys, dbCollations, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
