@@ -117,14 +117,28 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
      * Called before migrations are run.
      */
     async beforeMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = OFF`);
+        const databaseConnection = await this.connect();
+        return new Promise((ok, fail) => {
+            databaseConnection.exec(
+                [{ sql: 'PRAGMA foreign_keys = OFF;', args: [] }],
+                false,
+                (err: any) => err ? fail(err) : ok()
+            );
+        })
     }
 
     /**
      * Called after migrations are run.
      */
     async afterMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = ON`);
+        const databaseConnection = await this.connect();
+        return new Promise((ok, fail) => {
+            databaseConnection.exec(
+                [{ sql: 'PRAGMA foreign_keys = ON;', args: [] }],
+                false,
+                (err: any) => err ? fail(err) : ok()
+            );
+        })
     }
 
     /**
@@ -139,9 +153,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
             // All Expo SQL queries are executed in a transaction context
-            databaseConnection.transaction((transaction: ITransaction) => {
+            databaseConnection.transaction(async (transaction: ITransaction) => {
                 if (typeof this.transaction === "undefined") {
-                    this.startTransaction();
+                    await this.startTransaction();
                     this.transaction = transaction;
                 }
                 this.transaction.executeSql(query, parameters, (t: ITransaction, raw: IResultSet) => {
@@ -183,8 +197,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     this.driver.connection.logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
                 });
-            }, (err: any) => {
-                this.rollbackTransaction();
+            }, async (err: any) => {
+                await this.rollbackTransaction();
+                fail(err)
             }, () => {
                 this.isTransactionActive = false;
                 this.transaction = undefined;
