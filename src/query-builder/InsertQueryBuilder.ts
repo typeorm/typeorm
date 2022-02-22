@@ -19,6 +19,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import {TypeORMError} from "../error";
 import {v4 as uuidv4} from "uuid";
+import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -285,17 +286,19 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this;
 
-    orUpdate(overwrite: string[], conflictTarget?: string | string[]): this;
+    orUpdate(overwrite: string[], conflictTarget?: string | string[], orUpdateOptions?: InsertOrUpdateOptions): this;
 
     /**
      * Adds additional update statement supported in databases.
      */
-    orUpdate(statementOrOverwrite?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] } | string[], conflictTarget?: string | string[]): this {
+    orUpdate(statementOrOverwrite?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] } | string[], conflictTarget?: string | string[], orUpdateOptions?: InsertOrUpdateOptions): this {
+
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
                 conflict: statementOrOverwrite?.conflict_target,
                 columns: statementOrOverwrite?.columns,
                 overwrite: statementOrOverwrite?.overwrite,
+                skipUpdateIfNoValuesChanged: orUpdateOptions?.skipUpdateIfNoValuesChanged
             };
             return this;
         }
@@ -303,6 +306,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         this.expressionMap.onUpdate = {
             overwrite: statementOrOverwrite,
             conflict: conflictTarget,
+            skipUpdateIfNoValuesChanged: orUpdateOptions?.skipUpdateIfNoValuesChanged
         };
         return this;
     }
@@ -363,7 +367,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             } else if (this.expressionMap.onConflict) {
                 query += ` ON CONFLICT ${this.expressionMap.onConflict} `;
             } else if (this.expressionMap.onUpdate) {
-                const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
+                const { overwrite, columns, conflict, skipUpdateIfNoValuesChanged } = this.expressionMap.onUpdate;
 
                 let conflictTarget = "ON CONFLICT";
 
@@ -381,6 +385,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     query += ` ${conflictTarget} DO UPDATE SET `;
                     query += columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
                     query += " ";
+                }
+
+                if (Array.isArray(overwrite) && skipUpdateIfNoValuesChanged && this.connection.driver instanceof PostgresDriver) {
+                    query += ` WHERE (`;
+                    query += overwrite.map(column => `${tableName}.${this.escape(column)} IS DISTINCT FROM EXCLUDED.${this.escape(column)}`).join(" OR ");
+                    query += ") ";
                 }
             }
         } else if (this.connection.driver.supportedUpsertType === "on-duplicate-key-update") {

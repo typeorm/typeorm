@@ -100,6 +100,7 @@ export class QueryExpressionMap {
         conflict?: string | string[],
         columns?: string[],
         overwrite?: string[],
+        skipUpdateIfNoValuesChanged?: boolean
     };
 
     /**

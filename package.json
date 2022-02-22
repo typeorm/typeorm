@@ -11,8 +11,15 @@
   },
   "exports": {
     ".": {
-      "import": "./index.mjs",
-      "require": "./index.js"
+      "node": {
+        "import": "./index.mjs",
+        "require": "./index.js"
+      },
+      "browser": {
+        "require": "./index.js",
+        "import": "./browser/index.js",
+        "default": "./index.js"
+      }
     },
     "./browser": "./browser/index.js",
     "./*.js": "./*.js",
@@ -24,7 +31,6 @@
   "main": "./index.js",
   "module": "./index.mjs",
   "types": "./index.d.ts",
-  "type": "commonjs",
   "browser": {
     "./browser/connection/ConnectionOptionsReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
     "./browser/connection/options-reader/ConnectionOptionsXmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",

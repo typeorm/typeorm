@@ -15,6 +15,8 @@ import { EmbeddedUniqueConstraintEntity } from "./entity/EmbeddedUniqueConstrain
 import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey";
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns";
 import { OneToOneRelationEntity } from "./entity/OneToOneRelation";
+import { UpsertOptions } from "../../../../src/repository/UpsertOptions";
+import { PostgresDriver } from "../../../../src/driver/postgres/PostgresDriver";
 
 describe("repository > basic methods", () => {
 
@@ -480,6 +482,41 @@ describe("repository > basic methods", () => {
             await postObjects.upsert({ externalId, title: "title updated" }, ["externalId"]);
             (await postObjects.findOneOrFail(({ externalId }))).subTitle.should.equal("subtitle");
             (await postObjects.findOneOrFail(({ externalId }))).title.should.equal("title updated");
+        })));
+        it("should skip update when nothing has changed", () => Promise.all(connections.map(async (connection) => {
+            if (!(connection.driver instanceof PostgresDriver)) return;
+            
+            const postObjects = connection.getRepository(Post);
+            const externalId1 = "external-skip-update-nothing-changed1";
+            const externalId2 = "external-skip-update-nothing-changed2";
+
+            const upsertOptions: UpsertOptions<Post> = {
+                conflictPaths: ["externalId"],
+                skipUpdateIfNoValuesChanged: true
+            };
+
+            const insertResult = await postObjects.upsert([
+                { externalId:externalId1, title: "title1" },
+                { externalId:externalId2, title: "title2" }
+            ], upsertOptions);
+            insertResult.raw.should.have.length(2); // insert
+            (await postObjects.findOneOrFail(({ externalId: externalId1}))).title.should.equal("title1");
+            (await postObjects.findOneOrFail(({ externalId: externalId2}))).title.should.equal("title2");
+
+            const updatedResult = await postObjects.upsert([
+                { externalId: externalId1, title: "title updated1" },
+                { externalId: externalId2, title: "title updated2" },
+            ], upsertOptions);
+            updatedResult.raw.should.have.length(2); // update
+            (await postObjects.findOneOrFail(({ externalId: externalId1 }))).title.should.equal("title updated1");
+            (await postObjects.findOneOrFail(({ externalId: externalId2 }))).title.should.equal("title updated2");
+            
+            const skippedUpdateResult = await postObjects.upsert([
+                { externalId: externalId1, title: "title updated1" },
+                { externalId: externalId2, title: "title updated2" },
+            ], upsertOptions);
+            skippedUpdateResult.raw.should.have.length(0); // update skipped
+
         })));
         it("should upsert with embedded columns", () => Promise.all(connections.map(async (connection) => {
             if (connection.driver.supportedUpsertType == null) return;
