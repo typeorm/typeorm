@@ -210,7 +210,7 @@ export class EntitySchemaTransformer {
         // add index metadata args from the schema
         if (options.indices) {
             options.indices.forEach(index => {
-                const indexAgrs: IndexMetadataArgs = {
+                const indexArgs: IndexMetadataArgs = {
                     target: options.target || options.name,
                     name: index.name,
                     unique: index.unique === true ? true : false,
@@ -222,32 +222,32 @@ export class EntitySchemaTransformer {
                     sparse: index.sparse,
                     columns: index.columns
                 };
-                metadataArgsStorage.indices.push(indexAgrs);
+                metadataArgsStorage.indices.push(indexArgs);
             });
         }
 
         // add unique metadata args from the schema
         if (options.uniques) {
             options.uniques.forEach(unique => {
-                const uniqueAgrs: UniqueMetadataArgs = {
+                const uniqueArgs: UniqueMetadataArgs = {
                     target: options.target || options.name,
                     name: unique.name,
                     columns: unique.columns,
                     deferrable: unique.deferrable,
                 };
-                metadataArgsStorage.uniques.push(uniqueAgrs);
+                metadataArgsStorage.uniques.push(uniqueArgs);
             });
         }
 
         // add check metadata args from the schema
         if (options.checks) {
             options.checks.forEach(check => {
-                const checkAgrs: CheckMetadataArgs = {
+                const checkArgs: CheckMetadataArgs = {
                     target: options.target || options.name,
                     name: check.name,
                     expression: check.expression
                 };
-                metadataArgsStorage.checks.push(checkAgrs);
+                metadataArgsStorage.checks.push(checkArgs);
             });
         }
 
