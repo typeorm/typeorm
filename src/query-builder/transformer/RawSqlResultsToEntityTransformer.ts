@@ -47,7 +47,7 @@ export class RawSqlResultsToEntityTransformer {
         const entities: any[] = [];
         group.forEach(results => {
             const entity = this.transformRawResultsGroup(results, alias);
-            if (entity !== undefined && !Object.values(entity).every((value) => value === null))
+            if (entity !== undefined && !Object.values(entity).every((value) => value === null || value === undefined))
                 entities.push(entity);
         });
         return entities;
