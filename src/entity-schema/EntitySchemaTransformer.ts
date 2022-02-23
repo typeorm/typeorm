@@ -78,7 +78,7 @@ export class EntitySchemaTransformer {
             if (regularColumn.objectId)
                 mode = "objectId";
 
-            const columnAgrs: ColumnMetadataArgs = {
+            const columnArgs: ColumnMetadataArgs = {
                 target: options.target || options.name,
                 mode: mode,
                 propertyName: columnName,
@@ -113,7 +113,7 @@ export class EntitySchemaTransformer {
                     srid: regularColumn.srid
                 }
             };
-            metadataArgsStorage.columns.push(columnAgrs);
+            metadataArgsStorage.columns.push(columnArgs);
 
             if (regularColumn.generated) {
                 const generationArgs: GeneratedMetadataArgs = {
