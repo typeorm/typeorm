@@ -65,13 +65,13 @@ export class RelationLoader {
 
         if (columns.length === 1) {
             qb.where(`${joinAliasName}.${columns[0].propertyPath} IN (:...${joinAliasName + "_" + columns[0].propertyName})`);
-            qb.setParameter(joinAliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].getEntityValue(entity)));
+            qb.setParameter(joinAliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].getEntityValue(entity, true)));
 
         } else {
             const condition = entities.map((entity, entityIndex) => {
                 return columns.map((column, columnIndex) => {
                     const paramName = joinAliasName + "_entity_" + entityIndex + "_" + columnIndex;
-                    qb.setParameter(paramName, column.getEntityValue(entity));
+                    qb.setParameter(paramName, column.getEntityValue(entity, true));
                     return joinAliasName + "." + column.propertyPath + " = :" + paramName;
                 }).join(" AND ");
             }).map(condition => "(" + condition + ")").join(" OR ");
@@ -102,13 +102,13 @@ export class RelationLoader {
 
         if (columns.length === 1) {
             qb.where(`${aliasName}.${columns[0].propertyPath} IN (:...${aliasName + "_" + columns[0].propertyName})`);
-            qb.setParameter(aliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity)));
+            qb.setParameter(aliasName + "_" + columns[0].propertyName, entities.map(entity => columns[0].referencedColumn!.getEntityValue(entity, true)));
 
         } else {
             const condition = entities.map((entity, entityIndex) => {
                 return columns.map((column, columnIndex) => {
                     const paramName = aliasName + "_entity_" + entityIndex + "_" + columnIndex;
-                    qb.setParameter(paramName, column.referencedColumn!.getEntityValue(entity));
+                    qb.setParameter(paramName, column.referencedColumn!.getEntityValue(entity, true));
                     return aliasName + "." + column.propertyPath + " = :" + paramName;
                 }).join(" AND ");
             }).map(condition => "(" + condition + ")").join(" OR ");
@@ -141,7 +141,7 @@ export class RelationLoader {
             return `${joinAlias}.${inverseJoinColumn.propertyName}=${mainAlias}.${inverseJoinColumn.referencedColumn!.propertyName}`;
         });
         const parameters = relation.joinColumns.reduce((parameters, joinColumn) => {
-            parameters[joinColumn.propertyName] = entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity));
+            parameters[joinColumn.propertyName] = entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity, true));
             return parameters;
         }, {} as ObjectLiteral);
 
@@ -177,7 +177,7 @@ export class RelationLoader {
             return `${joinAlias}.${inverseJoinColumn.propertyName} IN (:...${inverseJoinColumn.propertyName})`;
         });
         const parameters = relation.inverseRelation!.inverseJoinColumns.reduce((parameters, joinColumn) => {
-            parameters[joinColumn.propertyName] = entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity));
+            parameters[joinColumn.propertyName] = entities.map(entity => joinColumn.referencedColumn!.getEntityValue(entity, true));
             return parameters;
         }, {} as ObjectLiteral);
 
