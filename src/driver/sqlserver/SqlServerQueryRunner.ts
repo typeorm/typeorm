@@ -148,6 +148,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                     ok();
                     this.connection.logger.logQuery("COMMIT");
+                    this.transactionDepth -= 1;
                 });
             });
         }
@@ -170,6 +171,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         if (this.transactionDepth > 1) {
             await this.query(`ROLLBACK TRANSACTION typeorm_${this.transactionDepth - 1}`);
+            this.transactionDepth -= 1;
         } else {
             return new Promise<void>( (ok, fail) => {
                 this.databaseConnection.rollback(async (err: any) => {
@@ -181,10 +183,10 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
                     ok();
                     this.connection.logger.logQuery("ROLLBACK");
+                    this.transactionDepth -= 1;
                 });
             });
         }
-        this.transactionDepth -= 1;
     }
 
     /**
