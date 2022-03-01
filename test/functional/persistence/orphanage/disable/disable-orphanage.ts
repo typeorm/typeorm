@@ -30,7 +30,6 @@ describe("persistence > orphanage > disable", () => {
         let userRepo: Repository<User>;
         let settingRepo: Repository<Setting>;
         let userId: number;
-		const expectedDataList = ["foo","bar_updated","moo","cow"];
 
         beforeEach(async () => {
             await Promise.all(connections.map(async connection => {
@@ -77,13 +76,6 @@ describe("persistence > orphanage > disable", () => {
             expect(itemsWithoutForeignKeys).to.have.lengthOf(0);
         });
 
-        it("should persist data correctly", async () => {
-            const user = await userRepo.findOne(userId);
-            expect(user!.settings).to.have.lengthOf(4);
-			for(let i=0; i<4; i++) {
-				expect(user!.settings[i].data).to.equal(expectedDataList[i]);
-			}
-        });
     });
 
 });
