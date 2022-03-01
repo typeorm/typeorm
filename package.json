@@ -51,7 +51,8 @@
     "./browser/platform/PlatformTools.js": "./browser/platform/BrowserPlatformTools.js",
     "./browser/repository/MongoRepository.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/util/DirectoryExportedClassesLoader.js": "./browser/platform/BrowserDirectoryExportedClassesLoader.js",
-    "./index.js": "./browser/index.js"
+    "./index.js": "./browser/index.js",
+    "./index.mjs": "./browser/index.js"
   },
   "repository": {
     "type": "git",
