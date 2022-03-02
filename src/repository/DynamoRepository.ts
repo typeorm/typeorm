@@ -1,13 +1,14 @@
 import { FindOptions } from "../driver/dynamo/models/FindOptions";
 import { ScanOptions } from "../driver/dynamo/models/ScanOptions";
 import { BatchWriteItem } from "../driver/dynamo/models/BatchWriteItem";
-import {
-    DeepPartial,
-    EntityMetadata, FindConditions, FindOneOptions,
-    ObjectID,
-    ObjectLiteral, Repository,
-    SelectQueryBuilder
-} from "..";
+import { ObjectID } from "../driver/mongodb/typings";
+import { ObjectLiteral } from "../common/ObjectLiteral";
+import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
+import { DeepPartial } from "../common/DeepPartial";
+import { EntityMetadata } from "../metadata/EntityMetadata";
+import { FindConditions } from "../find-options/FindConditions";
+import { FindOneOptions } from "../find-options/FindOneOptions";
+import { Repository } from "./Repository";
 import { DynamoReadStream } from "../driver/dynamo/DynamoReadStream";
 import { DynamoEntityManager } from "../entity-manager/DynamoEntityManager";
 import { DynamoQueryRunner } from "../driver/dynamo/DynamoQueryRunner";

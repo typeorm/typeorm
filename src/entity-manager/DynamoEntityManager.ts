@@ -20,7 +20,7 @@ import {DynamoQueryRunner} from "../driver/dynamo/DynamoQueryRunner";
 import {DynamoDriver} from "../driver/dynamo/DynamoDriver";
 import {UpdateOptions} from "../driver/dynamo/models/UpdateOptions";
 import {paramHelper} from "../driver/dynamo/helpers/ParamHelper";
-import {DynamoClient} from "../driver/dynamo/DynamoClient";
+import {getDocumentClient} from "../driver/dynamo/DynamoClient";
 import {indexedColumns} from "../driver/dynamo/helpers/GlobalSecondaryIndexHelper";
 import {FindOptions} from "../driver/dynamo/models/FindOptions";
 import {commonUtils} from "../driver/dynamo/utils/CommonUtils";
@@ -71,7 +71,7 @@ export class DynamoEntityManager extends EntityManager {
         // TODO: needs to be smart enough to set the indexedColumns if any of the underlying columns are changed
         indexedColumns(metadata, entityClassOrName);
         const params = paramHelper.update(metadata.tablePath, options);
-        return new DynamoClient().update(params);
+        return getDocumentClient().update(params);
     }
 
     /**
@@ -79,7 +79,7 @@ export class DynamoEntityManager extends EntityManager {
      */
     async find<Entity> (entityClassOrName: EntityTarget<Entity>, options?: FindOptions | any): Promise<Entity[]> {
         if (options) {
-            const dbClient = new DynamoClient();
+            const dbClient = getDocumentClient();
             const metadata = this.connection.getMetadata(entityClassOrName);
             const params = paramHelper.find(metadata.tablePath, options, metadata.indices);
             const results = commonUtils.isEmpty(options.where) ? await dbClient.scan(params) : await dbClient.query(params);
@@ -95,7 +95,7 @@ export class DynamoEntityManager extends EntityManager {
      */
     async findAll<Entity> (entityClassOrName: EntityTarget<Entity>, options: FindOptions): Promise<Entity[]> {
         delete options.limit;
-        const dbClient = new DynamoClient();
+        const dbClient = getDocumentClient();
         const metadata = this.connection.getMetadata(entityClassOrName);
         const params = paramHelper.find(metadata.tablePath, options, metadata.indices);
         let items: any[] = [];
@@ -110,7 +110,7 @@ export class DynamoEntityManager extends EntityManager {
     }
 
     async scan<Entity> (entityClassOrName: EntityTarget<Entity>, options: ScanOptions) {
-        const dbClient = new DynamoClient();
+        const dbClient = getDocumentClient();
         const metadata = this.connection.getMetadata(entityClassOrName);
         const params: any = {
             TableName: metadata.tablePath
@@ -136,7 +136,7 @@ export class DynamoEntityManager extends EntityManager {
     async findOne<Entity> (entityClassOrName: EntityTarget<Entity>,
         optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOneOptions<Entity> | DeepPartial<Entity>,
         maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
-        const dbClient = new DynamoClient();
+        const dbClient = getDocumentClient();
         const metadata = this.connection.getMetadata(entityClassOrName);
         const id = typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
         const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
@@ -248,7 +248,7 @@ export class DynamoEntityManager extends EntityManager {
      * Read from DynamoDB in batches.
      */
     async batchRead<Entity> (entityClassOrName: EntityTarget<Entity>, keys: ObjectLiteral[]) {
-        const dbClient = new DynamoClient();
+        const dbClient = getDocumentClient();
         const metadata = this.connection.getMetadata(entityClassOrName);
         const batches = batchHelper.batch(keys, 100);
         let items: any[] = [];
@@ -273,7 +273,7 @@ export class DynamoEntityManager extends EntityManager {
      */
     // TODO: ... how do we update the indexColumn values here ... ?
     async batchWrite<Entity> (entityClassOrName: EntityTarget<Entity>, writes: BatchWriteItem[]) {
-        const dbClient = new DynamoClient();
+        const dbClient = getDocumentClient();
         const metadata = this.connection.getMetadata(entityClassOrName);
         const batches = batchHelper.batch(writes, 25);
         for (let i = 0; i < batches.length; i++) {

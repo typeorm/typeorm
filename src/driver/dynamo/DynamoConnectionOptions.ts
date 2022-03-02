@@ -1,7 +1,9 @@
 /**
  * DynamoDb specific connection options.
  */
-export interface DynamoConnectionOptions {
+import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+
+export interface DynamoConnectionOptions extends BaseConnectionOptions {
 
     /**
      * Database type.
