@@ -156,7 +156,7 @@ View Column options define additional options for your view entity columns, simi
 You can specify view column options in `@ViewColumn`:
 
 ```typescript
-@Column({
+@ViewColumn({
     name: "postName",
     // ...
 })
