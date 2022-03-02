@@ -42,6 +42,12 @@ export class PlatformTools {
             switch (name) {
 
                 /**
+                 * aws-sdk
+                 */
+                case "aws-sdk":
+                    return require("aws-sdk");
+
+                /**
                 * mongodb
                 */
                 case "mongodb":

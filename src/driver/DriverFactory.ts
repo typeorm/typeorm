@@ -18,6 +18,7 @@ import {Connection} from "../connection/Connection";
 import {SapDriver} from "./sap/SapDriver";
 import {BetterSqlite3Driver} from "./better-sqlite3/BetterSqlite3Driver";
 import {CapacitorDriver} from "./capacitor/CapacitorDriver";
+import {DynamoDriver} from "./dynamo/DynamoDriver";
 
 /**
  * Helps to create drivers.
@@ -58,6 +59,8 @@ export class DriverFactory {
                 return new SqlServerDriver(connection);
             case "mongodb":
                 return new MongoDriver(connection);
+            case "dynamodb":
+                return new DynamoDriver(connection);
             case "expo":
                 return new ExpoDriver(connection);
             case "aurora-data-api":
@@ -79,6 +82,7 @@ export class DriverFactory {
                         "expo",
                         "mariadb",
                         "mongodb",
+                        "dynamodb",
                         "mssql",
                         "mysql",
                         "nativescript",
