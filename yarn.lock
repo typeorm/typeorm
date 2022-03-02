@@ -334,6 +334,11 @@
   dependencies:
     "source-map" "^0.6.0"
 
+"@types/tiny-async-pool@^1.0.0":
+  "integrity" "sha512-d8RK1jg/piCgv5/jD8ta8uJOE10tU8MWExzL1Kf1kOjMaTuL5cW0eZ9ax001SSYa4Ecg6xzZBh/jM4GB7+5OAg=="
+  "resolved" "https://repo.forge.lmig.com/api/npm/npm/@types/tiny-async-pool/-/tiny-async-pool-1.0.0.tgz"
+  "version" "1.0.0"
+
 "@types/undertaker-registry@*":
   "integrity" "sha512-Z4TYuEKn9+RbNVk1Ll2SS4x1JeLHecolIbM/a8gveaHsW0Hr+RQMraZACwTO2VD7JvepgA6UO1A1VrbktQrIbQ=="
   "resolved" "https://registry.npmjs.org/@types/undertaker-registry/-/undertaker-registry-1.0.1.tgz"
@@ -6758,6 +6763,14 @@
     "es5-ext" "~0.10.46"
     "next-tick" "1"
 
+"tiny-async-pool@^1.2.0":
+  "integrity" "sha512-PY/OiSenYGBU3c1nTuP1HLKRkhKFDXsAibYI5GeHbHw2WVpt6OFzAPIRP94dGnS66Jhrkheim2CHAXUNI4XwMg=="
+  "resolved" "https://repo.forge.lmig.com/api/npm/npm/tiny-async-pool/-/tiny-async-pool-1.2.0.tgz"
+  "version" "1.2.0"
+  dependencies:
+    "semver" "^5.5.0"
+    "yaassertion" "^1.0.0"
+
 "tmp@^0.0.33":
   "integrity" "sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw=="
   "resolved" "https://registry.npmjs.org/tmp/-/tmp-0.0.33.tgz"
@@ -7304,6 +7317,11 @@
   "integrity" "sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA=="
   "resolved" "https://registry.npmjs.org/y18n/-/y18n-5.0.8.tgz"
   "version" "5.0.8"
+
+"yaassertion@^1.0.0":
+  "integrity" "sha512-sBoJBg5vTr3lOpRX0yFD+tz7wv/l2UPMFthag4HGTMPrypBRKerjjS8jiEnNMjcAEtPXjbHiKE0UwRR1W1GXBg=="
+  "resolved" "https://repo.forge.lmig.com/api/npm/npm/yaassertion/-/yaassertion-1.0.2.tgz"
+  "version" "1.0.2"
 
 "yallist@^2.1.2":
   "integrity" "sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI="

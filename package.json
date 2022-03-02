@@ -91,6 +91,7 @@
     "@types/sha.js": "^2.4.0",
     "@types/sinon": "^9.0.10",
     "@types/source-map-support": "^0.5.3",
+    "@types/tiny-async-pool": "^1.0.0",
     "@types/uuid": "^8.3.4",
     "@types/xml2js": "^0.4.8",
     "@types/yargs": "^17.0.2",
@@ -137,6 +138,7 @@
     "typescript": "^4.2.2"
   },
   "peerDependencies": {
+    "aws-sdk": "^2.797.0",
     "@sap/hana-client": "^2.11.14",
     "better-sqlite3": "^7.1.2",
     "hdb-pool": "^0.1.6",
@@ -213,6 +215,7 @@
     "mkdirp": "^1.0.4",
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
+    "tiny-async-pool": "^1.2.0",
     "tslib": "^2.1.0",
     "uuid": "^8.3.2",
     "xml2js": "^0.4.23",

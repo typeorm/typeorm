@@ -5,6 +5,8 @@ import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoRepository} from "./MongoRepository";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {EntityManager} from "../entity-manager/EntityManager";
+import {DynamoDriver} from "../driver/dynamo/DynamoDriver";
+import {DynamoRepository} from "./DynamoRepository";
 
 /**
  * Factory used to create different types of repositories.
@@ -37,6 +39,8 @@ export class RepositoryFactory {
             let repository: Repository<any>;
             if (manager.connection.driver instanceof MongoDriver) {
                 repository = new MongoRepository();
+            } else if (manager.connection.driver instanceof DynamoDriver) {
+                repository = new DynamoRepository();
             } else {
                 repository = new Repository<any>();
             }
