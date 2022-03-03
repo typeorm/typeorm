@@ -54,6 +54,11 @@ export class RedisQueryResultCache implements QueryResultCache {
                 ...cacheOptions?.options,
                 legacyMode: true
             });
+            if (typeof this.connection.options.cache === "object" && this.connection.options.cache.ignoreErrors) {
+                this.client.on("error", (err: any) => {
+                    this.connection.logger.log("warn", err);
+                });
+            }
             if ("connect" in this.client) {
                 await this.client.connect();
             }
