@@ -1,5 +1,5 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
 import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * MySQL specific connection options.
@@ -7,7 +7,7 @@ import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnection
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface AuroraMysqlConnectionOptions
-    extends BaseConnectionOptions,
+    extends BaseDataSourceOptions,
         AuroraMysqlConnectionCredentialsOptions {
     /**
      * Database type.

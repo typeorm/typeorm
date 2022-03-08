@@ -187,7 +187,7 @@ export class MongoDriver implements Driver {
         "readConcern",
         "maxStalenessSeconds",
         "loggerLevel",
-        // Do not overwrite BaseConnectionOptions.logger
+        // Do not overwrite BaseDataSourceOptions.logger
         // "logger",
         "promoteValues",
         "promoteBuffers",

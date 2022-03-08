@@ -1,9 +1,9 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * Sqlite-specific connection options.
  */
-export interface ReactNativeConnectionOptions extends BaseConnectionOptions {
+export interface ReactNativeConnectionOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */

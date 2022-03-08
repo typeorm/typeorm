@@ -1,4 +1,4 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 
 /**
@@ -7,7 +7,7 @@ import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsO
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface MysqlConnectionOptions
-    extends BaseConnectionOptions,
+    extends BaseDataSourceOptions,
         MysqlConnectionCredentialsOptions {
     /**
      * Database type.

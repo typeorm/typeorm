@@ -5,7 +5,7 @@ import { ColumnType } from "./types/ColumnTypes"
 import { MappedColumnTypes } from "./types/MappedColumnTypes"
 import { SchemaBuilder } from "../schema-builder/SchemaBuilder"
 import { DataTypeDefaults } from "./types/DataTypeDefaults"
-import { BaseConnectionOptions } from "../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../data-source/BaseDataSourceOptions"
 import { TableColumn } from "../schema-builder/table/TableColumn"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ReplicationMode } from "./types/ReplicationMode"
@@ -23,7 +23,7 @@ export interface Driver {
     /**
      * Connection options.
      */
-    options: BaseConnectionOptions
+    options: BaseDataSourceOptions
 
     /**
      * Database name used to perform all write queries.

@@ -211,6 +211,28 @@ userRepository.find({
 
 ### BREAKING CHANGES
 
+* drop `ormconfig` support. `ormconfig` still works if you use deprecated methods,
+however we do not recommend using it anymore, because it's support will be completely dropped in `0.4.0`.
+If you want to have your connection options defined in a separate file, you can still do it like this:
+
+```ts
+import ormconfig from "./ormconfig.json"
+
+const MyDataSource = new DataSource(require("./ormconfig.json"))
+```
+
+Or even more type-safe approach with `resolveJsonModule` in `tsconfig.json` enabled:
+
+```ts
+import ormconfig from "./ormconfig.json"
+
+const MyDataSource = new DataSource(ormconfig)
+```
+
+We won't be supporting all `ormcofing` extensions (e.g. `json`, `js`, `ts`, `yaml`, `xml`, `env`).
+
+* `EntityManager.connection` is now `EntityManager.dataSource`
+
 * `aurora-data-api` driver now is called `aurora-mysql`
 
 * `aurora-data-api-pg` driver now is called `aurora-postgres`
@@ -499,6 +521,8 @@ export const MyDataSources = {
 * `getConnectionOptions()` is deprecated - in next version we are going to implement different mechanism of connection options loading
 
 * `AbstractRepository` is deprecated. Use new way of custom repositories creation.
+
+* `Connection.name` and `BaseConnectionOptions.name` are deprecated. Connections don't need names anymore since we are going to drop all related methods relying on this property.
 
 * all deprecated signatures will be removed in `0.4.0`
 

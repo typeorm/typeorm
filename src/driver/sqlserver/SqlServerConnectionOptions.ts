@@ -1,11 +1,11 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
 
 /**
  * Microsoft Sql Server specific connection options.
  */
 export interface SqlServerConnectionOptions
-    extends BaseConnectionOptions,
+    extends BaseDataSourceOptions,
         SqlServerConnectionCredentialsOptions {
     /**
      * Database type.

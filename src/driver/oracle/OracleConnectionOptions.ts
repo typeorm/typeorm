@@ -1,11 +1,11 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
 
 /**
  * Oracle-specific connection options.
  */
 export interface OracleConnectionOptions
-    extends BaseConnectionOptions,
+    extends BaseDataSourceOptions,
         OracleConnectionCredentialsOptions {
     /**
      * Database type.

@@ -9,7 +9,7 @@ import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { OrmUtils } from "../../util/OrmUtils"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
@@ -60,7 +60,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Connection options.
      */
-    options: BaseConnectionOptions
+    options: BaseDataSourceOptions
 
     /**
      * Master database used to perform all write queries.
@@ -238,7 +238,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     constructor(connection: DataSource) {
         this.connection = connection
-        this.options = connection.options as BaseConnectionOptions
+        this.options = connection.options as BaseDataSourceOptions
 
         this.database = DriverUtils.buildDriverOptions(this.options).database
     }

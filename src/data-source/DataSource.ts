@@ -53,6 +53,8 @@ export class DataSource {
 
     /**
      * Connection name.
+     *
+     * @deprecated we don't need names anymore since we are going to drop all related methods relying on this property.
      */
     readonly name: string
 
@@ -62,7 +64,7 @@ export class DataSource {
     readonly options: DataSourceOptions
 
     /**
-     * Indicates if connection is initialized or not.
+     * Indicates if DataSource initial connection with database is established or not.
      */
     readonly isConnected: boolean
 
@@ -206,7 +208,7 @@ export class DataSource {
      * This method not necessarily creates database connection (depend on database type),
      * but it also can setup a connection pool with database to use.
      */
-    async connect(): Promise<this> {
+    async initialize(): Promise<this> {
         if (this.isConnected)
             throw new CannotConnectAlreadyConnectedError(this.name)
 
@@ -247,10 +249,22 @@ export class DataSource {
     }
 
     /**
+     * Performs connection to the database.
+     * This method should be called once on application bootstrap.
+     * This method not necessarily creates database connection (depend on database type),
+     * but it also can setup a connection pool with database to use.
+     *
+     * @deprecated use .initialize method instead
+     */
+    async connect(): Promise<this> {
+        return this.initialize()
+    }
+
+    /**
      * Closes connection with the database.
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
-    async close(): Promise<void> {
+    async destroy(): Promise<void> {
         if (!this.isConnected)
             throw new CannotExecuteNotConnectedError(this.name)
 
@@ -260,6 +274,16 @@ export class DataSource {
         if (this.queryResultCache) await this.queryResultCache.disconnect()
 
         ObjectUtils.assign(this, { isConnected: false })
+    }
+
+    /**
+     * Closes connection with the database.
+     * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
+     *
+     * @deprecated use .destroy method instead
+     */
+    async close(): Promise<void> {
+        return this.destroy()
     }
 
     /**

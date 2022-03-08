@@ -1,9 +1,9 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * Sql.js-specific connection options.
  */
-export interface SqljsConnectionOptions extends BaseConnectionOptions {
+export interface SqljsConnectionOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */

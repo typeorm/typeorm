@@ -1,11 +1,11 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 
 /**
  * Postgres-specific connection options.
  */
 export interface PostgresConnectionOptions
-    extends BaseConnectionOptions,
+    extends BaseDataSourceOptions,
         PostgresConnectionCredentialsOptions {
     /**
      * Database type.

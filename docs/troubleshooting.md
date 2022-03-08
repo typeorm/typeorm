@@ -1,6 +1,6 @@
 # Troubleshooting
 
-* [Glob patterns](#glob-patterns)
+-   [Glob patterns](#glob-patterns)
 
 ## Glob Patterns
 
@@ -10,6 +10,7 @@ Glob patterns are used in the TypeOrm to specify the locations of entities, migr
 # in case of an error
  INFO: No classes were found using the provided glob pattern:  "dist/**/*.entity{.ts}"
 ```
+
 ```bash
 # when files are found
 INFO: All classes found using provided glob pattern "dist/**/*.entity{.js,.ts}" : "dist/app/user/user.entity.js | dist/app/common/common.entity.js"
