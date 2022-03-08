@@ -64,9 +64,9 @@ export class DataSource {
     readonly options: DataSourceOptions
 
     /**
-     * Indicates if DataSource initial connection with database is established or not.
+     * Indicates if DataSource is initialized or not.
      */
-    readonly isConnected: boolean
+    readonly isInitialized: boolean
 
     /**
      * Database driver used by this connection.
@@ -141,12 +141,21 @@ export class DataSource {
             : undefined
         this.relationLoader = new RelationLoader(this)
         this.relationIdLoader = new RelationIdLoader(this)
-        this.isConnected = false
+        this.isInitialized = false
     }
 
     // -------------------------------------------------------------------------
     // Public Accessors
     // -------------------------------------------------------------------------
+
+    /**
+     Indicates if DataSource is initialized or not.
+     *
+     * @deprecated use .isInitialized instead
+     */
+    get isConnected() {
+        return this.isInitialized
+    }
 
     /**
      * Gets the mongodb entity manager that allows to perform mongodb-specific repository operations
@@ -209,7 +218,7 @@ export class DataSource {
      * but it also can setup a connection pool with database to use.
      */
     async initialize(): Promise<this> {
-        if (this.isConnected)
+        if (this.isInitialized)
             throw new CannotConnectAlreadyConnectedError(this.name)
 
         // connect to the database via its driver
@@ -265,7 +274,7 @@ export class DataSource {
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
     async destroy(): Promise<void> {
-        if (!this.isConnected)
+        if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
 
         await this.driver.disconnect()
@@ -293,7 +302,7 @@ export class DataSource {
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
      */
     async synchronize(dropBeforeSync: boolean = false): Promise<void> {
-        if (!this.isConnected)
+        if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
 
         if (dropBeforeSync) await this.dropDatabase()
@@ -351,7 +360,7 @@ export class DataSource {
     async runMigrations(options?: {
         transaction?: "all" | "none" | "each"
     }): Promise<Migration[]> {
-        if (!this.isConnected)
+        if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
 
         const migrationExecutor = new MigrationExecutor(this)
@@ -370,7 +379,7 @@ export class DataSource {
     async undoLastMigration(options?: {
         transaction?: "all" | "none" | "each"
     }): Promise<void> {
-        if (!this.isConnected)
+        if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
 
         const migrationExecutor = new MigrationExecutor(this)
@@ -385,7 +394,7 @@ export class DataSource {
      * Returns true if there are pending migrations
      */
     async showMigrations(): Promise<boolean> {
-        if (!this.isConnected) {
+        if (!this.isInitialized) {
             throw new CannotExecuteNotConnectedError(this.name)
         }
         const migrationExecutor = new MigrationExecutor(this)

@@ -38,8 +38,6 @@ After connection is released it is not possible to use the query runner methods.
 which you can use through `manager` property in order to run `EntityManager` methods on a particular database connection
 used by `QueryRunner` instance:
 
-Once you set your queryRunner up, you can use it with an interface similar to the `Connection` interface:
-
 ```typescript
 const queryRunner = connection.createQueryRunner()
 

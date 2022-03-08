@@ -56,7 +56,7 @@ export class ConnectionManager {
         )
         if (existConnection) {
             // if connection is registered and its not closed then throw an error
-            if (existConnection.isConnected)
+            if (existConnection.isInitialized)
                 throw new AlreadyHasActiveConnectionError(
                     options.name || "default",
                 )

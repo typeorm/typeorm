@@ -39,7 +39,7 @@ describe("ConnectionManager", () => {
             const connection = connectionManager.create(options)
             connection.name.should.be.equal("default")
             connection.driver.should.be.instanceOf(MysqlDriver)
-            connection.isConnected.should.be.false
+            connection.isInitialized.should.be.false
         })
 
         /* it("should create a postgres connection when postgres driver is specified", () => {

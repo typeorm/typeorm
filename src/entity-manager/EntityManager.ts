@@ -1340,6 +1340,17 @@ export class EntityManager {
     }
 
     /**
+     * Creates a new repository instance out of a given Repository and
+     * sets current EntityManager instance to it. Used to work with custom repositories
+     * in transactions.
+     */
+    withRepository<Entity, R extends Repository<Entity>>(repository: R): R {
+        const repositoryConstructor =
+            repository.constructor as typeof Repository
+        return new repositoryConstructor(repository.target, this) as R
+    }
+
+    /**
      * Gets custom entity repository marked with @EntityRepository decorator.
      *
      * @deprecated use Repository.extend to create custom repositories

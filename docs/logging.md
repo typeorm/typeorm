@@ -118,10 +118,10 @@ export class MyCustomLogger implements Logger {
 And specify it in data source options:
 
 ```typescript
-import { createConnection } from "typeorm"
+import { DataSource } from "typeorm"
 import { MyCustomLogger } from "./logger/MyCustomLogger"
 
-createConnection({
+const dataSource = new DataSource({
     name: "mysql",
     type: "mysql",
     host: "localhost",

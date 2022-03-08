@@ -36,7 +36,7 @@ and make sure [sql-wasm.wasm file](https://github.com/sql-js/sql.js/blob/master/
 **Example of configuration**
 
 ```typescript
-createConnection({
+new DataSource({
     type: "sqljs",
     entities: [Photo],
     synchronize: true,

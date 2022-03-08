@@ -20,7 +20,7 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
     after(cleanup)
 
     afterEach(() => {
-        if (connection && connection.isConnected) {
+        if (connection && connection.isInitialized) {
             connection.close()
         }
     })
@@ -38,7 +38,7 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
             database: path,
         })
 
-        assert.strictEqual(connection.isConnected, true)
+        assert.strictEqual(connection.isInitialized, true)
     })
 
     it("should create the whole path to database file for better-sqlite3", async function () {
@@ -54,6 +54,6 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
             database: path,
         })
 
-        assert.strictEqual(connection.isConnected, true)
+        assert.strictEqual(connection.isInitialized, true)
     })
 })

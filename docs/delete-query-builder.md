@@ -21,14 +21,12 @@ await myDataSource
 
 This is the most efficient way in terms of performance to delete entities from your database.
 
----
-
 ### `Soft-Delete`
 
 Applying Soft Delete to QueryBuilder
 
 ```typescript
-await myDataSource.getRepository(Entity).createQueryBuilder().softDelete()
+await dataSource.getRepository(Entity).createQueryBuilder().softDelete()
 ```
 
 ### `Restore-Soft-Delete`

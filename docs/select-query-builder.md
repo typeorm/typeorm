@@ -71,7 +71,7 @@ User {
 When using the `QueryBuilder`, you need to provide unique parameters in your `WHERE` expressions. **This will not work**:
 
 ```TypeScript
-const result = await getConnection()
+const result = await dataSource
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')
@@ -82,7 +82,7 @@ const result = await getConnection()
 ... but this will:
 
 ```TypeScript
-const result = await getConnection()
+const result = await dataSource
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')
@@ -142,9 +142,7 @@ There are 5 different `QueryBuilder` types available:
 -   `InsertQueryBuilder` - used to build and execute `INSERT` queries. Example:
 
     ```typescript
-    import { getConnection } from "typeorm"
-
-    await getConnection()
+    await dataSource
         .createQueryBuilder()
         .insert()
         .into(User)
@@ -158,9 +156,7 @@ There are 5 different `QueryBuilder` types available:
 -   `UpdateQueryBuilder` - used to build and execute `UPDATE` queries. Example:
 
     ```typescript
-    import { getConnection } from "typeorm"
-
-    await getConnection()
+    await dataSource
         .createQueryBuilder()
         .update(User)
         .set({ firstName: "Timber", lastName: "Saw" })
@@ -171,9 +167,7 @@ There are 5 different `QueryBuilder` types available:
 -   `DeleteQueryBuilder` - used to build and execute `DELETE` queries. Example:
 
     ```typescript
-    import { getConnection } from "typeorm"
-
-    await getConnection()
+    await dataSource
         .createQueryBuilder()
         .delete()
         .from(User)
@@ -185,9 +179,7 @@ There are 5 different `QueryBuilder` types available:
     Example:
 
         ```typescript
-        import {getConnection} from "typeorm";
-
-        await getConnection()
+        await dataSource
             .createQueryBuilder()
             .relation(User,"photos")
             .of(id)
@@ -203,7 +195,8 @@ To get a single result from the database,
 for example to get a user by id or name, you must use `getOne`:
 
 ```typescript
-const timber = await getRepository(User)
+const timber = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id OR user.name = :name", { id: 1, name: "Timber" })
     .getOne()
@@ -213,7 +206,8 @@ const timber = await getRepository(User)
 no result exists it will throw an `EntityNotFoundError`:
 
 ```typescript
-const timber = await getRepository(User)
+const timber = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id OR user.name = :name", { id: 1, name: "Timber" })
     .getOneOrFail()
@@ -223,7 +217,10 @@ To get multiple results from the database,
 for example, to get all users from the database, use `getMany`:
 
 ```typescript
-const users = await getRepository(User).createQueryBuilder("user").getMany()
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .getMany()
 ```
 
 There are two types of results you can get using select query builder: **entities** or **raw results**.
@@ -235,7 +232,8 @@ To get raw data, you use `getRawOne` and `getRawMany`.
 Examples:
 
 ```typescript
-const { sum } = await getRepository(User)
+const { sum } = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .select("SUM(user.photosCount)", "sum")
     .where("user.id = :id", { id: 1 })
@@ -243,7 +241,8 @@ const { sum } = await getRepository(User)
 ```
 
 ```typescript
-const photosSums = await getRepository(User)
+const photosSums = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
@@ -822,7 +821,8 @@ To get raw data, you use `getRawOne` and `getRawMany`.
 Examples:
 
 ```typescript
-const { sum } = await getRepository(User)
+const { sum } = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .select("SUM(user.photosCount)", "sum")
     .where("user.id = :id", { id: 1 })
@@ -830,7 +830,8 @@ const { sum } = await getRepository(User)
 ```
 
 ```typescript
-const photosSums = await getRepository(User)
+const photosSums = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .select("user.id")
     .addSelect("SUM(user.photosCount)", "sum")
@@ -846,7 +847,8 @@ You can use `stream` which returns you a stream.
 Streaming returns you raw data and you must handle entity transformation manually:
 
 ```typescript
-const stream = await getRepository(User)
+const stream = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id", { id: 1 })
     .stream()
@@ -858,7 +860,8 @@ Most of the time when you develop an application, you need pagination functional
 This is used if you have pagination, page slider, or infinite scroll components in your application.
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo")
     .take(10)
@@ -868,7 +871,8 @@ const users = await getRepository(User)
 This will give you the first 10 users with their photos.
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo")
     .skip(10)
@@ -879,7 +883,8 @@ This will give you all except the first 10 users with their photos.
 You can combine those methods:
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo")
     .skip(5)
@@ -899,7 +904,8 @@ QueryBuilder supports both optimistic and pessimistic locking.
 To use pessimistic read locking use the following method:
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .setLock("pessimistic_read")
     .getMany()
@@ -908,7 +914,8 @@ const users = await getRepository(User)
 To use pessimistic write locking use the following method:
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .setLock("pessimistic_write")
     .getMany()
@@ -917,7 +924,8 @@ const users = await getRepository(User)
 To use dirty read locking use the following method:
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .setLock("dirty_read")
     .getMany()
@@ -926,7 +934,8 @@ const users = await getRepository(User)
 To use optimistic locking use the following method:
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .setLock("optimistic", existUser.version)
     .getMany()
@@ -939,7 +948,8 @@ Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` 
 You can provide a certain index for database server to use in some cases. This feature is only supported in MySQL.
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .useIndex("my_index") // name of index
     .getMany()
@@ -950,7 +960,8 @@ const users = await getRepository(User)
 We can drop slow query to avoid crashing the server.
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .maxExecutionTime(1000) // milliseconds.
     .getMany()
@@ -961,7 +972,8 @@ const users = await getRepository(User)
 If you want to select only some entity properties, you can use the following syntax:
 
 ```typescript
-const users = await getRepository(User)
+const users = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .select(["user.id", "user.name"])
     .getMany()
@@ -975,7 +987,8 @@ You can easily create subqueries. Subqueries are supported in `FROM`, `WHERE` an
 Example:
 
 ```typescript
-const qb = await getRepository(Post).createQueryBuilder("post")
+const qb = await dataSource.getRepository(Post).createQueryBuilder("post")
+
 const posts = qb
     .where(
         "post.title IN " +

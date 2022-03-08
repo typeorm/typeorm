@@ -6,18 +6,18 @@
 
 ## What is `DataSource`
 
-Your interaction with the database is only possible once you setup a DataSource.
+Your interaction with the database is only possible once you setup a `DataSource`.
 TypeORM's `DataSource` holds your database connection settings and
 establishes initial database connection or connection pool depend on RDBMS you use.
 
-In order to establish initial connection / connection pool you must call `connect` method of your `DataSource` instance.
+In order to establish initial connection / connection pool you must call `initialize` method of your `DataSource` instance.
 
-Disconnection (closing all connections in the pool) is made when `close` is called.
+Disconnection (closing all connections in the pool) is made when `destroy` method is called.
 
-Generally, you call `connect` method of the `DataSource` instance on application bootstrap,
-and `close` it after you completely finished working with the database.
+Generally, you call `initialize` method of the `DataSource` instance on application bootstrap,
+and `destroy` it after you completely finished working with the database.
 In practice, if you are building a backend for your site and your backend server always stays running -
-you never `close` a DataSource.
+you never `destroy` a DataSource.
 
 ## Creating a new DataSource
 
@@ -36,14 +36,17 @@ const AppDataSource = new DataSource({
     database: "test",
 })
 
-MyDataSource.connect()
+AppDataSource.initialize()
     .then(() => {
-        console.log("Connection established!")
+        console.log("Data Source has been initialized!")
     })
     .catch((err) => {
-        console.error("error during connection establishment:", err)
+        console.error("Error during Data Source initialization", err)
     })
 ```
+
+It's a good idea to make `AppDataSource` globally available by `export`-ing it, since you'll
+use this instance across your application.
 
 `DataSource` accepts `DataSourceOptions` and those options vary depend on database `type` you use.
 For different database types there are different options you can specify.

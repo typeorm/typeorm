@@ -6,10 +6,9 @@ You can access the repository via DataSource's manager.
 Example:
 
 ```typescript
-import { getRepository } from "typeorm"
 import { User } from "./entity/User"
 
-const userRepository = getRepository(User) // you can also get it via getConnection().getRepository() or getManager().getRepository()
+const userRepository = dataSource.getRepository(User)
 const user = await userRepository.findOne(1)
 user.name = "Umed"
 await userRepository.save(user)

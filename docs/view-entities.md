@@ -60,7 +60,7 @@ or an instance of QueryBuilder
 })
 ```
 
-Each view entity must be registered in your connection options:
+Each view entity must be registered in your data source options:
 
 ```typescript
 import { DataSource } from "typeorm"

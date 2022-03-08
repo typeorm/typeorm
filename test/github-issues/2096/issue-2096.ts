@@ -26,7 +26,7 @@ describe("github issues > #2096 [mysql] Database name isn't read from url", () =
                 synchronize: true,
                 type: "mysql",
             })
-            expect(connection.isConnected).to.eq(true)
+            expect(connection.isInitialized).to.eq(true)
             await connection.close()
         }
     })

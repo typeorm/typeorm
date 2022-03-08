@@ -50,7 +50,7 @@ You can specify the table name in the entity:
 
 ```typescript
 @Entity("users")
-export class User {
+export class User {}
 ```
 
 This code will create a database table named "users".
@@ -70,15 +70,15 @@ Example:
 @Entity({
     name: "users",
     engine: "MyISAM",
-    database: 'example_dev',
-    schema: 'schema_with_best_tables',
+    database: "example_dev",
+    schema: "schema_with_best_tables",
     synchronize: false,
     orderBy: {
         name: "ASC",
-        id: "DESC"
-    }
+        id: "DESC",
+    },
 })
-export class User {
+export class User {}
 ```
 
 Learn more about [Entities](entities.md).
@@ -102,23 +102,25 @@ View entity is a class that maps to a database view.
         SELECT "post"."id" "id", "post"."name" AS "name", "category"."name" AS "categoryName"
         FROM "post" "post"
         LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
-    `
+    `,
 })
-export class PostCategory {
+export class PostCategory {}
 ```
 
 or an instance of QueryBuilder
 
 ```typescript
 @ViewEntity({
-    expression: (dataSource: DataSource) => dataSource.createQueryBuilder()
-        .select("post.id", "id")
-        .addSelect("post.name", "name")
-        .addSelect("category.name", "categoryName")
-        .from(Post, "post")
-        .leftJoin(Category, "category", "category.id = post.categoryId")
+    expression: (dataSource: DataSource) =>
+        dataSource
+            .createQueryBuilder()
+            .select("post.id", "id")
+            .addSelect("post.name", "name")
+            .addSelect("category.name", "categoryName")
+            .from(Post, "post")
+            .leftJoin(Category, "category", "category.id = post.categoryId"),
 })
-export class PostCategory {
+export class PostCategory {}
 ```
 
 **Note:** parameter binding is not supported due to drivers limitations. Use the literal parameters instead.
@@ -169,7 +171,7 @@ export class User {
 
 -   `type: ColumnType` - Column type. One of the [supported column types](entities.md#column-types).
 -   `name: string` - Column name in the database table.
-    By default the column name is generated from the name of the property.
+    By default, the column name is generated from the name of the property.
     You can change it by specifying your own name.
 -   `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
     you specify column type and length options.

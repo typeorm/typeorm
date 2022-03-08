@@ -148,7 +148,7 @@ To set up the `entitiesDir` of the project you must add it in data source option
 }
 ```
 
-Learn more about [data source options](./datasourceoptions.md).
+Learn more about [data source options](./data-source-options.md).
 If you have a multi-module project structure with multiple entities in different directories
 you can provide the path to the CLI command where you want to generate an entity:
 
@@ -178,7 +178,7 @@ To setup `subscribersDir` you must add it in data source options:
 }
 ```
 
-Learn more about [data source options](./datasourceoptions.md).
+Learn more about [data source options](./data-source-options.md).
 If you have a multi-module project structure with multiple subscribers in different directories
 you can provide a path to the CLI command where you want to generate a subscriber:
 
@@ -208,7 +208,7 @@ To setup `migrationsDir` you must add it in data source options:
 }
 ```
 
-Learn more about [data source options](./datasourceoptions.md).
+Learn more about [data source options](./data-source-options.md).
 If you have a multi-module project structure with multiple migrations in different directories
 you can provide a path to the CLI command where you want to generate a migration:
 

@@ -167,7 +167,7 @@ const myDataSource = new DataSource({
 ```
 
 Configure each option as you need.
-Learn more about options [here](./datasourceoptions.md).
+Learn more about options [here](./data-source-options.md).
 
 Let's create a `user.entity.ts` entity inside `src/entity`:
 
@@ -192,18 +192,17 @@ Let's change `src/app.ts` to establish database connection and start using `myDa
 ```typescript
 import * as express from "express"
 import { Request, Response } from "express"
-import { createConnection } from "typeorm"
 import { User } from "./entity/User"
 import { myDataSource } from "./app-data-source.ts"
 
 // establish database connection
 myDataSource
-    .connect()
+    .initialize()
     .then(() => {
-        console.log("Connection established!")
+        console.log("Data Source has been initialized!")
     })
     .catch((err) => {
-        console.error("error during connection establishment:", err)
+        console.error("Error during Data Source initialization:", err)
     })
 
 // create and setup express app

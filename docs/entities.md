@@ -76,7 +76,7 @@ const myDataSource = new DataSource({
 Or you can specify the whole directory with all entities inside - and all of them will be loaded:
 
 ```typescript
-import { createConnection, Connection } from "typeorm"
+import { DataSource } from "typeorm"
 
 const dataSource = new DataSource({
     type: "mysql",
@@ -223,7 +223,7 @@ const origin = {
     coordinates: [0, 0],
 }
 
-await getManager()
+await dataSource.manager
     .createQueryBuilder(Thing, "thing")
     // convert stringified GeoJSON into a geometry with an SRID that matches the
     // table specification
@@ -242,7 +242,7 @@ await getManager()
     })
     .getMany()
 
-await getManager()
+await dataSource.manager
     .createQueryBuilder(Thing, "thing")
     // convert geometry result into GeoJSON, treated as JSON (so that TypeORM
     // will know to deserialize it)

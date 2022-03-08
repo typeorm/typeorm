@@ -58,7 +58,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
         const options = connection.options as SqliteConnectionOptions
         const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
 
-        if (!connection.isConnected) {
+        if (!connection.isInitialized) {
             throw new ConnectionIsNotSetError("sqlite")
         }
 

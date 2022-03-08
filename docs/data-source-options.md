@@ -18,7 +18,7 @@
 
 ## What is `DataSourceOptions`
 
-Connection options is a connection configuration you pass when you create a new `DataSource` instance.
+`DataSourceOptions` is a data source configuration you pass when you create a new `DataSource` instance.
 Different RDBMS-es have their own specific options.
 
 ## Common data source options
@@ -35,7 +35,7 @@ Different RDBMS-es have their own specific options.
     Accepts both entity classes, entity schema classes, and directories paths to load from.
     Directories support glob patterns.
     Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
-    Learn more about [Entities](./entities.md).
+    Learn more about [Entities](entities.md).
     Learn more about [Entity Schemas](separating-entity-definition.md).
 
 -   `subscribers` - Subscribers to be loaded and used for this data source.
@@ -48,22 +48,22 @@ Different RDBMS-es have their own specific options.
     Accepts both migration classes and directories to load from.
     Directories support glob patterns.
     Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
-    Learn more about [Migrations](./migrations.md).
+    Learn more about [Migrations](migrations.md).
 
 -   `logging` - Indicates if logging is enabled or not.
     If set to `true` then query and error logging will be enabled.
     You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
-    Learn more about [Logging](./logging.md).
+    Learn more about [Logging](logging.md).
 
 -   `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "simple-console" and "file".
     Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
-    Learn more about [Logging](./logging.md).
+    Learn more about [Logging](logging.md).
 
 -   `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
     then logger will log this query.
 
 -   `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
-    ~~
+
 -   `entityPrefix` - Prefixes with the given string all tables (or collections) on this data source.
 
 -   `entitySkipConstructor` - Indicates if TypeORM should skip constructors when deserializing entities
@@ -85,15 +85,15 @@ Different RDBMS-es have their own specific options.
     As an alternative, you can use CLI and run migration:run command.
 
 -   `migrationsTableName` - Name of the table in the database which is going to contain information about executed migrations.
-    By default this table is called "migrations".
+    By default, this table is called "migrations".
 
 -   `migrationsTransactionMode` - Control transactions for migrations (default: `all`), can be one of `all` | `none` | `each`
 
 -   `metadataTableName` - Name of the table in the database which is going to contain information about table metadata.
-    By default this table is called "typeorm_metadata".
+    By default, this table is called "typeorm_metadata".
 
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
-    Read more about caching [here](./caching.md).
+    Read more about caching [here](caching.md).
 
 -   `cli.entitiesDir` - Directory where entities should be created by default by CLI.
 
@@ -194,11 +194,11 @@ Different RDBMS-es have their own specific options.
 
 ## `sqlite` data source options
 
--   `database` - Database path. For example "./mydb.sql"
+-   `database` - Database path. For example "mydb.sql"
 
 ## `better-sqlite3` data source options
 
--   `database` - Database path. For example "./mydb.sql"
+-   `database` - Database path. For example "mydb.sql"
 
 -   `statementCacheSize` - Cache size of sqlite statement to speed up queries (default 100).
 

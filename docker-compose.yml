@@ -3,7 +3,8 @@ services:
 
   # mysql
   mysql:
-    image: "mysql:5.7.24"
+    image: "mysql:5.7.37"
+    platform: linux/x86_64
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"

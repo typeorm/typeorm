@@ -28,6 +28,6 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
         })
         connections.push(connection)
         await connection.connect()
-        connection.isConnected.should.be.true
+        connection.isInitialized.should.be.true
     })
 })

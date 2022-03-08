@@ -2,9 +2,9 @@
 
 You can cache results selected by these `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne` and `getCount`.
 
-You can also cache results selected by these `Repository` methods: `find`, `findAndCount`, `findByIds`, and `count`.
+You can also cache results selected by `find*` and `count*` methods of the `Repository` and `EntityManager`.
 
-To enable caching you need to explicitly enable it in your data source options:
+To enable caching you need to explicitly enable it in data source options:
 
 ```typescript
 {

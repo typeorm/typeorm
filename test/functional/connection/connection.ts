@@ -38,7 +38,8 @@ describe("Connection", () => {
             connection = getConnectionManager().create(options)
         })
         after(() => {
-            if (connection && connection.isConnected) return connection.close()
+            if (connection && connection.isInitialized)
+                return connection.close()
 
             return Promise.resolve()
         })
@@ -46,7 +47,7 @@ describe("Connection", () => {
         it("connection.isConnected should be false", () => {
             if (!connection) return
 
-            connection.isConnected.should.be.false
+            connection.isInitialized.should.be.false
         })
 
         it.skip("entity manager and reactive entity manager should not be accessible", () => {
@@ -129,7 +130,7 @@ describe("Connection", () => {
 
         it("connection.isConnected should be true", () =>
             connections.forEach((connection) => {
-                connection.isConnected.should.be.true
+                connection.isInitialized.should.be.true
             }))
 
         it("entity manager and reactive entity manager should be accessible", () =>
@@ -278,7 +279,7 @@ describe("Connection", () => {
 
         it("connection.isConnected should be false", () =>
             connections.forEach((connection) => {
-                connection.isConnected.should.be.false
+                connection.isInitialized.should.be.false
             }))
     })
 

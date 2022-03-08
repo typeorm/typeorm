@@ -420,6 +420,13 @@ This change was required to simplify ORM internals and introduce new features.
 
 ### DEPRECATIONS
 
+* all container-related features (`UseContainerOptions`, `ContainedType`, `ContainerInterface`, `defaultContainer`,
+`useContainer`, `getFromContainer`) are deprecated.
+
+* EntityManager's `getCustomRepository` used within transactions is deprecated. Use `withRepository` method instead.
+
+* `Connection.isConnected` is deprecated. Use `.isInitialized` instead.
+
 * `select` in `FindOptions` (used in `find*` methods) used as an array of property names is deprecated.
   Now you should use a new object-literal notation. Example:
 

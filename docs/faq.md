@@ -40,7 +40,7 @@ There are two ways that help you achieve this:
     Note, to make command line tools work, you must create an ormconfig.json file.
 
 Schema sync is extremely fast.
-If you are considering the disable synchronize option during development because of performance issues,
+If you are considering to disable synchronize option during development because of performance issues,
 first check how fast it is.
 
 ## How do I change a column name in the database?
@@ -129,23 +129,6 @@ It's not possible to add extra columns into a table created by a many-to-many re
 You'll need to create a separate entity and bind it using two many-to-one relations with the target entities
 (the effect will be same as creating a many-to-many table),
 and add extra columns in there. You can read more about this in [Many-to-Many relations](./many-to-many-relations.md#many-to-many-relations-with-custom-properties).
-
-## How to use TypeORM with a dependency injection tool?
-
-In TypeORM you can use service containers. Service containers allow you to inject custom services in some places, like in subscribers or custom naming strategies. For example, you can get access to ConnectionManager from any place using a service container.
-
-Here is an example for how you can set up typedi service containers with TypeORM. Note: you can setup any service container with TypeORM.
-
-```typescript
-import { useContainer, createConnection } from "typeorm"
-import { Container } from "typedi"
-
-// its important to setup container before you start to work with TypeORM
-useContainer(Container)
-createConnection({
-    /* ... */
-})
-```
 
 ## How to handle outDir TypeScript compiler option?
 

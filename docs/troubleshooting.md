@@ -12,6 +12,5 @@ Glob patterns are used in the TypeOrm to specify the locations of entities, migr
 ```
 
 ```bash
-# when files are found
-INFO: All classes found using provided glob pattern "dist/**/*.entity{.js,.ts}" : "dist/app/user/user.entity.js | dist/app/common/common.entity.js"
+# when files are foundINFO: All classes found using provided glob pattern "dist/**/*.entity{.js,.ts}" : "dist/app/user/user.entity.js | dist/app/common/common.entity.js"
 ```

@@ -253,7 +253,7 @@ const categoryRepository = manager.getTreeRepository(Category)
 const userRepository = manager.getMongoRepository(User)
 ```
 
--   `getCustomRepository` - Gets custom entity repository.
+-   `withRepository` - Gets custom repository instance used in a transaction.
     Learn more about [Custom repositories](custom-repository.md).
 
 ```typescript

@@ -148,32 +148,7 @@ const timber = await userRepository.findOne({
 })
 ```
 
-Now let's say we want to create a function that returns users by first and last name.
-We can create such a function in a "custom repository".
-
-```typescript
-import { EntityRepository, Repository } from "typeorm"
-import { User } from "../entity/User"
-
-@EntityRepository()
-export class UserRepository extends Repository<User> {
-    findByName(firstName: string, lastName: string) {
-        return this.createQueryBuilder("user")
-            .where("user.firstName = :firstName", { firstName })
-            .andWhere("user.lastName = :lastName", { lastName })
-            .getMany()
-    }
-}
-```
-
-And use it this way:
-
-```typescript
-const userRepository = dataSource.getCustomRepository(UserRepository)
-const timber = await userRepository.findByName("Timber", "Saw")
-```
-
-Learn more about [custom repositories](custom-repository.md).
+In order to extend standard repository with custom methods, use [custom repository pattern](custom-repository.md).
 
 ## Which one should I choose?
 

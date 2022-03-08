@@ -1,16 +1,16 @@
 # DataSource API
 
 -   `options` - Options used to create this dataSource.
-    Learn more about [DataSourceOptions](./datasourceoptions.md).
+    Learn more about [DataSourceOptions](data-source-options.md).
 
 ```typescript
 const dataSourceOptions: DataSourceOptions = dataSource.options
 ```
 
--   `isConnected` - Indicates if initial connection / connection pool with database was established or not.
+-   `isInitialized` - Indicates if DataSource was initialized and initial connection / connection pool with database was established or not.
 
 ```typescript
-const isConnected: boolean = dataSource.isConnected
+const isInitialized: boolean = dataSource.isInitialized
 ```
 
 -   `driver` - Underlying database driver used in this dataSource.
@@ -29,7 +29,7 @@ const user = await manager.findOne(1)
 ```
 
 -   `mongoManager` - `MongoEntityManager` used to work with entities for mongodb data source.
-    For more information about MongoEntityManager see [MongoDB](./mongodb.md) documentation.
+    For more information about MongoEntityManager see [MongoDB](mongodb.md) documentation.
 
 ```typescript
 const manager: MongoEntityManager = dataSource.mongoManager
@@ -37,17 +37,17 @@ const manager: MongoEntityManager = dataSource.mongoManager
 const user = await manager.findOne(1)
 ```
 
--   `connect` - Performs connection to the database.
+-   `initialize` - Initializes data source and opens connection pool to the database.
 
 ```typescript
-await dataSource.connect()
+await dataSource.initialize()
 ```
 
--   `close` - Closes connection with the database.
+-   `destroy` - Destroys the DataSource and closes all database connections.
     Usually, you call this method when your application is shutting down.
 
 ```typescript
-await dataSource.close()
+await dataSource.destroy()
 ```
 
 -   `synchronize` - Synchronizes database schema. When `synchronize: true` is set in data source options it calls this method.
@@ -78,7 +78,7 @@ await dataSource.undoLastMigration()
 ```
 
 -   `hasMetadata` - Checks if metadata for a given entity is registered.
-    Learn more about [Entity Metadata](./entity-metadata.md).
+    Learn more about [Entity Metadata](entity-metadata.md).
 
 ```typescript
 if (dataSource.hasMetadata(User))
@@ -87,7 +87,7 @@ if (dataSource.hasMetadata(User))
 
 -   `getMetadata` - Gets `EntityMetadata` of the given entity.
     You can also specify a table name and if entity metadata with such table name is found it will be returned.
-    Learn more about [Entity Metadata](./entity-metadata.md).
+    Learn more about [Entity Metadata](entity-metadata.md).
 
 ```typescript
 const userMetadata = dataSource.getMetadata(User)
@@ -116,7 +116,7 @@ const categories = await repository.findTrees()
 
 -   `getMongoRepository` - Gets `MongoRepository` of the given entity.
     This repository is used for entities in MongoDB dataSource.
-    Learn more about [MongoDB support](./mongodb.md).
+    Learn more about [MongoDB support](mongodb.md).
 
 ```typescript
 const repository = dataSource.getMongoRepository(User)
@@ -126,17 +126,8 @@ const category1 = await categoryCursor.next()
 const category2 = await categoryCursor.next()
 ```
 
--   `getCustomRepository` - Gets custom defined repository.
-    Learn more about [custom repositories](custom-repository.md).
-
-```typescript
-const userRepository = dataSource.getCustomRepository(UserRepository)
-// now you can call methods inside your custom repository - UserRepository class
-const crazyUsers = await userRepository.findCrazyUsers()
-```
-
 -   `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-    Learn more about [Transactions](./transactions.md).
+    Learn more about [Transactions](transactions.md).
 
 ```typescript
 await dataSource.transaction(async (manager) => {
@@ -165,7 +156,7 @@ const users = await dataSource
 ```
 
 -   `createQueryRunner` - Creates a query runner used to manage and work with a single real database dataSource.
-    Learn more about [QueryRunner](./query-runner.md).
+    Learn more about [QueryRunner](query-runner.md).
 
 ```typescript
 const queryRunner = dataSource.createQueryRunner()

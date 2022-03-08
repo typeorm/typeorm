@@ -19,10 +19,10 @@ const sequelize = new Sequelize("database", "username", "password", {
 sequelize
     .authenticate()
     .then(() => {
-        console.log("Connection has been established successfully.")
+        console.log("Data Source has been initialized successfully.")
     })
     .catch((err) => {
-        console.error("Unable to connect to the database:", err)
+        console.error("Error during Data Source initialization:", err)
     })
 ```
 
@@ -41,10 +41,10 @@ const dataSource = new DataSource({
 dataSource
     .initialize()
     .then(() => {
-        console.log("Connection has been established successfully.")
+        console.log("Data Source has been initialized successfully.")
     })
     .catch((err) => {
-        console.error("Unable to connect to the database:", err)
+        console.error("Error during Data Source initialization:", err)
     })
 ```
 
@@ -253,7 +253,7 @@ In TypeORM there are several ways to create and save a new model:
 const employee = new Employee() // you can use constructor parameters as well
 employee.name = "John Doe"
 employee.title = "senior engineer"
-await getRepository(Employee).save(employee)
+await dataSource.getRepository(Employee).save(employee)
 ```
 
 or active record pattern

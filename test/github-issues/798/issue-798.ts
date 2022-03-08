@@ -17,7 +17,7 @@ describe("github issues > #798 sqlite: 'database' path in ormconfig.json is not 
     })
 
     afterEach(() => {
-        if (connection && connection.isConnected) {
+        if (connection && connection.isInitialized) {
             connection.close()
         }
     })
@@ -32,7 +32,7 @@ describe("github issues > #798 sqlite: 'database' path in ormconfig.json is not 
         const options = await getConnectionOptions("sqlite")
         connection = await createConnection(options)
 
-        assert.strictEqual(connection.isConnected, true)
+        assert.strictEqual(connection.isInitialized, true)
     })
 
     it("should find the sqlite database if the cwd is changed for better-sqlite3", async function () {
@@ -45,6 +45,6 @@ describe("github issues > #798 sqlite: 'database' path in ormconfig.json is not 
         const options = await getConnectionOptions("better-sqlite3")
         connection = await createConnection(options)
 
-        assert.strictEqual(connection.isConnected, true)
+        assert.strictEqual(connection.isInitialized, true)
     })
 })
