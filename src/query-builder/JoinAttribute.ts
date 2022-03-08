@@ -19,7 +19,7 @@ export class JoinAttribute {
     /**
      * Join direction.
      */
-    direction: "LEFT"|"INNER";
+    direction: "LEFT"|"INNER"|"FULL";
 
     /**
      * Alias of the joined (destination) table.
