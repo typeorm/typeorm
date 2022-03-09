@@ -1,12 +1,11 @@
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {AuroraDataApiPostgresDriver} from "./AuroraDataApiPostgresDriver";
 import {PostgresQueryRunner} from "../postgres/PostgresQueryRunner";
 import {ReplicationMode} from "../types/ReplicationMode";
-import { QueryResult } from "../../query-runner/QueryResult";
+import {QueryResult} from "../../query-runner/QueryResult";
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     driver: any;
@@ -90,16 +89,22 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
      * Starts transaction on the current connection.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-
-        await this.broadcaster.broadcast('BeforeTransactionStart')
-
         this.isTransactionActive = true;
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
+        }
 
-        await this.client.startTransaction();
+        if (this.transactionDepth === 0) {
+            await this.client.startTransaction();
+        } else {
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
+        this.transactionDepth += 1;
 
-        await this.broadcaster.broadcast('AfterTransactionStart')
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -112,9 +117,13 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        await this.client.commitTransaction();
-
-        this.isTransactionActive = false;
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            await this.client.commitTransaction();
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -129,7 +138,13 @@ export class AuroraDataApiPostgresQueryRunner extends PostgresQueryRunnerWrapper
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        await this.client.rollbackTransaction();
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            await this.client.rollbackTransaction();
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }

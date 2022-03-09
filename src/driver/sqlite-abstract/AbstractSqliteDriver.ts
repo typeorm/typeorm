@@ -20,6 +20,13 @@ import { Table } from "../../schema-builder/table/Table";
 import { View } from "../../schema-builder/view/View";
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 
+
+type DatabasesMap = Record<string, {
+    attachFilepathAbsolute: string
+    attachFilepathRelative: string
+    attachHandle: string
+}>;
+
 /**
  * Organizes communication with sqlite DBMS.
  */
@@ -72,6 +79,11 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Indicates if tree tables are supported by this driver.
      */
     treeSupport = true;
+
+    /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport: "simple" | "nested" | "none" = "nested";
 
     /**
      * Gets list of supported column data types by a driver.
@@ -210,6 +222,15 @@ export abstract class AbstractSqliteDriver implements Driver {
     maxAliasLength?: number;
 
     // -------------------------------------------------------------------------
+    // Protected Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Any attached databases (excepting default 'main')
+     */
+    attachedDatabases: DatabasesMap = {};
+
+    // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
@@ -255,6 +276,18 @@ export abstract class AbstractSqliteDriver implements Driver {
             this.queryRunner = undefined;
             this.databaseConnection.close((err: any) => err ? fail(err) : ok());
         });
+    }
+
+    hasAttachedDatabases(): boolean {
+        return !!Object.keys(this.attachedDatabases).length;
+    }
+
+    getAttachedDatabaseHandleByRelativePath(path: string): string | undefined {
+        return this.attachedDatabases?.[path]?.attachHandle
+    }
+
+    getAttachedDatabasePathRelativeByHandle(handle: string): string | undefined {
+        return Object.values(this.attachedDatabases).find(({attachHandle}) => handle === attachHandle)?.attachFilepathRelative
     }
 
     /**
@@ -429,7 +462,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         const driverSchema = undefined
 
         if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
+            const parsed = this.parseTableName(target.schema ? `"${target.schema}"."${target.name}"` : target.name);
 
             return {
                 database: target.database || parsed.database || driverDatabase,
@@ -468,8 +501,9 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableName: parts[2]
             };
         } else if (parts.length === 2) {
+            const database = this.getAttachedDatabasePathRelativeByHandle(parts[0]) ?? driverDatabase
             return {
-                database: driverDatabase,
+                database: database,
                 schema: parts[0],
                 tableName: parts[1]
             };

@@ -33,6 +33,7 @@ import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
+import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {IsolationLevel} from "../driver/types/IsolationLevel";
@@ -82,6 +83,11 @@ export class Connection {
     readonly namingStrategy: NamingStrategyInterface;
 
     /**
+     * Name for the metadata table
+     */
+    readonly metadataTableName: string;
+
+    /**
      * Logger used to log orm events.
      */
     readonly logger: Logger;
@@ -122,6 +128,7 @@ export class Connection {
         this.driver = new DriverFactory().create(this);
         this.manager = this.createEntityManager();
         this.namingStrategy = options.namingStrategy || new DefaultNamingStrategy();
+        this.metadataTableName = options.metadataTableName || "typeorm_metadata";
         this.queryResultCache = options.cache ? new QueryResultCacheFactory(this).create() : undefined;
         this.relationLoader = new RelationLoader(this);
         this.isConnected = false;
@@ -183,7 +190,7 @@ export class Connection {
         try {
 
             // build all metadatas registered in the current connection
-            this.buildMetadatas();
+            await this.buildMetadatas();
 
             await this.driver.afterConnect();
 
@@ -254,15 +261,23 @@ export class Connection {
     async dropDatabase(): Promise<void> {
         const queryRunner = this.createQueryRunner();
         try {
-            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver) {
-                const databases: string[] = this.driver.database ? [this.driver.database] : [];
+            if (this.driver instanceof SqlServerDriver || this.driver instanceof MysqlDriver || this.driver instanceof AuroraDataApiDriver || this.driver instanceof AbstractSqliteDriver) {
+                const databases: string[] = [];
                 this.entityMetadatas.forEach(metadata => {
                     if (metadata.database && databases.indexOf(metadata.database) === -1)
                         databases.push(metadata.database);
                 });
+                if (databases.length === 0 && this.driver.database) {
+                    databases.push(this.driver.database);
+                };
 
-                for (const database of databases) {
-                    await queryRunner.clearDatabase(database);
+                if (databases.length === 0) {
+                    await queryRunner.clearDatabase();
+                }
+                else {
+                    for (const database of databases) {
+                        await queryRunner.clearDatabase(database);
+                    }
                 }
             } else {
                 await queryRunner.clearDatabase();
@@ -403,17 +418,17 @@ export class Connection {
     }
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder(queryRunner?: QueryRunner): SelectQueryBuilder<any>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
@@ -497,21 +512,21 @@ export class Connection {
     /**
      * Builds metadatas for all registered classes inside this connection.
      */
-    protected buildMetadatas(): void {
+    protected async buildMetadatas(): Promise<void> {
 
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(this);
         const entityMetadataValidator = new EntityMetadataValidator();
 
         // create subscribers instances if they are not disallowed from high-level (for example they can disallowed from migrations run process)
-        const subscribers = connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
+        const subscribers = await connectionMetadataBuilder.buildSubscribers(this.options.subscribers || []);
         ObjectUtils.assign(this, { subscribers: subscribers });
 
         // build entity metadatas
-        const entityMetadatas = connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
+        const entityMetadatas = await connectionMetadataBuilder.buildEntityMetadatas(this.options.entities || []);
         ObjectUtils.assign(this, { entityMetadatas: entityMetadatas });
 
         // create migration instances
-        const migrations = connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
+        const migrations = await connectionMetadataBuilder.buildMigrations(this.options.migrations || []);
         ObjectUtils.assign(this, { migrations: migrations });
 
         // validate all created entity metadatas to make sure user created entities are valid and correct

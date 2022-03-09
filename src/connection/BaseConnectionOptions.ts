@@ -55,6 +55,12 @@ export interface BaseConnectionOptions {
     readonly migrationsTransactionMode?: "all" | "none" | "each";
 
     /**
+     * Typeorm metadata table name, in case of different name from "typeorm_metadata".
+     * Accepts single string name.
+     */
+    readonly metadataTableName?: string;
+
+    /**
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface;
@@ -114,6 +120,12 @@ export interface BaseConnectionOptions {
      * todo: deprecate this and move all database-specific types into hts own connection options object.
      */
     readonly extra?: any;
+
+    /**
+     * Holds reference to the baseDirectory where configuration file are expected
+     * @internal
+     */
+     baseDirectory?: string;
 
     /**
      * Allows to setup cache options.

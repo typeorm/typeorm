@@ -22,8 +22,10 @@ import {EntitySchema} from "../entity-schema/EntitySchema";
 import {FindOperator} from "../find-options/FindOperator";
 import {In} from "../find-options/operator/In";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
-import { TypeORMError } from "../error";
-import { WhereClause, WhereClauseCondition } from "./WhereClause";
+import {TypeORMError} from "../error";
+import {WhereClause, WhereClauseCondition} from "./WhereClause";
+import {NotBrackets} from "./NotBrackets";
+import {ReturningType} from "../driver/Driver";
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -113,7 +115,7 @@ export abstract class QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     abstract getQuery(): string;
 
@@ -736,7 +738,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates "RETURNING" / "OUTPUT" expression.
      */
-    protected createReturningExpression(): string {
+    protected createReturningExpression(returningType: ReturningType): string {
         const columns = this.getReturningColumns();
         const driver = this.connection.driver;
 
@@ -744,7 +746,7 @@ export abstract class QueryBuilder<Entity> {
         // if user gave his own returning
         if (typeof this.expressionMap.returning !== "string" &&
             this.expressionMap.extraReturningColumns.length > 0 &&
-            driver.isReturningSqlSupported()) {
+            driver.isReturningSqlSupported(returningType)) {
             columns.push(...this.expressionMap.extraReturningColumns.filter(column => {
                 return columns.indexOf(column) === -1;
             }));
@@ -1169,7 +1171,7 @@ export abstract class QueryBuilder<Entity> {
         }
     }
 
-    protected getWhereCondition(where: string|((qb: this) => string)|Brackets|ObjectLiteral|ObjectLiteral[]): WhereClauseCondition {
+    protected getWhereCondition(where: string|((qb: this) => string)|Brackets|NotBrackets|ObjectLiteral|ObjectLiteral[]): WhereClauseCondition {
         if (typeof where === "string") {
             return where;
         }
@@ -1189,7 +1191,7 @@ export abstract class QueryBuilder<Entity> {
             where.whereFactory(whereQueryBuilder as any);
 
             return {
-                operator: "brackets",
+                operator: where instanceof NotBrackets ? "not" : "brackets",
                 condition: whereQueryBuilder.expressionMap.wheres
             };
         }

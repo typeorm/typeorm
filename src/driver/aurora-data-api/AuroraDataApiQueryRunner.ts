@@ -1,7 +1,6 @@
 import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
@@ -21,7 +20,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
-import { TypeORMError } from "../../error";
+import {TypeORMError} from "../../error";
 import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
@@ -89,13 +88,20 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Starts transaction on the current connection.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
         this.isTransactionActive = true;
-        await this.client.startTransaction();
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
+        }
+
+        if (this.transactionDepth === 0) {
+            await this.client.startTransaction();
+        } else {
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
+        this.transactionDepth += 1;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -110,8 +116,13 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        await this.client.commitTransaction();
-        this.isTransactionActive = false;
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            await this.client.commitTransaction();
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -126,9 +137,13 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        await this.client.rollbackTransaction();
-
-        this.isTransactionActive = false;
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            await this.client.rollbackTransaction();
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }
@@ -1082,7 +1097,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index ${indexOrName} was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
@@ -1121,7 +1136,9 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             throw new TypeORMError(`Can not clear database. No database is specified`);
         }
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
 
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
@@ -1137,11 +1154,13 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
             await Promise.all(dropQueries.map(query => this.query(query["query"])));
             await this.query(enableForeignKeysCheckQuery);
 
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }
@@ -1331,7 +1350,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
                     if (tableColumn.isGenerated)
                         tableColumn.generationStrategy = "increment";
 
-                    tableColumn.comment = dbColumn["COLUMN_COMMENT"];
+                    tableColumn.comment = (typeof dbColumn["COLUMN_COMMENT"] === "string" && dbColumn["COLUMN_COMMENT"].length === 0) ? undefined : dbColumn["COLUMN_COMMENT"];
                     if (dbColumn["CHARACTER_SET_NAME"])
                         tableColumn.charset = dbColumn["CHARACTER_SET_NAME"] === defaultCharset ? undefined : dbColumn["CHARACTER_SET_NAME"];
                     if (dbColumn["COLLATION_NAME"])

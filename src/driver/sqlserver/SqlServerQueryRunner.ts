@@ -2,7 +2,6 @@ import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ColumnType} from "../types/ColumnTypes";
 import {ReadStream} from "../../platform/PlatformTools";
@@ -88,37 +87,40 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
-        return new Promise<void>(async (ok, fail) => {
-            this.isTransactionActive = true;
-
-            const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
-            this.databaseConnection = pool.transaction();
-
+        this.isTransactionActive = true;
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
+        }
+        await new Promise<void>(async (ok, fail) => {
             const transactionCallback = (err: any) => {
                 if (err) {
                     this.isTransactionActive = false;
                     return fail(err);
                 }
                 ok();
-                this.connection.logger.logQuery("BEGIN TRANSACTION");
-                if (isolationLevel) {
-                    this.connection.logger.logQuery("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
-                }
             };
 
-            if (isolationLevel) {
-                this.databaseConnection.begin(this.convertIsolationLevel(isolationLevel), transactionCallback);
+            if (this.transactionDepth === 0) {
+                const pool = await (this.mode === "slave" ? this.driver.obtainSlaveConnection() : this.driver.obtainMasterConnection());
+                this.databaseConnection = pool.transaction();
+                this.connection.logger.logQuery("BEGIN TRANSACTION");
+                if (isolationLevel) {
+                    this.databaseConnection.begin(this.convertIsolationLevel(isolationLevel), transactionCallback);
+                    this.connection.logger.logQuery("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+                } else {
+                    this.databaseConnection.begin(transactionCallback);
+                }
             } else {
-                this.databaseConnection.begin(transactionCallback);
+                await this.query(`SAVE TRANSACTION typeorm_${this.transactionDepth}`);
+                ok();
             }
-
-            await this.broadcaster.broadcast('AfterTransactionStart');
+            this.transactionDepth += 1;
         });
+
+        await this.broadcaster.broadcast('AfterTransactionStart');
     }
 
     /**
@@ -134,18 +136,23 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        return new Promise<void>((ok, fail) => {
-            this.databaseConnection.commit(async (err: any) => {
-                if (err) return fail(err);
-                this.isTransactionActive = false;
-                this.databaseConnection = null;
 
-                await this.broadcaster.broadcast('AfterTransactionCommit');
+        if (this.transactionDepth === 1) {
+            return new Promise<void>((ok, fail) => {
+                this.databaseConnection.commit(async (err: any) => {
+                    if (err) return fail(err);
+                    this.isTransactionActive = false;
+                    this.databaseConnection = null;
 
-                ok();
-                this.connection.logger.logQuery("COMMIT");
+                    await this.broadcaster.broadcast('AfterTransactionCommit');
+
+                    ok();
+                    this.connection.logger.logQuery("COMMIT");
+                    this.transactionDepth -= 1;
+                });
             });
-        });
+        }
+        this.transactionDepth -= 1;
     }
 
     /**
@@ -161,18 +168,25 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        return new Promise<void>( (ok, fail) => {
-            this.databaseConnection.rollback(async (err: any) => {
-                if (err) return fail(err);
-                this.isTransactionActive = false;
-                this.databaseConnection = null;
 
-                await this.broadcaster.broadcast('AfterTransactionRollback');
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TRANSACTION typeorm_${this.transactionDepth - 1}`);
+            this.transactionDepth -= 1;
+        } else {
+            return new Promise<void>( (ok, fail) => {
+                this.databaseConnection.rollback(async (err: any) => {
+                    if (err) return fail(err);
+                    this.isTransactionActive = false;
+                    this.databaseConnection = null;
 
-                ok();
-                this.connection.logger.logQuery("ROLLBACK");
+                    await this.broadcaster.broadcast('AfterTransactionRollback');
+
+                    ok();
+                    this.connection.logger.logQuery("ROLLBACK");
+                    this.transactionDepth -= 1;
+                });
             });
-        });
+        }
     }
 
     /**
@@ -1401,7 +1415,9 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 return Promise.resolve();
         }
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
             let allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
@@ -1477,11 +1493,13 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
                 }));
             }
 
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }
@@ -1672,7 +1690,7 @@ export class SqlServerQueryRunner extends BaseQueryRunner implements QueryRunner
             return `SELECT "TABLE_CATALOG", "TABLE_SCHEMA", "COLUMN_NAME", "TABLE_NAME" ` +
                 `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
                 `WHERE ` +
-                `EXISTS(SELECT 1 FROM "${TABLE_CATALOG}"."SYS"."COLUMNS" "S" WHERE OBJECT_ID("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME") = "S"."OBJECT_ID" AND "COLUMN_NAME" = "S"."NAME" AND "S"."is_identity" = 1) AND ` +
+                `EXISTS(SELECT 1 FROM "${TABLE_CATALOG}"."sys"."columns" "S" WHERE OBJECT_ID("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME") = "S"."OBJECT_ID" AND "COLUMN_NAME" = "S"."NAME" AND "S"."is_identity" = 1) AND ` +
                 `(${conditions})`;
         }).join(" UNION ALL ");
 

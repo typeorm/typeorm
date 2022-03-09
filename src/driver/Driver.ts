@@ -9,10 +9,12 @@ import {BaseConnectionOptions} from "../connection/BaseConnectionOptions";
 import {TableColumn} from "../schema-builder/table/TableColumn";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ReplicationMode} from "./types/ReplicationMode";
-import { Table } from "../schema-builder/table/Table";
-import { View } from "../schema-builder/view/View";
-import { TableForeignKey } from "../schema-builder/table/TableForeignKey";
-import { UpsertType } from "./types/UpsertType";
+import {Table} from "../schema-builder/table/Table";
+import {View} from "../schema-builder/view/View";
+import {TableForeignKey} from "../schema-builder/table/TableForeignKey";
+import {UpsertType} from "./types/UpsertType";
+
+export type ReturningType = "insert" | "update" | "delete";
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
@@ -45,6 +47,11 @@ export interface Driver {
      * Indicates if tree tables are supported by this driver.
      */
     treeSupport: boolean;
+
+    /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport: "simple" | "nested" | "none";
 
     /**
      * Gets list of supported column data types by a driver.
@@ -206,7 +213,7 @@ export interface Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean;
+    isReturningSqlSupported(returningType: ReturningType): boolean;
 
     /**
      * Returns true if driver supports uuid values generation on its own.

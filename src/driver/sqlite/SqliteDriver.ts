@@ -10,6 +10,8 @@ import { ColumnType } from "../types/ColumnTypes";
 import { QueryRunner } from "../../query-runner/QueryRunner";
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
 import {ReplicationMode} from "../types/ReplicationMode";
+import {filepathToName, isAbsolute} from "../../util/PathUtils";
+
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -81,6 +83,34 @@ export class SqliteDriver extends AbstractSqliteDriver {
         return super.normalizeType(column);
     }
 
+    async afterConnect(): Promise<void> {
+        return this.attachDatabases();
+    }
+
+    /**
+     * For SQLite, the database may be added in the decorator metadata. It will be a filepath to a database file.
+     */
+    buildTableName(tableName: string, _schema?: string, database?: string): string {
+
+        if (!database) return tableName;
+        if (this.getAttachedDatabaseHandleByRelativePath(database)) return `${this.getAttachedDatabaseHandleByRelativePath(database)}.${tableName}`;
+
+        if (database === this.options.database) return tableName;
+
+        // we use the decorated name as supplied when deriving attach handle (ideally without non-portable absolute path)
+        const identifierHash = filepathToName(database);
+        // decorated name will be assumed relative to main database file when non absolute. Paths supplied as absolute won't be portable
+        const absFilepath = isAbsolute(database) ? database : path.join(this.getMainDatabasePath(), database);
+
+        this.attachedDatabases[database] = {
+            attachFilepathAbsolute: absFilepath,
+            attachFilepathRelative: database,
+            attachHandle: identifierHash,
+        };
+
+        return `${identifierHash}.${tableName}`;
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -107,6 +137,11 @@ export class SqliteDriver extends AbstractSqliteDriver {
                 });
             });
         }
+        // in the options, if encryption key for SQLCipher is setted.
+        // Must invoke key pragma before trying to do any other interaction with the database.
+        if (this.options.key) {
+            await run(`PRAGMA key = ${JSON.stringify(this.options.key)};`);
+        }
 
         if (this.options.enableWAL) {
             await run(`PRAGMA journal_mode = WAL;`);
@@ -115,11 +150,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
         await run(`PRAGMA foreign_keys = ON;`);
-
-        // in the options, if encryption key for SQLCipher is setted.
-        if (this.options.key) {
-            await run(`PRAGMA key = ${JSON.stringify(this.options.key)};`);
-        }
 
         return databaseConnection;
     }
@@ -142,6 +172,26 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     protected async createDatabaseDirectory(fullPath: string): Promise<void> {
         await mkdirp(path.dirname(fullPath));
+    }
+
+    /**
+     * Performs the attaching of the database files. The attachedDatabase should have been populated during calls to #buildTableName
+     * during EntityMetadata production (see EntityMetadata#buildTablePath)
+     *
+     * https://sqlite.org/lang_attach.html
+     */
+    protected async attachDatabases() {
+
+        // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
+        for await (const {attachHandle, attachFilepathAbsolute} of Object.values(this.attachedDatabases)) {
+            await this.createDatabaseDirectory(attachFilepathAbsolute);
+            await this.connection.query(`ATTACH "${attachFilepathAbsolute}" AS "${attachHandle}"`);
+        }
+    }
+
+    protected getMainDatabasePath(): string {
+        const optionsDb = this.options.database;
+        return path.dirname(isAbsolute(optionsDb) ? optionsDb : path.join(process.cwd(), optionsDb));
     }
 
 }

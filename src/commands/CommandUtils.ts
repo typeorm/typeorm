@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import mkdirp from "mkdirp";
+import {TypeORMError} from "../error";
 
 /**
  * Command line utils functions.
@@ -39,5 +40,15 @@ export class CommandUtils {
 
     static async fileExists(filePath: string) {
         return fs.existsSync(filePath);
+    }
+
+    /**
+     * Gets migration timestamp and validates argument (if sent)
+     */
+    static getTimestamp(timestampOptionArgument: any): number {
+        if (timestampOptionArgument && (isNaN(timestampOptionArgument) || timestampOptionArgument < 0)) {
+            throw new TypeORMError(`timestamp option should be a non-negative number. received: ${timestampOptionArgument}`);
+        }
+        return timestampOptionArgument ? new Date(Number(timestampOptionArgument)).getTime() : Date.now();
     }
 }

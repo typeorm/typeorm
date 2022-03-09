@@ -1,8 +1,10 @@
 # Repository APIs
 
-* [Repository API](#repository-api)
-* [TreeRepository API](#treerepository-api)
-* [MongoRepository API](#mongorepository-api)
+- [Repository APIs](#repository-apis)
+  - [`Repository` API](#repository-api)
+    - [Additional Options](#additional-options)
+  - [`TreeRepository` API](#treerepository-api)
+  - [`MongoRepository` API](#mongorepository-api)
 
 ## `Repository` API
 
@@ -157,7 +159,7 @@ await repository.update(1, { firstName: "Rizzrak" });
 * `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
 
 ```typescript
-await repository.update([
+await repository.upsert([
     { externalId:"abc123", firstName: "Rizzrak" },
     { externalId:"bca321", firstName: "Karzzir" },
 ], ["externalId"]);
@@ -167,6 +169,25 @@ await repository.update([
  *      (externalId = abc123, firstName = Rizzrak),
  *      (externalId = cba321, firstName = Karzzir),
  *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
+ **/
+```
+
+```typescript
+await repository.upsert([
+    { externalId:"abc123", firstName: "Rizzrak" },
+    { externalId:"bca321", firstName: "Karzzir" },
+], {
+    conflictPaths: ["externalId"],
+    skipUpdateIfNoValuesChanged: true // supported by postgres, skips update if it would not change row values
+});
+/** executes 
+ *  INSERT INTO user 
+ *  VALUES 
+ *      (externalId = abc123, firstName = Rizzrak),
+ *      (externalId = cba321, firstName = Karzzir),
+ *  ON CONFLICT (externalId) DO UPDATE 
+ *  SET firstName = EXCLUDED.firstName 
+ *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName
  **/
 ```
 
@@ -283,9 +304,9 @@ userRepository.save(users, {chunk: users.length / 1000});
 Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
 
 * `data` - Additional data to be passed with remove method. This data can be used in subscribers then.
-* `listener`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
+* `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
 * `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
-* `chunk`: number - Breaks save execution into multiple groups of chunks. For example, if you want to save 100.000 objects but you have issues saving them, you can break them into 10 groups of 10.000 objects, by setting `{ chunk: 10000 }`, and save each group separately. This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
+* `chunk`: number - Breaks removal execution into multiple groups of chunks. For example, if you want to remove 100.000 objects but you have issues doing so, you can break them into 10 groups of 10.000 objects, by setting `{ chunk: 10000 }`, and remove each group separately. This option is needed to perform very big deletions when you have issues with underlying driver parameter number limitation.
 
 Example:
 ```typescript

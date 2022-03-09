@@ -61,7 +61,9 @@ export class MigrationExecutor {
     public async executeMigration(migration: Migration): Promise<Migration> {
         return this.withQueryRunner(async (queryRunner) => {
             await this.createMigrationsTableIfNotExist(queryRunner);
+            await queryRunner.beforeMigration();
             await (migration.instance as any).up(queryRunner);
+            await queryRunner.afterMigration();
             await this.insertExecutedMigration(queryRunner, migration);
 
             return migration;
@@ -226,7 +228,7 @@ export class MigrationExecutor {
 
                 await migration.instance!.up(queryRunner)
                     .catch(error => { // informative log about migration failure
-                        this.connection.logger.logMigration(`Migration "${migration.name}" has been failed, error: ${error?.message}`);
+                        this.connection.logger.logMigration(`Migration "${migration.name}" failed, error: ${error?.message}`);
                         throw error;
                     })
                     .then(async () => { // now when migration is executed we need to insert record about it into the database
@@ -309,7 +311,10 @@ export class MigrationExecutor {
         }
 
         try {
+            await queryRunner.beforeMigration();
             await migrationToRevert.instance!.down(queryRunner);
+            await queryRunner.afterMigration();
+
             await this.deleteExecutedMigration(queryRunner, migrationToRevert);
             this.connection.logger.logSchemaBuild(`Migration ${migrationToRevert.name} has been reverted successfully.`);
 

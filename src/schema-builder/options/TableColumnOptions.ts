@@ -129,6 +129,11 @@ export interface TableColumnOptions {
     generatedType?: "VIRTUAL"|"STORED";
 
     /**
+     * Identity column type. Supports only in Postgres 10+.
+     */
+    generatedIdentity?: "ALWAYS"|"BY DEFAULT";
+
+    /**
      * Spatial Feature Type (Geometry, Point, Polygon, etc.)
      */
     spatialFeatureType?: string;

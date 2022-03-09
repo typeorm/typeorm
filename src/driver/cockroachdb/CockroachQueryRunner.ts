@@ -1,7 +1,6 @@
 import {QueryResult} from "../../query-runner/QueryResult";
 import {QueryRunner} from "../../query-runner/QueryRunner";
 import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {TableColumn} from "../../schema-builder/table/TableColumn";
 import {Table} from "../../schema-builder/table/Table";
@@ -23,7 +22,7 @@ import {ColumnType} from "../types/ColumnTypes";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
 import {ReplicationMode} from "../types/ReplicationMode";
-import { TypeORMError } from "../../error";
+import {TypeORMError} from "../../error";
 import {MetadataTableType} from "../types/MetadataTableType";
 
 /**
@@ -130,17 +129,25 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
      * Starts transaction.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
         this.isTransactionActive = true;
-        await this.query("START TRANSACTION");
-        await this.query("SAVEPOINT cockroach_restart");
-        if (isolationLevel) {
-            await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
         }
+
+        if (this.transactionDepth === 0) {
+            await this.query("START TRANSACTION");
+            await this.query("SAVEPOINT cockroach_restart");
+            if (isolationLevel) {
+                await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+            }
+        } else {
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+        }
+
+        this.transactionDepth += 1;
         this.storeQueries = true;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
@@ -156,21 +163,26 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.storeQueries = false;
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+            this.transactionDepth -= 1;
+        } else {
+            this.storeQueries = false;
+            try {
+                await this.query("RELEASE SAVEPOINT cockroach_restart");
+                await this.query("COMMIT");
+                this.queries = [];
+                this.isTransactionActive = false;
+                this.transactionDepth -= 1;
 
-        try {
-            await this.query("RELEASE SAVEPOINT cockroach_restart");
-            await this.query("COMMIT");
-            this.queries = [];
-            this.isTransactionActive = false;
-
-        } catch (e) {
-            if (e.code === "40001") {
-                await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
-                for (const q of this.queries) {
-                    await this.query(q.query, q.parameters);
+            } catch (e) {
+                if (e.code === "40001") {
+                    await this.query("ROLLBACK TO SAVEPOINT cockroach_restart");
+                    for (const q of this.queries) {
+                        await this.query(q.query, q.parameters);
+                    }
+                    await this.commitTransaction();
                 }
-                await this.commitTransaction();
             }
         }
 
@@ -187,10 +199,15 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.storeQueries = false;
-        await this.query("ROLLBACK");
-        this.queries = [];
-        this.isTransactionActive = false;
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            this.storeQueries = false;
+            await this.query("ROLLBACK");
+            this.queries = [];
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }
@@ -1290,7 +1307,7 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index ${indexOrName} was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
@@ -1332,7 +1349,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             return name === "current_schema()" ? name : "'" + name + "'";
         }).join(", ");
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
             const selectViewDropsQuery = `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`;
@@ -1347,11 +1366,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             const sequenceDropQueries: ObjectLiteral[] = await this.query(selectSequenceDropsQuery);
             await Promise.all(sequenceDropQueries.map(q => this.query(q["query"])));
 
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }

@@ -1,9 +1,8 @@
 import {Entity} from "../../../../../../src/decorator/entity/Entity";
 import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
 import {Column} from "../../../../../../src/decorator/columns/Column";
-import {BeforeUpdate} from "../../../../../../src/decorator/listeners/BeforeUpdate";
-import {AfterUpdate} from "../../../../../../src/decorator/listeners/AfterUpdate";
 import {DeleteDateColumn} from "../../../../../../src/decorator/columns/DeleteDateColumn";
+import { AfterSoftRemove, BeforeSoftRemove } from "../../../../../../src";
 
 @Entity()
 export class PostWithDeleteDateColumn {
@@ -22,13 +21,13 @@ export class PostWithDeleteDateColumn {
 
     isSoftRemoved: boolean = false;
 
-    @BeforeUpdate()
-    beforeUpdate() {
+    @BeforeSoftRemove()
+    beforeSoftRemove() {
         this.title += "!";
     }
 
-    @AfterUpdate()
-    afterUpdate() {
+    @AfterSoftRemove()
+    afterSoftRemove() {
         this.isSoftRemoved = true;
     }
 

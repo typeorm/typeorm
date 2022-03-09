@@ -6,7 +6,7 @@
 
 ## Defining Schemas
 
-You can define an entity and its columns right in the model, using decorators. 
+You can define an entity and its columns right in the model, using decorators.
 But some people prefer to define an entity and its columns inside separate files
 which are called "entity schemas" in TypeORM.
 
@@ -139,14 +139,14 @@ export const CategoryEntity = new EntitySchema<Category>({
 
 ## Extending Schemas
 
-When using the `Decorator` approach it is easy to `extend` basic columns to an abstract class and simply extend this. 
-For example, your `id`, `createdAt` and `updatedAt` columns may be defined in such a `BaseEntity`. For more details, see 
+When using the `Decorator` approach it is easy to `extend` basic columns to an abstract class and simply extend this.
+For example, your `id`, `createdAt` and `updatedAt` columns may be defined in such a `BaseEntity`. For more details, see
 the documentation on [concrete table inheritance](entity-inheritance.md#concrete-table-inheritance).
 
-When using the `EntitySchema` approach, this is not possible. However, you can use the `Spread Operator` (`...`) to your 
+When using the `EntitySchema` approach, this is not possible. However, you can use the `Spread Operator` (`...`) to your
 advantage.
 
-Reconsider the `Category` example from above. You may want to `extract` basic column descriptions and reuse it across 
+Reconsider the `Category` example from above. You may want to `extract` basic column descriptions and reuse it across
 your other schemas. This may be done in the following way:
 
 ```ts
@@ -177,7 +177,7 @@ Now you can use the `BaseColumnSchemaPart` in your other schema models, like thi
 export const CategoryEntity = new EntitySchema<Category>({
     name: "category",
     columns: {
-        ...BaseColumnSchemaPart,    
+        ...BaseColumnSchemaPart,
         // the CategoryEntity now has the defined id, createdAt, updatedAt columns!
         // in addition, the following NEW fields are defined
         name: {
@@ -187,12 +187,58 @@ export const CategoryEntity = new EntitySchema<Category>({
 });
 ```
 
+You can use embedded entities in schema models, like this:
+```ts
+export interface Name {
+    first: string;
+    last: string;
+}
+
+export const NameEntitySchema = new EntitySchema<Name>({
+    name: "name",
+    columns: {
+        first: {
+            type: "varchar"
+        },
+        last: {
+            type: "varchar"
+        }
+    },
+});
+
+export interface User {
+    id: string;
+    name: Name;
+    isActive: boolean;
+}
+
+export const UserEntitySchema = new EntitySchema<User>({
+    name: "user",
+    columns: {
+        id: {
+            primary: true,
+            generated: "uuid",
+            type: "uuid"
+        },
+        isActive: {
+            type: "boolean"
+        }
+    },
+    embeddeds: {
+        name: {
+            schema: NameEntitySchema,
+            prefix: "name_",
+        },
+    }
+});
+```
+
 Be sure to add the `extended` columns also to the `Category` interface (e.g., via `export interface Category extend BaseEntity`).
 
 ## Using Schemas to Query / Insert Data
 
 Of course, you can use the defined schemas in your repositories or entity manager as you would use the decorators.
-Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema in order to get 
+Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema in order to get
 some data or manipulate the database.
 
 ```ts

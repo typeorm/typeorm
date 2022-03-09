@@ -1,42 +1,47 @@
-# Decorators reference
+# Decorator reference
 
-* [Entity decorators](#entity-decorators)
-    * [`@Entity`](#entity)
-    * [`@ViewEntity`](#viewentity)
-* [Column decorators](#column-decorators)
-    * [`@Column`](#column)
-    * [`@PrimaryColumn`](#primarycolumn)
-    * [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
-    * [`@ObjectIdColumn`](#objectidcolumn)
-    * [`@CreateDateColumn`](#createdatecolumn)
-    * [`@UpdateDateColumn`](#updatedatecolumn)
-    * [`@DeleteDateColumn`](#deletedatecolumn)
-    * [`@VersionColumn`](#versioncolumn)
-    * [`@Generated`](#generated)
-* [Relation decorators](#relation-decorators)
-    * [`@OneToOne`](#onetoone)
-    * [`@ManyToOne`](#manytoone)
-    * [`@OneToMany`](#onetomany)
-    * [`@ManyToMany`](#manytomany)
-    * [`@JoinColumn`](#joincolumn)
-    * [`@JoinTable`](#jointable)
-    * [`@RelationId`](#relationid)
-* [Subscriber and listener decorators](#subscriber-and-listener-decorators)
-    * [`@AfterLoad`](#afterload)
-    * [`@BeforeInsert`](#beforeinsert)
-    * [`@AfterInsert`](#afterinsert)
-    * [`@BeforeUpdate`](#beforeupdate)
-    * [`@AfterUpdate`](#afterupdate)
-    * [`@BeforeRemove`](#beforeremove)
-    * [`@AfterRemove`](#afterremove)
-    * [`@EventSubscriber`](#eventsubscriber)
-* [Other decorators](#other-decorators)
-    * [`@Index`](#index)
-    * [`@Unique`](#unique)
-    * [`@Check`](#check)
-    * [`@Exclusion`](#exclusion)
-    * [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
-    * [`@EntityRepository`](#entityrepository)
+- [Decorators reference](#decorators-reference)
+  - [Entity decorators](#entity-decorators)
+      - [`@Entity`](#entity)
+      - [`@ViewEntity`](#viewentity)
+  - [Column decorators](#column-decorators)
+      - [`@Column`](#column)
+      - [`@PrimaryColumn`](#primarycolumn)
+      - [`@PrimaryGeneratedColumn`](#primarygeneratedcolumn)
+      - [`@ObjectIdColumn`](#objectidcolumn)
+      - [`@CreateDateColumn`](#createdatecolumn)
+      - [`@UpdateDateColumn`](#updatedatecolumn)
+      - [`@DeleteDateColumn`](#deletedatecolumn)
+      - [`@VersionColumn`](#versioncolumn)
+      - [`@Generated`](#generated)
+  - [Relation decorators](#relation-decorators)
+      - [`@OneToOne`](#onetoone)
+      - [`@ManyToOne`](#manytoone)
+      - [`@OneToMany`](#onetomany)
+      - [`@ManyToMany`](#manytomany)
+      - [`@JoinColumn`](#joincolumn)
+      - [`@JoinTable`](#jointable)
+      - [`@RelationId`](#relationid)
+  - [Subscriber and listener decorators](#subscriber-and-listener-decorators)
+      - [`@AfterLoad`](#afterload)
+      - [`@BeforeInsert`](#beforeinsert)
+      - [`@AfterInsert`](#afterinsert)
+      - [`@BeforeUpdate`](#beforeupdate)
+      - [`@AfterUpdate`](#afterupdate)
+      - [`@BeforeRemove`](#beforeremove)
+      - [`@AfterRemove`](#afterremove)
+      - [`@BeforeSoftRemove`](#beforesoftremove)
+      - [`@AfterSoftRemove`](#aftersoftremove)
+      - [`@BeforeRecover`](#beforerecover)
+      - [`@AfterRecover`](#afterrecover)
+      - [`@EventSubscriber`](#eventsubscriber)
+  - [Other decorators](#other-decorators)
+      - [`@Index`](#index)
+      - [`@Unique`](#unique)
+      - [`@Check`](#check)
+      - [`@Exclusion`](#exclusion)
+      - [`@Transaction`, `@TransactionManager` and `@TransactionRepository`](#transaction-transactionmanager-and-transactionrepository)
+      - [`@EntityRepository`](#entityrepository)
 
 ## Entity decorators
 
@@ -192,7 +197,7 @@ If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 * `collation: string` - Defines a column collation.
 * `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
 You can specify array of values or specify a enum class.
-* `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's neccessary if you intend to use the same enum type in different tables.
+* `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's necessary if you intend to use the same enum type in different tables.
 * `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
 * `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html)  and [Postgres (Only "STORED")](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
 * `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
@@ -240,7 +245,7 @@ export class User {
 There are four generation strategies:
 
 * `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
-* `identity` - only for [PostgreSQL 10+](https://www.postgresql.org/docs/13/sql-createtable.html). Postgres versions above 10 support the SQL-Compliant **IDENTITY** column. When marking the generation strategy as `identity` the column will be produced using `GENERATED BY DEFAULT AS IDENTITY`
+* `identity` - only for [PostgreSQL 10+](https://www.postgresql.org/docs/13/sql-createtable.html). Postgres versions above 10 support the SQL-Compliant **IDENTITY** column. When marking the generation strategy as `identity` the column will be produced using `GENERATED [ALWAYS|BY DEFAULT] AS IDENTITY`
 * `uuid` - generates unique `uuid` string.
 * `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()`
 function. This produces a 64-bit integer from the current timestamp and ID of the node executing the `INSERT` or `UPSERT` operation.
@@ -499,7 +504,7 @@ export class Post {
 
 Used for `many-to-many` relations and describes join columns of the "junction" table.
 Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
-You can change the name of the generated "junction" table and also the column names inside the junction table and their referenced columns with the `joinColumn`- and `inverseJoinColumn` attributes. 
+You can change the name of the generated "junction" table and also the column names inside the junction table and their referenced columns with the `joinColumn`- and `inverseJoinColumn` attributes.
 Example:
 
 ```typescript
@@ -694,6 +699,82 @@ export class Post {
     @AfterRemove()
     updateStatus() {
         this.status = "removed";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@BeforeSoftRemove`
+
+You can define a method with any name in the entity and mark it with `@BeforeSoftRemove`
+and TypeORM will call it before a entity is soft removed using repository/manager `softRemove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @BeforeSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@AfterSoftRemove`
+
+You can define a method with any name in the entity and mark it with `@AfterSoftRemove`
+and TypeORM will call it after the entity is soft removed using repository/manager `softRemove`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @AfterSoftRemove()
+    updateStatus() {
+        this.status = "soft-removed";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@BeforeRecover`
+
+You can define a method with any name in the entity and mark it with `@BeforeRecover`
+and TypeORM will call it before a entity is recovered using repository/manager `recover`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @BeforeRecover()
+    updateStatus() {
+        this.status = "recovered";
+    }
+}
+```
+
+Learn more about [listeners](listeners-and-subscribers.md).
+
+#### `@AfterRecover`
+
+You can define a method with any name in the entity and mark it with `@AfterRecover`
+and TypeORM will call it after the entity is recovered using repository/manager `recover`.
+Example:
+
+```typescript
+@Entity()
+export class Post {
+
+    @AfterRecover()
+    updateStatus() {
+        this.status = "recovered";
     }
 }
 ```

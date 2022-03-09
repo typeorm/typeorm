@@ -2,6 +2,7 @@ import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
 import {CommandUtils} from "./CommandUtils";
 import * as yargs from "yargs";
 import chalk from "chalk";
+import { PlatformTools } from "../platform/PlatformTools";
 
 /**
  * Generates a new subscriber.
@@ -60,8 +61,7 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
             console.log(chalk.green(`Subscriber ${chalk.blue(path)} has been created successfully.`));
 
         } catch (err) {
-            console.log(chalk.black.bgRed("Error during subscriber creation:"));
-            console.error(err);
+            PlatformTools.logCmdErr("Error during subscriber creation:");
             process.exit(1);
         }
     }
@@ -75,6 +75,7 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
      */
     protected static getTemplate(name: string): string {
         return `import {EventSubscriber, EntitySubscriberInterface} from "typeorm";
+import { PlatformTools } from '../platform/PlatformTools';
 
 @EventSubscriber()
 export class ${name} implements EntitySubscriberInterface<any> {

@@ -1,7 +1,6 @@
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {AbstractSqliteQueryRunner} from "../sqlite-abstract/AbstractSqliteQueryRunner";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ExpoDriver} from "./ExpoDriver";
 import {Broadcaster} from "../../subscriber/Broadcaster";
@@ -64,12 +63,18 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
      * transaction.
      */
     async startTransaction(): Promise<void> {
-        if (this.isTransactionActive && typeof this.transaction !== "undefined")
-            throw new TransactionAlreadyStartedError();
-
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
         this.isTransactionActive = true;
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
+        }
+
+        if (this.transactionDepth > 0) {
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
+        this.transactionDepth += 1;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -88,8 +93,13 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        this.isTransactionActive = false;
-        this.transaction = undefined;
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            this.transaction = undefined;
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -107,10 +117,43 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        this.isTransactionActive = false;
-        this.transaction = undefined;
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            this.transaction = undefined;
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
+    }
+
+    /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        const databaseConnection = await this.connect();
+        return new Promise((ok, fail) => {
+            databaseConnection.exec(
+                [{ sql: 'PRAGMA foreign_keys = OFF;', args: [] }],
+                false,
+                (err: any) => err ? fail(err) : ok()
+            );
+        })
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        const databaseConnection = await this.connect();
+        return new Promise((ok, fail) => {
+            databaseConnection.exec(
+                [{ sql: 'PRAGMA foreign_keys = ON;', args: [] }],
+                false,
+                (err: any) => err ? fail(err) : ok()
+            );
+        })
     }
 
     /**
@@ -125,9 +168,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this);
             const queryStartTime = +new Date();
             // All Expo SQL queries are executed in a transaction context
-            databaseConnection.transaction((transaction: ITransaction) => {
+            databaseConnection.transaction(async (transaction: ITransaction) => {
                 if (typeof this.transaction === "undefined") {
-                    this.startTransaction();
+                    await this.startTransaction();
                     this.transaction = transaction;
                 }
                 this.transaction.executeSql(query, parameters, (t: ITransaction, raw: IResultSet) => {
@@ -169,8 +212,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     this.driver.connection.logger.logQueryError(err, query, parameters, this);
                     fail(new QueryFailedError(query, parameters, err));
                 });
-            }, (err: any) => {
-                this.rollbackTransaction();
+            }, async (err: any) => {
+                await this.rollbackTransaction();
+                fail(err)
             }, () => {
                 this.isTransactionActive = false;
                 this.transaction = undefined;

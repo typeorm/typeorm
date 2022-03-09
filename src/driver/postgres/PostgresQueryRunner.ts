@@ -1,7 +1,6 @@
 import {ObjectLiteral} from "../../common/ObjectLiteral";
 import {QueryFailedError} from "../../error/QueryFailedError";
 import {QueryRunnerAlreadyReleasedError} from "../../error/QueryRunnerAlreadyReleasedError";
-import {TransactionAlreadyStartedError} from "../../error/TransactionAlreadyStartedError";
 import {TransactionNotStartedError} from "../../error/TransactionNotStartedError";
 import {ColumnType} from "../types/ColumnTypes";
 import {ReadStream} from "../../platform/PlatformTools";
@@ -150,16 +149,23 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Starts transaction.
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
-        if (this.isTransactionActive)
-            throw new TransactionAlreadyStartedError();
-
-        await this.broadcaster.broadcast('BeforeTransactionStart');
-
         this.isTransactionActive = true;
-        await this.query("START TRANSACTION");
-        if (isolationLevel) {
-            await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+        try {
+            await this.broadcaster.broadcast('BeforeTransactionStart');
+        } catch (err) {
+            this.isTransactionActive = false;
+            throw err;
         }
+
+        if (this.transactionDepth === 0) {
+            await this.query("START TRANSACTION");
+            if (isolationLevel) {
+                await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
+            }
+        } else {
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
+        }
+        this.transactionDepth += 1;
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -174,8 +180,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        await this.query("COMMIT");
-        this.isTransactionActive = false;
+        if (this.transactionDepth > 1) {
+            await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            await this.query("COMMIT");
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -190,8 +201,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        await this.query("ROLLBACK");
-        this.isTransactionActive = false;
+        if (this.transactionDepth > 1) {
+            await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
+        } else {
+            await this.query("ROLLBACK");
+            this.isTransactionActive = false;
+        }
+        this.transactionDepth -= 1;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }
@@ -1020,23 +1036,45 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 }
             }
 
-            if (oldColumn.isGenerated !== newColumn.isGenerated &&
-                newColumn.generationStrategy !== "uuid" &&
-                newColumn.generationStrategy !== "identity"
-            ) {
-                if (newColumn.isGenerated === true) {
-                    upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
-                    downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+            if (oldColumn.isGenerated !== newColumn.isGenerated) {
+                // if old column was "generated", we should clear defaults
+                if (oldColumn.isGenerated) {
+                    if (oldColumn.generationStrategy === "uuid") {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
 
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    } else if (oldColumn.generationStrategy === "increment") {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
 
-                } else {
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
+                        upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+                        downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                    }
+                }
 
-                    upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
-                    downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                if (newColumn.generationStrategy === "uuid") {
+                    if (newColumn.isGenerated === true) {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                    } else {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
+                    }
+                } else if (newColumn.generationStrategy === "increment") {
+                    if (newColumn.isGenerated === true) {
+                        upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                        downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+
+                    } else {
+                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
+                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
+
+                        upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
+                        downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
+                    }
                 }
             }
 
@@ -1517,7 +1555,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index ${indexOrName} was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
@@ -1559,7 +1597,9 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             return name === "current_schema()" ? name : "'" + name + "'";
         }).join(", ");
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
             const version = await this.getVersion()
             // drop views
@@ -1588,11 +1628,13 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             // drop enum types
             await this.dropEnumTypes(schemaNamesString);
 
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }
@@ -1912,6 +1954,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                     if (dbColumn.is_identity === "YES") { // Postgres 10+ Identity column
                         tableColumn.isGenerated = true;
                         tableColumn.generationStrategy = "identity";
+                        tableColumn.generatedIdentity = dbColumn.identity_generation;
                     } else if (dbColumn["column_default"] !== null && dbColumn["column_default"] !== undefined) {
                         const serialDefaultName = `nextval('${this.buildSequenceName(table, dbColumn["column_name"])}'::regclass)`;
                         const serialDefaultPath = `nextval('${this.buildSequencePath(table, dbColumn["column_name"])}'::regclass)`;
@@ -1936,7 +1979,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                         // In postgres there is no VIRTUAL generated column type
                         tableColumn.generatedType = "STORED";
                         // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                        const asExpressionQuery = `SELECT * FROM "typeorm_metadata" `
+                        const asExpressionQuery = `SELECT * FROM "${this.connection.metadataTableName}" `
                             + ` WHERE "table" = '${dbTable["table_name"]}'`
                             + ` AND "name" = '${tableColumn.name}'`
                             + ` AND "schema" = '${dbTable["table_schema"]}'`
@@ -1972,7 +2015,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const uniques = dbConstraints.filter(dbC => dbC["constraint_name"] === constraint["constraint_name"]);
                 return new TableUnique({
                     name: constraint["constraint_name"],
-                    columnNames: uniques.map(u => u["column_name"])
+                    columnNames: uniques.map(u => u["column_name"]),
+                    deferrable: constraint["deferrable"] ? constraint["deferred"] : undefined,
                 });
             });
 
@@ -2028,6 +2072,7 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
                 return new TableForeignKey({
                     name: dbForeignKey["constraint_name"],
                     columnNames: foreignKeys.map(dbFk => dbFk["column_name"]),
+                    referencedSchema: dbForeignKey["referenced_table_schema"],
                     referencedTableName: referencedTableName,
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["referenced_column_name"]),
                     onDelete: dbForeignKey["on_delete"],
@@ -2087,7 +2132,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
             const uniquesSql = table.uniques.map(unique => {
                 const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table, unique.columnNames);
                 const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
-                return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
+                let constraint = `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
+                if (unique.deferrable)
+                    constraint += ` DEFERRABLE ${unique.deferrable}`;
+                return constraint;
             }).join(", ");
 
             sql += `, ${uniquesSql}`;
@@ -2300,7 +2348,10 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): Query {
         const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
-        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`);
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`;
+        if (uniqueConstraint.deferrable)
+            sql += ` DEFERRABLE ${uniqueConstraint.deferrable}`;
+        return new Query(sql);
     }
 
     /**
@@ -2481,7 +2532,8 @@ export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner 
         let c = "\"" + column.name + "\"";
         if (column.isGenerated === true && column.generationStrategy !== "uuid") {
             if (column.generationStrategy === "identity") { // Postgres 10+ Identity generated column
-                c += ` ${column.type} GENERATED BY DEFAULT AS IDENTITY`;
+                const generatedIdentityOrDefault = column.generatedIdentity || "BY DEFAULT";
+                c += ` ${column.type} GENERATED ${generatedIdentityOrDefault} AS IDENTITY`;
             } else { // classic SERIAL primary column
                 if (column.type === "integer" || column.type === "int" || column.type === "int4")
                     c += " SERIAL";

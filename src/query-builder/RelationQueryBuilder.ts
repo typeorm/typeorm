@@ -15,7 +15,7 @@ export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
         return "";

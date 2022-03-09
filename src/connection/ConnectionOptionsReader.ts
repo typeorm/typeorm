@@ -6,6 +6,8 @@ import {ConnectionOptionsEnvReader} from "./options-reader/ConnectionOptionsEnvR
 import {ConnectionOptionsYmlReader} from "./options-reader/ConnectionOptionsYmlReader";
 import {ConnectionOptionsXmlReader} from "./options-reader/ConnectionOptionsXmlReader";
 import { TypeORMError } from "../error";
+import { isAbsolute } from "../util/PathUtils";
+import {importOrRequireFile} from "../util/ImportUtils";
 
 /**
  * Reads connection options from the ormconfig.
@@ -83,7 +85,7 @@ export class ConnectionOptionsReader {
     protected async load(): Promise<ConnectionOptions[]|undefined> {
         let connectionOptions: ConnectionOptions|ConnectionOptions[]|undefined = undefined;
 
-        const fileFormats = ["env", "js", "cjs", "ts", "json", "yml", "yaml", "xml"];
+        const fileFormats = ["env", "js", "mjs", "cjs", "ts", "mts", "cts", "json", "yml", "yaml", "xml"];
 
         // Detect if baseFilePath contains file extension
         const possibleExtension = this.baseFilePath.substr(this.baseFilePath.lastIndexOf("."));
@@ -108,10 +110,14 @@ export class ConnectionOptionsReader {
         if (PlatformTools.getEnvVariable("TYPEORM_CONNECTION") || PlatformTools.getEnvVariable("TYPEORM_URL")) {
             connectionOptions = await new ConnectionOptionsEnvReader().read();
 
-        } else if (foundFileFormat === "js" || foundFileFormat === "cjs" || foundFileFormat === "ts") {
-            const configModule = await require(configFile);
+        } else if (
+            foundFileFormat === "js" || foundFileFormat === "mjs" || foundFileFormat === "cjs" ||
+            foundFileFormat === "ts" || foundFileFormat === "mts" || foundFileFormat === "cts"
+        ) {
+            const [importOrRequireResult, moduleSystem] = await importOrRequireFile(configFile);
+            const configModule = await importOrRequireResult;
 
-            if (configModule && "__esModule" in configModule && "default" in configModule) {
+            if (moduleSystem === "esm" || (configModule && "__esModule" in configModule && "default" in configModule)) {
                 connectionOptions = configModule.default;
             } else {
                 connectionOptions = configModule;
@@ -146,6 +152,7 @@ export class ConnectionOptionsReader {
             connectionOptions = [connectionOptions];
 
         connectionOptions.forEach(options => {
+            options.baseDirectory = this.baseDirectory;
             if (options.entities) {
                 const entities = (options.entities as any[]).map(entity => {
                     if (typeof entity === "string" && entity.substr(0, 1) !== "/")
@@ -176,7 +183,7 @@ export class ConnectionOptionsReader {
 
             // make database path file in sqlite relative to package.json
             if (options.type === "sqlite" || options.type === "better-sqlite3") {
-                if (typeof options.database === "string" &&
+                if (typeof options.database === "string" && !isAbsolute(options.database) &&
                     options.database.substr(0, 1) !== "/" &&  // unix absolute
                     options.database.substr(1, 2) !== ":\\" && // windows absolute
                     options.database !== ":memory:") {

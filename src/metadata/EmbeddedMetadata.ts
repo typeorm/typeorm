@@ -33,7 +33,7 @@ export class EmbeddedMetadata {
     /**
      * Embedded target type.
      */
-    type: Function;
+    type: Function|string;
 
     /**
      * Property name on which this embedded is attached.
@@ -197,6 +197,10 @@ export class EmbeddedMetadata {
      * Creates a new embedded object.
      */
     create(options?: { fromDeserializer?: boolean }): any {
+        if (!(this.type instanceof Function)) {
+            return {};
+        }
+
         if (!options?.fromDeserializer || this.isAlwaysUsingConstructor) {
             return new (this.type as any);
         } else {

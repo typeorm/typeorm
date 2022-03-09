@@ -80,6 +80,11 @@ export class AuroraDataApiDriver implements Driver {
     treeSupport = true;
 
     /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "nested" as const;
+
+    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.tutorialspoint.com/mysql/mysql-data-types.htm

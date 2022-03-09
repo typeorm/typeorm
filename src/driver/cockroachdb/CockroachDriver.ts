@@ -100,6 +100,12 @@ export class CockroachDriver implements Driver {
     treeSupport = true;
 
     /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "nested" as const;
+
+
+    /**
      * Gets list of supported column data types by a driver.
      *
      * @see https://www.cockroachlabs.com/docs/stable/data-types.html

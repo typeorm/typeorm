@@ -69,6 +69,7 @@ export class EntityMetadataValidator {
             const sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(metadata => {
                 return metadata !== entityMetadata
                     && (metadata.inheritancePattern === "STI" || metadata.tableType === "entity-child")
+                    && metadata.tableName === entityMetadata.tableName
                     && metadata.discriminatorValue === entityMetadata.discriminatorValue
                     && metadata.inheritanceTree.some(parent => entityMetadata.inheritanceTree.indexOf(parent) !== -1);
             });
@@ -115,7 +116,7 @@ export class EntityMetadataValidator {
         }
 
         // check if relations are all without initialized properties
-        const entityInstance = entityMetadata.create();
+        const entityInstance = entityMetadata.create(undefined, { fromDeserializer: true });
         entityMetadata.relations.forEach(relation => {
             if (relation.isManyToMany || relation.isOneToMany) {
 

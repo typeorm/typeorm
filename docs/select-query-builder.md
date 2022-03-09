@@ -188,6 +188,17 @@ There are 5 different `QueryBuilder` types available:
     ```
 
 * `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD].
+Example:
+
+    ```typescript
+    import {getConnection} from "typeorm";
+
+    await getConnection()
+        .createQueryBuilder()
+        .relation(User,"photos")
+        .of(id)
+        .loadMany();
+    ```
 
 You can switch between different types of query builder within any of them,
 once you do, you will get a new instance of query builder (unlike all other methods).
@@ -264,7 +275,7 @@ createQueryBuilder()
     .from(User, "user")
 ```
 
-Which will result in the following sql query:
+Which will result in the following SQL query:
 
 ```sql
 SELECT ... FROM users user
@@ -401,6 +412,24 @@ Which will produce the following SQL query:
 
 ```sql
 SELECT ... FROM users user WHERE user.registered = true AND (user.firstName = 'Timber' OR user.lastName = 'Saw')
+```
+
+
+You can add a negated complex `WHERE` expression into an existing `WHERE` using `NotBrackets`
+
+```typescript
+createQueryBuilder("user")
+    .where("user.registered = :registered", { registered: true })
+    .andWhere(new NotBrackets(qb => {
+        qb.where("user.firstName = :firstName", { firstName: "Timber" })
+          .orWhere("user.lastName = :lastName", { lastName: "Saw" })
+    }))
+```
+
+Which will produce the following SQL query:
+
+```sql
+SELECT ... FROM users user WHERE user.registered = true AND NOT((user.firstName = 'Timber' OR user.lastName = 'Saw'))
 ```
 
 You can combine as many `AND` and `OR` expressions as you need.
@@ -659,7 +688,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate following sql query:
+This will generate following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user
@@ -676,7 +705,7 @@ const user = await createQueryBuilder("user")
     .getOne();
 ```
 
-This will generate the following sql query:
+This will generate the following SQL query:
 
 ```sql
 SELECT user.*, photo.* FROM users user

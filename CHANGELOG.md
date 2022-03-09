@@ -1,3 +1,102 @@
+## [0.2.45](https://github.com/typeorm/typeorm/compare/0.2.44...0.2.45) (2022-03-04)
+
+### Bug Fixes
+
+* allow clearing database inside a transaction ([#8712](https://github.com/typeorm/typeorm/issues/8712)) ([f3cfdd2](https://github.com/typeorm/typeorm/commit/f3cfdd264105ba8cf1c92832b4b95e5a3ca0ed09)), closes [#8527](https://github.com/typeorm/typeorm/issues/8527)
+* discard duplicated columns on update ([#8724](https://github.com/typeorm/typeorm/issues/8724)) ([0fc093d](https://github.com/typeorm/typeorm/commit/0fc093d168b54a0fd99bb411a730aad9be1858ac)), closes [#8723](https://github.com/typeorm/typeorm/issues/8723)
+* fix entityManager.getId for custom join table ([#8676](https://github.com/typeorm/typeorm/issues/8676)) ([33b2bd7](https://github.com/typeorm/typeorm/commit/33b2bd7acc55d6eb30bfe0681748d6b6abaff0b5)), closes [#7736](https://github.com/typeorm/typeorm/issues/7736)
+* force web bundlers to ignore index.mjs and use the browser ESM version directly ([#8710](https://github.com/typeorm/typeorm/issues/8710)) ([411fa54](https://github.com/typeorm/typeorm/commit/411fa54368c8940e94b1cbf7ab64b8d5377f9406)), closes [#8709](https://github.com/typeorm/typeorm/issues/8709)
+
+### Features
+
+* add nested transaction ([#8541](https://github.com/typeorm/typeorm/issues/8541)) ([6523526](https://github.com/typeorm/typeorm/commit/6523526003bab74a0df8f7d578790c1728b26057)), closes [#1505](https://github.com/typeorm/typeorm/issues/1505)
+* add transformer to ViewColumnOptions ([#8717](https://github.com/typeorm/typeorm/issues/8717)) ([96ac8f7](https://github.com/typeorm/typeorm/commit/96ac8f7eece06ae0a8b52ae7da740c92c0c0d4b9))
+
+
+## [0.2.44](https://github.com/typeorm/typeorm/compare/0.2.43...0.2.44) (2022-02-23)
+
+### Bug Fixes
+
+* alter relation loader to use transforms when present ([#8691](https://github.com/typeorm/typeorm/issues/8691)) ([2c2fb29](https://github.com/typeorm/typeorm/commit/2c2fb29a67bfd0ca7dd9133a2f85f5b4db5fb195)), closes [#8690](https://github.com/typeorm/typeorm/issues/8690)
+* cannot read properties of undefined (reading 'joinEagerRelations') ([136015b](https://github.com/typeorm/typeorm/commit/136015b04ee72b0ca2439fbff53b1467c12c24b6))
+* expo driver doesn't work properly because of new beforeMigration() afterMigration() callbacks ([#8683](https://github.com/typeorm/typeorm/issues/8683)) ([5a71803](https://github.com/typeorm/typeorm/commit/5a7180378e34ab58ad40c504ebc5195e2413c5f4))
+* ng webpack default import ([#8688](https://github.com/typeorm/typeorm/issues/8688)) ([2d3374b](https://github.com/typeorm/typeorm/commit/2d3374b3b4cb8163764c035bd687b2c81787f338)), closes [#8674](https://github.com/typeorm/typeorm/issues/8674)
+* support imports of absolute paths of ESM files on Windows ([#8669](https://github.com/typeorm/typeorm/issues/8669)) ([12cbfcd](https://github.com/typeorm/typeorm/commit/12cbfcde7bc4f56069ed3298064bb91ad0816bf0)), closes [#8651](https://github.com/typeorm/typeorm/issues/8651)
+
+### Features
+
+* add option to upsert to skip update if the row already exists and no values would be changed  ([#8679](https://github.com/typeorm/typeorm/issues/8679)) ([8744395](https://github.com/typeorm/typeorm/commit/87443954b59768ab77fb15097ea9d88822b4a733))
+* allow `{delete,insert}().returning()` on MariaDB ([#8673](https://github.com/typeorm/typeorm/issues/8673)) ([7facbab](https://github.com/typeorm/typeorm/commit/7facbabd2663098156a53983ea38433ed39082d2)), closes [#7235](https://github.com/typeorm/typeorm/issues/7235) [#7235](https://github.com/typeorm/typeorm/issues/7235)
+* Implement deferrable foreign keys for SAP HANA ([#6104](https://github.com/typeorm/typeorm/issues/6104)) ([1f54c70](https://github.com/typeorm/typeorm/commit/1f54c70b76de34d4420904b72137df746ea9aaed))
+
+## [0.2.43](https://github.com/typeorm/typeorm/compare/0.2.42...0.2.43) (2022-02-17)
+
+### Bug Fixes
+
+* support `require` to internal files without explicitly writing `.js` in the path ([#8660](https://github.com/typeorm/typeorm/issues/8660)) ([96aed8a](https://github.com/typeorm/typeorm/commit/96aed8aae06df0ae555aa51ed9f1a5ffec141e61)), closes [#8656](https://github.com/typeorm/typeorm/issues/8656)
+
+### Features
+
+* embedded entities with entity schema ([#8626](https://github.com/typeorm/typeorm/issues/8626)) ([7dbe956](https://github.com/typeorm/typeorm/commit/7dbe956c56da3a430ae6f0e99730e9449deae889)), closes [#3632](https://github.com/typeorm/typeorm/issues/3632)
+
+### Reverts
+
+* Revert "feat: soft delete recursive cascade (#8436)" (#8654) ([6b0b15b](https://github.com/typeorm/typeorm/commit/6b0b15b0e68584ed7cd81a658d8606cfdb96817c)), closes [#8436](https://github.com/typeorm/typeorm/issues/8436) [#8654](https://github.com/typeorm/typeorm/issues/8654)
+
+## [0.2.42](https://github.com/typeorm/typeorm/compare/0.2.41...0.2.42) (2022-02-16)
+
+### Bug Fixes
+
+* proper column comment mapping from database to metadata in aurora-data-api ([baa5880](https://github.com/typeorm/typeorm/commit/baa5880001064333eb4eb01765b1d79e17cf1fb5))
+* add referencedSchema to PostgresQueryRunner ([#8566](https://github.com/typeorm/typeorm/issues/8566)) ([c490319](https://github.com/typeorm/typeorm/commit/c49031929aca8f3b932c6593b75447256085bfef))
+* adding/removing @Generated() will now generate a migration to add/remove the DEFAULT value ([#8274](https://github.com/typeorm/typeorm/issues/8274)) ([4208393](https://github.com/typeorm/typeorm/commit/42083936e2b65f0d1bd8e23d12689a7f49e2da2f)), closes [#5898](https://github.com/typeorm/typeorm/issues/5898)
+* adds entity-schema support for createForeignKeyConstraints ([#8606](https://github.com/typeorm/typeorm/issues/8606)) ([f224f24](https://github.com/typeorm/typeorm/commit/f224f24e5247d3c42385bfc03c89f518aa932310)), closes [#8489](https://github.com/typeorm/typeorm/issues/8489)
+* allow special keyword as column name for simple-enum type on sqlite ([#8645](https://github.com/typeorm/typeorm/issues/8645)) ([93bf96e](https://github.com/typeorm/typeorm/commit/93bf96ea635823c7933ea8ef7326be62ccdd6ea7))
+* correctly handle multiple-row insert for SAP HANA driver ([#7957](https://github.com/typeorm/typeorm/issues/7957)) ([8f2ae71](https://github.com/typeorm/typeorm/commit/8f2ae71201e7738fe3c1efd5bbc4584dfe62dcc0))
+* disable SQLite FK checks in synchronize / migrations ([#7922](https://github.com/typeorm/typeorm/issues/7922)) ([f24822e](https://github.com/typeorm/typeorm/commit/f24822ef9cb3051fbe9f3fd5d9e669788852c5a5))
+* find descendants of a non-existing tree parent ([#8557](https://github.com/typeorm/typeorm/issues/8557)) ([cbb61eb](https://github.com/typeorm/typeorm/commit/cbb61eb08139204479110c88d7d1849a24080d11)), closes [#8556](https://github.com/typeorm/typeorm/issues/8556)
+* For MS SQL Server use lowercase "sys"."columns" reference. ([#8400](https://github.com/typeorm/typeorm/issues/8400)) ([#8401](https://github.com/typeorm/typeorm/issues/8401)) ([e8a0f92](https://github.com/typeorm/typeorm/commit/e8a0f921b4baa7aa7e55ac1fd34c449dfa1e3229))
+* improve DeepPartial type ([#8187](https://github.com/typeorm/typeorm/issues/8187)) ([b93416d](https://github.com/typeorm/typeorm/commit/b93416d7bc25006b34a90c14c497cc7e6e57e28c))
+* Lock peer dependencies versions ([#8597](https://github.com/typeorm/typeorm/issues/8597)) ([600bd4e](https://github.com/typeorm/typeorm/commit/600bd4e5da74b012409d1fdf411a0a0b5265466b))
+* make EntityMetadataValidator comply with entitySkipConstructor, cover with test ([#8445](https://github.com/typeorm/typeorm/issues/8445)) ([3d6c5da](https://github.com/typeorm/typeorm/commit/3d6c5dae76ad0e0640650058ae58fe0addda2ae6)), closes [#8444](https://github.com/typeorm/typeorm/issues/8444)
+* materialized path being computed as "undefined1." ([#8526](https://github.com/typeorm/typeorm/issues/8526)) ([09f54e0](https://github.com/typeorm/typeorm/commit/09f54e0273be4dc836824a38e9c78b50ad21bba6))
+* MongoConnectionOptions sslCA type mismatch ([#8628](https://github.com/typeorm/typeorm/issues/8628)) ([02400da](https://github.com/typeorm/typeorm/commit/02400dab662aceca9a722c4aa0dd74a9fa2cb90d))
+* mongodb repository.find filters soft deleted rows ([#8581](https://github.com/typeorm/typeorm/issues/8581)) ([f7c1f7d](https://github.com/typeorm/typeorm/commit/f7c1f7d7c0481f4ada506e5b811a3219519eadf9)), closes [#7113](https://github.com/typeorm/typeorm/issues/7113)
+* mongodb@4 compatibility support ([#8412](https://github.com/typeorm/typeorm/issues/8412)) ([531013b](https://github.com/typeorm/typeorm/commit/531013b2f8dfb8d04b0bfb844dc83a5ba6404569))
+* must invoke key pragma before any other interaction if SEE setted ([#8478](https://github.com/typeorm/typeorm/issues/8478)) ([546b3ed](https://github.com/typeorm/typeorm/commit/546b3ed8886c44fbe3d9e167d1904cb9e5961df7)), closes [#8475](https://github.com/typeorm/typeorm/issues/8475)
+* nested eager relations in a lazy-loaded entity are not loaded ([#8564](https://github.com/typeorm/typeorm/issues/8564)) ([1cfd7b9](https://github.com/typeorm/typeorm/commit/1cfd7b98ba27032dd0e9429a245c40cea47900f7))
+* QueryFailedError when tree entity with JoinColumn ([#8443](https://github.com/typeorm/typeorm/issues/8443)) ([#8447](https://github.com/typeorm/typeorm/issues/8447)) ([a11c50d](https://github.com/typeorm/typeorm/commit/a11c50d5519bda1410ab9ccf67bfcb12ef109c61))
+* relation id and afterAll hook performance fixes ([#8169](https://github.com/typeorm/typeorm/issues/8169)) ([31f0b55](https://github.com/typeorm/typeorm/commit/31f0b5535aa0cc49ff23610b1924c03432f5461f))
+* replaced custom uuid generator with `uuid` library ([#8642](https://github.com/typeorm/typeorm/issues/8642)) ([8898a71](https://github.com/typeorm/typeorm/commit/8898a7175f481f1c171acefef61dc089bc3f8a8e))
+* single table inheritance returns the same discriminator value error for unrelated tables where their parents extend from the same entity  ([#8525](https://github.com/typeorm/typeorm/issues/8525)) ([6523fcc](https://github.com/typeorm/typeorm/commit/6523fccda1147dc697afbba57792e5cb4165fbf2)), closes [#8522](https://github.com/typeorm/typeorm/issues/8522)
+* updating with only `update: false` columns shouldn't trigger @UpdateDateColumn column updation ([2834729](https://github.com/typeorm/typeorm/commit/2834729e80577bd30f09c2c0e4c949cde173bba3)), closes [#8394](https://github.com/typeorm/typeorm/issues/8394) [#8394](https://github.com/typeorm/typeorm/issues/8394) [#8394](https://github.com/typeorm/typeorm/issues/8394)
+* upsert should find unique index created by one-to-one relation ([#8618](https://github.com/typeorm/typeorm/issues/8618)) ([c8c00ba](https://github.com/typeorm/typeorm/commit/c8c00baf9351973be5780687418303dd87de2077))
+
+### Features
+
+* add comment param to FindOptions ([#8545](https://github.com/typeorm/typeorm/issues/8545)) ([ece0da0](https://github.com/typeorm/typeorm/commit/ece0da027dfce4357764dda4b810598ad64af9d9))
+* add custom timestamp option in migration creation ([#8501](https://github.com/typeorm/typeorm/issues/8501)) ([4a7f242](https://github.com/typeorm/typeorm/commit/4a7f2420f1b498465b2a5913b7d848b3eaafb113)), closes [#8500](https://github.com/typeorm/typeorm/issues/8500) [#8500](https://github.com/typeorm/typeorm/issues/8500)
+* add support for node-redis v4.0.0 and newer ([#8425](https://github.com/typeorm/typeorm/issues/8425)) ([0626ed1](https://github.com/typeorm/typeorm/commit/0626ed1f0bd75fb8e72a462593f33813d85faee8))
+* add support for Postgres 10+ GENERATED ALWAYS AS IDENTITY ([#8371](https://github.com/typeorm/typeorm/issues/8371)) ([a0f09de](https://github.com/typeorm/typeorm/commit/a0f09de8400ac7c94df33f8213ef0eec79b9239d)), closes [#8370](https://github.com/typeorm/typeorm/issues/8370)
+* add WITH (lock) clause for MSSQL select with join queries ([#8507](https://github.com/typeorm/typeorm/issues/8507)) ([3284808](https://github.com/typeorm/typeorm/commit/3284808b63552d81456752187c0d130db76007ed)), closes [#4764](https://github.com/typeorm/typeorm/issues/4764)
+* adds entity-schema support for withoutRowid ([#8432](https://github.com/typeorm/typeorm/issues/8432)) ([bd22dc3](https://github.com/typeorm/typeorm/commit/bd22dc3b8175ef82967b8265a2388ce16cc08623)), closes [#8429](https://github.com/typeorm/typeorm/issues/8429)
+* allow soft-deletion of orphaned relation rows using orphanedRow… ([#8414](https://github.com/typeorm/typeorm/issues/8414)) ([cefddd9](https://github.com/typeorm/typeorm/commit/cefddd95c550191d6a18cb53c8ea4995d0c219ca))
+* custom name for typeorm_metadata table ([#8528](https://github.com/typeorm/typeorm/issues/8528)) ([f8154eb](https://github.com/typeorm/typeorm/commit/f8154eb4c5089a1a0d2c2073f0ea5d64b3252e08)), closes [#7266](https://github.com/typeorm/typeorm/issues/7266)
+* deferrable option for Unique constraints (Postgres) ([#8356](https://github.com/typeorm/typeorm/issues/8356)) ([e52b26c](https://github.com/typeorm/typeorm/commit/e52b26c910047d22aa3ea003b62d11c2bf352249))
+* ESM support ([#8536](https://github.com/typeorm/typeorm/issues/8536)) ([3a694dd](https://github.com/typeorm/typeorm/commit/3a694dd3e99699e7284709c53967a5dfcb1e1806)), closes [#6974](https://github.com/typeorm/typeorm/issues/6974) [#6941](https://github.com/typeorm/typeorm/issues/6941) [#7516](https://github.com/typeorm/typeorm/issues/7516) [#7159](https://github.com/typeorm/typeorm/issues/7159)
+* query builder negating with "NotBrackets" for complex expressions ([#8476](https://github.com/typeorm/typeorm/issues/8476)) ([fe7f328](https://github.com/typeorm/typeorm/commit/fe7f328fd5b918cab2e7301d57c62e81d9ff34f3))
+* separate update events into update, soft-remove, and recover ([#8403](https://github.com/typeorm/typeorm/issues/8403)) ([93383bd](https://github.com/typeorm/typeorm/commit/93383bd2ee6dc8c22a5cfc0021334fe199da81dc)), closes [#8398](https://github.com/typeorm/typeorm/issues/8398)
+* soft delete recursive cascade ([#8436](https://github.com/typeorm/typeorm/issues/8436)) ([d0f32b3](https://github.com/typeorm/typeorm/commit/d0f32b3a17be9ffe9fbc6112e5731bbac91c3691))
+* sqlite attach ([#8396](https://github.com/typeorm/typeorm/issues/8396)) ([9e844d9](https://github.com/typeorm/typeorm/commit/9e844d9ff72fae72578399e24464cd7912c0fe5e))
+
+### Reverts
+
+* migration:show command must exist with zero status code (Fixes [#7349](https://github.com/typeorm/typeorm/issues/7349)) ([#8185](https://github.com/typeorm/typeorm/issues/8185)) ([e0adeee](https://github.com/typeorm/typeorm/commit/e0adeee48eeb0d5412aa5c0258f7c12e6b1c38ed))
+
+### BREAKING CHANGES
+
+* update listeners and subscriber no longer triggered by soft-remove and recover
+
 ## [0.2.41](https://github.com/typeorm/typeorm/compare/0.2.40...0.2.41) (2021-11-18)
 
 ### Bug Fixes

@@ -101,7 +101,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        if (this.isTransactionActive)
+        if (this.isTransactionActive && this.driver.transactionSupport === "simple")
             throw new TransactionAlreadyStartedError();
 
         await this.broadcaster.broadcast('BeforeTransactionStart');
@@ -508,6 +508,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "), // "CHECK_TIME" is "INITIALLY_IMMEDIATE" or "INITIALLY DEFERRED"
                 });
             });
 
@@ -620,6 +621,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                             onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                             onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                            deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                         });
                     });
 
@@ -966,6 +968,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                         onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                         onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                        deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                     });
                 });
 
@@ -1110,6 +1113,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1185,6 +1189,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1393,7 +1398,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
         const index = indexOrName instanceof TableIndex ? indexOrName : table.indices.find(i => i.name === indexOrName);
         if (!index)
-            throw new TypeORMError(`Supplied index was not found in table ${table.name}`);
+            throw new TypeORMError(`Supplied index ${indexOrName} was not found in table ${table.name}`);
 
         const up = this.dropIndexSql(table, index);
         const down = this.createIndexSql(table, index);
@@ -1435,7 +1440,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return name === "current_schema" ? name : "'" + name + "'";
         }).join(", ");
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
             // const selectViewDropsQuery = `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
             //     `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`;
@@ -1447,11 +1454,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropTableQueries: ObjectLiteral[] = await this.query(selectTableDropsQuery);
             await Promise.all(dropTableQueries.map(q => this.query(q["query"])));
 
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }
@@ -1705,6 +1714,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
                     onDelete: dbForeignKey["DELETE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["DELETE_RULE"],
                     onUpdate: dbForeignKey["UPDATE_RULE"] === "RESTRICT" ? "NO ACTION" : dbForeignKey["UPDATE_RULE"],
+                    deferrable: dbForeignKey["CHECK_TIME"].replace("_", " "),
                 });
             });
 
@@ -1798,6 +1808,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (fk.onUpdate) {
                     const onUpdate = fk.onUpdate === "NO ACTION" ? "RESTRICT" : fk.onUpdate;
                     constraint += ` ON UPDATE ${onUpdate}`;
+                }
+                if (fk.deferrable) {
+                    constraint += ` ${fk.deferrable}`;
                 }
 
                 return constraint;
@@ -1958,6 +1971,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (foreignKey.onUpdate) {
             const onUpdate = foreignKey.onUpdate === "NO ACTION" ? "RESTRICT" : foreignKey.onUpdate;
             sql += ` ON UPDATE ${onUpdate}`;
+        }
+
+        if (foreignKey.deferrable) {
+            sql += ` ${foreignKey.deferrable}`;
         }
 
         return new Query(sql);

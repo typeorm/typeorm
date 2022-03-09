@@ -26,6 +26,20 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
         this.broadcaster = new Broadcaster(this);
     }
 
+    /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = OFF`);
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = ON`);
+    }
+
     async executeSet(set: { statement: string; values?: any[] }[]) {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError();
 

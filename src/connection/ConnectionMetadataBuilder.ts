@@ -29,18 +29,18 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds migration instances for the given classes or directories.
      */
-    buildMigrations(migrations: (Function|string)[]): MigrationInterface[] {
+    async buildMigrations(migrations: (Function|string)[]): Promise<MigrationInterface[]> {
         const [migrationClasses, migrationDirectories] = OrmUtils.splitClassesAndStrings(migrations);
-        const allMigrationClasses = [...migrationClasses, ...importClassesFromDirectories(this.connection.logger, migrationDirectories)];
+        const allMigrationClasses = [...migrationClasses, ...(await importClassesFromDirectories(this.connection.logger, migrationDirectories))];
         return allMigrationClasses.map(migrationClass => getFromContainer<MigrationInterface>(migrationClass));
     }
 
     /**
      * Builds subscriber instances for the given classes or directories.
      */
-    buildSubscribers(subscribers: (Function|string)[]): EntitySubscriberInterface<any>[] {
+    async buildSubscribers(subscribers: (Function|string)[]): Promise<EntitySubscriberInterface<any>[]> {
         const [subscriberClasses, subscriberDirectories] = OrmUtils.splitClassesAndStrings(subscribers || []);
-        const allSubscriberClasses = [...subscriberClasses, ...importClassesFromDirectories(this.connection.logger, subscriberDirectories)];
+        const allSubscriberClasses = [...subscriberClasses, ...(await importClassesFromDirectories(this.connection.logger, subscriberDirectories))];
         return getMetadataArgsStorage()
             .filterSubscribers(allSubscriberClasses)
             .map(metadata => getFromContainer<EntitySubscriberInterface<any>>(metadata.target));
@@ -49,14 +49,14 @@ export class ConnectionMetadataBuilder {
     /**
      * Builds entity metadatas for the given classes or directories.
      */
-    buildEntityMetadatas(entities: (Function|EntitySchema<any>|string)[]): EntityMetadata[] {
+    async buildEntityMetadatas(entities: (Function|EntitySchema<any>|string)[]): Promise<EntityMetadata[]> {
         // todo: instead we need to merge multiple metadata args storages
 
         const [entityClassesOrSchemas, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
         const entityClasses: Function[] = entityClassesOrSchemas.filter(entityClass => (entityClass instanceof EntitySchema) === false) as any;
         const entitySchemas: EntitySchema<any>[] = entityClassesOrSchemas.filter(entityClass => entityClass instanceof EntitySchema) as any;
 
-        const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(this.connection.logger, entityDirectories)];
+        const allEntityClasses = [...entityClasses, ...(await importClassesFromDirectories(this.connection.logger, entityDirectories))];
         allEntityClasses.forEach(entityClass => { // if we have entity schemas loaded from directories
             if (entityClass instanceof EntitySchema) {
                 entitySchemas.push(entityClass);

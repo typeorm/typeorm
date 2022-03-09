@@ -59,6 +59,20 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     }
 
     /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = OFF`);
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = ON`);
+    }
+
+    /**
      * Executes a given SQL query.
      */
     async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
@@ -113,5 +127,20 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             connection.logger.logQueryError(err, query, parameters, this);
             throw new QueryFailedError(query, parameters, err);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    protected async loadTableRecords(tablePath: string, tableOrIndex: "table" | "index") {
+        const [database, tableName] = this.splitTablePath(tablePath);
+        const res = await this.query(`SELECT ${database ? `'${database}'` : null} as database, * FROM ${this.escapePath(`${database ? `${database}.` : ""}sqlite_master`)} WHERE "type" = '${tableOrIndex}' AND "${tableOrIndex === "table" ? "name" : "tbl_name"}" IN ('${tableName}')`);
+        return res;
+    }
+    protected async loadPragmaRecords(tablePath: string, pragma: string) {
+        const [database, tableName] = this.splitTablePath(tablePath);
+        const res = await this.query(`PRAGMA ${database ? `"${database}".` : ""}${pragma}("${tableName}")`);
+        return res;
     }
 }

@@ -7,6 +7,10 @@ import {AfterUpdate} from "../../../src/decorator/listeners/AfterUpdate";
 import {BeforeUpdate} from "../../../src/decorator/listeners/BeforeUpdate";
 import {AfterInsert} from "../../../src/decorator/listeners/AfterInsert";
 import {BeforeInsert} from "../../../src/decorator/listeners/BeforeInsert";
+import {AfterRecover} from "../../../src/decorator/listeners/AfterRecover";
+import {BeforeRecover} from "../../../src/decorator/listeners/BeforeRecover";
+import {AfterSoftRemove} from "../../../src/decorator/listeners/AfterSoftRemove";
+import {BeforeSoftRemove} from "../../../src/decorator/listeners/BeforeSoftRemove";
 
 @Entity("sample9_post_category")
 export class PostCategory {
@@ -50,6 +54,26 @@ export class PostCategory {
     @AfterRemove()
     doSomethingAfterRemove() {
         console.log(`event: PostCategory "${this.name}" has been removed and callback executed`);
+    }
+
+    @BeforeSoftRemove()
+    doSomethingBeforeSoftRemove() {
+        console.log(`event: PostCategory "${this.name}" will be soft-removed so soon...`);
+    }
+
+    @AfterSoftRemove()
+    doSomethingAfterSoftRemove() {
+        console.log(`event: PostCategory "${this.name}" has been soft-removed and callback executed`);
+    }
+
+    @BeforeRecover()
+    doSomethingBeforeRecover() {
+        console.log(`event: PostCategory "${this.name}" will be recovered so soon...`);
+    }
+
+    @AfterRecover()
+    doSomethingAfterRecover() {
+        console.log(`event: PostCategory "${this.name}" has been recovered and callback executed`);
     }
 
 }

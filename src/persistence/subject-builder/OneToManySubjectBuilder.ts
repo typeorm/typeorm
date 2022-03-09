@@ -184,7 +184,10 @@ export class OneToManySubjectBuilder {
                 } else if (relation.inverseRelation.orphanedRowAction === "delete") {
                     removedRelatedEntitySubject.mustBeRemoved = true;
                 }
-
+                else if (relation.inverseRelation.orphanedRowAction === "soft-delete") {
+                    removedRelatedEntitySubject.canBeSoftRemoved = true;
+                }
+                
                 this.subjects.push(removedRelatedEntitySubject);
             });
     }

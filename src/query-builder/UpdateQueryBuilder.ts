@@ -1,4 +1,3 @@
-import {CockroachDriver} from "../driver/cockroachdb/CockroachDriver";
 import {SapDriver} from "../driver/sap/SapDriver";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
 import {QueryBuilder} from "./QueryBuilder";
@@ -15,12 +14,11 @@ import {ReturningResultsEntityUpdator} from "./ReturningResultsEntityUpdator";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {OrderByCondition} from "../find-options/OrderByCondition";
 import {LimitOnUpdateNotSupportedError} from "../error/LimitOnUpdateNotSupportedError";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import { TypeORMError } from "../error";
+import {TypeORMError} from "../error";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -41,7 +39,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
         let sql = this.createComment();
@@ -197,7 +195,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     }
 
     /**
-     * Adds new AND WHERE with conditions for the given ids.
+     * Sets WHERE condition in the query builder with a condition for the given ids.
+     * If you had previously WHERE expression defined,
+     * calling this function will override previously set WHERE conditions.
      */
     whereInIds(ids: any|any[]): this {
         return this.where(this.getWhereInIdsCondition(ids));
@@ -263,8 +263,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
     returning(returning: string|string[]): this {
 
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
+        if (!this.connection.driver.isReturningSqlSupported("update")) {
             throw new ReturningStatementNotSupportedError();
+        }
 
         this.expressionMap.returning = returning;
         return this;
@@ -393,7 +394,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
 
                 columns.forEach(column => {
-                    if (!column.isUpdate) { return; }
+                    if (!column.isUpdate || updatedColumns.includes(column)) { return; }
+                    
                     updatedColumns.push(column);
 
                     //
@@ -427,9 +429,9 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             }
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
-                              expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`;
+                                expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`;
                             } else {
-                              expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`;
+                                expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`;
                             }
                         } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             expression = column.type + "::STGeomFromText(" + paramName + ", " + (column.srid || "0") + ")";
@@ -441,11 +443,13 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 });
             });
 
-            if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
-                updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
-            if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
-
+            // Don't allow calling update only with columns that are `update: false`
+            if (updateColumnAndValues.length > 0 || Object.keys(valuesSet).length === 0) {
+                if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
+                    updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
+                if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
+                    updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+            }
         } else {
             Object.keys(valuesSet).map(key => {
                 let value = valuesSet[key];
@@ -473,18 +477,15 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression();
-        const returningExpression = this.createReturningExpression();
+        const returningExpression = this.createReturningExpression("update");
 
-        // generate and return sql update query
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
-
-        } else if (returningExpression && this.connection.driver instanceof SqlServerDriver) {
-            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
-
-        } else {
+        if (returningExpression === "") {
             return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression}`; // todo: how do we replace aliases in where to nothing?
         }
+        if (this.connection.driver instanceof SqlServerDriver) {
+            return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")} OUTPUT ${returningExpression}${whereExpression}`;
+        }
+        return `UPDATE ${this.getTableName(this.getMainTableName())} SET ${updateColumnAndValues.join(", ")}${whereExpression} RETURNING ${returningExpression}`;
     }
 
     /**

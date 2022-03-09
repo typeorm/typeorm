@@ -7,7 +7,6 @@ import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
-import {RandomGenerator} from "../util/RandomGenerator";
 import {InsertResult} from "./result/InsertResult";
 import {ReturningStatementNotSupportedError} from "../error/ReturningStatementNotSupportedError";
 import {InsertValuesMissingError} from "../error/InsertValuesMissingError";
@@ -18,7 +17,9 @@ import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {EntitySchema} from "../entity-schema/EntitySchema";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
-import { TypeORMError } from "../error";
+import {TypeORMError} from "../error";
+import {v4 as uuidv4} from "uuid";
+import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -30,7 +31,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets generated sql query without parameters being replaced.
+     * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
         let sql = this.createComment();
@@ -244,8 +245,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     returning(returning: string|string[]): this {
 
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported())
+        if (!this.connection.driver.isReturningSqlSupported("insert")) {
             throw new ReturningStatementNotSupportedError();
+        }
 
         this.expressionMap.returning = returning;
         return this;
@@ -284,17 +286,19 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     orUpdate(statement?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] }): this;
 
-    orUpdate(overwrite: string[], conflictTarget?: string | string[]): this;
+    orUpdate(overwrite: string[], conflictTarget?: string | string[], orUpdateOptions?: InsertOrUpdateOptions): this;
 
     /**
      * Adds additional update statement supported in databases.
      */
-    orUpdate(statementOrOverwrite?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] } | string[], conflictTarget?: string | string[]): this {
+    orUpdate(statementOrOverwrite?: { columns?: string[], overwrite?: string[], conflict_target?: string | string[] } | string[], conflictTarget?: string | string[], orUpdateOptions?: InsertOrUpdateOptions): this {
+
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
                 conflict: statementOrOverwrite?.conflict_target,
                 columns: statementOrOverwrite?.columns,
                 overwrite: statementOrOverwrite?.overwrite,
+                skipUpdateIfNoValuesChanged: orUpdateOptions?.skipUpdateIfNoValuesChanged
             };
             return this;
         }
@@ -302,6 +306,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         this.expressionMap.onUpdate = {
             overwrite: statementOrOverwrite,
             conflict: conflictTarget,
+            skipUpdateIfNoValuesChanged: orUpdateOptions?.skipUpdateIfNoValuesChanged
         };
         return this;
     }
@@ -316,12 +321,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() {
         const tableName = this.getTableName(this.getMainTableName());
         const valuesExpression = this.createValuesExpression(); // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const returningExpression = (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1) ? null : this.createReturningExpression(); // oracle doesnt support returning with multi-row insert
+        const returningExpression =
+            (this.connection.driver instanceof OracleDriver && this.getValueSets().length > 1)
+                ? null
+                : this.createReturningExpression("insert"); // oracle doesnt support returning with multi-row insert
         const columnsExpression = this.createColumnNamesExpression();
         let query = "INSERT ";
 
         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver) {
-          query += `${this.expressionMap.onIgnore ? " IGNORE " : ""}`;
+            query += `${this.expressionMap.onIgnore ? " IGNORE " : ""}`;
         }
 
         query += `INTO ${tableName}`;
@@ -359,7 +367,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             } else if (this.expressionMap.onConflict) {
                 query += ` ON CONFLICT ${this.expressionMap.onConflict} `;
             } else if (this.expressionMap.onUpdate) {
-                const { overwrite, columns, conflict } = this.expressionMap.onUpdate;
+                const { overwrite, columns, conflict, skipUpdateIfNoValuesChanged } = this.expressionMap.onUpdate;
 
                 let conflictTarget = "ON CONFLICT";
 
@@ -377,6 +385,12 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     query += ` ${conflictTarget} DO UPDATE SET `;
                     query += columns.map(column => `${this.escape(column)} = :${column}`).join(", ");
                     query += " ";
+                }
+
+                if (Array.isArray(overwrite) && skipUpdateIfNoValuesChanged && this.connection.driver instanceof PostgresDriver) {
+                    query += ` WHERE (`;
+                    query += overwrite.map(column => `${tableName}.${this.escape(column)} IS DISTINCT FROM EXCLUDED.${this.escape(column)}`).join(" OR ");
+                    query += ") ";
                 }
             }
         } else if (this.connection.driver.supportedUpsertType === "on-duplicate-key-update") {
@@ -400,7 +414,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         // add RETURNING expression
-        if (returningExpression && (this.connection.driver instanceof PostgresDriver || this.connection.driver instanceof OracleDriver || this.connection.driver instanceof CockroachDriver)) {
+        if (
+            returningExpression &&
+            (this.connection.driver instanceof PostgresDriver ||
+                this.connection.driver instanceof OracleDriver ||
+                this.connection.driver instanceof CockroachDriver ||
+                this.connection.driver instanceof MysqlDriver)
+        ) {
             query += ` RETURNING ${returningExpression}`;
         }
 
@@ -484,6 +504,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     if (columnIndex === 0) {
                         if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                             expression += " SELECT ";
+                        } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " SELECT ";
                         } else {
                             expression += "(";
                         }
@@ -502,7 +524,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
                     if (!(value instanceof Function)) {
                       // make sure our value is normalized by a driver
-                      value = this.connection.driver.preparePersistentValue(value, column);
+                        value = this.connection.driver.preparePersistentValue(value, column);
                     }
 
                     // newly inserted entities always have a version equal to 1 (first version)
@@ -535,7 +557,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
                     } else if (column.isGenerated && column.generationStrategy === "uuid" && !this.connection.driver.isUUIDGenerationSupported() && value === undefined) {
 
-                        value = RandomGenerator.uuid4();
+                        value = uuidv4();
                         expression += this.createParameter(value);
 
                         if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
@@ -582,9 +604,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             }
                         } else if (this.connection.driver instanceof PostgresDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             if (column.srid != null) {
-                              expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`;
+                                expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`;
                             } else {
-                              expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`;
+                                expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`;
                             }
                         } else if (this.connection.driver instanceof SqlServerDriver && this.connection.driver.spatialTypes.indexOf(column.type) !== -1) {
                             expression += column.type + "::STGeomFromText(" + paramName + ", " + (column.srid || "0") + ")";
@@ -597,12 +619,16 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         if (valueSetIndex === valueSets.length - 1) {
                             if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                                 expression += " FROM DUAL ";
+                            } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " FROM dummy ";
                             } else {
                                 expression += ")";
                             }
                         } else {
                             if (this.connection.driver instanceof OracleDriver && valueSets.length > 1) {
                                 expression += " FROM DUAL UNION ALL ";
+                            } else if (this.connection.driver instanceof SapDriver && valueSets.length > 1) {
+                                expression += " FROM dummy UNION ALL ";
                             } else {
                                 expression += "), ";
                             }

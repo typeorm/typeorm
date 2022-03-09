@@ -1,5 +1,7 @@
 import { expect } from "chai";
-import { EntitySubscriberInterface, EventSubscriber, UpdateEvent } from "../../../../src";
+import { EntitySubscriberInterface, EventSubscriber } from "../../../../src";
+import { RecoverEvent } from "../../../../src/subscriber/event/RecoverEvent";
+import { SoftRemoveEvent } from "../../../../src/subscriber/event/SoftRemoveEvent";
 import { Post } from "../entity/Post";
 
 @EventSubscriber()
@@ -8,17 +10,15 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
         return Post;
     }
 
-    afterUpdate(event: UpdateEvent<Post>): void {
-        const { entity, queryRunner: { data } } = event;
+    afterSoftRemove(event: SoftRemoveEvent<Post>): void {
+        const { entity } = event;
+        
+        expect(Object.prototype.toString.call(entity!.deletedAt)).to.be.eq("[object Date]");
+    }
 
-        expect(["soft-delete", "restore"]).to.include(data!.action);
+    afterRecover(event: RecoverEvent<Post>): void {
+        const { entity } = event;
 
-        if (data!.action === "soft-delete") {
-            expect(Object.prototype.toString.call(entity!.deletedAt)).to.be.eq("[object Date]");
-        }
-
-        if (data!.action === "restore") {
-            expect(entity!.deletedAt).to.be.null;
-        }
+        expect(entity!.deletedAt).to.be.null;
     }
 }

@@ -111,6 +111,11 @@ export class ColumnMetadata {
     generationStrategy?: "uuid"|"increment"|"rowid";
 
     /**
+     * Identity column type. Supports only in Postgres 10+.
+     */
+    generatedIdentity?: "ALWAYS"|"BY DEFAULT";
+
+    /**
      * Column comment.
      * This feature is not supported by all databases.
      */
@@ -360,6 +365,8 @@ export class ColumnMetadata {
             this.default = options.args.options.default;
         if (options.args.options.onUpdate)
             this.onUpdate = options.args.options.onUpdate;
+        if (options.args.options.generatedIdentity)
+            this.generatedIdentity = options.args.options.generatedIdentity;
         if (options.args.options.scale !== null && options.args.options.scale !== undefined)
             this.scale = options.args.options.scale;
         if (options.args.options.zerofill) {
@@ -591,7 +598,12 @@ export class ColumnMetadata {
             return Object.keys(map).length > 0 ? map : undefined;
 
         } else { // no embeds - no problems. Simply return column property name and its value of the entity
-            if (this.relationMetadata && entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object) {
+            /**
+             * Object.getOwnPropertyDescriptor checks if the relation is lazy, in which case value is a Promise
+             * DO NOT use `entity[this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
+             * refer: https://github.com/typeorm/typeorm/pull/8676#issuecomment-1049906331
+             */
+            if (this.relationMetadata && !Object.getOwnPropertyDescriptor(entity, this.relationMetadata.propertyName)?.get && entity[this.relationMetadata.propertyName] && entity[this.relationMetadata.propertyName] instanceof Object) {
                 const map = this.relationMetadata.joinColumns.reduce((map, joinColumn) => {
                     const value = joinColumn.referencedColumn!.getEntityValueMap(entity[this.relationMetadata!.propertyName]);
                     if (value === undefined) return map;

@@ -20,7 +20,6 @@ import {AbstractRepository} from "../repository/AbstractRepository";
 import {CustomRepositoryCannotInheritRepositoryError} from "../error/CustomRepositoryCannotInheritRepositoryError";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
-import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {RepositoryNotFoundError} from "../error/RepositoryNotFoundError";
 import {RepositoryNotTreeError} from "../error/RepositoryNotTreeError";
 import {RepositoryFactory} from "../repository/RepositoryFactory";
@@ -120,25 +119,15 @@ export class EntityManager {
             throw new TypeORMError(`Transaction method requires callback in second paramter if isolation level is supplied.`);
         }
 
-        if (this.connection.driver instanceof MongoDriver)
-            throw new TypeORMError(`Transactions aren't supported by MongoDB.`);
-
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError();
-
-        if (this.queryRunner && this.queryRunner.isTransactionActive)
-            throw new TypeORMError(`Cannot start transaction because its already started`);
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner = this.queryRunner || this.connection.createQueryRunner();
 
         try {
-            if (isolation) {
-                await queryRunner.startTransaction(isolation);
-              } else {
-                await queryRunner.startTransaction();
-              }
+            await queryRunner.startTransaction(isolation);
             const result = await runInTransaction(queryRunner.manager);
             await queryRunner.commitTransaction();
             return result;
@@ -163,17 +152,17 @@ export class EntityManager {
     }
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder(queryRunner?: QueryRunner): SelectQueryBuilder<any>;
 
     /**
-     * Creates a new query builder that can be used to build a sql query.
+     * Creates a new query builder that can be used to build a SQL query.
      */
     createQueryBuilder<Entity>(entityClass?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (alias) {
@@ -247,7 +236,7 @@ export class EntityManager {
             return metadata.create(this.queryRunner);
 
         if (Array.isArray(plainObjectOrObjects))
-            return plainObjectOrObjects.map(plainEntityLike => this.create(entityClass as any, plainEntityLike));
+            return (plainObjectOrObjects as DeepPartial<Entity>[]).map(plainEntityLike => this.create(entityClass, plainEntityLike));
 
         const mergeIntoEntity = metadata.create(this.queryRunner);
         this.plainObjectToEntityTransformer.transform(mergeIntoEntity, plainObjectOrObjects, metadata, true);
@@ -495,21 +484,6 @@ export class EntityManager {
             options = conflictPathsOrOptions;
         }
 
-        const uniqueColumnConstraints = [
-            metadata.primaryColumns,
-            ...metadata.indices.filter(ix => ix.isUnique).map(ix => ix.columns),
-            ...metadata.uniques.map(uq => uq.columns)
-        ];
-
-        const useIndex = uniqueColumnConstraints.find((ix) =>
-            ix.length === options.conflictPaths.length &&
-            options.conflictPaths.every((conflictPropertyPath) => ix.some((col) => col.propertyPath === conflictPropertyPath))
-        );
-
-        if (useIndex == null) {
-            throw new TypeORMError(`An upsert requires conditions that have a unique constraint but none was found for conflict properties: ${options.conflictPaths.join(", ")}`);
-        }
-
         let entities: QueryDeepPartialEntity<Entity>[];
 
         if (!Array.isArray(entityOrEntities)) {
@@ -529,7 +503,10 @@ export class EntityManager {
             .values(entities)
             .orUpdate(
                 [...conflictColumns, ...overwriteColumns].map((col) => col.databaseName),
-                conflictColumns.map((col) => col.databaseName)
+                conflictColumns.map((col) => col.databaseName),
+                {
+                    skipUpdateIfNoValuesChanged: options.skipUpdateIfNoValuesChanged
+                }
             )
             .execute();
     }

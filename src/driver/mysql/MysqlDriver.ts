@@ -1,4 +1,4 @@
-import {Driver} from "../Driver";
+import {Driver, ReturningType} from "../Driver";
 import {ConnectionIsNotSetError} from "../../error/ConnectionIsNotSetError";
 import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
 import {DriverUtils} from "../DriverUtils";
@@ -19,10 +19,11 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 import {ReplicationMode} from "../types/ReplicationMode";
-import { TypeORMError } from "../../error";
-import { Table } from "../../schema-builder/table/Table";
-import { View } from "../../schema-builder/view/View";
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
+import {TypeORMError} from "../../error";
+import {Table} from "../../schema-builder/table/Table";
+import {View} from "../../schema-builder/view/View";
+import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import {VersionUtils} from "../../util/VersionUtils";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -77,6 +78,11 @@ export class MysqlDriver implements Driver {
      * Indicates if tree tables are supported by this driver.
      */
     treeSupport = true;
+
+    /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "nested" as const;
 
     /**
      * Gets list of supported column data types by a driver.
@@ -304,6 +310,16 @@ export class MysqlDriver implements Driver {
      */
     maxAliasLength = 63;
 
+
+    /**
+     * Supported returning types
+     */
+    private readonly _isReturningSqlSupported: Record<ReturningType, boolean> = {
+        delete: false,
+        insert: false,
+        update: false,
+    };
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -359,6 +375,19 @@ export class MysqlDriver implements Driver {
             this.database = await queryRunner.getCurrentDatabase();
 
             await queryRunner.release();
+        }
+
+        if (this.options.type === "mariadb") {
+            const result = await this.createQueryRunner("master")
+                .query(`SELECT VERSION() AS \`version\``) as { version: string; }[];
+            const dbVersion = result[0].version;
+
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.0.5")) {
+                this._isReturningSqlSupported.delete = true;
+            }
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
+                this._isReturningSqlSupported.insert = true;
+            }
         }
     }
 
@@ -795,6 +824,21 @@ export class MysqlDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex: number) {
+        if (!insertResult) {
+            return undefined;
+        }
+
+        if (insertResult.insertId === undefined) {
+            return Object.keys(insertResult).reduce((map, key) => {
+                const column = metadata.findColumnWithDatabaseName(key);
+                if (column) {
+                    OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                    // OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column))); // TODO: probably should be like there, but fails on enums, fix later
+                }
+                return map;
+            }, {} as ObjectLiteral);
+        }
+
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
@@ -874,8 +918,8 @@ export class MysqlDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
-        return false;
+    isReturningSqlSupported(returningType: ReturningType): boolean {
+        return this._isReturningSqlSupported[returningType];
     }
 
     /**
@@ -961,8 +1005,8 @@ export class MysqlDriver implements Driver {
             socketPath: credentials.socketPath
         },
         options.acquireTimeout === undefined
-          ? {}
-          : { acquireTimeout: options.acquireTimeout },
+            ? {}
+            : { acquireTimeout: options.acquireTimeout },
         options.extra || {});
     }
 
@@ -994,8 +1038,8 @@ export class MysqlDriver implements Driver {
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection;
         /*
-          Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
-          cause the hosting app to crash.
+         * Attaching an error handler to connection errors is essential, as, otherwise, errors raised will go unhandled and
+         * cause the hosting app to crash.
          */
         if (connection.listeners("error").length === 0) {
             connection.on("error", (error: any) => logger.log("warn", `MySQL connection raised an error. ${error}`));

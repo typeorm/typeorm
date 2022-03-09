@@ -20,7 +20,7 @@ export class Post {
     @Column({ default: "My post" })
     name: string;
 
-    @Column()
+    @Column({ nullable: true })
     text: string;
 
     @Column()

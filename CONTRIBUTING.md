@@ -196,9 +196,9 @@ This new feature change bahviour of typeorm to allow use new magic decorator...
 
 Closes: #22222
 ```
-Doc update:
+Docs update:
 ```
-doc: update supported mssql column types
+docs: update supported mssql column types
 ```
 Breaking change:
 ```

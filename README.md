@@ -71,6 +71,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 * Supports MongoDB NoSQL database.
 * Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
 * TypeScript and JavaScript support.
+* ESM and CommonJS support.
 * Produced code is performant, flexible, clean and maintainable.
 * Follows all possible best practices.
 * CLI.
@@ -320,6 +321,9 @@ npm start
 That's it, your application should successfully run and insert a new user into the database.
 You can continue to work with this project and integrate other modules you need and start
 creating more entities.
+
+> You can generate an ESM project by running
+`typeorm init --name MyProject --database postgres --module esm` command.
 
 > You can generate an even more advanced project with express installed by running
 `typeorm init --name MyProject --database mysql --express` command.
@@ -949,6 +953,40 @@ But we used this function-typed approach to make our refactoring easier.
 Note that we should use the `@JoinColumn` decorator only on one side of a relation.
 Whichever side you put this decorator on will be the owning side of the relationship.
 The owning side of a relationship contains a column with a foreign key in the database.
+
+### Relations in ESM projects
+
+If you use ESM in your TypeScript project, you should use the `Relation` wrapper type in relation properties to avoid circular dependency issues.
+Let's modify our entities:
+
+```typescript
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn, Relation } from "typeorm";
+import { Photo } from "./Photo";
+
+@Entity()
+export class PhotoMetadata {
+
+    /* ... other columns */
+
+    @OneToOne(type => Photo, photo => photo.metadata)
+    @JoinColumn()
+    photo: Relation<Photo>;
+}
+```
+
+```typescript
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, Relation } from "typeorm";
+import { PhotoMetadata } from "./PhotoMetadata";
+
+@Entity()
+export class Photo {
+
+    /* ... other columns */
+
+    @OneToOne(type => PhotoMetadata, photoMetadata => photoMetadata.photo)
+    metadata: Relation<PhotoMetadata>;
+}
+```
 
 ### Loading objects with their relations
 

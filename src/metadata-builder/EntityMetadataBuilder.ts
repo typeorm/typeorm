@@ -579,7 +579,9 @@ export class EntityMetadataBuilder {
     protected createEmbeddedsRecursively(entityMetadata: EntityMetadata, embeddedArgs: EmbeddedMetadataArgs[]): EmbeddedMetadata[] {
         return embeddedArgs.map(embeddedArgs => {
             const embeddedMetadata = new EmbeddedMetadata({ entityMetadata: entityMetadata, args: embeddedArgs });
-            const targets = MetadataUtils.getInheritanceTree(embeddedMetadata.type);
+            const targets: any[] = embeddedMetadata.type instanceof Function
+                ? MetadataUtils.getInheritanceTree(embeddedMetadata.type)
+                : [embeddedMetadata.type]; // todo: implement later here inheritance for string-targets
 
             embeddedMetadata.columns = this.metadataArgsStorage.filterColumns(targets).map(args => {
                 return new ColumnMetadata({ connection: this.connection, entityMetadata, embeddedMetadata, args});
@@ -637,9 +639,13 @@ export class EntityMetadataBuilder {
         entityMetadata.afterInsertListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_INSERT);
         entityMetadata.afterUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_UPDATE);
         entityMetadata.afterRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_REMOVE);
+        entityMetadata.afterSoftRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_SOFT_REMOVE);
+        entityMetadata.afterRecoverListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.AFTER_RECOVER);
         entityMetadata.beforeInsertListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_INSERT);
         entityMetadata.beforeUpdateListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_UPDATE);
         entityMetadata.beforeRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_REMOVE);
+        entityMetadata.beforeSoftRemoveListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_SOFT_REMOVE);
+        entityMetadata.beforeRecoverListeners = entityMetadata.listeners.filter(listener => listener.type === EventListenerTypes.BEFORE_RECOVER);
         entityMetadata.indices = entityMetadata.embeddeds.reduce((indices, embedded) => indices.concat(embedded.indicesFromTree), entityMetadata.ownIndices);
         entityMetadata.uniques = entityMetadata.embeddeds.reduce((uniques, embedded) => uniques.concat(embedded.uniquesFromTree), entityMetadata.ownUniques);
         entityMetadata.primaryColumns = entityMetadata.columns.filter(column => column.isPrimary);

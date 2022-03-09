@@ -68,6 +68,11 @@ export class MongoDriver implements Driver {
     treeSupport = false;
 
     /**
+     * Represent transaction support by this driver
+     */
+    transactionSupport = "none" as const;
+
+    /**
      * Mongodb does not need to have column types because they are not used in schema sync.
      */
     supportedDataTypes: ColumnType[] = [];
