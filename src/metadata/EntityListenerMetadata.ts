@@ -3,6 +3,7 @@ import {EntityListenerMetadataArgs} from "../metadata-args/EntityListenerMetadat
 import {ObjectLiteral} from "../common/ObjectLiteral";
 import {EntityMetadata} from "./EntityMetadata";
 import {EmbeddedMetadata} from "./EmbeddedMetadata";
+import { TypeORMError } from "..";
 
 /**
  * This metadata contains all information about entity's listeners.
@@ -27,7 +28,7 @@ export class EntityListenerMetadata {
      * Target class to which metadata is applied.
      * This can be different then entityMetadata.target in the case if listener is in the embedded.
      */
-    target: Function|string;
+    target: Function;
 
     /**
      * Target's property name to which this metadata is applied.
@@ -56,21 +57,13 @@ export class EntityListenerMetadata {
     // ---------------------------------------------------------------------
 
     /**
-     * Checks if entity listener is allowed to be executed on the given entity.
-     */
-    isAllowed(entity: ObjectLiteral) { // todo: create in entity metadata method like isInherited?
-        return this.entityMetadata.target === entity.constructor || // todo: .constructor won't work for entity schemas, but there are no entity listeners in schemas since there are no objects, right?
-            (this.entityMetadata.target instanceof Function && entity.constructor.prototype instanceof this.entityMetadata.target); // todo: also need to implement entity schema inheritance
-    }
-
-    /**
      * Executes listener method of the given entity.
      */
     execute(entity: ObjectLiteral) {
         if (!this.embeddedMetadata)
-            return entity[this.propertyName]();
+            return this.target.prototype[this.propertyName].call(entity);
 
-        this.callEntityEmbeddedMethod(entity, this.embeddedMetadata.propertyPath.split("."));
+        this.callEntityEmbeddedMethod(entity, this.embeddedMetadata.propertyPath);
     }
 
     // ---------------------------------------------------------------------
@@ -80,20 +73,19 @@ export class EntityListenerMetadata {
     /**
      * Calls embedded entity listener method no matter how nested it is.
      */
-    protected callEntityEmbeddedMethod(entity: ObjectLiteral, propertyPaths: string[]): void {
-        const propertyPath = propertyPaths.shift();
-        if (!propertyPath || !entity[propertyPath])
-            return;
+    protected callEntityEmbeddedMethod(entity: ObjectLiteral, propertyPath: string): void {
+        const embeddedTarget = this.entityMetadata.findEmbeddedWithPropertyPath(propertyPath)?.type;
+        const embeddedValue = propertyPath.split(".").reduce((embeddedValue, key) => embeddedValue?.[key], entity);
 
-        if (propertyPaths.length === 0) {
-            if (entity[propertyPath] instanceof Array) {
-                entity[propertyPath].map((embedded: ObjectLiteral) => embedded[this.propertyName]());
-            } else {
-                entity[propertyPath][this.propertyName]();
-            }
-        } else {
-            if (entity[propertyPath])
-                this.callEntityEmbeddedMethod(entity[propertyPath], propertyPaths);
+        if (typeof embeddedTarget === "string") {
+            // target type will only be a string if the "entity" is a junction table which is not possible to embed
+            throw new TypeORMError("Unable to embed junction table");
+        }
+
+        if (embeddedValue instanceof Array) {
+            embeddedValue.map((embedded: ObjectLiteral) => embeddedTarget?.prototype[this.propertyName].call(embedded));
+        } else if (embeddedValue) {
+            embeddedTarget?.prototype[this.propertyName].call(embeddedValue);
         }
     }
 

@@ -12,6 +12,16 @@ describe("entity-listeners", () => {
     }));
     after(() => closeTestingConnections(connections));
 
+    it("entity listeners work when saving a plain object", () => Promise.all(connections.map(async connection => {
+        const plainObjectPost = {
+            title: "post title",
+            text: "post text"
+        };
+        const insertedPost = await connection.getRepository(Post).save(plainObjectPost);
+        let loadedPost = await connection.getRepository(Post).findOne(insertedPost.id);
+        loadedPost!.title.should.be.equal("new: post title");
+    })));
+
     it("beforeUpdate", () => Promise.all(connections.map(async connection => {
         const post = new Post();
         post.title = "post title";

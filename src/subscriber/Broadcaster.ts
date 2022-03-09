@@ -74,15 +74,12 @@ export class Broadcaster {
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
     broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity: undefined | ObjectLiteral): void {
-
         if (entity && metadata.beforeInsertListeners.length) {
             metadata.beforeInsertListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -115,12 +112,10 @@ export class Broadcaster {
     broadcastBeforeUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void { // todo: send relations too?
         if (entity && metadata.beforeUpdateListeners.length) {
             metadata.beforeUpdateListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -156,12 +151,10 @@ export class Broadcaster {
     broadcastBeforeRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
         if (entity && metadata.beforeRemoveListeners.length) {
             metadata.beforeRemoveListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -196,12 +189,10 @@ export class Broadcaster {
     broadcastBeforeSoftRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
         if (entity && metadata.beforeSoftRemoveListeners.length) {
             metadata.beforeSoftRemoveListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -236,12 +227,10 @@ export class Broadcaster {
     broadcastBeforeRecoverEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
         if (entity && metadata.beforeRecoverListeners.length) {
             metadata.beforeRecoverListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -277,12 +266,10 @@ export class Broadcaster {
 
         if (entity && metadata.afterInsertListeners.length) {
             metadata.afterInsertListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -436,12 +423,10 @@ export class Broadcaster {
 
         if (entity && metadata.afterUpdateListeners.length) {
             metadata.afterUpdateListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -478,12 +463,10 @@ export class Broadcaster {
 
         if (entity && metadata.afterRemoveListeners.length) {
             metadata.afterRemoveListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -519,12 +502,10 @@ export class Broadcaster {
 
         if (entity && metadata.afterSoftRemoveListeners.length) {
             metadata.afterSoftRemoveListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -560,12 +541,10 @@ export class Broadcaster {
 
         if (entity && metadata.afterRecoverListeners.length) {
             metadata.afterRecoverListeners.forEach(listener => {
-                if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
-                }
+                const executionResult = listener.execute(entity);
+                if (executionResult instanceof Promise)
+                    result.promises.push(executionResult);
+                result.count++;
             });
         }
 
@@ -628,11 +607,9 @@ export class Broadcaster {
             if (metadata.afterLoadListeners.length) {
                 metadata.afterLoadListeners.forEach(listener => {
                     nonPromiseEntities.forEach(entity => {
-                        if (listener.isAllowed(entity)) {
-                            const executionResult = listener.execute(entity);
-                            if (executionResult instanceof Promise) result.promises.push(executionResult);
-                            result.count++;
-                        }
+                        const executionResult = listener.execute(entity);
+                        if (executionResult instanceof Promise) result.promises.push(executionResult);
+                        result.count++;
                     });
                 });
             }
