@@ -1,3 +1,9 @@
+March 12, 2022
+
+Made most of the functions throw MissingArgumentError so we don't
+get the behavior of getting the last item if undefined/null sneak in.
+
+
 
 Because of this:https://github.com/typeorm/typeorm/issues/5676
 
