@@ -8,7 +8,6 @@ import {Index} from "../../../../src/decorator/Index";
 @Unique(["name"])
 @Index(["text"], { unique: true })
 export class Photo {
-
     @PrimaryColumn()
     id: number;
 
@@ -24,5 +23,4 @@ export class Photo {
 
     @Column()
     text: string;
-
 }

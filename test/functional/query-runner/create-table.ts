@@ -13,7 +13,9 @@ import {OracleDriver} from "../../../src/driver/oracle/OracleDriver";
 import {Photo} from "./entity/Photo";
 import {Book2, Book} from "./entity/Book";
 import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
+import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
 process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
+// process.env.GOOGLE_APPLICATION_CREDENTIALS="/Users/messer/Documents/google/astute-cumulus-342713-80000a3b5bdb.json"
 describe.only("query runner > create table", () => {
 
     let connections: Connection[];
@@ -26,7 +28,7 @@ describe.only("query runner > create table", () => {
     });
     after(() => closeTestingConnections(connections));
 
-    it.only("should correctly create table from simple object and revert creation", () => Promise.all(connections.map(async connection => {
+    it("should correctly create table from simple object and revert creation", () => Promise.all(connections.map(async connection => {
         const queryRunner = connection.createQueryRunner();
 
         let idType = "int"
@@ -62,13 +64,21 @@ describe.only("query runner > create table", () => {
         const nameColumn = table!.findColumnByName("name");
         idColumn!.should.be.exist;
         idColumn!.isPrimary.should.be.true;
-        idColumn!.isGenerated.should.be.true;
-        idColumn!.generationStrategy!.should.be.equal("increment");
+        if (connection.driver instanceof SpannerDriver) {
+            idColumn!.isGenerated.should.be.false;
+            expect(idColumn!.generationStrategy).to.be.undefined;
+        } else {
+            idColumn!.isGenerated.should.be.true;
+            idColumn!.generationStrategy!.should.be.equal("increment");
+        }
         nameColumn!.should.be.exist;
         nameColumn!.isUnique.should.be.true;
         table!.should.exist;
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof SapDriver))
+
+        if (!(connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof SapDriver || connection.driver instanceof SpannerDriver)) {
             table!.uniques.length.should.be.equal(1);
+        }
 
         await queryRunner.executeMemoryDownSql();
         table = await queryRunner.getTable("category");
@@ -88,15 +98,21 @@ describe.only("query runner > create table", () => {
         const idColumn = table!.findColumnByName("id");
         const versionColumn = table!.findColumnByName("version");
         const nameColumn = table!.findColumnByName("name");
+
         table!.should.exist;
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof SapDriver)) {
+        if (!(connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof SapDriver || connection.driver instanceof SpannerDriver)) {
             table!.uniques.length.should.be.equal(2);
             table!.checks.length.should.be.equal(1);
         }
 
         idColumn!.isPrimary.should.be.true;
         versionColumn!.isUnique.should.be.true;
-        nameColumn!.default!.should.be.exist;
+
+        // Spanner does not support DEFAULT values
+        if (!(connection.driver instanceof SpannerDriver)) {
+            nameColumn!.default!.should.be.exist;
+        }
 
         await queryRunner.release();
     })));
@@ -105,22 +121,34 @@ describe.only("query runner > create table", () => {
 
         const queryRunner = connection.createQueryRunner();
 
+        let numberType = "int"
+        if (connection.driver instanceof AbstractSqliteDriver) {
+            numberType = "integer"
+        } else if (connection.driver instanceof SpannerDriver) {
+            numberType = "int64"
+        }
+
+        let textType = "varchar"
+        if (connection.driver instanceof SpannerDriver) {
+            textType = "string"
+        }
+
         await queryRunner.createTable(new Table({
             name: "person",
             columns: [
                 {
-                    name: "id",
-                    type: "int",
+                    name: "userId",
+                    type: numberType,
                     isPrimary: true
                 },
                 {
-                    name: "userId",
-                    type: "int",
+                    name: "id",
+                    type: numberType,
                     isPrimary: true
                 },
                 {
                     name: "name",
-                    type: "varchar",
+                    type: textType,
                 }
             ]
         }), true);
@@ -130,27 +158,27 @@ describe.only("query runner > create table", () => {
             columns: [
                 {
                     name: "id",
-                    type: connection.driver instanceof AbstractSqliteDriver ? "integer" : "int",
+                    type: numberType,
                     isPrimary: true,
-                    isGenerated: true,
-                    generationStrategy: "increment"
+                    isGenerated: connection.driver instanceof SpannerDriver ? false : true,
+                    generationStrategy: connection.driver instanceof SpannerDriver ? undefined : "increment"
                 },
                 {
                     name: "name",
-                    type: "varchar",
+                    type: textType,
                 },
                 {
                     name: "text",
-                    type: "varchar",
+                    type: textType,
                     isNullable: false
                 },
                 {
                     name: "authorId",
-                    type: "int"
+                    type: numberType
                 },
                 {
                     name: "authorUserId",
-                    type: "int"
+                    type: numberType
                 }
             ],
             indices: [{ columnNames: ["authorId", "authorUserId"], isUnique: true }],
@@ -163,7 +191,8 @@ describe.only("query runner > create table", () => {
             ]
         };
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof SapDriver|| connection.driver instanceof SpannerDriver) {
             questionTableOptions.indices!.push({ columnNames: ["name", "text"] });
         } else {
             questionTableOptions.uniques = [{ columnNames: ["name", "text"] }];
@@ -177,25 +206,25 @@ describe.only("query runner > create table", () => {
             columns: [
                 {
                     name: "id",
-                    type: connection.driver instanceof AbstractSqliteDriver ? "integer" : "int",
+                    type: numberType,
                     isPrimary: true,
-                    isGenerated: true,
-                    generationStrategy: "increment"
+                    isGenerated: connection.driver instanceof SpannerDriver ? false : true,
+                    generationStrategy: connection.driver instanceof SpannerDriver ? undefined : "increment"
                 },
                 {
                     name: "name",
-                    type: "varchar",
+                    type: textType,
                     default: "'default category'",
                     isUnique: true,
                     isNullable: false
                 },
                 {
                     name: "alternativeName",
-                    type: "varchar",
+                    type: textType,
                 },
                 {
                     name: "questionId",
-                    type: "int",
+                    type: numberType,
                     isUnique: true
                 }
             ],
@@ -208,14 +237,17 @@ describe.only("query runner > create table", () => {
             ]
         };
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof SapDriver || connection.driver instanceof SpannerDriver) {
             categoryTableOptions.indices = [{ columnNames: ["name", "alternativeName"]}];
         } else {
             categoryTableOptions.uniques = [{ columnNames: ["name", "alternativeName"]}];
         }
 
         // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof OracleDriver) && !(connection.driver instanceof SapDriver))
+        if (!(connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof OracleDriver || connection.driver instanceof SapDriver
+            || connection.driver instanceof SpannerDriver))
             categoryTableOptions.indices = [{ columnNames: ["questionId"] }];
 
         await queryRunner.createTable(new Table(categoryTableOptions), true);
@@ -230,13 +262,16 @@ describe.only("query runner > create table", () => {
         let questionTable = await queryRunner.getTable("question");
         const questionIdColumn = questionTable!.findColumnByName("id");
         questionIdColumn!.isPrimary.should.be.true;
-        questionIdColumn!.isGenerated.should.be.true;
-        questionIdColumn!.generationStrategy!.should.be.equal("increment");
+        if (!(connection.driver instanceof SpannerDriver)) {
+            questionIdColumn!.isGenerated.should.be.true;
+            questionIdColumn!.generationStrategy!.should.be.equal("increment");
+        }
         questionTable!.should.exist;
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
-            // MySql and SAP HANA does not have unique constraints.
-            // all unique constraints is unique indexes.
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof SapDriver || connection.driver instanceof SpannerDriver) {
+            // MySql, SAP HANA and Spanner does not have unique constraints.
+            // all unique constraints are unique indexes.
             questionTable!.uniques.length.should.be.equal(0);
             questionTable!.indices.length.should.be.equal(2);
 
@@ -263,13 +298,16 @@ describe.only("query runner > create table", () => {
         let categoryTable = await queryRunner.getTable("category");
         const categoryTableIdColumn = categoryTable!.findColumnByName("id");
         categoryTableIdColumn!.isPrimary.should.be.true;
-        categoryTableIdColumn!.isGenerated.should.be.true;
-        categoryTableIdColumn!.generationStrategy!.should.be.equal("increment");
+        if (!(connection.driver instanceof SpannerDriver)) {
+            categoryTableIdColumn!.isGenerated.should.be.true;
+            categoryTableIdColumn!.generationStrategy!.should.be.equal("increment");
+        }
         categoryTable!.should.exist;
         categoryTable!.foreignKeys.length.should.be.equal(1);
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
-            // MySql and SAP HANA does not have unique constraints. All unique constraints is unique indexes.
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof SapDriver || connection.driver instanceof SpannerDriver) {
+            // MySql, SAP HANA and Spanner does not have unique constraints. All unique constraints are unique indexes.
             categoryTable!.indices.length.should.be.equal(3);
 
         } else if (connection.driver instanceof OracleDriver) {
@@ -310,7 +348,8 @@ describe.only("query runner > create table", () => {
         nameColumn!.isUnique.should.be.true;
         descriptionColumn!.isUnique.should.be.true;
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof SapDriver) {
+        if (connection.driver instanceof MysqlDriver || connection.driver instanceof AuroraDataApiDriver
+            || connection.driver instanceof SapDriver || connection.driver instanceof SpannerDriver) {
             table!.uniques.length.should.be.equal(0);
             table!.indices.length.should.be.equal(4);
             tagColumn!.isUnique.should.be.true;
@@ -340,41 +379,42 @@ describe.only("query runner > create table", () => {
 
     it("should correctly create table with different `withoutRowid` definitions", () => Promise.all(connections.map(async connection => {
 
-        if (connection.driver instanceof AbstractSqliteDriver) {
-            const queryRunner = connection.createQueryRunner();
+        if (!(connection.driver instanceof AbstractSqliteDriver))
+            return
 
-            // the table 'book' must contain a 'rowid' column
-            const metadataBook = connection.getMetadata(Book);
-            const newTableBook = Table.create(metadataBook, connection.driver);
-            await queryRunner.createTable(newTableBook);
-            const aBook = new Book();
-            aBook.ean = "asdf";
-            await connection.manager.save(aBook);
+        const queryRunner = connection.createQueryRunner();
 
-            const desc = await connection.manager.query("SELECT rowid FROM book WHERE ean = 'asdf'");
-            expect(desc[0].rowid).equals(1);
+        // the table 'book' must contain a 'rowid' column
+        const metadataBook = connection.getMetadata(Book);
+        const newTableBook = Table.create(metadataBook, connection.driver);
+        await queryRunner.createTable(newTableBook);
+        const aBook = new Book();
+        aBook.ean = "asdf";
+        await connection.manager.save(aBook);
 
-            await queryRunner.dropTable("book");
-            const bookTableIsGone = await queryRunner.getTable("book");
-            expect(bookTableIsGone).to.be.undefined;
+        const desc = await connection.manager.query("SELECT rowid FROM book WHERE ean = 'asdf'");
+        expect(desc[0].rowid).equals(1);
 
-            // the table 'book2' must NOT contain a 'rowid' column
-            const metadataBook2 = connection.getMetadata(Book2);
-            const newTableBook2 = Table.create(metadataBook2, connection.driver);
-            await queryRunner.createTable(newTableBook2);
+        await queryRunner.dropTable("book");
+        const bookTableIsGone = await queryRunner.getTable("book");
+        expect(bookTableIsGone).to.be.undefined;
 
-            try {
-                await connection.manager.query("SELECT rowid FROM book2");
-            } catch (e) {
-                expect(e.message).contains("no such column: rowid");
-            }
+        // the table 'book2' must NOT contain a 'rowid' column
+        const metadataBook2 = connection.getMetadata(Book2);
+        const newTableBook2 = Table.create(metadataBook2, connection.driver);
+        await queryRunner.createTable(newTableBook2);
 
-            await queryRunner.dropTable("book2");
-            const book2TableIsGone = await queryRunner.getTable("book2");
-            expect(book2TableIsGone).to.be.undefined;
-
-            await queryRunner.release();
+        try {
+            await connection.manager.query("SELECT rowid FROM book2");
+        } catch (e) {
+            expect(e.message).contains("no such column: rowid");
         }
+
+        await queryRunner.dropTable("book2");
+        const book2TableIsGone = await queryRunner.getTable("book2");
+        expect(book2TableIsGone).to.be.undefined;
+
+        await queryRunner.release();
     })));
 
 });

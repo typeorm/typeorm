@@ -25,6 +25,7 @@ import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {ExclusionMetadata} from "../metadata/ExclusionMetadata";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
 import { TypeORMError } from "../error";
+import {SpannerDriver} from "../driver/spanner/SpannerDriver";
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -136,7 +137,8 @@ export class EntityMetadataBuilder {
                     }
                     if (uniqueConstraint) {
                         if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver
-                            || this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof SapDriver) {
+                            || this.connection.driver instanceof SqlServerDriver || this.connection.driver instanceof SapDriver
+                            || this.connection.driver instanceof SpannerDriver) {
                             const index = new IndexMetadata({
                                 entityMetadata: uniqueConstraint.entityMetadata,
                                 columns: uniqueConstraint.columns,
@@ -548,8 +550,9 @@ export class EntityMetadataBuilder {
             });
         }
 
-        // Mysql and SAP HANA stores unique constraints as unique indices.
-        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver || this.connection.driver instanceof SapDriver) {
+        // This drivers stores unique constraints as unique indices.
+        if (this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver
+            || this.connection.driver instanceof SapDriver || this.connection.driver instanceof SpannerDriver) {
             const indices = this.metadataArgsStorage.filterUniques(entityMetadata.inheritanceTree).map(args => {
                 return new IndexMetadata({
                     entityMetadata: entityMetadata,

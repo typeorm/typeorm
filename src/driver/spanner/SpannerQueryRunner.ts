@@ -60,8 +60,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns obtained database connection.
      */
     async connect(): Promise<any> {
-        if (this.databaseConnection)
+        if (this.databaseConnection) {
             return Promise.resolve(this.databaseConnection);
+        }
 
         return this.driver.instance.database(this.driver.options.databaseId);
     }
@@ -71,8 +72,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * You cannot use query runner methods once its released.
      */
     async release(): Promise<void> {
-        if (this.databaseConnection)
-            return this.databaseConnection.close()
+        this.isReleased = true;
+        if (this.databaseConnection) {
+            await this.databaseConnection.close();
+        }
+        this.databaseConnection = undefined
+        return Promise.resolve();
     }
 
     /**
@@ -340,51 +345,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
-
-        // // if table have column with ENUM type, we must create this type in postgres.
-        // const enumColumns = table.columns.filter(column => column.type === "enum" || column.type === "simple-enum")
-        // const createdEnumTypes: string[] = []
-        // for (const column of enumColumns) {
-        //     // TODO: Should also check if values of existing type matches expected ones
-        //     const hasEnum = await this.hasEnumType(table, column);
-        //     const enumName = this.buildEnumName(table, column)
-        //
-        //     // if enum with the same "enumName" is defined more then once, me must prevent double creation
-        //     if (!hasEnum && createdEnumTypes.indexOf(enumName) === -1) {
-        //         createdEnumTypes.push(enumName)
-        //         upQueries.push(this.createEnumTypeSql(table, column, enumName));
-        //         downQueries.push(this.dropEnumTypeSql(table, column, enumName));
-        //     }
-        // }
-
-        // if table have column with generated type, we must add the expression to the metadata table
-        // const generatedColumns = table.columns.filter(column => column.generatedType === "STORED" && column.asExpression)
-        // for (const column of generatedColumns) {
-        //     const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
-        //     const tableName = tableNameWithSchema[1];
-        //     const schema = tableNameWithSchema[0];
-        //
-        //     const insertQuery = this.insertTypeormMetadataSql({
-        //         database: this.driver.database,
-        //         schema,
-        //         table: tableName,
-        //         type: MetadataTableType.GENERATED_COLUMN,
-        //         name: column.name,
-        //         value: column.asExpression
-        //     })
-        //
-        //     const deleteQuery = this.deleteTypeormMetadataSql({
-        //         database: this.driver.database,
-        //         schema,
-        //         table: tableName,
-        //         type: MetadataTableType.GENERATED_COLUMN,
-        //         name: column.name
-        //     })
-        //
-        //     upQueries.push(deleteQuery);
-        //     upQueries.push(insertQuery);
-        //     downQueries.push(deleteQuery);
-        // }
 
         upQueries.push(this.createTableSql(table, createForeignKeys));
         downQueries.push(this.dropTableSql(table));
@@ -941,21 +901,30 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
-                    const uniqueConstraint = new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(table, [newColumn.name]),
-                        columnNames: [newColumn.name]
+                    const uniqueIndex = new TableIndex({
+                        name: this.connection.namingStrategy.indexName(table, [newColumn.name]),
+                        columnNames: [newColumn.name],
+                        isUnique: true
                     });
-                    clonedTable.uniques.push(uniqueConstraint);
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${newColumn.name}")`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
+                    clonedTable.indices.push(uniqueIndex);
+                    clonedTable.uniques.push(new TableUnique({
+                        name: uniqueIndex.name,
+                        columnNames: uniqueIndex.columnNames
+                    }));
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${newColumn.name}\`)`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex.name}\``));
 
                 } else {
-                    const uniqueConstraint = clonedTable.uniques.find(unique => {
-                        return unique.columnNames.length === 1 && !!unique.columnNames.find(columnName => columnName === newColumn.name);
+                    const uniqueIndex = clonedTable.indices.find(index => {
+                        return index.columnNames.length === 1 && index.isUnique === true && !!index.columnNames.find(columnName => columnName === newColumn.name);
                     });
-                    clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint!), 1);
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint!.name}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint!.name}" UNIQUE ("${newColumn.name}")`));
+                    clonedTable.indices.splice(clonedTable.indices.indexOf(uniqueIndex!), 1);
+
+                    const tableUnique = clonedTable.uniques.find(unique => unique.name === uniqueIndex!.name);
+                    clonedTable.uniques.splice(clonedTable.uniques.indexOf(tableUnique!), 1);
+
+                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex!.name}\``));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${newColumn.name}\`)`));
                 }
             }
 
@@ -1129,14 +1098,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.createCheckConstraintSql(table, columnCheck));
         }
 
-        // drop column unique
-        const columnUnique = clonedTable.uniques.find(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
-        if (columnUnique) {
-            clonedTable.uniques.splice(clonedTable.uniques.indexOf(columnUnique), 1);
-            upQueries.push(this.dropUniqueConstraintSql(table, columnUnique));
-            downQueries.push(this.createUniqueConstraintSql(table, columnUnique));
-        }
-
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${column.name}"`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
 
@@ -1247,49 +1208,28 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates new unique constraint.
      */
     async createUniqueConstraint(tableOrName: Table|string, uniqueConstraint: TableUnique): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-
-        // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!uniqueConstraint.name)
-            uniqueConstraint.name = this.connection.namingStrategy.uniqueConstraintName(table, uniqueConstraint.columnNames);
-
-        const up = this.createUniqueConstraintSql(table, uniqueConstraint);
-        const down = this.dropUniqueConstraintSql(table, uniqueConstraint);
-        await this.executeQueries(up, down);
-        table.addUniqueConstraint(uniqueConstraint);
+        throw new TypeORMError(`Spanner does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Creates new unique constraints.
      */
     async createUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
-            await this.createUniqueConstraint(tableOrName, uniqueConstraint);
-        }
+        throw new TypeORMError(`Spanner does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops unique constraint.
      */
     async dropUniqueConstraint(tableOrName: Table|string, uniqueOrName: TableUnique|string): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const uniqueConstraint = uniqueOrName instanceof TableUnique ? uniqueOrName : table.uniques.find(u => u.name === uniqueOrName);
-        if (!uniqueConstraint)
-            throw new TypeORMError(`Supplied unique constraint was not found in table ${table.name}`);
-
-        const up = this.dropUniqueConstraintSql(table, uniqueConstraint);
-        const down = this.createUniqueConstraintSql(table, uniqueConstraint);
-        await this.executeQueries(up, down);
-        table.removeUniqueConstraint(uniqueConstraint);
+        throw new TypeORMError(`Spanner does not support unique constraints. Use unique index instead.`);
     }
 
     /**
      * Drops unique constraints.
      */
     async dropUniqueConstraints(tableOrName: Table|string, uniqueConstraints: TableUnique[]): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
-            await this.dropUniqueConstraint(tableOrName, uniqueConstraint);
-        }
+        throw new TypeORMError(`Spanner does not support unique constraints. Use unique index instead.`);
     }
 
     /**
@@ -1499,17 +1439,24 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.startTransaction();
         try {
+            // drop indices
+            const selectIndexDropsQuery = `SELECT concat('DROP INDEX \`', INDEX_NAME, '\`') AS \`query\` ` +
+                `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` ` +
+                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`INDEX_TYPE\` = 'INDEX' AND \`SPANNER_IS_MANAGED\` = false`;
+            const dropIndexQueries: ObjectLiteral[] = await this.query(selectIndexDropsQuery);
+            await Promise.all(dropIndexQueries.map(q => this.updateDDL(q["query"])));
+
+            // drop foreign keys
+            const selectFKDropsQuery = `SELECT concat('ALTER TABLE \`', TABLE_NAME, '\`', ' DROP CONSTRAINT \`', CONSTRAINT_NAME, '\`') AS \`query\` ` +
+                `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` ` +
+                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`CONSTRAINT_TYPE\` = 'FOREIGN KEY'`;
+            const dropFKQueries: ObjectLiteral[] = await this.query(selectFKDropsQuery);
+            await Promise.all(dropFKQueries.map(q => this.updateDDL(q["query"])));
+
             // drop views
             // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``;
             // const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
             // await Promise.all(dropViewQueries.map(q => this.updateDDL(q["query"])));
-
-            // drop indices
-            const selectIndexDropsQuery = `SELECT concat('DROP INDEX \`', INDEX_NAME, '\`') AS \`query\` ` +
-                `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`INDEX_TYPE\` = 'INDEX'`;
-            const dropIndexQueries: ObjectLiteral[] = await this.query(selectIndexDropsQuery);
-            await Promise.all(dropIndexQueries.map(q => this.updateDDL(q["query"])));
 
             // drop tables
             const dropTablesQuery = `SELECT concat('DROP TABLE \`', TABLE_NAME, '\`') AS \`query\` ` +
@@ -1594,23 +1541,21 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const loadedTableNames = dbTables.map(dbTable => `'${dbTable.TABLE_NAME}'`).join(", ")
 
-        const kcuSubquerySql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` ` +
-            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' ` +
-            `AND \`TABLE_NAME\` IN (${loadedTableNames})`;
+        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_NAME\` IN (${loadedTableNames})`;
 
-        const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` ` +
-            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' ` +
-            `AND \`TABLE_NAME\` IN (${loadedTableNames})`;
+        const indicesSql = `SELECT \`I\`.\`TABLE_NAME\`, \`I\`.\`INDEX_NAME\`, \`I\`.\`IS_UNIQUE\`, \`I\`.\`IS_NULL_FILTERED\`, \`IC\`.\`COLUMN_NAME\` ` +
+            `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` \`I\` ` +
+            `INNER JOIN \`INFORMATION_SCHEMA\`.\`INDEX_COLUMNS\` \`IC\` ON \`IC\`.\`INDEX_NAME\` = \`I\`.\`INDEX_NAME\` ` +
+            `AND \`IC\`.\`TABLE_NAME\` = \`I\`.\`TABLE_NAME\` ` +
+            `WHERE \`I\`.\`TABLE_CATALOG\` = '' AND \`I\`.\`TABLE_SCHEMA\` = '' AND \`I\`.\`TABLE_NAME\` IN (${loadedTableNames}) ` +
+            `AND \`I\`.\`INDEX_TYPE\` = 'INDEX' AND \`I\`.\`SPANNER_IS_MANAGED\` = false`;
 
-        // Key Column Usage but only for PKs
-        const primaryKeySql = `SELECT * FROM (${kcuSubquerySql}) \`kcu\` WHERE \`CONSTRAINT_NAME\` = 'PRIMARY'`;
+        const primaryKeySql = `SELECT \`KCU\`.\`TABLE_NAME\`, \`KCU\`.\`COLUMN_NAME\` ` +
+            `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` \`TC\` ` +
+            `INNER JOIN \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`KCU\` ON \`KCU\`.\`CONSTRAINT_NAME\` = \`TC\`.\`CONSTRAINT_NAME\` ` +
+            `WHERE \`TC\`.\`TABLE_CATALOG\` = '' AND \`TC\`.\`TABLE_SCHEMA\` = '' AND \`TC\`.\`CONSTRAINT_TYPE\` = 'PRIMARY KEY' ` +
+            `AND \`TC\`.\`TABLE_NAME\` IN (${loadedTableNames})`;
 
-        // Combine stats & referential constraints
-        const indicesSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` ` +
-            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' ` +
-            `AND \`TABLE_NAME\` IN (${loadedTableNames})`;
-
-        // Combine Key Column Usage & Referential Constraints
         const foreignKeysSql = `SELECT \`TC\`.\`TABLE_NAME\`, \`TC\`.\`CONSTRAINT_NAME\`, \`KCU\`.\`COLUMN_NAME\`, ` +
             `\`CTU\`.\`TABLE_NAME\` AS \`REFERENCED_TABLE_NAME\`, \`CCU\`.\`COLUMN_NAME\` AS \`REFERENCED_COLUMN_NAME\`, ` +
             `\`RC\`.\`UPDATE_RULE\`, \`RC\`.\`DELETE_RULE\` ` +
@@ -1629,6 +1574,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             this.query(foreignKeysSql)
         ]);
 
+        console.log("dbIndices", dbIndices);
+
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
             const table = new Table();
@@ -1643,7 +1590,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const columnUniqueIndices = dbIndices.filter(dbIndex => {
                         return dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"]
                             && dbIndex["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
-                            && parseInt(dbIndex["NON_UNIQUE"], 10) === 0
+                            && dbIndex["IS_UNIQUE"] === true
                     })
 
                     const tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
@@ -1694,7 +1641,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     tableColumn.isPrimary = dbPrimaryKeys.some(dbPrimaryKey => {
                         return (
                             dbPrimaryKey["TABLE_NAME"] === dbColumn["TABLE_NAME"] &&
-                            dbPrimaryKey["TABLE_SCHEMA"] === dbColumn["TABLE_SCHEMA"] &&
                             dbPrimaryKey["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
                         );
                     });
@@ -1735,46 +1681,41 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     return tableColumn;
                 });
 
-            // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-            const tableForeignKeyConstraints = OrmUtils.uniq(dbForeignKeys.filter(dbForeignKey => {
+            const tableForeignKeys = dbForeignKeys.filter(dbForeignKey => {
                 return dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"];
-            }), dbForeignKey => dbForeignKey["CONSTRAINT_NAME"]);
+            })
 
-            table.foreignKeys = tableForeignKeyConstraints.map(dbForeignKey => {
-                const foreignKeys = dbForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+            console.log("dbForeignKeys", tableForeignKeys);
 
-                return new TableForeignKey({
-                    name: dbForeignKey["CONSTRAINT_NAME"],
-                    columnNames: foreignKeys.map(dbFk => dbFk["COLUMN_NAME"]),
-                    referencedDatabase: dbForeignKey["REFERENCED_TABLE_SCHEMA"],
-                    referencedTableName: dbForeignKey["REFERENCED_TABLE_NAME"],
-                    referencedColumnNames: foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"]),
-                    onDelete: dbForeignKey["DELETE_RULE"],
-                    onUpdate: dbForeignKey["UPDATE_RULE"]
+            table.foreignKeys = OrmUtils.uniq(tableForeignKeys, dbForeignKey => dbForeignKey["CONSTRAINT_NAME"])
+                .map(dbForeignKey => {
+                    const foreignKeys = tableForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
+                    return new TableForeignKey({
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: OrmUtils.uniq(foreignKeys.map(dbFk => dbFk["COLUMN_NAME"])),
+                        referencedDatabase: dbForeignKey["REFERENCED_TABLE_SCHEMA"],
+                        referencedTableName: dbForeignKey["REFERENCED_TABLE_NAME"],
+                        referencedColumnNames: OrmUtils.uniq(foreignKeys.map(dbFk => dbFk["REFERENCED_COLUMN_NAME"])),
+                        onDelete: dbForeignKey["DELETE_RULE"],
+                        onUpdate: dbForeignKey["UPDATE_RULE"]
+                    });
                 });
-            });
 
-            // find index constraints of table, group them by constraint name and build TableIndex.
-            const tableIndexConstraints = OrmUtils.uniq(dbIndices.filter(dbIndex => (
+            const tableIndices = dbIndices.filter(dbIndex => (
                 dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"]
-            )), dbIndex => dbIndex["INDEX_NAME"]);
+            ));
 
-            table.indices = tableIndexConstraints.map(constraint => {
-                const indices = dbIndices.filter(index => {
-                    return index["TABLE_SCHEMA"] === constraint["TABLE_SCHEMA"]
-                        && index["TABLE_NAME"] === constraint["TABLE_NAME"]
-                        && index["INDEX_NAME"] === constraint["INDEX_NAME"];
+            table.indices = OrmUtils.uniq(tableIndices, dbIndex => dbIndex["INDEX_NAME"]).map(constraint => {
+                const indices = tableIndices.filter(index => {
+                    return index["INDEX_NAME"] === constraint["INDEX_NAME"];
                 });
-
-                const nonUnique = parseInt(constraint["NON_UNIQUE"], 10);
 
                 return new TableIndex(<TableIndexOptions>{
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
-                    isUnique: nonUnique === 0,
-                    isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
-                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT"
+                    isUnique: constraint["IS_UNIQUE"],
+                    isNullFiltered: constraint["IS_NULL_FILTERED"],
                 });
             });
 
@@ -1789,47 +1730,38 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnDefinitions = table.columns.map(column => this.buildCreateColumnSql(column)).join(", ");
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`;
 
+        // we create unique indexes instead of unique constraints, because Spanner does not have unique constraints.
+        // if we mark column as Unique, it means that we create UNIQUE INDEX.
         table.columns
             .filter(column => column.isUnique)
             .forEach(column => {
-                const isUniqueExist = table.uniques.some(unique => unique.columnNames.length === 1 && unique.columnNames[0] === column.name);
-                if (!isUniqueExist)
-                    table.uniques.push(new TableUnique({
+                const isUniqueIndexExist = table.indices.some(index => {
+                    return index.columnNames.length === 1 && !!index.isUnique && index.columnNames.indexOf(column.name) !== -1;
+                });
+                const isUniqueConstraintExist = table.uniques.some(unique => {
+                    return unique.columnNames.length === 1 && unique.columnNames.indexOf(column.name) !== -1;
+                });
+                if (!isUniqueIndexExist && !isUniqueConstraintExist)
+                    table.indices.push(new TableIndex({
                         name: this.connection.namingStrategy.uniqueConstraintName(table, [column.name]),
-                        columnNames: [column.name]
+                        columnNames: [column.name],
+                        isUnique: true
                     }));
             });
 
-        // if (table.uniques.length > 0) {
-        //     const uniquesSql = table.uniques.map(unique => {
-        //         const uniqueName = unique.name ? unique.name : this.connection.namingStrategy.uniqueConstraintName(table, unique.columnNames);
-        //         const columnNames = unique.columnNames.map(columnName => `"${columnName}"`).join(", ");
-        //         let constraint = `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`;
-        //         if (unique.deferrable)
-        //             constraint += ` DEFERRABLE ${unique.deferrable}`;
-        //         return constraint;
-        //     }).join(", ");
-        //
-        //     sql += `, ${uniquesSql}`;
-        // }
-        //
-        // if (table.checks.length > 0) {
-        //     const checksSql = table.checks.map(check => {
-        //         const checkName = check.name ? check.name : this.connection.namingStrategy.checkConstraintName(table, check.expression!);
-        //         return `CONSTRAINT "${checkName}" CHECK (${check.expression})`;
-        //     }).join(", ");
-        //
-        //     sql += `, ${checksSql}`;
-        // }
-        //
-        // if (table.exclusions.length > 0) {
-        //     const exclusionsSql = table.exclusions.map(exclusion => {
-        //         const exclusionName = exclusion.name ? exclusion.name : this.connection.namingStrategy.exclusionConstraintName(table, exclusion.expression!);
-        //         return `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`;
-        //     }).join(", ");
-        //
-        //     sql += `, ${exclusionsSql}`;
-        // }
+        // as Spanner does not have unique constraints, we must create table indices from table uniques and mark them as unique.
+        if (table.uniques.length > 0) {
+            table.uniques.forEach(unique => {
+                const uniqueExist = table.indices.some(index => index.name === unique.name);
+                if (!uniqueExist) {
+                    table.indices.push(new TableIndex({
+                        name: unique.name,
+                        columnNames: unique.columnNames,
+                        isUnique: true
+                    }));
+                }
+            });
+        }
 
         if (table.foreignKeys.length > 0 && createForeignKeys) {
             const foreignKeysSql = table.foreignKeys.map(fk => {
@@ -1995,26 +1927,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropIndexSql(table: Table, indexOrName: TableIndex|string): Query {
         let indexName = indexOrName instanceof TableIndex ? indexOrName.name : indexOrName;
-        return new Query(`DROP INDEX \`${indexName}\` ON ${this.escapePath(table)}`);
-    }
-
-    /**
-     * Builds create unique constraint sql.
-     */
-    protected createUniqueConstraintSql(table: Table, uniqueConstraint: TableUnique): Query {
-        const columnNames = uniqueConstraint.columnNames.map(column => `"` + column + `"`).join(", ");
-        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE (${columnNames})`;
-        if (uniqueConstraint.deferrable)
-            sql += ` DEFERRABLE ${uniqueConstraint.deferrable}`;
-        return new Query(sql);
-    }
-
-    /**
-     * Builds drop unique constraint sql.
-     */
-    protected dropUniqueConstraintSql(table: Table, uniqueOrName: TableUnique|string): Query {
-        const uniqueName = uniqueOrName instanceof TableUnique ? uniqueOrName.name : uniqueOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueName}"`);
+        return new Query(`DROP INDEX \`${indexName}\``);
     }
 
     /**
@@ -2218,6 +2131,24 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             return Promise.resolve() as Promise<any>;
 
         for (const {query, parameters} of upQueries) {
+            await this.updateDDL(query, parameters);
+        }
+    }
+
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        for (const {query, parameters} of this.sqlInMemory.upQueries) {
+            await this.updateDDL(query, parameters);
+        }
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
+        for (const {query, parameters} of this.sqlInMemory.downQueries.reverse()) {
             await this.updateDDL(query, parameters);
         }
     }

@@ -19,6 +19,7 @@ import {TableExclusion} from "./table/TableExclusion";
 import {View} from "./view/View";
 import {ViewUtils} from "./util/ViewUtils";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {SpannerDriver} from "../driver/spanner/SpannerDriver";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -614,8 +615,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             }
 
             // drop all composite uniques related to this column
-            // Mysql does not support unique constraints.
-            if (!(this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver)) {
+            // Mysql and Spanner does not support unique constraints.
+            if (!(this.connection.driver instanceof MysqlDriver || this.connection.driver instanceof AuroraDataApiDriver
+                || this.connection.driver instanceof SpannerDriver)) {
                 for (const changedColumn of changedColumns) {
                     await this.dropColumnCompositeUniques(this.getTablePath(metadata), changedColumn.databaseName);
                 }

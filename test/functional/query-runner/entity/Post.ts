@@ -10,7 +10,6 @@ import {Exclusion} from "../../../../src/decorator/Exclusion";
 @Exclusion(`USING gist ("name" WITH =)`)
 @Check(`"version" < 999`)
 export class Post {
-
     @PrimaryColumn()
     id: number;
 
@@ -25,5 +24,4 @@ export class Post {
 
     @Column()
     tag: string;
-
 }

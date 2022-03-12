@@ -6,7 +6,6 @@ import {OneToMany} from "../../../../src/decorator/relations/OneToMany";
 
 @Entity()
 export class Teacher {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -15,5 +14,4 @@ export class Teacher {
 
     @OneToMany(type => Student, student => student.teacher)
     students: Student[];
-
 }

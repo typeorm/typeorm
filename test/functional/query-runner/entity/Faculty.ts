@@ -4,11 +4,9 @@ import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryG
 
 @Entity()
 export class Faculty {
-
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column()
     name: string;
-
 }

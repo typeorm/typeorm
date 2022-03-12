@@ -9,7 +9,6 @@ import {Index} from "../../../../src/decorator/Index";
 @Entity()
 @Index("student_name_index", ["name"])
 export class Student {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -21,5 +20,4 @@ export class Student {
 
     @ManyToOne(type => Teacher)
     teacher: Teacher;
-
 }
