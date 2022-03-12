@@ -136,7 +136,7 @@ await dataSource.manager.save(question)
 Example how to load objects inside lazy relations:
 
 ```typescript
-const question = await dataSource.getRepository(Question).findOne(1)
+const [question] = await dataSource.getRepository(Question).find()
 const categories = await question.categories
 // you'll have all question's categories inside "categories" variable now
 ```

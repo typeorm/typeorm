@@ -165,17 +165,18 @@ To find an entity by id you can use `manager.findOne` or `repository.findOne`. E
 
 ```typescript
 // find one by id with single primary key
-const person = await dataSource.manager.findOne(Person, 1)
-const person = await dataSource.getRepository(Person).findOne(1)
+const person = await dataSource.manager.findBy(Person, { id: 1 })
+const person = await dataSource.getRepository(Person).findOneBy({ id: 1 })
 
 // find one by id with composite primary keys
-const user = await dataSource.manager.findOne(User, {
+const user = await dataSource.manager.findOneBy(User, {
     firstName: "Timber",
     lastName: "Saw",
 })
-const user = await dataSource
-    .getRepository(User)
-    .findOne({ firstName: "Timber", lastName: "Saw" })
+const user = await dataSource.getRepository(User).findOneBy({
+    firstName: "Timber",
+    lastName: "Saw",
+})
 ```
 
 ### Special columns

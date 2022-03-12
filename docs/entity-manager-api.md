@@ -171,12 +171,6 @@ await manager.delete(User, [1, 2, 3])
 await manager.delete(User, { firstName: "Timber" })
 ```
 
--   `count` - Counts entities that match given options. Useful for pagination.
-
-```typescript
-const count = await manager.count(User, { firstName: "Timber" })
-```
-
 -   `increment` - Increments some column by provided value of entities that match given options.
 
 ```typescript
@@ -189,13 +183,53 @@ await manager.increment(User, { firstName: "Timber" }, "age", 3)
 await manager.decrement(User, { firstName: "Timber" }, "age", 3)
 ```
 
--   `find` - Finds entities that match given options.
+-   `count` - Counts entities that match `FindOptions`. Useful for pagination.
 
 ```typescript
-const timbers = await manager.find(User, { firstName: "Timber" })
+const count = await manager.count(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
 ```
 
--   `findAndCount` - Finds entities that match given find options.
+-   `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.
+
+```typescript
+const count = await manager.countBy(User, { firstName: "Timber" })
+```
+
+-   `find` - Finds entities that match given `FindOptions`.
+
+```typescript
+const timbers = await manager.find(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `findBy` - Finds entities that match given `FindWhereOptions`.
+
+```typescript
+const timbers = await manager.findBy(User, {
+    firstName: "Timber",
+})
+```
+
+-   `findAndCount` - Finds entities that match given `FindOptions`.
+    Also counts all entities that match given conditions,
+    but ignores pagination settings (from and take options).
+
+```typescript
+const [timbers, timbersCount] = await manager.findAndCount(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `findAndCountBy` - Finds entities that match given `FindOptionsWhere`.
     Also counts all entities that match given conditions,
     but ignores pagination settings (from and take options).
 
@@ -205,16 +239,19 @@ const [timbers, timbersCount] = await manager.findAndCount(User, {
 })
 ```
 
--   `findByIds` - Finds multiple entities by id.
+-   `findOne` - Finds the first entity that matches given `FindOptions`.
 
 ```typescript
-const users = await manager.findByIds(User, [1, 2, 3])
+const timber = await manager.findOne(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
 ```
 
--   `findOne` - Finds the first entity that matches some id or find options.
+-   `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
 
 ```typescript
-const user = await manager.findOne(User, 1)
 const timber = await manager.findOne(User, { firstName: "Timber" })
 ```
 
@@ -222,8 +259,18 @@ const timber = await manager.findOne(User, { firstName: "Timber" })
     Rejects the returned promise if nothing matches.
 
 ```typescript
-const user = await manager.findOneOrFail(User, 1)
-const timber = await manager.findOneOrFail(User, { firstName: "Timber" })
+const timber = await manager.findOneOrFail(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `findOneByOrFail` - Finds the first entity that matches given `FindOptions`.
+    Rejects the returned promise if nothing matches.
+
+```typescript
+const timber = await manager.findOneByOrFail(User, { firstName: "Timber" })
 ```
 
 -   `clear` - Clears all the data from the given table (truncates/drops it).

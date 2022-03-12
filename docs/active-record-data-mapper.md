@@ -50,8 +50,8 @@ await user.remove()
 
 // example how to load AR entities
 const users = await User.find({ skip: 2, take: 5 })
-const newUsers = await User.find({ isActive: true })
-const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" })
+const newUsers = await User.findBy({ isActive: true })
+const timber = await User.findOneBy({ firstName: "Timber", lastName: "Saw" })
 ```
 
 `BaseEntity` has most of the methods of the standard `Repository`.
@@ -141,8 +141,8 @@ await userRepository.remove(user)
 
 // example how to load DM entities
 const users = await userRepository.find({ skip: 2, take: 5 })
-const newUsers = await userRepository.find({ isActive: true })
-const timber = await userRepository.findOne({
+const newUsers = await userRepository.findBy({ isActive: true })
+const timber = await userRepository.findOneBy({
     firstName: "Timber",
     lastName: "Saw",
 })

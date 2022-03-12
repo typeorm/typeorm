@@ -11,7 +11,9 @@ import { DataSource } from "typeorm"
 import { User } from "./entity/User"
 
 const myDataSource = new DataSource(/*...*/)
-const user = await myDataSource.manager.findOne(User, 1)
+const user = await myDataSource.manager.findOneBy(User, {
+    id: 1,
+})
 user.name = "Umed"
 await entityManager.save(user)
 ```

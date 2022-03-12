@@ -263,7 +263,7 @@ post2.categoryId = category2.id
 await dataSource.manager.save(post2)
 
 const postCategories = await dataSource.manager.find(PostCategory)
-const postCategory = await dataSource.manager.findOne(PostCategory, { id: 1 })
+const postCategory = await dataSource.manager.findOneBy(PostCategory, { id: 1 })
 ```
 
 the result in `postCategories` will be:

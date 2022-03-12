@@ -128,7 +128,7 @@ await repository.insert({
     lastName: "Timber",
 })
 
-await manager.insert(User, [
+await repository.insert([
     {
         firstName: "Foo",
         lastName: "Bar",
@@ -220,33 +220,67 @@ const entitiesAfterSoftRemove = await repository.softRemove(entities)
 await repository.recover(entitiesAfterSoftRemove)
 ```
 
--   `count` - Counts entities that match given options. Useful for pagination.
-
-```typescript
-const count = await repository.count({ firstName: "Timber" })
-```
-
 -   `increment` - Increments some column by provided value of entities that match given options.
 
 ```typescript
-await manager.increment(User, { firstName: "Timber" }, "age", 3)
+await repository.increment({ firstName: "Timber" }, "age", 3)
 ```
 
 -   `decrement` - Decrements some column by provided value that match given options.
 
 ```typescript
-await manager.decrement(User, { firstName: "Timber" }, "age", 3)
+await repository.decrement({ firstName: "Timber" }, "age", 3)
 ```
 
--   `find` - Finds entities that match given options.
+-   `count` - Counts entities that match `FindOptions`. Useful for pagination.
 
 ```typescript
-const timbers = await repository.find({ firstName: "Timber" })
+const count = await repository.count({
+    where: {
+        firstName: "Timber",
+    },
+})
 ```
 
--   `findAndCount` - Finds entities that match given find options.
+-   `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.
+
+```typescript
+const count = await repository.countBy({ firstName: "Timber" })
+```
+
+-   `find` - Finds entities that match given `FindOptions`.
+
+```typescript
+const timbers = await repository.find({
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `findBy` - Finds entities that match given `FindWhereOptions`.
+
+```typescript
+const timbers = await repository.findBy({
+    firstName: "Timber",
+})
+```
+
+-   `findAndCount` - Finds entities that match given `FindOptions`.
     Also counts all entities that match given conditions,
-    but ignores pagination settings (`skip` and `take` options).
+    but ignores pagination settings (from and take options).
+
+```typescript
+const [timbers, timbersCount] = await repository.findAndCount({
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `findAndCountBy` - Finds entities that match given `FindOptionsWhere`.
+    Also counts all entities that match given conditions,
+    but ignores pagination settings (from and take options).
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCount({
@@ -254,28 +288,39 @@ const [timbers, timbersCount] = await repository.findAndCount({
 })
 ```
 
--   `findByIds` - Finds multiple entities by id.
+-   `findOne` - Finds the first entity that matches given `FindOptions`.
 
 ```typescript
-const users = await repository.findByIds([1, 2, 3])
+const timber = await repository.findOne({
+    where: {
+        firstName: "Timber",
+    },
+})
 ```
 
--   `findOne` - Finds first entity that matches some id or find options.
+-   `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
 
 ```typescript
-const user = await repository.findOne(1)
 const timber = await repository.findOne({ firstName: "Timber" })
 ```
 
--   `findOneOrFail` - Finds the first entity that matches the some id or find options.
+-   `findOneOrFail` - Finds the first entity that matches some id or find options.
     Rejects the returned promise if nothing matches.
 
 ```typescript
-const user = await repository.findOneByOrFail({ id: 1 })
-const timber = await repository.findOneOrFail({ firstName: "Timber" })
+const timber = await repository.findOneOrFail({
+    where: {
+        firstName: "Timber",
+    },
+})
 ```
 
-> Note: It is strongly recommended to ensure that your `id` or `FindOptions` value is not `null` or `undefined` before calling `findOne` and `findOneOrFail`. When passed `null` or `undefined`, the query will match with every entity in the repository and return the first record.
+-   `findOneByOrFail` - Finds the first entity that matches given `FindOptions`.
+    Rejects the returned promise if nothing matches.
+
+```typescript
+const timber = await repository.findOneByOrFail({ firstName: "Timber" })
+```
 
 -   `query` - Executes a raw SQL query.
 

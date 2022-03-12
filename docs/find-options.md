@@ -5,12 +5,17 @@
 
 ## Basic options
 
-All repository and manager `find` methods accept special options you can use to query data you need without using `QueryBuilder`:
+All repository and manager ` .find*` methods accept special options you can use to query data you need without using `QueryBuilder`:
 
 -   `select` - indicates which properties of the main object must be selected
 
 ```typescript
-userRepository.find({ select: ["firstName", "lastName"] })
+userRepository.find({
+    select: {
+        firstName: true,
+        lastName: true,
+    },
+})
 ```
 
 will execute following query:
@@ -22,9 +27,21 @@ SELECT "firstName", "lastName" FROM "user"
 -   `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for `join` and `leftJoinAndSelect`)
 
 ```typescript
-userRepository.find({ relations: ["profile", "photos", "videos"] })
 userRepository.find({
-    relations: ["profile", "photos", "videos", "videos.video_attributes"],
+    relations: {
+        profile: true,
+        photos: true,
+        videos: true,
+    },
+})
+userRepository.find({
+    relations: {
+        profile: true,
+        photos: true,
+        videos: {
+            videoAttributes: true,
+        },
+    },
 })
 ```
 
@@ -43,34 +60,15 @@ LEFT JOIN "videos" ON "videos"."id" = "user"."videoId"
 LEFT JOIN "video_attributes" ON "video_attributes"."id" = "videos"."video_attributesId"
 ```
 
--   `join` - joins needs to be performed for the entity. Extended version of "relations".
-
-```typescript
-userRepository.find({
-    join: {
-        alias: "user",
-        leftJoinAndSelect: {
-            profile: "user.profile",
-            photo: "user.photos",
-            video: "user.videos",
-        },
-    },
-})
-```
-
-will execute following query:
-
-```sql
-SELECT * FROM "user" "user"
-LEFT JOIN "profile" ON "profile"."id" = "user"."profile"
-LEFT JOIN "photo" ON "photo"."id" = "user"."photos"
-LEFT JOIN "video" ON "video"."id" = "user"."videos"
-```
-
 -   `where` - simple conditions by which entity should be queried.
 
 ```typescript
-userRepository.find({ where: { firstName: "Timber", lastName: "Saw" } })
+userRepository.find({
+    where: {
+        firstName: "Timber",
+        lastName: "Saw",
+    },
+})
 ```
 
 will execute following query:
@@ -84,10 +82,15 @@ Querying a column from an embedded entity should be done with respect to the hie
 
 ```typescript
 userRepository.find({
-    where: {
-        project: { name: "TypeORM", initials: "TORM" },
+    relations: {
+        project: true,
     },
-    relations: ["project"],
+    where: {
+        project: {
+            name: "TypeORM",
+            initials: "TORM",
+        },
+    },
 })
 ```
 
@@ -95,8 +98,8 @@ will execute following query:
 
 ```sql
 SELECT * FROM "user"
-WHERE "project"."name" = 'TypeORM' AND "project"."initials" = 'TORM'
 LEFT JOIN "project" ON "project"."id" = "user"."projectId"
+WHERE "project"."name" = 'TypeORM' AND "project"."initials" = 'TORM'
 ```
 
 Querying with OR operator:
@@ -142,7 +145,7 @@ userRepository.find({
 })
 ```
 
-`find` methods which return multiple entities (`find`, `findAndCount`, `findByIds`) also accept following options:
+`find*` methods which return multiple entities (`find`, `findBy`, `findAndCount`, `findAndCountBy`) also accept following options:
 
 -   `skip` - offset (paginated) from where entities should be taken.
 
@@ -202,10 +205,11 @@ userRepository.find({
 })
 ```
 
--   `lock` - Enables locking mechanism for query. Can be used only in `findOne` method. `lock` is an object which can be defined as:
+-   `lock` - Enables locking mechanism for query. Can be used only in `findOne` and `findOneBy` methods.
+    `lock` is an object which can be defined as:
 
 ```ts
-{ mode: "optimistic", version: number|Date }
+{ mode: "optimistic", version: number | Date }
 ```
 
 or
@@ -224,7 +228,10 @@ or
 for example:
 
 ```typescript
-userRepository.findOne(1, {
+userRepository.findOne({
+    where: {
+        id: 1,
+    },
     lock: { mode: "optimistic", version: 1 },
 })
 ```
@@ -247,8 +254,15 @@ Complete example of find options:
 
 ```typescript
 userRepository.find({
-    select: ["firstName", "lastName"],
-    relations: ["profile", "photos", "videos"],
+    select: {
+        firstName: true,
+        lastName: true,
+    },
+    relations: {
+        profile: true,
+        photos: true,
+        videos: true,
+    },
     where: {
         firstName: "Timber",
         lastName: "Saw",
@@ -266,10 +280,10 @@ userRepository.find({
 })
 ```
 
-If `undefined` is passed as an argument, find will return all items in the table, and findOne will return the first item in the table.
+Find without arguments:
 
 ```ts
-userRepository.find(undefined)
+userRepository.find()
 ```
 
 will execute following query:
@@ -287,7 +301,7 @@ TypeORM provides a lot of built-in operators that can be used to create more com
 ```ts
 import { Not } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: Not("About #1"),
 })
 ```
@@ -303,7 +317,7 @@ SELECT * FROM "post" WHERE "title" != 'About #1'
 ```ts
 import { LessThan } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     likes: LessThan(10),
 })
 ```
@@ -319,7 +333,7 @@ SELECT * FROM "post" WHERE "likes" < 10
 ```ts
 import { LessThanOrEqual } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     likes: LessThanOrEqual(10),
 })
 ```
@@ -335,7 +349,7 @@ SELECT * FROM "post" WHERE "likes" <= 10
 ```ts
 import { MoreThan } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     likes: MoreThan(10),
 })
 ```
@@ -351,7 +365,7 @@ SELECT * FROM "post" WHERE "likes" > 10
 ```ts
 import { MoreThanOrEqual } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     likes: MoreThanOrEqual(10),
 })
 ```
@@ -367,7 +381,7 @@ SELECT * FROM "post" WHERE "likes" >= 10
 ```ts
 import { Equal } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: Equal("About #2"),
 })
 ```
@@ -383,7 +397,7 @@ SELECT * FROM "post" WHERE "title" = 'About #2'
 ```ts
 import { Like } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: Like("%out #%"),
 })
 ```
@@ -399,7 +413,7 @@ SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 ```ts
 import { ILike } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: ILike("%out #%"),
 })
 ```
@@ -415,7 +429,7 @@ SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
 ```ts
 import { Between } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     likes: Between(1, 10),
 })
 ```
@@ -431,7 +445,7 @@ SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
 ```ts
 import { In } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: In(["About #2", "About #3"]),
 })
 ```
@@ -447,7 +461,7 @@ SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
 ```ts
 import { Any } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: Any(["About #2", "About #3"]),
 })
 ```
@@ -463,7 +477,7 @@ SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
 ```ts
 import { IsNull } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: IsNull(),
 })
 ```
@@ -479,7 +493,7 @@ SELECT * FROM "post" WHERE "title" IS NULL
 ```ts
 import { Raw } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     likes: Raw("dislikes - 4"),
 })
 ```
@@ -496,7 +510,7 @@ But you can also completely rewrite the comparison logic using the function.
 ```ts
 import { Raw } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     currentDate: Raw((alias) => `${alias} > NOW()`),
 })
 ```
@@ -512,7 +526,7 @@ If you need to provide user input, you should not include the user input directl
 ```ts
 import { Raw } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     currentDate: Raw((alias) => `${alias} > :date`, { date: "2020-10-06" }),
 })
 ```
@@ -528,7 +542,7 @@ If you need to provide user input that is an array, you can bind them as a list 
 ```ts
 import { Raw } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findby({
     title: Raw((alias) => `${alias} IN (:...titles)`, {
         titles: [
             "Go To Statement Considered Harmful",
@@ -551,7 +565,7 @@ Also you can combine these operators with `Not` operator:
 ```ts
 import { Not, MoreThan, Equal } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).find({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     likes: Not(MoreThan(10)),
     title: Not(Equal("About #2")),
 })

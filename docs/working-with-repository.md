@@ -1,7 +1,7 @@
 # What is Repository
 
 `Repository` is just like `EntityManager` but its operations are limited to a concrete entity.
-You can access the repository via DataSource's manager.
+You can access the repository via EntityManager.
 
 Example:
 
@@ -9,7 +9,9 @@ Example:
 import { User } from "./entity/User"
 
 const userRepository = dataSource.getRepository(User)
-const user = await userRepository.findOne(1)
+const user = await userRepository.findOneBy({
+    id: 1,
+})
 user.name = "Umed"
 await userRepository.save(user)
 ```

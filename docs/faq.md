@@ -37,7 +37,6 @@ There are two ways that help you achieve this:
     ```
 
     This command will execute schema synchronization.
-    Note, to make command line tools work, you must create an ormconfig.json file.
 
 Schema sync is extremely fast.
 If you are considering to disable synchronize option during development because of performance issues,
@@ -253,7 +252,7 @@ module.exports = {
 }
 ```
 
-Lastly, make sure in your `ormconfig` file, the transpiled migration files are included:
+Lastly, make sure in your data source options, the transpiled migration files are included:
 
 ```js
 // TypeORM Configurations

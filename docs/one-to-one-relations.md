@@ -90,10 +90,10 @@ To load user with profile inside you must specify relation in `FindOptions`:
 
 ```typescript
 const users = await dataSource.getRepository(User).find({
-  relations: {
-    profile: true
-  }
-);
+    relations: {
+        profile: true,
+    },
+})
 ```
 
 Or using `QueryBuilder` you can join them:

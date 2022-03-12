@@ -164,7 +164,7 @@ You can use the majority of methods inside the `EntityManager` (except for RDBMS
 For example:
 
 ```typescript
-const timber = await myDataSource.manager.findOne(User, {
+const timber = await myDataSource.manager.findOneBy(User, {
     firstName: "Timber",
     lastName: "Saw",
 })
@@ -173,7 +173,7 @@ const timber = await myDataSource.manager.findOne(User, {
 For MongoDB there is also a separate `MongoEntityManager` which extends `EntityManager`.
 
 ```typescript
-const timber = await myDataSource.manager.findOne(User, {
+const timber = await myDataSource.manager.findOneBy(User, {
     firstName: "Timber",
     lastName: "Saw",
 })
@@ -182,9 +182,10 @@ const timber = await myDataSource.manager.findOne(User, {
 Just like separate like `MongoEntityManager` there is a `MongoRepository` with extended `Repository`:
 
 ```typescript
-const timber = await myDataSource
-    .getMongoRepository(User)
-    .findOne({ firstName: "Timber", lastName: "Saw" })
+const timber = await myDataSource.getMongoRepository(User).findOneBy({
+    firstName: "Timber",
+    lastName: "Saw",
+})
 ```
 
 Use Advanced options in find():

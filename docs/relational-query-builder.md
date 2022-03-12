@@ -19,7 +19,14 @@ This code is equivalent to doing this:
 
 ```typescript
 const postRepository = dataSource.manager.getRepository(Post)
-const post = await postRepository.findOne(1, { relations: ["categories"] })
+const post = await postRepository.findOne({
+    where: {
+        id: 1,
+    },
+    relations: {
+        categories: true,
+    },
+})
 post.categories.push(category)
 await postRepository.save(post)
 ```
@@ -89,7 +96,9 @@ For example, lets say inside a `Post` entity we have a many-to-many `categories`
 to load those relations you can use following code:
 
 ```typescript
-const post = await dataSource.manager.findOne(Post, 1)
+const post = await dataSource.manager.findOneBy(Post, {
+    id: 1,
+})
 
 post.categories = await dataSource
     .createQueryBuilder()

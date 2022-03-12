@@ -87,12 +87,10 @@ It creates all files needed for a basic project with TypeORM:
 -   package.json
 -   README.md
 -   tsconfig.json
--   ormconfig.json
 -   src/entity/User.ts
 -   src/index.ts
 
 Then you can run `npm install` to install all dependencies.
-Once all dependencies are installed, you need to modify `ormconfig.json` and insert your own database settings.
 After that, you can run your application by running `npm start`.
 
 All files are generated in the current directory.

@@ -167,7 +167,11 @@ To load questions with categories inside you must specify the relation in `FindO
 
 ```typescript
 const questionRepository = dataSource.getRepository(Question)
-const questions = await questionRepository.find({ relations: ["categories"] })
+const questions = await questionRepository.find({
+    relations: {
+        categories: true,
+    },
+})
 ```
 
 Or using `QueryBuilder` you can join them:

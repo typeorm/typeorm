@@ -25,7 +25,7 @@ const driver: Driver = dataSource.driver
 ```typescript
 const manager: EntityManager = dataSource.manager
 // you can call manager methods, for example find:
-const user = await manager.findOne(1)
+const users = await manager.find()
 ```
 
 -   `mongoManager` - `MongoEntityManager` used to work with entities for mongodb data source.
@@ -34,7 +34,7 @@ const user = await manager.findOne(1)
 ```typescript
 const manager: MongoEntityManager = dataSource.mongoManager
 // you can call manager or mongodb-manager specific methods, for example find:
-const user = await manager.findOne(1)
+const users = await manager.find()
 ```
 
 -   `initialize` - Initializes data source and opens connection pool to the database.
@@ -101,7 +101,7 @@ const userMetadata = dataSource.getMetadata(User)
 ```typescript
 const repository = dataSource.getRepository(User)
 // now you can call repository methods, for example find:
-const users = await repository.findOne(1)
+const users = await repository.find()
 ```
 
 -   `getTreeRepository` - Gets `TreeRepository` of the given entity.

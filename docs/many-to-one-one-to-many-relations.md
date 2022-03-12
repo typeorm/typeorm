@@ -104,12 +104,20 @@ To load a user with photos inside you must specify the relation in `FindOptions`
 
 ```typescript
 const userRepository = dataSource.getRepository(User)
-const users = await userRepository.find({ relations: ["photos"] })
+const users = await userRepository.find({
+    relations: {
+        photos: true,
+    },
+})
 
 // or from inverse side
 
 const photoRepository = dataSource.getRepository(Photo)
-const photos = await photoRepository.find({ relations: ["user"] })
+const photos = await photoRepository.find({
+    relations: {
+        user: true,
+    },
+})
 ```
 
 Or using `QueryBuilder` you can join them:
