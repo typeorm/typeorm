@@ -62,5 +62,6 @@ tslib_1.__exportStar(require("./QueryRunnerAlreadyReleasedError"), exports);
 tslib_1.__exportStar(require("./OffsetWithoutLimitNotSupportedError"), exports);
 tslib_1.__exportStar(require("./CannotExecuteNotConnectedError"), exports);
 tslib_1.__exportStar(require("./NoConnectionOptionError"), exports);
+tslib_1.__exportStar(require("./MissingArgumentError"), exports);
 
 //# sourceMappingURL=index.js.map

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Repository = void 0;
 var tslib_1 = require("tslib");
+var error_1 = require("../error");
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
  */
@@ -34,12 +35,18 @@ var Repository = /** @class */ (function () {
      * If entity composite compose ids, it will check them all.
      */
     Repository.prototype.hasId = function (entity) {
+        if (!entity) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.hasId(this.metadata.target, entity);
     };
     /**
      * Gets entity mixed id.
      */
     Repository.prototype.getId = function (entity) {
+        if (!entity) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.getId(this.metadata.target, entity);
     };
     /**
@@ -58,6 +65,9 @@ var Repository = /** @class */ (function () {
         for (var _i = 1; _i < arguments.length; _i++) {
             entityLikes[_i - 1] = arguments[_i];
         }
+        if (!mergeIntoEntity) {
+            throw new error_1.MissingArgumentError();
+        }
         return (_a = this.manager).merge.apply(_a, tslib_1.__spreadArray([this.metadata.target, mergeIntoEntity], tslib_1.__read(entityLikes)));
     };
     /**
@@ -70,30 +80,45 @@ var Repository = /** @class */ (function () {
      * Returns undefined if entity with given id was not found.
      */
     Repository.prototype.preload = function (entityLike) {
+        if (!entityLike) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.preload(this.metadata.target, entityLike);
     };
     /**
      * Saves one or many given entities.
      */
     Repository.prototype.save = function (entityOrEntities, options) {
+        if (!entityOrEntities) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.save(this.metadata.target, entityOrEntities, options);
     };
     /**
      * Removes one or many given entities.
      */
     Repository.prototype.remove = function (entityOrEntities, options) {
+        if (!entityOrEntities) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.remove(this.metadata.target, entityOrEntities, options);
     };
     /**
      * Records the delete date of one or many given entities.
      */
     Repository.prototype.softRemove = function (entityOrEntities, options) {
+        if (!entityOrEntities) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.softRemove(this.metadata.target, entityOrEntities, options);
     };
     /**
      * Recovers one or many given entities.
      */
     Repository.prototype.recover = function (entityOrEntities, options) {
+        if (!entityOrEntities) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.recover(this.metadata.target, entityOrEntities, options);
     };
     /**
@@ -103,6 +128,9 @@ var Repository = /** @class */ (function () {
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      */
     Repository.prototype.insert = function (entity) {
+        if (!entity) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.insert(this.metadata.target, entity);
     };
     /**
@@ -112,6 +140,9 @@ var Repository = /** @class */ (function () {
      * Does not check if entity exist in the database.
      */
     Repository.prototype.update = function (criteria, partialEntity) {
+        if (!criteria) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.update(this.metadata.target, criteria, partialEntity);
     };
     /**
@@ -121,6 +152,9 @@ var Repository = /** @class */ (function () {
      * Does not check if entity exist in the database.
      */
     Repository.prototype.delete = function (criteria) {
+        if (!criteria) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.delete(this.metadata.target, criteria);
     };
     /**
@@ -130,6 +164,9 @@ var Repository = /** @class */ (function () {
      * Does not check if entity exist in the database.
      */
     Repository.prototype.softDelete = function (criteria) {
+        if (!criteria) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.softDelete(this.metadata.target, criteria);
     };
     /**
@@ -139,6 +176,9 @@ var Repository = /** @class */ (function () {
      * Does not check if entity exist in the database.
      */
     Repository.prototype.restore = function (criteria) {
+        if (!criteria) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.restore(this.metadata.target, criteria);
     };
     /**
@@ -151,6 +191,9 @@ var Repository = /** @class */ (function () {
      * Finds entities that match given find options or conditions.
      */
     Repository.prototype.find = function (optionsOrConditions) {
+        if (!optionsOrConditions) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.find(this.metadata.target, optionsOrConditions);
     };
     /**
@@ -159,6 +202,9 @@ var Repository = /** @class */ (function () {
      * but ignores pagination settings (from and take options).
      */
     Repository.prototype.findAndCount = function (optionsOrConditions) {
+        if (!optionsOrConditions) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.findAndCount(this.metadata.target, optionsOrConditions);
     };
     /**
@@ -166,18 +212,30 @@ var Repository = /** @class */ (function () {
      * Optionally find options can be applied.
      */
     Repository.prototype.findByIds = function (ids, optionsOrConditions) {
+        if (!ids) {
+            throw new error_1.MissingArgumentError();
+        }
+        if (ids.length === 0) {
+            return Promise.resolve([]);
+        }
         return this.manager.findByIds(this.metadata.target, ids, optionsOrConditions);
     };
     /**
      * Finds first entity that matches given conditions.
      */
     Repository.prototype.findOne = function (optionsOrConditions, maybeOptions) {
+        if (!optionsOrConditions) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.findOne(this.metadata.target, optionsOrConditions, maybeOptions);
     };
     /**
      * Finds first entity that matches given conditions.
      */
     Repository.prototype.findOneOrFail = function (optionsOrConditions, maybeOptions) {
+        if (!optionsOrConditions) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.findOneOrFail(this.metadata.target, optionsOrConditions, maybeOptions);
     };
     /**
@@ -200,12 +258,18 @@ var Repository = /** @class */ (function () {
      * Increments some column by provided value of the entities matched given conditions.
      */
     Repository.prototype.increment = function (conditions, propertyPath, value) {
+        if (!conditions) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.increment(this.metadata.target, conditions, propertyPath, value);
     };
     /**
      * Decrements some column by provided value of the entities matched given conditions.
      */
     Repository.prototype.decrement = function (conditions, propertyPath, value) {
+        if (!conditions) {
+            throw new error_1.MissingArgumentError();
+        }
         return this.manager.decrement(this.metadata.target, conditions, propertyPath, value);
     };
     return Repository;

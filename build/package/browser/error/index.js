@@ -59,5 +59,6 @@ export * from "./QueryRunnerAlreadyReleasedError";
 export * from "./OffsetWithoutLimitNotSupportedError";
 export * from "./CannotExecuteNotConnectedError";
 export * from "./NoConnectionOptionError";
+export * from "./MissingArgumentError";
 
 //# sourceMappingURL=index.js.map
