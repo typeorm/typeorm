@@ -2,11 +2,54 @@ import * as fs from "fs"
 import * as path from "path"
 import mkdirp from "mkdirp"
 import { TypeORMError } from "../error"
+import { DataSource } from "../data-source"
+import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
  * Command line utils functions.
  */
 export class CommandUtils {
+    static loadDataSource(dataSourceFilePath: string): DataSource {
+        let dataSourceFileExports
+        try {
+            dataSourceFileExports = require(dataSourceFilePath)
+        } catch (err) {
+            throw new Error(
+                `Invalid file path given: "${dataSourceFilePath}". File must contain a TypeScript / JavaScript code and export a DataSource instance.`,
+            )
+        }
+
+        if (
+            !dataSourceFileExports ||
+            typeof dataSourceFileExports !== "object"
+        ) {
+            throw new Error(
+                `Given data source file must contain export of a DataSource instance`,
+            )
+        }
+
+        const dataSourceExports = []
+        for (let fileExport in dataSourceFileExports) {
+            if (
+                InstanceChecker.isDataSource(dataSourceFileExports[fileExport])
+            ) {
+                dataSourceExports.push(dataSourceFileExports[fileExport])
+            }
+        }
+
+        if (dataSourceExports.length === 0) {
+            throw new Error(
+                `Given data source file must contain export of a DataSource instance`,
+            )
+        }
+        if (dataSourceExports.length > 1) {
+            throw new Error(
+                `Given data source file must contain only one export of DataSource instance`,
+            )
+        }
+        return dataSourceExports[0]
+    }
+
     /**
      * Creates directories recursively.
      */

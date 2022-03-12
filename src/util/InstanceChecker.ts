@@ -26,6 +26,7 @@ import type { NotBrackets } from "../query-builder/NotBrackets"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
+import { DataSource } from "../data-source"
 
 export class InstanceChecker {
     static isMssqlParameter(obj: unknown): obj is MssqlParameter {
@@ -125,6 +126,9 @@ export class InstanceChecker {
     }
     static isView(obj: unknown): obj is View {
         return this.check(obj, "View")
+    }
+    static isDataSource(obj: unknown): obj is DataSource {
+        return this.check(obj, "DataSource")
     }
 
     private static check(obj: unknown, name: string) {

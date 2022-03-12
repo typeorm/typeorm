@@ -1,48 +1,35 @@
-import { ConnectionOptionsReader } from "../connection/ConnectionOptionsReader"
 import { CommandUtils } from "./CommandUtils"
-import { createConnection } from "../globals"
 import { camelCase } from "../util/StringUtils"
 import * as yargs from "yargs"
 import chalk from "chalk"
 import { format } from "@sqltools/formatter/lib/sqlFormatter"
 import { PlatformTools } from "../platform/PlatformTools"
+import { DataSource } from "../data-source"
+import * as path from "path"
+import process from "process"
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
  */
 export class MigrationGenerateCommand implements yargs.CommandModule {
-    command = "migration:generate"
+    command = "migration:generate <path>"
     describe =
         "Generates a new migration file with sql needs to be executed to update schema."
-    aliases = "migrations:generate"
 
     builder(args: yargs.Argv) {
         return args
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe: "Name of the connection on which run a query.",
-            })
-            .option("n", {
-                alias: "name",
-                describe: "Name of the migration class.",
-                demand: true,
+            .option("dataSource", {
+                alias: "d",
                 type: "string",
-            })
-            .option("d", {
-                alias: "dir",
-                describe: "Directory where migration should be created.",
+                describe:
+                    "Path to the file where your DataSource instance is defined.",
+                demandOption: true,
             })
             .option("p", {
                 alias: "pretty",
                 type: "boolean",
                 default: false,
                 describe: "Pretty-print generated SQL",
-            })
-            .option("f", {
-                alias: "config",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration.",
             })
             .option("o", {
                 alias: "outputJs",
@@ -74,54 +61,31 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     }
 
     async handler(args: yargs.Arguments) {
-        if (args._[0] === "migrations:generate") {
-            console.log(
-                "'migrations:generate' is deprecated, please use 'migration:generate' instead",
-            )
-        }
-
         const timestamp = CommandUtils.getTimestamp(args.timestamp)
         const extension = args.outputJs ? ".js" : ".ts"
-        const filename = timestamp + "-" + args.name + extension
-        let directory = args.dir as string | undefined
+        const fullPath = (args.path as string).startsWith("/")
+            ? (args.path as string)
+            : path.resolve(process.cwd(), args.path as string)
+        const filename = timestamp + "-" + path.basename(fullPath) + extension
 
-        // if directory is not set then try to open tsconfig and find default path there
-        if (!directory) {
-            try {
-                const connectionOptionsReader = new ConnectionOptionsReader({
-                    root: process.cwd(),
-                    configName: args.config as any,
-                })
-                const connectionOptions = await connectionOptionsReader.get(
-                    args.connection as any,
-                )
-                directory = connectionOptions.cli
-                    ? connectionOptions.cli.migrationsDir
-                    : undefined
-            } catch (err) {}
-        }
-
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any,
-            })
-            const connectionOptions = await connectionOptionsReader.get(
-                args.connection as any,
+            dataSource = CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
             )
-            Object.assign(connectionOptions, {
+            dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
                 logging: false,
             })
+            await dataSource.initialize()
 
             const upSqls: string[] = [],
                 downSqls: string[] = []
 
-            const connection = await createConnection(connectionOptions)
             try {
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 
@@ -165,7 +129,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     )
                 })
             } finally {
-                await connection.close()
+                await dataSource.destroy()
             }
 
             if (!upSqls.length) {
@@ -182,32 +146,24 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     )
                     process.exit(1)
                 }
-            } else if (!args.name) {
-                console.log(
-                    chalk.yellow(
-                        "Please specify a migration name using the `-n` argument",
-                    ),
-                )
+            } else if (!args.path) {
+                console.log(chalk.yellow("Please specify a migration path"))
                 process.exit(1)
             }
 
             const fileContent = args.outputJs
                 ? MigrationGenerateCommand.getJavascriptTemplate(
-                      args.name as any,
+                      path.basename(fullPath),
                       timestamp,
                       upSqls,
                       downSqls.reverse(),
                   )
                 : MigrationGenerateCommand.getTemplate(
-                      args.name as any,
+                      path.basename(fullPath),
                       timestamp,
                       upSqls,
                       downSqls.reverse(),
                   )
-            if (directory && !directory.startsWith("/")) {
-                directory = process.cwd() + "/" + directory
-            }
-            const path = (directory ? directory + "/" : "") + filename
 
             if (args.check) {
                 console.log(
@@ -224,17 +180,20 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 console.log(
                     chalk.green(
                         `Migration ${chalk.blue(
-                            path,
+                            fullPath + extension,
                         )} has content:\n\n${chalk.white(fileContent)}`,
                     ),
                 )
             } else {
-                await CommandUtils.createFile(path, fileContent)
+                await CommandUtils.createFile(
+                    path.dirname(fullPath) + "/" + filename,
+                    fileContent,
+                )
 
                 console.log(
                     chalk.green(
                         `Migration ${chalk.blue(
-                            path,
+                            fullPath + extension,
                         )} has been generated successfully.`,
                     ),
                 )
@@ -271,7 +230,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     ): string {
         const migrationName = `${camelCase(name, true)}${timestamp}`
 
-        return `import {MigrationInterface, QueryRunner} from "typeorm";
+        return `import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class ${migrationName} implements MigrationInterface {
     name = '${migrationName}'

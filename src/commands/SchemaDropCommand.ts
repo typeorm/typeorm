@@ -1,58 +1,50 @@
-import { createConnection } from "../globals"
 import { DataSource } from "../data-source/DataSource"
-import { ConnectionOptionsReader } from "../connection/ConnectionOptionsReader"
 import * as yargs from "yargs"
 import chalk from "chalk"
 import { PlatformTools } from "../platform/PlatformTools"
+import path from "path"
+import process from "process"
+import { CommandUtils } from "./CommandUtils"
 
 /**
- * Drops all tables of the database from the given connection.
+ * Drops all tables of the database from the given dataSource.
  */
 export class SchemaDropCommand implements yargs.CommandModule {
     command = "schema:drop"
     describe =
-        "Drops all tables in the database on your default connection. " +
+        "Drops all tables in the database on your default dataSource. " +
         "To drop table of a concrete connection's database use -c option."
 
     builder(args: yargs.Argv) {
-        return args
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe: "Name of the connection on which to drop all tables.",
-            })
-            .option("f", {
-                alias: "config",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration.",
-            })
+        return args.option("dataSource", {
+            alias: "d",
+            describe:
+                "Path to the file where your DataSource instance is defined.",
+            demandOption: true,
+        })
     }
 
     async handler(args: yargs.Arguments) {
-        let connection: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any,
-            })
-            const connectionOptions = await connectionOptionsReader.get(
-                args.connection as any,
+            dataSource = CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
             )
-            Object.assign(connectionOptions, {
+            dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
                 logging: ["query", "schema"],
             })
-            connection = await createConnection(connectionOptions)
-            await connection.dropDatabase()
-            await connection.close()
+            await dataSource.initialize()
+            await dataSource.dropDatabase()
+            await dataSource.destroy()
 
             console.log(
                 chalk.green("Database schema has been successfully dropped."),
             )
         } catch (err) {
-            if (connection) await (connection as DataSource).close()
+            if (dataSource) await dataSource.destroy()
             PlatformTools.logCmdErr("Error during schema drop:", err)
             process.exit(1)
         }

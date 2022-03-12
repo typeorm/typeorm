@@ -1,10 +1,11 @@
-import { createConnection } from "../globals"
 import { DataSource } from "../data-source/DataSource"
-import { ConnectionOptionsReader } from "../connection/ConnectionOptionsReader"
 import { highlight } from "cli-highlight"
 import * as yargs from "yargs"
 import chalk from "chalk"
 import { PlatformTools } from "../platform/PlatformTools"
+import path from "path"
+import process from "process"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Shows sql to be executed by schema:sync command.
@@ -12,44 +13,36 @@ import { PlatformTools } from "../platform/PlatformTools"
 export class SchemaLogCommand implements yargs.CommandModule {
     command = "schema:log"
     describe =
-        "Shows sql to be executed by schema:sync command. It shows sql log only for your default connection. " +
+        "Shows sql to be executed by schema:sync command. It shows sql log only for your default dataSource. " +
         "To run update queries on a concrete connection use -c option."
 
     builder(args: yargs.Argv) {
-        return args
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe:
-                    "Name of the connection of which schema sync log should be shown.",
-            })
-            .option("f", {
-                alias: "config",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration.",
-            })
+        return args.option("dataSource", {
+            alias: "d",
+            describe:
+                "Path to the file where your DataSource instance is defined.",
+            demandOption: true,
+        })
     }
 
     async handler(args: yargs.Arguments) {
-        let connection: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any,
-            })
-            const connectionOptions = await connectionOptionsReader.get(
-                args.connection as any,
+            dataSource = CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
             )
-            Object.assign(connectionOptions, {
+            dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
                 logging: false,
             })
-            connection = await createConnection(connectionOptions)
-            const sqlInMemory = await connection.driver
+            await dataSource.initialize()
+
+            const sqlInMemory = await dataSource.driver
                 .createSchemaBuilder()
                 .log()
+
             if (sqlInMemory.upQueries.length === 0) {
                 console.log(
                     chalk.yellow(
@@ -91,9 +84,9 @@ export class SchemaLogCommand implements yargs.CommandModule {
                     console.log(highlight(sqlString))
                 })
             }
-            await connection.close()
+            await dataSource.destroy()
         } catch (err) {
-            if (connection)
+            if (dataSource)
                 PlatformTools.logCmdErr(
                     "Error during schema synchronization:",
                     err,

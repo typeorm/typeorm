@@ -1,55 +1,46 @@
-import { createConnection } from "../globals"
-import { ConnectionOptionsReader } from "../connection/ConnectionOptionsReader"
-import { DataSource } from "../data-source/DataSource"
+import { DataSource } from "../data-source"
 import * as process from "process"
 import * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
+import path from "path"
+import { CommandUtils } from "./CommandUtils"
 
 /**
- * Runs migration command.
+ * Shows all migrations and whether they have been run or not.
  */
 export class MigrationShowCommand implements yargs.CommandModule {
     command = "migration:show"
     describe = "Show all migrations and whether they have been run or not"
 
     builder(args: yargs.Argv) {
-        return args
-            .option("connection", {
-                alias: "c",
-                default: "default",
-                describe: "Name of the connection on which run a query.",
-            })
-            .option("config", {
-                alias: "f",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration.",
-            })
+        return args.option("dataSource", {
+            alias: "d",
+            describe:
+                "Path to the file where your DataSource instance is defined.",
+            demandOption: true,
+        })
     }
 
     async handler(args: yargs.Arguments) {
-        let connection: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any,
-            })
-            const connectionOptions = await connectionOptionsReader.get(
-                args.connection as any,
+            dataSource = CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
             )
-            Object.assign(connectionOptions, {
+            dataSource.setOptions({
                 subscribers: [],
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["query", "error", "schema"],
+                logging: ["schema"],
             })
-            connection = await createConnection(connectionOptions)
-            await connection.showMigrations()
-            await connection.close()
+            await dataSource.initialize()
+            await dataSource.showMigrations()
+            await dataSource.destroy()
 
             process.exit(0)
         } catch (err) {
-            if (connection) await (connection as DataSource).close()
+            if (dataSource) await dataSource.destroy()
             PlatformTools.logCmdErr("Error during migration show:", err)
             process.exit(1)
         }

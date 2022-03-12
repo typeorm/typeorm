@@ -1,10 +1,9 @@
 import { CommandUtils } from "./CommandUtils"
-import { ObjectLiteral } from "../common/ObjectLiteral"
 import * as path from "path"
 import * as yargs from "yargs"
 import chalk from "chalk"
 import { exec } from "child_process"
-import { TypeORMError } from "../error/TypeORMError"
+import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 
 /**
@@ -19,11 +18,6 @@ export class InitCommand implements yargs.CommandModule {
 
     builder(args: yargs.Argv) {
         return args
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe: "Name of the connection on which to run a query",
-            })
             .option("n", {
                 alias: "name",
                 describe: "Name of the project directory.",
@@ -34,7 +28,7 @@ export class InitCommand implements yargs.CommandModule {
             })
             .option("express", {
                 describe:
-                    "Indicates if express should be included in the project.",
+                    "Indicates if express server sample code should be included in the project. False by default.",
             })
             .option("docker", {
                 describe:
@@ -57,7 +51,7 @@ export class InitCommand implements yargs.CommandModule {
 
     async handler(args: yargs.Arguments) {
         try {
-            const database: string = (args.database as any) || "mysql"
+            const database: string = (args.database as any) || "postgres"
             const isExpress = args.express !== undefined ? true : false
             const isDocker = args.docker !== undefined ? true : false
             const basePath = process.cwd() + (args.name ? "/" + args.name : "")
@@ -91,12 +85,12 @@ export class InitCommand implements yargs.CommandModule {
                 InitCommand.getTsConfigTemplate(projectIsEsm),
             )
             await CommandUtils.createFile(
-                basePath + "/ormconfig.json",
-                InitCommand.getOrmConfigTemplate(database),
-            )
-            await CommandUtils.createFile(
                 basePath + "/src/entity/User.ts",
                 InitCommand.getUserEntityTemplate(database),
+            )
+            await CommandUtils.createFile(
+                basePath + "/src/data-source.ts",
+                InitCommand.getAppDataSourceTemplate(projectIsEsm, database),
             )
             await CommandUtils.createFile(
                 basePath + "/src/index.ts",
@@ -143,11 +137,14 @@ export class InitCommand implements yargs.CommandModule {
                 )
             }
 
+            console.log(chalk.green(`Please wait, installing dependencies...`))
             if (args.pm && installNpm) {
                 await InitCommand.executeCommand("npm install", basePath)
             } else {
                 await InitCommand.executeCommand("yarn install", basePath)
             }
+
+            console.log(chalk.green(`Done! Start playing with a new project!`))
         } catch (err) {
             PlatformTools.logCmdErr("Error during project initialization:", err)
             process.exit(1)
@@ -172,100 +169,85 @@ export class InitCommand implements yargs.CommandModule {
     /**
      * Gets contents of the ormconfig file.
      */
-    protected static getOrmConfigTemplate(database: string): string {
-        const options: ObjectLiteral = {}
+    protected static getAppDataSourceTemplate(
+        isEsm: boolean,
+        database: string,
+    ): string {
+        let dbSettings = ""
         switch (database) {
             case "mysql":
-                Object.assign(options, {
-                    type: "mysql",
-                    host: "localhost",
-                    port: 3306,
-                    username: "test",
-                    password: "test",
-                    database: "test",
-                })
+                dbSettings = `type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",`
                 break
             case "mariadb":
-                Object.assign(options, {
-                    type: "mariadb",
-                    host: "localhost",
-                    port: 3306,
-                    username: "test",
-                    password: "test",
-                    database: "test",
-                })
+                dbSettings = `type: "mariadb",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",`
                 break
             case "sqlite":
-                Object.assign(options, {
-                    type: "sqlite",
-                    database: "database.sqlite",
-                })
+                dbSettings = `type: "sqlite",
+    database: "database.sqlite",`
                 break
             case "better-sqlite3":
-                Object.assign(options, {
-                    type: "better-sqlite3",
-                    database: "database.sqlite",
-                })
+                dbSettings = `type: "better-sqlite3",
+    database: "database.sqlite",`
                 break
             case "postgres":
-                Object.assign(options, {
-                    type: "postgres",
-                    host: "localhost",
-                    port: 5432,
-                    username: "test",
-                    password: "test",
-                    database: "test",
-                })
+                dbSettings = `type: "postgres",
+    host: "localhost",
+    port: 5432,
+    username: "test",
+    password: "test",
+    database: "test",`
                 break
             case "cockroachdb":
-                Object.assign(options, {
-                    type: "cockroachdb",
-                    host: "localhost",
-                    port: 26257,
-                    username: "root",
-                    password: "",
-                    database: "defaultdb",
-                })
+                dbSettings = `type: "cockroachdb",
+    host: "localhost",
+    port: 26257,
+    username: "root",
+    password: "",
+    database: "defaultdb",`
                 break
             case "mssql":
-                Object.assign(options, {
-                    type: "mssql",
-                    host: "localhost",
-                    username: "sa",
-                    password: "Admin12345",
-                    database: "tempdb",
-                })
+                dbSettings = `type: "mssql",
+    host: "localhost",
+    username: "sa",
+    password: "Admin12345",
+    database: "tempdb",`
                 break
             case "oracle":
-                Object.assign(options, {
-                    type: "oracle",
-                    host: "localhost",
-                    username: "system",
-                    password: "oracle",
-                    port: 1521,
-                    sid: "xe.oracle.docker",
-                })
+                dbSettings = `type: "oracle",
+host: "localhost",
+username: "system",
+password: "oracle",
+port: 1521,
+sid: "xe.oracle.docker",`
                 break
             case "mongodb":
-                Object.assign(options, {
-                    type: "mongodb",
-                    database: "test",
-                })
+                dbSettings = `type: "mongodb",
+database: "test",`
                 break
         }
-        Object.assign(options, {
-            synchronize: true,
-            logging: false,
-            entities: ["src/entity/**/*.ts"],
-            migrations: ["src/migration/**/*.ts"],
-            subscribers: ["src/subscriber/**/*.ts"],
-            cli: {
-                entitiesDir: "src/entity",
-                migrationsDir: "src/migration",
-                subscribersDir: "src/subscriber",
-            },
-        })
-        return JSON.stringify(options, undefined, 3)
+        return `import "reflect-metadata"
+import { DataSource } from "typeorm"
+import { User } from "./entity/User${isEsm ? ".js" : ""}"
+
+export const AppDataSource = new DataSource({
+    ${dbSettings}
+    synchronize: true,
+    logging: false,
+    entities: [User],
+    migrations: [],
+    subscribers: [],
+})
+`
     }
 
     /**
@@ -325,11 +307,11 @@ temp/`
      * Gets contents of the user entity.
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import {Entity, ${
+        return `import { Entity, ${
             database === "mongodb"
                 ? "ObjectIdColumn, ObjectID"
                 : "PrimaryGeneratedColumn"
-        }, Column} from "typeorm";
+        }, Column } from "typeorm"
 
 @Entity()
 export class User {
@@ -339,16 +321,16 @@ export class User {
             ? "@ObjectIdColumn()"
             : "@PrimaryGeneratedColumn()"
     }
-    id: ${database === "mongodb" ? "ObjectID" : "number"};
+    id: ${database === "mongodb" ? "ObjectID" : "number"}
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
     @Column()
-    age: number;
+    age: number
 
 }
 `
@@ -358,9 +340,9 @@ export class User {
      * Gets contents of the route file (used when express is enabled).
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
-        return `import {UserController} from "./controller/UserController${
+        return `import { UserController } from "./controller/UserController${
             isEsm ? ".js" : ""
-        }";
+        }"
 
 export const Routes = [{
     method: "get",
@@ -382,36 +364,36 @@ export const Routes = [{
     route: "/users/:id",
     controller: UserController,
     action: "remove"
-}];`
+}]`
     }
 
     /**
      * Gets contents of the user controller file (used when express is enabled).
      */
     protected static getControllerTemplate(isEsm: boolean): string {
-        return `import {getRepository} from "typeorm";
-import {NextFunction, Request, Response} from "express";
-import {User} from "../entity/User${isEsm ? ".js" : ""}";
+        return `import { getRepository } from "typeorm"
+import { NextFunction, Request, Response } from "express"
+import { User } from "../entity/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
-    private userRepository = getRepository(User);
+    private userRepository = getRepository(User)
 
     async all(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.find();
+        return this.userRepository.find()
     }
 
     async one(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.findOne(request.params.id);
+        return this.userRepository.findOne(request.params.id)
     }
 
     async save(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.save(request.body);
+        return this.userRepository.save(request.body)
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        let userToRemove = await this.userRepository.findOne(request.params.id);
-        await this.userRepository.remove(userToRemove);
+        let userToRemove = await this.userRepository.findOneBy({ id: request.params.id })
+        await this.userRepository.remove(userToRemove)
     }
 
 }`
@@ -425,77 +407,82 @@ export class UserController {
         isEsm: boolean,
     ): string {
         if (express) {
-            return `import "reflect-metadata";
-import {createConnection} from "typeorm";
-import ${!isEsm ? "* as " : ""}express from "express";
-import ${!isEsm ? "* as " : ""}bodyParser from "body-parser";
-import {Request, Response} from "express";
-import {Routes} from "./routes${isEsm ? ".js" : ""}";
-import {User} from "./entity/User${isEsm ? ".js" : ""}";
+            return `import ${!isEsm ? "* as " : ""}express from "express"
+import ${!isEsm ? "* as " : ""}bodyParser from "body-parser"
+import { Request, Response } from "express"
+import { AppDataSource } from "./data-source${isEsm ? ".js" : ""}"
+import { Routes } from "./routes${isEsm ? ".js" : ""}"
+import { User } from "./entity/User${isEsm ? ".js" : ""}"
 
-createConnection().then(async connection => {
+AppDataSource.initialize().then(async () => {
 
     // create express app
-    const app = express();
-    app.use(bodyParser.json());
+    const app = express()
+    app.use(bodyParser.json())
 
     // register express routes from defined application routes
     Routes.forEach(route => {
         (app as any)[route.method](route.route, (req: Request, res: Response, next: Function) => {
-            const result = (new (route.controller as any))[route.action](req, res, next);
+            const result = (new (route.controller as any))[route.action](req, res, next)
             if (result instanceof Promise) {
-                result.then(result => result !== null && result !== undefined ? res.send(result) : undefined);
+                result.then(result => result !== null && result !== undefined ? res.send(result) : undefined)
 
             } else if (result !== null && result !== undefined) {
-                res.json(result);
+                res.json(result)
             }
-        });
-    });
+        })
+    })
 
     // setup express app here
     // ...
 
     // start express server
-    app.listen(3000);
+    app.listen(3000)
 
     // insert new users for test
-    await connection.manager.save(connection.manager.create(User, {
-        firstName: "Timber",
-        lastName: "Saw",
-        age: 27
-    }));
-    await connection.manager.save(connection.manager.create(User, {
-        firstName: "Phantom",
-        lastName: "Assassin",
-        age: 24
-    }));
+    await AppDataSource.manager.save(
+        AppDataSource.manager.create(User, {
+            firstName: "Timber",
+            lastName: "Saw",
+            age: 27
+        })
+    )
 
-    console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results");
+    await AppDataSource.manager.save(
+        dataSource.manager.create(User, {
+            firstName: "Phantom",
+            lastName: "Assassin",
+            age: 24
+        })
+    )
 
-}).catch(error => console.log(error));
+    console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results")
+
+}).catch(error => console.log(error))
 `
         } else {
-            return `import "reflect-metadata";
-import {createConnection} from "typeorm";
-import {User} from "./entity/User${isEsm ? ".js" : ""}";
+            return `import { AppDataSource } from "./data-source${
+                isEsm ? ".js" : ""
+            }"
+import { User } from "./entity/User${isEsm ? ".js" : ""}"
 
-createConnection().then(async connection => {
+AppDataSource.initialize().then(async () => {
 
-    console.log("Inserting a new user into the database...");
-    const user = new User();
-    user.firstName = "Timber";
-    user.lastName = "Saw";
-    user.age = 25;
-    await connection.manager.save(user);
-    console.log("Saved a new user with id: " + user.id);
+    console.log("Inserting a new user into the database...")
+    const user = new User()
+    user.firstName = "Timber"
+    user.lastName = "Saw"
+    user.age = 25
+    await AppDataSource.manager.save(user)
+    console.log("Saved a new user with id: " + user.id)
 
-    console.log("Loading users from the database...");
-    const users = await connection.manager.find(User);
-    console.log("Loaded users: ", users);
+    console.log("Loading users from the database...")
+    const users = await AppDataSource.manager.find(User)
+    console.log("Loaded users: ", users)
 
-    console.log("Here you can setup and run express/koa/any other framework.");
+    console.log("Here you can setup and run express / fastify / any other framework.")
 
-}).catch(error => console.log(error));
+}).catch(error => console.log(error))
 `
         }
     }
@@ -509,7 +496,7 @@ createConnection().then(async connection => {
     ): string {
         return JSON.stringify(
             {
-                name: projectName || "new-typeorm-project",
+                name: projectName || "typeorm-sample",
                 version: "0.0.1",
                 description: "Awesome project developed with TypeORM.",
                 type: projectIsEsm ? "module" : "commonjs",
@@ -635,7 +622,7 @@ Steps to run this project:
             template += `2. Run \`docker-compose up\` command
 `
         } else {
-            template += `2. Setup database settings inside \`ormconfig.json\` file
+            template += `2. Setup database settings inside \`data-source.ts\` file
 `
         }
 

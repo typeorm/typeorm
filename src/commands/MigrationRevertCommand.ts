@@ -1,8 +1,9 @@
-import { createConnection } from "../globals"
-import { ConnectionOptionsReader } from "../connection/ConnectionOptionsReader"
 import { DataSource } from "../data-source/DataSource"
 import * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
+import path from "path"
+import process from "process"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Reverts last migration command.
@@ -10,14 +11,14 @@ import { PlatformTools } from "../platform/PlatformTools"
 export class MigrationRevertCommand implements yargs.CommandModule {
     command = "migration:revert"
     describe = "Reverts last executed migration."
-    aliases = "migrations:revert"
 
     builder(args: yargs.Argv) {
         return args
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe: "Name of the connection on which run a query.",
+            .option("dataSource", {
+                alias: "d",
+                describe:
+                    "Path to the file where your DataSource instance is defined.",
+                demandOption: true,
             })
             .option("transaction", {
                 alias: "t",
@@ -25,41 +26,26 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 describe:
                     "Indicates if transaction should be used or not for migration revert. Enabled by default.",
             })
-            .option("f", {
-                alias: "config",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration.",
-            })
     }
 
     async handler(args: yargs.Arguments) {
-        if (args._[0] === "migrations:revert") {
-            console.log(
-                "'migrations:revert' is deprecated, please use 'migration:revert' instead",
-            )
-        }
-
-        let connection: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any,
-            })
-            const connectionOptions = await connectionOptionsReader.get(
-                args.connection as any,
+            dataSource = CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
             )
-            Object.assign(connectionOptions, {
+            dataSource.setOptions({
                 subscribers: [],
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
                 logging: ["query", "error", "schema"],
             })
-            connection = await createConnection(connectionOptions)
+            await dataSource.initialize()
 
             const options = {
                 transaction:
-                    connectionOptions.migrationsTransactionMode ??
+                    dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
             }
 
@@ -78,10 +64,10 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 // noop
             }
 
-            await connection.undoLastMigration(options)
-            await connection.close()
+            await dataSource.undoLastMigration(options)
+            await dataSource.destroy()
         } catch (err) {
-            if (connection) await (connection as DataSource).close()
+            if (dataSource) await dataSource.destroy()
 
             PlatformTools.logCmdErr("Error during migration revert:", err)
             process.exit(1)

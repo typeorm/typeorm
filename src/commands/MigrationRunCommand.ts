@@ -1,9 +1,9 @@
-import { createConnection } from "../globals"
-import { ConnectionOptionsReader } from "../connection/ConnectionOptionsReader"
-import { DataSource } from "../data-source/DataSource"
+import path from "path"
 import * as process from "process"
 import * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
+import { DataSource } from "../data-source"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Runs migration command.
@@ -11,14 +11,14 @@ import { PlatformTools } from "../platform/PlatformTools"
 export class MigrationRunCommand implements yargs.CommandModule {
     command = "migration:run"
     describe = "Runs all pending migrations."
-    aliases = "migrations:run"
 
     builder(args: yargs.Argv) {
         return args
-            .option("connection", {
-                alias: "c",
-                default: "default",
-                describe: "Name of the connection on which run a query.",
+            .option("dataSource", {
+                alias: "d",
+                describe:
+                    "Path to the file where your DataSource instance is defined.",
+                demandOption: true,
             })
             .option("transaction", {
                 alias: "t",
@@ -26,41 +26,26 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 describe:
                     "Indicates if transaction should be used or not for migration run. Enabled by default.",
             })
-            .option("config", {
-                alias: "f",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration.",
-            })
     }
 
     async handler(args: yargs.Arguments) {
-        if (args._[0] === "migrations:run") {
-            console.log(
-                "'migrations:run' is deprecated, please use 'migration:run' instead",
-            )
-        }
-
-        let connection: DataSource | undefined = undefined
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any,
-            })
-            const connectionOptions = await connectionOptionsReader.get(
-                args.connection as any,
+            dataSource = CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
             )
-            Object.assign(connectionOptions, {
+            dataSource.setOptions({
                 subscribers: [],
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
                 logging: ["query", "error", "schema"],
             })
-            connection = await createConnection(connectionOptions)
+            await dataSource.initialize()
 
             const options = {
                 transaction:
-                    connectionOptions.migrationsTransactionMode ??
+                    dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
             }
 
@@ -79,12 +64,13 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 // noop
             }
 
-            await connection.runMigrations(options)
-            await connection.close()
+            await dataSource.runMigrations(options)
+            await dataSource.destroy()
+
             // exit process if no errors
             process.exit(0)
         } catch (err) {
-            if (connection) await (connection as DataSource).close()
+            if (dataSource) await dataSource.destroy()
 
             PlatformTools.logCmdErr("Error during migration run:", err)
             process.exit(1)

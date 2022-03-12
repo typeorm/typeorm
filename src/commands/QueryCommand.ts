@@ -1,18 +1,19 @@
-import { createConnection } from "../globals"
 import { QueryRunner } from "../query-runner/QueryRunner"
-import { ConnectionOptionsReader } from "../connection/ConnectionOptionsReader"
 import { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
 import * as yargs from "yargs"
 import chalk from "chalk"
+import path from "path"
+import process from "process"
+import { CommandUtils } from "./CommandUtils"
 
 /**
- * Executes an SQL query on the given connection.
+ * Executes an SQL query on the given dataSource.
  */
 export class QueryCommand implements yargs.CommandModule {
     command = "query [query]"
     describe =
-        "Executes given SQL query on a default connection. Specify connection name to run query on a specific connection."
+        "Executes given SQL query on a default dataSource. Specify connection name to run query on a specific dataSource."
 
     builder(args: yargs.Argv) {
         return args
@@ -20,40 +21,31 @@ export class QueryCommand implements yargs.CommandModule {
                 describe: "The SQL Query to run",
                 type: "string",
             })
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe: "Name of the connection on which to run a query.",
-            })
-            .option("f", {
-                alias: "config",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration.",
+            .option("dataSource", {
+                alias: "d",
+                describe:
+                    "Path to the file where your DataSource instance is defined.",
+                demandOption: true,
             })
     }
 
     async handler(args: yargs.Arguments) {
-        let connection: DataSource | undefined = undefined
         let queryRunner: QueryRunner | undefined = undefined
+        let dataSource: DataSource | undefined = undefined
         try {
-            // create a connection
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any,
-            })
-            const connectionOptions = await connectionOptionsReader.get(
-                args.connection as any,
+            dataSource = CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
             )
-            Object.assign(connectionOptions, {
+            dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
                 logging: false,
             })
-            connection = await createConnection(connectionOptions)
+            await dataSource.initialize()
 
             // create a query runner and execute query using it
-            queryRunner = connection.createQueryRunner()
+            queryRunner = dataSource.createQueryRunner()
             const query = args.query as string
             console.log(
                 chalk.green("Running query: ") +
@@ -77,10 +69,10 @@ export class QueryCommand implements yargs.CommandModule {
             }
 
             await queryRunner.release()
-            await connection.close()
+            await dataSource.destroy()
         } catch (err) {
             if (queryRunner) await (queryRunner as QueryRunner).release()
-            if (connection) await (connection as DataSource).close()
+            if (dataSource) await dataSource.destroy()
 
             PlatformTools.logCmdErr("Error during query execution:", err)
             process.exit(1)

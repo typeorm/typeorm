@@ -150,10 +150,10 @@ export class MigrationExecutor {
             )
 
             if (executedMigration) {
-                this.connection.logger.logSchemaBuild(` [X] ${migration.name}`)
+                this.connection.logger.logSchemaBuild(`[X] ${migration.name}`)
             } else {
                 hasUnappliedMigrations = true
-                this.connection.logger.logSchemaBuild(` [ ] ${migration.name}`)
+                this.connection.logger.logSchemaBuild(`[ ] ${migration.name}`)
             }
         }
 
@@ -238,7 +238,7 @@ export class MigrationExecutor {
                 ).toString()}.`,
             )
         this.connection.logger.logSchemaBuild(
-            `${pendingMigrations.length} migrations are new migrations that needs to be executed.`,
+            `${pendingMigrations.length} migrations are new migrations must be executed.`,
         )
 
         // start transaction if its not started yet

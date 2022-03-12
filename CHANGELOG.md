@@ -418,7 +418,17 @@ user: User
 
 This change was required to simplify ORM internals and introduce new features.
 
+* support for previously deprecated `migrations:*` commands was removed. Use `migration:*` commands instead.
+
+* all commands were re-worked. Please refer to new CLI documentation.
+
+* `cli` connection / data-source options were removed (since CLI commands were re-worked).
+
 ### DEPRECATIONS
+
+* all CLI commands do not support `ormconfig` anymore. You must specify a file with data source instance instead.
+
+* directory-based entity loading feature is deprecated. Please use entity / entity schema real object references
 
 * all container-related features (`UseContainerOptions`, `ContainedType`, `ContainerInterface`, `defaultContainer`,
 `useContainer`, `getFromContainer`) are deprecated.

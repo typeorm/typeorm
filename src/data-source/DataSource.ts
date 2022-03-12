@@ -47,6 +47,8 @@ import { InstanceChecker } from "../util/InstanceChecker"
  * because `Connection` isn't the best name for what it's actually is.
  */
 export class DataSource {
+    readonly "@instanceof" = Symbol.for("DataSource")
+
     // -------------------------------------------------------------------------
     // Public Readonly Properties
     // -------------------------------------------------------------------------

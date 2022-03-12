@@ -168,3 +168,4 @@ export { EntitySchemaRelationOptions } from "./entity-schema/EntitySchemaRelatio
 export { EntitySchemaEmbeddedColumnOptions } from "./entity-schema/EntitySchemaEmbeddedColumnOptions"
 export { ColumnType } from "./driver/types/ColumnTypes"
 export { EntitySchemaOptions } from "./entity-schema/EntitySchemaOptions"
+export { InstanceChecker } from "./util/InstanceChecker"
