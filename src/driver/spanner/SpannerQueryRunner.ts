@@ -287,9 +287,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasColumn(tableOrName: Table|string, columnName: string): Promise<boolean> {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
+        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` ` +
             `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' ` +
-            `AND \`TABLE_NAME\` = '${tableName}' AND \`COLUMN_NAME\` = ${columnName}`;
+            `AND \`TABLE_NAME\` = '${tableName}' AND \`COLUMN_NAME\` = '${columnName}'`;
         const result = await this.query(sql);
         return result.length ? true : false;
     }
@@ -539,51 +539,29 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = [];
         const downQueries: Query[] = [];
 
-        if (column.type === "enum" || column.type === "simple-enum") {
-            const hasEnum = await this.hasEnumType(table, column);
-            if (!hasEnum) {
-                upQueries.push(this.createEnumTypeSql(table, column));
-                downQueries.push(this.dropEnumTypeSql(table, column));
-            }
-        }
-
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
-        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${column.name}"`));
-
-        // create or update primary key constraint
-        if (column.isPrimary) {
-            const primaryColumns = clonedTable.primaryColumns;
-            // if table already have primary key, me must drop it and recreate again
-            if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
-                const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
-            }
-
-            primaryColumns.push(column);
-            const pkName = this.connection.namingStrategy.primaryKeyName(clonedTable, primaryColumns.map(column => column.name));
-            const columnNames = primaryColumns.map(column => `"${column.name}"`).join(", ");
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${pkName}"`));
-        }
+        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${this.driver.escape(column.name)}`));
 
         // create column index
         const columnIndex = clonedTable.indices.find(index => index.columnNames.length === 1 && index.columnNames[0] === column.name);
         if (columnIndex) {
             upQueries.push(this.createIndexSql(table, columnIndex));
             downQueries.push(this.dropIndexSql(table, columnIndex));
-        }
 
-        // create unique constraint
-        if (column.isUnique) {
-            const uniqueConstraint = new TableUnique({
-                name: this.connection.namingStrategy.uniqueConstraintName(table, [column.name]),
-                columnNames: [column.name]
+        } else if (column.isUnique) {
+            const uniqueIndex = new TableIndex({
+                name: this.connection.namingStrategy.indexName(table, [column.name]),
+                columnNames: [column.name],
+                isUnique: true
             });
-            clonedTable.uniques.push(uniqueConstraint);
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${uniqueConstraint.name}" UNIQUE ("${column.name}")`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${uniqueConstraint.name}"`));
+            clonedTable.indices.push(uniqueIndex);
+            clonedTable.uniques.push(new TableUnique({
+                name: uniqueIndex.name,
+                columnNames: uniqueIndex.columnNames
+            }));
+
+            upQueries.push(this.createIndexSql(table, uniqueIndex));
+            downQueries.push(this.dropIndexSql(table, uniqueIndex));
         }
 
         if (column.generatedType === "STORED" && column.asExpression) {
@@ -611,12 +589,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             upQueries.push(deleteQuery);
             upQueries.push(insertQuery);
             downQueries.push(deleteQuery);
-        }
-
-        // create column's comment
-        if (column.comment) {
-            upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
-            downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}" IS ${this.escapeComment(column.comment)}`));
         }
 
         await this.executeQueries(upQueries, downQueries);
@@ -855,11 +827,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 }
             }
 
-            if (oldColumn.comment !== newColumn.comment) {
-                upQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${oldColumn.name}" IS ${this.escapeComment(newColumn.comment)}`));
-                downQueries.push(new Query(`COMMENT ON COLUMN ${this.escapePath(table)}."${newColumn.name}" IS ${this.escapeComment(oldColumn.comment)}`));
-            }
-
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
                 const primaryColumns = clonedTable.primaryColumns;
 
@@ -1014,7 +981,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         name: oldColumn.name
                     }));
                     // However, we can't copy it back on downgrade. It needs to regenerate.
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${newColumn.name}"`));
+                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${this.driver.escape(newColumn.name)}`));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(oldColumn)}`));
                     downQueries.push(this.deleteTypeormMetadataSql({
                         database: this.driver.database,
@@ -1098,7 +1065,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.createCheckConstraintSql(table, columnCheck));
         }
 
-        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${column.name}"`));
+        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${this.driver.escape(column.name)}`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
 
         // drop enum type
@@ -1238,7 +1205,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     async createCheckConstraint(tableOrName: Table|string, checkConstraint: TableCheck): Promise<void> {
         const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
 
-        // new unique constraint may be passed without name. In this case we generate unique name manually.
+        // new check constraint may be passed without name. In this case we generate unique name manually.
         if (!checkConstraint.name)
             checkConstraint.name = this.connection.namingStrategy.checkConstraintName(table, checkConstraint.expression!);
 
@@ -1283,47 +1250,28 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates new exclusion constraint.
      */
     async createExclusionConstraint(tableOrName: Table|string, exclusionConstraint: TableExclusion): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-
-        // new unique constraint may be passed without name. In this case we generate unique name manually.
-        if (!exclusionConstraint.name)
-            exclusionConstraint.name = this.connection.namingStrategy.exclusionConstraintName(table, exclusionConstraint.expression!);
-
-        const up = this.createExclusionConstraintSql(table, exclusionConstraint);
-        const down = this.dropExclusionConstraintSql(table, exclusionConstraint);
-        await this.executeQueries(up, down);
-        table.addExclusionConstraint(exclusionConstraint);
+        throw new TypeORMError(`Spanner does not support exclusion constraints.`);
     }
 
     /**
      * Creates new exclusion constraints.
      */
     async createExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        const promises = exclusionConstraints.map(exclusionConstraint => this.createExclusionConstraint(tableOrName, exclusionConstraint));
-        await Promise.all(promises);
+        throw new TypeORMError(`Spanner does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraint.
      */
     async dropExclusionConstraint(tableOrName: Table|string, exclusionOrName: TableExclusion|string): Promise<void> {
-        const table = tableOrName instanceof Table ? tableOrName : await this.getCachedTable(tableOrName);
-        const exclusionConstraint = exclusionOrName instanceof TableExclusion ? exclusionOrName : table.exclusions.find(c => c.name === exclusionOrName);
-        if (!exclusionConstraint)
-            throw new TypeORMError(`Supplied exclusion constraint was not found in table ${table.name}`);
-
-        const up = this.dropExclusionConstraintSql(table, exclusionConstraint);
-        const down = this.createExclusionConstraintSql(table, exclusionConstraint);
-        await this.executeQueries(up, down);
-        table.removeExclusionConstraint(exclusionConstraint);
+        throw new TypeORMError(`Spanner does not support exclusion constraints.`);
     }
 
     /**
      * Drops exclusion constraints.
      */
     async dropExclusionConstraints(tableOrName: Table|string, exclusionConstraints: TableExclusion[]): Promise<void> {
-        const promises = exclusionConstraints.map(exclusionConstraint => this.dropExclusionConstraint(tableOrName, exclusionConstraint));
-        await Promise.all(promises);
+        throw new TypeORMError(`Spanner does not support exclusion constraints.`);
     }
 
     /**
@@ -1543,6 +1491,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const columnsSql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_NAME\` IN (${loadedTableNames})`;
 
+        const primaryKeySql = `SELECT \`KCU\`.\`TABLE_NAME\`, \`KCU\`.\`COLUMN_NAME\` ` +
+            `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` \`TC\` ` +
+            `INNER JOIN \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`KCU\` ON \`KCU\`.\`CONSTRAINT_NAME\` = \`TC\`.\`CONSTRAINT_NAME\` ` +
+            `WHERE \`TC\`.\`TABLE_CATALOG\` = '' AND \`TC\`.\`TABLE_SCHEMA\` = '' AND \`TC\`.\`CONSTRAINT_TYPE\` = 'PRIMARY KEY' ` +
+            `AND \`TC\`.\`TABLE_NAME\` IN (${loadedTableNames})`;
+
         const indicesSql = `SELECT \`I\`.\`TABLE_NAME\`, \`I\`.\`INDEX_NAME\`, \`I\`.\`IS_UNIQUE\`, \`I\`.\`IS_NULL_FILTERED\`, \`IC\`.\`COLUMN_NAME\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` \`I\` ` +
             `INNER JOIN \`INFORMATION_SCHEMA\`.\`INDEX_COLUMNS\` \`IC\` ON \`IC\`.\`INDEX_NAME\` = \`I\`.\`INDEX_NAME\` ` +
@@ -1550,11 +1504,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `WHERE \`I\`.\`TABLE_CATALOG\` = '' AND \`I\`.\`TABLE_SCHEMA\` = '' AND \`I\`.\`TABLE_NAME\` IN (${loadedTableNames}) ` +
             `AND \`I\`.\`INDEX_TYPE\` = 'INDEX' AND \`I\`.\`SPANNER_IS_MANAGED\` = false`;
 
-        const primaryKeySql = `SELECT \`KCU\`.\`TABLE_NAME\`, \`KCU\`.\`COLUMN_NAME\` ` +
+        const checksSql = `SELECT \`TC\`.\`TABLE_NAME\`, \`TC\`.\`CONSTRAINT_NAME\`, \`CC\`.\`CHECK_CLAUSE\`, \`CCU\`.\`COLUMN_NAME\`` +
             `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` \`TC\` ` +
-            `INNER JOIN \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`KCU\` ON \`KCU\`.\`CONSTRAINT_NAME\` = \`TC\`.\`CONSTRAINT_NAME\` ` +
-            `WHERE \`TC\`.\`TABLE_CATALOG\` = '' AND \`TC\`.\`TABLE_SCHEMA\` = '' AND \`TC\`.\`CONSTRAINT_TYPE\` = 'PRIMARY KEY' ` +
-            `AND \`TC\`.\`TABLE_NAME\` IN (${loadedTableNames})`;
+            `INNER JOIN \`INFORMATION_SCHEMA\`.\`CONSTRAINT_COLUMN_USAGE\` \`CCU\` ON \`CCU\`.\`CONSTRAINT_NAME\` = \`TC\`.\`CONSTRAINT_NAME\` ` +
+            `INNER JOIN \`INFORMATION_SCHEMA\`.\`CHECK_CONSTRAINTS\` \`CC\` ON \`CC\`.\`CONSTRAINT_NAME\` = \`TC\`.\`CONSTRAINT_NAME\` ` +
+            `WHERE \`TC\`.\`TABLE_CATALOG\` = '' AND \`TC\`.\`TABLE_SCHEMA\` = '' AND \`TC\`.\`CONSTRAINT_TYPE\` = 'CHECK' ` +
+            `AND \`TC\`.\`TABLE_NAME\` IN (${loadedTableNames}) AND \`TC\`.\`CONSTRAINT_NAME\` NOT LIKE 'CK_IS_NOT_NULL%'`;
 
         const foreignKeysSql = `SELECT \`TC\`.\`TABLE_NAME\`, \`TC\`.\`CONSTRAINT_NAME\`, \`KCU\`.\`COLUMN_NAME\`, ` +
             `\`CTU\`.\`TABLE_NAME\` AS \`REFERENCED_TABLE_NAME\`, \`CCU\`.\`COLUMN_NAME\` AS \`REFERENCED_COLUMN_NAME\`, ` +
@@ -1567,14 +1522,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `WHERE \`TC\`.\`TABLE_CATALOG\` = '' AND \`TC\`.\`TABLE_SCHEMA\` = '' AND \`TC\`.\`CONSTRAINT_TYPE\` = 'FOREIGN KEY' ` +
             `AND \`TC\`.\`TABLE_NAME\` IN (${loadedTableNames})`;
 
-        const [dbColumns, dbPrimaryKeys, dbIndices, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
+        const [dbColumns, dbPrimaryKeys, dbIndices, dbChecks, dbForeignKeys]: ObjectLiteral[][] = await Promise.all([
             this.query(columnsSql),
             this.query(primaryKeySql),
             this.query(indicesSql),
+            this.query(checksSql),
             this.query(foreignKeysSql)
         ]);
-
-        console.log("dbIndices", dbIndices);
 
         // create tables for loaded tables
         return Promise.all(dbTables.map(async dbTable => {
@@ -1608,27 +1562,18 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
-                    tableColumn.type = dbColumn["SPANNER_TYPE"].toLowerCase();
+
+                    const fullType = dbColumn["SPANNER_TYPE"].toLowerCase();
+                    tableColumn.type = fullType.substring(0, fullType.indexOf("("));
 
                     if (this.driver.withWidthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
-                        const width = tableColumn.type.substring(tableColumn.type.indexOf("(") + 1, tableColumn.type.indexOf(")"));
+                        const width = fullType.substring(fullType.indexOf("(") + 1, fullType.indexOf(")"));
                         if (width !== "MAX")
                             tableColumn.width = parseInt(width) // && !this.isDefaultColumnWidth(table, tableColumn, parseInt(width)) ? parseInt(width) : undefined;
-
-                        tableColumn.type = tableColumn.type.substring(0, tableColumn.type.indexOf("("));
                     }
 
-                    console.log(tableColumn.type);
-
-                    if (dbColumn["COLUMN_DEFAULT"] === null || dbColumn["COLUMN_DEFAULT"] === undefined) {
-                        tableColumn.default = undefined;
-
-                    } else if (/^CURRENT_TIMESTAMP(\([0-9]*\))?$/i.test(dbColumn["COLUMN_DEFAULT"])) {
-                        // New versions of MariaDB return expressions in lowercase.  We need to set it in
-                        // uppercase so the comparison in MysqlDriver#compareDefaultValues does not fail.
-                        tableColumn.default = dbColumn["COLUMN_DEFAULT"].toUpperCase();
-                    } else {
-                        tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`;
+                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
+                        tableColumn.length = fullType.substring(fullType.indexOf("(") + 1, fullType.indexOf(")"));
                     }
 
                     if (dbColumn["GENERATION_EXPRESSION"]) {
@@ -1644,17 +1589,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                             dbPrimaryKey["COLUMN_NAME"] === dbColumn["COLUMN_NAME"]
                         );
                     });
-
-                    // if (tableColumn.isGenerated)
-                    //     tableColumn.generationStrategy = "increment";
-
-                    tableColumn.comment = (typeof dbColumn["COLUMN_COMMENT"] === "string" && dbColumn["COLUMN_COMMENT"].length === 0) ? undefined : dbColumn["COLUMN_COMMENT"];
-
-                    // check only columns that have length property
-                    if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1 && dbColumn["CHARACTER_MAXIMUM_LENGTH"]) {
-                        const length = dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString();
-                        tableColumn.length = !this.isDefaultColumnLength(table, tableColumn, length) ? length : "";
-                    }
 
                     if (tableColumn.type === "decimal" || tableColumn.type === "double" || tableColumn.type === "float") {
                         if (dbColumn["NUMERIC_PRECISION"] !== null && !this.isDefaultColumnPrecision(table, tableColumn, dbColumn["NUMERIC_PRECISION"]))
@@ -1685,8 +1619,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"];
             })
 
-            console.log("dbForeignKeys", tableForeignKeys);
-
             table.foreignKeys = OrmUtils.uniq(tableForeignKeys, dbForeignKey => dbForeignKey["CONSTRAINT_NAME"])
                 .map(dbForeignKey => {
                     const foreignKeys = tableForeignKeys.filter(dbFk => dbFk["CONSTRAINT_NAME"] === dbForeignKey["CONSTRAINT_NAME"]);
@@ -1716,6 +1648,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     columnNames: indices.map(i => i["COLUMN_NAME"]),
                     isUnique: constraint["IS_UNIQUE"],
                     isNullFiltered: constraint["IS_NULL_FILTERED"],
+                });
+            });
+
+            const tableChecks = dbChecks.filter(dbCheck => (
+                dbCheck["TABLE_NAME"] === dbTable["TABLE_NAME"]
+            ));
+
+            table.checks = OrmUtils.uniq(tableChecks, dbIndex => dbIndex["CONSTRAINT_NAME"]).map(constraint => {
+                const checks = tableChecks.filter(dbC => dbC["CONSTRAINT_NAME"] === constraint["CONSTRAINT_NAME"]);
+                return new TableCheck({
+                    name: constraint["CONSTRAINT_NAME"],
+                    columnNames: checks.map(c => c["COLUMN_NAME"]),
+                    expression: constraint["CHECK_CLAUSE"]
                 });
             });
 
@@ -1763,6 +1708,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             });
         }
 
+        if (table.checks.length > 0) {
+            const checksSql = table.checks.map(check => {
+                const checkName = check.name ? check.name : this.connection.namingStrategy.checkConstraintName(table, check.expression!);
+                return `CONSTRAINT \`${checkName}\` CHECK (${check.expression})`;
+            }).join(", ");
+
+            sql += `, ${checksSql}`;
+        }
+
         if (table.foreignKeys.length > 0 && createForeignKeys) {
             const foreignKeysSql = table.foreignKeys.map(fk => {
                 const columnNames = fk.columnNames.map(columnName => `\`${columnName}\``).join(", ");
@@ -1770,13 +1724,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     fk.name = this.connection.namingStrategy.foreignKeyName(table, fk.columnNames, this.getTablePath(fk), fk.referencedColumnNames);
                 const referencedColumnNames = fk.referencedColumnNames.map(columnName => `\`${columnName}\``).join(", ");
 
-                let constraint = `CONSTRAINT \`${fk.name}\` FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(this.getTablePath(fk))} (${referencedColumnNames})`;
-                if (fk.onDelete)
-                    constraint += ` ON DELETE ${fk.onDelete}`;
-                if (fk.onUpdate)
-                    constraint += ` ON UPDATE ${fk.onUpdate}`;
-
-                return constraint;
+                return `CONSTRAINT \`${fk.name}\` FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(this.getTablePath(fk))} (${referencedColumnNames})`;
             }).join(", ");
 
             sql += `, ${foreignKeysSql}`;
@@ -1789,10 +1737,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             const columnNames = primaryColumns.map(column => this.driver.escape(column.name)).join(", ");
             sql += ` PRIMARY KEY (${columnNames})`;
         }
-
-        table.columns
-            .filter(it => it.comment)
-            .forEach(it => sql += `; COMMENT ON COLUMN ${this.escapePath(table)}."${it.name}" IS ${this.escapeComment(it.comment)}`);
 
         return new Query(sql);
     }
@@ -1934,7 +1878,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create check constraint sql.
      */
     protected createCheckConstraintSql(table: Table, checkConstraint: TableCheck): Query {
-        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${checkConstraint.name}" CHECK (${checkConstraint.expression})`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT \`${checkConstraint.name}\` CHECK (${checkConstraint.expression})`);
     }
 
     /**
@@ -1942,22 +1886,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropCheckConstraintSql(table: Table, checkOrName: TableCheck|string): Query {
         const checkName = checkOrName instanceof TableCheck ? checkOrName.name : checkOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${checkName}"`);
-    }
-
-    /**
-     * Builds create exclusion constraint sql.
-     */
-    protected createExclusionConstraintSql(table: Table, exclusionConstraint: TableExclusion): Query {
-        return new Query(`ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${exclusionConstraint.name}" EXCLUDE ${exclusionConstraint.expression}`);
-    }
-
-    /**
-     * Builds drop exclusion constraint sql.
-     */
-    protected dropExclusionConstraintSql(table: Table, exclusionOrName: TableExclusion|string): Query {
-        const exclusionName = exclusionOrName instanceof TableExclusion ? exclusionOrName.name : exclusionOrName;
-        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT "${exclusionName}"`);
+        return new Query(`ALTER TABLE ${this.escapePath(table)} DROP CONSTRAINT \`${checkName}\``);
     }
 
     /**
@@ -2101,15 +2030,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (!column.isNullable)
             c += " NOT NULL";
-
-        // if (column.isGenerated && column.generationStrategy === "increment")
-        //     c += " AUTO_INCREMENT";
-        // if (column.comment && column.comment.length > 0)
-        //     c += ` COMMENT ${this.escapeComment(column.comment)}`;
-        // if (column.default !== undefined && column.default !== null)
-        //     c += ` DEFAULT ${column.default}`;
-        // if (column.onUpdate)
-        //     c += ` ON UPDATE ${column.onUpdate}`;
 
         return c;
     }

@@ -655,7 +655,6 @@ export class SpannerDriver implements Driver {
             //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
             //     console.log("enum:", tableColumn.enum, columnMetadata.enum);
             //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            //     console.log("onUpdate:", tableColumn.onUpdate, this.normalizeOnUpdate(columnMetadata.onUpdate));
             //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));

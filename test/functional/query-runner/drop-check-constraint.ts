@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
 
 describe("query runner > drop check constraint", () => {
@@ -13,7 +13,6 @@ describe("query runner > drop check constraint", () => {
             dropSchema: true,
         });
     });
-    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should correctly drop check constraint and revert drop", () => Promise.all(connections.map(async connection => {

@@ -1,4 +1,3 @@
-import {expect} from "chai";
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
@@ -7,6 +6,8 @@ import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/Abstract
 import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
 import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
+import {expect} from "chai";
 
 describe("query runner > add column", () => {
 
@@ -22,39 +23,55 @@ describe("query runner > add column", () => {
 
     it("should correctly add column and revert add", () => Promise.all(connections.map(async connection => {
 
+        let numericType = "int"
+        if (connection.driver instanceof AbstractSqliteDriver) {
+            numericType = "integer"
+        } else if (connection.driver instanceof SpannerDriver) {
+            numericType = "int64"
+        }
+
+        let stringType = "varchar"
+        if (connection.driver instanceof SpannerDriver) {
+            stringType = "string"
+        }
+
         const queryRunner = connection.createQueryRunner();
 
         let table = await queryRunner.getTable("post");
         let column1 = new TableColumn({
             name: "secondId",
-            type: "int",
+            type: numericType,
             isUnique: true,
-            isNullable: false
+            isNullable: connection.driver instanceof SpannerDriver
         });
 
-        // CockroachDB does not support altering primary key constraint
-        if (!(connection.driver instanceof CockroachDriver))
+        // CockroachDB and Spanner does not support altering primary key constraint
+        if (!(connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver))
             column1.isPrimary = true;
 
-        // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof CockroachDriver)) {
+        // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
+        // Spanner does not support autoincrement.
+        if (!(connection.driver instanceof MysqlDriver || connection.driver instanceof AbstractSqliteDriver
+            || connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver)) {
             column1.isGenerated = true;
             column1.generationStrategy = "increment";
         }
 
         let column2 = new TableColumn({
             name: "description",
-            type: "varchar",
+            type: stringType,
             length: "100",
-            default: "'this is description'"
+            default: "'this is description'",
+            isNullable: connection.driver instanceof SpannerDriver
         });
 
         let column3 = new TableColumn({
             name: "textAndTag",
-            type: "varchar",
+            type: stringType,
             length: "200",
             generatedType: "STORED",
-            asExpression: "text || tag"
+            asExpression: "text || tag",
+            isNullable: connection.driver instanceof SpannerDriver
         });
 
         let column4 = new TableColumn({
@@ -62,7 +79,8 @@ describe("query runner > add column", () => {
             type: "varchar",
             length: "200",
             generatedType: "VIRTUAL",
-            asExpression: "text || tag"
+            asExpression: "text || tag",
+            isNullable: connection.driver instanceof SpannerDriver
         });
 
         await queryRunner.addColumn(table!, column1);
@@ -72,14 +90,20 @@ describe("query runner > add column", () => {
         column1 = table!.findColumnByName("secondId")!;
         column1!.should.be.exist;
         column1!.isUnique.should.be.true;
-        column1!.isNullable.should.be.false;
+        if (connection.driver instanceof SpannerDriver) {
+            column1!.isNullable.should.be.true;
+        } else {
+            column1!.isNullable.should.be.false;
+        }
 
-        // CockroachDB does not support altering primary key constraint
-        if (!(connection.driver instanceof CockroachDriver))
+        // CockroachDB and Spanner does not support altering primary key constraint
+        if (!(connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver))
             column1!.isPrimary.should.be.true;
 
-        // MySql and Sqlite does not supports autoincrement composite primary keys.
-        if (!(connection.driver instanceof MysqlDriver) && !(connection.driver instanceof AbstractSqliteDriver) && !(connection.driver instanceof CockroachDriver)) {
+        // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
+        // Spanner does not support autoincrement.
+        if (!(connection.driver instanceof MysqlDriver || connection.driver instanceof AbstractSqliteDriver
+            || connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver)) {
             column1!.isGenerated.should.be.true;
             column1!.generationStrategy!.should.be.equal("increment");
         }
@@ -87,7 +111,11 @@ describe("query runner > add column", () => {
         column2 = table!.findColumnByName("description")!;
         column2.should.be.exist;
         column2.length.should.be.equal("100");
-        column2!.default!.should.be.equal("'this is description'");
+
+        // Spanner does not support DEFAULT
+        if (!(connection.driver instanceof SpannerDriver)) {
+            column2!.default!.should.be.equal("'this is description'");
+        }
 
         if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver) {
             const isMySQL = connection.driver instanceof MysqlDriver && connection.options.type === "mysql";

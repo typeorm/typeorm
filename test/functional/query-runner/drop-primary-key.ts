@@ -2,6 +2,7 @@ import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 
 describe("query runner > drop primary key", () => {
 
@@ -18,8 +19,8 @@ describe("query runner > drop primary key", () => {
 
     it("should correctly drop primary key and revert drop", () => Promise.all(connections.map(async connection => {
 
-        // CockroachDB does not allow dropping primary key
-        if (connection.driver instanceof CockroachDriver)
+        // CockroachDB and Spanner does not allow dropping primary key
+        if (connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver)
             return;
 
         const queryRunner = connection.createQueryRunner();

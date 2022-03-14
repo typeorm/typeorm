@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
 describe("query runner > drop foreign key", () => {
 
@@ -12,7 +12,6 @@ describe("query runner > drop foreign key", () => {
             dropSchema: true,
         });
     });
-    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should correctly drop foreign key and revert drop", () => Promise.all(connections.map(async connection => {

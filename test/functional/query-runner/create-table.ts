@@ -16,12 +16,11 @@ import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
 process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
 // process.env.GOOGLE_APPLICATION_CREDENTIALS="/Users/messer/Documents/google/astute-cumulus-342713-80000a3b5bdb.json"
-describe.only("query runner > create table", () => {
+describe("query runner > create table", () => {
 
     let connections: Connection[];
     before(async () => {
         connections = await createTestingConnections({
-            enabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
         });
@@ -121,16 +120,16 @@ describe.only("query runner > create table", () => {
 
         const queryRunner = connection.createQueryRunner();
 
-        let numberType = "int"
+        let numericType = "int"
         if (connection.driver instanceof AbstractSqliteDriver) {
-            numberType = "integer"
+            numericType = "integer"
         } else if (connection.driver instanceof SpannerDriver) {
-            numberType = "int64"
+            numericType = "int64"
         }
 
-        let textType = "varchar"
+        let stringType = "varchar"
         if (connection.driver instanceof SpannerDriver) {
-            textType = "string"
+            stringType = "string"
         }
 
         await queryRunner.createTable(new Table({
@@ -138,17 +137,17 @@ describe.only("query runner > create table", () => {
             columns: [
                 {
                     name: "userId",
-                    type: numberType,
+                    type: numericType,
                     isPrimary: true
                 },
                 {
                     name: "id",
-                    type: numberType,
+                    type: numericType,
                     isPrimary: true
                 },
                 {
                     name: "name",
-                    type: textType,
+                    type: stringType,
                 }
             ]
         }), true);
@@ -158,27 +157,27 @@ describe.only("query runner > create table", () => {
             columns: [
                 {
                     name: "id",
-                    type: numberType,
+                    type: numericType,
                     isPrimary: true,
                     isGenerated: connection.driver instanceof SpannerDriver ? false : true,
                     generationStrategy: connection.driver instanceof SpannerDriver ? undefined : "increment"
                 },
                 {
                     name: "name",
-                    type: textType,
+                    type: stringType,
                 },
                 {
                     name: "text",
-                    type: textType,
+                    type: stringType,
                     isNullable: false
                 },
                 {
                     name: "authorId",
-                    type: numberType
+                    type: numericType
                 },
                 {
                     name: "authorUserId",
-                    type: numberType
+                    type: numericType
                 }
             ],
             indices: [{ columnNames: ["authorId", "authorUserId"], isUnique: true }],
@@ -206,25 +205,25 @@ describe.only("query runner > create table", () => {
             columns: [
                 {
                     name: "id",
-                    type: numberType,
+                    type: numericType,
                     isPrimary: true,
                     isGenerated: connection.driver instanceof SpannerDriver ? false : true,
                     generationStrategy: connection.driver instanceof SpannerDriver ? undefined : "increment"
                 },
                 {
                     name: "name",
-                    type: textType,
+                    type: stringType,
                     default: "'default category'",
                     isUnique: true,
                     isNullable: false
                 },
                 {
                     name: "alternativeName",
-                    type: textType,
+                    type: stringType,
                 },
                 {
                     name: "questionId",
-                    type: numberType,
+                    type: numericType,
                     isUnique: true
                 }
             ],

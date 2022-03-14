@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 
 describe("query runner > drop index", () => {
 
@@ -13,7 +13,6 @@ describe("query runner > drop index", () => {
             dropSchema: true,
         });
     });
-    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should correctly drop index and revert drop", () => Promise.all(connections.map(async connection => {

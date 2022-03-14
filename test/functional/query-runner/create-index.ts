@@ -1,9 +1,11 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
 import {Table} from "../../../src/schema-builder/table/Table";
 import {TableIndex} from "../../../src/schema-builder/table/TableIndex";
+import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
+import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 
 describe("query runner > create index", () => {
 
@@ -15,10 +17,20 @@ describe("query runner > create index", () => {
             dropSchema: true,
         });
     });
-    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should correctly create index and revert creation", () => Promise.all(connections.map(async connection => {
+        let numericType = "int"
+        if (connection.driver instanceof AbstractSqliteDriver) {
+            numericType = "integer"
+        } else if (connection.driver instanceof SpannerDriver) {
+            numericType = "int64"
+        }
+
+        let stringType = "varchar"
+        if (connection.driver instanceof SpannerDriver) {
+            stringType = "string"
+        }
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.createTable(new Table({
@@ -26,16 +38,16 @@ describe("query runner > create index", () => {
             columns: [
                 {
                     name: "id",
-                    type: "int",
+                    type: numericType,
                     isPrimary: true
                 },
                 {
                     name: "name",
-                    type: "varchar",
+                    type: stringType,
                 },
                 {
                     name: "description",
-                    type: "varchar",
+                    type: stringType,
                 }
             ]
         }), true);
