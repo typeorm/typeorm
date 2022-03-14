@@ -129,6 +129,7 @@ export * from "./driver/sqlserver/MssqlParameter"
 
 export { ConnectionOptionsReader } from "./connection/ConnectionOptionsReader"
 export { DataSource } from "./data-source/DataSource"
+export { Connection } from "./connection/Connection"
 export { ConnectionManager } from "./connection/ConnectionManager"
 export { DataSourceOptions } from "./data-source/DataSourceOptions"
 export { Driver } from "./driver/Driver"
