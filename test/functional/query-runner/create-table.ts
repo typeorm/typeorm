@@ -136,12 +136,12 @@ describe("query runner > create table", () => {
             name: "person",
             columns: [
                 {
-                    name: "userId",
+                    name: "id",
                     type: numericType,
                     isPrimary: true
                 },
                 {
-                    name: "id",
+                    name: "userId",
                     type: numericType,
                     isPrimary: true
                 },
