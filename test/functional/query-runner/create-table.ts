@@ -14,8 +14,8 @@ import {Photo} from "./entity/Photo";
 import {Book2, Book} from "./entity/Book";
 import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
-// process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
-process.env.GOOGLE_APPLICATION_CREDENTIALS="/Users/messer/Documents/google/astute-cumulus-342713-80000a3b5bdb.json"
+process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
+// process.env.GOOGLE_APPLICATION_CREDENTIALS="/Users/messer/Documents/google/astute-cumulus-342713-80000a3b5bdb.json"
 describe("query runner > create table", () => {
 
     let connections: Connection[];

@@ -161,7 +161,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             const queryStartTime = +new Date();
             const [rows] = await this.databaseConnection.run({
                 sql: query,
-                params: parameters,
+                params: parameters ? parameters.reduce((params, value, index) => {
+                    params["param" + index] = value
+                    return params
+                }, {} as ObjectLiteral) : undefined,
                 json: true
             });
             console.log("rows", rows);
@@ -1393,9 +1396,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             await Promise.all(dropFKQueries.map(q => this.updateDDL(q["query"])));
 
             // drop views
-            const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``;
-            const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
-            await Promise.all(dropViewQueries.map(q => this.updateDDL(q["query"])));
+            // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``;
+            // const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
+            // await Promise.all(dropViewQueries.map(q => this.updateDDL(q["query"])));
 
             // drop tables
             const dropTablesQuery = `SELECT concat('DROP TABLE \`', TABLE_NAME, '\`') AS \`query\` ` +

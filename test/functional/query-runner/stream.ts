@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { Connection } from "../../../src";
 import { expect } from "chai";
-import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils";
+import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import { Book } from "./entity/Book";
 
 describe("query runner > stream", () => {
@@ -14,6 +14,7 @@ describe("query runner > stream", () => {
             dropSchema: true
         });
     });
+    beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("should stream data", () => Promise.all(connections.map(async connection => {

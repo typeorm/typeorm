@@ -249,7 +249,7 @@ export class SpannerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
 
-        sql = sql.replace(/@(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
+        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
             if (!parameters.hasOwnProperty(key)) {
                 return full;
             }
@@ -692,7 +692,7 @@ export class SpannerDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "?";
+        return "@param" + index;
     }
 
     // -------------------------------------------------------------------------
