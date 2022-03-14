@@ -7,7 +7,7 @@ import {Table} from "../schema-builder/table/Table";
  * Naming strategy that is used by default.
  */
 export class DefaultNamingStrategy implements NamingStrategyInterface {
-    private getTableName(tableOrName: Table | string): string {
+    protected getTableName(tableOrName: Table | string): string {
         if (tableOrName instanceof Table) {
             tableOrName = tableOrName.name;
         }

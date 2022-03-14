@@ -1216,7 +1216,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Removes all tables from the currently connected database.
      */
     async clearDatabase(): Promise<void> {
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
             // drop views
             const dropViewsQuery = `SELECT 'DROP VIEW "' || VIEW_NAME || '"' AS "query" FROM "USER_VIEWS"`;
@@ -1232,11 +1234,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropTablesQuery = `SELECT 'DROP TABLE "' || TABLE_NAME || '" CASCADE CONSTRAINTS' AS "query" FROM "USER_TABLES"`;
             const dropTableQueries: ObjectLiteral[] = await this.query(dropTablesQuery);
             await Promise.all(dropTableQueries.map(query => this.query(query["query"])));
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }

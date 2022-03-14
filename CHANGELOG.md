@@ -1,3 +1,18 @@
+## [0.2.45](https://github.com/typeorm/typeorm/compare/0.2.44...0.2.45) (2022-03-04)
+
+### Bug Fixes
+
+* allow clearing database inside a transaction ([#8712](https://github.com/typeorm/typeorm/issues/8712)) ([f3cfdd2](https://github.com/typeorm/typeorm/commit/f3cfdd264105ba8cf1c92832b4b95e5a3ca0ed09)), closes [#8527](https://github.com/typeorm/typeorm/issues/8527)
+* discard duplicated columns on update ([#8724](https://github.com/typeorm/typeorm/issues/8724)) ([0fc093d](https://github.com/typeorm/typeorm/commit/0fc093d168b54a0fd99bb411a730aad9be1858ac)), closes [#8723](https://github.com/typeorm/typeorm/issues/8723)
+* fix entityManager.getId for custom join table ([#8676](https://github.com/typeorm/typeorm/issues/8676)) ([33b2bd7](https://github.com/typeorm/typeorm/commit/33b2bd7acc55d6eb30bfe0681748d6b6abaff0b5)), closes [#7736](https://github.com/typeorm/typeorm/issues/7736)
+* force web bundlers to ignore index.mjs and use the browser ESM version directly ([#8710](https://github.com/typeorm/typeorm/issues/8710)) ([411fa54](https://github.com/typeorm/typeorm/commit/411fa54368c8940e94b1cbf7ab64b8d5377f9406)), closes [#8709](https://github.com/typeorm/typeorm/issues/8709)
+
+### Features
+
+* add nested transaction ([#8541](https://github.com/typeorm/typeorm/issues/8541)) ([6523526](https://github.com/typeorm/typeorm/commit/6523526003bab74a0df8f7d578790c1728b26057)), closes [#1505](https://github.com/typeorm/typeorm/issues/1505)
+* add transformer to ViewColumnOptions ([#8717](https://github.com/typeorm/typeorm/issues/8717)) ([96ac8f7](https://github.com/typeorm/typeorm/commit/96ac8f7eece06ae0a8b52ae7da740c92c0c0d4b9))
+
+
 ## [0.2.44](https://github.com/typeorm/typeorm/compare/0.2.43...0.2.44) (2022-02-23)
 
 ### Bug Fixes

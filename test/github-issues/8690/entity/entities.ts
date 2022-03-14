@@ -28,7 +28,7 @@ export class Photo {
   @PrimaryColumn({ type: "int", transformer: WrappedIntTransformer, nullable: false })
   id: string;
 
-  @Column({ type: "text" })
+  @Column()
   url: string;
 
   @Column({ type: "int", transformer: WrappedIntTransformer, nullable: false })

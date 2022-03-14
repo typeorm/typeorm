@@ -2,6 +2,7 @@
 
 * [What is View Entity?](#what-is-view-entity)
 * [View Entity columns](#view-entity-columns)
+* [View Column options](#view-column-options)
 * [Complete example](#complete-example)
 
 ## What is View Entity?
@@ -147,6 +148,26 @@ export class PostCategory {
 
 }
 ```
+
+## View Column options
+
+View Column options define additional options for your view entity columns, similar to [column options](entities.md#column-options) for regular entities.
+
+You can specify view column options in `@ViewColumn`:
+
+```typescript
+@ViewColumn({
+    name: "postName",
+    // ...
+})
+name: string;
+```
+
+List of available options in `ViewColumnOptions`:
+
+* `name: string` - Column name in the database view.
+* `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to unmarshal properties of arbitrary type `DatabaseType` supported by the database into a type `EntityType`. Arrays of transformers are also supported and are applied in reverse order when reading. Note that because database views are read-only, `transformer.to(value)` will never be used.
+
 
 ## Complete example
 

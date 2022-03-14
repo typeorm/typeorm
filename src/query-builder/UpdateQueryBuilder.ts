@@ -394,7 +394,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 }
 
                 columns.forEach(column => {
-                    if (!column.isUpdate) { return; }
+                    if (!column.isUpdate || updatedColumns.includes(column)) { return; }
+                    
                     updatedColumns.push(column);
 
                     //

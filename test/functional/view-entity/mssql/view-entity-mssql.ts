@@ -50,11 +50,11 @@ describe("view entity > mssql", () => {
 
         postCategories[0].id.should.be.equal(1);
         postCategories[0].postName.should.be.equal("About BMW");
-        postCategories[0].categoryName.should.be.equal("Cars");
+        postCategories[0].categoryName.should.be.equal("CARS");
 
         postCategories[1].id.should.be.equal(2);
         postCategories[1].postName.should.be.equal("About Boeing");
-        postCategories[1].categoryName.should.be.equal("Airplanes");
+        postCategories[1].categoryName.should.be.equal("AIRPLANES");
 
     })));
 });

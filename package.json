@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.2.44",
+  "version": "0.2.45",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -51,7 +51,8 @@
     "./browser/platform/PlatformTools.js": "./browser/platform/BrowserPlatformTools.js",
     "./browser/repository/MongoRepository.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/util/DirectoryExportedClassesLoader.js": "./browser/platform/BrowserDirectoryExportedClassesLoader.js",
-    "./index.js": "./browser/index.js"
+    "./index.js": "./browser/index.js",
+    "./index.mjs": "./browser/index.js"
   },
   "repository": {
     "type": "git",

@@ -9,6 +9,7 @@ import {Photo} from "./entity/Photo";
 import {PhotoAlbumCategory} from "./entity/PhotoAlbumCategory";
 import {Post} from "./entity/Post";
 import {PostCategory} from "./entity/PostCategory";
+import { PhotoAlbum } from "./entity/PhotoAlbum";
 
 describe("view entity > general", () => {
 
@@ -112,5 +113,10 @@ describe("view entity > general", () => {
         photoAlbumCategory!.categoryName.should.be.equal("Cars");
         photoAlbumCategory!.photoAlbumId.should.be.equal(albumId);
 
+        const photoAlbums = await connection.manager.find(PhotoAlbum);
+        const photoId3 = connection.driver instanceof CockroachDriver ? "3" : 3;
+        photoAlbums[0].id.should.be.equal(photoId3);
+        photoAlbums[0].name.should.be.equal('boeing737')
+        photoAlbums[0].albumName.should.be.equal('BOEING PHOTOS')
     })));
 });

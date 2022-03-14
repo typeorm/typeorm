@@ -2,7 +2,6 @@ import "reflect-metadata";
 import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { Connection } from "../../../src/connection/Connection";
 import { expect } from "chai";
-import { getRepository } from "../../../src";
 import { User, Photo } from "./entity/entities";
 
 describe("github issues > #8690 Relations do not render primary key column values correctly when transformers present", () => {
@@ -17,8 +16,8 @@ describe("github issues > #8690 Relations do not render primary key column value
     after(() => closeTestingConnections(connections));
 
     it("should load relations correctly when primary columns have transformers", () => Promise.all(connections.map(async connection => {
-      const userRepository = getRepository(User);
-      const photoRepository = getRepository(Photo);
+      const userRepository = connection.getRepository(User);
+      const photoRepository = connection.getRepository(Photo);
       const user = userRepository.create({id: `"1"`});
       await userRepository.save(user);
       const photo = photoRepository.create({id: `"42"`, url: "example.com/photo1", userId: user.id})

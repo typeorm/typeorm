@@ -1349,7 +1349,9 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             return name === "current_schema()" ? name : "'" + name + "'";
         }).join(", ");
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
             const selectViewDropsQuery = `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`;
@@ -1364,11 +1366,13 @@ export class CockroachQueryRunner extends BaseQueryRunner implements QueryRunner
             const sequenceDropQueries: ObjectLiteral[] = await this.query(selectSequenceDropsQuery);
             await Promise.all(sequenceDropQueries.map(q => this.query(q["query"])));
 
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }

@@ -1189,7 +1189,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(`Can not clear database. No database is specified`);
         }
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
 
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`;
@@ -1205,11 +1207,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             await Promise.all(dropQueries.map(query => this.query(query["query"])));
             await this.query(enableForeignKeysCheckQuery);
 
-            await this.commitTransaction();
+            if (!isAnotherTransactionActive)
+                await this.commitTransaction();
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }
