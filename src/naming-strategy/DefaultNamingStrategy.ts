@@ -158,7 +158,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
 
     eagerJoinRelationAlias(alias: string, propertyPath: string): string {
-        return alias + "_" + propertyPath.replace(".", "_");
+        return alias + "__" + propertyPath.replace(".", "_");
     }
 
     nestedSetColumnNames = { left: "nsleft", right: "nsright" };
