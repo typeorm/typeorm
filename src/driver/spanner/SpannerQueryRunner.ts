@@ -222,7 +222,26 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns raw data stream.
      */
     async stream(query: string, parameters?: any[], onEnd?: Function, onError?: Function): Promise<ReadStream> {
-        throw new Error(`Streams are not supported`)
+        if (this.isReleased)
+            throw new QueryRunnerAlreadyReleasedError();
+
+        try {
+            const databaseConnection = await this.connect();
+            this.driver.connection.logger.logQuery(query, parameters, this);
+            const stream = databaseConnection.runStream(query);
+            if (onEnd) {
+                stream.on("end", onEnd);
+            }
+
+            if (onError) {
+                stream.on("error", onError);
+            }
+
+            return stream;
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(err, query, parameters, this);
+            throw new QueryFailedError(query, parameters, err);
+        }
     }
 
     /**
@@ -517,16 +536,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             foreignKey.name = newForeignKeyName;
         });
 
-        // rename ENUM types
-        const enumColumns = newTable.columns.filter(column => column.type === "enum" || column.type === "simple-enum");
-        for (let column of enumColumns) {
-            // skip renaming for user-defined enum name
-            if (column.enumName) continue;
-
-            const oldEnumType = await this.getUserDefinedTypeName(oldTable, column);
-            upQueries.push(new Query(`ALTER TYPE "${oldEnumType.schema}"."${oldEnumType.name}" RENAME TO ${this.buildEnumName(newTable, column, false)}`));
-            downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(newTable, column)} RENAME TO "${oldEnumType.name}"`));
-        }
         await this.executeQueries(upQueries, downQueries);
     }
 
@@ -660,13 +669,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // rename column
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${oldColumn.name}" TO "${newColumn.name}"`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${newColumn.name}" TO "${oldColumn.name}"`));
-
-                // rename ENUM type
-                if (oldColumn.type === "enum" || oldColumn.type === "simple-enum") {
-                    const oldEnumType = await this.getUserDefinedTypeName(table, oldColumn);
-                    upQueries.push(new Query(`ALTER TYPE "${oldEnumType.schema}"."${oldEnumType.name}" RENAME TO ${this.buildEnumName(table, newColumn, false)}`));
-                    downQueries.push(new Query(`ALTER TYPE ${this.buildEnumName(table, newColumn)} RENAME TO "${oldEnumType.name}"`));
-                }
 
                 // rename column primary key constraint
                 if (oldColumn.isPrimary === true) {
@@ -1068,17 +1070,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP COLUMN ${this.driver.escape(column.name)}`));
         downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD ${this.buildCreateColumnSql(column)}`));
 
-        // drop enum type
-        if (column.type === "enum" || column.type === "simple-enum") {
-            const hasEnum = await this.hasEnumType(table, column);
-            if (hasEnum) {
-                const enumType = await this.getUserDefinedTypeName(table, column);
-                const escapedEnumName = `"${enumType.schema}"."${enumType.name}"`;
-                upQueries.push(this.dropEnumTypeSql(table, column, escapedEnumName));
-                downQueries.push(this.createEnumTypeSql(table, column, escapedEnumName));
-            }
-        }
-
         if (column.generatedType === "STORED") {
             const tableNameWithSchema = (await this.getTableNameWithSchema(table.name)).split('.');
             const tableName = tableNameWithSchema[1];
@@ -1402,9 +1393,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             await Promise.all(dropFKQueries.map(q => this.updateDDL(q["query"])));
 
             // drop views
-            // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``;
-            // const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
-            // await Promise.all(dropViewQueries.map(q => this.updateDDL(q["query"])));
+            const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``;
+            const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
+            await Promise.all(dropViewQueries.map(q => this.updateDDL(q["query"])));
 
             // drop tables
             const dropTablesQuery = `SELECT concat('DROP TABLE \`', TABLE_NAME, '\`') AS \`query\` ` +
@@ -1429,32 +1420,25 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     protected async loadViews(viewNames?: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName());
-
-        if (!hasTable)
+        if (!hasTable) {
             return [];
+        }
 
         if (!viewNames) {
             viewNames = [];
         }
 
-        const viewsCondition = viewNames.length === 0 ? "1=1" : viewNames
-            .map(tableName => this.driver.parseTableName(tableName))
-            .map(({ schema, tableName }) => {
-                return `("t"."name" = '${tableName}')`;
-            }).join(" OR ");
+        const escapedViewNames = viewNames.map(viewName => `'${viewName}'`).join(", ")
 
-        const query = `SELECT "t".* FROM ${this.escapePath(this.getTypeormMetadataTableName())} "t" ` +
-            `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "c"."relnamespace" AND "n"."nspname" = "t"."schema" ` +
-            `WHERE "t"."type" IN ('${MetadataTableType.VIEW}', '${MetadataTableType.MATERIALIZED_VIEW}') ${viewsCondition ? `AND (${viewsCondition})` : ""}`;
-
+        const query = `SELECT \`T\`.*, \`V\`.\`VIEW_DEFINITION\` FROM ${this.escapePath(this.getTypeormMetadataTableName())} \`T\` ` +
+            `INNER JOIN \`INFORMATION_SCHEMA\`.\`VIEWS\` \`V\` ON \`V\`.\`TABLE_SCHEMA\` = \`T\`.\`SCHEMA\` AND \`V\`.\`TABLE_NAME\` = \`T\`.\`NAME\` ` +
+            `WHERE \`T\`.\`TYPE\` = '${MetadataTableType.VIEW}' ${viewNames.length ? ` AND \`T\`.\`NAME\` IN (${escapedViewNames})` : ''}`;
         const dbViews = await this.query(query);
         return dbViews.map((dbView: any) => {
             const view = new View();
-            view.schema = dbView["schema"];
-            view.name = this.driver.buildTableName(dbView["name"]);
-            view.expression = dbView["value"];
-            view.materialized = dbView["type"] === MetadataTableType.MATERIALIZED_VIEW;
+            view.database = dbView["NAME"];
+            view.name = this.driver.buildTableName(dbView["NAME"]);
+            view.expression = dbView["NAME"];
             return view;
         });
     }
@@ -1760,21 +1744,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const materializedClause = view.materialized ? "MATERIALIZED " : "";
         const viewName = this.escapePath(view);
 
-        if (typeof view.expression === "string") {
-            return new Query(`CREATE ${materializedClause}VIEW ${viewName} AS ${view.expression}`);
-        } else {
-            return new Query(`CREATE ${materializedClause}VIEW ${viewName} AS ${view.expression(this.connection).getQuery()}`);
-        }
+        const expression = typeof view.expression === "string" ? view.expression : view.expression(this.connection).getQuery()
+        return new Query(`CREATE ${materializedClause}VIEW ${viewName} SQL SECURITY INVOKER AS ${expression}`);
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema()
-
         let { schema, tableName: name } = this.driver.parseTableName(view);
-
-        if (!schema) {
-            schema = currentSchema;
-        }
 
         const type = view.materialized ? MetadataTableType.MATERIALIZED_VIEW : MetadataTableType.VIEW
         const expression = typeof view.expression === "string" ? view.expression.trim() : view.expression(this.connection).getQuery();
@@ -1793,13 +1768,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(view: View): Promise<Query> {
-        const currentSchema = await this.getCurrentSchema()
-
         let { schema, tableName: name } = this.driver.parseTableName(view);
-
-        if (!schema) {
-            schema = currentSchema;
-        }
 
         const type = view.materialized ? MetadataTableType.MATERIALIZED_VIEW : MetadataTableType.VIEW
         return this.deleteTypeormMetadataSql({ type, schema, name })
@@ -1815,24 +1784,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`;
         const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
         await Promise.all(dropQueries.map(q => this.query(q["query"])));
-    }
-
-    /**
-     * Checks if enum with the given name exist in the database.
-     */
-    protected async hasEnumType(table: Table, column: TableColumn): Promise<boolean> {
-        let { schema } = this.driver.parseTableName(table);
-
-        if (!schema) {
-            schema = await this.getCurrentSchema();
-        }
-
-        const enumName = this.buildEnumName(table, column, false, true);
-        const sql = `SELECT "n"."nspname", "t"."typname" FROM "pg_type" "t" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" = '${schema}' AND "t"."typname" = '${enumName}'`;
-        const result = await this.query(sql);
-        return result.length ? true : false;
     }
 
     /**
@@ -1946,31 +1897,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         return enumName.split(".").map(i => {
             return disableEscape ? i : `"${i}"`;
         }).join(".");
-    }
-
-    protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
-        let { schema, tableName: name } = this.driver.parseTableName(table);
-
-        if (!schema) {
-            schema = await this.getCurrentSchema();
-        }
-
-        const result = await this.query(`SELECT "udt_schema", "udt_name" ` +
-            `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`);
-
-        // docs: https://www.postgresql.org/docs/current/xtypes.html
-        // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
-        // The array type typically has the same name as the base type with the underscore character (_) prepended.
-        // ----
-        // so, we must remove this underscore character from enum type name
-        let udtName = result[0]["udt_name"]
-        if (udtName.indexOf("_") === 0) {
-            udtName = udtName.substr(1, udtName.length)
-        }
-        return {
-            schema: result[0]["udt_schema"],
-            name: udtName
-        };
     }
 
     /**

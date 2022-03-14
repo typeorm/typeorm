@@ -842,6 +842,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         const database = this.currentDatabase;
         const typeormMetadataTable = this.connection.driver.buildTableName(this.connection.metadataTableName, schema, database);
 
+        // Spanner requires at least one primary key in a table.
+        // Since we don't have unique column in "typeorm_metadata" table
+        // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
+        const isPrimary = this.connection.driver instanceof SpannerDriver
         await queryRunner.createTable(new Table(
             {
                 database: database,
@@ -851,32 +855,38 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     {
                         name: "type",
                         type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataType}),
-                        isNullable: false
+                        isNullable: false,
+                        isPrimary
                     },
                     {
                         name: "database",
                         type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataDatabase}),
-                        isNullable: true
+                        isNullable: true,
+                        isPrimary
                     },
                     {
                         name: "schema",
                         type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataSchema}),
-                        isNullable: true
+                        isNullable: true,
+                        isPrimary
                     },
                     {
                         name: "table",
                         type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataTable}),
-                        isNullable: true
+                        isNullable: true,
+                        isPrimary
                     },
                     {
                         name: "name",
                         type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataName}),
-                        isNullable: true
+                        isNullable: true,
+                        isPrimary
                     },
                     {
                         name: "value",
                         type: this.connection.driver.normalizeType({type: this.connection.driver.mappedDataTypes.metadataValue}),
-                        isNullable: true
+                        isNullable: true,
+                        isPrimary
                     },
                 ]
             },
