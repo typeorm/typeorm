@@ -845,7 +845,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // Spanner requires at least one primary key in a table.
         // Since we don't have unique column in "typeorm_metadata" table
         // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
-        const isPrimary = this.connection.driver instanceof SpannerDriver
+        const isPrimary = this.connection.driver instanceof SpannerDriver;
         await queryRunner.createTable(new Table(
             {
                 database: database,
