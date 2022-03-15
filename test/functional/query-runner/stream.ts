@@ -3,6 +3,7 @@ import { Connection } from "../../../src";
 import { expect } from "chai";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import { Book } from "./entity/Book";
+import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 
 describe("query runner > stream", () => {
 
@@ -10,7 +11,7 @@ describe("query runner > stream", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [Book],
-            enabledDrivers: [ "mysql", "cockroachdb", "postgres", "mssql", "oracle" ],
+            enabledDrivers: [ "mysql", "cockroachdb", "postgres", "mssql", "oracle", "spanner" ],
             dropSchema: true
         });
     });
@@ -27,11 +28,13 @@ describe("query runner > stream", () => {
 
         const query = connection.createQueryBuilder(Book, 'book')
             .select()
+            .orderBy("book.ean")
             .getQuery()
 
         const readStream = await queryRunner.stream(query);
 
-        await new Promise((ok) => readStream.once('readable', ok));
+        if (!(connection.driver instanceof SpannerDriver))
+            await new Promise((ok) => readStream.once('readable', ok));
 
         const data: any[] = [];
 

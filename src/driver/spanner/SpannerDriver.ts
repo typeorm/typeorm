@@ -210,6 +210,8 @@ export class SpannerDriver implements Driver {
      * Performs connection to the database.
      */
     async connect(): Promise<void> {
+        this.instance = this.spanner.instance(this.options.instanceId);
+        this.instanceDatabase = this.instance.database(this.options.databaseId);
     }
 
     /**
@@ -709,9 +711,6 @@ export class SpannerDriver implements Driver {
             this.spanner = new lib.Spanner({
                 projectId: this.options.projectId,
             });
-
-            this.instance = this.spanner.instance(this.options.instanceId);
-            this.instanceDatabase = this.instance.database(this.options.databaseId);
             /*
              * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
              * if it was not installed. We check that the object we got actually contains something otherwise we treat

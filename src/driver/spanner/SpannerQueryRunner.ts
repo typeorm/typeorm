@@ -39,6 +39,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     driver: SpannerDriver;
 
+    /**
+     * Real database connection from a connection pool used to perform queries.
+     */
+    protected session?: any;
+
+    /**
+     * Transaction currently executed by this session.
+     */
+    protected sessionTransaction?: any;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -60,11 +70,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns obtained database connection.
      */
     async connect(): Promise<any> {
-        if (this.databaseConnection) {
-            return Promise.resolve(this.databaseConnection);
+        if (this.session) {
+            return Promise.resolve(this.session);
         }
 
-        return this.driver.instance.database(this.driver.options.databaseId);
+        const [session] = await this.driver.instanceDatabase.createSession({})
+        this.session = session
+        this.sessionTransaction = await session.transaction()
+        return this.session
     }
 
     /**
@@ -73,10 +86,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async release(): Promise<void> {
         this.isReleased = true;
-        if (this.databaseConnection) {
-            await this.databaseConnection.close();
+        if (this.session) {
+            await this.session.delete();
         }
-        this.databaseConnection = undefined
+        this.session = undefined
         return Promise.resolve();
     }
 
@@ -92,15 +105,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err;
         }
 
-        // if (this.transactionDepth === 0) {
-        //     await this.query("START TRANSACTION");
-        //     if (isolationLevel) {
-        //         await this.query("SET TRANSACTION ISOLATION LEVEL " + isolationLevel);
-        //     }
-        // } else {
-        //     await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`);
-        // }
-        // this.transactionDepth += 1;
+        await this.connect()
+        await this.sessionTransaction.begin()
+        this.connection.logger.logQuery("START TRANSACTION");
 
         await this.broadcaster.broadcast('AfterTransactionStart');
     }
@@ -110,18 +117,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
-        if (!this.isTransactionActive)
+        if (!this.isTransactionActive || !this.sessionTransaction)
             throw new TransactionNotStartedError();
 
         await this.broadcaster.broadcast('BeforeTransactionCommit');
 
-        // if (this.transactionDepth > 1) {
-        //     await this.query(`RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`);
-        // } else {
-        //     await this.query("COMMIT");
-        //     this.isTransactionActive = false;
-        // }
-        // this.transactionDepth -= 1;
+        await this.sessionTransaction.commit()
+        this.connection.logger.logQuery("COMMIT");
+        this.isTransactionActive = false;
 
         await this.broadcaster.broadcast('AfterTransactionCommit');
     }
@@ -131,18 +134,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
-        if (!this.isTransactionActive)
+        if (!this.isTransactionActive || !this.sessionTransaction)
             throw new TransactionNotStartedError();
 
         await this.broadcaster.broadcast('BeforeTransactionRollback');
 
-        // if (this.transactionDepth > 1) {
-        //     await this.query(`ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`);
-        // } else {
-        //     await this.query("ROLLBACK");
-        //     this.isTransactionActive = false;
-        // }
-        // this.transactionDepth -= 1;
+        await this.sessionTransaction.rollback()
+        this.connection.logger.logQuery("ROLLBACK");
+        this.isTransactionActive = false;
 
         await this.broadcaster.broadcast('AfterTransactionRollback');
     }
@@ -154,19 +153,40 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        this.databaseConnection = await this.connect();
-
-        this.driver.connection.logger.logQuery(query, parameters, this);
         try {
             const queryStartTime = +new Date();
-            const [rows] = await this.databaseConnection.run({
-                sql: query,
-                params: parameters ? parameters.reduce((params, value, index) => {
-                    params["param" + index] = value
-                    return params
-                }, {} as ObjectLiteral) : undefined,
-                json: true
-            });
+            await this.connect();
+            let rows: any[] = [];
+            const isSelect = query.substr(0, "SELECT".length) === "SELECT"
+            const executor = isSelect
+                ? this.driver.instanceDatabase
+                : this.sessionTransaction
+
+            if (!this.isTransactionActive && !isSelect) {
+                this.sessionTransaction.begin();
+            }
+
+            try {
+                this.driver.connection.logger.logQuery(query, parameters, this);
+                [rows] = await executor.run({
+                    sql: query,
+                    params: parameters ? parameters.reduce((params, value, index) => {
+                        params["param" + index] = value
+                        return params
+                    }, {} as ObjectLiteral) : undefined,
+                    json: true
+                });
+                if (!this.isTransactionActive && !isSelect) {
+                    await this.sessionTransaction.commit()
+                }
+
+            } catch (error) {
+                try { // we throw original error even if rollback thrown an error
+                    if (!this.isTransactionActive && !isSelect)
+                        await this.sessionTransaction.rollback();
+                } catch (rollbackError) { }
+                throw error
+            }
             console.log("rows", rows);
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
@@ -188,6 +208,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         } catch (err) {
             this.driver.connection.logger.logQueryError(err, query, parameters, this);
             throw new QueryFailedError(query, parameters, err);
+        } finally {
         }
     }
 
@@ -201,12 +222,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        this.databaseConnection = await this.connect();
-
         this.driver.connection.logger.logQuery(query, parameters, this);
         try {
             const queryStartTime = +new Date();
-            const [operation] = await this.databaseConnection.updateSchema(query);
+            const [operation] = await this.driver.instanceDatabase.updateSchema(query);
             await operation.promise()
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime;
@@ -229,9 +248,18 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new QueryRunnerAlreadyReleasedError();
 
         try {
-            const databaseConnection = await this.connect();
             this.driver.connection.logger.logQuery(query, parameters, this);
-            const stream = databaseConnection.runStream(query);
+            const request = {
+                sql: query,
+                params: parameters ? parameters.reduce((params, value, index) => {
+                    params["param" + index] = value
+                    return params
+                }, {} as ObjectLiteral) : undefined,
+                json: true
+            }
+            await this.connect()
+            const stream = this.sessionTransaction.runStream(request);
+
             if (onEnd) {
                 stream.on("end", onEnd);
             }
@@ -480,36 +508,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
         }
 
-        // rename sequences
-        newTable.columns.map(col => {
-            if (col.isGenerated && col.generationStrategy === "increment") {
-                const sequencePath = this.buildSequencePath(oldTable, col.name);
-                const sequenceName = this.buildSequenceName(oldTable, col.name);
-
-                const newSequencePath = this.buildSequencePath(newTable, col.name);
-                const newSequenceName = this.buildSequenceName(newTable, col.name);
-
-                const up = `ALTER SEQUENCE ${this.escapePath(sequencePath)} RENAME TO "${newSequenceName}"`;
-                const down = `ALTER SEQUENCE ${this.escapePath(newSequencePath)} RENAME TO "${sequenceName}"`;
-
-                upQueries.push(new Query(up));
-                downQueries.push(new Query(down));
-            }
-        });
-
-        // rename unique constraints
-        newTable.uniques.forEach(unique => {
-            // build new constraint name
-            const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(newTable, unique.columnNames);
-
-            // build queries
-            upQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`));
-            downQueries.push(new Query(`ALTER TABLE ${this.escapePath(newTable)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
-
-            // replace constraint name
-            unique.name = newUniqueName;
-        });
-
         // rename index constraints
         newTable.indices.forEach(index => {
             // build new constraint name
@@ -692,35 +690,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`));
                 }
 
-                // rename column sequence
-                if (oldColumn.isGenerated === true && newColumn.generationStrategy === "increment") {
-                    const sequencePath = this.buildSequencePath(table, oldColumn.name);
-                    const sequenceName = this.buildSequenceName(table, oldColumn.name);
-
-                    const newSequencePath = this.buildSequencePath(table, newColumn.name);
-                    const newSequenceName = this.buildSequenceName(table, newColumn.name);
-
-                    const up = `ALTER SEQUENCE ${this.escapePath(sequencePath)} RENAME TO "${newSequenceName}"`;
-                    const down = `ALTER SEQUENCE ${this.escapePath(newSequencePath)} RENAME TO "${sequenceName}"`;
-                    upQueries.push(new Query(up));
-                    downQueries.push(new Query(down));
-                }
-
-                // rename unique constraints
-                clonedTable.findColumnUniques(oldColumn).forEach(unique => {
-                    // build new constraint name
-                    unique.columnNames.splice(unique.columnNames.indexOf(oldColumn.name), 1);
-                    unique.columnNames.push(newColumn.name);
-                    const newUniqueName = this.connection.namingStrategy.uniqueConstraintName(clonedTable, unique.columnNames);
-
-                    // build queries
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${unique.name}" TO "${newUniqueName}"`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} RENAME CONSTRAINT "${newUniqueName}" TO "${unique.name}"`));
-
-                    // replace constraint name
-                    unique.name = newUniqueName;
-                });
-
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach(index => {
                     // build new constraint name
@@ -763,63 +732,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (newColumn.precision !== oldColumn.precision || newColumn.scale !== oldColumn.scale) {
                 upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`));
                 downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`));
-            }
-
-            if (
-                (newColumn.type === "enum" || newColumn.type === "simple-enum")
-                && (oldColumn.type === "enum" || oldColumn.type === "simple-enum")
-                && (!OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!) || newColumn.enumName !== oldColumn.enumName)
-            ) {
-                const arraySuffix = newColumn.isArray ? "[]" : "";
-
-                // "public"."new_enum"
-                const newEnumName = this.buildEnumName(table, newColumn);
-
-                // "public"."old_enum"
-                const oldEnumName = this.buildEnumName(table, oldColumn);
-
-                // "old_enum"
-                const oldEnumNameWithoutSchema = this.buildEnumName(table, oldColumn, false);
-
-                //"public"."old_enum_old"
-                const oldEnumNameWithSchema_old = this.buildEnumName(table, oldColumn, true, false, true);
-
-                //"old_enum_old"
-                const oldEnumNameWithoutSchema_old = this.buildEnumName(table, oldColumn, false, false, true);
-
-                // rename old ENUM
-                upQueries.push(new Query(`ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`));
-                downQueries.push(new Query(`ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`));
-
-                // create new ENUM
-                upQueries.push(this.createEnumTypeSql(table, newColumn, newEnumName));
-                downQueries.push(this.dropEnumTypeSql(table, newColumn, newEnumName));
-
-                // if column have default value, we must drop it to avoid issues with type casting
-                if (oldColumn.default !== null && oldColumn.default !== undefined) {
-                    // mark default as changed to prevent double update
-                    defaultValueChanged = true
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${oldColumn.default}`));
-                }
-
-                // build column types
-                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`;
-                const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`;
-
-                // update column to use new type
-                upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`));
-                downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`));
-
-                // restore column default or create new one
-                if (newColumn.default !== null && newColumn.default !== undefined) {
-                    upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${newColumn.default}`));
-                    downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                }
-
-                // remove old ENUM
-                upQueries.push(this.dropEnumTypeSql(table, oldColumn, oldEnumNameWithSchema_old));
-                downQueries.push(this.createEnumTypeSql(table, oldColumn, oldEnumNameWithSchema_old));
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
@@ -897,50 +809,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${uniqueIndex!.name}\``));
                     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${newColumn.name}\`)`));
-                }
-            }
-
-            if (oldColumn.isGenerated !== newColumn.isGenerated) {
-                // if old column was "generated", we should clear defaults
-                if (oldColumn.isGenerated) {
-                    if (oldColumn.generationStrategy === "uuid") {
-                        // todo
-                        // upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`));
-                        // downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
-
-                    } else if (oldColumn.generationStrategy === "increment") {
-                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
-
-                        upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
-                        downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
-                    }
-                }
-
-                if (newColumn.generationStrategy === "uuid") {
-                    // todo
-                    // if (newColumn.isGenerated === true) {
-                    //     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
-                    //     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                    // } else {
-                    //     upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                    //     downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${this.driver.uuidGenerator}`))
-                    // }
-                } else if (newColumn.generationStrategy === "increment") {
-                    if (newColumn.isGenerated === true) {
-                        upQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
-                        downQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
-
-                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
-                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-
-                    } else {
-                        upQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`));
-                        downQueries.push(new Query(`ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET DEFAULT nextval('${this.escapePath(this.buildSequencePath(table, newColumn))}')`));
-
-                        upQueries.push(new Query(`DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, newColumn))}`));
-                        downQueries.push(new Query(`CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(this.buildSequencePath(table, newColumn))} OWNED BY ${this.escapePath(table)}."${newColumn.name}"`));
-                    }
                 }
             }
 
@@ -1379,7 +1247,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async clearDatabase(): Promise<void> {
 
-        await this.startTransaction();
+        const isAnotherTransactionActive = this.isTransactionActive;
+        if (!isAnotherTransactionActive)
+            await this.startTransaction();
         try {
             // drop indices
             const selectIndexDropsQuery = `SELECT concat('DROP INDEX \`', INDEX_NAME, '\`') AS \`query\` ` +
@@ -1411,7 +1281,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         } catch (error) {
             try { // we throw original error even if rollback thrown an error
-                await this.rollbackTransaction();
+                if (!isAnotherTransactionActive)
+                    await this.rollbackTransaction();
             } catch (rollbackError) { }
             throw error;
         }
@@ -1729,14 +1600,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Loads Spanner version.
-     */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SHOW SERVER_VERSION`);
-        return result[0]["server_version"];
-    }
-
-    /**
      * Builds drop table sql.
      */
     protected dropTableSql(tableOrPath: Table|string): Query {
@@ -1775,35 +1638,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const type = view.materialized ? MetadataTableType.MATERIALIZED_VIEW : MetadataTableType.VIEW
         return this.deleteTypeormMetadataSql({ type, schema, name })
-    }
-
-    /**
-     * Drops ENUM type from given schemas.
-     */
-    protected async dropEnumTypes(schemaNames: string): Promise<void> {
-        const selectDropsQuery = `SELECT 'DROP TYPE IF EXISTS "' || n.nspname || '"."' || t.typname || '" CASCADE;' as "query" FROM "pg_type" "t" ` +
-            `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-            `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`;
-        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery);
-        await Promise.all(dropQueries.map(q => this.query(q["query"])));
-    }
-
-    /**
-     * Builds create ENUM type sql.
-     */
-    protected createEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
-        if (!enumName) enumName = this.buildEnumName(table, column);
-        const enumValues = column.enum!.map(value => `'${value.replace("'", "''")}'`).join(", ");
-        return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`);
-    }
-
-    /**
-     * Builds create ENUM type sql.
-     */
-    protected dropEnumTypeSql(table: Table, column: TableColumn, enumName?: string): Query {
-        if (!enumName) enumName = this.buildEnumName(table, column);
-        return new Query(`DROP TYPE ${enumName}`);
     }
 
     /**
@@ -1864,69 +1698,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Builds sequence name from given table and column.
-     */
-    protected buildSequenceName(table: Table, columnOrName: TableColumn|string): string {
-        const { tableName } = this.driver.parseTableName(table);
-
-        const columnName = columnOrName instanceof TableColumn ? columnOrName.name : columnOrName;
-
-        let seqName = `${tableName}_${columnName}_seq`;
-
-        if (seqName.length > this.connection.driver.maxAliasLength!) {
-            // note doesn't yet handle corner cases where .length differs from number of UTF-8 bytes
-            seqName = `${tableName.substring(0,29)}_${columnName.substring(0,Math.max(29,63 - (table.name.length) - 5))}_seq`;
-        }
-
-        return seqName;
-    }
-
-    protected buildSequencePath(table: Table, columnOrName: TableColumn|string): string {
-        const { schema } = this.driver.parseTableName(table);
-
-        return schema ? `${schema}.${this.buildSequenceName(table, columnOrName)}` : this.buildSequenceName(table, columnOrName);
-    }
-
-    /**
-     * Builds ENUM type name from given table and column.
-     */
-    protected buildEnumName(table: Table, column: TableColumn, withSchema: boolean = true, disableEscape?: boolean, toOld?: boolean): string {
-        const { schema, tableName } = this.driver.parseTableName(table);
-        let enumName = column.enumName ? column.enumName : `${tableName}_${column.name.toLowerCase()}_enum`;
-        if (schema && withSchema)
-            enumName = `${schema}.${enumName}`
-        if (toOld)
-            enumName = enumName + "_old";
-        return enumName.split(".").map(i => {
-            return disableEscape ? i : `"${i}"`;
-        }).join(".");
-    }
-
-    /**
-     * Escapes a given comment so it's safe to include in a query.
-     */
-    protected escapeComment(comment?: string) {
-        if (!comment || comment.length === 0) {
-            return "NULL";
-        }
-
-        comment = comment
-            .replace(/'/g, "''")
-            .replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
-
-        return `'${comment}'`;
-    }
-
-    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string): string {
-        // todo
-        const { /*schema, */tableName } = this.driver.parseTableName(target);
-        // if (schema && schema !== this.driver.searchSchema) {
-        //     return `"${schema}"."${tableName}"`;
-        // }
-
+        const { tableName } = this.driver.parseTableName(target);
         return `\`${tableName}\``;
     }
 
@@ -2000,13 +1775,5 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         for (const {query, parameters} of this.sqlInMemory.downQueries.reverse()) {
             await this.updateDDL(query, parameters);
         }
-    }
-
-    /**
-     * Checks if the PostgreSQL server has support for partitioned tables
-     */
-    protected async hasSupportForPartitionedTables() {
-        const result = await this.query(`SELECT TRUE FROM information_schema.columns WHERE table_name = 'pg_class' and column_name = 'relispartition'`);
-        return result.length ? true : false;
     }
 }
