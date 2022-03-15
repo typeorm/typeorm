@@ -3,7 +3,7 @@ import {EntitySubscriberInterface} from "../../../src/subscriber/EntitySubscribe
 import {InsertEvent} from "../../../src/subscriber/event/InsertEvent";
 import {RecoverEvent} from "../../../src/subscriber/event/RecoverEvent";
 import {RemoveEvent} from "../../../src/subscriber/event/RemoveEvent";
-import { SoftRemoveEvent } from "../../../src/subscriber/event/SoftRemoveEvent";
+import {SoftRemoveEvent} from "../../../src/subscriber/event/SoftRemoveEvent";
 import {UpdateEvent} from "../../../src/subscriber/event/UpdateEvent";
 
 @EventSubscriber()
