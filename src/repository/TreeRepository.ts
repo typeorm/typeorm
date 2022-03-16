@@ -386,6 +386,24 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     }
 
     /**
+     * Extends tree repository with provided functions.
+     */
+    extend<CustomRepository>(
+        custom: CustomRepository &
+            ThisType<TreeRepository<Entity> & CustomRepository>,
+    ): TreeRepository<Entity> & CustomRepository {
+        const thisRepo: any = this.constructor
+        const { target, manager, queryRunner } = this
+        const cls = new (class extends thisRepo {
+            constructor() {
+                super(target, manager, queryRunner)
+            }
+        })()
+        Object.assign(cls, custom)
+        return cls as any
+    }
+
+    /**
      * Moves entity to the children of then given entity.
      *
     move(entity: Entity, to: Entity): Promise<void> {
