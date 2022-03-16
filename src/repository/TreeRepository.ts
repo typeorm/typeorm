@@ -1,11 +1,11 @@
-import { Repository } from "./Repository"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { TypeORMError } from "../error/TypeORMError"
-import { FindTreeOptions } from "../find-options/FindTreeOptions"
-import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { FindTreesOptions } from "./FindTreesOptions"
 import { DriverUtils } from "../driver/DriverUtils"
+import { TypeORMError } from "../error/TypeORMError"
+import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
+import { FindTreeOptions } from "../find-options/FindTreeOptions"
+import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import { TreeRepositoryUtils } from "../util/TreeRepositoryUtils"
+import { Repository } from "./Repository"
 
 /**
  * Repository with additional functions to work with trees.
@@ -87,8 +87,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
 
         const entities = await qb.getRawAndEntities()
-        const relationMaps = this.createRelationMaps("treeEntity", entities.raw)
-        this.buildChildrenEntityTree(entity, entities.entities, relationMaps, {
+        const relationMaps = TreeRepositoryUtils.createRelationMaps(this.manager, this.metadata, "treeEntity", entities.raw)
+        TreeRepositoryUtils.buildChildrenEntityTree(this.metadata, entity, entities.entities, relationMaps, {
             depth: -1,
             ...options,
         })
@@ -253,8 +253,8 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
 
         const entities = await qb.getRawAndEntities()
-        const relationMaps = this.createRelationMaps("treeEntity", entities.raw)
-        this.buildParentEntityTree(entity, entities.entities, relationMaps)
+        const relationMaps = TreeRepositoryUtils.createRelationMaps(this.manager, this.metadata,"treeEntity", entities.raw)
+        TreeRepositoryUtils.buildParentEntityTree(this.metadata,entity, entities.entities, relationMaps)
         return entity
     }
 
@@ -391,95 +391,4 @@ export class TreeRepository<Entity> extends Repository<Entity> {
     move(entity: Entity, to: Entity): Promise<void> {
         return Promise.resolve();
     } */
-
-    // -------------------------------------------------------------------------
-    // Protected Methods
-    // -------------------------------------------------------------------------
-
-    protected createRelationMaps(
-        alias: string,
-        rawResults: any[],
-    ): { id: any; parentId: any }[] {
-        return rawResults.map((rawResult) => {
-            const joinColumn = this.metadata.treeParentRelation!.joinColumns[0]
-            // fixes issue #2518, default to databaseName property when givenDatabaseName is not set
-            const joinColumnName =
-                joinColumn.givenDatabaseName || joinColumn.databaseName
-            const id =
-                rawResult[
-                    alias + "_" + this.metadata.primaryColumns[0].databaseName
-                ]
-            const parentId = rawResult[alias + "_" + joinColumnName]
-            return {
-                id: this.manager.connection.driver.prepareHydratedValue(
-                    id,
-                    this.metadata.primaryColumns[0],
-                ),
-                parentId: this.manager.connection.driver.prepareHydratedValue(
-                    parentId,
-                    joinColumn,
-                ),
-            }
-        })
-    }
-
-    protected buildChildrenEntityTree(
-        entity: any,
-        entities: any[],
-        relationMaps: { id: any; parentId: any }[],
-        options: FindTreesOptions & { depth: number },
-    ): void {
-        const childProperty = this.metadata.treeChildrenRelation!.propertyName
-        if (options.depth === 0) {
-            entity[childProperty] = []
-            return
-        }
-        const parentEntityId =
-            this.metadata.primaryColumns[0].getEntityValue(entity)
-        const childRelationMaps = relationMaps.filter(
-            (relationMap) => relationMap.parentId === parentEntityId,
-        )
-        const childIds = new Set(
-            childRelationMaps.map((relationMap) => relationMap.id),
-        )
-        entity[childProperty] = entities.filter((entity) =>
-            childIds.has(
-                this.metadata.primaryColumns[0].getEntityValue(entity),
-            ),
-        )
-        entity[childProperty].forEach((childEntity: any) => {
-            this.buildChildrenEntityTree(childEntity, entities, relationMaps, {
-                ...options,
-                depth: options.depth - 1,
-            })
-        })
-    }
-
-    protected buildParentEntityTree(
-        entity: any,
-        entities: any[],
-        relationMaps: { id: any; parentId: any }[],
-    ): void {
-        const parentProperty = this.metadata.treeParentRelation!.propertyName
-        const entityId = this.metadata.primaryColumns[0].getEntityValue(entity)
-        const parentRelationMap = relationMaps.find(
-            (relationMap) => relationMap.id === entityId,
-        )
-        const parentEntity = entities.find((entity) => {
-            if (!parentRelationMap) return false
-
-            return (
-                this.metadata.primaryColumns[0].getEntityValue(entity) ===
-                parentRelationMap.parentId
-            )
-        })
-        if (parentEntity) {
-            entity[parentProperty] = parentEntity
-            this.buildParentEntityTree(
-                entity[parentProperty],
-                entities,
-                relationMaps,
-            )
-        }
-    }
 }
