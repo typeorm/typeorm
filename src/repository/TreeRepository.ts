@@ -87,11 +87,22 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
 
         const entities = await qb.getRawAndEntities()
-        const relationMaps = TreeRepositoryUtils.createRelationMaps(this.manager, this.metadata, "treeEntity", entities.raw)
-        TreeRepositoryUtils.buildChildrenEntityTree(this.metadata, entity, entities.entities, relationMaps, {
-            depth: -1,
-            ...options,
-        })
+        const relationMaps = TreeRepositoryUtils.createRelationMaps(
+            this.manager,
+            this.metadata,
+            "treeEntity",
+            entities.raw,
+        )
+        TreeRepositoryUtils.buildChildrenEntityTree(
+            this.metadata,
+            entity,
+            entities.entities,
+            relationMaps,
+            {
+                depth: -1,
+                ...options,
+            },
+        )
 
         return entity
     }
@@ -253,8 +264,18 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
 
         const entities = await qb.getRawAndEntities()
-        const relationMaps = TreeRepositoryUtils.createRelationMaps(this.manager, this.metadata,"treeEntity", entities.raw)
-        TreeRepositoryUtils.buildParentEntityTree(this.metadata,entity, entities.entities, relationMaps)
+        const relationMaps = TreeRepositoryUtils.createRelationMaps(
+            this.manager,
+            this.metadata,
+            "treeEntity",
+            entities.raw,
+        )
+        TreeRepositoryUtils.buildParentEntityTree(
+            this.metadata,
+            entity,
+            entities.entities,
+            relationMaps,
+        )
         return entity
     }
 
