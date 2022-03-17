@@ -77,22 +77,6 @@ const dataSource = new DataSource({
 })
 ```
 
-Or you can specify the whole directory with all entities inside - and all of them will be loaded:
-
-```typescript
-import { DataSource } from "typeorm"
-
-const dataSource = new DataSource({
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",
-    entities: ["entity/*.js"],
-})
-```
-
 ## View Entity columns
 
 To map data from view into the correct entity columns you must mark entity columns with `@ViewColumn()`

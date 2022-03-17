@@ -37,7 +37,7 @@ export interface FindOneOptions<Entity = any> {
     relations?: FindOptionsRelations<Entity> | FindOptionsRelationByString
 
     /**
-     * Specifies how relations must be loaded - using "joins" or as separate queries.
+     * Specifies how relations must be loaded - using "joins" or separate queries.
      * If you are loading too much data with nested joins it's better to load relations
      * using separate queries.
      *

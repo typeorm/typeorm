@@ -100,7 +100,7 @@ module.exports = function (sequelize, DataTypes) {
 }
 ```
 
-In TypeORM these models are called entities and you can define them like this:
+In TypeORM these models are called entities and you can define them the following way:
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
@@ -137,7 +137,7 @@ export class Task {
 }
 ```
 
-It's highly recommended to define one entity class per file.
+It's highly recommended defining one entity class per file.
 TypeORM allows you to use your classes as database models
 and provides a declarative way to define what part of your model
 will become part of your database table.

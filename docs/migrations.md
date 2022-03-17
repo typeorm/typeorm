@@ -10,7 +10,7 @@
 ## How migrations work
 
 Once you get into production you'll need to synchronize model changes into the database.
-Typically it is unsafe to use `synchronize: true` for schema synchronization on production once
+Typically, it is unsafe to use `synchronize: true` for schema synchronization on production once
 you get data in your database. Here is where migrations come to help.
 
 A migration is just a single file with sql queries to update a database schema
@@ -56,28 +56,24 @@ This place is called "migrations".
 
 Before creating a new migration you need to setup your data source options properly:
 
-```json
+```ts
 {
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "test",
-    "password": "test",
-    "database": "test",
-    "entities": ["entity/*.js"],
-    "migrationsTableName": "custom_migration_table",
-    "migrations": ["migration/*.js"],
-    "cli": {
-        "migrationsDir": "migration"
-    }
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
+    entities: [/*...*/],
+    migrations: [/*...*/],
+    migrationsTableName: "custom_migration_table",
 }
 ```
 
 Here we setup three options:
 
 -   `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
--   `"migrations": ["migration/*.js"]` - indicates that typeorm must load migrations from the given "migration" directory.
--   `"cli": { "migrationsDir": "migration" }` - indicates that the CLI must create new migrations in the "migration" directory.
+-   `"migrations": [/*...*/]` - list of migrations need to be loaded by TypeORM
 
 Once you setup connection options you can create a new migration using CLI:
 

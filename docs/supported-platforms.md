@@ -9,7 +9,7 @@
 
 ## NodeJS
 
-TypeORM was tested on Node.js version 12 and above.
+TypeORM was tested on Node.js version 14 and above.
 
 ## Browser
 

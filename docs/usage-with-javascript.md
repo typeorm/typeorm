@@ -106,4 +106,4 @@ module.exports = new EntitySchema({
 })
 ```
 
-You can checkout this example [typeorm/javascript-example](https://github.com/typeorm/javascript-example) to learn more.
+You can check out this example [typeorm/javascript-example](https://github.com/typeorm/javascript-example) to learn more.

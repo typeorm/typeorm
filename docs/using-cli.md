@@ -22,7 +22,7 @@
 
 If you have a local typeorm version, make sure it matches the global version we are going to install.
 
-Install typeorm globally with `npm i -g typeorm`.
+You can install typeorm globally with `npm i -g typeorm`.
 You can also choose to use `npx typeorm <params>` for each command if you prefer not having to install it.
 
 ### If entities files are in typescript

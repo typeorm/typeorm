@@ -56,7 +56,7 @@ The following database drivers support the standard isolation levels (`READ UNCO
 -   Postgres
 -   SQL Server
 
-**SQlite** defaults transactions to `SERIALIZABLE`, but if _shared cache mode_ is enabled, a transaction can use the `READ UNCOMMITTED` isolation level.
+**SQLite** defaults transactions to `SERIALIZABLE`, but if _shared cache mode_ is enabled, a transaction can use the `READ UNCOMMITTED` isolation level.
 
 **Oracle** only supports the `READ COMMITTED` and `SERIALIZABLE` isolation levels.
 

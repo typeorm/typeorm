@@ -1056,7 +1056,7 @@ const posts = await dataSource
     .getRawMany()
 ```
 
-or using more a elegant syntax:
+or using a more elegant syntax:
 
 ```typescript
 const posts = await dataSource
