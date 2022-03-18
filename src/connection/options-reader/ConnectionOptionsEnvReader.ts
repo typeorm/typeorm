@@ -77,17 +77,6 @@ export class ConnectionOptionsEnvReader {
                     "TYPEORM_MAX_QUERY_EXECUTION_TIME",
                 ),
                 debug: PlatformTools.getEnvVariable("TYPEORM_DEBUG"),
-                cli: {
-                    entitiesDir: PlatformTools.getEnvVariable(
-                        "TYPEORM_ENTITIES_DIR",
-                    ),
-                    migrationsDir: PlatformTools.getEnvVariable(
-                        "TYPEORM_MIGRATIONS_DIR",
-                    ),
-                    subscribersDir: PlatformTools.getEnvVariable(
-                        "TYPEORM_SUBSCRIBERS_DIR",
-                    ),
-                },
                 cache: this.transformCaching(),
                 uuidExtension: PlatformTools.getEnvVariable(
                     "TYPEORM_UUID_EXTENSION",
