@@ -39,9 +39,9 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
         })
         if (!connections.length) return
 
-        User.useConnection(connections[0])
-        Record.useConnection(connections[0])
-        RecordContext.useConnection(connections[0])
+        User.useDataSource(connections[0])
+        Record.useDataSource(connections[0])
+        RecordContext.useDataSource(connections[0])
 
         const user = User.create({ id: "user1" })
         await user.save()

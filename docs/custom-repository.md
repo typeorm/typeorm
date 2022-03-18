@@ -34,7 +34,7 @@ In order to extend `UserRepository` functionality you can use `.extend` method o
 ```typescript
 // user.repository.ts
 export const UserRepository = dataSource.getRepository(User).extend({
-    findByName(firstName: string, lastName: string) {
+    findOneByName(firstName: string, lastName: string) {
         return this.createQueryBuilder("user")
             .where("user.firstName = :firstName", { firstName })
             .andWhere("user.lastName = :lastName", { lastName })

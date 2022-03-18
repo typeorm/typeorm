@@ -837,7 +837,7 @@ describe("repository > find options > operators", () => {
     it("should work with ActiveRecord model", async () => {
         // These must run sequentially as we have the global context of the `PersonAR` ActiveRecord class
         for (const connection of connections) {
-            PersonAR.useConnection(connection)
+            PersonAR.useDataSource(connection)
 
             const person = new PersonAR()
             person.name = "Timber"

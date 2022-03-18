@@ -27,6 +27,7 @@ import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { DataSource } from "../data-source"
+import { BaseEntity } from "../repository/BaseEntity"
 
 export class InstanceChecker {
     static isMssqlParameter(obj: unknown): obj is MssqlParameter {
@@ -91,6 +92,14 @@ export class InstanceChecker {
     }
     static isEntitySchema(obj: unknown): obj is EntitySchema {
         return this.check(obj, "EntitySchema")
+    }
+    static isBaseEntityConstructor(obj: unknown): obj is typeof BaseEntity {
+        return (
+            typeof obj === "function" &&
+            typeof (obj as typeof BaseEntity).hasId === "function" &&
+            typeof (obj as typeof BaseEntity).save === "function" &&
+            typeof (obj as typeof BaseEntity).useDataSource === "function"
+        )
     }
     static isFindOperator(obj: unknown): obj is FindOperator<any> {
         return (

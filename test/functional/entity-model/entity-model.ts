@@ -22,7 +22,7 @@ describe("entity-model", () => {
     it("should save successfully and use static methods successfully", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
         for (const connection of connections) {
-            Post.useConnection(connection) // change connection each time because of AR specifics
+            Post.useDataSource(connection) // change connection each time because of AR specifics
 
             const post = Post.create()
             post.title = "About ActiveRecord"
@@ -48,7 +48,7 @@ describe("entity-model", () => {
             for (const connection of connections.filter(
                 (c) => c.driver.supportedUpsertType != null,
             )) {
-                Post.useConnection(connection) // change connection each time because of AR specifics
+                Post.useDataSource(connection) // change connection each time because of AR specifics
 
                 const externalId = "external-entity"
 
@@ -80,8 +80,8 @@ describe("entity-model", () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
         for (const connection of connections) {
             await connection.synchronize(true)
-            Post.useConnection(connection)
-            Category.useConnection(connection)
+            Post.useDataSource(connection)
+            Category.useDataSource(connection)
 
             const category = Category.create()
             category.id = 1

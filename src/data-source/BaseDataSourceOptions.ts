@@ -204,24 +204,4 @@ export interface BaseDataSourceOptions {
                */
               readonly ignoreErrors?: boolean
           }
-
-    /**
-     * CLI settings.
-     */
-    readonly cli?: {
-        /**
-         * Directory where entities should be created by default.
-         */
-        readonly entitiesDir?: string
-
-        /**
-         * Directory where migrations should be created by default.
-         */
-        readonly migrationsDir?: string
-
-        /**
-         * Directory where subscribers should be created by default.
-         */
-        readonly subscribersDir?: string
-    }
 }

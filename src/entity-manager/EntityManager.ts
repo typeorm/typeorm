@@ -1347,7 +1347,14 @@ export class EntityManager {
     withRepository<Entity, R extends Repository<Entity>>(repository: R): R {
         const repositoryConstructor =
             repository.constructor as typeof Repository
-        return new repositoryConstructor(repository.target, this) as R
+        const { target, manager, queryRunner, ...otherRepositoryProperties } =
+            repository
+        return Object.assign(
+            new repositoryConstructor(repository.target, this) as R,
+            {
+                ...otherRepositoryProperties,
+            },
+        )
     }
 
     /**

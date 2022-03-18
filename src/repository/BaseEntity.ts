@@ -1,13 +1,11 @@
 import { Repository } from "./Repository"
-import { getConnection } from "../globals"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { DeepPartial } from "../common/DeepPartial"
 import { SaveOptions } from "./SaveOptions"
 import { FindOneOptions } from "../find-options/FindOneOptions"
 import { RemoveOptions } from "./RemoveOptions"
 import { FindManyOptions } from "../find-options/FindManyOptions"
-import { DataSource } from "../data-source/DataSource"
-import { ObjectType } from "../common/ObjectType"
+import { DataSource } from "../data-source"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
@@ -27,10 +25,10 @@ export class BaseEntity {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used in all static methods of the BaseEntity.
+     * DataSource used in all static methods of the BaseEntity.
      */
     // @ts-ignore: Unused variable which is actually used
-    private static usedConnection?: DataSource
+    private static dataSource?: DataSource
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -41,7 +39,8 @@ export class BaseEntity {
      * If entity composite compose ids, it will check them all.
      */
     hasId(): boolean {
-        return (this.constructor as any).getRepository().hasId(this)
+        const baseEntity = this.constructor as typeof BaseEntity
+        return baseEntity.getRepository().hasId(this)
     }
 
     /**
@@ -49,40 +48,42 @@ export class BaseEntity {
      * If entity does not exist in the database then inserts, otherwise updates.
      */
     save(options?: SaveOptions): Promise<this> {
-        return (this.constructor as any).getRepository().save(this, options)
+        const baseEntity = this.constructor as typeof BaseEntity
+        return baseEntity.getRepository().save(this, options)
     }
 
     /**
      * Removes current entity from the database.
      */
     remove(options?: RemoveOptions): Promise<this> {
-        return (this.constructor as any).getRepository().remove(this, options)
+        const baseEntity = this.constructor as typeof BaseEntity
+        return baseEntity.getRepository().remove(this, options) as Promise<this>
     }
 
     /**
      * Records the delete date of current entity.
      */
     softRemove(options?: SaveOptions): Promise<this> {
-        return (this.constructor as any)
-            .getRepository()
-            .softRemove(this, options)
+        const baseEntity = this.constructor as typeof BaseEntity
+        return baseEntity.getRepository().softRemove(this, options)
     }
 
     /**
      * Recovers a given entity in the database.
      */
     recover(options?: SaveOptions): Promise<this> {
-        return (this.constructor as any).getRepository().recover(this, options)
+        const baseEntity = this.constructor as typeof BaseEntity
+        return baseEntity.getRepository().recover(this, options)
     }
 
     /**
      * Reloads entity data from the database.
      */
     async reload(): Promise<void> {
-        const base: any = this.constructor
-        const newestEntity: BaseEntity = await base
+        const baseEntity = this.constructor as typeof BaseEntity
+        const newestEntity: BaseEntity = await baseEntity
             .getRepository()
-            .findOneOrFail(base.getId(this))
+            .findOneOrFail(baseEntity.getId(this))
 
         ObjectUtils.assign(this, newestEntity)
     }
@@ -92,21 +93,22 @@ export class BaseEntity {
     // -------------------------------------------------------------------------
 
     /**
-     * Sets connection to be used by entity.
+     * Sets DataSource to be used by entity.
      */
-    static useConnection(connection: DataSource) {
-        this.usedConnection = connection
+    static useDataSource(dataSource: DataSource) {
+        this.dataSource = dataSource
     }
 
     /**
      * Gets current entity's Repository.
      */
     static getRepository<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
     ): Repository<T> {
-        const connection: DataSource =
-            (this as any).usedConnection || getConnection()
-        return connection.getRepository<T>(this)
+        const dataSource = (this as typeof BaseEntity).dataSource
+        if (!dataSource)
+            throw new Error(`DataSource is not set for this entity.`)
+        return dataSource.getRepository<T>(this)
     }
 
     /**
@@ -129,25 +131,28 @@ export class BaseEntity {
     /**
      * Gets entity mixed id.
      */
-    static getId<T extends BaseEntity>(this: ObjectType<T>, entity: T): any {
-        return (this as any).getRepository().getId(entity)
+    static getId<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        entity: T,
+    ): any {
+        return this.getRepository<T>().getId(entity)
     }
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
     static createQueryBuilder<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         alias?: string,
     ): SelectQueryBuilder<T> {
-        return (this as any).getRepository().createQueryBuilder(alias)
+        return this.getRepository<T>().createQueryBuilder(alias)
     }
 
     /**
      * Creates a new entity instance.
      */
     static create<T extends BaseEntity>(
-        this: ObjectType<T> & typeof BaseEntity,
+        this: { new (): T } & typeof BaseEntity,
     ): T
 
     /**
@@ -155,7 +160,7 @@ export class BaseEntity {
      * Note that it copies only properties that present in entity schema.
      */
     static create<T extends BaseEntity>(
-        this: ObjectType<T> & typeof BaseEntity,
+        this: { new (): T } & typeof BaseEntity,
         entityLikeArray: DeepPartial<T>[],
     ): T[]
 
@@ -164,31 +169,33 @@ export class BaseEntity {
      * Note that it copies only properties that present in entity schema.
      */
     static create<T extends BaseEntity>(
-        this: ObjectType<T> & typeof BaseEntity,
+        this: { new (): T } & typeof BaseEntity,
         entityLike: DeepPartial<T>,
     ): T
+
     /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
     static create<T extends BaseEntity>(
-        this: ObjectType<T> & typeof BaseEntity,
+        this: { new (): T } & typeof BaseEntity,
         entityOrEntities?: any,
-    ): T {
-        return (this as any).getRepository().create(entityOrEntities)
+    ) {
+        return this.getRepository<T>().create(entityOrEntities)
     }
 
     /**
      * Merges multiple entities (or entity-like objects) into a given entity.
      */
     static merge<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         mergeIntoEntity: T,
         ...entityLikes: DeepPartial<T>[]
     ): T {
-        return (this as any)
-            .getRepository()
-            .merge(mergeIntoEntity, ...entityLikes)
+        return this.getRepository<T>().merge(
+            mergeIntoEntity,
+            ...entityLikes,
+        ) as T
     }
 
     /**
@@ -201,10 +208,10 @@ export class BaseEntity {
      * Returns undefined if entity with given id was not found.
      */
     static preload<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entityLike: DeepPartial<T>,
     ): Promise<T | undefined> {
-        const thisRepository = (this as any).getRepository() as Repository<T>
+        const thisRepository = this.getRepository() as Repository<T>
         return thisRepository.preload(entityLike)
     }
 
@@ -213,8 +220,8 @@ export class BaseEntity {
      * If entities do not exist in the database then inserts, otherwise updates.
      */
     static save<T extends BaseEntity>(
-        this: ObjectType<T>,
-        entities: T[],
+        this: { new (): T } & typeof BaseEntity,
+        entities: DeepPartial<T>[],
         options?: SaveOptions,
     ): Promise<T[]>
 
@@ -223,8 +230,8 @@ export class BaseEntity {
      * If entity does not exist in the database then inserts, otherwise updates.
      */
     static save<T extends BaseEntity>(
-        this: ObjectType<T>,
-        entity: T,
+        this: { new (): T } & typeof BaseEntity,
+        entity: DeepPartial<T>,
         options?: SaveOptions,
     ): Promise<T>
 
@@ -232,20 +239,18 @@ export class BaseEntity {
      * Saves one or many given entities.
      */
     static save<T extends BaseEntity>(
-        this: ObjectType<T>,
-        entityOrEntities: T | T[],
+        this: { new (): T } & typeof BaseEntity,
+        entityOrEntities: DeepPartial<T> | DeepPartial<T>[],
         options?: SaveOptions,
-    ): Promise<T | T[]> {
-        return (this as any)
-            .getRepository()
-            .save(entityOrEntities as any, options)
+    ) {
+        return this.getRepository<T>().save(entityOrEntities as any, options)
     }
 
     /**
      * Removes a given entities from the database.
      */
     static remove<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entities: T[],
         options?: RemoveOptions,
     ): Promise<T[]>
@@ -254,7 +259,7 @@ export class BaseEntity {
      * Removes a given entity from the database.
      */
     static remove<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entity: T,
         options?: RemoveOptions,
     ): Promise<T>
@@ -263,20 +268,18 @@ export class BaseEntity {
      * Removes one or many given entities.
      */
     static remove<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entityOrEntities: T | T[],
         options?: RemoveOptions,
-    ): Promise<T | T[]> {
-        return (this as any)
-            .getRepository()
-            .remove(entityOrEntities as any, options)
+    ) {
+        return this.getRepository<T>().remove(entityOrEntities as any, options)
     }
 
     /**
      * Records the delete date of all given entities.
      */
     static softRemove<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entities: T[],
         options?: SaveOptions,
     ): Promise<T[]>
@@ -285,7 +288,7 @@ export class BaseEntity {
      * Records the delete date of a given entity.
      */
     static softRemove<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entity: T,
         options?: SaveOptions,
     ): Promise<T>
@@ -294,13 +297,14 @@ export class BaseEntity {
      * Records the delete date of one or many given entities.
      */
     static softRemove<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entityOrEntities: T | T[],
         options?: SaveOptions,
-    ): Promise<T | T[]> {
-        return (this as any)
-            .getRepository()
-            .softRemove(entityOrEntities as any, options)
+    ) {
+        return this.getRepository<T>().softRemove(
+            entityOrEntities as any,
+            options,
+        )
     }
 
     /**
@@ -310,11 +314,10 @@ export class BaseEntity {
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      */
     static insert<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         entity: QueryDeepPartialEntity<T> | QueryDeepPartialEntity<T>[],
-        options?: SaveOptions,
     ): Promise<InsertResult> {
-        return (this as any).getRepository().insert(entity, options)
+        return this.getRepository<T>().insert(entity)
     }
 
     /**
@@ -324,7 +327,7 @@ export class BaseEntity {
      * Does not check if entity exist in the database.
      */
     static update<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         criteria:
             | string
             | string[]
@@ -336,11 +339,8 @@ export class BaseEntity {
             | ObjectID[]
             | FindOptionsWhere<T>,
         partialEntity: QueryDeepPartialEntity<T>,
-        options?: SaveOptions,
     ): Promise<UpdateResult> {
-        return (this as any)
-            .getRepository()
-            .update(criteria, partialEntity, options)
+        return this.getRepository<T>().update(criteria, partialEntity)
     }
 
     /**
@@ -349,7 +349,7 @@ export class BaseEntity {
      * Executes fast and efficient INSERT ... ON CONFLICT DO UPDATE/ON DUPLICATE KEY UPDATE query.
      */
     static upsert<T extends BaseEntity>(
-        this: ObjectType<T> & typeof BaseEntity,
+        this: { new (): T } & typeof BaseEntity,
         entityOrEntities:
             | QueryDeepPartialEntity<T>
             | QueryDeepPartialEntity<T>[],
@@ -368,7 +368,7 @@ export class BaseEntity {
      * Does not check if entity exist in the database.
      */
     static delete<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         criteria:
             | string
             | string[]
@@ -379,49 +379,48 @@ export class BaseEntity {
             | ObjectID
             | ObjectID[]
             | FindOptionsWhere<T>,
-        options?: RemoveOptions,
     ): Promise<DeleteResult> {
-        return (this as any).getRepository().delete(criteria, options)
+        return this.getRepository<T>().delete(criteria)
     }
 
     /**
      * Counts entities that match given options.
      */
     static count<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         options?: FindManyOptions<T>,
     ): Promise<number> {
-        return (this as any).getRepository().count(options)
+        return this.getRepository<T>().count(options)
     }
 
     /**
      * Counts entities that match given WHERE conditions.
      */
     static countBy<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
     ): Promise<number> {
-        return (this as any).getRepository().count(where)
+        return this.getRepository<T>().countBy(where)
     }
 
     /**
      * Finds entities that match given options.
      */
     static find<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         options?: FindManyOptions<T>,
     ): Promise<T[]> {
-        return (this as any).getRepository().find(options)
+        return this.getRepository<T>().find(options)
     }
 
     /**
      * Finds entities that match given WHERE conditions.
      */
     static findBy<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
     ): Promise<T[]> {
-        return (this as any).getRepository().find(where)
+        return this.getRepository<T>().findBy(where)
     }
 
     /**
@@ -430,10 +429,10 @@ export class BaseEntity {
      * but ignores pagination settings (from and take options).
      */
     static findAndCount<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         options?: FindManyOptions<T>,
     ): Promise<[T[], number]> {
-        return (this as any).getRepository().findAndCount(options)
+        return this.getRepository<T>().findAndCount(options)
     }
 
     /**
@@ -442,10 +441,10 @@ export class BaseEntity {
      * but ignores pagination settings (from and take options).
      */
     static findAndCountBy<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
     ): Promise<[T[], number]> {
-        return (this as any).getRepository().findAndCount(where)
+        return this.getRepository<T>().findAndCountBy(where)
     }
 
     /**
@@ -459,30 +458,30 @@ export class BaseEntity {
      * })
      */
     static findByIds<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         ids: any[],
     ): Promise<T[]> {
-        return (this as any).getRepository().findByIdsBy(ids)
+        return this.getRepository<T>().findByIds(ids)
     }
 
     /**
      * Finds first entity that matches given conditions.
      */
     static findOne<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         options: FindOneOptions<T>,
     ): Promise<T | null> {
-        return (this as any).getRepository().findOne(options)
+        return this.getRepository<T>().findOne(options)
     }
 
     /**
      * Finds first entity that matches given conditions.
      */
     static findOneBy<T extends BaseEntity>(
-        this: ObjectType<T>,
-        where?: FindOptionsWhere<T>,
+        this: { new (): T } & typeof BaseEntity,
+        where: FindOptionsWhere<T>,
     ): Promise<T | null> {
-        return (this as any).getRepository().findOneBy(where)
+        return this.getRepository<T>().findOneBy(where)
     }
 
     /**
@@ -495,30 +494,30 @@ export class BaseEntity {
      * })
      */
     static findOneById<T extends BaseEntity>(
-        this: ObjectType<T>,
-        id?: string | number | Date | ObjectID,
+        this: { new (): T } & typeof BaseEntity,
+        id: string | number | Date | ObjectID,
     ): Promise<T | null> {
-        return (this as any).getRepository().findOneById(id)
+        return this.getRepository<T>().findOneById(id)
     }
 
     /**
      * Finds first entity that matches given conditions.
      */
     static findOneOrFail<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         options: FindOneOptions<T>,
     ): Promise<T> {
-        return (this as any).getRepository().findOneOrFail(options)
+        return this.getRepository<T>().findOneOrFail(options)
     }
 
     /**
      * Finds first entity that matches given conditions.
      */
     static findOneByOrFail<T extends BaseEntity>(
-        this: ObjectType<T>,
-        where?: FindOptionsWhere<T>,
+        this: { new (): T } & typeof BaseEntity,
+        where: FindOptionsWhere<T>,
     ): Promise<T> {
-        return (this as any).getRepository().findOneByOrFail(where)
+        return this.getRepository<T>().findOneByOrFail(where)
     }
 
     /**
@@ -526,17 +525,19 @@ export class BaseEntity {
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      */
     static query<T extends BaseEntity>(
-        this: ObjectType<T>,
+        this: { new (): T } & typeof BaseEntity,
         query: string,
         parameters?: any[],
     ): Promise<any> {
-        return (this as any).getRepository().query(query, parameters)
+        return this.getRepository<T>().query(query, parameters)
     }
 
     /**
      * Clears all the data from the given table/collection (truncates/drops it).
      */
-    static clear<T extends BaseEntity>(this: ObjectType<T>): Promise<void> {
-        return (this as any).getRepository().clear()
+    static clear<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+    ): Promise<void> {
+        return this.getRepository<T>().clear()
     }
 }

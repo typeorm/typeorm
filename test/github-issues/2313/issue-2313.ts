@@ -24,7 +24,7 @@ describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () 
     it("should find the appropriate record when one exists", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
         for (const connection of connections) {
-            Post.useConnection(connection) // change connection each time because of AR specifics
+            Post.useDataSource(connection) // change connection each time because of AR specifics
 
             const post1 = new Post()
             post1.data = 123
@@ -55,7 +55,7 @@ describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () 
     it("should throw no matching record exists", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class
         for (const connection of connections) {
-            Post.useConnection(connection) // change connection each time because of AR specifics
+            Post.useDataSource(connection) // change connection each time because of AR specifics
 
             try {
                 await Post.findOneByOrFail({ id: 100 })

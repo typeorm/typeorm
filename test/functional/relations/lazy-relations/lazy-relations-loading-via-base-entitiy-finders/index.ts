@@ -25,8 +25,8 @@ describe("lazy-relations-loading-via-base-entity-finders", () => {
 
     it("works", async () => {
         for (let connection of connections) {
-            Category.useConnection(connection)
-            Post.useConnection(connection)
+            Category.useDataSource(connection)
+            Post.useDataSource(connection)
             const category = new Category()
             category.name = "hello"
             await category.save()
