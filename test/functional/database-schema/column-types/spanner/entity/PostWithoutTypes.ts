@@ -1,21 +1,19 @@
-import {Column, Entity, PrimaryColumn} from "../../../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../../../src"
 
 @Entity()
 export class PostWithoutTypes {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    bool: boolean;
+    bool: boolean
 
     @Column()
-    bytes: Buffer;
+    bytes: Buffer
 
     @Column()
-    timestamp: Date;
-
+    timestamp: Date
 }

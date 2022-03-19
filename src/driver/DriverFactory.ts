@@ -18,7 +18,7 @@ import { DataSource } from "../data-source/DataSource"
 import { SapDriver } from "./sap/SapDriver"
 import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
-import {SpannerDriver} from "./spanner/SpannerDriver";
+import { SpannerDriver } from "./spanner/SpannerDriver"
 
 /**
  * Helps to create drivers.
@@ -72,25 +72,24 @@ export class DriverFactory {
                 throw new MissingDriverError(type, [
                     "aurora-mysql",
                     "aurora-postgres",
-                        "better-sqlite3",
-                        "capacitor",
-                        "cockroachdb",
-                        "cordova",
-                        "expo",
-                        "mariadb",
-                        "mongodb",
-                        "mssql",
-                        "mysql",
-                        "nativescript",
-                        "oracle",
-                        "postgres",
-                        "react-native",
-                        "sap",
-                        "sqlite",
-                        "sqljs",
-                        "spanner",
-                    ]
-                )
+                    "better-sqlite3",
+                    "capacitor",
+                    "cockroachdb",
+                    "cordova",
+                    "expo",
+                    "mariadb",
+                    "mongodb",
+                    "mssql",
+                    "mysql",
+                    "nativescript",
+                    "oracle",
+                    "postgres",
+                    "react-native",
+                    "sap",
+                    "sqlite",
+                    "sqljs",
+                    "spanner",
+                ])
         }
     }
 }

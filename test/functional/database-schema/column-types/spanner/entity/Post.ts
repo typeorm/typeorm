@@ -1,69 +1,68 @@
-import {Column, Entity, PrimaryColumn} from "../../../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     // -------------------------------------------------------------------------
     // Integer Types
     // -------------------------------------------------------------------------
 
     @Column("int64")
-    int64: number;
+    int64: number
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("string")
-    string: string;
+    string: string
 
     // -------------------------------------------------------------------------
     // Float Types
     // -------------------------------------------------------------------------
 
     @Column("float64")
-    float64: number;
+    float64: number
 
     // -------------------------------------------------------------------------
     // Binary Types
     // -------------------------------------------------------------------------
 
     @Column("bytes")
-    bytes: Buffer;
+    bytes: Buffer
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("numeric")
-    numeric: string;
+    numeric: string
 
     // -------------------------------------------------------------------------
     // Date Types
     // -------------------------------------------------------------------------
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("timestamp")
-    timestamp: Date;
+    timestamp: Date
 
     // -------------------------------------------------------------------------
     // Other Types
     // -------------------------------------------------------------------------
 
     @Column("bool")
-    bool: boolean;
+    bool: boolean
 
     @Column("json")
-    json: Object;
+    json: Object
 
     @Column("string", { array: true })
-    array: string[];
+    array: string[]
 }

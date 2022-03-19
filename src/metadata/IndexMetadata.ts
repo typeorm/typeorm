@@ -47,7 +47,7 @@ export class IndexMetadata {
      *
      * Works only in Spanner.
      */
-    isNullFiltered: boolean = false;
+    isNullFiltered: boolean = false
 
     /**
      * Fulltext parser.

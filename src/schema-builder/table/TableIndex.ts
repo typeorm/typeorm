@@ -45,7 +45,7 @@ export class TableIndex {
      *
      * Works only in Spanner.
      */
-    isNullFiltered: boolean;
+    isNullFiltered: boolean
 
     /**
      * Fulltext parser.

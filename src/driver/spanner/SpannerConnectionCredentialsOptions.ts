@@ -2,19 +2,18 @@
  * Spanner specific connection credential options.
  */
 export interface SpannerConnectionCredentialsOptions {
-
     /**
      * Connection url where perform connection to.
      */
-    readonly instanceId?: string;
+    readonly instanceId?: string
 
     /**
      * Database host.
      */
-    readonly projectId?: string;
+    readonly projectId?: string
 
     /**
      * Database host port.
      */
-    readonly databaseId?: string;
+    readonly databaseId?: string
 }

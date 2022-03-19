@@ -102,7 +102,7 @@ export type SimpleColumnType =
     | "float" // mysql, mssql, oracle, sqlite, sap
     | "float4" // postgres, cockroachdb
     | "float8" // postgres, cockroachdb
-    |"float64" // spanner
+    | "float64" // spanner
     | "smallmoney" // mssql
     | "money" // postgres, mssql
 
