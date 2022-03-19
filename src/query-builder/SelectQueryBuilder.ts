@@ -3206,7 +3206,9 @@ export class SelectQueryBuilder<Entity>
                         primaryColumn.databaseName,
                     )
 
-                    return `${distinctAlias}.${columnAlias} as "${alias}"`
+                    return `${distinctAlias}.${columnAlias} AS ${this.escape(
+                        alias,
+                    )}`
                 },
             )
 
