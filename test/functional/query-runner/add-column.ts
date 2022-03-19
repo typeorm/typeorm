@@ -141,9 +141,12 @@ describe("query runner > add column", () => {
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "postgres"
+                    connection.driver.options.type === "postgres" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     const isMySQL = connection.options.type === "mysql"
+                    const isSpanner =
+                        connection.driver.options.type === "spanner"
                     let postgresSupported = false
 
                     if (connection.driver.options.type === "postgres") {
@@ -152,12 +155,13 @@ describe("query runner > add column", () => {
                         ).isGeneratedColumnsSupported
                     }
 
-                    if (isMySQL || postgresSupported) {
+                    if (isMySQL || isSpanner || postgresSupported) {
                         await queryRunner.addColumn(table!, column3)
                         table = await queryRunner.getTable("post")
                         column3 = table!.findColumnByName("textAndTag")!
                         column3.should.be.exist
                         column3!.generatedType!.should.be.equals("STORED")
+                        column3!.asExpression!.should.be.equal("text || tag")
                         column3!.asExpression!.should.be.a("string")
 
                         if (DriverUtils.isMySQLFamily(connection.driver)) {

@@ -159,7 +159,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             const queryStartTime = +new Date()
             await this.connect()
             let rows: any[] = []
-            const isSelect = query.substr(0, "SELECT".length) === "SELECT"
+            const isSelect = query.startsWith("SELECT")
             const executor = isSelect
                 ? this.driver.instanceDatabase
                 : this.sessionTransaction
@@ -756,35 +756,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.dropIndexSql(table, uniqueIndex))
         }
 
-        if (column.generatedType === "STORED" && column.asExpression) {
-            const tableNameWithSchema = (
-                await this.getTableNameWithSchema(table.name)
-            ).split(".")
-            const tableName = tableNameWithSchema[1]
-            const schema = tableNameWithSchema[0]
-
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
-
-            upQueries.push(deleteQuery)
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
-        }
-
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.addColumn(column)
@@ -850,7 +821,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         let clonedTable = table.clone()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
-        let defaultValueChanged = false
 
         const oldColumn =
             oldTableColumnOrName instanceof TableColumn
@@ -1248,182 +1218,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 }
             }
 
-            // the default might have changed when the enum changed
-            if (
-                newColumn.default !== oldColumn.default &&
-                !defaultValueChanged
-            ) {
-                if (
-                    newColumn.default !== null &&
-                    newColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${
-                                newColumn.default
-                            }`,
-                        ),
-                    )
-
-                    if (
-                        oldColumn.default !== null &&
-                        oldColumn.default !== undefined
-                    ) {
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} ALTER COLUMN "${
-                                    newColumn.name
-                                }" SET DEFAULT ${oldColumn.default}`,
-                            ),
-                        )
-                    } else {
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} ALTER COLUMN "${
-                                    newColumn.name
-                                }" DROP DEFAULT`,
-                            ),
-                        )
-                    }
-                } else if (
-                    oldColumn.default !== null &&
-                    oldColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${
-                                oldColumn.default
-                            }`,
-                        ),
-                    )
-                }
-            }
-
-            if (
-                (newColumn.spatialFeatureType || "").toLowerCase() !==
-                    (oldColumn.spatialFeatureType || "").toLowerCase() ||
-                newColumn.srid !== oldColumn.srid
-            ) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
-            }
-
             if (newColumn.generatedType !== oldColumn.generatedType) {
-                // Convert generated column data to normal column
-                if (
-                    !newColumn.generatedType ||
-                    newColumn.generatedType === "VIRTUAL"
-                ) {
-                    // We can copy the generated data to the new column
-                    const tableNameWithSchema = (
-                        await this.getTableNameWithSchema(table.name)
-                    ).split(".")
-                    const tableName = tableNameWithSchema[1]
-                    const schema = tableNameWithSchema[0]
-
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} RENAME COLUMN "${oldColumn.name}" TO "TEMP_OLD_${
-                                oldColumn.name
-                            }"`,
-                        ),
-                    )
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD ${this.buildCreateColumnSql(newColumn)}`,
-                        ),
-                    )
-                    upQueries.push(
-                        new Query(
-                            `UPDATE ${this.escapePath(table)} SET "${
-                                newColumn.name
-                            }" = "TEMP_OLD_${oldColumn.name}"`,
-                        ),
-                    )
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`,
-                        ),
-                    )
-                    upQueries.push(
-                        this.deleteTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
-                        }),
-                    )
-                    // However, we can't copy it back on downgrade. It needs to regenerate.
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP COLUMN ${this.driver.escape(
-                                newColumn.name,
-                            )}`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD ${this.buildCreateColumnSql(oldColumn)}`,
-                        ),
-                    )
-                    downQueries.push(
-                        this.deleteTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: newColumn.name,
-                        }),
-                    )
-                    downQueries.push(
-                        this.insertTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
-                            value: oldColumn.asExpression,
-                        }),
-                    )
-                }
             }
         }
 
@@ -1566,32 +1361,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} ADD ${this.buildCreateColumnSql(column)}`,
             ),
         )
-
-        if (column.generatedType === "STORED") {
-            const tableNameWithSchema = (
-                await this.getTableNameWithSchema(table.name)
-            ).split(".")
-            const tableName = tableNameWithSchema[1]
-            const schema = tableNameWithSchema[0]
-            const insertQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
-            const deleteQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
-        }
 
         await this.executeQueries(upQueries, downQueries)
 
@@ -2106,6 +1875,39 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     // -------------------------------------------------------------------------
+    // Override Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Executes up sql queries.
+     */
+    async executeMemoryUpSql(): Promise<void> {
+        for (const { query, parameters } of this.sqlInMemory.upQueries) {
+            if (this.isDMLQuery(query)) {
+                await this.query(query, parameters)
+            } else {
+                await this.updateDDL(query, parameters)
+            }
+        }
+    }
+
+    /**
+     * Executes down sql queries.
+     */
+    async executeMemoryDownSql(): Promise<void> {
+        for (const {
+            query,
+            parameters,
+        } of this.sqlInMemory.downQueries.reverse()) {
+            if (this.isDMLQuery(query)) {
+                await this.query(query, parameters)
+            } else {
+                await this.updateDDL(query, parameters)
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
 
@@ -2318,13 +2120,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                             )
                         }
 
-                        if (dbColumn["GENERATION_EXPRESSION"]) {
+                        if (dbColumn["IS_GENERATED"] === "ALWAYS") {
                             tableColumn.asExpression =
                                 dbColumn["GENERATION_EXPRESSION"]
                             tableColumn.generatedType =
-                                dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1
-                                    ? "VIRTUAL"
-                                    : "STORED"
+                                dbColumn["IS_STORED"] === "YES"
+                                    ? "STORED"
+                                    : "VIRTUAL"
                         }
 
                         tableColumn.isUnique =
@@ -2343,72 +2145,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 )
                             },
                         )
-
-                        if (
-                            tableColumn.type === "decimal" ||
-                            tableColumn.type === "double" ||
-                            tableColumn.type === "float"
-                        ) {
-                            if (
-                                dbColumn["NUMERIC_PRECISION"] !== null &&
-                                !this.isDefaultColumnPrecision(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            )
-                                tableColumn.precision = parseInt(
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            if (
-                                dbColumn["NUMERIC_SCALE"] !== null &&
-                                !this.isDefaultColumnScale(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                            )
-                                tableColumn.scale = parseInt(
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                        }
-
-                        if (
-                            tableColumn.type === "enum" ||
-                            tableColumn.type === "simple-enum" ||
-                            tableColumn.type === "set"
-                        ) {
-                            const colType = dbColumn["COLUMN_TYPE"]
-                            const items = colType
-                                .substring(
-                                    colType.indexOf("(") + 1,
-                                    colType.lastIndexOf(")"),
-                                )
-                                .split(",")
-                            tableColumn.enum = (items as string[]).map(
-                                (item) => {
-                                    return item.substring(1, item.length - 1)
-                                },
-                            )
-                            tableColumn.length = ""
-                        }
-
-                        if (
-                            (tableColumn.type === "datetime" ||
-                                tableColumn.type === "time" ||
-                                tableColumn.type === "timestamp") &&
-                            dbColumn["DATETIME_PRECISION"] !== null &&
-                            dbColumn["DATETIME_PRECISION"] !== undefined &&
-                            !this.isDefaultColumnPrecision(
-                                table,
-                                tableColumn,
-                                parseInt(dbColumn["DATETIME_PRECISION"]),
-                            )
-                        ) {
-                            tableColumn.precision = parseInt(
-                                dbColumn["DATETIME_PRECISION"],
-                            )
-                        }
 
                         return tableColumn
                     })
@@ -2785,40 +2521,18 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Get the table name with table schema
-     * Note: Without ' or "
-     */
-    protected async getTableNameWithSchema(target: Table | string) {
-        const tableName = target instanceof Table ? target.name : target
-        if (tableName.indexOf(".") === -1) {
-            const schemaResult = await this.query(`SELECT current_schema()`)
-            const schema = schemaResult[0]["current_schema"]
-            return `${schema}.${tableName}`
-        } else {
-            return `${tableName.split(".")[0]}.${tableName.split(".")[1]}`
-        }
-    }
-
-    /**
      * Builds a part of query to create/change a column.
      */
-    protected buildCreateColumnSql(
-        column: TableColumn,
-        skipName: boolean = false,
-    ) {
+    protected buildCreateColumnSql(column: TableColumn) {
         let c = `${this.driver.escape(
             column.name,
         )} ${this.connection.driver.createFullType(column)}`
 
-        if (column.asExpression)
+        if (column.asExpression) {
             c += ` AS (${column.asExpression}) ${
-                column.generatedType ? column.generatedType : "VIRTUAL"
+                column.generatedType ? column.generatedType : "STORED"
             }`
-
-        if (column.enum)
-            c += ` (${column.enum
-                .map((value) => "'" + value.replace(/'/g, "''") + "'")
-                .join(", ")})`
+        }
 
         if (!column.isNullable) c += " NOT NULL"
 
@@ -2843,28 +2557,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             return Promise.resolve() as Promise<any>
 
         for (const { query, parameters } of upQueries) {
-            await this.updateDDL(query, parameters)
+            if (this.isDMLQuery(query)) {
+                await this.query(query, parameters)
+            } else {
+                await this.updateDDL(query, parameters)
+            }
         }
     }
 
-    /**
-     * Executes up sql queries.
-     */
-    async executeMemoryUpSql(): Promise<void> {
-        for (const { query, parameters } of this.sqlInMemory.upQueries) {
-            await this.updateDDL(query, parameters)
-        }
-    }
-
-    /**
-     * Executes down sql queries.
-     */
-    async executeMemoryDownSql(): Promise<void> {
-        for (const {
-            query,
-            parameters,
-        } of this.sqlInMemory.downQueries.reverse()) {
-            await this.updateDDL(query, parameters)
-        }
+    protected isDMLQuery(query: string): boolean {
+        return query.startsWith("INSERT") || query.startsWith("DELETE")
     }
 }
