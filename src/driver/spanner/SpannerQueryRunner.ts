@@ -1421,13 +1421,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     const tableColumn = new TableColumn();
                     tableColumn.name = dbColumn["COLUMN_NAME"];
 
-                    const fullType = dbColumn["SPANNER_TYPE"].toLowerCase();
-                    tableColumn.type = fullType.substring(0, fullType.indexOf("("));
+                    let fullType = dbColumn["SPANNER_TYPE"].toLowerCase();
+                    if (fullType.indexOf("array") !== -1) {
+                        tableColumn.isArray = true
+                        fullType = fullType.substring(fullType.indexOf("<") + 1, fullType.indexOf(">"))
+                    }
 
-                    if (this.driver.withWidthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {
-                        const width = fullType.substring(fullType.indexOf("(") + 1, fullType.indexOf(")"));
-                        if (width !== "MAX")
-                            tableColumn.width = parseInt(width) // && !this.isDefaultColumnWidth(table, tableColumn, parseInt(width)) ? parseInt(width) : undefined;
+                    if (fullType.indexOf("(") !== -1) {
+                        tableColumn.type = fullType.substring(0, fullType.indexOf("("));
+                    } else {
+                        tableColumn.type = fullType;
                     }
 
                     if (this.driver.withLengthColumnTypes.indexOf(tableColumn.type as ColumnType) !== -1) {

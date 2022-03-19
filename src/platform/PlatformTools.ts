@@ -46,6 +46,8 @@ export class PlatformTools {
                 */
                 case "spanner":
                     return require("@google-cloud/spanner");
+                case "precise-date":
+                    return require("@google-cloud/precise-date");
 
                 /**
                 * mongodb

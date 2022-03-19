@@ -157,6 +157,9 @@
     "typeorm-aurora-data-api-driver": "^2.0.0"
   },
   "peerDependenciesMeta": {
+    "@google-cloud/precise-date": {
+      "optional": true
+    },
     "@google-cloud/spanner": {
       "optional": true
     },

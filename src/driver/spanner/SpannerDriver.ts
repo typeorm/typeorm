@@ -123,16 +123,12 @@ export class SpannerDriver implements Driver {
     /**
      * Gets list of column data types that support precision by a driver.
      */
-    withPrecisionColumnTypes: ColumnType[] = [
-        "numeric"
-    ];
+    withPrecisionColumnTypes: ColumnType[] = [];
 
     /**
      * Gets list of column data types that supports scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = [
-        "numeric"
-    ];
+    withScaleColumnTypes: ColumnType[] = [];
 
     /**
      * ORM has special columns and we need to know what database column types should be for those columns.
@@ -168,9 +164,7 @@ export class SpannerDriver implements Driver {
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
-    dataTypeDefaults: DataTypeDefaults = {
-        "numeric": { precision: 38, scale: 9 },
-    };
+    dataTypeDefaults: DataTypeDefaults = {};
 
 
     /**
@@ -355,32 +349,18 @@ export class SpannerDriver implements Driver {
         if (value === null || value === undefined)
             return value;
 
-        if (columnMetadata.type === Boolean) {
-            return value === true ? 1 : 0;
+        if (columnMetadata.type === "numeric") {
+            const lib = this.options.driver || PlatformTools.load("spanner");
+            return lib.Spanner.numeric(value);
 
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value);
 
-        } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedDateToTimeString(value);
-
         } else if (columnMetadata.type === "json") {
-            return JSON.stringify(value);
+            return value;
 
-        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === "datetime" || columnMetadata.type === Date) {
+        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === Date) {
             return DateUtils.mixedDateToDate(value);
-
-        } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.simpleArrayToString(value);
-
-        } else if (columnMetadata.type === "simple-json") {
-            return DateUtils.simpleJsonToString(value);
-
-        } else if (columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") {
-            return "" + value;
-
-        } else if (columnMetadata.type === "set") {
-            return DateUtils.simpleArrayToString(value);
         }
 
         return value;
@@ -393,35 +373,20 @@ export class SpannerDriver implements Driver {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
-        if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
+        if (columnMetadata.type === Boolean || columnMetadata.type === "bool") {
             value = value ? true : false;
 
-        } else if (columnMetadata.type === "datetime" || columnMetadata.type === Date) {
-            value = DateUtils.normalizeHydratedDate(value);
+        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === Date) {
+            value = new Date(value);
+
+        } else if (columnMetadata.type === "numeric") {
+            value = value.value
 
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value);
 
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value;
-
-        } else if (columnMetadata.type === "time") {
-            value = DateUtils.mixedTimeToString(value);
-
-        } else if (columnMetadata.type === "simple-array") {
-            value = DateUtils.stringToSimpleArray(value);
-
-        } else if (columnMetadata.type === "simple-json") {
-            value = DateUtils.stringToSimpleJson(value);
-
-        } else if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum")
-            && columnMetadata.enum
-            && !isNaN(value)
-            && columnMetadata.enum.indexOf(parseInt(value)) >= 0) {
-            // convert to number if that exists in possible enum options
-            value = parseInt(value);
-        } else if (columnMetadata.type === "set") {
-            value = DateUtils.stringToSimpleArray(value);
         }
 
         if (columnMetadata.transformer)
@@ -441,19 +406,13 @@ export class SpannerDriver implements Driver {
             return "string";
 
         } else if (column.type === Date) {
-            return "date";
+            return "timestamp";
 
         } else if ((column.type as any) === Buffer) {
             return "bytes";
 
         } else if (column.type === Boolean) {
             return "bool";
-
-        } else if (column.type === "uuid") {
-            return "string";
-
-        } else if (column.type === "simple-array" || column.type === "simple-json") {
-            return "string";
 
         } else {
             return column.type as string || "";
@@ -462,44 +421,11 @@ export class SpannerDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     *
+     * Spanner does not support default values.
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
-        const defaultValue = columnMetadata.default;
-
-        if (defaultValue === null) {
-            return undefined;
-        }
-
-        if (
-            (columnMetadata.type === "enum"
-            || columnMetadata.type === "simple-enum"
-            || typeof defaultValue === "string")
-            && defaultValue !== undefined) {
-            return `'${defaultValue}'`;
-        }
-
-        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
-            return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
-        }
-
-        if (typeof defaultValue === "number") {
-            return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
-        }
-
-        if (typeof defaultValue === "boolean") {
-            return defaultValue ? "1" : "0";
-        }
-
-        if (typeof defaultValue === "function") {
-            const value = defaultValue();
-            return this.normalizeDatetimeFunction(value);
-        }
-
-        if (defaultValue === undefined) {
-            return undefined;
-        }
-
-        return `${defaultValue}`;
+        return `${columnMetadata.default}`;
     }
 
     /**
@@ -516,15 +442,10 @@ export class SpannerDriver implements Driver {
         if (column.length)
             return column.length.toString();
 
-        /**
-         * fix https://github.com/typeorm/typeorm/issues/1139
-         */
-        if (column.generationStrategy === "uuid")
-            return "36";
-
         switch (column.type) {
             case String:
             case "string":
+            case "bytes":
                 return "MAX";
             default:
                 return "";
@@ -552,7 +473,7 @@ export class SpannerDriver implements Driver {
         }
 
         if (column.isArray)
-            type += " array";
+            type = `array<${type}>`;
 
         return type;
     }
