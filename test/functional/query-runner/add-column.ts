@@ -6,9 +6,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
-import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 
 describe("query runner > add column", () => {
     let connections: DataSource[]
@@ -24,49 +23,58 @@ describe("query runner > add column", () => {
     it("should correctly add column and revert add", () =>
         Promise.all(
             connections.map(async (connection) => {
+                let numericType = "int"
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    numericType = "integer"
+                } else if (connection.driver.options.type === "spanner") {
+                    numericType = "int64"
+                }
+
+                let stringType = "varchar"
+                if (connection.driver.options.type === "spanner") {
+                    stringType = "string"
+                }
+
                 const queryRunner = connection.createQueryRunner()
 
-        let numericType = "int"
-        if (connection.driver instanceof AbstractSqliteDriver) {
-            numericType = "integer"
-        } else if (connection.driver instanceof SpannerDriver) {
-            numericType = "int64"
-        }
+                let table = await queryRunner.getTable("post")
+                let column1 = new TableColumn({
+                    name: "secondId",
+                    type: numericType,
+                    isUnique: true,
+                    isNullable: connection.driver.options.type === "spanner",
+                })
 
-        let stringType = "varchar"
-        if (connection.driver instanceof SpannerDriver) {
-            stringType = "string"
-        }
+                // CockroachDB and Spanner does not support altering primary key constraint
+                if (
+                    !(
+                        connection.driver.options.type === "cockroachdb" ||
+                        connection.driver.options.type === "spanner"
+                    )
+                )
+                    column1.isPrimary = true
 
-        const queryRunner = connection.createQueryRunner();
-
-        let table = await queryRunner.getTable("post");
-        let column1 = new TableColumn({
-            name: "secondId",
-            type: numericType,
-            isUnique: true,
-            isNullable: connection.driver instanceof SpannerDriver
-        });
-
-        // CockroachDB and Spanner does not support altering primary key constraint
-        if (!(connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver))
-            column1.isPrimary = true;
-
-        // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
-        // Spanner does not support autoincrement.
-        if (!(connection.driver instanceof MysqlDriver || connection.driver instanceof AbstractSqliteDriver
-            || connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver)) {
-            column1.isGenerated = true;
-            column1.generationStrategy = "increment";
-        }
+                // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
+                // Spanner does not support autoincrement.
+                if (
+                    !(
+                        DriverUtils.isMySQLFamily(connection.driver) ||
+                        DriverUtils.isSQLiteFamily(connection.driver) ||
+                        connection.driver.options.type === "cockroachdb" ||
+                        connection.driver.options.type === "spanner"
+                    )
+                ) {
+                    column1.isGenerated = true
+                    column1.generationStrategy = "increment"
+                }
 
                 let column2 = new TableColumn({
                     name: "description",
                     type: stringType,
                     length: "100",
                     default: "'this is description'",
-            isNullable: connection.driver instanceof SpannerDriver
-        })
+                    isNullable: connection.driver.options.type === "spanner",
+                })
 
                 let column3 = new TableColumn({
                     name: "textAndTag",
@@ -74,8 +82,8 @@ describe("query runner > add column", () => {
                     length: "200",
                     generatedType: "STORED",
                     asExpression: "text || tag",
-            isNullable: connection.driver instanceof SpannerDriver
-        })
+                    isNullable: connection.driver.options.type === "spanner",
+                })
 
                 let column4 = new TableColumn({
                     name: "textAndTag2",
@@ -83,42 +91,53 @@ describe("query runner > add column", () => {
                     length: "200",
                     generatedType: "VIRTUAL",
                     asExpression: "text || tag",
-            isNullable: connection.driver instanceof SpannerDriver
-        })
+                    isNullable: connection.driver.options.type === "spanner",
+                })
 
                 await queryRunner.addColumn(table!, column1)
                 await queryRunner.addColumn("post", column2)
 
-        table = await queryRunner.getTable("post");
-        column1 = table!.findColumnByName("secondId")!;
-        column1!.should.be.exist;
-        column1!.isUnique.should.be.true;
-        if (connection.driver instanceof SpannerDriver) {
-            column1!.isNullable.should.be.true;
-        } else {
-            column1!.isNullable.should.be.false;
-        }
+                table = await queryRunner.getTable("post")
+                column1 = table!.findColumnByName("secondId")!
+                column1!.should.be.exist
+                column1!.isUnique.should.be.true
+                if (connection.driver.options.type === "spanner") {
+                    column1!.isNullable.should.be.true
+                } else {
+                    column1!.isNullable.should.be.false
+                }
 
-        // CockroachDB and Spanner does not support altering primary key constraint
-        if (!(connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver))
-            column1!.isPrimary.should.be.true;
+                // CockroachDB and Spanner does not support altering primary key constraint
+                if (
+                    !(
+                        connection.driver.options.type === "cockroachdb" ||
+                        connection.driver.options.type === "spanner"
+                    )
+                )
+                    column1!.isPrimary.should.be.true
 
-        // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
-        // Spanner does not support autoincrement.
-        if (!(connection.driver instanceof MysqlDriver || connection.driver instanceof AbstractSqliteDriver
-            || connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver)) {
-            column1!.isGenerated.should.be.true;
-            column1!.generationStrategy!.should.be.equal("increment");
-        }
+                // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
+                // Spanner does not support autoincrement.
+                if (
+                    !(
+                        DriverUtils.isMySQLFamily(connection.driver) ||
+                        DriverUtils.isSQLiteFamily(connection.driver) ||
+                        connection.driver.options.type === "cockroachdb" ||
+                        connection.driver.options.type === "spanner"
+                    )
+                ) {
+                    column1!.isGenerated.should.be.true
+                    column1!.generationStrategy!.should.be.equal("increment")
+                }
 
-        column2 = table!.findColumnByName("description")!;
-        column2.should.be.exist;
-        column2.length.should.be.equal("100");
+                column2 = table!.findColumnByName("description")!
+                column2.should.be.exist
+                column2.length.should.be.equal("100")
 
-        // Spanner does not support DEFAULT
-        if (!(connection.driver instanceof SpannerDriver)) {
-            column2!.default!.should.be.equal("'this is description'");
-        }
+                // Spanner does not support DEFAULT
+                if (!(connection.driver.options.type === "spanner")) {
+                    column2!.default!.should.be.equal("'this is description'")
+                }
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||

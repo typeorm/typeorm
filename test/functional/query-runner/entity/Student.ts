@@ -1,6 +1,12 @@
-import {Column, Entity, PrimaryGeneratedColumn, ManyToOne, Index} from "../../../../src";
-import {Faculty} from "./Faculty";
-import {Teacher} from "./Teacher";
+import {
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+    ManyToOne,
+    Index,
+} from "../../../../src"
+import { Faculty } from "./Faculty"
+import { Teacher } from "./Teacher"
 
 @Entity()
 @Index("student_name_index", ["name"])

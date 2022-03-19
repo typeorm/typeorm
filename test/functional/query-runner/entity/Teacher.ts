@@ -1,5 +1,10 @@
-import {Column, Entity, OneToMany, PrimaryGeneratedColumn} from "../../../../src";
-import {Student} from "./Student";
+import {
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { Student } from "./Student"
 
 @Entity()
 export class Teacher {

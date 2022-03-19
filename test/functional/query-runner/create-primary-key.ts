@@ -6,7 +6,6 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Table } from "../../../src/schema-builder/table/Table"
-import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 
 describe("query runner > create primary key", () => {
     let connections: DataSource[]
@@ -20,11 +19,15 @@ describe("query runner > create primary key", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should correctly create primary key and revert creation", () => Promise.all(connections.map(async connection => {
-
-        // CockroachDB and Spanner does not allow altering primary key
-        if (connection.driver instanceof CockroachDriver || connection.driver instanceof SpannerDriver)
-            return;
+    it("should correctly create primary key and revert creation", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // CockroachDB and Spanner does not allow altering primary key
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 await queryRunner.createTable(

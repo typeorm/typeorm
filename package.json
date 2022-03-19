@@ -123,6 +123,7 @@
     "mysql2": "^2.2.5",
     "pg": "^8.5.1",
     "pg-query-stream": "^4.0.0",
+    "prettier": "^2.5.1",
     "redis": "^3.1.1",
     "remap-istanbul": "^0.13.0",
     "rimraf": "^3.0.2",
@@ -133,11 +134,10 @@
     "sqlite3": "^5.0.2",
     "ts-node": "^9.1.1",
     "typeorm-aurora-data-api-driver": "^2.0.0",
-    "typescript": "^4.6.2",
-    "prettier": "^2.5.1"
+    "typescript": "^4.6.2"
   },
   "peerDependencies": {
-    "@google-cloud/spanner": "^5.16.3",
+    "@google-cloud/spanner": "^5.17.0",
     "@sap/hana-client": "^2.11.14",
     "better-sqlite3": "^7.1.2",
     "hdb-pool": "^0.1.6",
@@ -155,9 +155,6 @@
     "typeorm-aurora-data-api-driver": "^2.0.0"
   },
   "peerDependenciesMeta": {
-    "@google-cloud/precise-date": {
-      "optional": true
-    },
     "@google-cloud/spanner": {
       "optional": true
     },
@@ -213,6 +210,7 @@
     "buffer": "^6.0.3",
     "chalk": "^4.1.0",
     "cli-highlight": "^2.1.11",
+    "date-fns": "^2.28.0",
     "debug": "^4.3.3",
     "dotenv": "^16.0.0",
     "glob": "^7.2.0",
@@ -223,8 +221,7 @@
     "tslib": "^2.3.1",
     "uuid": "^8.3.2",
     "xml2js": "^0.4.23",
-    "yargs": "^17.3.1",
-    "date-fns": "^2.28.0"
+    "yargs": "^17.3.1"
   },
   "scripts": {
     "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",

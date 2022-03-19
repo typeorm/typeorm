@@ -17,7 +17,6 @@ import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
 import { PostgresDriver } from "../driver/postgres/PostgresDriver"
 import { DriverUtils } from "../driver/DriverUtils"
-import {SpannerDriver} from "../driver/spanner/SpannerDriver";
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -1186,7 +1185,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // Spanner requires at least one primary key in a table.
         // Since we don't have unique column in "typeorm_metadata" table
         // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
-        const isPrimary = this.connection.driver instanceof SpannerDriver;
+        const isPrimary = this.connection.driver.options.type === "spanner"
         await queryRunner.createTable(
             new Table({
                 database: database,
@@ -1200,7 +1199,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataType,
                         }),
                         isNullable: false,
-                        isPrimary
+                        isPrimary,
                     },
                     {
                         name: "database",
@@ -1209,7 +1208,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataDatabase,
                         }),
                         isNullable: true,
-                        isPrimary
+                        isPrimary,
                     },
                     {
                         name: "schema",
@@ -1218,7 +1217,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataSchema,
                         }),
                         isNullable: true,
-                        isPrimary
+                        isPrimary,
                     },
                     {
                         name: "table",
@@ -1227,7 +1226,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataTable,
                         }),
                         isNullable: true,
-                        isPrimary
+                        isPrimary,
                     },
                     {
                         name: "name",
@@ -1236,7 +1235,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataName,
                         }),
                         isNullable: true,
-                        isPrimary
+                        isPrimary,
                     },
                     {
                         name: "value",
@@ -1245,7 +1244,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataValue,
                         }),
                         isNullable: true,
-                        isPrimary
+                        isPrimary,
                     },
                 ],
             }),

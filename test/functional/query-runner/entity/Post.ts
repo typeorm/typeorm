@@ -1,4 +1,11 @@
-import {Check, Column, Entity, Exclusion, PrimaryColumn, Unique} from "../../../../src";
+import {
+    Check,
+    Column,
+    Entity,
+    Exclusion,
+    PrimaryColumn,
+    Unique,
+} from "../../../../src"
 
 @Entity()
 @Unique(["text", "tag"])

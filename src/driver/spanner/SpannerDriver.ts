@@ -1,31 +1,29 @@
-import {Driver, ReturningType} from "../Driver";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {SpannerQueryRunner} from "./SpannerQueryRunner";
-import {ObjectLiteral} from "../../common/ObjectLiteral";
-import {ColumnMetadata} from "../../metadata/ColumnMetadata";
-import {DateUtils} from "../../util/DateUtils";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {RdbmsSchemaBuilder} from "../../schema-builder/RdbmsSchemaBuilder";
-import {SpannerConnectionOptions} from "./SpannerConnectionOptions";
-import {MappedColumnTypes} from "../types/MappedColumnTypes";
-import {ColumnType} from "../types/ColumnTypes";
-import {DataTypeDefaults} from "../types/DataTypeDefaults";
-import {TableColumn} from "../../schema-builder/table/TableColumn";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {OrmUtils} from "../../util/OrmUtils";
-import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
-import {ReplicationMode} from "../types/ReplicationMode";
-import {TypeORMError} from "../../error";
-import {Table} from "../../schema-builder/table/Table";
-import {View} from "../../schema-builder/view/View";
-import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
+import { Driver, ReturningType } from "../Driver"
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { SpannerQueryRunner } from "./SpannerQueryRunner"
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { DateUtils } from "../../util/DateUtils"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { Connection } from "../../connection/Connection"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import { SpannerConnectionOptions } from "./SpannerConnectionOptions"
+import { MappedColumnTypes } from "../types/MappedColumnTypes"
+import { ColumnType } from "../types/ColumnTypes"
+import { DataTypeDefaults } from "../types/DataTypeDefaults"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { OrmUtils } from "../../util/OrmUtils"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { Table } from "../../schema-builder/table/Table"
+import { View } from "../../schema-builder/view/View"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 
 /**
  * Organizes communication with Spanner DBMS.
  */
 export class SpannerDriver implements Driver {
-
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -33,27 +31,27 @@ export class SpannerDriver implements Driver {
     /**
      * Connection used by driver.
      */
-    connection: Connection;
+    connection: Connection
 
     /**
      * Cloud Spanner underlying library.
      */
-    spanner: any;
+    spanner: any
 
     /**
      * Cloud Spanner instance.
      */
-    instance: any;
+    instance: any
 
     /**
      * Cloud Spanner database.
      */
-    instanceDatabase: any;
+    instanceDatabase: any
 
     /**
      * Database name.
      */
-    database?: string;
+    database?: string
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -62,22 +60,22 @@ export class SpannerDriver implements Driver {
     /**
      * Connection options.
      */
-    options: SpannerConnectionOptions;
+    options: SpannerConnectionOptions
 
     /**
      * Indicates if replication is enabled.
      */
-    isReplicated: boolean = false;
+    isReplicated: boolean = false
 
     /**
      * Indicates if tree tables are supported by this driver.
      */
-    treeSupport = true;
+    treeSupport = true
 
     /**
      * Represent transaction support by this driver
      */
-    transactionSupport = "nested" as const;
+    transactionSupport = "nested" as const
 
     /**
      * Gets list of supported column data types by a driver.
@@ -94,41 +92,38 @@ export class SpannerDriver implements Driver {
         "bytes",
         "date",
         "timestamp",
-        "array"
-    ];
+        "array",
+    ]
 
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-duplicate-key-update";
+    readonly supportedUpsertType = "on-duplicate-key-update"
 
     /**
      * Gets list of spatial column data types.
      */
-    spatialTypes: ColumnType[] = [];
+    spatialTypes: ColumnType[] = []
 
     /**
      * Gets list of column data types that support length by a driver.
      */
-    withLengthColumnTypes: ColumnType[] = [
-        "string",
-        "bytes"
-    ];
+    withLengthColumnTypes: ColumnType[] = ["string", "bytes"]
 
     /**
      * Gets list of column data types that support length by a driver.
      */
-    withWidthColumnTypes: ColumnType[] = [];
+    withWidthColumnTypes: ColumnType[] = []
 
     /**
      * Gets list of column data types that support precision by a driver.
      */
-    withPrecisionColumnTypes: ColumnType[] = [];
+    withPrecisionColumnTypes: ColumnType[] = []
 
     /**
      * Gets list of column data types that supports scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = [];
+    withScaleColumnTypes: ColumnType[] = []
 
     /**
      * ORM has special columns and we need to know what database column types should be for those columns.
@@ -158,42 +153,41 @@ export class SpannerDriver implements Driver {
         metadataTable: "string",
         metadataName: "string",
         metadataValue: "string",
-    };
+    }
 
     /**
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
-    dataTypeDefaults: DataTypeDefaults = {};
-
+    dataTypeDefaults: DataTypeDefaults = {}
 
     /**
      * Max length allowed by MySQL for aliases.
      * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
      */
-    maxAliasLength = 63;
-
+    maxAliasLength = 63
 
     /**
      * Supported returning types
      */
-    private readonly _isReturningSqlSupported: Record<ReturningType, boolean> = {
-        delete: false,
-        insert: false,
-        update: false,
-    };
+    private readonly _isReturningSqlSupported: Record<ReturningType, boolean> =
+        {
+            delete: false,
+            insert: false,
+            update: false,
+        }
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(connection: Connection) {
-        this.connection = connection;
-        this.options = connection.options as SpannerConnectionOptions;
-        this.isReplicated = this.options.replication ? true : false;
+        this.connection = connection
+        this.options = connection.options as SpannerConnectionOptions
+        this.isReplicated = this.options.replication ? true : false
 
         // load mysql package
-        this.loadDependencies();
+        this.loadDependencies()
     }
 
     // -------------------------------------------------------------------------
@@ -204,15 +198,15 @@ export class SpannerDriver implements Driver {
      * Performs connection to the database.
      */
     async connect(): Promise<void> {
-        this.instance = this.spanner.instance(this.options.instanceId);
-        this.instanceDatabase = this.instance.database(this.options.databaseId);
+        this.instance = this.spanner.instance(this.options.instanceId)
+        this.instanceDatabase = this.instance.database(this.options.databaseId)
     }
 
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     afterConnect(): Promise<void> {
-        return Promise.resolve();
+        return Promise.resolve()
     }
 
     /**
@@ -226,97 +220,119 @@ export class SpannerDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection);
+        return new RdbmsSchemaBuilder(this.connection)
     }
 
     /**
      * Creates a query runner used to execute database queries.
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new SpannerQueryRunner(this, mode);
+        return new SpannerQueryRunner(this, mode)
     }
 
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
+    escapeQueryWithParameters(
+        sql: string,
+        parameters: ObjectLiteral,
+        nativeParameters: ObjectLiteral,
+    ): [string, any[]] {
+        const escapedParameters: any[] = Object.keys(nativeParameters).map(
+            (key) => nativeParameters[key],
+        )
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, escapedParameters];
+            return [sql, escapedParameters]
 
-        sql = sql.replace(/:(\.\.\.)?([A-Za-z0-9_.]+)/g, (full, isArray: string, key: string): string => {
-            if (!parameters.hasOwnProperty(key)) {
-                return full;
-            }
+        sql = sql.replace(
+            /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
+            (full, isArray: string, key: string): string => {
+                if (!parameters.hasOwnProperty(key)) {
+                    return full
+                }
 
-            let value: any = parameters[key];
+                let value: any = parameters[key]
 
-            if (isArray) {
-                return value.map((v: any) => {
-                    escapedParameters.push(v);
-                    return this.createParameter(key, escapedParameters.length - 1);
-                }).join(", ");
+                if (isArray) {
+                    return value
+                        .map((v: any) => {
+                            escapedParameters.push(v)
+                            return this.createParameter(
+                                key,
+                                escapedParameters.length - 1,
+                            )
+                        })
+                        .join(", ")
+                }
 
-            }
+                if (value instanceof Function) {
+                    return value()
+                }
 
-            if (value instanceof Function) {
-                return value();
-
-            }
-
-            escapedParameters.push(value);
-            return this.createParameter(key, escapedParameters.length - 1);
-        }); // todo: make replace only in value statements, otherwise problems
-        return [sql, escapedParameters];
+                escapedParameters.push(value)
+                return this.createParameter(key, escapedParameters.length - 1)
+            },
+        ) // todo: make replace only in value statements, otherwise problems
+        return [sql, escapedParameters]
     }
 
     /**
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `\`${columnName}\``;
+        return `\`${columnName}\``
     }
 
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
      */
-    buildTableName(tableName: string, schema?: string, database?: string): string {
-        let tablePath = [ tableName ];
+    buildTableName(
+        tableName: string,
+        schema?: string,
+        database?: string,
+    ): string {
+        let tablePath = [tableName]
 
         if (database) {
-            tablePath.unshift(database);
+            tablePath.unshift(database)
         }
 
-        return tablePath.join(".");
+        return tablePath.join(".")
     }
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
      */
-    parseTableName(target: EntityMetadata | Table | View | TableForeignKey | string): { database?: string, schema?: string, tableName: string } {
-        const driverDatabase = this.database;
-        const driverSchema = undefined;
+    parseTableName(
+        target: EntityMetadata | Table | View | TableForeignKey | string,
+    ): { database?: string; schema?: string; tableName: string } {
+        const driverDatabase = this.database
+        const driverSchema = undefined
 
         if (target instanceof Table || target instanceof View) {
-            const parsed = this.parseTableName(target.name);
+            const parsed = this.parseTableName(target.name)
 
             return {
                 database: target.database || parsed.database || driverDatabase,
                 schema: target.schema || parsed.schema || driverSchema,
-                tableName: parsed.tableName
-            };
+                tableName: parsed.tableName,
+            }
         }
 
         if (target instanceof TableForeignKey) {
-            const parsed = this.parseTableName(target.referencedTableName);
+            const parsed = this.parseTableName(target.referencedTableName)
 
             return {
-                database: target.referencedDatabase || parsed.database || driverDatabase,
-                schema: target.referencedSchema || parsed.schema || driverSchema,
-                tableName: parsed.tableName
-            };
+                database:
+                    target.referencedDatabase ||
+                    parsed.database ||
+                    driverDatabase,
+                schema:
+                    target.referencedSchema || parsed.schema || driverSchema,
+                tableName: parsed.tableName,
+            }
         }
 
         if (target instanceof EntityMetadata) {
@@ -325,18 +341,18 @@ export class SpannerDriver implements Driver {
             return {
                 database: target.database || driverDatabase,
                 schema: target.schema || driverSchema,
-                tableName: target.tableName
-            };
-
+                tableName: target.tableName,
+            }
         }
 
-        const parts = target.split(".");
+        const parts = target.split(".")
 
         return {
-            database: (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+            database:
+                (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
             schema: driverSchema,
-            tableName: parts.length > 1 ? parts[1] : parts[0]
-        };
+            tableName: parts.length > 1 ? parts[1] : parts[0],
+        }
     }
 
     /**
@@ -344,26 +360,28 @@ export class SpannerDriver implements Driver {
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformTo(
+                columnMetadata.transformer,
+                value,
+            )
 
-        if (value === null || value === undefined)
-            return value;
+        if (value === null || value === undefined) return value
 
         if (columnMetadata.type === "numeric") {
-            const lib = this.options.driver || PlatformTools.load("spanner");
-            return lib.Spanner.numeric(value);
-
+            const lib = this.options.driver || PlatformTools.load("spanner")
+            return lib.Spanner.numeric(value)
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value);
-
+            return DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
-            return value;
-
-        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === Date) {
-            return DateUtils.mixedDateToDate(value);
+            return value
+        } else if (
+            columnMetadata.type === "timestamp" ||
+            columnMetadata.type === Date
+        ) {
+            return DateUtils.mixedDateToDate(value)
         }
 
-        return value;
+        return value
     }
 
     /**
@@ -371,51 +389,58 @@ export class SpannerDriver implements Driver {
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
-            return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
+            return columnMetadata.transformer
+                ? ApplyValueTransformers.transformFrom(
+                      columnMetadata.transformer,
+                      value,
+                  )
+                : value
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool") {
-            value = value ? true : false;
-
-        } else if (columnMetadata.type === "timestamp" || columnMetadata.type === Date) {
-            value = new Date(value);
-
+            value = value ? true : false
+        } else if (
+            columnMetadata.type === "timestamp" ||
+            columnMetadata.type === Date
+        ) {
+            value = new Date(value)
         } else if (columnMetadata.type === "numeric") {
             value = value.value
-
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value);
-
+            value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
-            value = typeof value === "string" ? JSON.parse(value) : value;
+            value = typeof value === "string" ? JSON.parse(value) : value
         }
 
         if (columnMetadata.transformer)
-            value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
+            value = ApplyValueTransformers.transformFrom(
+                columnMetadata.transformer,
+                value,
+            )
 
-        return value;
+        return value
     }
 
     /**
      * Creates a database type from a given column metadata.
      */
-    normalizeType(column: { type: ColumnType, length?: number|string, precision?: number|null, scale?: number }): string {
+    normalizeType(column: {
+        type: ColumnType
+        length?: number | string
+        precision?: number | null
+        scale?: number
+    }): string {
         if (column.type === Number) {
-            return "int64";
-
+            return "int64"
         } else if (column.type === String) {
-            return "string";
-
+            return "string"
         } else if (column.type === Date) {
-            return "timestamp";
-
+            return "timestamp"
         } else if ((column.type as any) === Buffer) {
-            return "bytes";
-
+            return "bytes"
         } else if (column.type === Boolean) {
-            return "bool";
-
+            return "bool"
         } else {
-            return column.type as string || "";
+            return (column.type as string) || ""
         }
     }
 
@@ -425,30 +450,34 @@ export class SpannerDriver implements Driver {
      * Spanner does not support default values.
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
-        return `${columnMetadata.default}`;
+        return `${columnMetadata.default}`
     }
 
     /**
      * Normalizes "isUnique" value of the column.
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.entityMetadata.indices.some(idx => idx.isUnique && idx.columns.length === 1 && idx.columns[0] === column);
+        return column.entityMetadata.indices.some(
+            (idx) =>
+                idx.isUnique &&
+                idx.columns.length === 1 &&
+                idx.columns[0] === column,
+        )
     }
 
     /**
      * Returns default column lengths, which is required on column creation.
      */
-    getColumnLength(column: ColumnMetadata|TableColumn): string {
-        if (column.length)
-            return column.length.toString();
+    getColumnLength(column: ColumnMetadata | TableColumn): string {
+        if (column.length) return column.length.toString()
 
         switch (column.type) {
             case String:
             case "string":
             case "bytes":
-                return "MAX";
+                return "MAX"
             default:
-                return "";
+                return ""
         }
     }
 
@@ -456,26 +485,30 @@ export class SpannerDriver implements Driver {
      * Creates column type definition including length, precision and scale
      */
     createFullType(column: TableColumn): string {
-        let type = column.type;
+        let type = column.type
 
         // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
         if (this.getColumnLength(column)) {
-            type += `(${this.getColumnLength(column)})`;
-
+            type += `(${this.getColumnLength(column)})`
         } else if (column.width) {
-            type += `(${column.width})`;
-
-        } else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
-            type += `(${column.precision},${column.scale})`;
-
-        } else if (column.precision !== null && column.precision !== undefined) {
-            type += `(${column.precision})`;
+            type += `(${column.width})`
+        } else if (
+            column.precision !== null &&
+            column.precision !== undefined &&
+            column.scale !== null &&
+            column.scale !== undefined
+        ) {
+            type += `(${column.precision},${column.scale})`
+        } else if (
+            column.precision !== null &&
+            column.precision !== undefined
+        ) {
+            type += `(${column.precision})`
         }
 
-        if (column.isArray)
-            type = `array<${type}>`;
+        if (column.isArray) type = `array<${type}>`
 
-        return type;
+        return type
     }
 
     /**
@@ -499,67 +532,102 @@ export class SpannerDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex: number) {
+    createGeneratedMap(
+        metadata: EntityMetadata,
+        insertResult: any,
+        entityIndex: number,
+    ) {
         if (!insertResult) {
-            return undefined;
+            return undefined
         }
 
         if (insertResult.insertId === undefined) {
             return Object.keys(insertResult).reduce((map, key) => {
-                const column = metadata.findColumnWithDatabaseName(key);
+                const column = metadata.findColumnWithDatabaseName(key)
                 if (column) {
-                    OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
+                    OrmUtils.mergeDeep(
+                        map,
+                        column.createValueMap(insertResult[key]),
+                    )
                     // OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column))); // TODO: probably should be like there, but fails on enums, fix later
                 }
-                return map;
-            }, {} as ObjectLiteral);
+                return map
+            }, {} as ObjectLiteral)
         }
 
-        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
-            let value: any;
-            if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
-                // NOTE: When multiple rows is inserted by a single INSERT statement,
-                // `insertId` is the value generated for the first inserted row only.
-                value = insertResult.insertId + entityIndex;
-            // } else if (generatedColumn.generationStrategy === "uuid") {
-            //     console.log("getting db value:", generatedColumn.databaseName);
-            //     value = generatedColumn.getEntityValue(uuidMap);
-            }
+        const generatedMap = metadata.generatedColumns.reduce(
+            (map, generatedColumn) => {
+                let value: any
+                if (
+                    generatedColumn.generationStrategy === "increment" &&
+                    insertResult.insertId
+                ) {
+                    // NOTE: When multiple rows is inserted by a single INSERT statement,
+                    // `insertId` is the value generated for the first inserted row only.
+                    value = insertResult.insertId + entityIndex
+                    // } else if (generatedColumn.generationStrategy === "uuid") {
+                    //     console.log("getting db value:", generatedColumn.databaseName);
+                    //     value = generatedColumn.getEntityValue(uuidMap);
+                }
 
-            return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
-        }, {} as ObjectLiteral);
+                return OrmUtils.mergeDeep(
+                    map,
+                    generatedColumn.createValueMap(value),
+                )
+            },
+            {} as ObjectLiteral,
+        )
 
-        return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
+        return Object.keys(generatedMap).length > 0 ? generatedMap : undefined
     }
 
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    findChangedColumns(tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
-        return columnMetadatas.filter(columnMetadata => {
-            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
-            if (!tableColumn)
-                return false; // we don't need new columns, we only need exist and changed
+    findChangedColumns(
+        tableColumns: TableColumn[],
+        columnMetadatas: ColumnMetadata[],
+    ): ColumnMetadata[] {
+        return columnMetadatas.filter((columnMetadata) => {
+            const tableColumn = tableColumns.find(
+                (c) => c.name === columnMetadata.databaseName,
+            )
+            if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== this.normalizeType(columnMetadata)
-                || tableColumn.length !== this.getColumnLength(columnMetadata)
-                || tableColumn.width !== columnMetadata.width
-                || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
-                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
-                || tableColumn.zerofill !== columnMetadata.zerofill
-                || tableColumn.unsigned !== columnMetadata.unsigned
-                || tableColumn.asExpression !== columnMetadata.asExpression
-                || tableColumn.generatedType !== columnMetadata.generatedType
-                || tableColumn.comment !== this.escapeComment(columnMetadata.comment)
-                || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
-                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
-                || tableColumn.onUpdate !== this.normalizeDatetimeFunction(columnMetadata.onUpdate)
-                || tableColumn.isPrimary !== columnMetadata.isPrimary
-                || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
-                || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
+            const isColumnChanged =
+                tableColumn.name !== columnMetadata.databaseName ||
+                tableColumn.type !== this.normalizeType(columnMetadata) ||
+                tableColumn.length !== this.getColumnLength(columnMetadata) ||
+                tableColumn.width !== columnMetadata.width ||
+                (columnMetadata.precision !== undefined &&
+                    tableColumn.precision !== columnMetadata.precision) ||
+                (columnMetadata.scale !== undefined &&
+                    tableColumn.scale !== columnMetadata.scale) ||
+                tableColumn.zerofill !== columnMetadata.zerofill ||
+                tableColumn.unsigned !== columnMetadata.unsigned ||
+                tableColumn.asExpression !== columnMetadata.asExpression ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
+                tableColumn.comment !==
+                    this.escapeComment(columnMetadata.comment) ||
+                !this.compareDefaultValues(
+                    this.normalizeDefault(columnMetadata),
+                    tableColumn.default,
+                ) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    )) ||
+                tableColumn.onUpdate !==
+                    this.normalizeDatetimeFunction(columnMetadata.onUpdate) ||
+                tableColumn.isPrimary !== columnMetadata.isPrimary ||
+                tableColumn.isNullable !== columnMetadata.isNullable ||
+                tableColumn.isUnique !==
+                    this.normalizeIsUnique(columnMetadata) ||
+                (columnMetadata.generationStrategy !== "uuid" &&
+                    tableColumn.isGenerated !== columnMetadata.isGenerated)
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -586,36 +654,36 @@ export class SpannerDriver implements Driver {
             //     console.log("==========================================");
             // }
 
-            return isColumnChanged;
-        });
+            return isColumnChanged
+        })
     }
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
-        return this._isReturningSqlSupported[returningType];
+        return this._isReturningSqlSupported[returningType]
     }
 
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
-        return false;
+        return false
     }
 
     /**
      * Returns true if driver supports fulltext indices.
      */
     isFullTextColumnTypeSupported(): boolean {
-        return true;
+        return true
     }
 
     /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "@param" + index;
+        return "@param" + index
     }
 
     // -------------------------------------------------------------------------
@@ -627,38 +695,37 @@ export class SpannerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            // try to load first supported package
-            const lib = this.options.driver || PlatformTools.load("spanner");
+            const lib = this.options.driver || PlatformTools.load("spanner")
             this.spanner = new lib.Spanner({
                 projectId: this.options.projectId,
-            });
-            /*
-             * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
-             * if it was not installed. We check that the object we got actually contains something otherwise we treat
-             * it as if the `require` call failed.
-             *
-             * @see https://github.com/typeorm/typeorm/issues/1373
-             */
-            if (Object.keys(this.spanner).length === 0) {
-                throw new TypeORMError("'mysql' was found but it is empty. Falling back to 'mysql2'.");
-            }
+            })
         } catch (e) {
-            throw new DriverPackageNotInstalledError("Spanner", "@google-cloud/spanner");
+            console.error(e)
+            throw new DriverPackageNotInstalledError(
+                "Spanner",
+                "@google-cloud/spanner",
+            )
         }
     }
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
-    protected compareDefaultValues(columnMetadataValue: string | undefined, databaseValue: string | undefined): boolean {
-        if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
+    protected compareDefaultValues(
+        columnMetadataValue: string | undefined,
+        databaseValue: string | undefined,
+    ): boolean {
+        if (
+            typeof columnMetadataValue === "string" &&
+            typeof databaseValue === "string"
+        ) {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not
-            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "");
-            databaseValue = databaseValue.replace(/^'+|'+$/g, "");
+            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "")
+            databaseValue = databaseValue.replace(/^'+|'+$/g, "")
         }
 
-        return columnMetadataValue === databaseValue;
+        return columnMetadataValue === databaseValue
     }
 
     /**
@@ -666,18 +733,21 @@ export class SpannerDriver implements Driver {
      * Otherwise returns original input.
      */
     protected normalizeDatetimeFunction(value?: string) {
-        if (!value) return value;
+        if (!value) return value
 
         // check if input is datetime function
-        const isDatetimeFunction = value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1
-            || value.toUpperCase().indexOf("NOW") !== -1;
+        const isDatetimeFunction =
+            value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1 ||
+            value.toUpperCase().indexOf("NOW") !== -1
 
         if (isDatetimeFunction) {
             // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/);
-            return precision ? `CURRENT_TIMESTAMP${precision[0]}` : "CURRENT_TIMESTAMP";
+            const precision = value.match(/\(\d+\)/)
+            return precision
+                ? `CURRENT_TIMESTAMP${precision[0]}`
+                : "CURRENT_TIMESTAMP"
         } else {
-            return value;
+            return value
         }
     }
 
@@ -685,11 +755,10 @@ export class SpannerDriver implements Driver {
      * Escapes a given comment.
      */
     protected escapeComment(comment?: string) {
-        if (!comment)  return comment;
+        if (!comment) return comment
 
-        comment = comment.replace(/\u0000/g, ""); // Null bytes aren't allowed in comments
+        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
 
-        return comment;
+        return comment
     }
-
 }

@@ -20,7 +20,6 @@ import { CheckMetadata } from "../metadata/CheckMetadata"
 import { ExclusionMetadata } from "../metadata/ExclusionMetadata"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
-import {SpannerDriver} from "../driver/spanner/SpannerDriver"
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -199,7 +198,8 @@ export class EntityMetadataBuilder {
                                 this.connection.driver.options.type ===
                                     "mssql" ||
                                 this.connection.driver.options.type === "sap" ||
-                                this.connection.driver.options.type === "spanner"
+                                this.connection.driver.options.type ===
+                                    "spanner"
                             ) {
                                 const index = new IndexMetadata({
                                     entityMetadata:

@@ -7,7 +7,6 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Book } from "./entity/Book"
-import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
 
 describe("query runner > stream", () => {
     let connections: DataSource[]
@@ -41,12 +40,12 @@ describe("query runner > stream", () => {
                     .createQueryBuilder(Book, "book")
                     .select()
                     .orderBy("book.ean")
-            .getQuery()
+                    .getQuery()
 
                 const readStream = await queryRunner.stream(query)
 
-                if (!(connection.driver instanceof SpannerDriver))
-            await new Promise((ok) => readStream.once("readable", ok))
+                if (!(connection.driver.options.type === "spanner"))
+                    await new Promise((ok) => readStream.once("readable", ok))
 
                 const data: any[] = []
 

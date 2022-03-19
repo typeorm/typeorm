@@ -7,8 +7,7 @@ import {
 } from "../../utils/test-utils"
 import { Table } from "../../../src/schema-builder/table/Table"
 import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create index", () => {
     let connections: DataSource[]
@@ -25,19 +24,19 @@ describe("query runner > create index", () => {
     it("should correctly create index and revert creation", () =>
         Promise.all(
             connections.map(async (connection) => {
-        let numericType = "int"
-        if (connection.driver instanceof AbstractSqliteDriver) {
-            numericType = "integer"
-        } else if (connection.driver instanceof SpannerDriver) {
-            numericType = "int64"
-        }
+                let numericType = "int"
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    numericType = "integer"
+                } else if (connection.driver.options.type === "spanner") {
+                    numericType = "int64"
+                }
 
-        let stringType = "varchar"
-        if (connection.driver instanceof SpannerDriver) {
-            stringType = "string"
-        }
+                let stringType = "varchar"
+                if (connection.driver.options.type === "spanner") {
+                    stringType = "string"
+                }
 
-        const queryRunner = connection.createQueryRunner()
+                const queryRunner = connection.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
                         name: "question",
