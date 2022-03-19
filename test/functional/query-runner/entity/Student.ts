@@ -6,14 +6,14 @@ import {Teacher} from "./Teacher";
 @Index("student_name_index", ["name"])
 export class Student {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @ManyToOne(type => Faculty)
-    faculty: Faculty;
+    @ManyToOne((type) => Faculty)
+    faculty: Faculty
 
-    @ManyToOne(type => Teacher)
-    teacher: Teacher;
+    @ManyToOne((type) => Teacher)
+    teacher: Teacher
 }

@@ -1,53 +1,68 @@
-import "reflect-metadata";
-import { Example } from "./entity/Example";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {expect} from "chai";
-import { Connection } from "../../../../src";
+import "reflect-metadata"
+import { Example } from "./entity/Example"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { expect } from "chai"
+import { DataSource } from "../../../../src"
 
 describe("query builder > parameters", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [Example],
+                enabledDrivers: ["sqlite"],
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
-        entities: [ Example ],
-        enabledDrivers: [ "sqlite" ]
+    it("should replace basic parameters when executing", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const repo = connection.getRepository(Example)
 
-    }));
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+                await repo.save({ id: "bar" })
 
-    it("should replace basic parameters when executing", () => Promise.all(connections.map(async connection => {
-        const repo = connection.getRepository(Example);
+                const example = await repo
+                    .createQueryBuilder()
+                    .setParameter("foo", "bar")
+                    .where("example.id = :foo")
+                    .getOne()
 
-        await repo.save({ id: 'bar' });
+                expect(example?.id).to.be.equal("bar")
+            }),
+        ))
 
-        const example = await repo.createQueryBuilder()
-            .setParameter('foo', 'bar')
-            .where('example.id = :foo')
-            .getOne();
+    it("should prevent invalid characters from being used as identifiers", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const b = connection.createQueryBuilder()
 
-        expect(example?.id).to.be.equal('bar')
-    })))
+                expect(() => b.setParameter(":foo", "bar")).to.throw()
+                expect(() => b.setParameter("@foo", "bar")).to.throw()
+                expect(() => b.setParameter("😋", "bar")).to.throw()
+                expect(() => b.setParameter("foo bar", "bar")).to.throw()
+            }),
+        ))
 
-    it("should prevent invalid characters from being used as identifiers", () => Promise.all(connections.map(async connection => {
-        const b = connection.createQueryBuilder();
+    it("should allow periods in parameters", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const repo = connection.getRepository(Example)
 
-        expect(() => b.setParameter(':foo', 'bar')).to.throw();
-        expect(() => b.setParameter('@foo', 'bar')).to.throw();
-        expect(() => b.setParameter('😋', 'bar')).to.throw();
-        expect(() => b.setParameter('foo bar', 'bar')).to.throw();
-    })))
+                await repo.save({ id: "bar" })
 
-    it("should allow periods in parameters", () => Promise.all(connections.map(async connection => {
-        const repo = connection.getRepository(Example);
+                const example = await repo
+                    .createQueryBuilder()
+                    .setParameter("f.o.o", "bar")
+                    .where("example.id = :f.o.o")
+                    .getOne()
 
-        await repo.save({ id: 'bar' });
-
-        const example = await repo.createQueryBuilder()
-            .setParameter('f.o.o', 'bar')
-            .where('example.id = :f.o.o')
-            .getOne();
-
-        expect(example?.id).to.be.equal('bar')
-    })))
-
-});
+                expect(example?.id).to.be.equal("bar")
+            }),
+        ))
+})

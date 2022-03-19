@@ -1,5 +1,5 @@
 export interface AzureActiveDirectoryMsiVmAuthentication {
-    type: "azure-active-directory-msi-vm";
+    type: "azure-active-directory-msi-vm"
     options: {
         /**
          * If you user want to connect to an Azure app service using a specific client account
@@ -7,10 +7,10 @@ export interface AzureActiveDirectoryMsiVmAuthentication {
          *
          * This is optional for retrieve token from azure web app service
          */
-        clientId?: string;
+        clientId?: string
         /**
          * A user need to provide `msiEndpoint` for retriving the accesstoken.
          */
-        msiEndpoint?: string;
-    };
+        msiEndpoint?: string
+    }
 }

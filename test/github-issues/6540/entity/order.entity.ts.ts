@@ -1,4 +1,9 @@
-import {BaseEntity, Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
 
 export enum OrderStatus {
     placed = "placed",
@@ -6,7 +11,7 @@ export enum OrderStatus {
     confirmed = "confirmed",
     shipped = "shipped",
     completed = "completed",
-    cancelled = "cancelled"
+    cancelled = "cancelled",
 }
 
 @Entity()

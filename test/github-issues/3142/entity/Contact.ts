@@ -1,7 +1,6 @@
-import {Column} from "../../../../src";
+import { Column } from "../../../../src"
 
 export class Contact {
-
     @Column({ unique: true })
-    email: string;
+    email: string
 }

@@ -5,18 +5,18 @@ import {Column, Entity, PrimaryColumn, Unique, Index} from "../../../../src";
 @Index(["text"], { unique: true })
 export class Photo {
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
     @Index({ unique: true })
-    tag: string;
+    tag: string
 
     @Column({ unique: true })
-    description: string;
+    description: string
 
     @Column()
-    text: string;
+    text: string
 }

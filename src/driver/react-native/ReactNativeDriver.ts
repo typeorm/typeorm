@@ -1,35 +1,34 @@
-import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
-import {ReactNativeConnectionOptions} from "./ReactNativeConnectionOptions";
-import {ReactNativeQueryRunner} from "./ReactNativeQueryRunner";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {Connection} from "../../connection/Connection";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {ReplicationMode} from "../types/ReplicationMode";
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import { ReactNativeConnectionOptions } from "./ReactNativeConnectionOptions"
+import { ReactNativeQueryRunner } from "./ReactNativeQueryRunner"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { DataSource } from "../../data-source/DataSource"
+import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { ReplicationMode } from "../types/ReplicationMode"
 
 export class ReactNativeDriver extends AbstractSqliteDriver {
-    options: ReactNativeConnectionOptions;
+    options: ReactNativeConnectionOptions
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
-        super(connection);
+    constructor(connection: DataSource) {
+        super(connection)
 
-        this.database = this.options.database;
+        this.database = this.options.database
 
         // validate options to make sure everything is set
         if (!this.options.database)
-            throw new DriverOptionNotSetError("database");
+            throw new DriverOptionNotSetError("database")
 
         if (!this.options.location)
-            throw new DriverOptionNotSetError("location");
+            throw new DriverOptionNotSetError("location")
 
         // load sqlite package
-        this.loadDependencies();
+        this.loadDependencies()
     }
-
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -40,9 +39,9 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
-            this.databaseConnection.close(ok, fail);
-        });
+            this.queryRunner = undefined
+            this.databaseConnection.close(ok, fail)
+        })
     }
 
     /**
@@ -50,9 +49,9 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
-            this.queryRunner = new ReactNativeQueryRunner(this);
+            this.queryRunner = new ReactNativeQueryRunner(this)
 
-        return this.queryRunner;
+        return this.queryRunner
     }
 
     // -------------------------------------------------------------------------
@@ -64,25 +63,38 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
      */
     protected createDatabaseConnection() {
         return new Promise<void>((ok, fail) => {
-            const options = Object.assign({}, {
-                name: this.options.database,
-                location: this.options.location,
-            }, this.options.extra || {});
+            const options = Object.assign(
+                {},
+                {
+                    name: this.options.database,
+                    location: this.options.location,
+                },
+                this.options.extra || {},
+            )
 
-            this.sqlite.openDatabase(options, (db: any) => {
-                const databaseConnection = db;
+            this.sqlite.openDatabase(
+                options,
+                (db: any) => {
+                    const databaseConnection = db
 
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete work with sqlite.
-                databaseConnection.executeSql(`PRAGMA foreign_keys = ON;`, [], (result: any) => {
-                    ok(databaseConnection);
-                }, (error: any) => {
-                    fail(error);
-                });
-            }, (error: any) => {
-                fail(error);
-            });
-        });
+                    // we need to enable foreign keys in sqlite to make sure all foreign key related features
+                    // working properly. this also makes onDelete work with sqlite.
+                    databaseConnection.executeSql(
+                        `PRAGMA foreign_keys = ON;`,
+                        [],
+                        (result: any) => {
+                            ok(databaseConnection)
+                        },
+                        (error: any) => {
+                            fail(error)
+                        },
+                    )
+                },
+                (error: any) => {
+                    fail(error)
+                },
+            )
+        })
     }
 
     /**
@@ -90,11 +102,14 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            const sqlite = this.options.driver || require("react-native-sqlite-storage");
-            this.sqlite = sqlite;
-
+            const sqlite =
+                this.options.driver || require("react-native-sqlite-storage")
+            this.sqlite = sqlite
         } catch (e) {
-            throw new DriverPackageNotInstalledError("React-Native", "react-native-sqlite-storage");
+            throw new DriverPackageNotInstalledError(
+                "React-Native",
+                "react-native-sqlite-storage",
+            )
         }
     }
 }

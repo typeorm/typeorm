@@ -5,24 +5,24 @@ import {
     OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src";
-import { Admin } from "./Admin";
-import { OrganizationMembership } from "./OrganizationMembership";
+} from "../../../../src"
+import { Admin } from "./Admin"
+import { OrganizationMembership } from "./OrganizationMembership"
 
 @Entity()
 export class Organization extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: string
 
     @OneToOne(() => Admin, (admin) => admin.organization, { nullable: true })
-    admin: Admin;
+    admin: Admin
 
     @Column()
-    randomField: string;
+    randomField: string
 
     @OneToMany(
         () => OrganizationMembership,
-        (membership) => membership.organization
+        (membership) => membership.organization,
     )
-    membership: OrganizationMembership[];
+    membership: OrganizationMembership[]
 }

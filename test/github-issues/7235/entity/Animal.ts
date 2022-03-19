@@ -1,10 +1,10 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Animal {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "varchar" })
-    name: string;
+    name: string
 }

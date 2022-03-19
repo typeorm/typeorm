@@ -1,70 +1,85 @@
-import { assert, AssertionError } from "chai";
-import { AsyncFunc, Context, Func, Test, TestFunction } from "mocha";
+import { assert, AssertionError } from "chai"
+import { AsyncFunc, Context, Func, Test, TestFunction } from "mocha"
 
-type XFailFunction = { it: TestFunction, unless: (condition: boolean | (() => boolean)) => { it: TestFunction } };
+type XFailFunction = {
+    it: TestFunction
+    unless: (condition: boolean | (() => boolean)) => { it: TestFunction }
+}
 
-const wrap = (fn: Func | AsyncFunc, condition: boolean | (() => boolean)): Func => {
+const wrap = (
+    fn: Func | AsyncFunc,
+    condition: boolean | (() => boolean),
+): Func => {
     return function Wrapped(this: Context): PromiseLike<any> {
         if (typeof condition === "function") {
             if (!condition()) {
-                return Promise.resolve();
+                return Promise.resolve()
             }
         } else if (condition === false) {
-            return Promise.resolve();
+            return Promise.resolve()
         }
 
         return new Promise<void>((ok, fail) => {
             if (fn.length > 1) {
-                fn.call(context, (err: any) => err ? fail(err) : ok());
+                fn.call(context, (err: any) => (err ? fail(err) : ok()))
             } else {
-                ok(fn.call(context));
+                ok(fn.call(context))
             }
         }).then(
             (e: any) => assert.fail("Expected this test to fail"),
             (e: any) => {
                 if (!(e instanceof AssertionError)) {
-                    throw e;
+                    throw e
                 }
-            }
-        );
-    };
-};
+            },
+        )
+    }
+}
 
 function unless(condition: boolean | (() => boolean)): { it: TestFunction } {
-    const xfailIt: TestFunction = (fnOrTitle: Func | AsyncFunc | string, fn?: Func | AsyncFunc): Test => {
+    const xfailIt: TestFunction = (
+        fnOrTitle: Func | AsyncFunc | string,
+        fn?: Func | AsyncFunc,
+    ): Test => {
         if (typeof fnOrTitle === "string") {
-            return it(fnOrTitle, wrap(fn!, condition));
+            return it(fnOrTitle, wrap(fn!, condition))
         } else {
-            return it(wrap(fnOrTitle, condition));
+            return it(wrap(fnOrTitle, condition))
         }
-    };
+    }
 
-    xfailIt.only = (fnOrTitle: Func | AsyncFunc | string, fn?: Func | AsyncFunc): Test => {
+    xfailIt.only = (
+        fnOrTitle: Func | AsyncFunc | string,
+        fn?: Func | AsyncFunc,
+    ): Test => {
         if (typeof fnOrTitle === "string") {
-            return it.skip(fnOrTitle, wrap(fn!, condition));
+            return it.skip(fnOrTitle, wrap(fn!, condition))
         } else {
-            return it.skip(wrap(fnOrTitle, condition));
+            return it.skip(wrap(fnOrTitle, condition))
         }
-    };
+    }
 
-    xfailIt.skip = (fnOrTitle: Func | AsyncFunc | string, fn?: Func | AsyncFunc): Test => {
+    xfailIt.skip = (
+        fnOrTitle: Func | AsyncFunc | string,
+        fn?: Func | AsyncFunc,
+    ): Test => {
         if (typeof fnOrTitle === "string") {
-            return it.skip(fnOrTitle, wrap(fn!, condition));
+            return it.skip(fnOrTitle, wrap(fn!, condition))
         } else {
-            return it.skip(wrap(fnOrTitle, condition));
+            return it.skip(wrap(fnOrTitle, condition))
         }
-    };
+    }
 
     xfailIt.retries = (n: number): void => {
-        it.retries(n);
-    };
+        it.retries(n)
+    }
 
-    return { it: xfailIt };
-};
+    return { it: xfailIt }
+}
 
 const xfail: XFailFunction = {
     ...unless(true),
-    unless
-};
+    unless,
+}
 
-export { xfail };
+export { xfail }

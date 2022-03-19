@@ -1,17 +1,20 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
-enum FooEnum { FOO, BAR }
+enum FooEnum {
+    FOO,
+    BAR,
+}
 
 class ParentEntity {
     @PrimaryGeneratedColumn()
     ud: number
 
     @Column({
-        type: 'enum',
+        type: "enum",
         enum: FooEnum,
-        enumName: 'foo_enum',
+        enumName: "foo_enum",
     })
-    foo: FooEnum;
+    foo: FooEnum
 }
 
 @Entity()

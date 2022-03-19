@@ -6,17 +6,17 @@ import {Check, Column, Entity, Exclusion, PrimaryColumn, Unique} from "../../../
 @Check(`"version" < 999`) // should be properly escaped for each driver.
 export class Post {
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({ unique: true })
-    version: number;
+    version: number
 
     @Column({ default: "My post" })
-    name: string;
+    name: string
 
     @Column()
-    text: string;
+    text: string
 
     @Column()
-    tag: string;
+    tag: string
 }

@@ -1,3 +1,556 @@
+## [0.3.0](https://github.com/typeorm/typeorm/pull/8616) (2022-03-17)
+
+Changes in the version includes changes from the `next` branch and `typeorm@next` version.
+They were pending their migration from 2018. Finally, they are in the master branch and master version.
+
+### Features
+
+* compilation `target` now is `es2020`. This requires Node.JS version `14+`
+
+* TypeORM now properly works when installed within different node_modules contexts
+  (often happen if TypeORM is a dependency of another library or TypeORM is heavily used in monorepo projects)
+
+* `Connection` was renamed to `DataSource`.
+  Old `Connection` is still there, but now it's deprecated. It will be completely removed in next version.
+  New API:
+
+```ts
+export const dataSource = new DataSource({
+    // ... options ...
+})
+
+// load entities, establish db connection, sync schema, etc.
+await dataSource.connect()
+```
+
+Previously, you could use `new Connection()`, `createConnection()`, `getConnectionManager().create()`, etc.
+They all deprecated in favour of new syntax you can see above.
+
+New way gives you more flexibility and simplicity in usage.
+
+* new custom repositories syntax:
+
+```ts
+export const UserRepository = myDataSource.getRepository(UserEntity).extend({
+    findUsersWithPhotos() {
+        return this.find({
+            relations: {
+                photos: true
+            }
+        })
+    }
+})
+```
+
+Old ways of custom repository creation were dropped.
+
+* added new option on relation load strategy called `relationLoadStrategy`.
+  Relation load strategy is used on entity load and determines how relations must be loaded when you query entities and their relations from the database.
+  Used on `find*` methods and `QueryBuilder`. Value can be set to `join` or `query`.
+
+    * `join` - loads relations using SQL `JOIN` expression
+    * `query` - executes separate SQL queries for each relation
+
+Default is `join`, but default can be set in `ConnectionOptions`:
+
+```ts
+createConnection({
+    /* ... */
+    relationLoadStrategy: "query"
+})
+```
+
+Also, it can be set per-query in `find*` methods:
+
+```ts
+userRepository.find({
+    relations: {
+        photos: true
+    }
+})
+```
+
+And QueryBuilder:
+
+```ts
+userRepository
+    .createQueryBuilder()
+    .setRelationLoadStrategy("query")
+```
+
+For queries returning big amount of data, we recommend to use `query` strategy,
+because it can be a more performant approach to query relations.
+
+* added new `findOneBy`, `findOneByOrFail`, `findBy`, `countBy`, `findAndCountBy` methods to `BaseEntity`, `EntityManager` and `Repository`:
+
+```ts
+const users = await userRepository.findBy({
+    name: "Michael"
+})
+```
+
+Overall `find*` and `count*` method signatures where changed, read the "breaking changes" section for more info.
+
+* new `select` type signature in `FindOptions` (used in `find*` methods):
+
+```ts
+userRepository.find({
+    select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+    }
+})
+```
+
+Also, now it's possible to specify select columns of the loaded relations:
+
+```ts
+userRepository.find({
+    select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        photo: {
+            id: true,
+            filename: true,
+            album: {
+                id: true,
+                name: true,
+            }
+        }
+    }
+})
+```
+
+* new `relations` type signature in `FindOptions` (used in `find*` methods):
+
+```ts
+userRepository.find({
+    relations: {
+        contacts: true,
+        photos: true,
+    }
+})
+```
+
+To load nested relations use a following signature:
+
+```ts
+userRepository.find({
+    relations: {
+        contacts: true,
+        photos: {
+            album: true,
+        },
+    }
+})
+```
+
+* new `order` type signature in `FindOptions` (used in `find*` methods):
+
+```ts
+userRepository.find({
+    order: {
+        id: "ASC"
+    }
+})
+```
+
+Now supports nested order by-s:
+
+```ts
+userRepository.find({
+    order: {
+        photos: {
+            album: {
+                name: "ASC"
+            },
+        },
+    }
+})
+```
+
+* new `where` type signature in `FindOptions` (used in `find*` methods) now allows to build nested statements with conditional relations, for example:
+
+```ts
+userRepository.find({
+    where: {
+        photos: {
+            album: {
+                name: "profile"
+            }
+        }
+    }
+})
+```
+
+Gives you users who have photos in their "profile" album.
+
+* `FindOperator`-s can be applied for relations in `where` statement, for example:
+
+```ts
+userRepository.find({
+    where: {
+        photos: MoreThan(10),
+    }
+})
+```
+
+Gives you users with more than 10 photos.
+
+* `boolean` can be applied for relations in `where` statement, for example:
+
+```ts
+userRepository.find({
+    where: {
+        photos: true
+    }
+})
+```
+
+### BREAKING CHANGES
+
+* minimal Node.JS version requirement now is `14+`
+
+* drop `ormconfig` support. `ormconfig` still works if you use deprecated methods,
+however we do not recommend using it anymore, because it's support will be completely dropped in `0.4.0`.
+If you want to have your connection options defined in a separate file, you can still do it like this:
+
+```ts
+import ormconfig from "./ormconfig.json"
+
+const MyDataSource = new DataSource(require("./ormconfig.json"))
+```
+
+Or even more type-safe approach with `resolveJsonModule` in `tsconfig.json` enabled:
+
+```ts
+import ormconfig from "./ormconfig.json"
+
+const MyDataSource = new DataSource(ormconfig)
+```
+
+But we do not recommend use this practice, because from `0.4.0` you'll only be able to specify entities / subscribers / migrations using direct references to entity classes / schemas (see "deprecations" section).
+
+We won't be supporting all `ormconfig` extensions (e.g. `json`, `js`, `ts`, `yaml`, `xml`, `env`).
+
+* support for previously deprecated `migrations:*` commands was removed. Use `migration:*` commands instead.
+
+* all commands were re-worked. Please refer to new CLI documentation.
+
+* `cli` option from `BaseConnectionOptions` (now `BaseDataSourceOptions` options) was removed (since CLI commands were re-worked).
+
+* now migrations are running before schema synchronization if you have both pending migrations and schema synchronization pending
+  (it works if you have both `migrationsRun` and `synchronize` enabled in connection options).
+
+* `aurora-data-api` driver now is called `aurora-mysql`
+
+* `aurora-data-api-pg` driver now is called `aurora-postgres`
+
+* `EntityManager.connection` is now `EntityManager.dataSource`
+
+* `Repository` now has a constructor (breaks classes extending Repository with custom constructor)
+
+* `@TransactionRepository`, `@TransactionManager`, `@Transaction` decorators were completely removed. These decorators do the things out of the TypeORM scope.
+
+* Only junction table names shortened.
+
+**MOTIVATION:**  We must shorten only table names generated by TypeORM.
+It's user responsibility to name tables short if their RDBMS limit table name length
+since it won't make sense to have table names as random hashes.
+It's really better if user specify custom table name into `@Entity` decorator.
+Also, for junction table it's possible to set a custom name using `@JoinTable` decorator.
+
+* `findOne()` signature without parameters was dropped.
+  If you need a single row from the db you can use a following syntax:
+
+```ts
+const [user] = await userRepository.find()
+```
+
+This change was made to prevent user confusion.
+See [this issue](https://github.com/typeorm/typeorm/issues/2500) for details.
+
+* `findOne(id)` signature was dropped. Use following syntax instead:
+
+```ts
+const user = await userRepository.findOneBy({
+    id: id // where id is your column name
+})
+```
+
+This change was made to provide a more type-safe approach for data querying.
+Due to this change you might need to refactor the way you load entities using MongoDB driver.
+
+* `findOne`, `findOneOrFail`, `find`, `count`, `findAndCount` methods now only accept `FindOptions` as parameter, e.g.:
+
+```ts
+const users = await userRepository.find({
+    where: { /* conditions */ },
+    relations: { /* relations */ }
+})
+```
+
+To supply `where` conditions directly without `FindOptions` new methods were added:
+`findOneBy`, `findOneByOrFail`, `findBy`, `countBy`, `findAndCountBy`. Example:
+
+```ts
+const users = await userRepository.findBy({
+    name: "Michael"
+})
+```
+
+This change was required to simply current `find*` and `count*` methods typings,
+improve type safety and prevent user confusion.
+
+* `findByIds` was deprecated, use `findBy` method instead in conjunction with `In` operator, for example:
+
+```ts
+userRepository.findBy({
+    id: In([1, 2, 3])
+})
+```
+
+This change was made to provide a more type-safe approach for data querying.
+
+* `findOne` and `QueryBuilder.getOne()` now return `null` instead of `undefined` in the case if it didn't find anything in the database.
+  Logically it makes more sense to return `null`.
+
+* `findOne` now limits returning rows to 1 at database level.
+
+**NOTE:** `FOR UPDATE` locking does not work with `findOne` in Oracle since `FOR UPDATE` cannot be used with `FETCH NEXT` in a single query.
+
+* `where` in `FindOptions` (e.g. `find({ where: { ... })`) is more sensitive to input criteria now.
+
+* `FindConditions` (`where` in `FindOptions`) was renamed to `FindOptionsWhere`.
+
+* `null` as value in `where` used in `find*` methods is not supported anymore.
+  Now you must explicitly use `IsNull()` operator.
+
+Before:
+
+```ts
+userRepository.find({
+    where: {
+        photo: null
+    }
+})
+```
+
+After:
+
+```ts
+userRepository.find({
+    where: {
+        photo: IsNull()
+    }
+})
+```
+
+This change was made to make it more transparent on how to add "IS NULL" statement to final SQL,
+because before it bring too much confusion for ORM users.
+
+* if you had entity properties of a non-primitive type (except Buffer) defined as columns,
+  then you won't be able to use it in `find*`'s `where`. Example:
+
+Before for the `@Column(/*...*/) membership: MembershipKind` you could have a query like:
+
+```ts
+userRepository.find({
+    membership: new MembershipKind("premium")
+})
+```
+
+now, you need to wrap this value into `Equal` operator:
+
+```ts
+userRepository.find({
+    membership: Equal(new MembershipKind("premium"))
+})
+```
+
+This change is due to type-safety improvement new `where` signature brings.
+
+* `order` in `FindOptions` (used in `find*` methods) doesn't support ordering by relations anymore.
+  Define relation columns, and order by them instead.
+
+* `where` in `FindOptions` (used in `find*` methods) previously supported `ObjectLiteral` and `string` types.
+  Now both signatures were removed. ObjectLiteral was removed because it seriously breaks the type safety,
+  and `string` doesn't make sense in the context of `FindOptions`. Use `QueryBuilder` instead.
+
+* `MongoRepository` and `MongoEntityManager` now use new types called `MongoFindManyOptions` and `MongoFindOneOptions`
+  for their `find*` methods.
+
+* `primary relation` (e.g. `@ManyToOne(() => User, { primary: true }) user: User`) support is removed.
+  You still have an ability to use foreign keys as your primary keys,
+  however now you must explicitly define a column marked as primary.
+
+Example, before:
+
+```ts
+@ManyToOne(() => User, { primary: true })
+user: User
+```
+
+Now:
+
+```ts
+@PrimaryColumn()
+userId: number
+
+@ManyToOne(() => User)
+user: User
+```
+
+Primary column name must match the relation name + join column name on related entity.
+If related entity has multiple primary keys, and you want to point to multiple primary keys,
+you can define multiple primary columns the same way:
+
+```ts
+@PrimaryColumn()
+userFirstName: string
+
+@PrimaryColumn()
+userLastName: string
+
+@ManyToOne(() => User)
+user: User
+```
+
+This change was required to simplify ORM internals and introduce new features.
+
+* prefix relation id columns contained in embedded entities ([#7432](https://github.com/typeorm/typeorm/pull/7432))
+
+* find by Date object in sqlite driver ([#7538](https://github.com/typeorm/typeorm/pull/7538))
+
+* issue with non-reliable `new Date(ISOString)` parsing ([#7796](https://github.com/typeorm/typeorm/pull/7796))
+
+### DEPRECATIONS
+
+* all CLI commands do not support `ormconfig` anymore. You must specify a file with data source instance instead.
+
+* `entities`, `migrations`, `subscribers` options inside `DataSourceOptions` accepting `string` directories support is deprecated.
+You'll be only able to pass entity references in the future versions.
+
+* all container-related features (`UseContainerOptions`, `ContainedType`, `ContainerInterface`, `defaultContainer`,
+`useContainer`, `getFromContainer`) are deprecated.
+
+* EntityManager's `getCustomRepository` used within transactions is deprecated. Use `withRepository` method instead.
+
+* `Connection.isConnected` is deprecated. Use `.isInitialized` instead.
+
+* `select` in `FindOptions` (used in `find*` methods) used as an array of property names is deprecated.
+  Now you should use a new object-literal notation. Example:
+
+Deprecated way of loading entity relations:
+
+```ts
+userRepository.find({
+    select: ["id", "firstName", "lastName"]
+})
+```
+
+New way of loading entity relations:
+
+```ts
+userRepository.find({
+    select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+    }
+})
+```
+
+This change is due to type-safety improvement new `select` signature brings.
+
+* `relations` in `FindOptions` (used in `find*` methods) used as an array of relation names is deprecated.
+  Now you should use a new object-literal notation. Example:
+
+Deprecated way of loading entity relations:
+
+```ts
+userRepository.find({
+    relations: ["contacts", "photos", "photos.album"]
+})
+```
+
+New way of loading entity relations:
+
+```ts
+userRepository.find({
+    relations: {
+        contacts: true,
+        photos: {
+            album: true
+        }
+    }
+})
+```
+
+This change is due to type-safety improvement new `relations` signature brings.
+
+* `join` in `FindOptions` (used in `find*` methods) is deprecated. Use `QueryBuilder` to build queries containing manual joins.
+
+* `Connection`, `ConnectionOptions` are deprecated, new names to use are: `DataSource` and `DataSourceOptions`.
+  To create the same connection you had before use a new syntax: `new DataSource({ /*...*/ })`.
+
+* `createConnection()`, `createConnections()` are deprecated, since `Connection` is called `DataSource` now, to create a connection and connect to the database
+  simply do:
+
+```ts
+const myDataSource = new DataSource({ /*...*/ })
+await myDataSource.connect()
+```
+
+* `getConnection()` is deprecated. To have a globally accessible connection, simply export your data source and use it in places you need it:
+
+```ts
+export const myDataSource = new DataSource({ /*...*/ })
+// now you can use myDataSource anywhere in your application
+```
+
+* `getManager()`, `getMongoManager()`, `getSqljsManager()`, `getRepository()`, `getTreeRepository()`, `getMongoRepository()`, `createQueryBuilder()`
+  are all deprecated now. Use globally accessible data source instead:
+
+```ts
+export const myDataSource = new DataSource({ /*...*/ })
+export const Manager = myDataSource.manager
+export const UserRepository = myDataSource.getRepository(UserEntity)
+export const PhotoRepository = myDataSource.getRepository(PhotoEntity)
+// ...
+```
+
+* `getConnectionManager()` and `ConnectionManager` itself are deprecated - now `Connection` is called `DataSource`,
+  and each data source can be defined in exported variable. If you want to have a collection
+  of data sources, just define them in a variable, simply as:
+
+```ts
+const dataSource1 = new DataSource({ /*...*/ })
+const dataSource2 = new DataSource({ /*...*/ })
+const dataSource3 = new DataSource({ /*...*/ })
+
+export const MyDataSources = {
+    dataSource1,
+    dataSource2,
+    dataSource3,
+}
+```
+
+* `getConnectionOptions()` is deprecated - in next version we are going to implement different mechanism of connection options loading
+
+* `AbstractRepository` is deprecated. Use new way of custom repositories creation.
+
+* `Connection.name` and `BaseConnectionOptions.name` are deprecated. Connections don't need names anymore since we are going to drop all related methods relying on this property.
+
+* all deprecated signatures will be removed in `0.4.0`
+
+### EXPERIMENTAL FEATURES NOT PORTED FROM NEXT BRANCH
+
+* `observers` - we will consider returning them back with new API in future versions
+* `alternative find operators` - using `$any`, `$in`, `$like` and other operators in `where` condition.
+
 ## [0.2.45](https://github.com/typeorm/typeorm/compare/0.2.44...0.2.45) (2022-03-04)
 
 ### Bug Fixes
@@ -11,7 +564,6 @@
 
 * add nested transaction ([#8541](https://github.com/typeorm/typeorm/issues/8541)) ([6523526](https://github.com/typeorm/typeorm/commit/6523526003bab74a0df8f7d578790c1728b26057)), closes [#1505](https://github.com/typeorm/typeorm/issues/1505)
 * add transformer to ViewColumnOptions ([#8717](https://github.com/typeorm/typeorm/issues/8717)) ([96ac8f7](https://github.com/typeorm/typeorm/commit/96ac8f7eece06ae0a8b52ae7da740c92c0c0d4b9))
-
 
 ## [0.2.44](https://github.com/typeorm/typeorm/compare/0.2.43...0.2.44) (2022-02-23)
 
@@ -539,7 +1091,7 @@
 
 ### Features
 
-* add AWS configurationOptions to aurora-data-api-pg connector ([#6106](https://github.com/typeorm/typeorm/issues/6106)) ([203f51d](https://github.com/typeorm/typeorm/commit/203f51d))
+* add AWS configurationOptions to aurora-postgres connector ([#6106](https://github.com/typeorm/typeorm/issues/6106)) ([203f51d](https://github.com/typeorm/typeorm/commit/203f51d))
 * add better-sqlite3 driver ([#6224](https://github.com/typeorm/typeorm/issues/6224)) ([2241451](https://github.com/typeorm/typeorm/commit/2241451))
 * add postgres connection timeout option ([#6160](https://github.com/typeorm/typeorm/issues/6160)) ([0072149](https://github.com/typeorm/typeorm/commit/0072149))
 * FileLogger accepts custom file path ([#6642](https://github.com/typeorm/typeorm/issues/6642)) ([c99ba40](https://github.com/typeorm/typeorm/commit/c99ba40)), closes [#4410](https://github.com/typeorm/typeorm/issues/4410)

@@ -2,21 +2,21 @@ import {
     Column,
     Entity,
     ManyToOne,
-    PrimaryGeneratedColumn
-} from "../../../../../src/index";
-import { Account } from "./Account";
+    PrimaryGeneratedColumn,
+} from "../../../../../src/index"
+import { Account } from "./Account"
 
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    text: string;
+    text: string
 
-    @ManyToOne(type => Account)
-    owner: Account;
+    @ManyToOne((type) => Account)
+    owner: Account
 }

@@ -1,23 +1,39 @@
-type WrappingOperator = "not" | "brackets";
+type WrappingOperator = "not" | "brackets"
 
-type PredicateOperator = "lessThan" | "lessThanOrEqual" | "moreThan" | "moreThanOrEqual" | "equal" | "notEqual" | "ilike" | "like" | "between" | "in" | "any" | "isNull";
+type PredicateOperator =
+    | "lessThan"
+    | "lessThanOrEqual"
+    | "moreThan"
+    | "moreThanOrEqual"
+    | "equal"
+    | "notEqual"
+    | "ilike"
+    | "like"
+    | "between"
+    | "in"
+    | "any"
+    | "isNull"
 
 export interface WherePredicateOperator {
-    operator: PredicateOperator;
+    operator: PredicateOperator
 
-    parameters: string[];
+    parameters: string[]
 }
 
 export interface WhereWrappingOperator {
-    operator: WrappingOperator;
+    operator: WrappingOperator
 
-    condition: WhereClauseCondition;
+    condition: WhereClauseCondition
 }
 
 export interface WhereClause {
-    type: "simple" | "and" | "or";
+    type: "simple" | "and" | "or"
 
-    condition: WhereClauseCondition;
+    condition: WhereClauseCondition
 }
 
-export type WhereClauseCondition = string | WherePredicateOperator | WhereWrappingOperator | WhereClause[];
+export type WhereClauseCondition =
+    | string
+    | WherePredicateOperator
+    | WhereWrappingOperator
+    | WhereClause[]

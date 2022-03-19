@@ -1,9 +1,16 @@
-import {BaseEntity, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryColumn} from "../../../../src";
-import {Employee} from "./Employee";
+import {
+    BaseEntity,
+    Entity,
+    JoinTable,
+    ManyToMany,
+    ManyToOne,
+    PrimaryColumn,
+} from "../../../../src"
+import { Employee } from "./Employee"
 
 @Entity()
 export class AccessEvent extends BaseEntity {
-    @PrimaryColumn({ type: 'varchar', length: 128 })
+    @PrimaryColumn({ type: "varchar", length: 128 })
     id!: string
 
     @ManyToOne(() => Employee, (employee) => employee.accessEvents)
@@ -11,5 +18,5 @@ export class AccessEvent extends BaseEntity {
 
     @ManyToMany(() => Employee)
     @JoinTable()
-    employees: Employee[];
+    employees: Employee[]
 }

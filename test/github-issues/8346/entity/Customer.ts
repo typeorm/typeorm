@@ -4,18 +4,18 @@ import {
     Entity,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src";
+} from "../../../../src"
 
-import { CustomerContact } from './CustomerContact';
+import { CustomerContact } from "./CustomerContact"
 
-@Entity('Customer')
+@Entity("Customer")
 export class Customer extends BaseEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @OneToMany(() => CustomerContact, (contact) => contact.customer)
-    contacts: CustomerContact[];
+    contacts: CustomerContact[]
 }

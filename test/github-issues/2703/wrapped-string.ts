@@ -1,4 +1,4 @@
-import {ValueTransformer} from "../../../src/decorator/options/ValueTransformer";
+import { ValueTransformer } from "../../../src/decorator/options/ValueTransformer"
 
 export class WrappedString {
     constructor(readonly value: string) {}
@@ -6,9 +6,9 @@ export class WrappedString {
 
 export const wrappedStringTransformer: ValueTransformer = {
     from(value: string): WrappedString {
-        return new WrappedString(value);
+        return new WrappedString(value)
     },
     to(value: WrappedString): string {
-        return value.value;
-    }
-};
+        return value.value
+    },
+}

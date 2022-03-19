@@ -9,82 +9,82 @@ import {
     DeleteDateColumn,
     Entity,
     PrimaryGeneratedColumn,
-} from "../../../../src";
+} from "../../../../src"
 
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    data: string;
+    data: string
 
     @DeleteDateColumn()
-    deletedAt: Date;
+    deletedAt: Date
 
     @Column({ default: 0 })
-    beforeUpdateListener: number;
+    beforeUpdateListener: number
 
     @Column({ default: 0 })
-    afterUpdateListener: number;
+    afterUpdateListener: number
 
     @Column({ default: 0 })
-    beforeSoftRemoveListener: number;
+    beforeSoftRemoveListener: number
 
     @Column({ default: 0 })
-    afterSoftRemoveListener: number;
+    afterSoftRemoveListener: number
 
     @Column({ default: 0 })
-    beforeRecoverListener: number;
+    beforeRecoverListener: number
 
     @Column({ default: 0 })
-    afterRecoverListener: number;
+    afterRecoverListener: number
 
     @Column({ default: 0 })
-    beforeUpdateSubscriber: number;
+    beforeUpdateSubscriber: number
 
     @Column({ default: 0 })
-    afterUpdateSubscriber: number;
+    afterUpdateSubscriber: number
 
     @Column({ default: 0 })
-    beforeSoftRemoveSubscriber: number;
+    beforeSoftRemoveSubscriber: number
 
     @Column({ default: 0 })
-    afterSoftRemoveSubscriber: number;
+    afterSoftRemoveSubscriber: number
 
     @Column({ default: 0 })
-    beforeRecoverSubscriber: number;
+    beforeRecoverSubscriber: number
 
     @Column({ default: 0 })
-    afterRecoverSubscriber: number;
+    afterRecoverSubscriber: number
 
     @BeforeUpdate()
     beforeUpdate() {
-        this.beforeUpdateListener++;
+        this.beforeUpdateListener++
     }
 
     @AfterUpdate()
     afterUpdate() {
-        this.afterUpdateListener++;
+        this.afterUpdateListener++
     }
 
     @BeforeSoftRemove()
     beforeSoftRemove() {
-        this.beforeSoftRemoveListener++;
+        this.beforeSoftRemoveListener++
     }
 
     @AfterSoftRemove()
     afterSoftRemove() {
-        this.afterSoftRemoveListener++;
+        this.afterSoftRemoveListener++
     }
 
     @BeforeRecover()
     beforeRecover() {
-        this.beforeRecoverListener++;
+        this.beforeRecoverListener++
     }
 
     @AfterRecover()
     afterRecover() {
-        this.afterRecoverListener++;
+        this.afterRecoverListener++
     }
 }

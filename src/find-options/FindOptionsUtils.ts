@@ -1,17 +1,15 @@
-import {FindManyOptions} from "./FindManyOptions";
-import {FindOneOptions} from "./FindOneOptions";
-import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
-import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {DriverUtils} from "../driver/DriverUtils";
-import { TypeORMError } from "../error";
-import { FindTreeOptions } from "./FindTreeOptions";
+import { FindManyOptions } from "./FindManyOptions"
+import { FindOneOptions } from "./FindOneOptions"
+import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import { FindRelationsNotFoundError } from "../error/FindRelationsNotFoundError"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { DriverUtils } from "../driver/DriverUtils"
+import { FindTreeOptions } from "./FindTreeOptions"
 
 /**
  * Utilities to work with FindOptions.
  */
 export class FindOptionsUtils {
-
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
@@ -19,56 +17,68 @@ export class FindOptionsUtils {
     /**
      * Checks if given object is really instance of FindOneOptions interface.
      */
-    static isFindOneOptions<Entity = any>(obj: any): obj is FindOneOptions<Entity> {
-        const possibleOptions: FindOneOptions<Entity> = obj;
-        return possibleOptions &&
-            (
-                Array.isArray(possibleOptions.select) ||
-                possibleOptions.where instanceof Object ||
-                typeof possibleOptions.where === "string" ||
+    static isFindOneOptions<Entity = any>(
+        obj: any,
+    ): obj is FindOneOptions<Entity> {
+        const possibleOptions: FindOneOptions<Entity> = obj
+        return (
+            possibleOptions &&
+            (Array.isArray(possibleOptions.select) ||
                 Array.isArray(possibleOptions.relations) ||
-                possibleOptions.join instanceof Object ||
-                possibleOptions.order instanceof Object ||
-                possibleOptions.cache instanceof Object ||
+                typeof possibleOptions.select === "object" ||
+                typeof possibleOptions.relations === "object" ||
+                typeof possibleOptions.where === "object" ||
+                // typeof possibleOptions.where === "string" ||
+                typeof possibleOptions.join === "object" ||
+                typeof possibleOptions.order === "object" ||
+                typeof possibleOptions.cache === "object" ||
                 typeof possibleOptions.cache === "boolean" ||
                 typeof possibleOptions.cache === "number" ||
                 typeof possibleOptions.comment === "string" ||
-                possibleOptions.lock instanceof Object ||
-                possibleOptions.loadRelationIds instanceof Object ||
+                typeof possibleOptions.lock === "object" ||
+                typeof possibleOptions.loadRelationIds === "object" ||
                 typeof possibleOptions.loadRelationIds === "boolean" ||
                 typeof possibleOptions.loadEagerRelations === "boolean" ||
                 typeof possibleOptions.withDeleted === "boolean" ||
-                typeof possibleOptions.transaction === "boolean"
-            );
+                typeof possibleOptions.relationLoadStrategy === "string" ||
+                typeof possibleOptions.transaction === "boolean")
+        )
     }
 
     /**
      * Checks if given object is really instance of FindManyOptions interface.
      */
-    static isFindManyOptions<Entity = any>(obj: any): obj is FindManyOptions<Entity> {
-        const possibleOptions: FindManyOptions<Entity> = obj;
-        return possibleOptions && (
-            this.isFindOneOptions(possibleOptions) ||
-            typeof (possibleOptions as FindManyOptions<any>).skip === "number" ||
-            typeof (possibleOptions as FindManyOptions<any>).take === "number" ||
-            typeof (possibleOptions as FindManyOptions<any>).skip === "string" ||
-            typeof (possibleOptions as FindManyOptions<any>).take === "string"
-        );
+    static isFindManyOptions<Entity = any>(
+        obj: any,
+    ): obj is FindManyOptions<Entity> {
+        const possibleOptions: FindManyOptions<Entity> = obj
+        return (
+            possibleOptions &&
+            (this.isFindOneOptions(possibleOptions) ||
+                typeof (possibleOptions as FindManyOptions<any>).skip ===
+                    "number" ||
+                typeof (possibleOptions as FindManyOptions<any>).take ===
+                    "number" ||
+                typeof (possibleOptions as FindManyOptions<any>).skip ===
+                    "string" ||
+                typeof (possibleOptions as FindManyOptions<any>).take ===
+                    "string")
+        )
     }
 
     /**
      * Checks if given object is really instance of FindOptions interface.
      */
-    static extractFindManyOptionsAlias(object: any): string|undefined {
+    static extractFindManyOptionsAlias(object: any): string | undefined {
         if (this.isFindManyOptions(object) && object.join)
-            return object.join.alias;
+            return object.join.alias
 
-        return undefined;
+        return undefined
     }
 
     /**
      * Applies give find many options to the given query builder.
-     */
+
     static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
         if (this.isFindManyOptions(options))
             return this.applyOptionsToQueryBuilder(qb, options);
@@ -77,11 +87,11 @@ export class FindOptionsUtils {
             return qb.where(options);
 
         return qb;
-    }
+    }*/
 
     /**
      * Applies give find options to the given query builder.
-     */
+
     static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): SelectQueryBuilder<T> {
 
         // if options are not set then simply return query builder. This is made for simplicity of usage.
@@ -226,23 +236,32 @@ export class FindOptionsUtils {
             });
 
         return qb;
-    }
+    }*/
 
-    static applyOptionsToTreeQueryBuilder<T>(qb: SelectQueryBuilder<T>, options?: FindTreeOptions): SelectQueryBuilder<T> {
+    static applyOptionsToTreeQueryBuilder<T>(
+        qb: SelectQueryBuilder<T>,
+        options?: FindTreeOptions,
+    ): SelectQueryBuilder<T> {
         if (options?.relations) {
             // Copy because `applyRelationsRecursively` modifies it
-            const allRelations = [...options.relations];
+            const allRelations = [...options.relations]
 
-            FindOptionsUtils.applyRelationsRecursively(qb, allRelations, qb.expressionMap.mainAlias!.name, qb.expressionMap.mainAlias!.metadata, "");
+            FindOptionsUtils.applyRelationsRecursively(
+                qb,
+                allRelations,
+                qb.expressionMap.mainAlias!.name,
+                qb.expressionMap.mainAlias!.metadata,
+                "",
+            )
 
             // recursive removes found relations from allRelations array
             // if there are relations left in this array it means those relations were not found in the entity structure
             // so, we give an exception about not found relations
             if (allRelations.length > 0)
-                throw new FindRelationsNotFoundError(allRelations);
+                throw new FindRelationsNotFoundError(allRelations)
         }
 
-        return qb;
+        return qb
     }
 
     // -------------------------------------------------------------------------
@@ -252,91 +271,140 @@ export class FindOptionsUtils {
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
      */
-    public static applyRelationsRecursively(qb: SelectQueryBuilder<any>, allRelations: string[], alias: string, metadata: EntityMetadata, prefix: string): void {
-
+    public static applyRelationsRecursively(
+        qb: SelectQueryBuilder<any>,
+        allRelations: string[],
+        alias: string,
+        metadata: EntityMetadata,
+        prefix: string,
+    ): void {
         // find all relations that match given prefix
-        let matchedBaseRelations: string[] = [];
+        let matchedBaseRelations: string[] = []
         if (prefix) {
-            const regexp = new RegExp("^" + prefix.replace(".", "\\.") + "\\.");
+            const regexp = new RegExp("^" + prefix.replace(".", "\\.") + "\\.")
             matchedBaseRelations = allRelations
-                .filter(relation => relation.match(regexp))
-                .map(relation => relation.replace(regexp, ""))
-                .filter(relation => metadata.findRelationWithPropertyPath(relation));
+                .filter((relation) => relation.match(regexp))
+                .map((relation) => relation.replace(regexp, ""))
+                .filter((relation) =>
+                    metadata.findRelationWithPropertyPath(relation),
+                )
         } else {
-            matchedBaseRelations = allRelations.filter(relation => metadata.findRelationWithPropertyPath(relation));
+            matchedBaseRelations = allRelations.filter((relation) =>
+                metadata.findRelationWithPropertyPath(relation),
+            )
         }
 
         // go through all matched relations and add join for them
-        matchedBaseRelations.forEach(relation => {
-
+        matchedBaseRelations.forEach((relation) => {
             // generate a relation alias
-            let relationAlias: string = DriverUtils.buildAlias(qb.connection.driver, { shorten: true, joiner: "__" }, alias, relation);
+            let relationAlias: string = DriverUtils.buildAlias(
+                qb.connection.driver,
+                { joiner: "__" },
+                alias,
+                relation,
+            )
 
             // add a join for the found relation
-            const selection = alias + "." + relation;
-            qb.leftJoinAndSelect(selection, relationAlias);
+            const selection = alias + "." + relation
+            qb.leftJoinAndSelect(selection, relationAlias)
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
-            allRelations.splice(allRelations.indexOf(prefix ? prefix + "." + relation : relation), 1);
+            allRelations.splice(
+                allRelations.indexOf(
+                    prefix ? prefix + "." + relation : relation,
+                ),
+                1,
+            )
 
             // try to find sub-relations
-            const join = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === selection);
-            this.applyRelationsRecursively(qb, allRelations, join!.alias.name, join!.metadata!, prefix ? prefix + "." + relation : relation);
+            const join = qb.expressionMap.joinAttributes.find(
+                (join) => join.entityOrProperty === selection,
+            )
+            this.applyRelationsRecursively(
+                qb,
+                allRelations,
+                join!.alias.name,
+                join!.metadata!,
+                prefix ? prefix + "." + relation : relation,
+            )
 
             // join the eager relations of the found relation
-            const relMetadata = metadata.relations.find(metadata => metadata.propertyName === relation);
+            const relMetadata = metadata.relations.find(
+                (metadata) => metadata.propertyName === relation,
+            )
             if (relMetadata) {
-                this.joinEagerRelations(qb, relationAlias, relMetadata.inverseEntityMetadata);
+                this.joinEagerRelations(
+                    qb,
+                    relationAlias,
+                    relMetadata.inverseEntityMetadata,
+                )
             }
-        });
+        })
     }
 
-    public static joinEagerRelations(qb: SelectQueryBuilder<any>, alias: string, metadata: EntityMetadata) {
-        metadata.eagerRelations.forEach(relation => {
-
+    public static joinEagerRelations(
+        qb: SelectQueryBuilder<any>,
+        alias: string,
+        metadata: EntityMetadata,
+    ) {
+        metadata.eagerRelations.forEach((relation) => {
             // generate a relation alias
-            let relationAlias = DriverUtils.buildAlias(qb.connection.driver, { shorten: true }, qb.connection.namingStrategy.eagerJoinRelationAlias(alias, relation.propertyPath));
+            let relationAlias = DriverUtils.buildAlias(
+                qb.connection.driver,
+                qb.connection.namingStrategy.eagerJoinRelationAlias(
+                    alias,
+                    relation.propertyPath,
+                ),
+            )
 
             // add a join for the relation
             // Checking whether the relation wasn't joined yet.
-            let addJoin = true;
+            let addJoin = true
             for (const join of qb.expressionMap.joinAttributes) {
                 if (
                     join.condition !== undefined ||
                     join.mapToProperty !== undefined ||
                     join.isMappingMany !== undefined ||
                     join.direction !== "LEFT" ||
-                    join.entityOrProperty !== `${alias}.${relation.propertyPath}`
+                    join.entityOrProperty !==
+                        `${alias}.${relation.propertyPath}`
                 ) {
-                    continue;
+                    continue
                 }
-                addJoin = false;
-                relationAlias = join.alias.name;
-                break;
+                addJoin = false
+                relationAlias = join.alias.name
+                break
             }
 
             if (addJoin) {
-                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias);
+                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
             }
 
             // Checking whether the relation wasn't selected yet.
             // This check shall be after the join check to detect relationAlias.
-            let addSelect = true;
+            let addSelect = true
             for (const select of qb.expressionMap.selects) {
-                if (select.aliasName !== undefined || select.virtual !== undefined || select.selection !== relationAlias) {
-                    continue;
+                if (
+                    select.aliasName !== undefined ||
+                    select.virtual !== undefined ||
+                    select.selection !== relationAlias
+                ) {
+                    continue
                 }
-                addSelect = false;
-                break;
+                addSelect = false
+                break
             }
 
             if (addSelect) {
-                qb.addSelect(relationAlias);
+                qb.addSelect(relationAlias)
             }
 
             // (recursive) join the eager relations
-            this.joinEagerRelations(qb, relationAlias, relation.inverseEntityMetadata);
-        });
+            this.joinEagerRelations(
+                qb,
+                relationAlias,
+                relation.inverseEntityMetadata,
+            )
+        })
     }
-
 }

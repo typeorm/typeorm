@@ -1,4 +1,4 @@
-import { Entity, ObjectID, ObjectIdColumn, Column } from "../../../../src";
+import { Entity, ObjectID, ObjectIdColumn, Column } from "../../../../src"
 
 @Entity("warnings")
 export class Warn {
@@ -6,17 +6,17 @@ export class Warn {
     id!: ObjectID
 
     @Column()
-    guild!: string;
+    guild!: string
 
     @Column()
-    user!: string;
+    user!: string
 
     @Column()
-    moderator!: string;
+    moderator!: string
 
     @Column()
-    reason!: string;
+    reason!: string
 
     @Column()
-    createdAt!: Date;
+    createdAt!: Date
 }

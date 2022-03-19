@@ -1,35 +1,50 @@
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../../utils/test-utils";
-import {Connection} from "../../../../../src/connection/Connection";
-import {expect} from "chai";
+import { Post } from "./entity/Post"
+import { Category } from "./entity/Category"
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
+import { DataSource } from "../../../../../src/data-source/DataSource"
+import { expect } from "chai"
 
 describe("lazy-relations-loading-via-base-entity-finders", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                // we can properly test lazy-relations only on one platform
+                enabledDrivers: ["mysql"],
+            })),
+    )
 
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        // we can properly test lazy-relations only on one platform
-        enabledDrivers: ["mysql"]
-    }));
-
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
     it("works", async () => {
         for (let connection of connections) {
-            Category.useConnection(connection);
-            Post.useConnection(connection);
-            const category = new Category();
-            category.name = "hello";
-            await category.save();
-            const post = new Post();
-            post.title = "hello post";
-            post.category = Promise.resolve(category);
-            await post.save();
-            expect((await Post.findOneOrFail({category})).id).equal(post.id);
-            expect((await Post.findOneOrFail({category: {id: category.id}})).id).equal(post.id);
+            Category.useDataSource(connection)
+            Post.useDataSource(connection)
+            const category = new Category()
+            category.name = "hello"
+            await category.save()
+            const post = new Post()
+            post.title = "hello post"
+            post.category = Promise.resolve(category)
+            await post.save()
+            expect(
+                (
+                    await Post.findOneByOrFail({
+                        category: { id: category.id, name: category.name },
+                    })
+                ).id,
+            ).equal(post.id)
+            expect(
+                (await Post.findOneByOrFail({ category: { id: category.id } }))
+                    .id,
+            ).equal(post.id)
         }
-    });
-});
+    })
+})

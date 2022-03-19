@@ -1,17 +1,21 @@
-import {Column, Entity, ManyToOne} from "../../../../src";
-import {Order} from "./Order";
-import {Product} from "./Product";
+import { Column, Entity, ManyToOne, PrimaryColumn } from "../../../../src"
+import { Order } from "./Order"
+import { Product } from "./Product"
 
 @Entity()
 export class OrderItem {
+    @PrimaryColumn()
+    orderId: number
 
-    @ManyToOne(type => Order, recurringOrder => recurringOrder.items, { primary: true })
-    order: Order;
+    @PrimaryColumn()
+    productId: number
 
-    @ManyToOne(type => Product, { primary: true })
-    product: Product;
+    @ManyToOne((type) => Order, (recurringOrder) => recurringOrder.items)
+    order: Order
+
+    @ManyToOne((type) => Product)
+    product: Product
 
     @Column()
-    amount: number;
-
+    amount: number
 }

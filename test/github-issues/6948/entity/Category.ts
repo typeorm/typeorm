@@ -1,17 +1,24 @@
-import { Entity, PrimaryGeneratedColumn, Column, Tree, TreeParent, TreeChildren } from "../../../../src";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    Tree,
+    TreeParent,
+    TreeChildren,
+} from "../../../../src"
 
 @Entity()
 @Tree("materialized-path")
 export class Category {
     @PrimaryGeneratedColumn()
-    cat_id: number;
+    cat_id: number
 
     @Column()
-    cat_name: string;
+    cat_name: string
 
     @TreeParent()
-    cat_parent: Category;
+    cat_parent: Category
 
     @TreeChildren({ cascade: true })
-    cat_children: Category[];
+    cat_children: Category[]
 }

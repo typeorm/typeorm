@@ -1,11 +1,11 @@
-import { getConnectionManager } from "../../../src";
-import { Connection } from "../../../src/connection/Connection";
-import { closeTestingConnections } from "../../utils/test-utils";
-import { User } from "./entity/User";
+import { getConnectionManager } from "../../../src"
+import { DataSource } from "../../../src/data-source/DataSource"
+import { closeTestingConnections } from "../../utils/test-utils"
+import { User } from "./entity/User"
 
 describe("github issues > #4753 MySQL Replication Config broken", () => {
-    let connections: Connection[] = [];
-    after(() => closeTestingConnections(connections));
+    let connections: DataSource[] = []
+    after(() => closeTestingConnections(connections))
 
     it("should connect without error when using replication", async () => {
         const connection = getConnectionManager().create({
@@ -14,20 +14,20 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
                 master: {
                     username: "test",
                     password: "test",
-                    database: "test"
+                    database: "test",
                 },
                 slaves: [
                     {
                         username: "test",
                         password: "test",
-                        database: "test"
-                    }
-                ]
+                        database: "test",
+                    },
+                ],
             },
-            entities: [User]
-        });
-        connections.push(connection);
-        await connection.connect();
-        connection.isConnected.should.be.true;
-    });
-});
+            entities: [User],
+        })
+        connections.push(connection)
+        await connection.connect()
+        connection.isInitialized.should.be.true
+    })
+})

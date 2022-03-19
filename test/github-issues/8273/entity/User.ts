@@ -1,22 +1,21 @@
-import { Entity, PrimaryColumn, Column, Generated } from "../../../../src";
+import { Entity, PrimaryColumn, Column, Generated } from "../../../../src"
 
 @Entity()
 export class User {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({ type: "uuid" })
-    uuid: string;
+    uuid: string
 
     @Column({ type: "uuid" })
     @Generated("uuid")
-    uuidWithGenerated: string;
+    uuidWithGenerated: string
 
     @Column()
-    increment: number;
+    increment: number
 
     @Column()
     @Generated("increment")
-    incrementWithGenerated: number;
+    incrementWithGenerated: number
 }

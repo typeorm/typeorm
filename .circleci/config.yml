@@ -50,6 +50,7 @@ commands:
           command: |
             if [ ! -d node_modules ]; then
               npm install
+              npm install oracledb
             fi
       - run:
           # This is pretty terrible but OracleDB requires you to grab the binaries OOB

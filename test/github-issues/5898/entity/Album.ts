@@ -1,5 +1,5 @@
-import {Entity, OneToMany, PrimaryGeneratedColumn} from "../../../../src";
-import {Photo} from "./Photo";
+import { Entity, OneToMany, PrimaryGeneratedColumn } from "../../../../src"
+import { Photo } from "./Photo"
 
 @Entity()
 export class Album {

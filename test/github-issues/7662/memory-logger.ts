@@ -1,14 +1,16 @@
-import {Logger} from "../../../src/logger/Logger";
+import { Logger } from "../../../src/logger/Logger"
 
 export class MemoryLogger implements Logger {
     constructor(public enabled = true) {}
 
-    private _queries: string[] = [];
-    get queries() { return this._queries; }
+    private _queries: string[] = []
+    get queries() {
+        return this._queries
+    }
 
     logQuery(query: string) {
         if (this.enabled) {
-            this._queries.push(query);
+            this._queries.push(query)
         }
     }
 
@@ -23,6 +25,6 @@ export class MemoryLogger implements Logger {
     log(level: "log" | "info" | "warn", message: any) {}
 
     clear() {
-        this._queries = [];
+        this._queries = []
     }
 }

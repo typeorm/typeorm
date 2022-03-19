@@ -1,5 +1,5 @@
-import { Column, PrimaryGeneratedColumn } from "../../../../../src";
-import { Entity } from "../../../../../src";
+import { Column, PrimaryGeneratedColumn } from "../../../../../src"
+import { Entity } from "../../../../../src"
 
 export enum Operator {
     LT = "lt",
@@ -7,23 +7,23 @@ export enum Operator {
     EQ = "eq",
     NE = "ne",
     GE = "ge",
-    GT = "gt"
+    GT = "gt",
 }
 
 @Entity()
 export class Metric {
     @PrimaryGeneratedColumn()
-    id!: number;
+    id!: number
 
     @Column({ type: "enum", enum: Operator, default: Operator.EQ })
-    defaultOperator!: string;
+    defaultOperator!: string
 
     @Column({ type: "enum", enum: Operator })
-    defaultOperator2!: string;
+    defaultOperator2!: string
 
     @Column({ type: "enum", enum: Operator, default: Operator.EQ })
-    defaultOperator3!: string;
+    defaultOperator3!: string
 
     @Column({ type: "enum", enum: Operator, default: Operator.EQ })
-    defaultOperator4!: string;
+    defaultOperator4!: string
 }

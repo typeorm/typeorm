@@ -1,4 +1,4 @@
-import {EntitySchema} from "../../../../../src/index";
+import { EntitySchema } from "../../../../../src/index"
 
 export const PersonSchema = new EntitySchema<any>({
     name: "Person",
@@ -6,25 +6,22 @@ export const PersonSchema = new EntitySchema<any>({
         Id: {
             primary: true,
             type: "int",
-            generated: "increment"
+            generated: "increment",
         },
         FirstName: {
             type: String,
-            length: 30
+            length: 30,
         },
         LastName: {
             type: String,
             length: 50,
-            nullable: false
-        }
+            nullable: false,
+        },
     },
     uniques: [
         {
             name: "UNIQUE_TEST",
-            columns: [
-                "FirstName",
-                "LastName"
-            ]
-        }
-    ]
-});
+            columns: ["FirstName", "LastName"],
+        },
+    ],
+})

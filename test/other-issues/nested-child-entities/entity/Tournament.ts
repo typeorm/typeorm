@@ -1,6 +1,13 @@
-import {TableInheritance, Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "../../../../src/index";
+import {
+    TableInheritance,
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    OneToOne,
+    JoinColumn,
+} from "../../../../src/index"
 
-import {TournamentGraph} from "./TournamentGraph";
+import { TournamentGraph } from "./TournamentGraph"
 
 @Entity()
 @TableInheritance({
@@ -12,18 +19,18 @@ import {TournamentGraph} from "./TournamentGraph";
 })
 export abstract class Tournament {
     @PrimaryGeneratedColumn()
-    public id: number;
+    public id: number
 
     @Column()
-    public name: string;
+    public name: string
 
-    @OneToOne(type => TournamentGraph, graph => graph.tournament)
+    @OneToOne((type) => TournamentGraph, (graph) => graph.tournament)
     @JoinColumn()
-    public graph: TournamentGraph;
+    public graph: TournamentGraph
 
-    constructor(tournament?: {name: string}) {
+    constructor(tournament?: { name: string }) {
         if (tournament) {
-            this.name = tournament.name;
+            this.name = tournament.name
         }
     }
 }

@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryColumn} from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../src"
 
 export enum Role {
     GuildMaster = "Guild Master",
@@ -6,18 +6,22 @@ export enum Role {
     Boss = 'BOSS "LEVEL 80"',
     Warrior = "Knight\\Rogue",
     Number = 1,
-    PlayerAlt = "Player Alt"
+    PlayerAlt = "Player Alt",
 }
-
 
 @Entity()
 export class User {
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({ type: "enum", enum: Role, default: Role.GuildMaster })
-    role: Role;
+    role: Role
 
-    @Column({ type: "enum", enum: Role, default: [Role.GuildMaster], array: true })
-    roles: Role[];
+    @Column({
+        type: "enum",
+        enum: Role,
+        default: [Role.GuildMaster],
+        array: true,
+    })
+    roles: Role[]
 }

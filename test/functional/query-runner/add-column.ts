@@ -1,27 +1,30 @@
-import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
-import {AbstractSqliteDriver} from "../../../src/driver/sqlite-abstract/AbstractSqliteDriver";
-import {TableColumn} from "../../../src/schema-builder/table/TableColumn";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {PostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
+import { expect } from "chai"
+import "reflect-metadata"
+import { DataSource } from "../../../src/data-source/DataSource"
+import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
+import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import {SpannerDriver} from "../../../src/driver/spanner/SpannerDriver";
-import {expect} from "chai";
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > add column", () => {
-
-    let connections: Connection[];
+    let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-        });
-    });
-    after(() => closeTestingConnections(connections));
+        })
+    })
+    after(() => closeTestingConnections(connections))
 
-    it("should correctly add column and revert add", () => Promise.all(connections.map(async connection => {
+    it("should correctly add column and revert add", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const queryRunner = connection.createQueryRunner()
 
         let numericType = "int"
         if (connection.driver instanceof AbstractSqliteDriver) {
@@ -57,34 +60,34 @@ describe("query runner > add column", () => {
             column1.generationStrategy = "increment";
         }
 
-        let column2 = new TableColumn({
-            name: "description",
-            type: stringType,
-            length: "100",
-            default: "'this is description'",
+                let column2 = new TableColumn({
+                    name: "description",
+                    type: stringType,
+                    length: "100",
+                    default: "'this is description'",
             isNullable: connection.driver instanceof SpannerDriver
-        });
+        })
 
-        let column3 = new TableColumn({
-            name: "textAndTag",
-            type: stringType,
-            length: "200",
-            generatedType: "STORED",
-            asExpression: "text || tag",
+                let column3 = new TableColumn({
+                    name: "textAndTag",
+                    type: stringType,
+                    length: "200",
+                    generatedType: "STORED",
+                    asExpression: "text || tag",
             isNullable: connection.driver instanceof SpannerDriver
-        });
+        })
 
-        let column4 = new TableColumn({
-            name: "textAndTag2",
-            type: "varchar",
-            length: "200",
-            generatedType: "VIRTUAL",
-            asExpression: "text || tag",
+                let column4 = new TableColumn({
+                    name: "textAndTag2",
+                    type: "varchar",
+                    length: "200",
+                    generatedType: "VIRTUAL",
+                    asExpression: "text || tag",
             isNullable: connection.driver instanceof SpannerDriver
-        });
+        })
 
-        await queryRunner.addColumn(table!, column1);
-        await queryRunner.addColumn("post", column2);
+                await queryRunner.addColumn(table!, column1)
+                await queryRunner.addColumn("post", column2)
 
         table = await queryRunner.getTable("post");
         column1 = table!.findColumnByName("secondId")!;
@@ -117,40 +120,45 @@ describe("query runner > add column", () => {
             column2!.default!.should.be.equal("'this is description'");
         }
 
-        if (connection.driver instanceof MysqlDriver || connection.driver instanceof PostgresDriver) {
-            const isMySQL = connection.driver instanceof MysqlDriver && connection.options.type === "mysql";
-            let postgresSupported = false;
+                if (
+                    DriverUtils.isMySQLFamily(connection.driver) ||
+                    connection.driver.options.type === "postgres"
+                ) {
+                    const isMySQL = connection.options.type === "mysql"
+                    let postgresSupported = false
 
-            if (connection.driver instanceof PostgresDriver) {
-                postgresSupported = connection.driver.isGeneratedColumnsSupported;
-            }
+                    if (connection.driver.options.type === "postgres") {
+                        postgresSupported = (
+                            connection.driver as PostgresDriver
+                        ).isGeneratedColumnsSupported
+                    }
 
-            if (isMySQL || postgresSupported) {
-                await queryRunner.addColumn(table!, column3);
-                table = await queryRunner.getTable("post");
-                column3 = table!.findColumnByName("textAndTag")!;
-                column3.should.be.exist;
-                column3!.generatedType!.should.be.equals("STORED");
-                column3!.asExpression!.should.be.a("string");
+                    if (isMySQL || postgresSupported) {
+                        await queryRunner.addColumn(table!, column3)
+                        table = await queryRunner.getTable("post")
+                        column3 = table!.findColumnByName("textAndTag")!
+                        column3.should.be.exist
+                        column3!.generatedType!.should.be.equals("STORED")
+                        column3!.asExpression!.should.be.a("string")
 
-                if (connection.driver instanceof MysqlDriver) {
-                    await queryRunner.addColumn(table!, column4);
-                    table = await queryRunner.getTable("post");
-                    column4 = table!.findColumnByName("textAndTag2")!;
-                    column4.should.be.exist;
-                    column4!.generatedType!.should.be.equals("VIRTUAL");
-                    column4!.asExpression!.should.be.a("string");
+                        if (DriverUtils.isMySQLFamily(connection.driver)) {
+                            await queryRunner.addColumn(table!, column4)
+                            table = await queryRunner.getTable("post")
+                            column4 = table!.findColumnByName("textAndTag2")!
+                            column4.should.be.exist
+                            column4!.generatedType!.should.be.equals("VIRTUAL")
+                            column4!.asExpression!.should.be.a("string")
+                        }
+                    }
                 }
-            }
-        }
 
-        await queryRunner.executeMemoryDownSql();
+                await queryRunner.executeMemoryDownSql()
 
-        table = await queryRunner.getTable("post");
-        expect(table!.findColumnByName("secondId")).to.be.undefined;
-        expect(table!.findColumnByName("description")).to.be.undefined;
+                table = await queryRunner.getTable("post")
+                expect(table!.findColumnByName("secondId")).to.be.undefined
+                expect(table!.findColumnByName("description")).to.be.undefined
 
-        await queryRunner.release();
-    })));
-
-});
+                await queryRunner.release()
+            }),
+        ))
+})
