@@ -13,6 +13,9 @@ type PredicateOperator =
     | "in"
     | "any"
     | "isNull"
+    | "arrayContains"
+    | "arrayContainedBy"
+    | "arrayOverlap"
 
 export interface WherePredicateOperator {
     operator: PredicateOperator

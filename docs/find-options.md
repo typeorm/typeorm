@@ -488,6 +488,54 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" IS NULL
 ```
 
+-   `ArrayContains`
+
+```ts
+import { ArrayContains } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    categories: ArrayContains(["TypeScript"]),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "categories" @> '{TypeScript}'
+```
+
+-   `ArrayContainedBy`
+
+```ts
+import { ArrayContainedBy } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    categories: ArrayContainedBy(["TypeScript"]),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "categories" <@ '{TypeScript}'
+```
+
+-   `ArrayOverlap`
+
+```ts
+import { ArrayOverlap } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    categories: ArrayOverlap(["TypeScript"]),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "categories" && '{TypeScript}'
+```
+
 -   `Raw`
 
 ```ts

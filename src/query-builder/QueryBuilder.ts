@@ -993,6 +993,12 @@ export abstract class QueryBuilder<Entity> {
                 return `${condition.parameters[0]} < ${condition.parameters[1]}`
             case "lessThanOrEqual":
                 return `${condition.parameters[0]} <= ${condition.parameters[1]}`
+            case "arrayContains":
+                return `${condition.parameters[0]} @> ${condition.parameters[1]}`
+            case "arrayContainedBy":
+                return `${condition.parameters[0]} <@ ${condition.parameters[1]}`
+            case "arrayOverlap":
+                return `${condition.parameters[0]} && ${condition.parameters[1]}`
             case "moreThan":
                 return `${condition.parameters[0]} > ${condition.parameters[1]}`
             case "moreThanOrEqual":
