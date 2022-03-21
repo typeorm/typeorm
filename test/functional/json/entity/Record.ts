@@ -1,6 +1,4 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 /**
  * For testing Postgres jsonb
@@ -15,6 +13,9 @@ export class Record {
 
     @Column({ type: "jsonb", nullable: true })
     data: any
+
+    @Column({ type: "jsonb", nullable: true, array: true })
+    data2: any
 
     @Column({
         type: "jsonb",

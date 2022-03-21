@@ -426,6 +426,13 @@ This change was required to simplify ORM internals and introduce new features.
 
 * issue with non-reliable `new Date(ISOString)` parsing ([#7796](https://github.com/typeorm/typeorm/pull/7796))
 
+* true JSON / JSONB support - manual `JSON.stringify` was removed,
+instead object handled by underlying driver. This opens ability to properly work with json/jsonb structures,
+but brings few breaking changes:
+
+  * `array: true` must be explicitly defined for array json/jsonb values
+  * strings being JSON-stringified must be manually escaped
+
 ### DEPRECATIONS
 
 * all CLI commands do not support `ormconfig` anymore. You must specify a file with data source instance instead.

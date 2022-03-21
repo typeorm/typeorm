@@ -1,6 +1,4 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 import { RecordData } from "./RecordData"
 import { RecordConfig } from "./RecordConfig"
 
@@ -9,9 +7,9 @@ export class Record {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ type: "json" })
+    @Column({ type: "json", array: true })
     configs: RecordConfig[]
 
-    @Column({ type: "jsonb" })
+    @Column({ type: "jsonb", array: true })
     datas: RecordData[]
 }
