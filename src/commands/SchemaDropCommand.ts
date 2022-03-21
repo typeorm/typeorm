@@ -27,7 +27,7 @@ export class SchemaDropCommand implements yargs.CommandModule {
     async handler(args: yargs.Arguments) {
         let dataSource: DataSource | undefined = undefined
         try {
-            dataSource = CommandUtils.loadDataSource(
+            dataSource = await CommandUtils.loadDataSource(
                 path.resolve(process.cwd(), args.dataSource as string),
             )
             dataSource.setOptions({
