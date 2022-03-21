@@ -1057,9 +1057,15 @@ export class MysqlDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
+        const connectorPackage = this.options.connectorPackage ?? "mysql"
+        const fallbackConnectorPackage =
+            connectorPackage === "mysql"
+                ? ("mysql2" as const)
+                : ("mysql" as const)
         try {
             // try to load first supported package
-            const mysql = this.options.driver || PlatformTools.load("mysql")
+            const mysql =
+                this.options.driver || PlatformTools.load(connectorPackage)
             this.mysql = mysql
             /*
              * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
@@ -1070,14 +1076,17 @@ export class MysqlDriver implements Driver {
              */
             if (Object.keys(this.mysql).length === 0) {
                 throw new TypeORMError(
-                    "'mysql' was found but it is empty. Falling back to 'mysql2'.",
+                    `'${connectorPackage}' was found but it is empty. Falling back to '${fallbackConnectorPackage}'.`,
                 )
             }
         } catch (e) {
             try {
-                this.mysql = PlatformTools.load("mysql2") // try to load second supported package
+                this.mysql = PlatformTools.load(fallbackConnectorPackage) // try to load second supported package
             } catch (e) {
-                throw new DriverPackageNotInstalledError("Mysql", "mysql")
+                throw new DriverPackageNotInstalledError(
+                    "Mysql",
+                    connectorPackage,
+                )
             }
         }
     }
