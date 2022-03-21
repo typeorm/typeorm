@@ -37,6 +37,7 @@ import { TypeORMError } from "../error/TypeORMError"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { importClassesFromDirectories } from "../util/DirectoryExportedClassesLoader"
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -645,6 +646,17 @@ export class DataSource {
         const flattenedEntities = ObjectUtils.mixedListToArray(
             this.options.entities || [],
         )
+
+        // resolve globs to the respective entity classes
+        flattenedEntities.push(
+            ...(await importClassesFromDirectories(
+                this.logger,
+                flattenedEntities.filter(
+                    (it) => typeof it === "string",
+                ) as string[],
+            )),
+        )
+
         const entityMetadatas =
             await connectionMetadataBuilder.buildEntityMetadatas(
                 flattenedEntities,
