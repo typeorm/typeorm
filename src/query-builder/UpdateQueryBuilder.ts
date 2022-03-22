@@ -508,8 +508,8 @@ export class UpdateQueryBuilder<Entity>
                         let value = column.getEntityValue(valuesSet)
                         if (
                             column.referencedColumn &&
-                            !(value instanceof Date) &&
                             typeof value === "object" &&
+                            !(value instanceof Date) &&
                             !Buffer.isBuffer(value)
                         ) {
                             value =
