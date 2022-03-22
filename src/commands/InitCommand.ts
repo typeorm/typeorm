@@ -691,14 +691,12 @@ Steps to run this project:
         if (projectIsEsm)
             Object.assign(packageJson.scripts, {
                 start: /*(docker ? "docker-compose up && " : "") + */ "node --loader ts-node/esm src/index.ts",
-                typeorm:
-                    "node --loader ts-node/esm ./node_modules/typeorm/cli.js",
+                typeorm: "typeorm-ts-node-esm",
             })
         else
             Object.assign(packageJson.scripts, {
                 start: /*(docker ? "docker-compose up && " : "") + */ "ts-node src/index.ts",
-                typeorm:
-                    "node --require ts-node/register ./node_modules/typeorm/cli.js",
+                typeorm: "typeorm-ts-node-commonjs",
             })
 
         return JSON.stringify(packageJson, undefined, 3)

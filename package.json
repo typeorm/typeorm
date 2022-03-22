@@ -129,7 +129,7 @@
     "source-map-support": "^0.5.19",
     "sql.js": "^1.4.0",
     "sqlite3": "^5.0.2",
-    "ts-node": "^9.1.1",
+    "ts-node": "^10.7.0",
     "typeorm-aurora-data-api-driver": "^2.0.0",
     "typescript": "^4.6.2",
     "prettier": "^2.5.1"
@@ -149,6 +149,7 @@
     "redis": "^3.1.1",
     "sql.js": "^1.4.0",
     "sqlite3": "^5.0.2",
+    "ts-node": "^10.7.0",
     "typeorm-aurora-data-api-driver": "^2.0.0"
   },
   "peerDependenciesMeta": {
@@ -194,6 +195,9 @@
     "sqlite3": {
       "optional": true
     },
+    "ts-node": {
+      "optional": true
+    },
     "typeorm-aurora-data-api-driver": {
       "optional": true
     }
@@ -228,7 +232,11 @@
     "format": "prettier --write \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
   },
-  "bin": "./cli.js",
+  "bin": {
+    "typeorm": "./cli.js",
+    "typeorm-ts-node-commonjs": "./cli-ts-node-commonjs.js",
+    "typeorm-ts-node-esm": "./cli-ts-node-esm.js"
+  },
   "funding": "https://opencollective.com/typeorm",
   "collective": {
     "type": "opencollective",
