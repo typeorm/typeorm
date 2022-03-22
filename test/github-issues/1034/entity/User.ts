@@ -1,19 +1,18 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
-import { Circle } from "./Circle";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { ManyToMany } from "../../../../src/decorator/relations/ManyToMany"
+import { Circle } from "./Circle"
 
 @Entity()
 export class User {
-
     /**
      * User's identifier
      */
-    @PrimaryGeneratedColumn({type: "bigint"})
-    private id: string;
+    @PrimaryGeneratedColumn({ type: "bigint" })
+    private id: string
 
     @ManyToMany((type: object) => Circle, (circle) => "users")
-    private circles: Promise<Circle[]>;
+    private circles: Promise<Circle[]>
 
     /**
      * Getter identifier
@@ -21,7 +20,7 @@ export class User {
      * @returns {number}
      */
     public getId(): string {
-        return this.id;
+        return this.id
     }
 
     /**
@@ -30,7 +29,7 @@ export class User {
      * @param id new identifier value
      */
     public setId(id: string): void {
-        this.id = id;
+        this.id = id
     }
     /**
      * Getter circles
@@ -38,7 +37,7 @@ export class User {
      * @returns {Circle[]}
      */
     public getCircles(): Promise<Circle[]> {
-        return this.circles;
+        return this.circles
     }
 
     /**
@@ -47,6 +46,6 @@ export class User {
      * @param circles new circle value
      */
     public setCircles(circles: Promise<Circle[]>): void {
-        this.circles = circles;
+        this.circles = circles
     }
 }

@@ -1,17 +1,15 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
-import {OneToMany} from "../../../src/decorator/relations/OneToMany";
-import {Post} from "./Post";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
+import { OneToMany } from "../../../src/decorator/relations/OneToMany"
+import { Post } from "./Post"
 
 @Entity("sample25_author")
 export class Author {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToMany(type => Post, author => author.author)
-    posts: Post[];
-    
+    @OneToMany((type) => Post, (author) => author.author)
+    posts: Post[]
 }

@@ -1,10 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Category {
     @PrimaryGeneratedColumn("increment")
-    id!: number;
+    id!: number
 
     @Column()
-    name!: string;
+    name!: string
 }

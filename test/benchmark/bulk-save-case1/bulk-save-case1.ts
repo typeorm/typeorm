@@ -1,33 +1,43 @@
-import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
+import "reflect-metadata"
+import { DataSource } from "../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { Post } from "./entity/Post"
 
 describe("benchmark > bulk-save > case1", () => {
-    
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({ __dirname, enabledDrivers: ["postgres"] }));
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                __dirname,
+                enabledDrivers: ["postgres"],
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
-    it("testing bulk save of 10.000 objects", () => Promise.all(connections.map(async connection => {
+    it("testing bulk save of 10.000 objects", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const posts: Post[] = []
 
-        const posts: Post[] = [];
+                for (let i = 1; i <= 10000; i++) {
+                    const post = new Post()
+                    post.title = `Post #${i}`
+                    post.text = `Post #${i} text`
+                    post.likesCount = i
+                    post.commentsCount = i
+                    post.watchesCount = i
+                    posts.push(post)
+                }
 
-        for (let i = 1; i <= 10000; i++) {
-            const post = new Post();
-            post.title = `Post #${i}`;
-            post.text = `Post #${i} text`;
-            post.likesCount = i;
-            post.commentsCount = i;
-            post.watchesCount = i;
-            posts.push(post);
-        }
-
-        await connection.manager.save(posts);
-        // await connection.manager.insert(Post, posts);
-
-    })));
+                await connection.manager.save(posts)
+                // await connection.manager.insert(Post, posts);
+            }),
+        ))
 
     /**
      * Before persistence refactoring
@@ -71,4 +81,4 @@ describe("benchmark > bulk-save > case1", () => {
      * √ testing bulk save of 1000 objects (5755ms)
      * √ testing bulk save of 1000 objects (5935ms)
      */
-});
+})

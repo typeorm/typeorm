@@ -5,91 +5,91 @@ import {
     PrimaryGeneratedColumn,
     Tree,
     TreeChildren,
-    TreeParent
-} from "../../../../src";
+    TreeParent,
+} from "../../../../src"
 
 @Entity()
 @Tree("closure-table")
 export class SqlServerSingleIdClosure {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SqlServerSingleIdClosure[];
+    children: SqlServerSingleIdClosure[]
 
     @TreeParent()
-    parent: SqlServerSingleIdClosure | null;
+    parent: SqlServerSingleIdClosure | null
 }
 
 @Entity()
 @Tree("nested-set")
 export class SqlServerSingleIdNested {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SqlServerSingleIdNested[];
+    children: SqlServerSingleIdNested[]
 
     @TreeParent()
-    parent: SqlServerSingleIdNested | null;
+    parent: SqlServerSingleIdNested | null
 }
 
 @Entity()
 @Tree("materialized-path")
 export class SqlServerSingleIdMaterialized {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SqlServerSingleIdMaterialized[];
+    children: SqlServerSingleIdMaterialized[]
 
     @TreeParent()
-    parent: SqlServerSingleIdMaterialized | null;
+    parent: SqlServerSingleIdMaterialized | null
 }
 
 @Entity()
 @Tree("nested-set")
 export class SqlServerMultiIdNested {
     @PrimaryColumn()
-    column: string;
+    column: string
 
     @PrimaryColumn()
-    row: number;
+    row: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SqlServerMultiIdNested[];
+    children: SqlServerMultiIdNested[]
 
     @TreeParent()
-    parent: SqlServerMultiIdNested | null;
+    parent: SqlServerMultiIdNested | null
 }
 
 @Entity()
 @Tree("materialized-path")
 export class SqlServerMultiIdMaterialized {
     @PrimaryColumn()
-    column: string;
+    column: string
 
     @PrimaryColumn()
-    row: number;
+    row: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SqlServerMultiIdMaterialized[];
+    children: SqlServerMultiIdMaterialized[]
 
     @TreeParent()
-    parent: SqlServerMultiIdMaterialized | null;
+    parent: SqlServerMultiIdMaterialized | null
 }

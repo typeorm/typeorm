@@ -1,19 +1,27 @@
-import { BaseEntity, Column, Entity, ManyToOne } from "../../../../src";
-import { User } from "./User";
-import { Organization } from "./Organization";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    ManyToOne,
+    PrimaryColumn,
+} from "../../../../src"
+import { User } from "./User"
+import { Organization } from "./Organization"
 
 @Entity()
 export class OrganizationMembership extends BaseEntity {
-    @ManyToOne(() => User, (user) => user.membership, {
-        primary: true,
-    })
-    user: User;
+    @PrimaryColumn()
+    userId: string
 
-    @ManyToOne(() => Organization, (organization) => organization.membership, {
-        primary: true,
-    })
-    organization: Organization;
+    @PrimaryColumn()
+    organizationId: string
+
+    @ManyToOne(() => User, (user) => user.membership)
+    user: User
+
+    @ManyToOne(() => Organization, (organization) => organization.membership)
+    organization: Organization
 
     @Column()
-    accessLevel: string;
+    accessLevel: string
 }

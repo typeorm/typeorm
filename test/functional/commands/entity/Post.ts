@@ -1,14 +1,18 @@
-import { PrimaryGeneratedColumn, Entity, Column, CreateDateColumn } from "../../../../src";
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id?: number;
+    id?: number
 
     @Column()
-    title: string;
+    title: string
 
     @CreateDateColumn()
-    readonly createdAt?: Date;
+    readonly createdAt?: Date
 }

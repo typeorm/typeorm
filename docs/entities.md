@@ -1,22 +1,20 @@
-
-
 # Entities
 
-* [What is Entity?](#what-is-entity)
-* [Entity columns](#entity-columns)
-  * [Primary columns](#primary-columns)
-  * [Special columns](#special-columns)
-  * [Spatial columns](#spatial-columns)
-* [Column types](#column-types)
-  * [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-  * [Column types for `postgres` / `cockroachdb`](#column-types-for-postgres)
-  * [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
-  * [Column types for `mssql`](#column-types-for-mssql)
-  * [`enum` column type](#enum-column-type)
-  * [`simple-array` column type](#simple-array-column-type)
-  * [`simple-json` column type](#simple-json-column-type)
-  * [Columns with generated values](#columns-with-generated-values)
-* [Column options](#column-options)
+-   [What is Entity?](#what-is-entity)
+-   [Entity columns](#entity-columns)
+    -   [Primary columns](#primary-columns)
+    -   [Special columns](#special-columns)
+    -   [Spatial columns](#spatial-columns)
+-   [Column types](#column-types)
+    -   [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
+    -   [Column types for `postgres` / `cockroachdb`](#column-types-for-postgres)
+    -   [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
+    -   [Column types for `mssql`](#column-types-for-mssql)
+    -   [`enum` column type](#enum-column-type)
+    -   [`simple-array` column type](#simple-array-column-type)
+    -   [`simple-json` column type](#simple-json-column-type)
+    -   [Columns with generated values](#columns-with-generated-values)
+-   [Column options](#column-options)
 
 ## What is Entity?
 
@@ -24,23 +22,21 @@ Entity is a class that maps to a database table (or collection when using MongoD
 You can create an entity by defining a new class and mark it with `@Entity()`:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
     @Column()
-    isActive: boolean;
-
+    isActive: boolean
 }
 ```
 
@@ -60,41 +56,41 @@ This will create following database table:
 Basic entities consist of columns and relations.
 Each entity **MUST** have a primary column (or ObjectId column if are using MongoDB).
 
-Each entity must be registered in your connection options:
+Each entity must be registered in your data source options:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
-import {User} from "./entity/User";
+import { DataSource } from "typeorm"
+import { User } from "./entity/User"
 
-const connection: Connection = await createConnection({
+const myDataSource = new DataSource({
     type: "mysql",
     host: "localhost",
     port: 3306,
     username: "test",
     password: "test",
     database: "test",
-    entities: [User]
-});
+    entities: [User],
+})
 ```
 
 Or you can specify the whole directory with all entities inside - and all of them will be loaded:
 
 ```typescript
-import {createConnection, Connection} from "typeorm";
+import { DataSource } from "typeorm"
 
-const connection: Connection = await createConnection({
+const dataSource = new DataSource({
     type: "mysql",
     host: "localhost",
     port: 3306,
     username: "test",
     password: "test",
     database: "test",
-    entities: ["entity/*.js"]
-});
+    entities: ["entity/*.js"],
+})
 ```
 
 If you want to use an alternative table name for the `User` entity you can specify it in `@Entity`: `@Entity("my_users")`.
-If you want to set a base prefix for all database tables in your application you can specify `entityPrefix` in connection options.
+If you want to set a base prefix for all database tables in your application you can specify `entityPrefix` in data source options.
 
 When using an entity constructor its arguments **must be optional**. Since ORM creates instances of entity classes when loading from the database, therefore it is not aware of your constructor arguments.
 
@@ -110,65 +106,54 @@ Each entity class property you marked with `@Column` will be mapped to a databas
 Each entity must have at least one primary column.
 There are several types of primary columns:
 
-* `@PrimaryColumn()` creates a primary column which takes any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. The example below will create id with `int` as type which you must manually assign before save.
+-   `@PrimaryColumn()` creates a primary column which takes any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. The example below will create id with `int` as type which you must manually assign before save.
 
 ```typescript
-import {Entity, PrimaryColumn} from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class User {
-
     @PrimaryColumn()
-    id: number;
-
-
+    id: number
 }
 ```
 
-* `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence`/`identity` (depend on the database and configuration provided). You don't have to manually assign its value before save - value will be automatically generated.
+-   `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence`/`identity` (depend on the database and configuration provided). You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
-
-
+    id: number
 }
 ```
 
-* `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
+-   `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn("uuid")
-    id: string;
-
-
+    id: string
 }
 ```
 
 You can have composite primary columns as well:
 
 ```typescript
-import {Entity, PrimaryColumn} from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class User {
+    @PrimaryColumn()
+    firstName: string
 
     @PrimaryColumn()
-    firstName: string;
-
-    @PrimaryColumn()
-    lastName: string;
-
+    lastName: string
 }
 ```
 
@@ -180,31 +165,36 @@ To find an entity by id you can use `manager.findOne` or `repository.findOne`. E
 
 ```typescript
 // find one by id with single primary key
-const person = await connection.manager.findOne(Person, 1);
-const person = await connection.getRepository(Person).findOne(1);
+const person = await dataSource.manager.findBy(Person, { id: 1 })
+const person = await dataSource.getRepository(Person).findOneBy({ id: 1 })
 
 // find one by id with composite primary keys
-const user = await connection.manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
-const user = await connection.getRepository(User).findOne({ firstName: "Timber", lastName: "Saw" });
+const user = await dataSource.manager.findOneBy(User, {
+    firstName: "Timber",
+    lastName: "Saw",
+})
+const user = await dataSource.getRepository(User).findOneBy({
+    firstName: "Timber",
+    lastName: "Saw",
+})
 ```
 
 ### Special columns
 
 There are several special column types with additional functionality available:
 
+-   `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
+    You don't need to set this column - it will be automatically set.
 
-* `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
-You don't need to set this column - it will be automatically set.
+-   `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
+    each time you call `save` of entity manager or repository.
+    You don't need to set this column - it will be automatically set.
 
-* `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
-each time you call `save` of entity manager or repository.
-You don't need to set this column - it will be automatically set.
+-   `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
 
-* `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
-
-* `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
-each time you call `save` of entity manager or repository.
-You don't need to set this column - it will be automatically set.
+-   `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
+    each time you call `save` of entity manager or repository.
+    You don't need to set this column - it will be automatically set.
 
 ### Spatial columns
 
@@ -230,35 +220,37 @@ GeoJSON and into GeoJSON as `json`:
 
 ```typescript
 const origin = {
-  type: "Point",
-  coordinates: [0, 0]
-};
+    type: "Point",
+    coordinates: [0, 0],
+}
 
-await getManager()
+await dataSource.manager
     .createQueryBuilder(Thing, "thing")
     // convert stringified GeoJSON into a geometry with an SRID that matches the
     // table specification
-    .where("ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0")
+    .where(
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0",
+    )
     .orderBy({
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))": {
-            order: "ASC"
-        }
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))":
+            {
+                order: "ASC",
+            },
     })
     .setParameters({
-      // stringify GeoJSON
-      origin: JSON.stringify(origin)
+        // stringify GeoJSON
+        origin: JSON.stringify(origin),
     })
-    .getMany();
+    .getMany()
 
-await getManager()
+await dataSource.manager
     .createQueryBuilder(Thing, "thing")
     // convert geometry result into GeoJSON, treated as JSON (so that TypeORM
     // will know to deserialize it)
     .select("ST_AsGeoJSON(ST_Buffer(geom, 0.1))::json geom")
     .from("thing")
-    .getMany();
+    .getMany()
 ```
-
 
 ## Column types
 
@@ -322,8 +314,7 @@ or
 `timestamp with time zone`, `json`, `jsonb`, `uuid`
 
 > Note: CockroachDB returns all numeric data types as `string`. However if you omit column type and define your property as
- `number` ORM will `parseInt` string into number.
-
+> `number` ORM will `parseInt` string into number.
 
 ### Column types for `sqlite` / `cordova` / `react-native` / `expo`
 
@@ -351,31 +342,32 @@ or
 `enum` column type is supported by `postgres` and `mysql`. There are various possible column definitions:
 
 Using typescript enums:
+
 ```typescript
 export enum UserRole {
     ADMIN = "admin",
     EDITOR = "editor",
-    GHOST = "ghost"
+    GHOST = "ghost",
 }
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
         type: "enum",
         enum: UserRole,
-        default: UserRole.GHOST
+        default: UserRole.GHOST,
     })
     role: UserRole
-
 }
 ```
+
 > Note: String, numeric and heterogeneous enums are supported.
 
 Using array with enum values:
+
 ```typescript
 export type UserRoleType = "admin" | "editor" | "ghost",
 
@@ -399,30 +391,30 @@ export class User {
 `set` column type is supported by `mariadb` and `mysql`. There are various possible column definitions:
 
 Using typescript enums:
+
 ```typescript
 export enum UserRole {
     ADMIN = "admin",
     EDITOR = "editor",
-    GHOST = "ghost"
+    GHOST = "ghost",
 }
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
         type: "set",
         enum: UserRole,
-        default: [UserRole.GHOST, UserRole.EDITOR]
+        default: [UserRole.GHOST, UserRole.EDITOR],
     })
     roles: UserRole[]
-
 }
 ```
 
 Using array with `set` values:
+
 ```typescript
 export type UserRoleType = "admin" | "editor" | "ghost",
 
@@ -449,24 +441,17 @@ All values are separated by a comma. For example:
 ```typescript
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("simple-array")
-    names: string[];
-
+    names: string[]
 }
 ```
 
 ```typescript
-const user = new User();
-user.names = [
-    "Alexander",
-    "Alex",
-    "Sasha",
-    "Shurik"
-];
+const user = new User()
+user.names = ["Alexander", "Alex", "Sasha", "Shurik"]
 ```
 
 Will be stored in a single database column as `Alexander,Alex,Sasha,Shurik` value.
@@ -486,19 +471,17 @@ For example:
 ```typescript
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("simple-json")
-    profile: { name: string, nickname: string };
-
+    profile: { name: string; nickname: string }
 }
 ```
 
 ```typescript
-const user = new User();
-user.profile = { name: "John", nickname: "Malkovich" };
+const user = new User()
+user.profile = { name: "John", nickname: "Malkovich" }
 ```
 
 Will be stored in a single database column as `{"name":"John","nickname":"Malkovich"}` value.
@@ -511,14 +494,12 @@ You can create column with generated value using `@Generated` decorator. For exa
 ```typescript
 @Entity()
 export class User {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
     @Generated("uuid")
-    uuid: string;
-
+    uuid: string
 }
 ```
 
@@ -545,36 +526,36 @@ name: string;
 
 List of available options in `ColumnOptions`:
 
-* `type: ColumnType` - Column type. One of the type listed [above](#column-types).
-* `name: string` - Column name in the database table.
-By default the column name is generated from the name of the property.
-You can change it by specifying your own name.
+-   `type: ColumnType` - Column type. One of the type listed [above](#column-types).
+-   `name: string` - Column name in the database table.
+    By default the column name is generated from the name of the property.
+    You can change it by specifying your own name.
 
-* `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
-* `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
-* `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
-* `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
-* `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.
-* `insert: boolean` - Indicates if column value is set the first time you insert the object.  Default value is `true`.
-* `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
-* `default: string` - Adds database-level column's `DEFAULT` value.
-* `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
-* `unique: boolean` - Marks column as unique column (creates unique constraint).
-* `comment: string` - Database's column comment. Not supported by all database types.
-* `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
- number of digits that are stored for the values. Used in some column types.
-* `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
-* `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
-* `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
-* `charset: string` - Defines a column character set. Not supported by all database types.
-* `collation: string` - Defines a column collation.
-* `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
-* `enumName: string` - Defines the name for the used enum.
-* `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-* `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-* `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
-* `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
-* `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
+-   `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
+-   `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+-   `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
+-   `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
+-   `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.
+-   `insert: boolean` - Indicates if column value is set the first time you insert the object. Default value is `true`.
+-   `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
+-   `default: string` - Adds database-level column's `DEFAULT` value.
+-   `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
+-   `unique: boolean` - Marks column as unique column (creates unique constraint).
+-   `comment: string` - Database's column comment. Not supported by all database types.
+-   `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
+    number of digits that are stored for the values. Used in some column types.
+-   `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
+-   `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
+-   `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
+-   `charset: string` - Defines a column character set. Not supported by all database types.
+-   `collation: string` - Defines a column collation.
+-   `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
+-   `enumName: string` - Defines the name for the used enum.
+-   `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+-   `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+-   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
+-   `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
+-   `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 
@@ -587,53 +568,47 @@ For example, you have `Photo`, `Question`, `Post` entities:
 ```typescript
 @Entity()
 export class Photo {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    size: string;
-
+    size: string
 }
 
 @Entity()
 export class Question {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    answersCount: number;
-
+    answersCount: number
 }
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    viewCount: number;
-
+    viewCount: number
 }
 ```
 
@@ -641,39 +616,31 @@ As you can see all those entities have common columns: `id`, `title`, `descripti
 
 ```typescript
 export abstract class Content {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
-
+    description: string
 }
 @Entity()
 export class Photo extends Content {
-
     @Column()
-    size: string;
-
+    size: string
 }
 
 @Entity()
 export class Question extends Content {
-
     @Column()
-    answersCount: number;
-
+    answersCount: number
 }
 
 @Entity()
 export class Post extends Content {
-
     @Column()
-    viewCount: number;
-
+    viewCount: number
 }
 ```
 
@@ -692,27 +659,31 @@ drawback is you can't load a big tree at once because of join limitations.
 Example:
 
 ```typescript
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "typeorm";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    ManyToOne,
+    OneToMany,
+} from "typeorm"
 
 @Entity()
 export class Category {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    description: string;
+    description: string
 
-    @ManyToOne(type => Category, category => category.children)
-    parent: Category;
+    @ManyToOne((type) => Category, (category) => category.children)
+    parent: Category
 
-    @OneToMany(type => Category, category => category.parent)
-    children: Category[];
+    @OneToMany((type) => Category, (category) => category.parent)
+    children: Category[]
 }
-
 ```
 
 ### Closure table
@@ -723,28 +694,35 @@ To learn more about closure table take a look at [this awesome presentation by B
 Example:
 
 ```typescript
-import {Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn} from "typeorm";
+import {
+    Entity,
+    Tree,
+    Column,
+    PrimaryGeneratedColumn,
+    TreeChildren,
+    TreeParent,
+    TreeLevelColumn,
+} from "typeorm"
 
 @Entity()
 @Tree("closure-table")
 export class Category {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    description: string;
+    description: string
 
     @TreeChildren()
-    children: Category[];
+    children: Category[]
 
     @TreeParent()
-    parent: Category;
+    parent: Category
 
     @TreeLevelColumn()
-    level: number;
+    level: number
 }
 ```

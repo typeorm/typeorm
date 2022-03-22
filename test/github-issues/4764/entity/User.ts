@@ -3,23 +3,23 @@ import {
     Entity,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src";
-import { Cart } from "./Cart";
+} from "../../../../src"
+import { Cart } from "./Cart"
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    ID!: number;
+    ID!: number
 
     @Column()
-    name!: string;
+    name!: string
 
     @Column()
-    RegDate!: Date;
+    RegDate!: Date
 
     @Column()
-    ModifiedDate!: Date;
+    ModifiedDate!: Date
 
     @OneToOne((type) => Cart, (t) => t.User)
-    Cart?: Cart;
+    Cart?: Cart
 }

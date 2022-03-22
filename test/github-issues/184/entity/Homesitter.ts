@@ -1,19 +1,17 @@
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Person, PersonType} from "./Person";
-import {ChildEntity} from "../../../../src/decorator/entity/ChildEntity";
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Person, PersonType } from "./Person"
+import { ChildEntity } from "../../../../src/decorator/entity/ChildEntity"
 
 @ChildEntity(PersonType.Homesitter) // required
 export class Homesitter extends Person {
+    @Column()
+    numberOfKids: number
 
     @Column()
-    numberOfKids: number;
-
-    @Column()
-    shared: string;
+    shared: string
 
     constructor() {
-        super();
-        this.type = 2;
+        super()
+        this.type = 2
     }
-
 }

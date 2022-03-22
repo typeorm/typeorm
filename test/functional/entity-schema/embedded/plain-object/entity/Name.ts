@@ -1,23 +1,23 @@
-import { EntitySchema } from "../../../../../../src";
+import { EntitySchema } from "../../../../../../src"
 
 export interface Name {
-    first: string;
-    last: string;
+    first: string
+    last: string
 }
 
 export const NameEntitySchema = new EntitySchema<Name>({
     name: "name",
     columns: {
         first: {
-            type: String
+            type: String,
         },
         last: {
-            type: String
-        }
+            type: String,
+        },
     },
     indices: [
         {
             columns: ["first"],
         },
     ],
-});
+})

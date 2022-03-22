@@ -1,27 +1,26 @@
-import {PrimaryGeneratedColumnType} from "../../driver/types/ColumnTypes";
+import { PrimaryGeneratedColumnType } from "../../driver/types/ColumnTypes"
 
 /**
  * Describes all options for PrimaryGeneratedColumn decorator with identity generation strategy.
  */
 export interface PrimaryGeneratedColumnIdentityOptions {
-
     /**
      * Column type. Must be one of the value from the ColumnTypes class.
      */
-    type?: PrimaryGeneratedColumnType;
+    type?: PrimaryGeneratedColumnType
 
     /**
      * Column name in the database.
      */
-    name?: string;
+    name?: string
 
     /**
      * Column comment. Not supported by all database types.
      */
-    comment?: string;
+    comment?: string
 
     /**
      * Identity column type. Supports only in Postgres 10+.
      */
-    generatedIdentity?: "ALWAYS"|"BY DEFAULT";
+    generatedIdentity?: "ALWAYS" | "BY DEFAULT"
 }

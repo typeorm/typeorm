@@ -1,5 +1,5 @@
-import {Column, PrimaryGeneratedColumn} from "../../../../src";
-import {Entity} from "../../../../src";
+import { Column, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity } from "../../../../src"
 
 enum UserType {
     ADMIN = "ADMIN",
@@ -9,8 +9,8 @@ enum UserType {
 @Entity("user")
 export class UserEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "enum", enum: UserType })
-    userType: UserType;
+    userType: UserType
 }

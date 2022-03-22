@@ -1,14 +1,13 @@
-import { TableInheritance, Column, Entity } from "../../../../src";
+import { TableInheritance, Column, Entity } from "../../../../src"
 
-import { BaseEntity } from "./BaseEntity";
+import { BaseEntity } from "./BaseEntity"
 
 @Entity()
-@TableInheritance({ column: { type: 'varchar', name: 'type' } })
+@TableInheritance({ column: { type: "varchar", name: "type" } })
 export class Role extends BaseEntity {
-  @Column()
-  name: string;
+    @Column()
+    name: string
 
-  @Column()
-  description: string;
-  
+    @Column()
+    description: string
 }
