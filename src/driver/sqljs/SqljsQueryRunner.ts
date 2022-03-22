@@ -114,7 +114,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             const records: any[] = []
 
             while (statement.step()) {
-                records.push(statement.getAsObject())
+                records.push(statement.getAsObject(null, this.driver.options.sqlJsConfig));
             }
 
             const result = new QueryResult()
