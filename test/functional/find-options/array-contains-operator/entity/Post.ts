@@ -25,12 +25,6 @@ export class Post {
     authors: string[]
 
     @Column({
-        type: "jsonb",
-        array: true,
-    })
-    categories: PostCategory[]
-
-    @Column({
         type: "enum",
         enum: PostStatus,
         array: true,

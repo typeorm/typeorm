@@ -7,9 +7,9 @@ export class Record {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ type: "json", array: true })
+    @Column({ type: "json" })
     configs: RecordConfig[]
 
-    @Column({ type: "jsonb", array: true })
+    @Column({ type: "jsonb" })
     datas: RecordData[]
 }

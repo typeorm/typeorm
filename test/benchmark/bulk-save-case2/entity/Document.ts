@@ -16,7 +16,7 @@ export class Document {
     @Column("text")
     context: string
 
-    @Column({ type: "jsonb", array: true })
+    @Column({ type: "jsonb" })
     distributions: Distribution[]
 
     @Column({ type: "timestamp with time zone" })

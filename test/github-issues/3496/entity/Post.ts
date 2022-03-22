@@ -10,6 +10,6 @@ export class Post {
     @VersionColumn()
     version: number
 
-    @Column({ type: "jsonb", array: true })
+    @Column({ type: "jsonb" })
     problems: object
 }

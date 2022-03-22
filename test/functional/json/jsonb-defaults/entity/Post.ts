@@ -4,12 +4,6 @@ export type PostCategory = {
     name: string
 }
 
-export enum PostStatus {
-    draft = "draft",
-    published = "published",
-    unknown = "unknown",
-}
-
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn()
@@ -19,15 +13,20 @@ export class Post {
     title: string
 
     @Column({
-        type: "varchar",
-        array: true,
+        type: "jsonb",
+        default: ["Dmitry", "Olimjon"],
     })
     authors: string[]
 
     @Column({
-        type: "enum",
-        enum: PostStatus,
-        array: true,
+        type: "jsonb",
+        default: { name: "TypeScript" },
     })
-    statuses: PostStatus[]
+    category: PostCategory
+
+    @Column({
+        type: "jsonb",
+        default: [{ name: "TypeScript" }],
+    })
+    categories: PostCategory[]
 }

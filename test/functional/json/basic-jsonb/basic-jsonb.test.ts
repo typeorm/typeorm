@@ -1,12 +1,12 @@
-import "../../utils/test-setup"
+import "../../../utils/test-setup"
 import { expect } from "chai"
 import { Record } from "./entity/Record"
-import { DataSource } from "../../../src"
+import { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 
 describe("jsonb type", () => {
     let connections: DataSource[]
@@ -86,7 +86,7 @@ describe("jsonb type", () => {
             connections.map(async (connection) => {
                 let recordRepo = connection.getRepository(Record)
                 let record = new Record()
-                record.data = `"foo"`
+                record.data = `foo`
                 let persistedRecord = await recordRepo.save(record)
                 let foundRecord = await recordRepo.findOneBy({
                     id: persistedRecord.id,
@@ -102,13 +102,13 @@ describe("jsonb type", () => {
             connections.map(async (connection) => {
                 let recordRepo = connection.getRepository(Record)
                 let record = new Record()
-                record.data2 = [1, `"2"`, { a: 3 }]
+                record.data = [1, `2`, { a: 3 }]
                 let persistedRecord = await recordRepo.save(record)
                 let foundRecord = await recordRepo.findOneBy({
                     id: persistedRecord.id,
                 })
                 expect(foundRecord).to.be.not.undefined
-                expect(foundRecord!.data2).to.deep.include.members([
+                expect(foundRecord!.data).to.deep.include.members([
                     1,
                     "2",
                     { a: 3 },
