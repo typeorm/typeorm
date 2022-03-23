@@ -27,8 +27,7 @@ export class BaseEntity {
     /**
      * DataSource used in all static methods of the BaseEntity.
      */
-    // @ts-ignore: Unused variable which is actually used
-    private static dataSource?: DataSource
+    private static dataSource: DataSource | null
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -95,7 +94,7 @@ export class BaseEntity {
     /**
      * Sets DataSource to be used by entity.
      */
-    static useDataSource(dataSource: DataSource) {
+    static useDataSource(dataSource: DataSource | null) {
         this.dataSource = dataSource
     }
 

@@ -669,10 +669,11 @@ export class DataSource {
         )
 
         // set current data source to the entities
-        for (let entityKey in flattenedEntities) {
-            const entity = flattenedEntities[entityKey]
-            if (InstanceChecker.isBaseEntityConstructor(entity)) {
-                entity.useDataSource(this)
+        for (let entityMetadata of entityMetadatas) {
+            if (
+                InstanceChecker.isBaseEntityConstructor(entityMetadata.target)
+            ) {
+                entityMetadata.target.useDataSource(this)
             }
         }
     }
