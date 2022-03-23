@@ -1176,7 +1176,7 @@ const users = await connection.getRepository(User)
 Result values of `InsertQueryBuilder` or `UpdateQueryBuilder` can be used in Postgres:
 
 ```typescript
-const insertQueryBuilder = await connection.getRepository(User)
+const insertQueryBuilder = connection.getRepository(User)
     .createQueryBuilder()
     .insert({
         name: 'John Smith'
