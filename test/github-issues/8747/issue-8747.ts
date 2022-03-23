@@ -14,6 +14,7 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
     before(
         async () =>
             (connections = await createTestingConnections({
+                enabledDrivers: ["postgres"],
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
