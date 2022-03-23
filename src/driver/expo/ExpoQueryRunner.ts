@@ -251,6 +251,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     fail(err)
                 },
                 () => {
+                    this.transactionDepth -= 1
                     this.isTransactionActive = false
                     this.transaction = undefined
                 },
