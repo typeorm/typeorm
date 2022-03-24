@@ -410,6 +410,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         query += `INTO ${tableName}`
 
+        if (
+            this.alias !== this.getMainTableName() &&
+            this.connection.driver.options.type === "postgres"
+        ) {
+            query += ` AS "${this.alias}"`
+        }
+
         // add columns expression
         if (columnsExpression) {
             query += `(${columnsExpression})`
