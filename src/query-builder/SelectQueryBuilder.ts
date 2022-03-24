@@ -2900,7 +2900,6 @@ export class SelectQueryBuilder<Entity>
                 }
             }
             if (this.selects.length) {
-                console.log("adding following selects: ", this.selects)
                 this.addSelect(this.selects)
             }
 
@@ -3686,7 +3685,6 @@ export class SelectQueryBuilder<Entity>
                             selection &&
                             typeof selection[relationName] === "object"
                         ) {
-                            console.log("sub selection", relationName)
                             this.buildSelect(
                                 selection[
                                     relationName
