@@ -127,13 +127,14 @@ describe("entity-model", () => {
 
             const post1 = Post.create()
             post1.title = "About ActiveRecord 1"
+            post1.externalId = "some external id 1"
             await post1.save()
 
             post1.should.be.eql({
                 id: 1,
                 title: "About ActiveRecord 1",
                 text: "This is default text.",
-                externalId: null,
+                externalId: "some external id 1",
             })
             await post1.reload()
 
@@ -141,18 +142,19 @@ describe("entity-model", () => {
                 id: 1,
                 title: "About ActiveRecord 1",
                 text: "This is default text.",
-                externalId: null,
+                externalId: "some external id 1",
             })
 
             const post2 = Post.create()
             post2.title = "About ActiveRecord 2"
+            post2.externalId = "some external id 2"
             await post2.save()
 
             post2.should.be.eql({
                 id: 2,
                 title: "About ActiveRecord 2",
                 text: "This is default text.",
-                externalId: null,
+                externalId: "some external id 2",
             })
             await post2.reload()
 
@@ -160,7 +162,7 @@ describe("entity-model", () => {
                 id: 2,
                 title: "About ActiveRecord 2",
                 text: "This is default text.",
-                externalId: null,
+                externalId: "some external id 2",
             })
         }
     })
