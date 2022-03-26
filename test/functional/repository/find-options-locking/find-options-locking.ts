@@ -465,6 +465,7 @@ describe("repository > find options > locking", () => {
                         entityManager
                             .getRepository(Post)
                             .findOne({
+                                where: { id: 1 },
                                 lock: { mode: "pessimistic_write", tables: [] },
                             })
                             .should.be.rejectedWith(
@@ -491,6 +492,7 @@ describe("repository > find options > locking", () => {
                         entityManager
                             .getRepository(Post)
                             .findOne({
+                                where: { id: 1 },
                                 relations: ["author"],
                                 lock: {
                                     mode: "pessimistic_write",
@@ -512,6 +514,7 @@ describe("repository > find options > locking", () => {
                     return connection.manager.transaction((entityManager) => {
                         return Promise.all([
                             entityManager.getRepository(Post).findOne({
+                                where: { id: 1 },
                                 relations: ["author"],
                                 lock: {
                                     mode: "pessimistic_write",
@@ -530,6 +533,7 @@ describe("repository > find options > locking", () => {
                     return connection.manager.transaction((entityManager) => {
                         return Promise.all([
                             entityManager.getRepository(Post).findOne({
+                                where: { id: 1 },
                                 relations: ["author"],
                                 lock: {
                                     mode: "pessimistic_write",
@@ -539,6 +543,7 @@ describe("repository > find options > locking", () => {
                             entityManager
                                 .getRepository(Post)
                                 .findOne({
+                                    where: { id: 1 },
                                     relations: ["author"],
                                     lock: { mode: "pessimistic_write" },
                                 })
@@ -561,6 +566,7 @@ describe("repository > find options > locking", () => {
                 return connection.manager.transaction((entityManager) => {
                     return Promise.all([
                         entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
                             relations: ["author"],
                             lock: {
                                 mode: "pessimistic_read",
@@ -568,6 +574,7 @@ describe("repository > find options > locking", () => {
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
                             relations: ["author"],
                             lock: {
                                 mode: "pessimistic_write",
@@ -575,6 +582,7 @@ describe("repository > find options > locking", () => {
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
                             relations: ["author"],
                             lock: {
                                 mode: "pessimistic_partial_write",
@@ -582,6 +590,7 @@ describe("repository > find options > locking", () => {
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
                             relations: ["author"],
                             lock: {
                                 mode: "pessimistic_write_or_fail",
@@ -589,6 +598,7 @@ describe("repository > find options > locking", () => {
                             },
                         }),
                         entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
                             relations: ["author"],
                             lock: {
                                 mode: "for_no_key_update",
@@ -614,6 +624,7 @@ describe("repository > find options > locking", () => {
                 return connection.manager.transaction((entityManager) => {
                     return Promise.all([
                         entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
                             join: {
                                 alias: "post",
                                 innerJoinAndSelect: {

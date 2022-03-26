@@ -116,7 +116,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                     settings: [],
                 })
 
-                const user = await connection.getRepository(User).findOne({
+                const [user] = await connection.getRepository(User).find({
                     relations: ["settings"],
                 })
 

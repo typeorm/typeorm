@@ -375,7 +375,7 @@ describe("repository > find methods", () => {
     })
 
     describe("findOne", function () {
-        it("should return first when no criteria given", () =>
+        it("should throw an error when no criteria given", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     const userRepository =
@@ -390,12 +390,13 @@ describe("repository > find methods", () => {
                         await userRepository.save(user)
                     }
 
-                    const loadedUser = (await userRepository.findOne({
-                        order: { id: "ASC" },
-                    }))!
-                    loadedUser.id.should.be.equal(0)
-                    loadedUser.firstName.should.be.equal("name #0")
-                    loadedUser.secondName.should.be.equal("Doe")
+                    return userRepository
+                        .findOne({
+                            order: { id: "ASC" },
+                        })
+                        .should.be.rejectedWith(
+                            `You must provide selection conditions in order to find a single row.`,
+                        )
                 }),
             ))
 
