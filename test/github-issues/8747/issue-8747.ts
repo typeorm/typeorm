@@ -1,7 +1,7 @@
-import "reflect-metadata"
+import "../../utils/test-setup"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { expect } from "chai"
@@ -10,22 +10,23 @@ import { Record } from "./entity/Record"
 import { DataSource } from "../../../src"
 
 describe("github issues > #8747 QueryBuilder update handles Date objects wrong on a ManyToOne relation ship.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
-                enabledDrivers: ["postgres"],
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly update the datetime field", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
+                Car.useDataSource(dataSource)
+                Record.useDataSource(dataSource)
                 const car = await Car.create({}).save()
                 const record = await Record.create({ car }).save()
 
