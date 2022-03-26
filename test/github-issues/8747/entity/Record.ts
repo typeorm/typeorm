@@ -1,6 +1,5 @@
 import {
     Column,
-    CreateDateColumn,
     Entity,
     BaseEntity,
     JoinColumn,
@@ -10,7 +9,7 @@ import { Car } from "./Car"
 
 @Entity()
 export class Record extends BaseEntity {
-    @CreateDateColumn({ precision: 3, primary: true })
+    @Column({ type: "timestamp", precision: 3, primary: true })
     timestamp: Date
 
     @Column({ type: "uuid", primary: true })

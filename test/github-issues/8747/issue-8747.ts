@@ -14,6 +14,7 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
     before(
         async () =>
             (dataSources = await createTestingConnections({
+                enabledDrivers: ["mysql", "postgres", "mariadb", "sqlite"],
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
@@ -22,27 +23,30 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should correctly update the datetime field", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                Car.useDataSource(dataSource)
-                Record.useDataSource(dataSource)
-                const car = await Car.create({}).save()
-                const record = await Record.create({ car }).save()
+    it("should correctly update the datetime field", async () => {
+        for (const dataSource of dataSources) {
+            Car.useDataSource(dataSource)
+            Record.useDataSource(dataSource)
+            const car = await Car.create({}).save()
 
-                await Car.update(
-                    { uuid: car.uuid },
-                    { latestRecordTimestamp: record.timestamp },
-                )
+            const record = await Record.create({
+                timestamp: new Date(),
+                car,
+            }).save()
 
-                const carReloaded = await Car.findOne({
-                    where: { uuid: car.uuid },
-                })
+            await Car.update(
+                { uuid: car.uuid },
+                { latestRecordTimestamp: record.timestamp },
+            )
 
-                expect(carReloaded).to.exist
-                expect(
-                    carReloaded!.latestRecordTimestamp?.getTime(),
-                ).to.be.equal(record.timestamp?.getTime())
-            }),
-        ))
+            const carReloaded = await Car.findOne({
+                where: { uuid: car.uuid },
+            })
+
+            expect(carReloaded).to.exist
+            expect(record.timestamp?.getTime()).to.be.equal(
+                carReloaded!.latestRecordTimestamp?.getTime(),
+            )
+        }
+    })
 })
