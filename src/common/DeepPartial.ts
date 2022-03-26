@@ -9,4 +9,4 @@ export type DeepPartial<T> = T extends Array<infer U>
     ? Set<DeepPartial<M>>
     : T extends object
     ? { [K in keyof T]?: DeepPartial<T[K]> }
-    : T;
+    : T
