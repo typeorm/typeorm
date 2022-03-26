@@ -1,11 +1,9 @@
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column } from "../../../../src/decorator/columns/Column"
 
 export class FooChildMetadata {
+    @Column({ nullable: true })
+    something: number
 
     @Column({ nullable: true })
-    something: number;
-
-    @Column({ nullable: true })
-    somethingElse: number;
-
+    somethingElse: number
 }

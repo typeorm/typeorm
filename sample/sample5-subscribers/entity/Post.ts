@@ -1,30 +1,33 @@
-import {Column, Entity, ManyToMany, PrimaryGeneratedColumn} from "../../../src/index";
-import {PostCategory} from "./PostCategory";
-import {PostAuthor} from "./PostAuthor";
-import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
-import {JoinTable} from "../../../src/decorator/relations/JoinTable";
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { PostCategory } from "./PostCategory"
+import { PostAuthor } from "./PostAuthor"
+import { ManyToOne } from "../../../src/decorator/relations/ManyToOne"
+import { JoinTable } from "../../../src/decorator/relations/JoinTable"
 
 @Entity("sample5_post")
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    text: string;
+    text: string
 
-    @ManyToOne(type => PostAuthor, post => post.posts, {
-        cascade: true
+    @ManyToOne((type) => PostAuthor, (post) => post.posts, {
+        cascade: true,
     })
-    author: PostAuthor;
+    author: PostAuthor
 
-    @ManyToMany(type => PostCategory, category => category.posts, {
-        cascade: true
+    @ManyToMany((type) => PostCategory, (category) => category.posts, {
+        cascade: true,
     })
     @JoinTable()
-    categories: PostCategory[] = [];
-
+    categories: PostCategory[] = []
 }

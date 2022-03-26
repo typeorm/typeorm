@@ -1,29 +1,25 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
 
 @Entity()
 export class FeatureWithoutSRID {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column({ type: "geometry" })
-    shape: string;
-
+    shape: string
 }
 
 @Entity()
 export class FeatureWithSRID {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column({ type: "geometry", srid: 2326 })
-    shape: string;
-
+    shape: string
 }

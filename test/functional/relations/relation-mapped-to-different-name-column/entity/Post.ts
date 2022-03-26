@@ -1,21 +1,19 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {PostDetails} from "./PostDetails";
-import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { PostDetails } from "./PostDetails"
+import { OneToOne } from "../../../../../src/decorator/relations/OneToOne"
+import { JoinColumn } from "../../../../../src/decorator/relations/JoinColumn"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @OneToOne(type => PostDetails)
+    @OneToOne((type) => PostDetails)
     @JoinColumn()
-    details: PostDetails;
+    details: PostDetails
 
     @Column()
-    title: string;
-
+    title: string
 }

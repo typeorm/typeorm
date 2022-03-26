@@ -1,56 +1,62 @@
-import {Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn} from "../../../src/index";
-import {Image} from "./Image";
-import {Cover} from "./Cover";
-import {Category} from "./Category";
-import {PostDetails} from "./PostDetails";
-import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
-import {JoinTable} from "../../../src/decorator/relations/JoinTable";
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    ManyToOne,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Image } from "./Image"
+import { Cover } from "./Cover"
+import { Category } from "./Category"
+import { PostDetails } from "./PostDetails"
+import { JoinColumn } from "../../../src/decorator/relations/JoinColumn"
+import { JoinTable } from "../../../src/decorator/relations/JoinTable"
 
 @Entity("sample10_post")
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
-        nullable: false
+        nullable: false,
     })
-    title: string;
-    
-    @Column({
-        nullable: false
-    })
-    text: string;
+    title: string
 
-    @OneToOne(type => PostDetails, details => details.post, {
-        cascade: true
+    @Column({
+        nullable: false,
+    })
+    text: string
+
+    @OneToOne((type) => PostDetails, (details) => details.post, {
+        cascade: true,
     })
     @JoinColumn()
-    details: PostDetails;
+    details: PostDetails
 
-    @OneToMany(type => Image, image => image.post, {
-        cascade: true
+    @OneToMany((type) => Image, (image) => image.post, {
+        cascade: true,
     })
-    images: Image[] = [];
+    images: Image[] = []
 
-    @OneToMany(type => Image, image => image.secondaryPost)
-    secondaryImages: Image[];
+    @OneToMany((type) => Image, (image) => image.secondaryPost)
+    secondaryImages: Image[]
 
-    @ManyToOne(type => Cover, cover => cover.posts, {
-        cascade: ["insert"]
+    @ManyToOne((type) => Cover, (cover) => cover.posts, {
+        cascade: ["insert"],
     })
     @JoinColumn({ name: "coverId" })
-    cover: Cover;
+    cover: Cover
 
     @Column("int", {
-        nullable: true
+        nullable: true,
     })
-    coverId: number;
+    coverId: number
 
-    @ManyToMany(type => Category, category => category.posts, {
-        cascade: true
+    @ManyToMany((type) => Category, (category) => category.posts, {
+        cascade: true,
     })
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }

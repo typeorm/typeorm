@@ -1,23 +1,19 @@
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Category} from "./Category";
-import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Category } from "./Category"
+import { OneToMany } from "../../../../../src/decorator/relations/OneToMany"
+import { Column } from "../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Product {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToMany(
-        () => Category,
-        (category) => category.product,
-        { cascade: true },
-    )
-    categories: Category[];
-
+    @OneToMany(() => Category, (category) => category.product, {
+        cascade: true,
+    })
+    categories: Category[]
 }

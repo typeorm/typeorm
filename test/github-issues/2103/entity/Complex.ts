@@ -1,15 +1,13 @@
-import {Entity, Column, PrimaryColumn} from "../../../../src";
+import { Entity, Column, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class Complex {
+    @PrimaryColumn()
+    id: number
 
     @PrimaryColumn()
-    id: number;
-
-    @PrimaryColumn()
-    code: number;
+    code: number
 
     @Column()
-    x: number;
-
+    x: number
 }

@@ -1,10 +1,11 @@
-import {Connection, Driver, EntityMetadata, SelectQueryBuilder} from "../..";
-import {ViewOptions} from "../options/ViewOptions";
+import { DataSource, Driver, EntityMetadata, SelectQueryBuilder } from "../.."
+import { ViewOptions } from "../options/ViewOptions"
 
 /**
  * View in the database represented in this class.
  */
 export class View {
+    readonly "@instanceof" = Symbol.for("View")
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -13,28 +14,27 @@ export class View {
     /**
      * Database name that this view resides in if it applies.
      */
-    database?: string;
+    database?: string
 
     /**
      * Schema name that this view resides in if it applies.
      */
-    schema?: string;
+    schema?: string
 
     /**
      * View name
      */
-    name: string;
-
+    name: string
 
     /**
      * Indicates if view is materialized.
      */
-    materialized: boolean;
+    materialized: boolean
 
     /**
      * View definition.
      */
-    expression: string | ((connection: Connection) => SelectQueryBuilder<any>);
+    expression: string | ((connection: DataSource) => SelectQueryBuilder<any>)
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -42,11 +42,11 @@ export class View {
 
     constructor(options?: ViewOptions) {
         if (options) {
-            this.database = options.database;
-            this.schema = options.schema;
-            this.name = options.name;
-            this.expression = options.expression;
-            this.materialized = !!options.materialized;
+            this.database = options.database
+            this.schema = options.schema
+            this.name = options.name
+            this.expression = options.expression
+            this.materialized = !!options.materialized
         }
     }
 
@@ -64,7 +64,7 @@ export class View {
             name: this.name,
             expression: this.expression,
             materialized: this.materialized,
-        });
+        })
     }
 
     // -------------------------------------------------------------------------
@@ -78,12 +78,15 @@ export class View {
         const options: ViewOptions = {
             database: entityMetadata.database,
             schema: entityMetadata.schema,
-            name: driver.buildTableName(entityMetadata.tableName, entityMetadata.schema, entityMetadata.database),
+            name: driver.buildTableName(
+                entityMetadata.tableName,
+                entityMetadata.schema,
+                entityMetadata.database,
+            ),
             expression: entityMetadata.expression!,
-            materialized: entityMetadata.tableMetadataArgs.materialized
-        };
+            materialized: entityMetadata.tableMetadataArgs.materialized,
+        }
 
-        return new View(options);
+        return new View(options)
     }
-
 }

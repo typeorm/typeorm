@@ -1,21 +1,19 @@
-import {Column, Entity, PrimaryColumn} from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({ unique: true })
-    version: number;
+    version: number
 
     @Column({ default: "My post" })
-    name: string;
+    name: string
 
     @Column()
-    text: string;
+    text: string
 
     @Column()
-    tag: string;
-
+    tag: string
 }

@@ -1,21 +1,27 @@
-import {ManyToMany, PrimaryGeneratedColumn, RelationId, OneToMany, Entity} from "../../../../src";
-import {Root} from "./Root";
-import {Shared} from "./Shared";
+import {
+    ManyToMany,
+    PrimaryGeneratedColumn,
+    RelationId,
+    OneToMany,
+    Entity,
+} from "../../../../src"
+import { Root } from "./Root"
+import { Shared } from "./Shared"
 
 @Entity()
 export class Child2 {
     @PrimaryGeneratedColumn("uuid")
-    public id?: string;
+    public id?: string
 
-    @ManyToMany(() => Root, entity => entity.allChild2)
-    public allRoot?: Root;
+    @ManyToMany(() => Root, (entity) => entity.allChild2)
+    public allRoot?: Root
 
     @RelationId("allRoot")
-    public allRootId?: Array<string>;
+    public allRootId?: Array<string>
 
-    @OneToMany(() => Shared, entity => entity.child2)
-    public allShared?: Array<Shared>;
+    @OneToMany(() => Shared, (entity) => entity.child2)
+    public allShared?: Array<Shared>
 
     @RelationId("allShared")
-    public allSharedId?: Array<string>;
+    public allSharedId?: Array<string>
 }

@@ -1,20 +1,9 @@
 version: "3"
 services:
-  # mysql-5.5
-  #mysql5.5:
-  #  image: "mysql:5.5"
-  #  container_name: "typeorm-mysql-5.5"
-  #  ports:
-  #    - "3306:3306"
-  #  environment:
-  #    MYSQL_ROOT_PASSWORD: "admin"
-  #    MYSQL_USER: "test"
-  #    MYSQL_PASSWORD: "test"
-  #    MYSQL_DATABASE: "test"
 
   # mysql
   mysql:
-    image: "mysql:5.7.24"
+    image: "mysql:5.7.37"
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
@@ -120,7 +109,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:3.4.18"
+    image: "mongo:5.0.6"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

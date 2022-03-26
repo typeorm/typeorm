@@ -1,10 +1,10 @@
-import {Column, Entity, PrimaryColumn} from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class Foo {
     @PrimaryColumn({ type: "varbinary", length: 16 })
-    id: Buffer;
+    id: Buffer
 
     @Column()
-    name: string;
+    name: string
 }

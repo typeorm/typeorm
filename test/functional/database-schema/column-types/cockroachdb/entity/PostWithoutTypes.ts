@@ -1,20 +1,18 @@
-import {Entity} from "../../../../../../src";
-import {PrimaryColumn} from "../../../../../../src";
-import {Column} from "../../../../../../src";
+import { Entity } from "../../../../../../src"
+import { PrimaryColumn } from "../../../../../../src"
+import { Column } from "../../../../../../src"
 
 @Entity()
 export class PostWithoutTypes {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    boolean: boolean;
+    boolean: boolean
 
     @Column()
-    datetime: Date;
-
+    datetime: Date
 }

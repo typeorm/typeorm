@@ -1,13 +1,13 @@
-import { Column, ManyToOne, PrimaryGeneratedColumn } from "../../../../src";
-import { Entity } from "../../../../src/decorator/entity/Entity";
-import { Foo } from "./Foo";
+import { Column, ManyToOne, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Foo } from "./Foo"
 
 @Entity()
 export class Bar {
-  @PrimaryGeneratedColumn() id: number;
+    @PrimaryGeneratedColumn() id: number
 
-  @Column() description: string;
+    @Column() description: string
 
-  @ManyToOne(type => Foo, foo => foo.bars)
-  foo?: Foo;
+    @ManyToOne((type) => Foo, (foo) => foo.bars)
+    foo?: Foo
 }

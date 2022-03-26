@@ -1,8 +1,8 @@
-import { EntitySchema } from "../../../../../../src";
+import { EntitySchema } from "../../../../../../src"
 
 export class Name {
-    first: string;
-    last: string;
+    first: string
+    last: string
 }
 
 export const NameEntitySchema = new EntitySchema<Name>({
@@ -10,15 +10,15 @@ export const NameEntitySchema = new EntitySchema<Name>({
     target: Name,
     columns: {
         first: {
-            type: String
+            type: String,
         },
         last: {
-            type: String
-        }
+            type: String,
+        },
     },
     indices: [
         {
             columns: ["first"],
         },
     ],
-});
+})

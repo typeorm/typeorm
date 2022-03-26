@@ -1,9 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Foo {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
         array: true,
@@ -11,5 +11,5 @@ export class Foo {
         length: 64,
         nullable: true,
     })
-    varchararray: string[];    
+    varchararray: string[]
 }

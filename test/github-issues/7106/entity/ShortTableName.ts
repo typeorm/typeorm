@@ -1,15 +1,14 @@
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column, Entity } from "../../../../src";
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column, Entity } from "../../../../src"
 
 @Entity()
 export class ShortTableName {
     @PrimaryGeneratedColumn() // typeORM requires a pkey
-    PrimaryGeneratedColumnIDBlahBlahBlahThisIsReallyLong: number;
+    PrimaryGeneratedColumnIDBlahBlahBlahThisIsReallyLong: number
 
     @Column()
-    Name: string;
+    Name: string
 
     @Column()
-    Value: number;
+    Value: number
 }
-

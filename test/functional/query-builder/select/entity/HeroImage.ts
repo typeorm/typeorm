@@ -1,21 +1,19 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
     Column,
+    Entity,
     OneToOne,
-} from "../../../../../src";
-import { Post } from "./Post";
+    PrimaryGeneratedColumn,
+} from "../../../../../src"
+import { Post } from "./Post"
 
 @Entity()
 export class HeroImage {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    url: string;
+    url: string
 
     @OneToOne(() => Post, (post) => post.heroImage)
-    post: Post;
-
+    post: Post
 }

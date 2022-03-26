@@ -1,16 +1,19 @@
-import {Column, Entity, PrimaryGeneratedColumn, OneToMany} from "../../../../src/index";
-import {Photo} from "./Photo";
+import {
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+    OneToMany,
+} from "../../../../src/index"
+import { Photo } from "./Photo"
 
 @Entity()
 export class Author {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToMany(type => Photo, photo => photo.author)
-    photos: Photo[];
-
+    @OneToMany((type) => Photo, (photo) => photo.author)
+    photos: Photo[]
 }

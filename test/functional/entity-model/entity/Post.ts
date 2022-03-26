@@ -1,32 +1,30 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {BaseEntity} from "../../../../src/repository/BaseEntity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {ManyToMany, JoinTable} from "../../../../src";
-import {Category} from "./Category";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { BaseEntity } from "../../../../src/repository/BaseEntity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { JoinTable, ManyToMany } from "../../../../src"
+import { Category } from "./Category"
 
 @Entity()
 export class Post extends BaseEntity {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
         nullable: true,
-        unique: true
+        unique: true,
     })
-    externalId?: string;
+    externalId?: string
 
     @Column()
-    title: string;
+    title: string
 
     @Column({
-        default: "This is default text."
+        default: "This is default text.",
     })
-    text: string;
+    text: string
 
-    @ManyToMany(type => Category)
+    @ManyToMany((type) => Category)
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }
