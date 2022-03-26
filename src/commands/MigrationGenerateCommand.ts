@@ -25,6 +25,13 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     "Path to the file where your DataSource instance is defined.",
                 demandOption: true,
             })
+            .option("addImport", {
+                alias: "a",
+                type: "boolean",
+                default: true,
+                describe:
+                    "Automatically add the generated migration to the DataSource file."
+            })
             .option("p", {
                 alias: "pretty",
                 type: "boolean",
@@ -68,11 +75,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             : path.resolve(process.cwd(), args.path as string)
         const filename = timestamp + "-" + path.basename(fullPath) + extension
 
+        const dataSourceFilePath = path.resolve(process.cwd(), args.dataSource as string);
         let dataSource: DataSource | undefined = undefined
         try {
-            dataSource = await CommandUtils.loadDataSource(
-                path.resolve(process.cwd(), args.dataSource as string),
-            )
+            dataSource = await CommandUtils.loadDataSource(dataSourceFilePath)
             dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
@@ -151,15 +157,16 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 process.exit(1)
             }
 
+            const migrationName = `${camelCase(path.basename(fullPath), true)}${timestamp}`
             const fileContent = args.outputJs
                 ? MigrationGenerateCommand.getJavascriptTemplate(
-                      path.basename(fullPath),
+                      migrationName,
                       timestamp,
                       upSqls,
                       downSqls.reverse(),
                   )
                 : MigrationGenerateCommand.getTemplate(
-                      path.basename(fullPath),
+                      migrationName,
                       timestamp,
                       upSqls,
                       downSqls.reverse(),
@@ -185,10 +192,22 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     ),
                 )
             } else {
-                await CommandUtils.createFile(
-                    path.dirname(fullPath) + "/" + filename,
-                    fileContent,
-                )
+                const migrationFilePath = path.dirname(fullPath) + "/" + filename;
+
+                if (!args.outputJs && args.addImport) {
+                    const dataSourceFileUpdated = await CommandUtils.updateDataSourceFile({
+                        dataSourceFilePath: dataSourceFilePath,
+                        initializerPropertyName: "migrations",
+                        importedClassFilePath: migrationFilePath,
+                        importedClassExportName: migrationName,
+                        importDefault: false
+                    });
+
+                    if (!dataSourceFileUpdated)
+                        console.warn(chalk.yellow("DataSource file could not be updated"));
+                }
+
+                await CommandUtils.createFile(migrationFilePath, fileContent)
 
                 console.log(
                     chalk.green(
@@ -223,13 +242,11 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
      * Gets contents of the migration file.
      */
     protected static getTemplate(
-        name: string,
+        migrationName: string,
         timestamp: number,
         upSqls: string[],
         downSqls: string[],
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
-
         return `import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class ${migrationName} implements MigrationInterface {
@@ -253,13 +270,11 @@ ${downSqls.join(`
      * Gets contents of the migration file in Javascript.
      */
     protected static getJavascriptTemplate(
-        name: string,
+        migrationName: string,
         timestamp: number,
         upSqls: string[],
         downSqls: string[],
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
-
         return `const { MigrationInterface, QueryRunner } = require("typeorm");
 
 module.exports = class ${migrationName} {

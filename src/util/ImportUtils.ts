@@ -21,22 +21,31 @@ export async function importOrRequireFile(
         return [require(filePath), "commonjs"]
     }
 
+    const moduleSystem = await determineModuleSystemForFile(filePath);
+
+    if (moduleSystem == "esm")
+        return tryToImport()
+    else
+        return tryToRequire()
+}
+
+export async function determineModuleSystemForFile(filePath: string): Promise<"esm" | "commonjs"> {
     const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
 
-    if (extension === "mjs" || extension === "mts") return tryToImport()
-    else if (extension === "cjs" || extension === "cts") return tryToRequire()
+    if (extension === "mjs" || extension === "mts") return "esm"
+    else if (extension === "cjs" || extension === "cts") return "commonjs"
     else if (extension === "js" || extension === "ts") {
         const packageJson = await getNearestPackageJson(filePath)
 
         if (packageJson != null) {
             const isModule = (packageJson as any)?.type === "module"
 
-            if (isModule) return tryToImport()
-            else return tryToRequire()
-        } else return tryToRequire()
+            if (isModule) return "esm"
+            else return "commonjs"
+        } else return "commonjs"
     }
 
-    return tryToRequire()
+    return "commonjs"
 }
 
 function getNearestPackageJson(filePath: string): Promise<object | null> {

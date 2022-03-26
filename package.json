@@ -131,7 +131,7 @@
     "sqlite3": "^5.0.2",
     "ts-node": "^10.7.0",
     "typeorm-aurora-data-api-driver": "^2.0.0",
-    "typescript": "^4.6.2",
+    "typescript": "^4.6.3",
     "prettier": "^2.5.1"
   },
   "peerDependencies": {
@@ -150,7 +150,8 @@
     "sql.js": "^1.4.0",
     "sqlite3": "^5.0.2",
     "ts-node": "^10.7.0",
-    "typeorm-aurora-data-api-driver": "^2.0.0"
+    "typeorm-aurora-data-api-driver": "^2.0.0",
+    "typescript": "^4.6.3"
   },
   "peerDependenciesMeta": {
     "@sap/hana-client": {
@@ -199,6 +200,9 @@
       "optional": true
     },
     "typeorm-aurora-data-api-driver": {
+      "optional": true
+    },
+    "typescript": {
       "optional": true
     }
   },

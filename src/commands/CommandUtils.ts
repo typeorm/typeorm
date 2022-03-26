@@ -4,7 +4,7 @@ import mkdirp from "mkdirp"
 import { TypeORMError } from "../error"
 import { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { importOrRequireFile } from "../util/ImportUtils"
+import { determineModuleSystemForFile, importOrRequireFile } from "../util/ImportUtils"
 
 /**
  * Command line utils functions.
@@ -53,6 +53,48 @@ export class CommandUtils {
             )
         }
         return dataSourceExports[0]
+    }
+
+    static async updateDataSourceFile({
+        dataSourceFilePath, initializerName = "DataSource",
+        initializerPropertyName,
+        importedClassFilePath, importedClassExportName,
+        importDefault
+    }: {
+        dataSourceFilePath: string, initializerName?: string,
+        initializerPropertyName: "entities" | "migrations" | "subscribers",
+        importedClassFilePath: string, importedClassExportName: string,
+        importDefault: boolean
+    }) {
+        const dataSourceExtName = path.extname(dataSourceFilePath);
+        const importedClassFileExtName = path.extname(importedClassFilePath);
+
+        if (dataSourceExtName != ".ts" && dataSourceExtName != ".cts" && dataSourceExtName != ".mts")
+            return false;
+
+        if (importedClassFileExtName != ".ts" && importedClassFileExtName != ".cts" && importedClassFileExtName != ".mts")
+            return false;
+
+        const moduleSystem = await determineModuleSystemForFile(dataSourceFilePath);
+
+        // only try to import typescript when needed to avoid crashing the whole CLI when typescript isn't installed
+        try {
+            require("typescript")
+        } catch (err) {
+            throw new Error(`TypeScript is required in order to run this command. Please install it and try again.`)
+        }
+
+        const { importAndAddItemToInitializerArrayPropertyInFile } = require("../util/TypeScriptUtils");
+
+        return importAndAddItemToInitializerArrayPropertyInFile({
+            filePath: dataSourceFilePath,
+            initializerName: initializerName,
+            initializerPropertyName: initializerPropertyName,
+            importedFilePath: importedClassFilePath,
+            importedExportName: importedClassExportName,
+            importDefault: importDefault,
+            importType: moduleSystem
+        })
     }
 
     /**
