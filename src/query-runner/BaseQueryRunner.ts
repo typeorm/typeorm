@@ -346,6 +346,47 @@ export abstract class BaseQueryRunner {
     }
 
     /**
+     * Generates SQL query to select record from typeorm metadata table.
+     */
+    protected selectTypeormMetadataSql({
+        database,
+        schema,
+        table,
+        type,
+        name,
+    }: {
+        database?: string
+        schema?: string
+        table?: string
+        type: MetadataTableType
+        name: string
+    }): Query {
+        const qb = this.connection.createQueryBuilder()
+        const selectQb = qb
+            .select()
+            .from(this.getTypeormMetadataTableName(), "t")
+            .where(`${qb.escape("type")} = :type`, { type })
+            .andWhere(`${qb.escape("name")} = :name`, { name })
+
+        if (database) {
+            selectQb.andWhere(`${qb.escape("database")} = :database`, {
+                database,
+            })
+        }
+
+        if (schema) {
+            selectQb.andWhere(`${qb.escape("schema")} = :schema`, { schema })
+        }
+
+        if (table) {
+            selectQb.andWhere(`${qb.escape("table")} = :table`, { table })
+        }
+
+        const [query, parameters] = selectQb.getQueryAndParameters()
+        return new Query(query, parameters)
+    }
+
+    /**
      * Generates SQL query to insert a record into typeorm metadata table.
      */
     protected insertTypeormMetadataSql({

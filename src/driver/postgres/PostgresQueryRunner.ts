@@ -3448,15 +3448,18 @@ export class PostgresQueryRunner
                                 tableColumn.generatedType = "STORED"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    `SELECT * FROM "${this.connection.metadataTableName}" ` +
-                                    ` WHERE "table" = '${dbTable["table_name"]}'` +
-                                    ` AND "name" = '${tableColumn.name}'` +
-                                    ` AND "schema" = '${dbTable["table_schema"]}'` +
-                                    ` AND "database" = '${this.driver.database}'` +
-                                    ` AND "type" = '${MetadataTableType.GENERATED_COLUMN}'`
+                                    await this.selectTypeormMetadataSql({
+                                        database: this.driver.database,
+                                        schema: dbTable["table_schema"],
+                                        table: dbTable["table_name"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
 
-                                const results: ObjectLiteral[] =
-                                    await this.query(asExpressionQuery)
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
                                 if (results[0] && results[0].value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {

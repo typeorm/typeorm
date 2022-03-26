@@ -120,6 +120,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     ): Promise<void> {
         if (
             this.viewEntityToSyncMetadatas.length > 0 ||
+            DriverUtils.isMySQLFamily(this.connection.driver) ||
             (this.connection.driver.options.type === "postgres" &&
                 (this.connection.driver as PostgresDriver)
                     .isGeneratedColumnsSupported)
