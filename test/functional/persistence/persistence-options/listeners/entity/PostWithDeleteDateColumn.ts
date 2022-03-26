@@ -1,34 +1,32 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {DeleteDateColumn} from "../../../../../../src/decorator/columns/DeleteDateColumn";
-import { AfterSoftRemove, BeforeSoftRemove } from "../../../../../../src";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { DeleteDateColumn } from "../../../../../../src/decorator/columns/DeleteDateColumn"
+import { AfterSoftRemove, BeforeSoftRemove } from "../../../../../../src"
 
 @Entity()
 export class PostWithDeleteDateColumn {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 
     @DeleteDateColumn()
-    deletedAt: Date;
+    deletedAt: Date
 
-    isSoftRemoved: boolean = false;
+    isSoftRemoved: boolean = false
 
     @BeforeSoftRemove()
     beforeSoftRemove() {
-        this.title += "!";
+        this.title += "!"
     }
 
     @AfterSoftRemove()
     afterSoftRemove() {
-        this.isSoftRemoved = true;
+        this.isSoftRemoved = true
     }
-
 }

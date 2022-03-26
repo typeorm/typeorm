@@ -1,37 +1,43 @@
-import { expect } from "chai";
-import {Connection} from "../../../src/connection/Connection";
+import { expect } from "chai"
+import { DataSource } from "../../../src/data-source/DataSource"
 import {
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils";
-import {Post} from "./entity/Post";
+} from "../../utils/test-utils"
+import { Post } from "./entity/Post"
 
 describe("github issues > #7030", () => {
-    let connections: Connection[];
+    let connections: DataSource[]
 
-    before(async () => connections = await createTestingConnections({
-        entities: [Post],
-        schemaCreate: true,
-        dropSchema: true,
-        enabledDrivers: ["postgres"]
-    }));
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [Post],
+                schemaCreate: true,
+                dropSchema: true,
+                enabledDrivers: ["postgres"],
+            })),
+    )
 
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
-    it("should insert and fetch from the expected column", () => Promise.all(connections.map(async connection => {
-        const id = '123e4567-e89b-12d3-a456-426614174000'
+    it("should insert and fetch from the expected column", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const id = "123e4567-e89b-12d3-a456-426614174000"
 
-        const post = new Post();
-        post.id = id;
+                const post = new Post()
+                post.id = id
 
-        let postRepository = connection.getRepository(Post);
+                let postRepository = connection.getRepository(Post)
 
-        await postRepository.save(post);
+                await postRepository.save(post)
 
-        const actualPost = await postRepository.findOneOrFail({ id });
+                const actualPost = await postRepository.findOneByOrFail({ id })
 
-        expect(actualPost!.id).to.be.equal(id);
-    })));
-});
+                expect(actualPost!.id).to.be.equal(id)
+            }),
+        ))
+})

@@ -39,5 +39,5 @@ export class testMigration1641163894670 implements MigrationInterface {
         await queryRunner.query(\`DROP TABLE \\\`post\\\`\`);
     }
 
-}`
-};
+}`,
+}

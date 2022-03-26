@@ -1,8 +1,8 @@
 # Separating Entity Definition
 
-- [Defining Schemas](#defining-schemas)
-- [Extending Schemas](#extending-schemas)
-- [Using Schemas](#using-schemas-to-query--insert-data)
+-   [Defining Schemas](#defining-schemas)
+-   [Extending Schemas](#extending-schemas)
+-   [Using Schemas](#using-schemas-to-query--insert-data)
 
 ## Defining Schemas
 
@@ -13,7 +13,7 @@ which are called "entity schemas" in TypeORM.
 Simple definition example:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import { EntitySchema } from "typeorm"
 
 export const CategoryEntity = new EntitySchema({
     name: "category",
@@ -21,19 +21,19 @@ export const CategoryEntity = new EntitySchema({
         id: {
             type: Number,
             primary: true,
-            generated: true
+            generated: true,
         },
         name: {
-            type: String
-        }
-    }
-});
+            type: String,
+        },
+    },
+})
 ```
 
 Example with relations:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import { EntitySchema } from "typeorm"
 
 export const PostEntity = new EntitySchema({
     name: "post",
@@ -41,28 +41,28 @@ export const PostEntity = new EntitySchema({
         id: {
             type: Number,
             primary: true,
-            generated: true
+            generated: true,
         },
         title: {
-            type: String
+            type: String,
         },
         text: {
-            type: String
-        }
+            type: String,
+        },
     },
     relations: {
         categories: {
             type: "many-to-many",
-            target: "category" // CategoryEntity
-        }
-    }
-});
+            target: "category", // CategoryEntity
+        },
+    },
+})
 ```
 
 Complex example:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import { EntitySchema } from "typeorm"
 
 export const PersonSchema = new EntitySchema({
     name: "person",
@@ -70,56 +70,50 @@ export const PersonSchema = new EntitySchema({
         id: {
             primary: true,
             type: "int",
-            generated: "increment"
+            generated: "increment",
         },
         firstName: {
             type: String,
-            length: 30
+            length: 30,
         },
         lastName: {
             type: String,
             length: 50,
-            nullable: false
+            nullable: false,
         },
         age: {
             type: Number,
-            nullable: false
-        }
+            nullable: false,
+        },
     },
     checks: [
         { expression: `"firstName" <> 'John' AND "lastName" <> 'Doe'` },
-        { expression: `"age" > 18` }
+        { expression: `"age" > 18` },
     ],
     indices: [
         {
             name: "IDX_TEST",
             unique: true,
-            columns: [
-                "firstName",
-                "lastName"
-            ]
-        }
+            columns: ["firstName", "lastName"],
+        },
     ],
     uniques: [
         {
             name: "UNIQUE_TEST",
-            columns: [
-                "firstName",
-                "lastName"
-            ]
-        }
-    ]
-});
+            columns: ["firstName", "lastName"],
+        },
+    ],
+})
 ```
 
 If you want to make your entity typesafe, you can define a model and specify it in schema definition:
 
 ```ts
-import {EntitySchema} from "typeorm";
+import { EntitySchema } from "typeorm"
 
 export interface Category {
-    id: number;
-    name: string;
+    id: number
+    name: string
 }
 
 export const CategoryEntity = new EntitySchema<Category>({
@@ -128,13 +122,13 @@ export const CategoryEntity = new EntitySchema<Category>({
         id: {
             type: Number,
             primary: true,
-            generated: true
+            generated: true,
         },
         name: {
-            type: String
-        }
-    }
-});
+            type: String,
+        },
+    },
+})
 ```
 
 ## Extending Schemas
@@ -150,25 +144,25 @@ Reconsider the `Category` example from above. You may want to `extract` basic co
 your other schemas. This may be done in the following way:
 
 ```ts
-import {EntitySchemaColumnOptions} from "typeorm";
+import { EntitySchemaColumnOptions } from "typeorm"
 
 export const BaseColumnSchemaPart = {
-  id: {
-    type: Number,
-    primary: true,
-    generated: true,
-  } as EntitySchemaColumnOptions,
-  createdAt: {
-    name: 'created_at',
-    type: 'timestamp with time zone',
-    createDate: true,
-  } as EntitySchemaColumnOptions,
-  updatedAt: {
-    name: 'updated_at',
-    type: 'timestamp with time zone',
-    updateDate: true,
-  } as EntitySchemaColumnOptions,
-};
+    id: {
+        type: Number,
+        primary: true,
+        generated: true,
+    } as EntitySchemaColumnOptions,
+    createdAt: {
+        name: "created_at",
+        type: "timestamp with time zone",
+        createDate: true,
+    } as EntitySchemaColumnOptions,
+    updatedAt: {
+        name: "updated_at",
+        type: "timestamp with time zone",
+        updateDate: true,
+    } as EntitySchemaColumnOptions,
+}
 ```
 
 Now you can use the `BaseColumnSchemaPart` in your other schema models, like this:
@@ -181,35 +175,36 @@ export const CategoryEntity = new EntitySchema<Category>({
         // the CategoryEntity now has the defined id, createdAt, updatedAt columns!
         // in addition, the following NEW fields are defined
         name: {
-            type: String
-        }
-    }
-});
+            type: String,
+        },
+    },
+})
 ```
 
 You can use embedded entities in schema models, like this:
+
 ```ts
 export interface Name {
-    first: string;
-    last: string;
+    first: string
+    last: string
 }
 
 export const NameEntitySchema = new EntitySchema<Name>({
     name: "name",
     columns: {
         first: {
-            type: "varchar"
+            type: "varchar",
         },
         last: {
-            type: "varchar"
-        }
+            type: "varchar",
+        },
     },
-});
+})
 
 export interface User {
-    id: string;
-    name: Name;
-    isActive: boolean;
+    id: string
+    name: Name
+    isActive: boolean
 }
 
 export const UserEntitySchema = new EntitySchema<User>({
@@ -218,19 +213,19 @@ export const UserEntitySchema = new EntitySchema<User>({
         id: {
             primary: true,
             generated: "uuid",
-            type: "uuid"
+            type: "uuid",
         },
         isActive: {
-            type: "boolean"
-        }
+            type: "boolean",
+        },
     },
     embeddeds: {
         name: {
             schema: NameEntitySchema,
             prefix: "name_",
         },
-    }
-});
+    },
+})
 ```
 
 Be sure to add the `extended` columns also to the `Category` interface (e.g., via `export interface Category extend BaseEntity`).
@@ -243,13 +238,15 @@ some data or manipulate the database.
 
 ```ts
 // request data
-const categoryRepository = getRepository<Category>(CategoryEntity);
-const category = await categoryRepository.findOne(1); // category is properly typed!
+const categoryRepository = dataSource.getRepository<Category>(CategoryEntity)
+const category = await categoryRepository.findOneBy({
+    id: 1,
+}) // category is properly typed!
 
 // insert a new category into the database
 const categoryDTO = {
-  // note that the ID is autogenerated; see the schema above
-  name: 'new category',
-};
-const newCategory = await categoryRepository.save(categoryDTO);
+    // note that the ID is autogenerated; see the schema above
+    name: "new category",
+}
+const newCategory = await categoryRepository.save(categoryDTO)
 ```

@@ -83,25 +83,25 @@ assignees: ''
 
 <!-- Put "yes" instead of "no" to your issue's relevant databases -->
 
-| DB Type              | Reproducible  |
-| ---                  | ---           |
-| `aurora-data-api`    | no            |
-| `aurora-data-api-pg` | no            |
-| `better-sqlite3`     | no            |
-| `cockroachdb`        | no            |
-| `cordova`            | no            |
-| `expo`               | no            |
-| `mongodb`            | no            |
-| `mysql`              | no            |
-| `nativescript`       | no            |
-| `oracle`             | no            |
-| `postgres`           | no            |
-| `react-native`       | no            |
-| `sap`                | no            |
-| `sqlite`             | no            |
-| `sqlite-abstract`    | no            |
-| `sqljs`              | no            |
-| `sqlserver`          | no            |
+| DB Type           | Reproducible  |
+|-------------------| ---           |
+| `aurora-mysql`    | no            |
+| `aurora-postgres` | no            |
+| `better-sqlite3`  | no            |
+| `cockroachdb`     | no            |
+| `cordova`         | no            |
+| `expo`            | no            |
+| `mongodb`         | no            |
+| `mysql`           | no            |
+| `nativescript`    | no            |
+| `oracle`          | no            |
+| `postgres`        | no            |
+| `react-native`    | no            |
+| `sap`             | no            |
+| `sqlite`          | no            |
+| `sqlite-abstract` | no            |
+| `sqljs`           | no            |
+| `sqlserver`       | no            |
 
 
 ### Are you willing to resolve this issue by submitting a Pull Request?

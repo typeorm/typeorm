@@ -1,9 +1,9 @@
-import "reflect-metadata";
-import {ConnectionOptions, createConnection} from "../../src/index";
-import {Post} from "./entity/Post";
-import {CustomNamingStrategy} from "./naming-strategy/CustomNamingStrategy";
+import "reflect-metadata"
+import { DataSourceOptions, createConnection } from "../../src/index"
+import { Post } from "./entity/Post"
+import { CustomNamingStrategy } from "./naming-strategy/CustomNamingStrategy"
 
-const options: ConnectionOptions = {
+const options: DataSourceOptions = {
     type: "mysql",
     host: "localhost",
     port: 3306,
@@ -12,20 +12,21 @@ const options: ConnectionOptions = {
     database: "test",
     synchronize: true,
     namingStrategy: new CustomNamingStrategy(),
-    entities: [Post]
-};
+    entities: [Post],
+}
 
-createConnection(options).then(connection => {
+createConnection(options).then(
+    (connection) => {
+        let post = new Post()
+        post.text = "Hello how are you?"
+        post.title = "hello"
 
-    let post = new Post();
-    post.text = "Hello how are you?";
-    post.title = "hello";
+        let postRepository = connection.getRepository(Post)
 
-    let postRepository = connection.getRepository(Post);
-
-    postRepository
-        .save(post)
-        .then(post => console.log("Post has been saved"))
-        .catch(error => console.log("Cannot save. Error: ", error));
-
-}, error => console.log("Cannot connect: ", error));
+        postRepository
+            .save(post)
+            .then((post) => console.log("Post has been saved"))
+            .catch((error) => console.log("Cannot save. Error: ", error))
+    },
+    (error) => console.log("Cannot connect: ", error),
+)

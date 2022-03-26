@@ -1,10 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class User {
     // test PrimaryGeneratedColumn
     @PrimaryGeneratedColumn("identity", { generatedIdentity: "ALWAYS" })
-    id: number;
+    id: number
 
     // test explicit `ALWAYS`
     @Column({
@@ -12,7 +12,7 @@ export class User {
         generated: "identity",
         generatedIdentity: "ALWAYS",
     })
-    secondId: number;
+    secondId: number
 
     // test explicit `BY DEFAULT`
     @Column({
@@ -20,9 +20,9 @@ export class User {
         generated: "identity",
         generatedIdentity: "BY DEFAULT",
     })
-    thirdId: number;
+    thirdId: number
 
     // test default `generatedIdentity`
     @Column({ type: "int", generated: "identity" })
-    fourthId: number;
+    fourthId: number
 }

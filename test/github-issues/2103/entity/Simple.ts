@@ -1,12 +1,10 @@
-import {Entity, Column, PrimaryGeneratedColumn} from "../../../../src";
+import { Entity, Column, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Simple {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    x: number;
-
+    x: number
 }

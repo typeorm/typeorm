@@ -16,7 +16,7 @@
  * @returns The values of the enum
  */
 export function getEnumValues<T>(enumObj: T): Array<T[keyof T]> {
-  return Object.keys(enumObj)
-      .filter(key => isNaN(parseInt(key, 10)))
-      .map(key => (enumObj as any)[key]);
+    return Object.keys(enumObj)
+        .filter((key) => isNaN(parseInt(key, 10)))
+        .map((key) => (enumObj as any)[key])
 }

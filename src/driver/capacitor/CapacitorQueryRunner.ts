@@ -1,10 +1,10 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError";
-import { QueryFailedError } from "../../error/QueryFailedError";
-import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner";
-import { CapacitorDriver } from "./CapacitorDriver";
-import { Broadcaster } from "../../subscriber/Broadcaster";
-import { ObjectLiteral } from "../../common/ObjectLiteral";
-import { QueryResult } from "../../query-runner/QueryResult";
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import { CapacitorDriver } from "./CapacitorDriver"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { QueryResult } from "../../query-runner/QueryResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -13,94 +13,103 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Database driver used by connection.
      */
-    driver: CapacitorDriver;
+    driver: CapacitorDriver
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(driver: CapacitorDriver) {
-        super();
-        this.driver = driver;
-        this.connection = driver.connection;
-        this.broadcaster = new Broadcaster(this);
+        super()
+        this.driver = driver
+        this.connection = driver.connection
+        this.broadcaster = new Broadcaster(this)
     }
 
     /**
      * Called before migrations are run.
      */
     async beforeMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = OFF`);
+        await this.query(`PRAGMA foreign_keys = OFF`)
     }
 
     /**
      * Called after migrations are run.
      */
     async afterMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = ON`);
+        await this.query(`PRAGMA foreign_keys = ON`)
     }
 
     async executeSet(set: { statement: string; values?: any[] }[]) {
-        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError();
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const databaseConnection = await this.connect();
+        const databaseConnection = await this.connect()
 
-        return databaseConnection.executeSet(set, false);
+        return databaseConnection.executeSet(set, false)
     }
 
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[], useStructuredResult = false): Promise<any> {
-        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError();
+    async query(
+        query: string,
+        parameters?: any[],
+        useStructuredResult = false,
+    ): Promise<any> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const databaseConnection = await this.connect();
+        const databaseConnection = await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this);
+        this.driver.connection.logger.logQuery(query, parameters, this)
 
-        const command = query.substr(0, query.indexOf(" "));
+        const command = query.substr(0, query.indexOf(" "))
 
         try {
-            let raw: any;
+            let raw: any
 
             if (
-                [ "BEGIN", "ROLLBACK", "COMMIT", "CREATE", "ALTER", "DROP" ].indexOf(
-                    command
-                ) !== -1
+                [
+                    "BEGIN",
+                    "ROLLBACK",
+                    "COMMIT",
+                    "CREATE",
+                    "ALTER",
+                    "DROP",
+                ].indexOf(command) !== -1
             ) {
-                raw = await databaseConnection.execute(query, false);
-            } else if ([ "INSERT", "UPDATE", "DELETE" ].indexOf(command) !== -1) {
-                raw = await databaseConnection.run(query, parameters, false);
+                raw = await databaseConnection.execute(query, false)
+            } else if (["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1) {
+                raw = await databaseConnection.run(query, parameters, false)
             } else {
-                raw = await databaseConnection.query(query, parameters || []);
+                raw = await databaseConnection.query(query, parameters || [])
             }
 
-            const result = new QueryResult();
+            const result = new QueryResult()
 
-            if (raw?.hasOwnProperty('values')) {
-                result.raw = raw.values;
-                result.records = raw.values;
+            if (raw?.hasOwnProperty("values")) {
+                result.raw = raw.values
+                result.records = raw.values
             }
 
-            if (raw?.hasOwnProperty('changes')) {
-                result.affected = raw.changes.changes;
-                result.raw = raw.changes.lastId || raw.changes.changes;
+            if (raw?.hasOwnProperty("changes")) {
+                result.affected = raw.changes.changes
+                result.raw = raw.changes.lastId || raw.changes.changes
             }
 
             if (!useStructuredResult) {
-                return result.raw;
+                return result.raw
             }
 
-            return result;
+            return result
         } catch (err) {
             this.driver.connection.logger.logQueryError(
                 err,
                 query,
                 parameters,
-                this
-            );
+                this,
+            )
 
-            throw new QueryFailedError(query, parameters, err);
+            throw new QueryFailedError(query, parameters, err)
         }
     }
 
@@ -112,6 +121,6 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
      * Parametrizes given object of values. Used to create column=value queries.
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
-        return Object.keys(objectLiteral).map((key) => `"${key}"` + "=?");
+        return Object.keys(objectLiteral).map((key) => `"${key}"` + "=?")
     }
 }

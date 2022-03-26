@@ -1,20 +1,18 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({ collation: "ascii_general_ci" })
-    name: string;
+    name: string
 
     @Column({ charset: "utf8" })
-    title: string;
+    title: string
 
     @Column({ charset: "cp852", collation: "cp852_general_ci" })
-    description: string;
-
+    description: string
 }

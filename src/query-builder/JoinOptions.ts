@@ -1,3 +1,3 @@
 export interface JoinOptions {
-    limit?: number;
+    limit?: number
 }

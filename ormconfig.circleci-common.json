@@ -22,11 +22,20 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "sqlite",
     "type": "sqlite",
-    "database": "temp/sqlitedb.db",
-    "logging": false
+    "database": "./temp/sqlitedb-1.db",
+    "logging": false,
+    "relationLoadStrategy": "join"
+  },
+  {
+    "skip": false,
+    "name": "sqlite-2",
+    "type": "sqlite",
+    "database": "./temp/sqlitedb-2.db",
+    "logging": false,
+    "relationLoadStrategy": "query"
   },
   {
     "skip": true,

@@ -1,16 +1,20 @@
-import { PrimaryGeneratedColumn, JoinTable, ManyToMany, Entity } from "../../../../src";
-import { Book } from "./Book";
+import {
+    PrimaryGeneratedColumn,
+    JoinTable,
+    ManyToMany,
+    Entity,
+} from "../../../../src"
+import { Book } from "./Book"
 
 @Entity("author")
 export class Author {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @ManyToMany(
-        () => Book,
-        book => book.authors,
-        { onDelete: "CASCADE", onUpdate: "CASCADE" }
-    )
+    @ManyToMany(() => Book, (book) => book.authors, {
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    })
     @JoinTable({
         name: "author_to_books",
         joinColumn: {
@@ -22,5 +26,5 @@ export class Author {
             referencedColumnName: "id",
         },
     })
-    books: Book[];
+    books: Book[]
 }

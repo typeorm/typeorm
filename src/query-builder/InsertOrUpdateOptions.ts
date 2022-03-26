@@ -1,3 +1,3 @@
 export type InsertOrUpdateOptions = {
-    skipUpdateIfNoValuesChanged?: boolean;
-};
+    skipUpdateIfNoValuesChanged?: boolean
+}

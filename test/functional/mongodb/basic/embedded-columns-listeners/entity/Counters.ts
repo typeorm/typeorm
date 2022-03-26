@@ -1,17 +1,16 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {Information} from "./Information";
-import {BeforeInsert} from "../../../../../../src";
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { Information } from "./Information"
+import { BeforeInsert } from "../../../../../../src"
 
 export class Counters {
-
     @Column()
-    likes: number;
+    likes: number
 
-    @Column(type => Information)
-    information?: Information;
+    @Column((type) => Information)
+    information?: Information
 
     @BeforeInsert()
     beforeInsert() {
-        this.likes = 100;
+        this.likes = 100
     }
 }

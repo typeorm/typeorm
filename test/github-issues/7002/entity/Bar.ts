@@ -3,17 +3,17 @@ import {
     Entity,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src";
-import { Foo } from "./Foo";
+} from "../../../../src"
+import { Foo } from "./Foo"
 
 @Entity()
 export class Bar {
     @PrimaryGeneratedColumn("increment")
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
-    @OneToOne(() => Foo, foo => foo.bar, { cascade: true, eager: true })
-    foo: Foo;
+    @OneToOne(() => Foo, (foo) => foo.bar, { cascade: true, eager: true })
+    foo: Foo
 }

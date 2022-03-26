@@ -31,4 +31,4 @@ export class testMigration1641163894670 implements MigrationInterface {
     }
 
 }`,
-};
+}
