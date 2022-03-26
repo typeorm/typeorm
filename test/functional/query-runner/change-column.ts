@@ -174,21 +174,20 @@ describe("query runner > change column", () => {
     it("should correctly change generated as expression", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Only works on postgres
-                if (!(connection.driver.options.type === "postgres")) return
+                const isPostgres = connection.driver.options.type === "postgres"
+                const isSpanner = connection.driver.options.type === "spanner"
+                const shouldRun =
+                    (isPostgres &&
+                        (connection.driver as PostgresDriver)
+                            .isGeneratedColumnsSupported) ||
+                    isSpanner
+                if (!shouldRun) return
 
                 const queryRunner = connection.createQueryRunner()
 
-                // Database is running < postgres 12
-                if (
-                    !(connection.driver as PostgresDriver)
-                        .isGeneratedColumnsSupported
-                )
-                    return
-
                 let generatedColumn = new TableColumn({
                     name: "generated",
-                    type: "character varying",
+                    type: isSpanner ? "string" : "varchar",
                     generatedType: "STORED",
                     asExpression: "text || tag",
                 })

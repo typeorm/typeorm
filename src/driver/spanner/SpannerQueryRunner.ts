@@ -837,10 +837,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+            oldColumn.generatedType !== newColumn.generatedType
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
@@ -2532,9 +2529,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` AS (${column.asExpression}) ${
                 column.generatedType ? column.generatedType : "STORED"
             }`
+        } else {
+            if (!column.isNullable) c += " NOT NULL"
         }
-
-        if (!column.isNullable) c += " NOT NULL"
 
         return c
     }
