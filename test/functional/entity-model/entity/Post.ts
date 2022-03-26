@@ -1,8 +1,11 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { BaseEntity } from "../../../../src/repository/BaseEntity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { JoinTable, ManyToMany } from "../../../../src"
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    JoinTable,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
 import { Category } from "./Category"
 
 @Entity()

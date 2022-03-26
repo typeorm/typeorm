@@ -80,11 +80,17 @@ export class BaseEntity {
      */
     async reload(): Promise<void> {
         const baseEntity = this.constructor as typeof BaseEntity
-        const newestEntity: BaseEntity = await baseEntity
+        const id = baseEntity.getRepository().metadata.getEntityIdMap(this)
+        if (!id) {
+            throw new Error(
+                `Entity doesn't have id-s set, cannot reload entity`,
+            )
+        }
+        const reloadedEntity: BaseEntity = await baseEntity
             .getRepository()
-            .findOneOrFail(baseEntity.getId(this))
+            .findOneByOrFail(id)
 
-        ObjectUtils.assign(this, newestEntity)
+        ObjectUtils.assign(this, reloadedEntity)
     }
 
     // -------------------------------------------------------------------------
