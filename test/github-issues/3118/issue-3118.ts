@@ -76,7 +76,7 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
                         .save(category)
                 }
 
-                const loadedCategory = await connection.manager.findOne(
+                const [loadedCategory] = await connection.manager.find(
                     CategoryWithVeryLongName,
                     {
                         relations: [
