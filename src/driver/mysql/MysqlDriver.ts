@@ -1,3 +1,4 @@
+import { isCustomColumnType } from "../../util/IsCustomColumnType"
 import { Driver, ReturningType } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
@@ -744,6 +745,8 @@ export class MysqlDriver implements Driver {
             return "varchar"
         } else if (column.type === "nchar" || column.type === "national char") {
             return "char"
+        } else if (isCustomColumnType(column.type)) {
+            return column.type.getDatabaseIdentifier(this)
         } else {
             return (column.type as string) || ""
         }

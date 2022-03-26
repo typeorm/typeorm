@@ -1,3 +1,4 @@
+import { isCustomColumnType } from "../../util/IsCustomColumnType"
 import { Driver } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
@@ -594,6 +595,8 @@ export class OracleDriver implements Driver {
             return "clob"
         } else if (column.type === "simple-json") {
             return "clob"
+        } else if (isCustomColumnType(column.type)) {
+            return column.type.getDatabaseIdentifier(this)
         } else {
             return (column.type as string) || ""
         }

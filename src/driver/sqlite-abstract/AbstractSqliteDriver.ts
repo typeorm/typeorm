@@ -1,3 +1,4 @@
+import { isCustomColumnType } from "../../util/IsCustomColumnType"
 import { Driver } from "../Driver"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
@@ -613,6 +614,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             return "text"
         } else if (column.type === "simple-enum") {
             return "varchar"
+        } else if (isCustomColumnType(column.type)) {
+            return column.type.getDatabaseIdentifier(this)
         } else {
             return (column.type as string) || ""
         }

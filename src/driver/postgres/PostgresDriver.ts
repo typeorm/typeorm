@@ -10,6 +10,7 @@ import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
+import { isCustomColumnType } from "../../util/IsCustomColumnType"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Driver } from "../Driver"
 import { ColumnType } from "../types/ColumnTypes"
@@ -972,6 +973,8 @@ export class PostgresDriver implements Driver {
             return "character"
         } else if (column.type === "varbit") {
             return "bit varying"
+        } else if (isCustomColumnType(column.type)) {
+            return column.type.getDatabaseIdentifier(this)
         } else {
             return (column.type as string) || ""
         }

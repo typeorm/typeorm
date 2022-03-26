@@ -9,6 +9,7 @@ import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { isCustomColumnType } from "../util/IsCustomColumnType"
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -109,6 +110,9 @@ export class EntityMetadataValidator {
 
         if (!(driver.options.type === "mongodb")) {
             entityMetadata.columns.forEach((column) => {
+                if (isCustomColumnType(column.type)) {
+                    return
+                }
                 const normalizedColumn = driver.normalizeType(
                     column,
                 ) as ColumnType

@@ -1,3 +1,4 @@
+import { isCustomColumnType } from "../../util/IsCustomColumnType"
 import { Driver } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
@@ -620,6 +621,8 @@ export class CockroachDriver implements Driver {
             return "char"
         } else if (column.type === "json") {
             return "jsonb"
+        } else if (isCustomColumnType(column.type)) {
+            return column.type.getDatabaseIdentifier(this)
         } else {
             return (column.type as string) || ""
         }

@@ -8,6 +8,7 @@ import {
     WithWidthColumnType,
 } from "../../driver/types/ColumnTypes"
 import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import { isCustomColumnType } from "../../util/IsCustomColumnType"
 import { ColumnCommonOptions } from "../options/ColumnCommonOptions"
 import { SpatialColumnOptions } from "../options/SpatialColumnOptions"
 import { ColumnWithLengthOptions } from "../options/ColumnWithLengthOptions"
@@ -143,12 +144,13 @@ export function Column(
         let type: ColumnType | undefined
         if (
             typeof typeOrOptions === "string" ||
-            typeof typeOrOptions === "function"
+            typeof typeOrOptions === "function" ||
+            isCustomColumnType(typeOrOptions)
         ) {
             type = <ColumnType>typeOrOptions
         } else if (typeOrOptions) {
             options = <ColumnOptions>typeOrOptions
-            type = typeOrOptions.type
+            type = options.type
         }
         if (!options) options = {} as ColumnOptions
 

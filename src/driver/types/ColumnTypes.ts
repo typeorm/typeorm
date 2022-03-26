@@ -1,6 +1,8 @@
 /**
  * Column types used for @PrimaryGeneratedColumn() decorator.
  */
+import { CustomColumnType } from "./CustomColumnType"
+
 export type PrimaryGeneratedColumnType =
     | "int" // mysql, mssql, oracle, sqlite, sap
     | "int2" // postgres, sqlite, cockroachdb
@@ -210,3 +212,4 @@ export type ColumnType =
     | DateConstructor
     | NumberConstructor
     | StringConstructor
+    | CustomColumnType
