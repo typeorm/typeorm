@@ -62,7 +62,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
                 const thingService = new AbstractService<Thing>(Thing)
 
                 const myThing: DeepPartial<Thing> = { id: 1 }
-                const thing = thingService.create(myThing)
+                const thing = await thingService.create(myThing)
 
                 const thingRepository = connection.getRepository(Thing)
                 const dbItems = await thingRepository.find()
