@@ -65,14 +65,16 @@ export class CommandUtils {
         importedClassFilePath,
         importedClassExportName,
         importDefault,
+        updateOtherRelevantFiles
     }: {
         dataSourceFilePath: string
         initializerName?: string
         initializerPropertyName: "entities" | "migrations" | "subscribers"
         importedClassFilePath: string
         importedClassExportName: string
-        importDefault: boolean
-    }) {
+        importDefault: boolean,
+        updateOtherRelevantFiles: boolean
+    }): Promise<string[]> {
         const dataSourceExtName = path.extname(dataSourceFilePath)
         const importedClassFileExtName = path.extname(importedClassFilePath)
 
@@ -81,14 +83,14 @@ export class CommandUtils {
             dataSourceExtName != ".cts" &&
             dataSourceExtName != ".mts"
         )
-            return false
+            return []
 
         if (
             importedClassFileExtName != ".ts" &&
             importedClassFileExtName != ".cts" &&
             importedClassFileExtName != ".mts"
         )
-            return false
+            return []
 
         const moduleSystem = await determineModuleSystemForFile(
             dataSourceFilePath,
@@ -115,6 +117,7 @@ export class CommandUtils {
             importedExportName: importedClassExportName,
             importDefault: importDefault,
             importType: moduleSystem,
+            updateOtherRelevantFiles,
         })
     }
 

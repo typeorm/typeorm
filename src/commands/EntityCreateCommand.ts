@@ -51,18 +51,28 @@ export class EntityCreateCommand implements yargs.CommandModule {
             }
 
             if (args.addImport && dataSourceFilePath != null) {
-                const dataSourceFileUpdated =
+                const updatedFilePaths =
                     await CommandUtils.updateDataSourceFile({
                         dataSourceFilePath: dataSourceFilePath,
                         initializerPropertyName: "entities",
                         importedClassFilePath: entityFilePath,
                         importedClassExportName: filename,
                         importDefault: false,
+                        updateOtherRelevantFiles: true
                     })
 
-                if (!dataSourceFileUpdated)
+                if (updatedFilePaths.length > 0) {
+                    for (const filePath of updatedFilePaths)
+                        console.log(
+                            chalk.green(
+                                `File ${chalk.blue(path.relative(process.cwd(), filePath))} has been updated`,
+                            ),
+                        )
+                } else
                     console.warn(
-                        chalk.yellow("DataSource file could not be updated"),
+                        chalk.yellow(
+                            "DataSource file could not be updated",
+                        ),
                     )
             }
 

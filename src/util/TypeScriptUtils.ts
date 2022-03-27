@@ -10,6 +10,7 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
     importedExportName,
     importDefault,
     importType,
+    updateOtherRelevantFiles
 }: {
     filePath: string
     initializerName: string
@@ -17,36 +18,40 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
     importedFilePath: string
     importedExportName: string
     importDefault: boolean
-    importType: "esm" | "commonjs"
-}): boolean {
+    importType: "esm" | "commonjs",
+    updateOtherRelevantFiles: boolean
+}): string[] /* returns updated file paths, an empty array means no update was done */ {
     const tsconfigPath = ts.findConfigFile(filePath, ts.sys.fileExists)
     const tsconfig =
         tsconfigPath != null
             ? ts.readJsonConfigFile(tsconfigPath, ts.sys.readFile)
             : {}
-    const sourceFileContent = fs.readFileSync(filePath, "utf8")
-
-    // this is needed in order to preserve blank lines after generating the new file from the AST
-    const sourceFileForTsProgram =
-        replaceBlankLinesWithComments(sourceFileContent)
+    const transformedFileContentMap = new Map<string, ReturnType<typeof replaceBlankLinesWithComments>>();
+    const sourceFiles = new Map<string, ts.SourceFile>();
+    const updatedSourceFilePaths = new Set<string>();
+    const filesToAddImportIn = new Set<string>();
+    let linkingError = false;
 
     const host = ts.createCompilerHost(tsconfig, false)
     const originalHostReadFile = host.readFile
     host.readFile = (fileName: string) => {
-        if (fileName === filePath) return sourceFileForTsProgram.content
+        const absoluteFilePath = path.resolve(fileName)
+        const extName = path.extname(absoluteFilePath)
+
+        if (/^\.[cm]?[jt]s$/.test(extName)) {
+            // this is needed in order to preserve blank lines after generating the new file from the AST
+            const transformedFile = replaceBlankLinesWithComments(fs.readFileSync(absoluteFilePath, "utf8"))
+            transformedFileContentMap.set(absoluteFilePath, transformedFile)
+
+            return transformedFile.content;
+        }
 
         return originalHostReadFile.call(host, fileName)
     }
 
     const program = ts.createProgram([filePath], tsconfig, host)
     const checker = program.getTypeChecker()
-    let sourceFile = program.getSourceFile(filePath) as ts.SourceFile
-    const printer = ts.createPrinter({
-        newLine: sourceFileContent.includes("\r\n")
-            ? ts.NewLineKind.CarriageReturnLineFeed
-            : ts.NewLineKind.LineFeed,
-        removeComments: false,
-    })
+    let entrySourceFile = getSourceFile(filePath) as ts.SourceFile
 
     const importedFileRelativePath = getImportedFileRelativePath()
 
@@ -77,7 +82,30 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
         return relativePath
     }
 
-    function addImport() {
+    function getSourceFile(filePath: string) {
+        const absoluteFilePath = path.resolve(filePath)
+        let sourceFile = sourceFiles.get(absoluteFilePath)
+        if (sourceFile == null) {
+            sourceFile = program.getSourceFile(absoluteFilePath)
+
+            if (sourceFile != null)
+                sourceFiles.set(absoluteFilePath, sourceFile)
+        }
+
+        return sourceFile
+    }
+
+    function updateSourceFile(sourceFile: ts.SourceFile) {
+        const absoluteFilePath = path.resolve(sourceFile.fileName)
+        sourceFiles.set(absoluteFilePath, sourceFile)
+    }
+
+    function markSourceFilePathAsUpdated(sourceFilePath: string) {
+        const filePath = path.resolve(sourceFilePath)
+        updatedSourceFilePaths.add(filePath);
+    }
+
+    function addImport(sourceFile: ts.SourceFile) {
         let lastImportStatementIndex = 0
         for (let i = sourceFile.statements.length - 1; i >= 0; i--) {
             const statement = sourceFile.statements[i]
@@ -88,37 +116,39 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
             }
         }
 
-        sourceFile = ts.factory.updateSourceFile(sourceFile, [
-            ...sourceFile.statements.slice(0, lastImportStatementIndex + 1),
-            ts.factory.createImportDeclaration(
-                undefined,
-                undefined,
-                importDefault
-                    ? ts.factory.createImportClause(
-                          false,
-                          ts.factory.createIdentifier(importedExportName),
-                          undefined,
-                      )
-                    : ts.factory.createImportClause(
-                          false,
-                          undefined,
-                          ts.factory.createNamedImports([
-                              ts.factory.createImportSpecifier(
-                                  false,
-                                  undefined,
-                                  ts.factory.createIdentifier(
-                                      importedExportName,
+        updateSourceFile(
+            ts.factory.updateSourceFile(sourceFile, [
+                ...sourceFile.statements.slice(0, lastImportStatementIndex + 1),
+                ts.factory.createImportDeclaration(
+                    undefined,
+                    undefined,
+                    importDefault
+                        ? ts.factory.createImportClause(
+                              false,
+                              ts.factory.createIdentifier(importedExportName),
+                              undefined,
+                          )
+                        : ts.factory.createImportClause(
+                              false,
+                              undefined,
+                              ts.factory.createNamedImports([
+                                  ts.factory.createImportSpecifier(
+                                      false,
+                                      undefined,
+                                      ts.factory.createIdentifier(
+                                          importedExportName,
+                                      ),
                                   ),
-                              ),
-                          ]),
-                      ),
-                ts.factory.createStringLiteral(importedFileRelativePath),
-            ),
-            ...sourceFile.statements.slice(lastImportStatementIndex + 1),
-        ])
+                              ]),
+                          ),
+                    ts.factory.createStringLiteral(importedFileRelativePath),
+                ),
+                ...sourceFile.statements.slice(lastImportStatementIndex + 1),
+            ])
+        )
     }
 
-    function addReferenceToListPropertyOnInitializer() {
+    function addReferenceToListPropertyOnInitializer(sourceFile: ts.SourceFile) {
         let referenceAdded = false
 
         function findAndUpdateInitializer(
@@ -222,7 +252,7 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
                     }
 
                     return statement
-                }),
+                })
             )
         }
 
@@ -297,6 +327,7 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
                                         [],
                                         true,
                                     ),
+                                    sourceFile
                                 ),
                             ),
                         ],
@@ -309,6 +340,21 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
                 if (index > 0) return argument
 
                 if (ts.isObjectLiteralExpression(argument)) {
+                    const propertyNameAlreadyExists = argument.properties.some(
+                        (property) => {
+                            if (ts.isPropertyAssignment(property) && property.name.getText() === initializerPropertyName)
+                                return true;
+
+                            if (ts.isShorthandPropertyAssignment(property) && property.name.getText() === initializerPropertyName)
+                                return true;
+
+                            return false;
+                        }
+                    )
+
+                    if (propertyNameAlreadyExists)
+                        return argument;
+
                     return ts.factory.updateObjectLiteralExpression(
                         argument,
                         argument.properties.concat([
@@ -321,6 +367,7 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
                                         [],
                                         true,
                                     ),
+                                    sourceFile
                                 ),
                             ),
                         ]),
@@ -347,13 +394,29 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
 
         function updateArrayLiteralExpression(
             arrayLiteralExpression: ts.ArrayLiteralExpression,
+            sourceFile?: ts.SourceFile
         ): ts.ArrayLiteralExpression {
+            if (sourceFile == null)
+                sourceFile = arrayLiteralExpression.getSourceFile();
+
+            if (sourceFile == null) {
+                linkingError = true;
+                return arrayLiteralExpression;
+            }
+
+            const sourceFilePath = path.resolve(sourceFile.fileName);
+            if (!updateOtherRelevantFiles && sourceFilePath === path.resolve(entrySourceFile.fileName))
+                return arrayLiteralExpression;
+
             const res = ts.factory.updateArrayLiteralExpression(
                 arrayLiteralExpression,
                 arrayLiteralExpression.elements.concat([
                     ts.factory.createIdentifier(importedExportName),
                 ]),
             )
+
+            markSourceFilePathAsUpdated(sourceFilePath);
+            filesToAddImportIn.add(sourceFilePath);
 
             referenceAdded = true
 
@@ -375,6 +438,7 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
                         declaration.initializer == null
                             ? ts.factory.createArrayLiteralExpression([], true)
                             : declaration.initializer,
+                        declaration.initializer == null ? sourceFile : undefined
                     ),
                 )
 
@@ -382,6 +446,23 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
                     declaration,
                     newDeclaration,
                 )
+
+                markSourceFilePathAsUpdated(path.resolve(declaration.getSourceFile().fileName));
+            } else if (
+                ts.isImportSpecifier(declaration)
+            ) {
+                const declarationNamedImportSymbol = checker.getSymbolAtLocation(declaration.name)
+
+                if (declarationNamedImportSymbol == null)
+                    return;
+
+                const sourceDeclarationSymbol = checker.getAliasedSymbol(declarationNamedImportSymbol)
+
+                if (sourceDeclarationSymbol == null || sourceDeclarationSymbol.declarations == null)
+                    return;
+
+                for (const delcaration of sourceDeclarationSymbol.declarations)
+                    handleDeclaration(delcaration)
             }
         }
 
@@ -398,25 +479,27 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
             return declaration
         }
 
-        function updateGlobalDeclarations() {
-            sourceFile = ts.factory.updateSourceFile(
-                sourceFile,
-                sourceFile.statements.map((statement) => {
-                    if (ts.isVariableStatement(statement)) {
-                        return ts.factory.updateVariableStatement(
-                            statement,
-                            statement.modifiers,
-                            ts.factory.updateVariableDeclarationList(
-                                statement.declarationList,
-                                statement.declarationList.declarations.map(
-                                    updateDeclaration,
+        function updateGlobalDeclarations(sourceFile: ts.SourceFile) {
+            updateSourceFile(
+                ts.factory.updateSourceFile(
+                    sourceFile,
+                    sourceFile.statements.map((statement) => {
+                        if (ts.isVariableStatement(statement)) {
+                            return ts.factory.updateVariableStatement(
+                                statement,
+                                statement.modifiers,
+                                ts.factory.updateVariableDeclarationList(
+                                    statement.declarationList,
+                                    statement.declarationList.declarations.map(
+                                        updateDeclaration,
+                                    ),
                                 ),
-                            ),
-                        )
-                    }
+                            )
+                        }
 
-                    return statement
-                }),
+                        return statement
+                    }),
+                )
             )
         }
 
@@ -432,35 +515,99 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
 
         if (!referenceAdded) createInitializerProperty()
 
-        updateGlobalDeclarations()
+        updateSourceFile(sourceFile);
+
+        for (const updateSourceFilePath of updatedSourceFilePaths) {
+            const sourceFile = getSourceFile(updateSourceFilePath);
+            if (sourceFile == null) {
+                linkingError = true;
+                continue;
+            }
+
+            updateGlobalDeclarations(sourceFile);
+        }
+
 
         return referenceAdded
     }
 
-    addImport()
-    const referenceAdded = addReferenceToListPropertyOnInitializer()
+    function generateAndUpdateChangedFiles() {
+        const updatedFilePathsResult = []
+        const fileUpdates: {filePath: string, content: string}[] = [];
 
-    if (!referenceAdded) return false
+        for (const filePath of updatedSourceFilePaths) {
+            const astSourceFile = getSourceFile(filePath);
+            if (astSourceFile == null) {
+                linkingError = true;
+                continue;
+            }
 
-    const printFile = ts.createSourceFile(
-        path.basename(filePath),
-        "",
-        ts.ScriptTarget.Latest,
-        false,
-        ts.ScriptKind.TS,
-    )
-    const compiledFileContent = printer.printNode(
-        ts.EmitHint.Unspecified,
-        sourceFile,
-        printFile,
-    )
-    const resultFileContent = compiledFileContent
-        .split(sourceFileForTsProgram.comment)
-        .join("") // remove blank-line-preserving comments
+            const transformedFileContent = transformedFileContentMap.get(filePath)
+            if (transformedFileContent == null)
+                continue
 
-    fs.writeFileSync(filePath, resultFileContent, "utf8")
+            const printer = ts.createPrinter({
+                newLine: transformedFileContent.content.includes("\r\n")
+                    ? ts.NewLineKind.CarriageReturnLineFeed
+                    : ts.NewLineKind.LineFeed,
+                removeComments: false,
+            })
+            const printFile = ts.createSourceFile(
+                path.basename(filePath),
+                "",
+                ts.ScriptTarget.Latest,
+                false,
+                ts.ScriptKind.TS,
+            )
+            const compiledFileContent = printer.printNode(
+                ts.EmitHint.Unspecified,
+                astSourceFile,
+                printFile,
+            )
 
-    return true
+            const transformedFile = transformedFileContentMap.get(filePath)
+
+            if (transformedFile == null) {
+                linkingError = true;
+                continue
+            }
+
+            const resultFileContent = compiledFileContent
+                .split(transformedFile.comment)
+                .join("") // remove blank-line-preserving comments
+
+            fileUpdates.push({
+                filePath,
+                content: resultFileContent,
+            })
+        }
+
+        for (const {filePath, content} of fileUpdates) {
+            fs.writeFileSync(filePath, content, "utf8")
+
+            updatedFilePathsResult.push(filePath)
+        }
+
+        return updatedFilePathsResult;
+    }
+
+    const referenceAdded = addReferenceToListPropertyOnInitializer(entrySourceFile)
+
+    for (const filePath of filesToAddImportIn) {
+        const sourceFile = getSourceFile(filePath)
+        if (sourceFile == null) {
+            linkingError = true;
+            continue;
+        }
+
+        addImport(sourceFile)
+    }
+
+    if (!referenceAdded || linkingError || filesToAddImportIn.size == 0) return [];
+
+    const updatedFilePathsResult = generateAndUpdateChangedFiles()
+
+    return updatedFilePathsResult
 }
 
 function replaceBlankLinesWithComments(fileContent: string): {
