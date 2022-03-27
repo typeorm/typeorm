@@ -104,11 +104,6 @@ describe("command utils - update data-source.ts on create commands", () => {
     }
 
     describe("adds an import to the entity in data-source.ts when using entity:create", async function () {
-        // these tests are relatively slow since they use spawnSync,
-        // which is needed in order to use ts-node
-        // without affecting the entire test environment
-        this.timeout(1000 * 20)
-
         it("array literal expression", async () => {
             await testUpdatingDataSource(`
                 import "reflect-metadata";
