@@ -168,6 +168,20 @@ export class EntityMetadataValidator {
                 )
         }
 
+        // Postgres supports only STORED generated columns.
+        if (driver.options.type === "postgres") {
+            const virtualColumn = entityMetadata.columns.find(
+                (column) =>
+                    column.asExpression &&
+                    (!column.generatedType ||
+                        column.generatedType === "VIRTUAL"),
+            )
+            if (virtualColumn)
+                throw new TypeORMError(
+                    `Column "${virtualColumn.propertyName}" of Entity "${entityMetadata.name}" is defined as VIRTUAL, but Postgres supports only STORED generated columns.`,
+                )
+        }
+
         // check if relations are all without initialized properties
         const entityInstance = entityMetadata.create(undefined, {
             fromDeserializer: true,

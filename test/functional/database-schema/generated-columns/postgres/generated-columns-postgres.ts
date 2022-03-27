@@ -6,16 +6,26 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
+import { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
 
-describe("database schema > generated columns > mysql", () => {
+describe.skip("database schema > generated columns > postgres", () => {
     let dataSources: DataSource[]
-    before(async () => {
+    before(async function () {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql", "mariadb"],
-            schemaCreate: true,
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
             dropSchema: true,
         })
+
+        // generated columns supported from Postgres 12
+        if (
+            !(dataSources[0].driver as PostgresDriver)
+                .isGeneratedColumnsSupported
+        ) {
+            this.skip()
+            return
+        }
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
@@ -33,43 +43,30 @@ describe("database schema > generated columns > mysql", () => {
             }),
         ))
 
-    it("should create table with generated columns", () =>
+    it.only("should create table with generated columns", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
-                const virtualFullName =
-                    table!.findColumnByName("virtualFullName")!
                 const storedFullName =
                     table!.findColumnByName("storedFullName")!
                 const name = table!.findColumnByName("name")!
                 const nameHash = table!.findColumnByName("nameHash")!
-                const complexColumn = table!.findColumnByName("complexColumn")!
 
-                virtualFullName.asExpression!.should.be.equal(
-                    "concat(`firstName`,' ',`lastName`)",
-                )
-                virtualFullName.generatedType!.should.be.equal("VIRTUAL")
                 storedFullName.asExpression!.should.be.equal(
-                    "CONCAT(`firstName`,' ',`lastName`)",
+                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
                 )
                 storedFullName.generatedType!.should.be.equal("STORED")
 
                 name.generatedType!.should.be.equal("STORED")
-                name.asExpression!.should.be.equal("`firstName` || `lastName`")
+                name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
 
-                nameHash.generatedType!.should.be.equal("VIRTUAL")
+                nameHash.generatedType!.should.be.equal("STORED")
                 nameHash.asExpression!.should.be.equal(
-                    "md5(coalesce(`firstName`,0))",
+                    `md5(coalesce("firstName",'0'))`,
                 )
                 nameHash.length!.should.be.equal("255")
-                if (dataSource.driver.options.type !== "mariadb")
-                    nameHash.isNullable.should.be.true
-
-                complexColumn.generatedType!.should.be.equal("VIRTUAL")
-                complexColumn.asExpression!.should.be.equal(
-                    "concat(if(((not `useTitle`) or IsNull(`title`)), '', concat(`firstName`,' ', `lastName`)))",
-                )
+                nameHash.isNullable.should.be.true
 
                 await queryRunner.release()
             }),

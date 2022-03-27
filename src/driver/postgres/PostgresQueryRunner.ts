@@ -3449,7 +3449,7 @@ export class PostgresQueryRunner
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
                                     await this.selectTypeormMetadataSql({
-                                        database: this.driver.database,
+                                        database: currentDatabase,
                                         schema: dbTable["table_schema"],
                                         table: dbTable["table_name"],
                                         type: MetadataTableType.GENERATED_COLUMN,
@@ -4324,19 +4324,19 @@ export class PostgresQueryRunner
         // Also, postgres only supports the stored generated column type
         if (column.generatedType === "STORED" && column.asExpression) {
             c += ` GENERATED ALWAYS AS (${column.asExpression}) STORED`
-        } else {
-            if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
-            if (column.collation) c += ' COLLATE "' + column.collation + '"'
-            if (column.isNullable !== true) c += " NOT NULL"
-            if (column.default !== undefined && column.default !== null)
-                c += " DEFAULT " + column.default
-            if (
-                column.isGenerated &&
-                column.generationStrategy === "uuid" &&
-                !column.default
-            )
-                c += ` DEFAULT ${this.driver.uuidGenerator}`
         }
+
+        if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
+        if (column.collation) c += ' COLLATE "' + column.collation + '"'
+        if (column.isNullable !== true) c += " NOT NULL"
+        if (column.default !== undefined && column.default !== null)
+            c += " DEFAULT " + column.default
+        if (
+            column.isGenerated &&
+            column.generationStrategy === "uuid" &&
+            !column.default
+        )
+            c += ` DEFAULT ${this.driver.uuidGenerator}`
 
         return c
     }
