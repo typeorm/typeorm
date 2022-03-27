@@ -1088,6 +1088,12 @@ export class EntityManager {
             alias = options.join.alias
         }
 
+        if (!options.where) {
+            throw new Error(
+                `You must provide selection conditions in order to find a single row.`,
+            )
+        }
+
         // create query builder and apply find options
         return this.createQueryBuilder<Entity>(entityClass, alias)
             .setFindOptions({

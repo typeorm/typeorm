@@ -1,3 +1,20 @@
+## [0.3.4](https://github.com/typeorm/typeorm/compare/0.3.3...0.3.4) (2022-03-26)
+
+### Bug Fixes
+
+* BaseEntity.reload method regression and made `findOne` to throw error on missing conditions in runtime ([#8801](https://github.com/typeorm/typeorm/issues/8801)) ([ee8c1ec](https://github.com/typeorm/typeorm/commit/ee8c1ecbc210adcc685d6156a941004b9d724227))
+* improve DeepPartial recursion ([#8732](https://github.com/typeorm/typeorm/issues/8732)) ([0494008](https://github.com/typeorm/typeorm/commit/0494008b703240bf593c6f8f2c601cb0d6761805)), closes [#8681](https://github.com/typeorm/typeorm/issues/8681)
+* missing timestamp in created migrations filenames ([#8802](https://github.com/typeorm/typeorm/issues/8802)) ([ceee439](https://github.com/typeorm/typeorm/commit/ceee4396d31da1a7dde53cb50689f53659c8a4b1))
+* PoolConnection leaked by MysqlDriver ([#8803](https://github.com/typeorm/typeorm/issues/8803)) ([d2cfd22](https://github.com/typeorm/typeorm/commit/d2cfd224cacb5db9761aa9679764d699b8abbc65))
+* remove console.log calls from SelectQueryBuilder ([#8795](https://github.com/typeorm/typeorm/issues/8795)) ([54c7db4](https://github.com/typeorm/typeorm/commit/54c7db49355bb09514b6e977d1d7235c02557a0b)), closes [#8792](https://github.com/typeorm/typeorm/issues/8792)
+* stop crashing when redis is offline and ignoreErrors on cache options is set ([#8725](https://github.com/typeorm/typeorm/issues/8725)) ([edc39d1](https://github.com/typeorm/typeorm/commit/edc39d14a97d90c534b56693b988a0ad139e69fd))
+
+### Features
+
+* add support for insert with alias ([#4003](https://github.com/typeorm/typeorm/issues/4003)) ([#8791](https://github.com/typeorm/typeorm/issues/8791)) ([4b37030](https://github.com/typeorm/typeorm/commit/4b37030fc02878a27b0d57d4217b2efab49999af))
+* applicationName parameter for CockroachDB ([#8800](https://github.com/typeorm/typeorm/issues/8800)) ([79b7f5c](https://github.com/typeorm/typeorm/commit/79b7f5c22840992e205d61f6433916aaf80ea647))
+
+
 ## [0.3.3](https://github.com/typeorm/typeorm/compare/0.3.2...0.3.3) (2022-03-23)
 
 ### Bug Fixes
@@ -8,6 +25,7 @@
 ### Features
 
 * support for Common Table Expressions ([#8534](https://github.com/typeorm/typeorm/issues/8534)) ([7cc1848](https://github.com/typeorm/typeorm/commit/7cc1848fd4a44aefa986026ee659ed872ea6ab8f)), closes [#1116](https://github.com/typeorm/typeorm/issues/1116) [#5899](https://github.com/typeorm/typeorm/issues/5899) [#4753](https://github.com/typeorm/typeorm/issues/4753)
+
 
 ## [0.3.2](https://github.com/typeorm/typeorm/compare/0.3.1...0.3.2) (2022-03-22)
 
@@ -24,6 +42,7 @@
 
 * json/jsonb change introduced in 0.3.1 ([#8777](https://github.com/typeorm/typeorm/issues/8777)) ([edf27d9](https://github.com/typeorm/typeorm/commit/edf27d97a30d1aaf28e5c7a7aab96d16152e4983))
 
+
 ## [0.3.1](https://github.com/typeorm/typeorm/compare/0.3.0...0.3.1) (2022-03-21)
 
 ### Bug Fixes
@@ -39,6 +58,7 @@
 * we do not call JSON.stringify() to json/jsonb column types in Postgres. Instead, we delegate value directly to underlying pg driver. This is a correct way of handling jsons.
 * array: true must be explicitly defined for array json/jsonb values
 * strings being JSON-stringified must be manually escaped
+
 
 ## [0.3.0](https://github.com/typeorm/typeorm/pull/8616) (2022-03-17)
 

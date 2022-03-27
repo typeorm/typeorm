@@ -3582,7 +3582,7 @@ export class SelectQueryBuilder<Entity>
         embedPrefix?: string,
     ) {
         for (let key in select) {
-            if (select[key] === undefined) continue
+            if (select[key] === undefined || select[key] === false) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
             const column =

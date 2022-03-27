@@ -47,7 +47,6 @@ export class RedisQueryResultCache implements QueryResultCache {
     /**
      * Creates a connection with given cache provider.
      */
-
     async connect(): Promise<void> {
         const cacheOptions: any = this.connection.options.cache
         if (this.clientType === "redis") {
@@ -55,8 +54,13 @@ export class RedisQueryResultCache implements QueryResultCache {
                 ...cacheOptions?.options,
                 legacyMode: true,
             })
-            if ("connect" in this.client) {
-                await this.client.connect()
+            if (
+                typeof this.connection.options.cache === "object" &&
+                this.connection.options.cache.ignoreErrors
+            ) {
+                this.client.on("error", (err: any) => {
+                    this.connection.logger.log("warn", err)
+                })
             }
         } else if (this.clientType === "ioredis") {
             if (cacheOptions && cacheOptions.port) {

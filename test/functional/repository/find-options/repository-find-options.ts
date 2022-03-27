@@ -44,11 +44,9 @@ describe("repository > find options", () => {
                 post.categories = [category]
                 await connection.manager.save(post)
 
-                const loadedPost = await connection
-                    .getRepository(Post)
-                    .findOne({
-                        relations: ["author", "categories"],
-                    })
+                const [loadedPost] = await connection.getRepository(Post).find({
+                    relations: ["author", "categories"],
+                })
                 expect(loadedPost).to.be.eql({
                     id: 1,
                     title: "About Alex Messer",

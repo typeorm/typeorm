@@ -44,6 +44,12 @@ export interface CockroachConnectionOptions
         readonly slaves: CockroachConnectionCredentialsOptions[]
     }
 
+    /**
+     * sets the application_name var to help db administrators identify
+     * the service using this connection. Defaults to 'undefined'
+     */
+    readonly applicationName?: string
+
     /*
      * Function handling errors thrown by drivers pool.
      * Defaults to logging error with `warn` level.

@@ -923,6 +923,7 @@ export class CockroachDriver implements Driver {
                 database: credentials.database,
                 port: credentials.port,
                 ssl: credentials.ssl,
+                application_name: options.applicationName,
             },
             options.extra || {},
         )

@@ -51,11 +51,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 await CommandUtils.loadDataSource(dataSourceFilePath)
 
             const timestamp = CommandUtils.getTimestamp(args.timestamp)
-            const fullPath = (args.path as string).startsWith("/")
+            const inputPath = (args.path as string).startsWith("/")
                 ? (args.path as string)
                 : path.resolve(process.cwd(), args.path as string)
-            const filename = path.basename(fullPath)
-            const migrationFilePath = fullPath + (args.outputJs ? ".js" : ".ts");
+            const filename = path.basename(inputPath)
+            const fullPath =
+                path.dirname(inputPath) + "/" + timestamp + "-" + filename
 
             const migrationName = `${camelCase(filename, true)}${timestamp}`;
             const fileContent = args.outputJs

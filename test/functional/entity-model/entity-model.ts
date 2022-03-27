@@ -1,4 +1,4 @@
-import "reflect-metadata"
+import "../../utils/test-setup"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import {
@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../src"
 
 describe("entity-model", () => {
     let connections: DataSource[]
@@ -114,6 +114,55 @@ describe("entity-model", () => {
             assertReloadedCategory.should.be.eql({
                 id: 1,
                 name: "Persistence and Entity",
+            })
+        }
+    })
+
+    it("should reload exactly the same entity", async () => {
+        // These must run sequentially as we have the global context of the `Post` ActiveRecord class
+        for (const connection of connections) {
+            await connection.synchronize(true)
+            Post.useDataSource(connection)
+            Category.useDataSource(connection)
+
+            const post1 = Post.create()
+            post1.title = "About ActiveRecord 1"
+            post1.externalId = "some external id 1"
+            await post1.save()
+
+            post1.should.be.eql({
+                id: 1,
+                title: "About ActiveRecord 1",
+                text: "This is default text.",
+                externalId: "some external id 1",
+            })
+            await post1.reload()
+
+            post1.should.be.eql({
+                id: 1,
+                title: "About ActiveRecord 1",
+                text: "This is default text.",
+                externalId: "some external id 1",
+            })
+
+            const post2 = Post.create()
+            post2.title = "About ActiveRecord 2"
+            post2.externalId = "some external id 2"
+            await post2.save()
+
+            post2.should.be.eql({
+                id: 2,
+                title: "About ActiveRecord 2",
+                text: "This is default text.",
+                externalId: "some external id 2",
+            })
+            await post2.reload()
+
+            post2.should.be.eql({
+                id: 2,
+                title: "About ActiveRecord 2",
+                text: "This is default text.",
+                externalId: "some external id 2",
             })
         }
     })
