@@ -112,7 +112,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
+     * Create the typeorm_metadata table if necessary.
      */
     async createMetadataTableIfNecessary(
         queryRunner: QueryRunner,
@@ -1176,7 +1176,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Creates typeorm service table for storing user defined Views.
+     * Creates typeorm service table for storing user defined Views and generate columns.
      */
     protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema
