@@ -18,19 +18,22 @@ export class EntityCreateCommand implements yargs.CommandModule {
                 alias: "d",
                 type: "string",
                 describe:
-                    "Path to the file where your DataSource instance is defined."
+                    "Path to the file where your DataSource instance is defined.",
             })
             .option("addImport", {
                 alias: "a",
                 type: "boolean",
                 default: true,
                 describe:
-                    "Automatically add the generated entity to the DataSource file. true by default when dataSource is specified."
+                    "Automatically add the generated entity to the DataSource file. true by default when dataSource is specified.",
             })
     }
 
     async handler(args: yargs.Arguments) {
-        const dataSourceFilePath = args.dataSource == null ? null : path.resolve(process.cwd(), args.dataSource as string);
+        const dataSourceFilePath =
+            args.dataSource == null
+                ? null
+                : path.resolve(process.cwd(), args.dataSource as string)
 
         try {
             if (dataSourceFilePath != null)
@@ -48,23 +51,28 @@ export class EntityCreateCommand implements yargs.CommandModule {
             }
 
             if (args.addImport && dataSourceFilePath != null) {
-                const dataSourceFileUpdated = await CommandUtils.updateDataSourceFile({
-                    dataSourceFilePath: dataSourceFilePath,
-                    initializerPropertyName: "entities",
-                    importedClassFilePath: entityFilePath,
-                    importedClassExportName: filename,
-                    importDefault: false
-                });
+                const dataSourceFileUpdated =
+                    await CommandUtils.updateDataSourceFile({
+                        dataSourceFilePath: dataSourceFilePath,
+                        initializerPropertyName: "entities",
+                        importedClassFilePath: entityFilePath,
+                        importedClassExportName: filename,
+                        importDefault: false,
+                    })
 
                 if (!dataSourceFileUpdated)
-                    console.warn(chalk.yellow("DataSource file could not be updated"));
+                    console.warn(
+                        chalk.yellow("DataSource file could not be updated"),
+                    )
             }
 
             await CommandUtils.createFile(entityFilePath, fileContent)
 
             console.log(
                 chalk.green(
-                    `Entity ${chalk.blue(entityFilePath)} has been created successfully.`,
+                    `Entity ${chalk.blue(
+                        entityFilePath,
+                    )} has been created successfully.`,
                 ),
             )
         } catch (err) {

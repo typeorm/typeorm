@@ -30,7 +30,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 type: "boolean",
                 default: true,
                 describe:
-                    "Automatically add the generated migration to the DataSource file."
+                    "Automatically add the generated migration to the DataSource file.",
             })
             .option("p", {
                 alias: "pretty",
@@ -75,7 +75,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             : path.resolve(process.cwd(), args.path as string)
         const filename = timestamp + "-" + path.basename(fullPath) + extension
 
-        const dataSourceFilePath = path.resolve(process.cwd(), args.dataSource as string);
+        const dataSourceFilePath = path.resolve(
+            process.cwd(),
+            args.dataSource as string,
+        )
         let dataSource: DataSource | undefined = undefined
         try {
             dataSource = await CommandUtils.loadDataSource(dataSourceFilePath)
@@ -157,7 +160,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 process.exit(1)
             }
 
-            const migrationName = `${camelCase(path.basename(fullPath), true)}${timestamp}`
+            const migrationName = `${camelCase(
+                path.basename(fullPath),
+                true,
+            )}${timestamp}`
             const fileContent = args.outputJs
                 ? MigrationGenerateCommand.getJavascriptTemplate(
                       migrationName,
@@ -192,19 +198,25 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     ),
                 )
             } else {
-                const migrationFilePath = path.dirname(fullPath) + "/" + filename;
+                const migrationFilePath =
+                    path.dirname(fullPath) + "/" + filename
 
                 if (!args.outputJs && args.addImport) {
-                    const dataSourceFileUpdated = await CommandUtils.updateDataSourceFile({
-                        dataSourceFilePath: dataSourceFilePath,
-                        initializerPropertyName: "migrations",
-                        importedClassFilePath: migrationFilePath,
-                        importedClassExportName: migrationName,
-                        importDefault: false
-                    });
+                    const dataSourceFileUpdated =
+                        await CommandUtils.updateDataSourceFile({
+                            dataSourceFilePath: dataSourceFilePath,
+                            initializerPropertyName: "migrations",
+                            importedClassFilePath: migrationFilePath,
+                            importedClassExportName: migrationName,
+                            importDefault: false,
+                        })
 
                     if (!dataSourceFileUpdated)
-                        console.warn(chalk.yellow("DataSource file could not be updated"));
+                        console.warn(
+                            chalk.yellow(
+                                "DataSource file could not be updated",
+                            ),
+                        )
                 }
 
                 await CommandUtils.createFile(migrationFilePath, fileContent)

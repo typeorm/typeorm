@@ -21,15 +21,15 @@ export async function importOrRequireFile(
         return [require(filePath), "commonjs"]
     }
 
-    const moduleSystem = await determineModuleSystemForFile(filePath);
+    const moduleSystem = await determineModuleSystemForFile(filePath)
 
-    if (moduleSystem == "esm")
-        return tryToImport()
-    else
-        return tryToRequire()
+    if (moduleSystem == "esm") return tryToImport()
+    else return tryToRequire()
 }
 
-export async function determineModuleSystemForFile(filePath: string): Promise<"esm" | "commonjs"> {
+export async function determineModuleSystemForFile(
+    filePath: string,
+): Promise<"esm" | "commonjs"> {
     const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
 
     if (extension === "mjs" || extension === "mts") return "esm"

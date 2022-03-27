@@ -19,14 +19,14 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 alias: "d",
                 type: "string",
                 describe:
-                    "Path to the file where your DataSource instance is defined."
+                    "Path to the file where your DataSource instance is defined.",
             })
             .option("addImport", {
                 alias: "a",
                 type: "boolean",
                 default: true,
                 describe:
-                    "Automatically add the generated migration to the DataSource file. true by default when dataSource is specified."
+                    "Automatically add the generated migration to the DataSource file. true by default when dataSource is specified.",
             })
             .option("o", {
                 alias: "outputJs",
@@ -44,7 +44,10 @@ export class MigrationCreateCommand implements yargs.CommandModule {
     }
 
     async handler(args: yargs.Arguments) {
-        const dataSourceFilePath = args.dataSource == null ? null : path.resolve(process.cwd(), args.dataSource as string);
+        const dataSourceFilePath =
+            args.dataSource == null
+                ? null
+                : path.resolve(process.cwd(), args.dataSource as string)
 
         try {
             if (dataSourceFilePath != null)
@@ -57,23 +60,31 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             const filename = path.basename(inputPath)
             const fullPath =
                 path.dirname(inputPath) + "/" + timestamp + "-" + filename
+            const migrationFilePath = fullPath + (args.outputJs ? ".js" : ".ts")
 
-            const migrationName = `${camelCase(filename, true)}${timestamp}`;
+            const migrationName = `${camelCase(filename, true)}${timestamp}`
             const fileContent = args.outputJs
                 ? MigrationCreateCommand.getJavascriptTemplate(migrationName)
                 : MigrationCreateCommand.getTemplate(migrationName)
 
-            if (!args.outputJs && args.addImport && dataSourceFilePath != null) {
-                const dataSourceFileUpdated = await CommandUtils.updateDataSourceFile({
-                    dataSourceFilePath: dataSourceFilePath,
-                    initializerPropertyName: "migrations",
-                    importedClassFilePath: migrationFilePath,
-                    importedClassExportName: migrationName,
-                    importDefault: false
-                });
+            if (
+                !args.outputJs &&
+                args.addImport &&
+                dataSourceFilePath != null
+            ) {
+                const dataSourceFileUpdated =
+                    await CommandUtils.updateDataSourceFile({
+                        dataSourceFilePath: dataSourceFilePath,
+                        initializerPropertyName: "migrations",
+                        importedClassFilePath: migrationFilePath,
+                        importedClassExportName: migrationName,
+                        importDefault: false,
+                    })
 
                 if (!dataSourceFileUpdated)
-                    console.warn(chalk.yellow("DataSource file could not be updated"));
+                    console.warn(
+                        chalk.yellow("DataSource file could not be updated"),
+                    )
             }
 
             await CommandUtils.createFile(migrationFilePath, fileContent)

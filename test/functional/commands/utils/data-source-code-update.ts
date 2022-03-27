@@ -15,42 +15,47 @@ describe("command utils - update data-source.ts on create commands", () => {
         const res = spawnSync(bin, args, {
             cwd: cwd,
             env: process.env,
-            stdio: "inherit"
+            stdio: "inherit",
         })
 
         expect(res.status).to.equal(0)
     }
 
     const runCliCommand = (cwd: string, argv: string[]) => {
-        runCommand(cwd, "node", ["--require=ts-node/register", cliFilePath, ...argv])
+        runCommand(cwd, "node", [
+            "--require=ts-node/register",
+            cliFilePath,
+            ...argv,
+        ])
     }
 
     async function testUpdatingDataSource(dataSourceFileContent: string) {
         const testDir = path.join(__dirname, "testCreateEntityImport")
-        const entitiesFolderName = "entity";
+        const entitiesFolderName = "entity"
         const entitiesDir = path.join(testDir, entitiesFolderName)
-        const entityName = "User";
+        const entityName = "User"
 
         const dataSourceFileName = "data-source.ts"
-        const dataSourceFileNameWithoutExt = dataSourceFileName.slice(0, - (path.extname(dataSourceFileName).length))
+        const dataSourceFileNameWithoutExt = dataSourceFileName.slice(
+            0,
+            -path.extname(dataSourceFileName).length,
+        )
         const dataSourceFilePath = path.join(testDir, dataSourceFileName)
 
         if (fs.existsSync(testDir)) rmdirSync(testDir)
 
         fs.mkdirSync(entitiesDir, { recursive: true })
 
-        fs.writeFileSync(
-            dataSourceFilePath,
-            dataSourceFileContent,
-            "utf8",
-        )
+        fs.writeFileSync(dataSourceFilePath, dataSourceFileContent, "utf8")
         // fs.writeFileSync(jsFilePath, jsFileContent, "utf8")
 
         runCliCommand(testDir, [
             "entity:create",
-            "--dataSource", dataSourceFileName,
-            "--addImport", "true",
-            entitiesFolderName + "/" + entityName
+            "--dataSource",
+            dataSourceFileName,
+            "--addImport",
+            "true",
+            entitiesFolderName + "/" + entityName,
         ])
 
         const entityFilePath = path.join(entitiesDir, entityName + ".ts")
@@ -85,10 +90,15 @@ describe("command utils - update data-source.ts on create commands", () => {
             const entities: any = dataSourceResult.AppDataSource.options.entities;
             expect(entities).to.be.an("array")
             expect(entities.length).to.be.gt(0)
-            expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(entityName)})
+            expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
+                entityName,
+            )})
         `
         fs.writeFileSync(jsCheckFilePath, jsCheckFileContent, "utf8")
-        runCommand(testDir, "node", ["--require=ts-node/register", jsCheckFilePath])
+        runCommand(testDir, "node", [
+            "--require=ts-node/register",
+            jsCheckFilePath,
+        ])
 
         rmdirSync(testDir)
     }

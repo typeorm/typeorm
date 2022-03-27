@@ -18,19 +18,22 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
                 alias: "d",
                 type: "string",
                 describe:
-                    "Path to the file where your DataSource instance is defined."
+                    "Path to the file where your DataSource instance is defined.",
             })
             .option("addImport", {
                 alias: "a",
                 type: "boolean",
                 default: true,
                 describe:
-                    "Automatically add the generated subscriber to the DataSource file. true by default when dataSource is specified."
+                    "Automatically add the generated subscriber to the DataSource file. true by default when dataSource is specified.",
             })
     }
 
     async handler(args: yargs.Arguments) {
-        const dataSourceFilePath = args.dataSource == null ? null : path.resolve(process.cwd(), args.dataSource as string);
+        const dataSourceFilePath =
+            args.dataSource == null
+                ? null
+                : path.resolve(process.cwd(), args.dataSource as string)
 
         try {
             if (dataSourceFilePath != null)
@@ -41,23 +44,26 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
                 : path.resolve(process.cwd(), args.path as string)
             const filename = path.basename(fullPath)
             const fileContent = SubscriberCreateCommand.getTemplate(filename)
-            const subscriberFilePath = fullPath + ".ts";
+            const subscriberFilePath = fullPath + ".ts"
             const fileExists = await CommandUtils.fileExists(subscriberFilePath)
             if (fileExists) {
                 throw `File ${chalk.blue(subscriberFilePath)} already exists`
             }
 
             if (args.addImport && dataSourceFilePath != null) {
-                const dataSourceFileUpdated = await CommandUtils.updateDataSourceFile({
-                    dataSourceFilePath: dataSourceFilePath,
-                    initializerPropertyName: "subscribers",
-                    importedClassFilePath: subscriberFilePath,
-                    importedClassExportName: filename,
-                    importDefault: false
-                });
+                const dataSourceFileUpdated =
+                    await CommandUtils.updateDataSourceFile({
+                        dataSourceFilePath: dataSourceFilePath,
+                        initializerPropertyName: "subscribers",
+                        importedClassFilePath: subscriberFilePath,
+                        importedClassExportName: filename,
+                        importDefault: false,
+                    })
 
                 if (!dataSourceFileUpdated)
-                    console.warn(chalk.yellow("DataSource file could not be updated"));
+                    console.warn(
+                        chalk.yellow("DataSource file could not be updated"),
+                    )
             }
 
             await CommandUtils.createFile(subscriberFilePath, fileContent)
