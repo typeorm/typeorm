@@ -31,14 +31,20 @@ describe("command utils - update data-source.ts on create commands", () => {
         ])
     }
 
-    const runCreateEntityCommand = async ({dataSourceFilePath, entityPath}: {dataSourceFilePath: string, entityPath: string}) => {
+    const runCreateEntityCommand = async ({
+        dataSourceFilePath,
+        entityPath,
+    }: {
+        dataSourceFilePath: string
+        entityPath: string
+    }) => {
         runCliCommand(testDir, [
             "entity:create",
             "--dataSource",
             dataSourceFilePath,
             "--addImport",
             "true",
-            entityPath
+            entityPath,
         ])
 
         // uncomment this to be able to debug the command,
@@ -55,29 +61,31 @@ describe("command utils - update data-source.ts on create commands", () => {
     }
 
     function createDir(dirPath: string) {
-        if (!fs.existsSync(dirPath))
-            fs.mkdirSync(dirPath, { recursive: true })
+        if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true })
     }
 
     function writeFile(filePath: string, content: string) {
-        createDir(path.dirname(filePath));
+        createDir(path.dirname(filePath))
         fs.writeFileSync(filePath, content, "utf8")
     }
 
-    function createImportPath(sourceFilePath: string, importFilePath: string, removeExtension = true) {
+    function createImportPath(
+        sourceFilePath: string,
+        importFilePath: string,
+        removeExtension = true,
+    ) {
         let relativePath = path.relative(
             path.dirname(sourceFilePath),
             importFilePath,
         )
-        if (!relativePath.startsWith("."))
-            relativePath = "./" + relativePath
+        if (!relativePath.startsWith(".")) relativePath = "./" + relativePath
 
         const extName = path.extname(relativePath)
         if (removeExtension) {
             if (extName === ".ts" || extName === ".js")
-                relativePath = relativePath.slice(0, -(extName.length))
+                relativePath = relativePath.slice(0, -extName.length)
         } else if (extName === ".ts")
-            relativePath = relativePath.slice(0, -(extName.length)) + ".js"
+            relativePath = relativePath.slice(0, -extName.length) + ".js"
 
         return relativePath
     }
@@ -85,10 +93,7 @@ describe("command utils - update data-source.ts on create commands", () => {
     // this is required for the tests to work also after the entire `tests` directory is compiled to js
     function runTsFile(filePath: string, tsCode: string) {
         writeFile(filePath, tsCode)
-        runCommand(testDir, "node", [
-            "--require=ts-node/register",
-            filePath
-        ])
+        runCommand(testDir, "node", ["--require=ts-node/register", filePath])
     }
 
     async function testContainedDataSourceFile(dataSourceCode: string) {
@@ -97,41 +102,50 @@ describe("command utils - update data-source.ts on create commands", () => {
         const entityName = "User"
         const entityFile = entityName + ".ts"
 
-        const dataSourceFilePath = path.join(testDir, dataSourceFile);
-        writeFile(dataSourceFilePath,
+        const dataSourceFilePath = path.join(testDir, dataSourceFile)
+        writeFile(
+            dataSourceFilePath,
             `
                 import "reflect-metadata";
-                import {DataSource} from ${JSON.stringify(createImportPath(dataSourceFilePath, typeormLibraryPath))};
+                import {DataSource} from ${JSON.stringify(
+                    createImportPath(dataSourceFilePath, typeormLibraryPath),
+                )};
 
                 ${dataSourceCode}
-            `
+            `,
         )
 
         await runCreateEntityCommand({
             dataSourceFilePath: dataSourceFile,
-            entityPath: entitiesFolder + "/" + entityName
+            entityPath: entitiesFolder + "/" + entityName,
         })
 
         // this is needed to make sure importing this file is successful in the
         // test environment, since importing "typeorm" inside a test would fail
         const entityFilePath = path.join(testDir, entitiesFolder, entityFile)
-        writeFile(entityFilePath,
+        writeFile(
+            entityFilePath,
             `
-                import { Entity, BaseEntity, PrimaryGeneratedColumn } from ${JSON.stringify(createImportPath(entityFilePath, typeormLibraryPath))};
+                import { Entity, BaseEntity, PrimaryGeneratedColumn } from ${JSON.stringify(
+                    createImportPath(entityFilePath, typeormLibraryPath),
+                )};
 
                 @Entity()
                 export class ${entityName} extends BaseEntity {
                     @PrimaryGeneratedColumn()
                     id: number;
                 }
-            `
+            `,
         )
 
         const checkFilePath = path.join(testDir, "check.ts")
-        runTsFile(checkFilePath,
+        runTsFile(
+            checkFilePath,
             `
             import { expect } from "chai"
-            import * as dataSourceResult from ${JSON.stringify(createImportPath(checkFilePath, dataSourceFilePath))}
+            import * as dataSourceResult from ${JSON.stringify(
+                createImportPath(checkFilePath, dataSourceFilePath),
+            )}
 
             expect(dataSourceResult).to.haveOwnProperty("AppDataSource")
             expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options")
@@ -143,54 +157,66 @@ describe("command utils - update data-source.ts on create commands", () => {
             expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
                 entityName,
             )})
-            `
+            `,
         )
     }
 
-    async function testDataSourceFileWithLinkToEntitiesInOtherFile(dataSourceCode: string, files: {path: string, content: string}[]) {
+    async function testDataSourceFileWithLinkToEntitiesInOtherFile(
+        dataSourceCode: string,
+        files: { path: string; content: string }[],
+    ) {
         const entitiesFolder = "entities"
         const dataSourceFile = "data-source.ts"
         const entityName = "User"
         const entityFile = entityName + ".ts"
 
-        const dataSourceFilePath = path.join(testDir, dataSourceFile);
-        writeFile(dataSourceFilePath,
+        const dataSourceFilePath = path.join(testDir, dataSourceFile)
+        writeFile(
+            dataSourceFilePath,
             `
                 import "reflect-metadata";
-                import {DataSource} from ${JSON.stringify(createImportPath(dataSourceFilePath, typeormLibraryPath))};
+                import {DataSource} from ${JSON.stringify(
+                    createImportPath(dataSourceFilePath, typeormLibraryPath),
+                )};
 
                 ${dataSourceCode}
-            `
+            `,
         )
 
         for (const file of files)
-            writeFile(path.join(testDir, file.path), file.content);
+            writeFile(path.join(testDir, file.path), file.content)
 
         await runCreateEntityCommand({
             dataSourceFilePath: dataSourceFile,
-            entityPath: entitiesFolder + "/" + entityName
+            entityPath: entitiesFolder + "/" + entityName,
         })
 
         // this is needed to make sure importing this file is successful in the
         // test environment, since importing "typeorm" inside a test would fail
         const entityFilePath = path.join(testDir, entitiesFolder, entityFile)
-        writeFile(entityFilePath,
+        writeFile(
+            entityFilePath,
             `
-                import { Entity, BaseEntity, PrimaryGeneratedColumn } from ${JSON.stringify(createImportPath(entityFilePath, typeormLibraryPath))};
+                import { Entity, BaseEntity, PrimaryGeneratedColumn } from ${JSON.stringify(
+                    createImportPath(entityFilePath, typeormLibraryPath),
+                )};
 
                 @Entity()
                 export class ${entityName} extends BaseEntity {
                     @PrimaryGeneratedColumn()
                     id: number;
                 }
-            `
+            `,
         )
 
         const checkFilePath = path.join(testDir, "check.ts")
-        runTsFile(checkFilePath,
+        runTsFile(
+            checkFilePath,
             `
             import { expect } from "chai"
-            import * as dataSourceResult from ${JSON.stringify(createImportPath(checkFilePath, dataSourceFilePath))}
+            import * as dataSourceResult from ${JSON.stringify(
+                createImportPath(checkFilePath, dataSourceFilePath),
+            )}
 
             expect(dataSourceResult).to.haveOwnProperty("AppDataSource")
             expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options")
@@ -202,7 +228,7 @@ describe("command utils - update data-source.ts on create commands", () => {
             expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
                 entityName,
             )})
-            `
+            `,
         )
     }
 
@@ -265,7 +291,8 @@ describe("command utils - update data-source.ts on create commands", () => {
 
     describe("adds an import to the entity in external file used by data-source.ts when using entity:create", async function () {
         it("external file with exported list", async () => {
-            await testDataSourceFileWithLinkToEntitiesInOtherFile(`
+            await testDataSourceFileWithLinkToEntitiesInOtherFile(
+                `
                 import { entities } from "./entities"
 
                 export const AppDataSource = new DataSource({
@@ -273,25 +300,31 @@ describe("command utils - update data-source.ts on create commands", () => {
                     database: "database.db",
                     entities: entities
                 });
-            `, [{
-                path: "entities.ts",
-                content: `
+            `,
+                [
+                    {
+                        path: "entities.ts",
+                        content: `
                     import { SomeModal } from "./entities/SomeModal";
 
                     export const entities = [
                         SomeModal
                     ];
-                `
-            }, {
-                path: "entities/SomeModal.ts",
-                content: `
+                `,
+                    },
+                    {
+                        path: "entities/SomeModal.ts",
+                        content: `
                     export class SomeModal {}
-                `
-            }])
+                `,
+                    },
+                ],
+            )
         })
 
         it("external file with exported list - shorthand property assignment", async () => {
-            await testDataSourceFileWithLinkToEntitiesInOtherFile(`
+            await testDataSourceFileWithLinkToEntitiesInOtherFile(
+                `
                 import { entities } from "./entities"
 
                 export const AppDataSource = new DataSource({
@@ -299,19 +332,24 @@ describe("command utils - update data-source.ts on create commands", () => {
                     database: "database.db",
                     entities
                 });
-            `, [{
-                path: "entities.ts",
-                content: `
+            `,
+                [
+                    {
+                        path: "entities.ts",
+                        content: `
                     import { SomeModal } from "./entities/SomeModal";
 
                     export const entities = [SomeModal];
-                `
-            }, {
-                path: "entities/SomeModal.ts",
-                content: `
+                `,
+                    },
+                    {
+                        path: "entities/SomeModal.ts",
+                        content: `
                     export class SomeModal {}
-                `
-            }])
+                `,
+                    },
+                ],
+            )
         })
     })
 })

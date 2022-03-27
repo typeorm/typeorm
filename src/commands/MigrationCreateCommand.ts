@@ -79,21 +79,21 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                         importedClassFilePath: migrationFilePath,
                         importedClassExportName: migrationName,
                         importDefault: false,
-                        updateOtherRelevantFiles: true
+                        updateOtherRelevantFiles: true,
                     })
 
                 if (updatedFilePaths.length > 0) {
                     for (const filePath of updatedFilePaths)
                         console.log(
                             chalk.green(
-                                `File ${chalk.blue(path.relative(process.cwd(), filePath))} has been updated`,
+                                `File ${chalk.blue(
+                                    path.relative(process.cwd(), filePath),
+                                )} has been updated`,
                             ),
                         )
                 } else
                     console.warn(
-                        chalk.yellow(
-                            "DataSource file could not be updated",
-                        ),
+                        chalk.yellow("DataSource file could not be updated"),
                     )
             }
 

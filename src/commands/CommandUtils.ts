@@ -65,14 +65,14 @@ export class CommandUtils {
         importedClassFilePath,
         importedClassExportName,
         importDefault,
-        updateOtherRelevantFiles
+        updateOtherRelevantFiles,
     }: {
         dataSourceFilePath: string
         initializerName?: string
         initializerPropertyName: "entities" | "migrations" | "subscribers"
         importedClassFilePath: string
         importedClassExportName: string
-        importDefault: boolean,
+        importDefault: boolean
         updateOtherRelevantFiles: boolean
     }): Promise<string[]> {
         const dataSourceExtName = path.extname(dataSourceFilePath)
