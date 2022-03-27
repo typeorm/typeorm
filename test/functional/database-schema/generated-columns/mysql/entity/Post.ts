@@ -17,7 +17,10 @@ export class Post {
     @Column()
     lastName: string
 
-    @Column({ asExpression: "concat(`firstName`,' ',`lastName`)" })
+    @Column({
+        asExpression: "concat(`firstName`,' ',`lastName`)",
+        collation: "latin1_bin",
+    })
     virtualFullName: string
 
     @Column({
@@ -29,6 +32,7 @@ export class Post {
     @Column({
         asExpression: "`firstName` || `lastName`",
         generatedType: "STORED",
+        collation: "latin1_bin",
     })
     name: string
 

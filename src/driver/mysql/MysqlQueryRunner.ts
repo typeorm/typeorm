@@ -3166,6 +3166,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 column,
             )}`
         }
+
+        if (column.charset) c += ` CHARACTER SET "${column.charset}"`
+        if (column.collation) c += ` COLLATE "${column.collation}"`
+
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${
                 column.generatedType ? column.generatedType : "VIRTUAL"
@@ -3181,8 +3185,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` (${column.enum
                 .map((value) => "'" + value.replace(/'/g, "''") + "'")
                 .join(", ")})`
-        if (column.charset) c += ` CHARACTER SET "${column.charset}"`
-        if (column.collation) c += ` COLLATE "${column.collation}"`
 
         const isMariaDb = this.driver.options.type === "mariadb"
         if (
