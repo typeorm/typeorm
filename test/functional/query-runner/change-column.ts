@@ -4,6 +4,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
+    createTypeormMetadataTable,
 } from "../../utils/test-utils"
 import { TableColumn } from "../../../src"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
@@ -178,6 +179,8 @@ describe("query runner > change column", () => {
                 if (!(connection.driver.options.type === "postgres")) return
 
                 const queryRunner = connection.createQueryRunner()
+
+                await createTypeormMetadataTable(connection.driver, queryRunner)
 
                 // Database is running < postgres 12
                 if (
