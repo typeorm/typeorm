@@ -25,7 +25,7 @@ describe("database schema > generated columns > mysql", () => {
                 const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
-                console.log(sqlInMemory)
+
                 sqlInMemory.upQueries.length.should.be.equal(0)
                 sqlInMemory.downQueries.length.should.be.equal(0)
             }),
