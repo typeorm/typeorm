@@ -15,7 +15,6 @@ import { TableCheck } from "./table/TableCheck"
 import { TableExclusion } from "./table/TableExclusion"
 import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
-import { PostgresDriver } from "../driver/postgres/PostgresDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 
 /**
@@ -120,10 +119,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     ): Promise<void> {
         if (
             this.viewEntityToSyncMetadatas.length > 0 ||
-            DriverUtils.isMySQLFamily(this.connection.driver) ||
-            (this.connection.driver.options.type === "postgres" &&
-                (this.connection.driver as PostgresDriver)
-                    .isGeneratedColumnsSupported)
+            this.hasGeneratedColumns()
         ) {
             await this.createTypeormMetadataTable(queryRunner)
         }
@@ -191,6 +187,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 // sort views in creation order by dependencies
                 .sort(ViewUtils.viewMetadataCmp)
         )
+    }
+
+    /**
+     * Checks if there are at least one generated column.
+     */
+    protected hasGeneratedColumns(): boolean {
+        return this.connection.entityMetadatas.some((entityMetadata) => {
+            return entityMetadata.columns.some((column) => column.generatedType)
+        })
     }
 
     /**

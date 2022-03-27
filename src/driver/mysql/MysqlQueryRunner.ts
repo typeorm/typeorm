@@ -2599,8 +2599,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 columnUniqueIndices.length > 0 &&
                                 !hasIgnoredIndex &&
                                 !isConstraintComposite
-                            tableColumn.isNullable =
-                                dbColumn["IS_NULLABLE"] === "YES"
+
+                            if (isMariaDb && tableColumn.generatedType) {
+                                // do nothing - MariaDB does not support NULL/NOT NULL expressions for generated columns
+                            } else {
+                                tableColumn.isNullable =
+                                    dbColumn["IS_NULLABLE"] === "YES"
+                            }
+
                             tableColumn.isPrimary = dbPrimaryKeys.some(
                                 (dbPrimaryKey) => {
                                     return (

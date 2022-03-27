@@ -11,7 +11,7 @@ describe("database schema > generated columns > mysql", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql"],
+            enabledDrivers: ["mysql", "mariadb"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -25,6 +25,7 @@ describe("database schema > generated columns > mysql", () => {
                 const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
+                console.log(sqlInMemory)
                 sqlInMemory.upQueries.length.should.be.equal(0)
                 sqlInMemory.downQueries.length.should.be.equal(0)
             }),
@@ -60,7 +61,8 @@ describe("database schema > generated columns > mysql", () => {
                     "md5(coalesce(`firstName`,0))",
                 )
                 nameHash.length!.should.be.equal("255")
-                nameHash.isNullable.should.be.true
+                if (dataSource.driver.options.type !== "mariadb")
+                    nameHash.isNullable.should.be.true
 
                 complexColumn.generatedType!.should.be.equal("VIRTUAL")
                 complexColumn.asExpression!.should.be.equal(
