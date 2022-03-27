@@ -119,7 +119,7 @@ export class CommandUtils {
             importType: moduleSystem,
             updateOtherRelevantFiles,
             treatImportNamespaceAsList: true,
-            exportImportAllFromFileWhenImportingNamespace: true
+            exportImportAllFromFileWhenImportingNamespace: true,
         })
     }
 

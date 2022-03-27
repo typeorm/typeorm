@@ -160,14 +160,16 @@ describe("command utils - update data-source.ts on create commands", () => {
     }
 
     async function testDataSourceFileWithLinkToEntitiesInOtherFile({
-        dataSourceCode, files, testCode, entityName = "User"
+        dataSourceCode,
+        files,
+        testCode,
+        entityName = "User",
     }: {
-        dataSourceCode: string,
-        files: { path: string; content: string }[],
-        testCode: string,
+        dataSourceCode: string
+        files: { path: string; content: string }[]
+        testCode: string
         entityName?: string
-    }
-    ) {
+    }) {
         const entitiesFolder = "entities"
         const dataSourceFile = "data-source.ts"
         const entityFile = entityName + ".ts"
@@ -287,7 +289,7 @@ describe("command utils - update data-source.ts on create commands", () => {
     })
 
     describe("adds an import to the entity in external file used by data-source.ts when using entity:create", async function () {
-        const entityName = "User";
+        const entityName = "User"
 
         it("external file with exported list", async () => {
             await testDataSourceFileWithLinkToEntitiesInOtherFile({
@@ -323,8 +325,10 @@ describe("command utils - update data-source.ts on create commands", () => {
                     const entities: any = dataSourceResult.AppDataSource.options.entities;
                     expect(entities).to.be.an("array");
                     expect(entities.length).to.be.gt(0);
-                    expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(entityName)});
-                `
+                    expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
+                        entityName,
+                    )});
+                `,
             })
         })
 
@@ -362,8 +366,10 @@ describe("command utils - update data-source.ts on create commands", () => {
                     const entities: any = dataSourceResult.AppDataSource.options.entities;
                     expect(entities).to.be.an("array");
                     expect(entities.length).to.be.gt(0);
-                    expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(entityName)});
-                `
+                    expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
+                        entityName,
+                    )});
+                `,
             })
         })
 
@@ -398,8 +404,10 @@ describe("command utils - update data-source.ts on create commands", () => {
                     expect(entities).to.be.an("object");
                     const entityNamesList: (string | undefined)[] = Object.values(entities).map((entity: any) => entity?.name);
                     expect(entityNamesList.length).to.be.gt(0);
-                    expect(entityNamesList).to.include(${JSON.stringify(entityName)});
-                `
+                    expect(entityNamesList).to.include(${JSON.stringify(
+                        entityName,
+                    )});
+                `,
             })
         })
     })

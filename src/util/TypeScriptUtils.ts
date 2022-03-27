@@ -12,7 +12,7 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
     importType,
     updateOtherRelevantFiles,
     treatImportNamespaceAsList = false,
-    exportImportAllFromFileWhenImportingNamespace = true
+    exportImportAllFromFileWhenImportingNamespace = true,
 }: {
     filePath: string
     initializerName: string
@@ -21,8 +21,8 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
     importedExportName: string
     importDefault: boolean
     importType: "esm" | "commonjs"
-    updateOtherRelevantFiles: boolean,
-    treatImportNamespaceAsList?: boolean,
+    updateOtherRelevantFiles: boolean
+    treatImportNamespaceAsList?: boolean
     exportImportAllFromFileWhenImportingNamespace?: boolean
 }): string[] /* returns updated file paths, an empty array means no update was done */ {
     const tsconfigPath = ts.findConfigFile(filePath, ts.sys.fileExists)
@@ -492,7 +492,10 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
 
                 for (const delcaration of sourceDeclarationSymbol.declarations)
                     handleDeclaration(delcaration)
-            } else if (treatImportNamespaceAsList && ts.isNamespaceImport(declaration)) {
+            } else if (
+                treatImportNamespaceAsList &&
+                ts.isNamespaceImport(declaration)
+            ) {
                 const declarationNamedImportSymbol =
                     checker.getSymbolAtLocation(declaration.name)
 
@@ -502,59 +505,66 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
                     declarationNamedImportSymbol,
                 )
 
-                if (sourceDeclarationSymbol.valueDeclaration == null || !ts.isSourceFile(sourceDeclarationSymbol.valueDeclaration))
-                    return;
+                if (
+                    sourceDeclarationSymbol.valueDeclaration == null ||
+                    !ts.isSourceFile(sourceDeclarationSymbol.valueDeclaration)
+                )
+                    return
 
-                const referenceSourceFile = getSourceFile(sourceDeclarationSymbol.valueDeclaration.fileName);
+                const referenceSourceFile = getSourceFile(
+                    sourceDeclarationSymbol.valueDeclaration.fileName,
+                )
 
-                if (referenceSourceFile == null)
-                    return;
-
+                if (referenceSourceFile == null) return
 
                 updateSourceFile(
-                    addExportFromImportToSourceFile(referenceSourceFile)
-                );
+                    addExportFromImportToSourceFile(referenceSourceFile),
+                )
                 markSourceFilePathAsUpdated(referenceSourceFile.fileName)
-                importsAdded = true;
-                referenceAdded = true;
+                importsAdded = true
+                referenceAdded = true
             }
         }
 
-        function addExportFromImportToSourceFile(sourceFile: ts.SourceFile): ts.SourceFile {
+        function addExportFromImportToSourceFile(
+            sourceFile: ts.SourceFile,
+        ): ts.SourceFile {
             let lastExportStatementIndex = 0
             for (let i = sourceFile.statements.length - 1; i >= 0; i--) {
                 const statement = sourceFile.statements[i]
 
-                if (ts.isExportDeclaration(statement) || ts.isImportDeclaration(statement)) {
+                if (
+                    ts.isExportDeclaration(statement) ||
+                    ts.isImportDeclaration(statement)
+                ) {
                     lastExportStatementIndex = i
                     break
                 }
             }
 
-            return ts.factory.updateSourceFile(
-                sourceFile,
-                [
-                    ...sourceFile.statements.slice(0, lastExportStatementIndex + 1),
-                    ts.factory.createExportDeclaration(
-                        undefined,
-                        undefined,
-                        false,
-                        exportImportAllFromFileWhenImportingNamespace ?
-                            undefined : // export * from "./file"
-                            ts.factory.createNamedExports([
-                                ts.factory.createExportSpecifier(
-                                    false,
-                                    importDefault ?
-                                        ts.factory.createIdentifier("default") : // export { default as Something } from "./file"
-                                        undefined, // export { Something } from "./file"
-                                    ts.factory.createIdentifier(importedExportName)
-                                )
-                            ]),
-                        ts.factory.createStringLiteral(importedFileRelativePath),
-                    ),
-                    ...sourceFile.statements.slice(lastExportStatementIndex + 1),
-                ]
-            )
+            return ts.factory.updateSourceFile(sourceFile, [
+                ...sourceFile.statements.slice(0, lastExportStatementIndex + 1),
+                ts.factory.createExportDeclaration(
+                    undefined,
+                    undefined,
+                    false,
+                    exportImportAllFromFileWhenImportingNamespace
+                        ? undefined // export * from "./file"
+                        : ts.factory.createNamedExports([
+                              ts.factory.createExportSpecifier(
+                                  false,
+                                  importDefault
+                                      ? ts.factory.createIdentifier("default") // export { default as Something } from "./file"
+                                      : undefined, // export { Something } from "./file"
+                                  ts.factory.createIdentifier(
+                                      importedExportName,
+                                  ),
+                              ),
+                          ]),
+                    ts.factory.createStringLiteral(importedFileRelativePath),
+                ),
+                ...sourceFile.statements.slice(lastExportStatementIndex + 1),
+            ])
         }
 
         function updateDeclaration(
@@ -693,11 +703,10 @@ export function importAndAddItemToInitializerArrayPropertyInFile({
 
         addImport(sourceFile)
 
-        importsAdded = true;
+        importsAdded = true
     }
 
-    if (!referenceAdded || linkingError || !importsAdded)
-        return []
+    if (!referenceAdded || linkingError || !importsAdded) return []
 
     const updatedFilePathsResult = generateAndUpdateChangedFiles()
 
