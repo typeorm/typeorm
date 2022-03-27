@@ -52,8 +52,6 @@ describe("command utils - update data-source.ts on create commands", () => {
         //
         // const { EntityCreateCommand } = require("../../../../src/commands/EntityCreateCommand");
         // await (new EntityCreateCommand()).handler({
-        //     $0: testDir,
-        //     _: ["test"],
         //     path: path.join(testDir, entityPath),
         //     dataSource: path.join(testDir, dataSourceFilePath),
         //     addImport: true
@@ -142,32 +140,36 @@ describe("command utils - update data-source.ts on create commands", () => {
         runTsFile(
             checkFilePath,
             `
-            import { expect } from "chai"
+            import { expect } from "chai";
             import * as dataSourceResult from ${JSON.stringify(
                 createImportPath(checkFilePath, dataSourceFilePath),
-            )}
+            )};
 
-            expect(dataSourceResult).to.haveOwnProperty("AppDataSource")
-            expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options")
-            expect(dataSourceResult.AppDataSource.options).to.haveOwnProperty("entities")
+            expect(dataSourceResult).to.haveOwnProperty("AppDataSource");
+            expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options");
+            expect(dataSourceResult.AppDataSource.options).to.haveOwnProperty("entities");
 
             const entities: any = dataSourceResult.AppDataSource.options.entities;
-            expect(entities).to.be.an("array")
-            expect(entities.length).to.be.gt(0)
+            expect(entities).to.be.an("array");
+            expect(entities.length).to.be.gt(0);
             expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
                 entityName,
-            )})
+            )});
             `,
         )
     }
 
-    async function testDataSourceFileWithLinkToEntitiesInOtherFile(
+    async function testDataSourceFileWithLinkToEntitiesInOtherFile({
+        dataSourceCode, files, testCode, entityName = "User"
+    }: {
         dataSourceCode: string,
         files: { path: string; content: string }[],
+        testCode: string,
+        entityName?: string
+    }
     ) {
         const entitiesFolder = "entities"
         const dataSourceFile = "data-source.ts"
-        const entityName = "User"
         const entityFile = entityName + ".ts"
 
         const dataSourceFilePath = path.join(testDir, dataSourceFile)
@@ -213,21 +215,16 @@ describe("command utils - update data-source.ts on create commands", () => {
         runTsFile(
             checkFilePath,
             `
-            import { expect } from "chai"
+            import { expect } from "chai";
             import * as dataSourceResult from ${JSON.stringify(
                 createImportPath(checkFilePath, dataSourceFilePath),
-            )}
+            )};
 
-            expect(dataSourceResult).to.haveOwnProperty("AppDataSource")
-            expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options")
-            expect(dataSourceResult.AppDataSource.options).to.haveOwnProperty("entities")
+            expect(dataSourceResult).to.haveOwnProperty("AppDataSource");
+            expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options");
+            expect(dataSourceResult.AppDataSource.options).to.haveOwnProperty("entities");
 
-            const entities: any = dataSourceResult.AppDataSource.options.entities;
-            expect(entities).to.be.an("array")
-            expect(entities.length).to.be.gt(0)
-            expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
-                entityName,
-            )})
+            ${testCode}
             `,
         )
     }
@@ -290,66 +287,120 @@ describe("command utils - update data-source.ts on create commands", () => {
     })
 
     describe("adds an import to the entity in external file used by data-source.ts when using entity:create", async function () {
-        it("external file with exported list", async () => {
-            await testDataSourceFileWithLinkToEntitiesInOtherFile(
-                `
-                import { entities } from "./entities"
+        const entityName = "User";
 
-                export const AppDataSource = new DataSource({
-                    type: "sqlite",
-                    database: "database.db",
-                    entities: entities
-                });
-            `,
-                [
+        it("external file with exported list", async () => {
+            await testDataSourceFileWithLinkToEntitiesInOtherFile({
+                entityName,
+                dataSourceCode: `
+                    import { entities } from "./entities"
+
+                    export const AppDataSource = new DataSource({
+                        type: "sqlite",
+                        database: "database.db",
+                        entities: entities
+                    });
+                `,
+                files: [
                     {
                         path: "entities.ts",
                         content: `
-                    import { SomeModal } from "./entities/SomeModal";
+                            import { SomeModal } from "./entities/SomeModal";
 
-                    export const entities = [
-                        SomeModal
-                    ];
-                `,
+                            export const entities = [
+                                SomeModal
+                            ];
+                        `,
                     },
                     {
                         path: "entities/SomeModal.ts",
                         content: `
-                    export class SomeModal {}
-                `,
+                            export class SomeModal {}
+                        `,
                     },
                 ],
-            )
+                testCode: `
+                    const entities: any = dataSourceResult.AppDataSource.options.entities;
+                    expect(entities).to.be.an("array");
+                    expect(entities.length).to.be.gt(0);
+                    expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(entityName)});
+                `
+            })
         })
 
         it("external file with exported list - shorthand property assignment", async () => {
-            await testDataSourceFileWithLinkToEntitiesInOtherFile(
-                `
-                import { entities } from "./entities"
+            await testDataSourceFileWithLinkToEntitiesInOtherFile({
+                entityName,
+                dataSourceCode: `
+                    import { entities } from "./entities"
 
-                export const AppDataSource = new DataSource({
-                    type: "sqlite",
-                    database: "database.db",
-                    entities
-                });
-            `,
-                [
+                    export const AppDataSource = new DataSource({
+                        type: "sqlite",
+                        database: "database.db",
+                        entities
+                    });
+                `,
+                files: [
                     {
                         path: "entities.ts",
                         content: `
-                    import { SomeModal } from "./entities/SomeModal";
+                            import { SomeModal } from "./entities/SomeModal";
 
-                    export const entities = [SomeModal];
-                `,
+                            export const entities = [
+                                SomeModal
+                            ];
+                        `,
                     },
                     {
                         path: "entities/SomeModal.ts",
                         content: `
-                    export class SomeModal {}
-                `,
+                            export class SomeModal {}
+                        `,
                     },
                 ],
-            )
+                testCode: `
+                    const entities: any = dataSourceResult.AppDataSource.options.entities;
+                    expect(entities).to.be.an("array");
+                    expect(entities.length).to.be.gt(0);
+                    expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(entityName)});
+                `
+            })
+        })
+
+        it("external file with exported imports", async () => {
+            await testDataSourceFileWithLinkToEntitiesInOtherFile({
+                entityName,
+                dataSourceCode: `
+                    import * as entities from "./entities"
+
+                    export const AppDataSource = new DataSource({
+                        type: "sqlite",
+                        database: "database.db",
+                        entities: entities
+                    });
+                `,
+                files: [
+                    {
+                        path: "entities.ts",
+                        content: `
+                            export { SomeModal } from "./entities/SomeModal";
+                        `,
+                    },
+                    {
+                        path: "entities/SomeModal.ts",
+                        content: `
+                            export class SomeModal {}
+                        `,
+                    },
+                ],
+                testCode: `
+                    const entities: any = dataSourceResult.AppDataSource.options.entities;
+                    expect(entities).to.be.an("object");
+                    const entityNamesList: (string | undefined)[] = Object.values(entities).map((entity: any) => entity?.name);
+                    expect(entityNamesList.length).to.be.gt(0);
+                    expect(entityNamesList).to.include(${JSON.stringify(entityName)});
+                `
+            })
         })
     })
 })

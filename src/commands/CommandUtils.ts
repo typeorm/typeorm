@@ -118,6 +118,8 @@ export class CommandUtils {
             importDefault: importDefault,
             importType: moduleSystem,
             updateOtherRelevantFiles,
+            treatImportNamespaceAsList: true,
+            exportImportAllFromFileWhenImportingNamespace: true
         })
     }
 
