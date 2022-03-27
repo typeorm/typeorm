@@ -1,13 +1,13 @@
+import { expect } from "chai"
+import { DataSource, DeepPartial, Repository } from "../../../src"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, DeepPartial, EntitySchema, Repository } from "../../../src"
-import { expect } from "chai"
-import { Thing } from "./entity/thing.entity"
 import { Item } from "./entity/item.entity"
+import { Thing } from "./entity/thing.entity"
 
 describe("github issues > #8681 DeepPartial simplification breaks the .create() and .save() method in certain cases.", () => {
     let connections: DataSource[]
