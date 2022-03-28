@@ -93,6 +93,18 @@ export class InitCommand implements yargs.CommandModule {
                 InitCommand.getAppDataSourceTemplate(projectIsEsm, database),
             )
             await CommandUtils.createFile(
+                basePath + "/src/entities.ts",
+                InitCommand.getEntitiesFileTemplate(projectIsEsm),
+            )
+            await CommandUtils.createFile(
+                basePath + "/src/migrations.ts",
+                InitCommand.getMigrationsFileTemplate(),
+            )
+            await CommandUtils.createFile(
+                basePath + "/src/subscribers.ts",
+                InitCommand.getSubscribersFileTemplate(),
+            )
+            await CommandUtils.createFile(
                 basePath + "/src/index.ts",
                 InitCommand.getAppIndexTemplate(isExpress, projectIsEsm),
             )
@@ -237,17 +249,32 @@ database: "test",`
         }
         return `import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import * as entities from "./entities${isEsm ? ".js" : ""}"
+import * as migrations from "./migrations${isEsm ? ".js" : ""}"
+import * as subscribers from "./subscribers${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
     ${dbSettings}
     synchronize: true,
     logging: false,
-    entities: [User],
-    migrations: [],
-    subscribers: [],
+    entities,
+    migrations,
+    subscribers,
 })
 `
+    }
+
+    protected static getEntitiesFileTemplate(isEsm: boolean) {
+        return `export * from "./entity/User${isEsm ? ".js" : ""}"
+`
+    }
+
+    protected static getMigrationsFileTemplate() {
+        return "export {}"
+    }
+
+    protected static getSubscribersFileTemplate() {
+        return "export {}"
     }
 
     /**
@@ -644,7 +671,7 @@ Steps to run this project:
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         Object.assign(packageJson.devDependencies, {
-            "ts-node": "10.4.0",
+            "ts-node": "^10.7.0",
             "@types/node": "^16.11.10",
             typescript: "4.5.2",
         })
