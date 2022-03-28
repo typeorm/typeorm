@@ -1,6 +1,6 @@
-import "reflect-metadata"
+import "../../../../utils/test-setup"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

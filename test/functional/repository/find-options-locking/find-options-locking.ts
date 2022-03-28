@@ -522,6 +522,7 @@ describe("repository > find options > locking", () => {
                                 },
                             }),
                             entityManager.getRepository(Post).findOne({
+                                where: { id: 1 },
                                 relations: ["author"],
                                 lock: { mode: "pessimistic_write" },
                             }),
