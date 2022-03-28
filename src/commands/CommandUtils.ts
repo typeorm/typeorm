@@ -4,7 +4,7 @@ import mkdirp from "mkdirp"
 import { TypeORMError } from "../error"
 import { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
-import {importOrRequireFile} from "../util/ImportUtils"
+import { importOrRequireFile } from "../util/ImportUtils"
 
 /**
  * Command line utils functions.
@@ -102,18 +102,19 @@ export class CommandUtils {
             ImportAndAddItemToInitializerArrayPropertyInCodebase,
         } = require("../codebase-updater/ImportAndAddItemToInitializerArrayPropertyInCodebase")
 
-        const codebaseUpdated = new ImportAndAddItemToInitializerArrayPropertyInCodebase({
-            filePath: dataSourceFilePath,
-            initializerName: initializerName,
-            initializerPropertyName: initializerPropertyName,
-            importedFilePath: importedClassFilePath,
-            importedFileImportName: importedClassExportName,
-            importedFileExportName: importedClassExportName,
-            importDefault: importDefault,
-            updateOtherRelevantFiles,
-            treatImportNamespaceAsList: true,
-            exportImportAllFromFileWhenImportingNamespace: true,
-        })
+        const codebaseUpdated =
+            new ImportAndAddItemToInitializerArrayPropertyInCodebase({
+                filePath: dataSourceFilePath,
+                initializerName: initializerName,
+                initializerPropertyName: initializerPropertyName,
+                importedFilePath: importedClassFilePath,
+                importedFileImportName: importedClassExportName,
+                importedFileExportName: importedClassExportName,
+                importDefault: importDefault,
+                updateOtherRelevantFiles,
+                treatImportNamespaceAsList: true,
+                exportImportAllFromFileWhenImportingNamespace: true,
+            })
         return await codebaseUpdated.manipulateCodebase()
     }
 
