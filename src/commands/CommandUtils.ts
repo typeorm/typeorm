@@ -4,10 +4,7 @@ import mkdirp from "mkdirp"
 import { TypeORMError } from "../error"
 import { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
-import {
-    determineModuleSystemForFile,
-    importOrRequireFile,
-} from "../util/ImportUtils"
+import {importOrRequireFile} from "../util/ImportUtils"
 
 /**
  * Command line utils functions.
@@ -92,10 +89,6 @@ export class CommandUtils {
         )
             return []
 
-        const moduleSystem = await determineModuleSystemForFile(
-            dataSourceFilePath,
-        )
-
         // only try to import typescript when needed to avoid crashing the whole CLI when typescript isn't installed
         try {
             require("typescript")
@@ -106,21 +99,22 @@ export class CommandUtils {
         }
 
         const {
-            importAndAddItemToInitializerArrayPropertyInFile,
-        } = require("../util/TypeScriptUtils")
+            ImportAndAddItemToInitializerArrayPropertyInCodebase,
+        } = require("../codebase-updater/ImportAndAddItemToInitializerArrayPropertyInCodebase")
 
-        return importAndAddItemToInitializerArrayPropertyInFile({
+        const codebaseUpdated = new ImportAndAddItemToInitializerArrayPropertyInCodebase({
             filePath: dataSourceFilePath,
             initializerName: initializerName,
             initializerPropertyName: initializerPropertyName,
             importedFilePath: importedClassFilePath,
-            importedExportName: importedClassExportName,
+            importedFileImportName: importedClassExportName,
+            importedFileExportName: importedClassExportName,
             importDefault: importDefault,
-            importType: moduleSystem,
             updateOtherRelevantFiles,
             treatImportNamespaceAsList: true,
             exportImportAllFromFileWhenImportingNamespace: true,
         })
+        return await codebaseUpdated.manipulateCodebase()
     }
 
     /**
