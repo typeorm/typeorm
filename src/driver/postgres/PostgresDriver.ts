@@ -723,9 +723,7 @@ export class PostgresDriver implements Driver {
                         return ""
                     },
                 )
-                return object
-            } else {
-                return value
+                value = object
             }
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
