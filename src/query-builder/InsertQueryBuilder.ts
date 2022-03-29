@@ -829,7 +829,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                                 expression += `${geomFromText}(${paramName})`
                             }
                         } else if (
-                            DriverUtils.isPostgresFamily(this.connection.driver) &&
+                            DriverUtils.isPostgresFamily(
+                                this.connection.driver,
+                            ) &&
                             this.connection.driver.spatialTypes.indexOf(
                                 column.type,
                             ) !== -1
