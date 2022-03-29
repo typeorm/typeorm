@@ -412,7 +412,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         if (
             this.alias !== this.getMainTableName() &&
-            this.connection.driver.options.type === "postgres"
+            DriverUtils.isPostgresFamily(this.connection.driver)
         ) {
             query += ` AS "${this.alias}"`
         }
@@ -507,7 +507,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (
                     Array.isArray(overwrite) &&
                     skipUpdateIfNoValuesChanged &&
-                    this.connection.driver.options.type === "postgres"
+                    DriverUtils.isPostgresFamily(this.connection.driver)
                 ) {
                     query += ` WHERE (`
                     query += overwrite
@@ -560,7 +560,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         // add RETURNING expression
         if (
             returningExpression &&
-            (this.connection.driver.options.type === "postgres" ||
+            (DriverUtils.isPostgresFamily(this.connection.driver) ||
                 this.connection.driver.options.type === "oracle" ||
                 this.connection.driver.options.type === "cockroachdb" ||
                 DriverUtils.isMySQLFamily(this.connection.driver))
@@ -829,8 +829,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                                 expression += `${geomFromText}(${paramName})`
                             }
                         } else if (
-                            this.connection.driver.options.type ===
-                                "postgres" &&
+                            DriverUtils.isPostgresFamily(this.connection.driver) &&
                             this.connection.driver.spatialTypes.indexOf(
                                 column.type,
                             ) !== -1
