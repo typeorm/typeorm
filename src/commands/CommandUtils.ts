@@ -114,6 +114,8 @@ export class CommandUtils {
                 updateOtherRelevantFiles,
                 treatImportNamespaceAsList: true,
                 exportImportAllFromFileWhenImportingNamespace: true,
+                treatObjectLiteralExpressionValuesAsList: true,
+                instantiateObjectLiteralExpressionValuesByDefault: true,
             })
         return await codebaseUpdated.manipulateCodebase()
     }

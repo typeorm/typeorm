@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 import { expect } from "chai"
 import { spawnSync } from "child_process"
+import { getRelativeImportPath } from "../../../../src/codebase-updater/codebase-utils/getRelativeImportPath"
 
 describe("command utils - update data-source.ts on create commands", () => {
     const typeormLibraryPath = path.join(__dirname, "../../../../src/index")
@@ -67,37 +68,19 @@ describe("command utils - update data-source.ts on create commands", () => {
         fs.writeFileSync(filePath, content, "utf8")
     }
 
-    function createImportPath(
-        sourceFilePath: string,
-        importFilePath: string,
-        removeExtension = true,
-    ) {
-        let relativePath = path.relative(
-            path.dirname(sourceFilePath),
-            importFilePath,
-        )
-        if (!relativePath.startsWith(".")) relativePath = "./" + relativePath
-
-        const extName = path.extname(relativePath)
-        if (removeExtension) {
-            if (extName === ".ts" || extName === ".js")
-                relativePath = relativePath.slice(0, -extName.length)
-        } else if (extName === ".ts")
-            relativePath = relativePath.slice(0, -extName.length) + ".js"
-
-        return relativePath
-    }
-
     // this is required for the tests to work also after the entire `tests` directory is compiled to js
     function runTsFile(filePath: string, tsCode: string) {
         writeFile(filePath, tsCode)
         runCommand(testDir, "node", ["--require=ts-node/register", filePath])
     }
 
-    async function testContainedDataSourceFile(dataSourceCode: string) {
+    async function testContainedDataSourceFile(
+        entityName: string = "User",
+        dataSourceCode: string,
+        testCode: string,
+    ) {
         const entitiesFolder = "entities"
         const dataSourceFile = "data-source.ts"
-        const entityName = "User"
         const entityFile = entityName + ".ts"
 
         const dataSourceFilePath = path.join(testDir, dataSourceFile)
@@ -106,7 +89,11 @@ describe("command utils - update data-source.ts on create commands", () => {
             `
                 import "reflect-metadata";
                 import {DataSource} from ${JSON.stringify(
-                    createImportPath(dataSourceFilePath, typeormLibraryPath),
+                    getRelativeImportPath(
+                        dataSourceFilePath,
+                        typeormLibraryPath,
+                        "commonjs",
+                    ),
                 )};
 
                 ${dataSourceCode}
@@ -125,7 +112,11 @@ describe("command utils - update data-source.ts on create commands", () => {
             entityFilePath,
             `
                 import { Entity, BaseEntity, PrimaryGeneratedColumn } from ${JSON.stringify(
-                    createImportPath(entityFilePath, typeormLibraryPath),
+                    getRelativeImportPath(
+                        entityFilePath,
+                        typeormLibraryPath,
+                        "commonjs",
+                    ),
                 )};
 
                 @Entity()
@@ -140,22 +131,57 @@ describe("command utils - update data-source.ts on create commands", () => {
         runTsFile(
             checkFilePath,
             `
-            import { expect } from "chai";
-            import * as dataSourceResult from ${JSON.stringify(
-                createImportPath(checkFilePath, dataSourceFilePath),
-            )};
+                import { expect } from "chai";
+                import * as dataSourceResult from ${JSON.stringify(
+                    getRelativeImportPath(
+                        checkFilePath,
+                        dataSourceFilePath,
+                        "commonjs",
+                    ),
+                )};
 
-            expect(dataSourceResult).to.haveOwnProperty("AppDataSource");
-            expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options");
-            expect(dataSourceResult.AppDataSource.options).to.haveOwnProperty("entities");
+                expect(dataSourceResult).to.haveOwnProperty("AppDataSource");
+                expect(dataSourceResult.AppDataSource).to.haveOwnProperty("options");
+                expect(dataSourceResult.AppDataSource.options).to.haveOwnProperty("entities");
 
-            const entities: any = dataSourceResult.AppDataSource.options.entities;
-            expect(entities).to.be.an("array");
-            expect(entities.length).to.be.gt(0);
-            expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
-                entityName,
-            )});
+                ${testCode}
             `,
+        )
+    }
+
+    async function testContainedDataSourceFileWithArrayEntities(
+        dataSourceCode: string,
+    ) {
+        const entityName = "User"
+        await testContainedDataSourceFile(
+            entityName,
+            dataSourceCode,
+            `
+            const entities: any = dataSourceResult.AppDataSource.options.entities;
+                expect(entities).to.be.an("array");
+                expect(entities.length).to.be.gt(0);
+                expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
+                    entityName,
+                )});
+        `,
+        )
+    }
+
+    async function testContainedDataSourceFileWithObjectEntities(
+        dataSourceCode: string,
+    ) {
+        const entityName = "User"
+
+        await testContainedDataSourceFile(
+            entityName,
+            dataSourceCode,
+            `
+            const entities: any = dataSourceResult.AppDataSource.options.entities;
+            expect(entities).to.be.an("object");
+            const entityNamesList: (string | undefined)[] = Object.values(entities).map((entity: any) => entity?.name);
+            expect(entityNamesList.length).to.be.gt(0);
+            expect(entityNamesList).to.include(${JSON.stringify(entityName)});
+        `,
         )
     }
 
@@ -180,7 +206,11 @@ describe("command utils - update data-source.ts on create commands", () => {
             `
                 import "reflect-metadata";
                 import {DataSource} from ${JSON.stringify(
-                    createImportPath(dataSourceFilePath, typeormLibraryPath),
+                    getRelativeImportPath(
+                        dataSourceFilePath,
+                        typeormLibraryPath,
+                        "commonjs",
+                    ),
                 )};
 
                 ${dataSourceCode}
@@ -202,7 +232,11 @@ describe("command utils - update data-source.ts on create commands", () => {
             entityFilePath,
             `
                 import { Entity, BaseEntity, PrimaryGeneratedColumn } from ${JSON.stringify(
-                    createImportPath(entityFilePath, typeormLibraryPath),
+                    getRelativeImportPath(
+                        entityFilePath,
+                        typeormLibraryPath,
+                        "commonjs",
+                    ),
                 )};
 
                 @Entity()
@@ -219,7 +253,11 @@ describe("command utils - update data-source.ts on create commands", () => {
             `
             import { expect } from "chai";
             import * as dataSourceResult from ${JSON.stringify(
-                createImportPath(checkFilePath, dataSourceFilePath),
+                getRelativeImportPath(
+                    checkFilePath,
+                    dataSourceFilePath,
+                    "commonjs",
+                ),
             )};
 
             expect(dataSourceResult).to.haveOwnProperty("AppDataSource");
@@ -239,9 +277,9 @@ describe("command utils - update data-source.ts on create commands", () => {
         if (fs.existsSync(testDir)) rmdirSync(testDir)
     })
 
-    describe("adds an import to the entity in data-source.ts when using entity:create", async function () {
+    describe("adds an import to the entity in data-source.ts when using entity:create - array", async () => {
         it("array literal expression", async () => {
-            await testContainedDataSourceFile(`
+            await testContainedDataSourceFileWithArrayEntities(`
                 export const AppDataSource = new DataSource({
                     type: "sqlite",
                     database: "database.db",
@@ -251,7 +289,7 @@ describe("command utils - update data-source.ts on create commands", () => {
         })
 
         it("variable declaration", async () => {
-            await testContainedDataSourceFile(`
+            await testContainedDataSourceFileWithArrayEntities(`
                 class Model {}
 
                 const entities = [Model];
@@ -265,10 +303,36 @@ describe("command utils - update data-source.ts on create commands", () => {
         })
 
         it("variable declaration - shorthand property assignment", async () => {
-            await testContainedDataSourceFile(`
+            await testContainedDataSourceFileWithArrayEntities(`
                 class Model {}
 
                 const entities = [Model];
+
+                export const AppDataSource = new DataSource({
+                    type: "sqlite",
+                    database: "database.db",
+                    entities
+                });
+            `)
+        })
+    })
+
+    describe("adds an import to the entity in data-source.ts when using entity:create - object", async () => {
+        it("object literal expression", async () => {
+            await testContainedDataSourceFileWithObjectEntities(`
+                export const AppDataSource = new DataSource({
+                    type: "sqlite",
+                    database: "database.db",
+                    entities: {}
+                });
+            `)
+        })
+
+        it("variable declaration", async () => {
+            await testContainedDataSourceFileWithObjectEntities(`
+                class Model {}
+
+                const entities = {Model};
 
                 export const AppDataSource = new DataSource({
                     type: "sqlite",
@@ -278,8 +342,22 @@ describe("command utils - update data-source.ts on create commands", () => {
             `)
         })
 
+        it("variable declaration - shorthand property assignment", async () => {
+            await testContainedDataSourceFileWithObjectEntities(`
+                class Model {}
+
+                const entities = {Model};
+
+                export const AppDataSource = new DataSource({
+                    type: "sqlite",
+                    database: "database.db",
+                    entities
+                });
+            `)
+        })
+
         it("omitted", async () => {
-            await testContainedDataSourceFile(`
+            await testContainedDataSourceFileWithObjectEntities(`
                 export const AppDataSource = new DataSource({
                     type: "sqlite",
                     database: "database.db"
@@ -288,7 +366,7 @@ describe("command utils - update data-source.ts on create commands", () => {
         })
     })
 
-    describe("adds an import to the entity in external file used by data-source.ts when using entity:create", async function () {
+    describe("adds an import to the entity in external file used by data-source.ts when using entity:create", async () => {
         const entityName = "User"
 
         it("external file with exported list", async () => {
@@ -367,6 +445,48 @@ describe("command utils - update data-source.ts on create commands", () => {
                     expect(entities).to.be.an("array");
                     expect(entities.length).to.be.gt(0);
                     expect(entities[entities.length - 1].name).to.be.eq(${JSON.stringify(
+                        entityName,
+                    )});
+                `,
+            })
+        })
+
+        it("external file with exported object", async () => {
+            await testDataSourceFileWithLinkToEntitiesInOtherFile({
+                entityName,
+                dataSourceCode: `
+                    import { entities } from "./entities"
+
+                    export const AppDataSource = new DataSource({
+                        type: "sqlite",
+                        database: "database.db",
+                        entities: entities
+                    });
+                `,
+                files: [
+                    {
+                        path: "entities.ts",
+                        content: `
+                            import { SomeModal } from "./entities/SomeModal";
+
+                            export const entities = {
+                                SomeModal
+                            };
+                        `,
+                    },
+                    {
+                        path: "entities/SomeModal.ts",
+                        content: `
+                            export class SomeModal {}
+                        `,
+                    },
+                ],
+                testCode: `
+                    const entities: any = dataSourceResult.AppDataSource.options.entities;
+                    expect(entities).to.be.an("object");
+                    const entityNamesList: (string | undefined)[] = Object.values(entities).map((entity: any) => entity?.name);
+                    expect(entityNamesList.length).to.be.gt(0);
+                    expect(entityNamesList).to.include(${JSON.stringify(
                         entityName,
                     )});
                 `,

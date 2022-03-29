@@ -1,9 +1,9 @@
 import fs from "fs"
 import path from "path"
 import * as ts from "typescript"
-import { determineModuleSystemForFile } from "../../util/ImportUtils.js"
-import { replaceCodeBlankLinesWithComments } from "./replaceCodeBlankLinesWithComments.js"
-import { getRelativeImportPath as getRelativeImportPathUtil } from "./getRelativeImportPath.js"
+import { determineModuleSystemForFile } from "../../util/ImportUtils"
+import { replaceCodeBlankLinesWithComments } from "./replaceCodeBlankLinesWithComments"
+import { getRelativeImportPath as getRelativeImportPathUtil } from "./getRelativeImportPath"
 
 export class Codebase {
     public readonly entryFilePath: string

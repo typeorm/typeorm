@@ -1,6 +1,6 @@
 import * as path from "path"
 import * as ts from "typescript"
-import { Codebase } from "./codebase-utils/Codebase.js"
+import { Codebase } from "./codebase-utils/Codebase"
 
 export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
     public readonly filePath: string
@@ -13,6 +13,8 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
     public readonly updateOtherRelevantFiles: boolean
     public readonly treatImportNamespaceAsList: boolean
     public readonly exportImportAllFromFileWhenImportingNamespace: boolean
+    public readonly treatObjectLiteralExpressionValuesAsList: boolean
+    public readonly instantiateObjectLiteralExpressionValuesByDefault: boolean
 
     private codebase: Codebase
     private referenceAdded: boolean = false
@@ -33,10 +35,12 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
      * @param {string} importedFileImportName - name of the import to use in the manipulated array
      * @param {undefined | string} importedFileExportName - name of the export from `importedFilePath` file
      * @param {boolean} importDefault - is the export from `importedFilePath` file a default export?
-     * @param {undefined | "esm" | "commonjs"} importType - determines whether and `.js` extension should be used in the import, if omitted then it's determined automatically
+     * @param {undefined | "esm" | "commonjs"} moduleSystem - determines whether and `.js` extension should be used in the import, if omitted then it's determined automatically
      * @param {boolean} updateOtherRelevantFiles - should other files other than the `filePath` can be updated if necessary?
      * @param {boolean} treatImportNamespaceAsList - given `import * as value from "./something"` treat `value` as a valid list
      * @param {boolean} exportImportAllFromFileWhenImportingNamespace - in `treatImportNamespaceAsList` case, add `export * from "./importedFilePath` instead of `export { importedFileImportName } from "./importedFilePath`
+     * @param {boolean} treatObjectLiteralExpressionValuesAsList - given `{Something, Something2: Something3}` the result will be `{Something, Something2: Something3, importedFileImportName}`
+     * @param {boolean} instantiateObjectLiteralExpressionValuesByDefault - use object literal expression values when creating the `initializerPropertyName` property. See `treatObjectLiteralExpressionValuesAsList` parameter
      */
     public constructor({
         filePath,
@@ -47,8 +51,10 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         importedFileExportName,
         importDefault,
         updateOtherRelevantFiles,
-        treatImportNamespaceAsList,
-        exportImportAllFromFileWhenImportingNamespace,
+        treatImportNamespaceAsList = false,
+        exportImportAllFromFileWhenImportingNamespace = true,
+        treatObjectLiteralExpressionValuesAsList = false,
+        instantiateObjectLiteralExpressionValuesByDefault = false,
         moduleSystem,
     }: {
         filePath: string
@@ -61,6 +67,8 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         updateOtherRelevantFiles: boolean
         treatImportNamespaceAsList: boolean
         exportImportAllFromFileWhenImportingNamespace: boolean
+        treatObjectLiteralExpressionValuesAsList?: boolean
+        instantiateObjectLiteralExpressionValuesByDefault?: boolean
         moduleSystem?: "esm" | "commonjs"
     }) {
         this.filePath = filePath
@@ -74,6 +82,10 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         this.treatImportNamespaceAsList = treatImportNamespaceAsList
         this.exportImportAllFromFileWhenImportingNamespace =
             exportImportAllFromFileWhenImportingNamespace
+        this.treatObjectLiteralExpressionValuesAsList =
+            treatObjectLiteralExpressionValuesAsList
+        this.instantiateObjectLiteralExpressionValuesByDefault =
+            instantiateObjectLiteralExpressionValuesByDefault
 
         this.addToExistingInitializerArgumentsPropertyArgumentsHandler =
             this.addToExistingInitializerArgumentsPropertyArgumentsHandler.bind(
@@ -313,6 +325,31 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         })
     }
 
+    // const value = *[ImportName]*
+    // const value = *{ImportName}*
+    // new Initializer({property: *[ImportName]*})
+    // new Initializer({property: *{ImportName}*})
+    private createNewPropertyAssignment(
+        sourceFile: ts.SourceFile,
+    ): ts.PropertyAssignment {
+        if (this.instantiateObjectLiteralExpressionValuesByDefault)
+            return ts.factory.createPropertyAssignment(
+                ts.factory.createIdentifier(this.initializerPropertyName),
+                this.updateObjectLiteralExpression(
+                    ts.factory.createObjectLiteralExpression([], true),
+                    sourceFile,
+                ),
+            )
+
+        return ts.factory.createPropertyAssignment(
+            ts.factory.createIdentifier(this.initializerPropertyName),
+            this.updateArrayLiteralExpression(
+                ts.factory.createArrayLiteralExpression([], true),
+                sourceFile,
+            ),
+        )
+    }
+
     // new Initializer(**)
     private addNewInitializerArgumentsPropertyArgumentsHandler(
         initializerArguments: ts.NodeArray<ts.Expression>,
@@ -321,20 +358,7 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         if (initializerArguments.length === 0) {
             return [
                 ts.factory.createObjectLiteralExpression(
-                    [
-                        ts.factory.createPropertyAssignment(
-                            ts.factory.createIdentifier(
-                                this.initializerPropertyName,
-                            ),
-                            this.updateArrayLiteralExpression(
-                                ts.factory.createArrayLiteralExpression(
-                                    [],
-                                    true,
-                                ),
-                                sourceFile,
-                            ),
-                        ),
-                    ],
+                    [this.createNewPropertyAssignment(sourceFile)],
                     true,
                 ),
             ]
@@ -367,18 +391,55 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
             return ts.factory.updateObjectLiteralExpression(
                 argument,
                 argument.properties.concat([
-                    ts.factory.createPropertyAssignment(
-                        ts.factory.createIdentifier(
-                            this.initializerPropertyName,
-                        ),
-                        this.updateArrayLiteralExpression(
-                            ts.factory.createArrayLiteralExpression([], true),
-                            sourceFile,
-                        ),
-                    ),
+                    this.createNewPropertyAssignment(sourceFile),
                 ]),
             )
         })
+    }
+
+    // expression: *[] as any[]*, updater: (valueExpression: *[]*) => expression
+    // expression: *<any[]>[]*, updater: (valueExpression: *[]*) => expression
+    // relevant for any expression value, not necessarily just for arrays
+    private updateWithTypeExpression(
+        expression: ts.Expression,
+        updater: (valueExpression: ts.Expression) => ts.Expression,
+    ): ts.Expression {
+        if (ts.isAsExpression(expression)) {
+            return ts.factory.updateAsExpression(
+                expression,
+                this.isWithTypeExpression(expression.expression)
+                    ? this.updateWithTypeExpression(
+                          expression.expression,
+                          updater,
+                      )
+                    : updater(expression.expression),
+                expression.type,
+            )
+        }
+
+        if (ts.isTypeAssertionExpression(expression)) {
+            return ts.factory.updateTypeAssertion(
+                expression,
+                expression.type,
+                this.isWithTypeExpression(expression.expression)
+                    ? this.updateWithTypeExpression(
+                          expression.expression,
+                          updater,
+                      )
+                    : updater(expression.expression),
+            )
+        }
+
+        return updater(expression)
+    }
+
+    private isWithTypeExpression(
+        expression: ts.Expression,
+    ): expression is ts.TypeAssertion | ts.AsExpression {
+        return (
+            ts.isAsExpression(expression) ||
+            ts.isTypeAssertionExpression(expression)
+        )
     }
 
     // Initializer({property: *value*})
@@ -387,9 +448,25 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         expression: ts.Expression,
         sourceFile: ts.SourceFile,
     ): ts.Expression {
+        // [] as any[]
+        // <any[]>[]
+        if (this.isWithTypeExpression(expression))
+            return this.updateWithTypeExpression(
+                expression,
+                (valueExpression) =>
+                    this.updateExpression(valueExpression, sourceFile),
+            )
+
         // Initializer({property: *[]*})
         if (ts.isArrayLiteralExpression(expression))
             return this.updateArrayLiteralExpression(expression)
+
+        // Initializer({property: *{}*})
+        if (
+            ts.isObjectLiteralExpression(expression) &&
+            this.treatObjectLiteralExpressionValuesAsList
+        )
+            return this.updateObjectLiteralExpression(expression)
 
         // Initializer({property: *value*})
         // refSymbol is where this variable expression is referencing to
@@ -403,6 +480,7 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         return expression
     }
 
+    // [Something, *ImportName*]
     private updateArrayLiteralExpression(
         arrayLiteralExpression: ts.ArrayLiteralExpression,
         sourceFile?: ts.SourceFile,
@@ -430,6 +508,36 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         return res
     }
 
+    // {Something, Something2: Something2, *ImportName*}
+    private updateObjectLiteralExpression(
+        objectLiteralExpression: ts.ObjectLiteralExpression,
+        sourceFile?: ts.SourceFile,
+    ): ts.ObjectLiteralExpression {
+        if (sourceFile == null)
+            sourceFile = objectLiteralExpression.getSourceFile()
+
+        if (sourceFile == null) {
+            this.linkingError = true
+            return objectLiteralExpression
+        }
+
+        const res = ts.factory.updateObjectLiteralExpression(
+            objectLiteralExpression,
+            objectLiteralExpression.properties.concat([
+                ts.factory.createShorthandPropertyAssignment(
+                    ts.factory.createIdentifier(this.importedFileImportName),
+                ),
+            ]),
+        )
+
+        this.codebase.markSourceFileAsUpdated(sourceFile)
+        this.filesToAddImportInFilePaths.add(path.resolve(sourceFile.fileName))
+
+        this.referenceAdded = true
+
+        return res
+    }
+
     private handleDeclaration(
         declaration: ts.Declaration,
         sourceFile: ts.SourceFile,
@@ -437,8 +545,7 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
         // *const value = []*
         if (
             ts.isVariableDeclaration(declaration) &&
-            declaration.initializer != null &&
-            ts.isArrayLiteralExpression(declaration.initializer)
+            declaration.initializer != null
         ) {
             if (
                 !this.updateOtherRelevantFiles &&
@@ -447,25 +554,49 @@ export class ImportAndAddItemToInitializerArrayPropertyInCodebase {
             )
                 return
 
+            let declarationUpdated = false
             const newDeclaration = ts.factory.updateVariableDeclaration(
                 declaration,
                 declaration.name,
                 declaration.exclamationToken,
                 declaration.type,
-                this.updateArrayLiteralExpression(
-                    declaration.initializer == null
-                        ? ts.factory.createArrayLiteralExpression([], true)
-                        : declaration.initializer,
-                    declaration.initializer == null ? sourceFile : undefined,
+                this.updateWithTypeExpression(
+                    declaration.initializer,
+                    (valueExpression) => {
+                        if (ts.isArrayLiteralExpression(valueExpression)) {
+                            declarationUpdated = true
+                            return this.updateArrayLiteralExpression(
+                                valueExpression,
+                                undefined,
+                            )
+                        }
+
+                        if (
+                            ts.isObjectLiteralExpression(valueExpression) &&
+                            this.treatObjectLiteralExpressionValuesAsList
+                        ) {
+                            declarationUpdated = true
+                            return this.updateObjectLiteralExpression(
+                                valueExpression,
+                                undefined,
+                            )
+                        }
+
+                        return valueExpression
+                    },
                 ),
             )
 
-            this.variableDeclarationReplacementMap.set(
-                declaration,
-                newDeclaration,
-            )
+            if (declarationUpdated) {
+                this.variableDeclarationReplacementMap.set(
+                    declaration,
+                    newDeclaration,
+                )
 
-            this.codebase.markSourceFileAsUpdated(declaration.getSourceFile())
+                this.codebase.markSourceFileAsUpdated(
+                    declaration.getSourceFile(),
+                )
+            }
         } else if (
             // *import {value} from "./somewhere"*
             ts.isImportSpecifier(declaration)
