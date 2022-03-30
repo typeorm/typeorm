@@ -335,7 +335,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     }
 
     /**
-     * @deprecated
+     * @deprecated Use new call signature instead.
      */
     orUpdate(statement?: {
         columns?: string[]
