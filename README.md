@@ -248,7 +248,7 @@ The quickest way to get started with TypeORM is to use its CLI commands to gener
 Quick start works only if you are using TypeORM in a NodeJS application.
 If you are using other platforms, proceed to the [step-by-step guide](#step-by-step-guide).
 
-To create a new project using CLI, run the follwing command:
+To create a new project using CLI, run the following command:
 
 ```shell
 npx typeorm init --name MyProject --database postgres
