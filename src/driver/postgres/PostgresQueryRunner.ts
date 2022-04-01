@@ -540,7 +540,6 @@ export class PostgresQueryRunner
                 name: column.name,
             })
 
-            upQueries.push(deleteQuery)
             upQueries.push(insertQuery)
             downQueries.push(deleteQuery)
         }
@@ -1013,7 +1012,6 @@ export class PostgresQueryRunner
                 name: column.name,
             })
 
-            upQueries.push(deleteQuery)
             upQueries.push(insertQuery)
             downQueries.push(deleteQuery)
         }
@@ -1243,6 +1241,7 @@ export class PostgresQueryRunner
                     const down = `ALTER SEQUENCE ${this.escapePath(
                         newSequencePath,
                     )} RENAME TO "${sequenceName}"`
+
                     upQueries.push(new Query(up))
                     downQueries.push(new Query(down))
                 }
@@ -1308,6 +1307,7 @@ export class PostgresQueryRunner
                     const down = schema
                         ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"`
                         : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`
+
                     upQueries.push(new Query(up))
                     downQueries.push(new Query(down))
 
@@ -2074,11 +2074,14 @@ export class PostgresQueryRunner
                     )
                     // However, we can't copy it back on downgrade. It needs to regenerate.
                     downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP COLUMN "${newColumn.name}"`,
-                        ),
+                        this.insertTypeormMetadataSql({
+                            database: this.driver.database,
+                            schema,
+                            table: tableName,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: oldColumn.name,
+                            value: oldColumn.asExpression,
+                        }),
                     )
                     downQueries.push(
                         new Query(
@@ -2091,24 +2094,21 @@ export class PostgresQueryRunner
                         ),
                     )
                     downQueries.push(
-                        this.deleteTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: newColumn.name,
-                        }),
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} DROP COLUMN "${newColumn.name}"`,
+                        ),
                     )
-                    downQueries.push(
-                        this.insertTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
-                            value: oldColumn.asExpression,
-                        }),
-                    )
+                    // downQueries.push(
+                    //     this.deleteTypeormMetadataSql({
+                    //         database: this.driver.database,
+                    //         schema,
+                    //         table: tableName,
+                    //         type: MetadataTableType.GENERATED_COLUMN,
+                    //         name: newColumn.name,
+                    //     }),
+                    // )
                 }
             }
         }
@@ -2292,14 +2292,14 @@ export class PostgresQueryRunner
             ).split(".")
             const tableName = tableNameWithSchema[1]
             const schema = tableNameWithSchema[0]
-            const insertQuery = this.deleteTypeormMetadataSql({
+            const deleteQuery = this.deleteTypeormMetadataSql({
                 database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const deleteQuery = this.insertTypeormMetadataSql({
+            const insertQuery = this.insertTypeormMetadataSql({
                 database: this.driver.database,
                 schema,
                 table: tableName,
@@ -2308,8 +2308,8 @@ export class PostgresQueryRunner
                 value: column.asExpression,
             })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -4320,8 +4320,8 @@ export class PostgresQueryRunner
         } else if (!column.isGenerated || column.type === "uuid") {
             c += " " + this.connection.driver.createFullType(column)
         }
-        // CHARACTER SET, COLLATE, NOT NULL and DEFAULT do not exist on generated (virtual) columns
-        // Also, postgres only supports the stored generated column type
+
+        // Postgres only supports the stored generated column type
         if (column.generatedType === "STORED" && column.asExpression) {
             c += ` GENERATED ALWAYS AS (${column.asExpression}) STORED`
         }

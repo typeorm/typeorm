@@ -8,7 +8,7 @@ import {
 import { expect } from "chai"
 import { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
 
-describe.skip("database schema > generated columns > postgres", () => {
+describe("database schema > generated columns > postgres", () => {
     let dataSources: DataSource[]
     before(async function () {
         dataSources = await createTestingConnections({
@@ -43,7 +43,7 @@ describe.skip("database schema > generated columns > postgres", () => {
             }),
         ))
 
-    it.only("should create table with generated columns", () =>
+    it("should create table with generated columns", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
@@ -84,19 +84,10 @@ describe.skip("database schema > generated columns > postgres", () => {
                     type: "varchar",
                     length: "200",
                     generatedType: "STORED",
-                    asExpression: "firstName || lastName",
-                })
-
-                let virtualColumn = new TableColumn({
-                    name: "virtualColumn",
-                    type: "varchar",
-                    length: "200",
-                    generatedType: "VIRTUAL",
-                    asExpression: "firstName || lastName",
+                    asExpression: `"firstName" || "lastName"`,
                 })
 
                 await queryRunner.addColumn(table!, storedColumn)
-                await queryRunner.addColumn(table!, virtualColumn)
 
                 table = await queryRunner.getTable("post")
 
@@ -104,26 +95,18 @@ describe.skip("database schema > generated columns > postgres", () => {
                 storedColumn.should.be.exist
                 storedColumn!.generatedType!.should.be.equal("STORED")
                 storedColumn!.asExpression!.should.be.equal(
-                    "firstName || lastName",
-                )
-
-                virtualColumn = table!.findColumnByName("virtualColumn")!
-                virtualColumn.should.be.exist
-                virtualColumn!.generatedType!.should.be.equal("VIRTUAL")
-                virtualColumn!.asExpression!.should.be.equal(
-                    "firstName || lastName",
+                    `"firstName" || "lastName"`,
                 )
 
                 // revert changes
                 await queryRunner.executeMemoryDownSql()
 
                 table = await queryRunner.getTable("post")
-                expect(table!.findColumnByName("storedColumn")).to.be.undefined
-                expect(table!.findColumnByName("virtualColumn")).to.be.undefined
+                expect(table!.findColumnByName("column")).to.be.undefined
 
                 // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` IN ('storedColumn', 'virtualColumn')`,
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedColumn'`,
                 )
                 metadataRecords.length.should.be.equal(0)
 
@@ -138,17 +121,14 @@ describe.skip("database schema > generated columns > postgres", () => {
 
                 let table = await queryRunner.getTable("post")
                 await queryRunner.dropColumn(table!, "storedFullName")
-                await queryRunner.dropColumn(table!, "virtualFullName")
 
                 table = await queryRunner.getTable("post")
                 expect(table!.findColumnByName("storedFullName")).to.be
                     .undefined
-                expect(table!.findColumnByName("virtualFullName")).to.be
-                    .undefined
 
                 // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` IN ('storedFullName', 'virtualFullName')`,
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullName'`,
                 )
                 metadataRecords.length.should.be.equal(0)
 
@@ -162,15 +142,7 @@ describe.skip("database schema > generated columns > postgres", () => {
                 storedFullName.should.be.exist
                 storedFullName!.generatedType!.should.be.equal("STORED")
                 storedFullName!.asExpression!.should.be.equal(
-                    "CONCAT(`firstName`,' ',`lastName`)",
-                )
-
-                const virtualFullName =
-                    table!.findColumnByName("virtualFullName")!
-                virtualFullName.should.be.exist
-                virtualFullName!.generatedType!.should.be.equal("VIRTUAL")
-                virtualFullName!.asExpression!.should.be.equal(
-                    "concat(`firstName`,' ',`lastName`)",
+                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
                 )
 
                 await queryRunner.release()
@@ -186,8 +158,7 @@ describe.skip("database schema > generated columns > postgres", () => {
 
                 let storedFullName = table!.findColumnByName("storedFullName")!
                 const changedStoredFullName = storedFullName.clone()
-                changedStoredFullName.asExpression =
-                    "concat('Mr. ',`firstName`,' ',`lastName`)"
+                changedStoredFullName.asExpression = `'Mr.' || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`
 
                 let name = table!.findColumnByName("name")!
                 const changedName = name.clone()
@@ -206,7 +177,7 @@ describe.skip("database schema > generated columns > postgres", () => {
 
                 storedFullName = table!.findColumnByName("storedFullName")!
                 storedFullName!.asExpression!.should.be.equal(
-                    "concat('Mr. ',`firstName`,' ',`lastName`)",
+                    `'Mr.' || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
                 )
 
                 name = table!.findColumnByName("name")!
@@ -215,7 +186,7 @@ describe.skip("database schema > generated columns > postgres", () => {
 
                 // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` = 'name'`,
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'name'`,
                 )
                 metadataRecords.length.should.be.equal(0)
 
@@ -226,12 +197,13 @@ describe.skip("database schema > generated columns > postgres", () => {
 
                 storedFullName = table!.findColumnByName("storedFullName")!
                 storedFullName!.asExpression!.should.be.equal(
-                    "CONCAT(`firstName`,' ',`lastName`)",
+                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
                 )
 
                 name = table!.findColumnByName("name")!
+
                 name.generatedType!.should.be.equal("STORED")
-                name.asExpression!.should.be.equal("`firstName` || `lastName`")
+                name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
 
                 await queryRunner.release()
             }),
