@@ -545,6 +545,37 @@ export class CockroachQueryRunner
                 })
         }
 
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -890,6 +921,31 @@ export class CockroachQueryRunner
                     )} DROP CONSTRAINT "${pkName}"`,
                 ),
             )
+        }
+
+        if (column.generatedType && column.asExpression) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
         }
 
         // create column index
@@ -1714,6 +1770,30 @@ export class CockroachQueryRunner
             )
         }
 
+        if (column.generatedType && column.asExpression) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.removeColumn(column)
@@ -2369,12 +2449,14 @@ export class CockroachQueryRunner
             })
             .join(" OR ")
         const columnsSql =
-            `
-            SELECT
-                *,
-                pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description
-            FROM "information_schema"."columns"
-            WHERE "is_hidden" = 'NO' AND ` + columnsCondiiton
+            `SELECT "columns".*, "attr"."attgenerated" as "generated_type", ` +
+            `pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description ` +
+            `FROM "information_schema"."columns" ` +
+            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relname" = "table_name" ` +
+            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."oid" = "cls"."relnamespace" AND "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_attribute" AS "attr" ON "attr"."attrelid" = "cls"."oid" AND "attr"."attname" = "column_name" AND "attr"."attnum" = "ordinal_position" ` +
+            `WHERE "is_hidden" = 'NO' AND ` +
+            columnsCondiiton
 
         const constraintsCondition = dbTables
             .map(({ table_name, table_schema }) => {
@@ -2659,6 +2741,34 @@ export class CockroachQueryRunner
                                             /^(-?[\d\.]+)$/,
                                             "($1)",
                                         )
+                                }
+                            }
+
+                            if (
+                                dbColumn["is_generated"] === "YES" &&
+                                dbColumn["generation_expression"]
+                            ) {
+                                tableColumn.generatedType =
+                                    dbColumn["generated_type"] === "s"
+                                        ? "STORED"
+                                        : "VIRTUAL"
+                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                                const asExpressionQuery =
+                                    await this.selectTypeormMetadataSql({
+                                        schema: dbTable["table_schema"],
+                                        table: dbTable["table_name"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+                                if (results[0] && results[0].value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
                                 }
                             }
 
@@ -3001,9 +3111,7 @@ export class CockroachQueryRunner
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
-
         let { schema, tableName: name } = this.driver.parseTableName(view)
-
         if (!schema) {
             schema = currentSchema
         }
@@ -3294,10 +3402,19 @@ export class CockroachQueryRunner
                 c += " UUID DEFAULT gen_random_uuid()"
             }
         }
+
         if (!column.isGenerated)
             c += " " + this.connection.driver.createFullType(column)
-        if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
-        if (column.collation) c += ' COLLATE "' + column.collation + '"'
+
+        if (column.asExpression) {
+            c += ` AS (${column.asExpression}) ${
+                column.generatedType ? column.generatedType : "VIRTUAL"
+            }`
+        } else {
+            if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
+            if (column.collation) c += ' COLLATE "' + column.collation + '"'
+        }
+
         if (!column.isNullable) c += " NOT NULL"
         if (
             !column.isGenerated &&

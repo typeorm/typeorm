@@ -6,27 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
 
-describe("database schema > generated columns > postgres", () => {
+describe("database schema > generated columns > cockroachdb", () => {
     let dataSources: DataSource[]
-    before(async function () {
+    before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
-            schemaCreate: false,
+            enabledDrivers: ["cockroachdb"],
+            schemaCreate: true,
             dropSchema: true,
         })
-
-        // generated columns supported from Postgres 12
-        if (
-            dataSources[0] &&
-            !(dataSources[0].driver as PostgresDriver)
-                .isGeneratedColumnsSupported
-        ) {
-            this.skip()
-            return
-        }
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
@@ -49,25 +38,30 @@ describe("database schema > generated columns > postgres", () => {
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
                 let table = await queryRunner.getTable("post")
+                const virtualFullName =
+                    table!.findColumnByName("virtualFullName")!
                 const storedFullName =
                     table!.findColumnByName("storedFullName")!
                 const name = table!.findColumnByName("name")!
                 const nameHash = table!.findColumnByName("nameHash")!
 
+                virtualFullName.asExpression!.should.be.equal(
+                    `concat("firstName",' ',"lastName")`,
+                )
+                virtualFullName.generatedType!.should.be.equal("VIRTUAL")
                 storedFullName.asExpression!.should.be.equal(
-                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
+                    `CONCAT("firstName",' ',"lastName")`,
                 )
                 storedFullName.generatedType!.should.be.equal("STORED")
 
                 name.generatedType!.should.be.equal("STORED")
                 name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
 
-                nameHash.generatedType!.should.be.equal("STORED")
+                nameHash.generatedType!.should.be.equal("VIRTUAL")
                 nameHash.asExpression!.should.be.equal(
                     `md5(coalesce("firstName",'0'))`,
                 )
                 nameHash.length!.should.be.equal("255")
-                nameHash.isNullable.should.be.true
 
                 await queryRunner.release()
             }),
@@ -88,7 +82,16 @@ describe("database schema > generated columns > postgres", () => {
                     asExpression: `"firstName" || "lastName"`,
                 })
 
+                let virtualColumn = new TableColumn({
+                    name: "virtualColumn",
+                    type: "varchar",
+                    length: "200",
+                    generatedType: "VIRTUAL",
+                    asExpression: `"firstName" || "lastName"`,
+                })
+
                 await queryRunner.addColumn(table!, storedColumn)
+                await queryRunner.addColumn(table!, virtualColumn)
 
                 table = await queryRunner.getTable("post")
 
@@ -99,15 +102,23 @@ describe("database schema > generated columns > postgres", () => {
                     `"firstName" || "lastName"`,
                 )
 
+                virtualColumn = table!.findColumnByName("virtualColumn")!
+                virtualColumn.should.be.exist
+                virtualColumn!.generatedType!.should.be.equal("VIRTUAL")
+                virtualColumn!.asExpression!.should.be.equal(
+                    `"firstName" || "lastName"`,
+                )
+
                 // revert changes
                 await queryRunner.executeMemoryDownSql()
 
                 table = await queryRunner.getTable("post")
-                expect(table!.findColumnByName("column")).to.be.undefined
+                expect(table!.findColumnByName("storedColumn")).to.be.undefined
+                expect(table!.findColumnByName("virtualColumn")).to.be.undefined
 
                 // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedColumn'`,
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedColumn', 'virtualColumn')`,
                 )
                 metadataRecords.length.should.be.equal(0)
 
@@ -122,14 +133,17 @@ describe("database schema > generated columns > postgres", () => {
 
                 let table = await queryRunner.getTable("post")
                 await queryRunner.dropColumn(table!, "storedFullName")
+                await queryRunner.dropColumn(table!, "virtualFullName")
 
                 table = await queryRunner.getTable("post")
                 expect(table!.findColumnByName("storedFullName")).to.be
                     .undefined
+                expect(table!.findColumnByName("virtualFullName")).to.be
+                    .undefined
 
                 // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullName'`,
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedFullName', 'virtualFullName')`,
                 )
                 metadataRecords.length.should.be.equal(0)
 
@@ -143,14 +157,22 @@ describe("database schema > generated columns > postgres", () => {
                 storedFullName.should.be.exist
                 storedFullName!.generatedType!.should.be.equal("STORED")
                 storedFullName!.asExpression!.should.be.equal(
-                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
+                    `CONCAT("firstName",' ',"lastName")`,
+                )
+
+                const virtualFullName =
+                    table!.findColumnByName("virtualFullName")!
+                virtualFullName.should.be.exist
+                virtualFullName!.generatedType!.should.be.equal("VIRTUAL")
+                virtualFullName!.asExpression!.should.be.equal(
+                    `concat("firstName",' ',"lastName")`,
                 )
 
                 await queryRunner.release()
             }),
         ))
 
-    it("should change generated column and revert change", () =>
+    it.skip("should change generated column and revert change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
@@ -159,7 +181,7 @@ describe("database schema > generated columns > postgres", () => {
 
                 let storedFullName = table!.findColumnByName("storedFullName")!
                 const changedStoredFullName = storedFullName.clone()
-                changedStoredFullName.asExpression = `'Mr.' || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`
+                changedStoredFullName.asExpression = `concat('Mr. ',"firstName",' ',"lastName")`
 
                 let name = table!.findColumnByName("name")!
                 const changedName = name.clone()
@@ -178,7 +200,7 @@ describe("database schema > generated columns > postgres", () => {
 
                 storedFullName = table!.findColumnByName("storedFullName")!
                 storedFullName!.asExpression!.should.be.equal(
-                    `'Mr.' || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
+                    `concat('Mr. ',"firstName",' ',"lastName")`,
                 )
 
                 name = table!.findColumnByName("name")!
@@ -198,11 +220,10 @@ describe("database schema > generated columns > postgres", () => {
 
                 storedFullName = table!.findColumnByName("storedFullName")!
                 storedFullName!.asExpression!.should.be.equal(
-                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
+                    `CONCAT("firstName",' ',"lastName")`,
                 )
 
                 name = table!.findColumnByName("name")!
-
                 name.generatedType!.should.be.equal("STORED")
                 name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
 

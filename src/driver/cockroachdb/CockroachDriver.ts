@@ -815,7 +815,10 @@ export class CockroachDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
-                tableColumn.isGenerated !== columnMetadata.isGenerated
+                tableColumn.isGenerated !== columnMetadata.isGenerated ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
+                (tableColumn.asExpression || "").trim() !==
+                    (columnMetadata.asExpression || "").trim()
             )
         })
     }
