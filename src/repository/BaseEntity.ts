@@ -27,8 +27,7 @@ export class BaseEntity {
     /**
      * DataSource used in all static methods of the BaseEntity.
      */
-    // @ts-ignore: Unused variable which is actually used
-    private static dataSource?: DataSource
+    private static dataSource: DataSource | null
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -81,11 +80,17 @@ export class BaseEntity {
      */
     async reload(): Promise<void> {
         const baseEntity = this.constructor as typeof BaseEntity
-        const newestEntity: BaseEntity = await baseEntity
+        const id = baseEntity.getRepository().metadata.getEntityIdMap(this)
+        if (!id) {
+            throw new Error(
+                `Entity doesn't have id-s set, cannot reload entity`,
+            )
+        }
+        const reloadedEntity: BaseEntity = await baseEntity
             .getRepository()
-            .findOneOrFail(baseEntity.getId(this))
+            .findOneByOrFail(id)
 
-        ObjectUtils.assign(this, newestEntity)
+        ObjectUtils.assign(this, reloadedEntity)
     }
 
     // -------------------------------------------------------------------------
@@ -95,7 +100,7 @@ export class BaseEntity {
     /**
      * Sets DataSource to be used by entity.
      */
-    static useDataSource(dataSource: DataSource) {
+    static useDataSource(dataSource: DataSource | null) {
         this.dataSource = dataSource
     }
 

@@ -15,3 +15,6 @@ export type FindOperatorType =
     | "ilike"
     | "like"
     | "raw"
+    | "arrayContains"
+    | "arrayContainedBy"
+    | "arrayOverlap"

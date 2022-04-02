@@ -14,7 +14,7 @@
 -   [`mongodb` data source options](#mongodb-data-source-options)
 -   [`sql.js` data source options](#sqljs-data-source-options)
 -   [`expo` data source options](#expo-data-source-options)
--   [Connection options example](#data-source-options-example)
+-   [DataSource options example](#data-source-options-example)
 
 ## What is `DataSourceOptions`
 

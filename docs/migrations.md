@@ -140,19 +140,13 @@ typeorm migration:run
 Example with `ts-node`:
 
 ```
-ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run
+npx typeorm-ts-node-commonjs migration:run
 ```
 
 Example with `ts-node` in ESM projects:
 
 ```
-node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run
-```
-
-Example `ts-node` not using `node_modules` directly:
-
-```
-ts-node $(yarn bin typeorm) migration:run
+npx typeorm-ts-node-esm migration:run
 ```
 
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.

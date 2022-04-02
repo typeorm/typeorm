@@ -5,13 +5,16 @@ import { EntityTarget } from "../common/EntityTarget"
 import { ObjectType } from "../common/ObjectType"
 import { EntityManager } from "../entity-manager/EntityManager"
 import { DefaultNamingStrategy } from "../naming-strategy/DefaultNamingStrategy"
-import { CannotExecuteNotConnectedError } from "../error/CannotExecuteNotConnectedError"
-import { CannotConnectAlreadyConnectedError } from "../error/CannotConnectAlreadyConnectedError"
+import {
+    CannotConnectAlreadyConnectedError,
+    CannotExecuteNotConnectedError,
+    EntityMetadataNotFoundError,
+    QueryRunnerProviderAlreadyReleasedError,
+} from "../error"
 import { TreeRepository } from "../repository/TreeRepository"
 import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { Logger } from "../logger/Logger"
-import { EntityMetadataNotFoundError } from "../error/EntityMetadataNotFoundError"
 import { MigrationInterface } from "../migration/MigrationInterface"
 import { MigrationExecutor } from "../migration/MigrationExecutor"
 import { Migration } from "../migration/Migration"
@@ -19,7 +22,6 @@ import { MongoRepository } from "../repository/MongoRepository"
 import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
 import { EntityMetadataValidator } from "../metadata-builder/EntityMetadataValidator"
 import { DataSourceOptions } from "./DataSourceOptions"
-import { QueryRunnerProviderAlreadyReleasedError } from "../error/QueryRunnerProviderAlreadyReleasedError"
 import { EntityManagerFactory } from "../entity-manager/EntityManagerFactory"
 import { DriverFactory } from "../driver/DriverFactory"
 import { ConnectionMetadataBuilder } from "../connection/ConnectionMetadataBuilder"
@@ -33,7 +35,7 @@ import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
-import { TypeORMError } from "../error/TypeORMError"
+import { TypeORMError } from "../error"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -196,6 +198,22 @@ export class DataSource {
      */
     setOptions(options: Partial<DataSourceOptions>): this {
         Object.assign(this.options, options)
+
+        if (options.logger || options.logging) {
+            this.logger = new LoggerFactory().create(
+                options.logger || this.options.logger,
+                options.logging || this.options.logging,
+            )
+        }
+
+        if (options.namingStrategy) {
+            this.namingStrategy = options.namingStrategy
+        }
+
+        if (options.cache) {
+            this.queryResultCache = new QueryResultCacheFactory(this).create()
+        }
+
         return this
     }
 
@@ -669,10 +687,11 @@ export class DataSource {
         )
 
         // set current data source to the entities
-        for (let entityKey in flattenedEntities) {
-            const entity = flattenedEntities[entityKey]
-            if (InstanceChecker.isBaseEntityConstructor(entity)) {
-                entity.useDataSource(this)
+        for (let entityMetadata of entityMetadatas) {
+            if (
+                InstanceChecker.isBaseEntityConstructor(entityMetadata.target)
+            ) {
+                entityMetadata.target.useDataSource(this)
             }
         }
     }

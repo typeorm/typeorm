@@ -42,7 +42,7 @@ Add typeorm command under scripts section in package.json
 ```
 "scripts": {
     ...
-    "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js"
+    "typeorm": "typeorm-ts-node-commonjs"
 }
 ```
 
@@ -51,7 +51,7 @@ For ESM projects add this instead:
 ```
 "scripts": {
     ...
-    "typeorm": "node --loader ts-node/esm ./node_modules/typeorm/cli.js"
+    "typeorm": "typeorm-ts-node-esm"
 }
 ```
 

@@ -80,6 +80,7 @@ export class SelectQueryBuilder<Entity>
      */
     getQuery(): string {
         let sql = this.createComment()
+        sql += this.createCteExpression()
         sql += this.createSelectExpression()
         sql += this.createJoinExpression()
         sql += this.createWhereExpression()
@@ -2899,7 +2900,6 @@ export class SelectQueryBuilder<Entity>
                 }
             }
             if (this.selects.length) {
-                console.log("adding following selects: ", this.selects)
                 this.addSelect(this.selects)
             }
 
@@ -3584,7 +3584,7 @@ export class SelectQueryBuilder<Entity>
         embedPrefix?: string,
     ) {
         for (let key in select) {
-            if (select[key] === undefined) continue
+            if (select[key] === undefined || select[key] === false) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
             const column =
@@ -3687,7 +3687,6 @@ export class SelectQueryBuilder<Entity>
                             selection &&
                             typeof selection[relationName] === "object"
                         ) {
-                            console.log("sub selection", relationName)
                             this.buildSelect(
                                 selection[
                                     relationName

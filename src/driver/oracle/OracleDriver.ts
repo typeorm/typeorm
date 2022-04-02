@@ -1,6 +1,7 @@
 import { Driver } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { OracleQueryRunner } from "./OracleQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
@@ -219,6 +220,10 @@ export class OracleDriver implements Driver {
      * > If COMPATIBLE is set to a value of 12.2 or higher, then names must be from 1 to 128 bytes long with these exceptions
      */
     maxAliasLength = 29
+
+    cteCapabilities: CteCapabilities = {
+        enabled: false, // TODO: enable
+    }
 
     // -------------------------------------------------------------------------
     // Constructor

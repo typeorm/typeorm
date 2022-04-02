@@ -2,6 +2,8 @@ import { Alias } from "./Alias"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { OrderByCondition } from "../find-options/OrderByCondition"
 import { JoinAttribute } from "./JoinAttribute"
+import { QueryBuilder } from "./QueryBuilder"
+import { QueryBuilderCteOptions } from "./QueryBuilderCte"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { DataSource } from "../data-source/DataSource"
@@ -320,6 +322,12 @@ export class QueryExpressionMap {
      */
     locallyGenerated: { [key: number]: ObjectLiteral } = {}
 
+    commonTableExpressions: {
+        queryBuilder: QueryBuilder<any> | string
+        alias: string
+        options: QueryBuilderCteOptions
+    }[] = []
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -504,6 +512,16 @@ export class QueryExpressionMap {
         map.useTransaction = this.useTransaction
         map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
+        map.commonTableExpressions = this.commonTableExpressions.map(
+            (cteOptions) => ({
+                alias: cteOptions.alias,
+                queryBuilder:
+                    typeof cteOptions.queryBuilder === "string"
+                        ? cteOptions.queryBuilder
+                        : cteOptions.queryBuilder.clone(),
+                options: cteOptions.options,
+            }),
+        )
         return map
     }
 }

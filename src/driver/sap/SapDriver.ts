@@ -16,6 +16,7 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Driver } from "../Driver"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { SapConnectionOptions } from "./SapConnectionOptions"
@@ -203,6 +204,10 @@ export class SapDriver implements Driver {
      * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a760537519101497e3cfe07b348f3c.html
      */
     maxAliasLength = 128
+
+    cteCapabilities: CteCapabilities = {
+        enabled: true,
+    }
 
     // -------------------------------------------------------------------------
     // Constructor

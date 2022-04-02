@@ -4,15 +4,20 @@ import mkdirp from "mkdirp"
 import { TypeORMError } from "../error"
 import { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { importOrRequireFile } from "../util/ImportUtils"
 
 /**
  * Command line utils functions.
  */
 export class CommandUtils {
-    static loadDataSource(dataSourceFilePath: string): DataSource {
+    static async loadDataSource(
+        dataSourceFilePath: string,
+    ): Promise<DataSource> {
         let dataSourceFileExports
         try {
-            dataSourceFileExports = require(dataSourceFilePath)
+            ;[dataSourceFileExports] = await importOrRequireFile(
+                dataSourceFilePath,
+            )
         } catch (err) {
             throw new Error(
                 `Invalid file path given: "${dataSourceFilePath}". File must contain a TypeScript / JavaScript code and export a DataSource instance.`,

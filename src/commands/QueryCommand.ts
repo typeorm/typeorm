@@ -33,7 +33,7 @@ export class QueryCommand implements yargs.CommandModule {
         let queryRunner: QueryRunner | undefined = undefined
         let dataSource: DataSource | undefined = undefined
         try {
-            dataSource = CommandUtils.loadDataSource(
+            dataSource = await CommandUtils.loadDataSource(
                 path.resolve(process.cwd(), args.dataSource as string),
             )
             dataSource.setOptions({

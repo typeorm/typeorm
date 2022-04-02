@@ -2,7 +2,7 @@
 
 -   [What is `DataSource`](#what-is-datasource)
 -   [Creating a new DataSource](#creating-a-new-datasource)
--   [Working with DataSource](#working-with-datasource)
+-   [How to use DataSource](#how-to-use-datasource)
 
 ## What is `DataSource`
 
@@ -81,7 +81,7 @@ const PostgresDataSource = new DataSource({
 })
 ```
 
-## Working with DataSource
+## How to use DataSource
 
 Once you set your `DataSource`, you can use it anywhere in your app, for example:
 

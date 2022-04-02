@@ -1,11 +1,12 @@
-import "reflect-metadata"
+import "../../../utils/test-setup"
 import { expect } from "chai"
 import { Record } from "./entity/Record"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
-} from "../../utils/test-utils"
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
 
 describe("jsonb type", () => {
     let connections: DataSource[]
@@ -14,9 +15,10 @@ describe("jsonb type", () => {
             (connections = await createTestingConnections({
                 entities: [Record],
                 enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+                logging: true,
             })),
     )
-    // beforeEach(() => reloadTestingDatabases(connections));
+    beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
     it("should make correct schema with Postgres' jsonb type", () =>
@@ -84,7 +86,7 @@ describe("jsonb type", () => {
             connections.map(async (connection) => {
                 let recordRepo = connection.getRepository(Record)
                 let record = new Record()
-                record.data = "foo"
+                record.data = `foo`
                 let persistedRecord = await recordRepo.save(record)
                 let foundRecord = await recordRepo.findOneBy({
                     id: persistedRecord.id,
@@ -100,7 +102,7 @@ describe("jsonb type", () => {
             connections.map(async (connection) => {
                 let recordRepo = connection.getRepository(Record)
                 let record = new Record()
-                record.data = [1, "2", { a: 3 }]
+                record.data = [1, `2`, { a: 3 }]
                 let persistedRecord = await recordRepo.save(record)
                 let foundRecord = await recordRepo.findOneBy({
                     id: persistedRecord.id,

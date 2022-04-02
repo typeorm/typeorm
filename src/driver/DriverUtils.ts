@@ -32,6 +32,10 @@ export class DriverUtils {
         return ["mysql", "mariadb"].includes(driver.options.type)
     }
 
+    static isPostgresFamily(driver: Driver): boolean {
+        return ["postgres", "aurora-postgres"].includes(driver.options.type)
+    }
+
     /**
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.

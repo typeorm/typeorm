@@ -2,6 +2,7 @@ import { Driver } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { DriverUtils } from "../DriverUtils"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { SqlServerQueryRunner } from "./SqlServerQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
@@ -220,6 +221,12 @@ export class SqlServerDriver implements Driver {
         time: { precision: 7 },
         datetime2: { precision: 7 },
         datetimeoffset: { precision: 7 },
+    }
+
+    cteCapabilities: CteCapabilities = {
+        enabled: true,
+        // todo: enable it for SQL Server - it's partially supported, but there are issues with generation of non-standard OUTPUT clause
+        writable: false,
     }
 
     /**

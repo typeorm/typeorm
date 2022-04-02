@@ -1,4 +1,4 @@
-import "reflect-metadata"
+import "../../utils/test-setup"
 import { expect } from "chai"
 import { DataSource } from "../../../src"
 import {

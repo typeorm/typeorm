@@ -2,6 +2,7 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { ColumnType } from "./types/ColumnTypes"
+import { CteCapabilities } from "./types/CteCapabilities"
 import { MappedColumnTypes } from "./types/MappedColumnTypes"
 import { SchemaBuilder } from "../schema-builder/SchemaBuilder"
 import { DataTypeDefaults } from "./types/DataTypeDefaults"
@@ -98,6 +99,8 @@ export interface Driver {
      * Max length allowed by the DBMS for aliases (execution of queries).
      */
     maxAliasLength?: number
+
+    cteCapabilities: CteCapabilities
 
     /**
      * Performs connection to the database.

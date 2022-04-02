@@ -1,10 +1,10 @@
-import "reflect-metadata"
+import "../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 

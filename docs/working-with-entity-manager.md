@@ -15,5 +15,5 @@ const user = await myDataSource.manager.findOneBy(User, {
     id: 1,
 })
 user.name = "Umed"
-await entityManager.save(user)
+await myDataSource.manager.save(user)
 ```

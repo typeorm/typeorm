@@ -1,5 +1,6 @@
 import { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { AuroraMysqlQueryRunner } from "./AuroraMysqlQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
@@ -309,6 +310,10 @@ export class AuroraMysqlDriver implements Driver {
      * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
      */
     maxAliasLength = 63
+
+    cteCapabilities: CteCapabilities = {
+        enabled: false,
+    }
 
     // -------------------------------------------------------------------------
     // Constructor

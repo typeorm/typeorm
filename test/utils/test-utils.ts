@@ -1,12 +1,19 @@
-import { DataSource } from "../../src/data-source/DataSource"
-import { DataSourceOptions } from "../../src/data-source/DataSourceOptions"
-import { DatabaseType } from "../../src/driver/types/DatabaseType"
-import { EntitySchema } from "../../src/entity-schema/EntitySchema"
-import { createConnections } from "../../src/index"
-import { NamingStrategyInterface } from "../../src/naming-strategy/NamingStrategyInterface"
+import {
+    DatabaseType,
+    DataSource,
+    DataSourceOptions,
+    EntitySchema,
+    EntitySubscriberInterface,
+    getMetadataArgsStorage,
+    InsertEvent,
+    Logger,
+    NamingStrategyInterface,
+} from "../../src"
 import { QueryResultCache } from "../../src/cache/QueryResultCache"
-import { Logger } from "../../src/logger/Logger"
 import path from "path"
+import { ObjectUtils } from "../../src/util/ObjectUtils"
+import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import { v4 as uuidv4 } from "uuid"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -57,7 +64,7 @@ export interface TestingOptions {
     /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
-    subscribers?: string[] | Function[]
+    subscribers?: (string | Function)[]
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -293,6 +300,65 @@ export function setupTestingConnections(
         })
 }
 
+export function createDataSource(options: DataSourceOptions): DataSource {
+    class GeneratedColumnReplacerSubscriber
+        implements EntitySubscriberInterface
+    {
+        static globalIncrementValues: { [entityName: string]: number } = {}
+        beforeInsert(event: InsertEvent<any>): Promise<any> | void {
+            event.metadata.generatedColumns.map((column) => {
+                if (column.generationStrategy === "increment") {
+                    if (
+                        !GeneratedColumnReplacerSubscriber
+                            .globalIncrementValues[event.metadata.tableName]
+                    ) {
+                        GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                            event.metadata.tableName
+                        ] = 0
+                    }
+                    GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ] += 1
+
+                    column.setEntityValue(
+                        event.entity,
+                        GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                            event.metadata.tableName
+                        ],
+                    )
+                } else if (column.generationStrategy === "uuid") {
+                    column.setEntityValue(event.entity, uuidv4())
+                }
+            })
+        }
+    }
+
+    // todo: uncomment later
+    if (options.type === ("spanner" as any)) {
+        getMetadataArgsStorage().entitySubscribers.push({
+            target: GeneratedColumnReplacerSubscriber,
+        } as EntitySubscriberMetadataArgs)
+
+        if (Array.isArray(options.subscribers)) {
+            options.subscribers.push(
+                GeneratedColumnReplacerSubscriber as Function,
+            )
+        } else if (ObjectUtils.isObject(options.subscribers)) {
+            options.subscribers["GeneratedColumnReplacer"] =
+                GeneratedColumnReplacerSubscriber
+        } else {
+            options = {
+                ...options,
+                subscribers: {
+                    GeneratedColumnReplacer: GeneratedColumnReplacerSubscriber,
+                },
+            }
+        }
+    }
+
+    return new DataSource(options)
+}
+
 /**
  * Creates a testing connections based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
@@ -300,11 +366,16 @@ export function setupTestingConnections(
 export async function createTestingConnections(
     options?: TestingOptions,
 ): Promise<DataSource[]> {
-    const connections = await createConnections(
-        setupTestingConnections(options),
-    )
+    const dataSourceOptions = setupTestingConnections(options)
+    const dataSources: DataSource[] = []
+    for (let options of dataSourceOptions) {
+        const dataSource = createDataSource(options)
+        await dataSource.initialize()
+        dataSources.push(dataSource)
+    }
+
     await Promise.all(
-        connections.map(async (connection) => {
+        dataSources.map(async (connection) => {
             // create new databases
             const databases: string[] = []
             connection.entityMetadatas.forEach((metadata) => {
@@ -388,7 +459,7 @@ export async function createTestingConnections(
         }),
     )
 
-    return connections
+    return dataSources
 }
 
 /**

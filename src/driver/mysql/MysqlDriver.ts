@@ -2,6 +2,7 @@ import { Driver, ReturningType } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { DriverUtils } from "../DriverUtils"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { MysqlQueryRunner } from "./MysqlQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
@@ -309,6 +310,11 @@ export class MysqlDriver implements Driver {
      */
     maxAliasLength = 63
 
+    cteCapabilities: CteCapabilities = {
+        enabled: false,
+        requiresRecursiveHint: true,
+    }
+
     /**
      * Supported returning types
      */
@@ -391,17 +397,26 @@ export class MysqlDriver implements Driver {
             await queryRunner.release()
         }
 
-        if (this.options.type === "mariadb") {
-            const result = (await this.createQueryRunner("master").query(
-                `SELECT VERSION() AS \`version\``,
-            )) as { version: string }[]
-            const dbVersion = result[0].version
+        const queryRunner = this.createQueryRunner("master")
+        const result: {
+            version: string
+        }[] = await queryRunner.query(`SELECT VERSION() AS \`version\``)
+        const dbVersion = result[0].version
+        await queryRunner.release()
 
+        if (this.options.type === "mariadb") {
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.0.5")) {
                 this._isReturningSqlSupported.delete = true
             }
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
                 this._isReturningSqlSupported.insert = true
+            }
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.2.0")) {
+                this.cteCapabilities.enabled = true
+            }
+        } else if (this.options.type === "mysql") {
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
+                this.cteCapabilities.enabled = true
             }
         }
     }
@@ -1057,9 +1072,15 @@ export class MysqlDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
+        const connectorPackage = this.options.connectorPackage ?? "mysql"
+        const fallbackConnectorPackage =
+            connectorPackage === "mysql"
+                ? ("mysql2" as const)
+                : ("mysql" as const)
         try {
             // try to load first supported package
-            const mysql = this.options.driver || PlatformTools.load("mysql")
+            const mysql =
+                this.options.driver || PlatformTools.load(connectorPackage)
             this.mysql = mysql
             /*
              * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
@@ -1070,14 +1091,17 @@ export class MysqlDriver implements Driver {
              */
             if (Object.keys(this.mysql).length === 0) {
                 throw new TypeORMError(
-                    "'mysql' was found but it is empty. Falling back to 'mysql2'.",
+                    `'${connectorPackage}' was found but it is empty. Falling back to '${fallbackConnectorPackage}'.`,
                 )
             }
         } catch (e) {
             try {
-                this.mysql = PlatformTools.load("mysql2") // try to load second supported package
+                this.mysql = PlatformTools.load(fallbackConnectorPackage) // try to load second supported package
             } catch (e) {
-                throw new DriverPackageNotInstalledError("Mysql", "mysql")
+                throw new DriverPackageNotInstalledError(
+                    "Mysql",
+                    connectorPackage,
+                )
             }
         }
     }

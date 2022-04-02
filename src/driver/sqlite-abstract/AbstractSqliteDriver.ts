@@ -4,6 +4,7 @@ import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { DateUtils } from "../../util/DateUtils"
 import { DataSource } from "../../data-source/DataSource"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
@@ -222,6 +223,11 @@ export abstract class AbstractSqliteDriver implements Driver {
      * for SQLite.
      */
     maxAliasLength?: number
+
+    cteCapabilities: CteCapabilities = {
+        enabled: true,
+        requiresRecursiveHint: true,
+    }
 
     // -------------------------------------------------------------------------
     // Protected Properties

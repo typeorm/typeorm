@@ -33,6 +33,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      */
     getQuery(): string {
         let sql = this.createComment()
+        sql += this.createCteExpression()
         sql += this.createInsertExpression()
         return sql.trim()
     }
@@ -335,6 +336,15 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
     /**
      * @deprecated
+     *
+     * `.orUpdate({ columns: [ "is_updated" ] }).setParameter("is_updated", value)`
+     *
+     * is now `.orUpdate(["is_updated"])`
+     *
+     * `.orUpdate({ conflict_target: ['date'], overwrite: ['title'] })`
+     *
+     * is now `.orUpdate(['title'], ['date'])`
+     *
      */
     orUpdate(statement?: {
         columns?: string[]
@@ -408,6 +418,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         }
 
         query += `INTO ${tableName}`
+
+        if (
+            this.alias !== this.getMainTableName() &&
+            DriverUtils.isPostgresFamily(this.connection.driver)
+        ) {
+            query += ` AS "${this.alias}"`
+        }
 
         // add columns expression
         if (columnsExpression) {
@@ -499,7 +516,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (
                     Array.isArray(overwrite) &&
                     skipUpdateIfNoValuesChanged &&
-                    this.connection.driver.options.type === "postgres"
+                    DriverUtils.isPostgresFamily(this.connection.driver)
                 ) {
                     query += ` WHERE (`
                     query += overwrite
@@ -552,7 +569,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         // add RETURNING expression
         if (
             returningExpression &&
-            (this.connection.driver.options.type === "postgres" ||
+            (DriverUtils.isPostgresFamily(this.connection.driver) ||
                 this.connection.driver.options.type === "oracle" ||
                 this.connection.driver.options.type === "cockroachdb" ||
                 DriverUtils.isMySQLFamily(this.connection.driver))
@@ -821,8 +838,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                                 expression += `${geomFromText}(${paramName})`
                             }
                         } else if (
-                            this.connection.driver.options.type ===
-                                "postgres" &&
+                            DriverUtils.isPostgresFamily(
+                                this.connection.driver,
+                            ) &&
                             this.connection.driver.spatialTypes.indexOf(
                                 column.type,
                             ) !== -1
