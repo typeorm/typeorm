@@ -161,7 +161,6 @@ describe("query runner > add column", () => {
                         column3 = table!.findColumnByName("textAndTag")!
                         column3.should.be.exist
                         column3!.generatedType!.should.be.equals("STORED")
-                        column3!.asExpression!.should.be.equal("text || tag")
                         column3!.asExpression!.should.be.a("string")
 
                         if (DriverUtils.isMySQLFamily(connection.driver)) {
