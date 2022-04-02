@@ -648,7 +648,8 @@ export class UpdateQueryBuilder<Entity>
                         this.escape(key) + " = " + value(),
                     )
                 } else if (
-                    this.connection.driver.options.type === "sap" &&
+                    (this.connection.driver.options.type === "sap" ||
+                        this.connection.driver.options.type === "spanner") &&
                     value === null
                 ) {
                     updateColumnAndValues.push(this.escape(key) + " = NULL")

@@ -165,7 +165,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : this.sessionTransaction
 
             if (!this.isTransactionActive && !isSelect) {
-                this.sessionTransaction.begin()
+                await this.sessionTransaction.begin()
             }
 
             try {
@@ -1827,9 +1827,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropIndexQueries: ObjectLiteral[] = await this.query(
                 selectIndexDropsQuery,
             )
-            await Promise.all(
-                dropIndexQueries.map((q) => this.updateDDL(q["query"])),
-            )
+            for (let query of dropIndexQueries) {
+                await this.updateDDL(query["query"])
+            }
 
             // drop foreign keys
             const selectFKDropsQuery =
@@ -1839,14 +1839,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropFKQueries: ObjectLiteral[] = await this.query(
                 selectFKDropsQuery,
             )
-            await Promise.all(
-                dropFKQueries.map((q) => this.updateDDL(q["query"])),
-            )
+            for (let query of dropFKQueries) {
+                await this.updateDDL(query["query"])
+            }
 
             // drop views
             // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``;
             // const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
-            // await Promise.all(dropViewQueries.map(q => this.updateDDL(q["query"])));
+            // for (let query of dropViewQueries) {
+            //     await this.updateDDL(query["query"])
+            // }
 
             // drop tables
             const dropTablesQuery =
@@ -1856,9 +1858,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             const dropQueries: ObjectLiteral[] = await this.query(
                 dropTablesQuery,
             )
-            await Promise.all(
-                dropQueries.map((query) => this.updateDDL(query["query"])),
-            )
+            for (let query of dropQueries) {
+                await this.updateDDL(query["query"])
+            }
 
             await this.commitTransaction()
         } catch (error) {
