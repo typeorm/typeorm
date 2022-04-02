@@ -509,6 +509,7 @@ export class UpdateQueryBuilder<Entity>
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
+                            value !== null &&
                             !Buffer.isBuffer(value)
                         ) {
                             value =
@@ -530,7 +531,9 @@ export class UpdateQueryBuilder<Entity>
                                     value(),
                             )
                         } else if (
-                            this.connection.driver.options.type === "sap" &&
+                            (this.connection.driver.options.type === "sap" ||
+                                this.connection.driver.options.type ===
+                                    "spanner") &&
                             value === null
                         ) {
                             updateColumnAndValues.push(

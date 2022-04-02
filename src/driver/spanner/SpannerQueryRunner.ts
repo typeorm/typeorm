@@ -191,7 +191,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 } catch (rollbackError) {}
                 throw error
             }
-            console.log("rows", rows)
+
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
