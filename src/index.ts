@@ -66,9 +66,9 @@ export * from "./decorator/Exclusion"
 export * from "./decorator/Generated"
 export * from "./decorator/EntityRepository"
 export * from "./find-options/operator/Any"
-export * from "./find-options/operator/ArrayContainedBy";
-export * from "./find-options/operator/ArrayContains";
-export * from "./find-options/operator/ArrayOverlap";
+export * from "./find-options/operator/ArrayContainedBy"
+export * from "./find-options/operator/ArrayContains"
+export * from "./find-options/operator/ArrayOverlap"
 export * from "./find-options/operator/Between"
 export * from "./find-options/operator/Equal"
 export * from "./find-options/operator/In"
