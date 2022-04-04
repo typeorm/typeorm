@@ -25,6 +25,7 @@ describe("entity-model", () => {
             Post.useDataSource(connection) // change connection each time because of AR specifics
 
             const post = Post.create()
+            post.id = 1
             post.title = "About ActiveRecord"
             post.text = "Huge discussion how good or bad ActiveRecord is."
             await post.save()
@@ -89,6 +90,7 @@ describe("entity-model", () => {
             await category.save()
 
             const post = Post.create()
+            post.id = 1
             post.title = "About ActiveRecord"
             post.categories = [category]
             await post.save()
@@ -126,6 +128,7 @@ describe("entity-model", () => {
             Category.useDataSource(connection)
 
             const post1 = Post.create()
+            post1.id = 1
             post1.title = "About ActiveRecord 1"
             post1.externalId = "some external id 1"
             await post1.save()
@@ -146,6 +149,7 @@ describe("entity-model", () => {
             })
 
             const post2 = Post.create()
+            post2.id = 2
             post2.title = "About ActiveRecord 2"
             post2.externalId = "some external id 2"
             await post2.save()

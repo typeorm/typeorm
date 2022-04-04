@@ -432,7 +432,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
 
                     const loadedUsers2 = (await connection
                         .getRepository(User)
-                        .find())!
+                        .find({ order: { name: "ASC" } }))!
                     expect(loadedUsers2.length).to.be.equal(2)
                     expect(loadedUsers2[0].name).to.be.equal("Bob")
                     expect(loadedUsers2[1].name).to.be.equal("Clara")

@@ -23,7 +23,11 @@ describe("entity-schema > checks", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (
+                    DriverUtils.isMySQLFamily(connection.driver) ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("person")

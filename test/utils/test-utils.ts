@@ -306,7 +306,7 @@ export function createDataSource(options: DataSourceOptions): DataSource {
     {
         static globalIncrementValues: { [entityName: string]: number } = {}
         beforeInsert(event: InsertEvent<any>): Promise<any> | void {
-            event.metadata.generatedColumns.map((column) => {
+            event.metadata.columns.map((column) => {
                 if (column.generationStrategy === "increment") {
                     if (
                         !GeneratedColumnReplacerSubscriber
@@ -328,13 +328,24 @@ export function createDataSource(options: DataSourceOptions): DataSource {
                     )
                 } else if (column.generationStrategy === "uuid") {
                     column.setEntityValue(event.entity, uuidv4())
+                } else if (
+                    (column.isCreateDate || column.isUpdateDate) &&
+                    !column.getEntityValue(event.entity)
+                ) {
+                    column.setEntityValue(event.entity, new Date())
+                } else if (
+                    !column.isCreateDate &&
+                    !column.isUpdateDate &&
+                    column.default &&
+                    !column.getEntityValue(event.entity)
+                ) {
+                    column.setEntityValue(event.entity, column.default)
                 }
             })
         }
     }
 
-    // todo: uncomment later
-    if (options.type === ("spanner" as any)) {
+    if (options.type === "spanner") {
         getMetadataArgsStorage().entitySubscribers.push({
             target: GeneratedColumnReplacerSubscriber,
         } as EntitySubscriberMetadataArgs)

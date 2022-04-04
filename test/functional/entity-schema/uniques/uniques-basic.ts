@@ -29,7 +29,8 @@ describe("entity-schema > uniques", () => {
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     expect(table!.indices.length).to.be.equal(1)
                     expect(table!.indices[0].name).to.be.equal("UNIQUE_TEST")

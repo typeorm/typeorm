@@ -19,6 +19,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { CteCapabilities } from "../types/CteCapabilities"
 
 /**
  * Organizes communication with Spanner DBMS.
@@ -98,7 +99,7 @@ export class SpannerDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-duplicate-key-update"
+    readonly supportedUpsertType = undefined
 
     /**
      * Gets list of spatial column data types.
@@ -130,11 +131,11 @@ export class SpannerDriver implements Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes = {
-        createDate: "date",
+        createDate: "timestamp",
         createDateDefault: "",
-        updateDate: "date",
+        updateDate: "timestamp",
         updateDateDefault: "",
-        deleteDate: "date",
+        deleteDate: "timestamp",
         deleteDateNullable: true,
         version: "int64",
         treeLevel: "int64",
@@ -166,6 +167,10 @@ export class SpannerDriver implements Driver {
      * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
      */
     maxAliasLength = 63
+
+    cteCapabilities: CteCapabilities = {
+        enabled: true,
+    }
 
     /**
      * Supported returning types
@@ -431,7 +436,7 @@ export class SpannerDriver implements Driver {
     }): string {
         if (column.type === Number) {
             return "int64"
-        } else if (column.type === String) {
+        } else if (column.type === String || column.type === "uuid") {
             return "string"
         } else if (column.type === Date) {
             return "timestamp"
@@ -475,7 +480,7 @@ export class SpannerDriver implements Driver {
             case String:
             case "string":
             case "bytes":
-                return "MAX"
+                return "max"
             default:
                 return ""
         }
@@ -599,60 +604,57 @@ export class SpannerDriver implements Driver {
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== this.getColumnLength(columnMetadata) ||
-                tableColumn.width !== columnMetadata.width ||
-                (columnMetadata.precision !== undefined &&
-                    tableColumn.precision !== columnMetadata.precision) ||
-                (columnMetadata.scale !== undefined &&
-                    tableColumn.scale !== columnMetadata.scale) ||
-                tableColumn.zerofill !== columnMetadata.zerofill ||
-                tableColumn.unsigned !== columnMetadata.unsigned ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                tableColumn.comment !==
-                    this.escapeComment(columnMetadata.comment) ||
-                !this.compareDefaultValues(
-                    this.normalizeDefault(columnMetadata),
-                    tableColumn.default,
-                ) ||
-                (tableColumn.enum &&
-                    columnMetadata.enum &&
-                    !OrmUtils.isArraysEqual(
-                        tableColumn.enum,
-                        columnMetadata.enum.map((val) => val + ""),
-                    )) ||
-                tableColumn.onUpdate !==
-                    this.normalizeDatetimeFunction(columnMetadata.onUpdate) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
-                tableColumn.isUnique !==
-                    this.normalizeIsUnique(columnMetadata) ||
-                (columnMetadata.generationStrategy !== "uuid" &&
-                    tableColumn.isGenerated !== columnMetadata.isGenerated)
+                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
 
             // DEBUG SECTION
-            // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName);
-            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            //     console.log("length:", tableColumn.length, columnMetadata.length);
-            //     console.log("width:", tableColumn.width, columnMetadata.width);
-            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
-            //     console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
-            //     console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
-            //     console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
-            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
-            //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
-            //     console.log("enum:", tableColumn.enum, columnMetadata.enum);
-            //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            //     console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
-            //     console.log("==========================================");
-            // }
+            if (isColumnChanged) {
+                console.log("table:", columnMetadata.entityMetadata.tableName)
+                console.log(
+                    "name:",
+                    tableColumn.name,
+                    columnMetadata.databaseName,
+                )
+                console.log(
+                    "type:",
+                    tableColumn.type,
+                    this.normalizeType(columnMetadata),
+                )
+                console.log(
+                    "length:",
+                    tableColumn.length,
+                    this.getColumnLength(columnMetadata),
+                )
+                console.log(
+                    "asExpression:",
+                    tableColumn.asExpression,
+                    columnMetadata.asExpression,
+                )
+                console.log(
+                    "generatedType:",
+                    tableColumn.generatedType,
+                    columnMetadata.generatedType,
+                )
+                console.log(
+                    "isPrimary:",
+                    tableColumn.isPrimary,
+                    columnMetadata.isPrimary,
+                )
+                console.log(
+                    "isNullable:",
+                    tableColumn.isNullable,
+                    columnMetadata.isNullable,
+                )
+                console.log(
+                    "isUnique:",
+                    tableColumn.isUnique,
+                    this.normalizeIsUnique(columnMetadata),
+                )
+                console.log("==========================================")
+            }
 
             return isColumnChanged
         })

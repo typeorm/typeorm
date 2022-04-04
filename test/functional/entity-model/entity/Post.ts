@@ -4,13 +4,13 @@ import {
     Entity,
     JoinTable,
     ManyToMany,
-    PrimaryGeneratedColumn,
+    PrimaryColumn,
 } from "../../../../src"
 import { Category } from "./Category"
 
 @Entity()
 export class Post extends BaseEntity {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column({
