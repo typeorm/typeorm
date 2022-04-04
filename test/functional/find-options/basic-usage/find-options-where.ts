@@ -16,7 +16,9 @@ describe("find options > where", () => {
     let connections: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (connections = await createTestingConnections({
+                __dirname,
+            })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
@@ -486,6 +488,7 @@ describe("find options > where", () => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()
+                post4.id = 4
                 post4.title = "Post #4"
                 post4.text = "About post #4"
                 post4.counters = new Counters()
@@ -538,6 +541,7 @@ describe("find options > where", () => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()
+                post4.id = 4
                 post4.title = "Post #4"
                 post4.text = "About post #4"
                 post4.counters = new Counters()
