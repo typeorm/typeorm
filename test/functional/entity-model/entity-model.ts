@@ -53,16 +53,18 @@ describe("entity-model", () => {
 
                 const externalId = "external-entity"
 
-                await Post.upsert({ externalId, title: "External post" }, [
-                    "externalId",
-                ])
+                await Post.upsert(
+                    { externalId, id: 1, title: "External post" },
+                    ["externalId"],
+                )
                 const upsertInsertedExternalPost = await Post.findOneByOrFail({
                     externalId,
                 })
 
-                await Post.upsert({ externalId, title: "External post 2" }, [
-                    "externalId",
-                ])
+                await Post.upsert(
+                    { externalId, id: 1, title: "External post 2" },
+                    ["externalId"],
+                )
                 const upsertUpdatedExternalPost = await Post.findOneByOrFail({
                     externalId,
                 })
