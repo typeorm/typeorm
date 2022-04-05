@@ -632,6 +632,26 @@ Steps to run this project:
     }
 
     /**
+     * Walks up the directory tree until it finds the project package.json file
+     * 
+     * @returns the contents of the package.json file as an object
+     */
+    protected static requirePackageJson() {
+        let packageJson = null;
+        let dir = __dirname;
+        while (dir !== path.dirname(dir)) {
+            try {
+                packageJson = require(path.join(dir, 'package.json'))
+            } catch (err) {
+                dir = path.dirname(dir)
+            }
+            if (packageJson !== null) {
+                return packageJson;
+            }
+        }
+    }
+
+    /**
      * Appends to a given package.json template everything needed.
      */
     protected static appendPackageJson(
@@ -651,7 +671,7 @@ Steps to run this project:
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
         Object.assign(packageJson.dependencies, {
-            typeorm: require("../package.json").version,
+            typeorm: this.requirePackageJson().version,
             "reflect-metadata": "^0.1.13",
         })
 
