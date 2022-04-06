@@ -299,49 +299,48 @@ export function setupTestingConnections(
         })
 }
 
-export function createDataSource(options: DataSourceOptions): DataSource {
-    class GeneratedColumnReplacerSubscriber
-        implements EntitySubscriberInterface
-    {
-        static globalIncrementValues: { [entityName: string]: number } = {}
-        beforeInsert(event: InsertEvent<any>): Promise<any> | void {
-            event.metadata.columns.map((column) => {
-                if (column.generationStrategy === "increment") {
-                    if (
-                        !GeneratedColumnReplacerSubscriber
-                            .globalIncrementValues[event.metadata.tableName]
-                    ) {
-                        GeneratedColumnReplacerSubscriber.globalIncrementValues[
-                            event.metadata.tableName
-                        ] = 0
-                    }
+class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {
+    static globalIncrementValues: { [entityName: string]: number } = {}
+    beforeInsert(event: InsertEvent<any>): Promise<any> | void {
+        event.metadata.columns.map((column) => {
+            if (column.generationStrategy === "increment") {
+                if (
+                    !GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ]
+                ) {
                     GeneratedColumnReplacerSubscriber.globalIncrementValues[
                         event.metadata.tableName
-                    ] += 1
-
-                    column.setEntityValue(
-                        event.entity,
-                        GeneratedColumnReplacerSubscriber.globalIncrementValues[
-                            event.metadata.tableName
-                        ],
-                    )
-                } else if (
-                    (column.isCreateDate || column.isUpdateDate) &&
-                    !column.getEntityValue(event.entity)
-                ) {
-                    column.setEntityValue(event.entity, new Date())
-                } else if (
-                    !column.isCreateDate &&
-                    !column.isUpdateDate &&
-                    column.default &&
-                    column.getEntityValue(event.entity) === undefined
-                ) {
-                    column.setEntityValue(event.entity, column.default)
+                    ] = 0
                 }
-            })
-        }
-    }
+                GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                    event.metadata.tableName
+                ] += 1
 
+                column.setEntityValue(
+                    event.entity,
+                    GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ],
+                )
+            } else if (
+                (column.isCreateDate || column.isUpdateDate) &&
+                !column.getEntityValue(event.entity)
+            ) {
+                column.setEntityValue(event.entity, new Date())
+            } else if (
+                !column.isCreateDate &&
+                !column.isUpdateDate &&
+                column.default &&
+                column.getEntityValue(event.entity) === undefined
+            ) {
+                column.setEntityValue(event.entity, column.default)
+            }
+        })
+    }
+}
+
+export function createDataSource(options: DataSourceOptions): DataSource {
     if (options.type === "spanner") {
         getMetadataArgsStorage().entitySubscribers.push({
             target: GeneratedColumnReplacerSubscriber,
@@ -487,6 +486,7 @@ export function closeTestingConnections(connections: DataSource[]) {
  * Reloads all databases for all given connections.
  */
 export function reloadTestingDatabases(connections: DataSource[]) {
+    GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
     return Promise.all(
         connections.map((connection) => connection.synchronize(true)),
     )

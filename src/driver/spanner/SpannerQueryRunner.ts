@@ -158,7 +158,18 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         try {
             const queryStartTime = +new Date()
             await this.connect()
-            let rows: any[] = []
+            let rawResult:
+                | [
+                      any[],
+                      {
+                          queryPlan: null
+                          queryStats: null
+                          rowCountExact: string
+                          rowCount: string
+                      },
+                      { rowType: { fields: [] }; transaction: null },
+                  ]
+                | undefined = undefined
             const isSelect = query.startsWith("SELECT")
             const executor =
                 isSelect && !this.isTransactionActive
@@ -171,7 +182,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             try {
                 this.driver.connection.logger.logQuery(query, parameters, this)
-                ;[rows] = await executor.run({
+                rawResult = await executor.run({
                     sql: query,
                     params: parameters
                         ? parameters.reduce((params, value, index) => {
@@ -211,11 +222,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             const result = new QueryResult()
 
-            result.raw = rows
-            result.records = rows
+            result.raw = rawResult
+            result.records = rawResult ? rawResult[0] : []
+            if (rawResult && rawResult[1] && rawResult[1].rowCountExact) {
+                result.affected = parseInt(rawResult[1].rowCountExact)
+            }
 
             if (!useStructuredResult) {
-                return result.raw
+                return result.records
             }
 
             return result

@@ -133,7 +133,8 @@ describe("query builder > delete", () => {
                 const result = await connection
                     .createQueryBuilder()
                     .delete()
-                    .from(User)
+                    .from(User, "user")
+                    .where("user.name = 'John Doe' OR user.name = 'Jane Doe'")
                     .execute()
 
                 expect(result.affected).to.equal(2)

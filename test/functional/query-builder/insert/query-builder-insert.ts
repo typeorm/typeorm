@@ -51,7 +51,11 @@ describe("query builder > insert", () => {
                     .values({ name: "Muhammad Mirzoev" })
                     .execute()
 
-                const users = await connection.getRepository(User).find()
+                const users = await connection.getRepository(User).find({
+                    order: {
+                        id: "ASC",
+                    },
+                })
                 users.should.be.eql([
                     { id: 1, name: "Alex Messer" },
                     { id: 2, name: "Dima Zotov" },
@@ -81,7 +85,11 @@ describe("query builder > insert", () => {
                     ])
                     .execute()
 
-                const users = await connection.getRepository(User).find()
+                const users = await connection.getRepository(User).find({
+                    order: {
+                        id: "ASC",
+                    },
+                })
                 users.should.be.eql([
                     { id: 1, name: "Umed Khudoiberdiev" },
                     { id: 2, name: "Bakhrom Baubekov" },
