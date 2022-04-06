@@ -146,7 +146,7 @@ export class AdvancedConsoleLogger implements Logger {
 
     /**
      * Converts parameters to a string.
-     * Sometimes parameters can have circular objects and therefor we are handle this case too.
+     * Sometimes parameters can have circular objects and therefore we are handle this case too.
      */
     protected stringifyParams(parameters: any[]) {
         try {

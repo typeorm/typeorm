@@ -337,7 +337,7 @@ export function createDataSource(options: DataSourceOptions): DataSource {
                     !column.isCreateDate &&
                     !column.isUpdateDate &&
                     column.default &&
-                    !column.getEntityValue(event.entity)
+                    column.getEntityValue(event.entity) === undefined
                 ) {
                     column.setEntityValue(event.entity, column.default)
                 }

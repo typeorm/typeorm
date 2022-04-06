@@ -209,6 +209,9 @@ describe("find options > where", () => {
                                 },
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -273,6 +276,9 @@ describe("find options > where", () => {
                                 likes: 1,
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -306,6 +312,9 @@ describe("find options > where", () => {
                                     firstName: "Gyro",
                                 },
                             },
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -353,6 +362,9 @@ describe("find options > where", () => {
                                 },
                             },
                         ],
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -428,6 +440,9 @@ describe("find options > where", () => {
                                 photos: MoreThan(1),
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts3.should.be.eql([
@@ -462,6 +477,9 @@ describe("find options > where", () => {
                     .setFindOptions({
                         where: {
                             posts: MoreThan(1),
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -503,6 +521,9 @@ describe("find options > where", () => {
                                 id: undefined,
                                 firstName: undefined,
                             },
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -553,6 +574,9 @@ describe("find options > where", () => {
                     .setFindOptions({
                         where: {
                             author: true,
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()

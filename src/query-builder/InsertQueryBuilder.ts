@@ -798,6 +798,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         } else {
                             expression += "DEFAULT"
                         }
+                    } else if (
+                        value === null &&
+                        this.connection.driver.options.type === "spanner"
+                    ) {
+                        expression += "NULL"
 
                         // support for SQL expressions in queries
                     } else if (typeof value === "function") {
@@ -943,7 +948,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         } else {
                             expression += "DEFAULT"
                         }
-
+                    } else if (
+                        value === null &&
+                        this.connection.driver.options.type === "spanner"
+                    ) {
                         // just any other regular value
                     } else {
                         expression += this.createParameter(value)
