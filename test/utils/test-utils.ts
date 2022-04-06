@@ -13,7 +13,6 @@ import { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
 import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
-import { v4 as uuidv4 } from "uuid"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -326,8 +325,6 @@ export function createDataSource(options: DataSourceOptions): DataSource {
                             event.metadata.tableName
                         ],
                     )
-                } else if (column.generationStrategy === "uuid") {
-                    column.setEntityValue(event.entity, uuidv4())
                 } else if (
                     (column.isCreateDate || column.isUpdateDate) &&
                     !column.getEntityValue(event.entity)

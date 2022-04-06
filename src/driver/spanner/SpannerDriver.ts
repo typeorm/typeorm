@@ -142,7 +142,7 @@ export class SpannerDriver implements Driver {
         migrationId: "int64",
         migrationName: "string",
         migrationTimestamp: "int64",
-        cacheId: "int64",
+        cacheId: "string",
         cacheIdentifier: "string",
         cacheTime: "int64",
         cacheDuration: "int64",
@@ -500,6 +500,7 @@ export class SpannerDriver implements Driver {
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
+        if (column.generationStrategy === "uuid") return "36"
 
         switch (column.type) {
             case String:
@@ -517,7 +518,7 @@ export class SpannerDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type
 
-        // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
+        // used 'getColumnLength()' method, because Spanner requires column length for `string` and `bytes` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
         } else if (column.width) {
