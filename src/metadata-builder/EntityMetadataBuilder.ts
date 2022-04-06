@@ -226,6 +226,13 @@ export class EntityMetadataBuilder {
                                         .join(" AND ")
                                 }
 
+                                if (
+                                    this.connection.driver.options.type ===
+                                    "spanner"
+                                ) {
+                                    index.isNullFiltered = true
+                                }
+
                                 if (relation.embeddedMetadata) {
                                     relation.embeddedMetadata.indices.push(
                                         index,

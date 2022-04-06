@@ -259,6 +259,10 @@ export class SpannerDriver implements Driver {
 
                 let value: any = parameters[key]
 
+                if (value === null) {
+                    return full
+                }
+
                 if (isArray) {
                     return value
                         .map((v: any) => {
@@ -274,11 +278,32 @@ export class SpannerDriver implements Driver {
                 if (value instanceof Function) {
                     return value()
                 }
-
                 escapedParameters.push(value)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
+
+        sql = sql.replace(
+            /([ ]+)?=([ ]+)?:(\.\.\.)?([A-Za-z0-9_.]+)/g,
+            (
+                full,
+                emptySpaceBefore: string,
+                emptySpaceAfter: string,
+                isArray: string,
+                key: string,
+            ): string => {
+                if (!parameters.hasOwnProperty(key)) {
+                    return full
+                }
+
+                let value: any = parameters[key]
+                if (value === null) {
+                    return " IS NULL"
+                }
+
+                return full
+            },
+        )
         return [sql, escapedParameters]
     }
 
