@@ -2795,6 +2795,27 @@ export class SelectQueryBuilder<Entity>
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
+        if (this.connection.driver.options.type === "spanner") {
+            // spanner also has gotta be different from everyone else.
+            // they do not support concatenation of different column types without casting them to string
+
+            if (primaryColumns.length === 1) {
+                return `COUNT(DISTINCT(${distinctAlias}.${this.escape(
+                    primaryColumns[0].databaseName,
+                )}))`
+            }
+
+            const columnsExpression = primaryColumns
+                .map(
+                    (primaryColumn) =>
+                        `CAST(${distinctAlias}.${this.escape(
+                            primaryColumn.databaseName,
+                        )} AS STRING)`,
+                )
+                .join(", '|;|', ")
+            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
+        }
+
         // If all else fails, fall back to a `COUNT` and `DISTINCT` across all the primary columns concatenated.
         // Per the SQL spec, this is the canonical string concatenation mechanism which is most
         // likely to work across servers implementing the SQL standard.

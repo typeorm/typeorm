@@ -160,9 +160,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.connect()
             let rows: any[] = []
             const isSelect = query.startsWith("SELECT")
-            const executor = isSelect
-                ? this.driver.instanceDatabase
-                : this.sessionTransaction
+            const executor =
+                isSelect && !this.isTransactionActive
+                    ? this.driver.instanceDatabase
+                    : this.sessionTransaction
 
             if (!this.isTransactionActive && !isSelect) {
                 await this.sessionTransaction.begin()
