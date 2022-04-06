@@ -57,7 +57,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "post.categoryId",
                             "post.category",
                         )
-                        .addOrderBy("post.categoryId")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryId).to.be.eql({
@@ -116,7 +116,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "category.imageId",
                             "category.image",
                         )
-                        .addOrderBy("category.imageId")
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].imageId).to.be.equal(1)
@@ -171,7 +171,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "post.categoryId",
                             "post.subcategory",
                         )
-                        .addOrderBy("post.categoryId")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryId).to.be.eql({
