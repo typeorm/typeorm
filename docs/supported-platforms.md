@@ -33,7 +33,7 @@ plugins: [
 
 and make sure [sql-wasm.wasm file](https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing) exists in your public path.
 
-### Example of configuration
+#### Example of configuration
 
 ```typescript
 new DataSource({
@@ -43,7 +43,7 @@ new DataSource({
 })
 ```
 
-### Don't forget to include reflect-metadata
+#### Don't forget to include reflect-metadata
 
 In your main html page, you need to include reflect-metadata:
 
