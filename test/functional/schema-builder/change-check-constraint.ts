@@ -56,7 +56,9 @@ describe("schema builder > change check constraint", () => {
                 if (DriverUtils.isMySQLFamily(connection.driver)) return
 
                 const postMetadata = connection.getMetadata(Post)
-                postMetadata.checks[0].expression = `"likesCount" < 2000`
+                postMetadata.checks[0].expression = `${connection.driver.escape(
+                    "likesCount",
+                )} < 2000`
                 postMetadata.checks[0].build(connection.namingStrategy)
 
                 await connection.synchronize()
