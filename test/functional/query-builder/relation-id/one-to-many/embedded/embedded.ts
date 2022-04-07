@@ -93,6 +93,12 @@ describe("query builder > relation-id > one-to-many > embedded", () => {
                     .orderBy("post.id")
                     .getMany()
 
+                // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
+                loadedPosts[0].counters.categoryIds.sort()
+                loadedPosts[0].counters.subcounters.watchedUserIds.sort()
+                loadedPosts[1].counters.categoryIds.sort()
+                loadedPosts[1].counters.subcounters.watchedUserIds.sort()
+
                 expect(
                     loadedPosts[0].should.be.eql({
                         title: "About BMW",

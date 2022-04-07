@@ -24,6 +24,9 @@ describe("persistence > cascades > example 2", () => {
     it("should insert everything by cascades properly", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // not supported in Spanner
+                if (connection.driver.options.type === "spanner") return
+
                 const photo = new Photo()
                 const user = new User()
 

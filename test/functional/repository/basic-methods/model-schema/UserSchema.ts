@@ -1,7 +1,7 @@
 export default {
-    name: "Question",
+    name: "User",
     table: {
-        name: "question",
+        name: "user",
     },
     columns: {
         id: {
@@ -9,12 +9,13 @@ export default {
             primary: true,
             generated: true,
         },
-        title: {
+        firstName: {
             type: String,
             nullable: false,
         },
-    },
-    target: function Question() {
-        this.type = "question"
+        secondName: {
+            type: String,
+            nullable: false,
+        },
     },
 }

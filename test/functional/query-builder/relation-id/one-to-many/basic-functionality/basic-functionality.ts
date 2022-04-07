@@ -53,16 +53,17 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
                 const loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryIds", "post.categories")
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[0].categoryIds.length).to.be.equal(2)
-                expect(loadedPosts[0].categoryIds[0]).to.be.equal(1)
-                expect(loadedPosts[0].categoryIds[1]).to.be.equal(2)
+                expect(loadedPosts[0].categoryIds).to.contain(1)
+                expect(loadedPosts[0].categoryIds).to.contain(2)
                 expect(loadedPosts[1].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[1].categoryIds.length).to.be.equal(2)
-                expect(loadedPosts[1].categoryIds[0]).to.be.equal(3)
-                expect(loadedPosts[1].categoryIds[1]).to.be.equal(4)
+                expect(loadedPosts[1].categoryIds).to.contain(3)
+                expect(loadedPosts[1].categoryIds).to.contain(4)
 
                 const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
@@ -119,6 +120,7 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
                                 isRemoved: true,
                             }),
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -208,38 +210,38 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
                         "category.imageIds",
                         "category.images",
                     )
-                    .orderBy("category.id")
+                    .orderBy("post.id, category.id")
                     .getMany()
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[0].categoryIds.length).to.be.equal(2)
-                expect(loadedPosts[0].categoryIds[0]).to.be.equal(1)
-                expect(loadedPosts[0].categoryIds[1]).to.be.equal(2)
+                expect(loadedPosts[0].categoryIds).to.contain(1)
+                expect(loadedPosts[0].categoryIds).to.contain(2)
                 expect(loadedPosts[0].categories).to.not.be.eql([])
                 expect(loadedPosts[0].categories.length).to.be.equal(2)
                 expect(loadedPosts[0].categories[0].imageIds).to.not.be.eql([])
                 expect(
                     loadedPosts[0].categories[0].imageIds.length,
                 ).to.be.equal(2)
-                expect(loadedPosts[0].categories[0].imageIds[0]).to.be.equal(1)
-                expect(loadedPosts[0].categories[0].imageIds[1]).to.be.equal(2)
+                expect(loadedPosts[0].categories[0].imageIds).to.contain(1)
+                expect(loadedPosts[0].categories[0].imageIds).to.contain(2)
                 expect(loadedPosts[0].categories[1].imageIds).to.not.be.eql([])
                 expect(
                     loadedPosts[0].categories[1].imageIds.length,
                 ).to.be.equal(1)
-                expect(loadedPosts[0].categories[1].imageIds[0]).to.be.equal(3)
+                expect(loadedPosts[0].categories[1].imageIds).to.contain(3)
                 expect(loadedPosts[1].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[1].categoryIds.length).to.be.equal(2)
-                expect(loadedPosts[1].categoryIds[0]).to.be.equal(3)
-                expect(loadedPosts[1].categoryIds[1]).to.be.equal(4)
+                expect(loadedPosts[1].categoryIds).to.contain(3)
+                expect(loadedPosts[1].categoryIds).to.contain(4)
                 expect(loadedPosts[1].categories).to.not.be.eql([])
                 expect(loadedPosts[1].categories.length).to.be.equal(2)
                 expect(loadedPosts[1].categories[0].imageIds).to.not.be.eql([])
                 expect(
                     loadedPosts[1].categories[0].imageIds.length,
                 ).to.be.equal(2)
-                expect(loadedPosts[1].categories[0].imageIds[0]).to.be.equal(4)
-                expect(loadedPosts[1].categories[0].imageIds[1]).to.be.equal(5)
+                expect(loadedPosts[1].categories[0].imageIds).to.contain(4)
+                expect(loadedPosts[1].categories[0].imageIds).to.contain(5)
                 expect(loadedPosts[1].categories[1].imageIds).to.be.eql([])
 
                 const loadedPost = await connection.manager

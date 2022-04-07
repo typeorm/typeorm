@@ -76,7 +76,7 @@ export class SpannerDriver implements Driver {
     /**
      * Represent transaction support by this driver
      */
-    transactionSupport = "nested" as const
+    transactionSupport = "none" as const
 
     /**
      * Gets list of supported column data types by a driver.
@@ -480,7 +480,9 @@ export class SpannerDriver implements Driver {
      * Spanner does not support default values.
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
-        return `${columnMetadata.default}`
+        return columnMetadata.default === ""
+            ? `"${columnMetadata.default}"`
+            : `${columnMetadata.default}`
     }
 
     /**

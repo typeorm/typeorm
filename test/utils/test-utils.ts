@@ -303,7 +303,10 @@ class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {
     static globalIncrementValues: { [entityName: string]: number } = {}
     beforeInsert(event: InsertEvent<any>): Promise<any> | void {
         event.metadata.columns.map((column) => {
-            if (column.generationStrategy === "increment") {
+            if (
+                column.generationStrategy === "increment" &&
+                !column.getEntityValue(event.entity)
+            ) {
                 if (
                     !GeneratedColumnReplacerSubscriber.globalIncrementValues[
                         event.metadata.tableName
@@ -331,7 +334,8 @@ class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {
             } else if (
                 !column.isCreateDate &&
                 !column.isUpdateDate &&
-                column.default &&
+                !column.isVirtual &&
+                column.default !== undefined &&
                 column.getEntityValue(event.entity) === undefined
             ) {
                 column.setEntityValue(event.entity, column.default)
@@ -473,7 +477,6 @@ export async function createTestingConnections(
  * Closes testing connections if they are connected.
  */
 export function closeTestingConnections(connections: DataSource[]) {
-    GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
     return Promise.all(
         connections.map((connection) =>
             connection && connection.isInitialized

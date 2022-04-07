@@ -560,7 +560,10 @@ describe("repository > find methods", () => {
                         loadIds,
                     ))!
 
-                    loadedUsers.map((user) => user.id).should.be.eql(loadIds)
+                    loadedUsers
+                        .sort((a, b) => a.id - b.id)
+                        .map((user) => user.id)
+                        .should.be.eql(loadIds)
                 }),
             ))
     })

@@ -624,7 +624,7 @@ export class EntityMetadataBuilder {
                         propertyName: "mpath",
                         options: /*tree.column || */ {
                             name: namingStrategy.materializedPathColumnName,
-                            type: "varchar",
+                            type: String,
                             nullable: true,
                             default: "",
                         },
@@ -644,7 +644,7 @@ export class EntityMetadataBuilder {
                         propertyName: left,
                         options: /*tree.column || */ {
                             name: left,
-                            type: "integer",
+                            type: Number,
                             nullable: false,
                             default: 1,
                         },
@@ -662,7 +662,7 @@ export class EntityMetadataBuilder {
                         propertyName: right,
                         options: /*tree.column || */ {
                             name: right,
-                            type: "integer",
+                            type: Number,
                             nullable: false,
                             default: 2,
                         },
