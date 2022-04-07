@@ -303,10 +303,7 @@ class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {
     static globalIncrementValues: { [entityName: string]: number } = {}
     beforeInsert(event: InsertEvent<any>): Promise<any> | void {
         event.metadata.columns.map((column) => {
-            if (
-                column.generationStrategy === "increment" &&
-                !column.getEntityValue(event.entity)
-            ) {
+            if (column.generationStrategy === "increment") {
                 if (
                     !GeneratedColumnReplacerSubscriber.globalIncrementValues[
                         event.metadata.tableName
@@ -343,13 +340,12 @@ class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {
         })
     }
 }
+getMetadataArgsStorage().entitySubscribers.push({
+    target: GeneratedColumnReplacerSubscriber,
+} as EntitySubscriberMetadataArgs)
 
 export function createDataSource(options: DataSourceOptions): DataSource {
     if (options.type === "spanner") {
-        getMetadataArgsStorage().entitySubscribers.push({
-            target: GeneratedColumnReplacerSubscriber,
-        } as EntitySubscriberMetadataArgs)
-
         if (Array.isArray(options.subscribers)) {
             options.subscribers.push(
                 GeneratedColumnReplacerSubscriber as Function,
