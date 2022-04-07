@@ -1061,7 +1061,7 @@ export abstract class AbstractSqliteQueryRunner
                 this.driver.getAttachedDatabaseHandleByRelativePath(database)
         }
 
-        await this.query(`PRAGMA foreign_keys = OFF;`)
+        await this.query(`PRAGMA foreign_keys = OFF`)
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
@@ -1095,7 +1095,7 @@ export abstract class AbstractSqliteQueryRunner
             } catch (rollbackError) {}
             throw error
         } finally {
-            await this.query(`PRAGMA foreign_keys = ON;`)
+            await this.query(`PRAGMA foreign_keys = ON`)
         }
     }
 

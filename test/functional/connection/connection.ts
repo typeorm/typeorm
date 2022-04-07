@@ -16,18 +16,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Repository } from "../../../src/repository/Repository"
 import { TreeRepository } from "../../../src/repository/TreeRepository"
-import { getConnectionManager } from "../../../src/index"
 import { NoConnectionForRepositoryError } from "../../../src/error/NoConnectionForRepositoryError"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import { CannotGetEntityManagerNotConnectedError } from "../../../src/error/CannotGetEntityManagerNotConnectedError"
-import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
 
 describe("Connection", () => {
     // const resourceDir = __dirname + "/../../../../../test/functional/connection/";
 
     describe("before connection is established", function () {
-        let connection: DataSource
+        let dataSource: DataSource
         before(async () => {
             const options = setupSingleTestingConnection("mysql", {
                 name: "default",
@@ -35,23 +33,23 @@ describe("Connection", () => {
             })
             if (!options) return
 
-            connection = getConnectionManager().create(options)
+            dataSource = new DataSource(options)
         })
         after(() => {
-            if (connection && connection.isInitialized)
-                return connection.close()
+            if (dataSource && dataSource.isInitialized)
+                return dataSource.destroy()
 
             return Promise.resolve()
         })
 
         it("connection.isConnected should be false", () => {
-            if (!connection) return
+            if (!dataSource) return
 
-            connection.isInitialized.should.be.false
+            dataSource.isInitialized.should.be.false
         })
 
         it.skip("entity manager and reactive entity manager should not be accessible", () => {
-            expect(() => connection.manager).to.throw(
+            expect(() => dataSource.manager).to.throw(
                 CannotGetEntityManagerNotConnectedError,
             )
             // expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
@@ -72,22 +70,22 @@ describe("Connection", () => {
          });*/
 
         it("should not be able to close", () => {
-            if (!connection) return
-            return connection.close().should.be.rejected // CannotCloseNotConnectedError
+            if (!dataSource) return
+            return dataSource.close().should.be.rejected // CannotCloseNotConnectedError
         })
 
         it("should not be able to sync a schema", () => {
-            if (!connection) return
-            return connection.synchronize().should.be.rejected // CannotCloseNotConnectedError
+            if (!dataSource) return
+            return dataSource.synchronize().should.be.rejected // CannotCloseNotConnectedError
         })
 
         it.skip("should not be able to use repositories", () => {
-            if (!connection) return
+            if (!dataSource) return
 
-            expect(() => connection.getRepository(Post)).to.throw(
+            expect(() => dataSource.getRepository(Post)).to.throw(
                 NoConnectionForRepositoryError,
             )
-            expect(() => connection.getTreeRepository(Category)).to.throw(
+            expect(() => dataSource.getTreeRepository(Category)).to.throw(
                 NoConnectionForRepositoryError,
             )
             // expect(() => connection.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
@@ -95,23 +93,21 @@ describe("Connection", () => {
         })
 
         it("should be able to connect", () => {
-            if (!connection) return
-            return connection.connect().should.be.fulfilled
+            if (!dataSource) return
+            return dataSource.connect().should.be.fulfilled
         })
     })
 
     describe.skip("establishing connection", function () {
         it("should throw DriverOptionNotSetError when extra.socketPath and host is missing", function () {
             expect(() => {
-                getConnectionManager().create(<DataSourceOptions>{
+                new DataSource({
                     type: "mysql",
                     username: "test",
                     password: "test",
                     database: "test",
                     entities: [],
                     dropSchema: false,
-                    schemaCreate: false,
-                    enabledDrivers: ["mysql"],
                 })
             }).to.throw(Error)
         })

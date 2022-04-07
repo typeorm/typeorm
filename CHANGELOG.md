@@ -1,3 +1,16 @@
+## [0.3.5](https://github.com/typeorm/typeorm/compare/0.3.4...0.3.5) (2022-04-05)
+
+### Bug Fixes
+
+* `.save` repository method not returning generated uuids for aurora-postgres ([#8825](https://github.com/typeorm/typeorm/issues/8825)) ([ed06f4c](https://github.com/typeorm/typeorm/commit/ed06f4c1f1056837f03a97a25762742a12620a94))
+* allow hstore type to use transformers in driver postgres ([#8823](https://github.com/typeorm/typeorm/issues/8823)) ([b1a0107](https://github.com/typeorm/typeorm/commit/b1a01074c99b1fee9b2da2c056f5f773367d391b))
+* broken shebang parameters of `cli-ts-node-commonjs` and `cli-ts-node-esm` on some linux distros ([#8821](https://github.com/typeorm/typeorm/issues/8821)) ([c5dfc11](https://github.com/typeorm/typeorm/commit/c5dfc11ea7b8b33aa9e621b64b953c1d62a27989)), closes [#8818](https://github.com/typeorm/typeorm/issues/8818)
+* find select object api should support false values [#8796](https://github.com/typeorm/typeorm/issues/8796) ([#8807](https://github.com/typeorm/typeorm/issues/8807)) ([9ac8e9e](https://github.com/typeorm/typeorm/commit/9ac8e9ed0da0ac5bba71b76ee99d6f0c4eb0871f))
+* resolve missing ConnectionOptions export in index.ts ([#8850](https://github.com/typeorm/typeorm/issues/8850)) ([1693a17](https://github.com/typeorm/typeorm/commit/1693a17011195c353e5bc1d93d9c26ac48624a0b)), closes [#8837](https://github.com/typeorm/typeorm/issues/8837)
+* save correct discriminator with STI ([#8819](https://github.com/typeorm/typeorm/issues/8819)) ([9d1e246](https://github.com/typeorm/typeorm/commit/9d1e2460edae9c01f6a56c727f0321b265f78d89)), closes [#2927](https://github.com/typeorm/typeorm/issues/2927)
+* Update DeepPartial for usage of generics with Repository class ([#8817](https://github.com/typeorm/typeorm/issues/8817)) ([8ba742e](https://github.com/typeorm/typeorm/commit/8ba742eb36586a21a918ed178208874a53ace3f9))
+* fixed issue with `typeorm init` command ([#8820](https://github.com/typeorm/typeorm/issues/8820))
+
 ## [0.3.4](https://github.com/typeorm/typeorm/compare/0.3.3...0.3.4) (2022-03-26)
 
 ### Bug Fixes

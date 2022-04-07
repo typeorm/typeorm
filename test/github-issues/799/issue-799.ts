@@ -1,13 +1,12 @@
 import "reflect-metadata"
 import * as assert from "assert"
-import { createConnection } from "../../../src/index"
 import rimraf from "rimraf"
 import { dirname } from "path"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { getTypeOrmConfig } from "../../utils/test-utils"
 
 describe("github issues > #799 sqlite: 'database' path should be created", () => {
-    let connection: DataSource
+    let dataSource: DataSource
 
     const path = `${__dirname}/tmp/sqlitedb.db`
     const cleanup = (done: () => void) => {
@@ -20,8 +19,8 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
     after(cleanup)
 
     afterEach(() => {
-        if (connection && connection.isInitialized) {
-            connection.close()
+        if (dataSource && dataSource.isInitialized) {
+            dataSource.close()
         }
     })
 
@@ -32,13 +31,14 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         )
         if (isEnabled === false) return
 
-        connection = await createConnection({
+        const dataSource = new DataSource({
             name: "sqlite",
             type: "sqlite",
             database: path,
         })
+        await dataSource.initialize()
 
-        assert.strictEqual(connection.isInitialized, true)
+        assert.strictEqual(dataSource.isInitialized, true)
     })
 
     it("should create the whole path to database file for better-sqlite3", async function () {
@@ -48,12 +48,13 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         )
         if (isEnabled === false) return
 
-        connection = await createConnection({
+        const dataSource = new DataSource({
             name: "better-sqlite3",
             type: "better-sqlite3",
             database: path,
         })
+        await dataSource.initialize()
 
-        assert.strictEqual(connection.isInitialized, true)
+        assert.strictEqual(dataSource.isInitialized, true)
     })
 })
