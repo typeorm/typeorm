@@ -473,6 +473,7 @@ export async function createTestingConnections(
  * Closes testing connections if they are connected.
  */
 export function closeTestingConnections(connections: DataSource[]) {
+    GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
     return Promise.all(
         connections.map((connection) =>
             connection && connection.isInitialized

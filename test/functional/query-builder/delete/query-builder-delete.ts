@@ -134,7 +134,7 @@ describe("query builder > delete", () => {
                     .createQueryBuilder()
                     .delete()
                     .from(User, "user")
-                    .where("user.name = 'John Doe' OR user.name = 'Jane Doe'")
+                    .where("name IS NOT NULL")
                     .execute()
 
                 expect(result.affected).to.equal(2)
