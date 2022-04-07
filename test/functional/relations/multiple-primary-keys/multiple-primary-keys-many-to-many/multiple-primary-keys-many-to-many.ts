@@ -16,7 +16,7 @@ describe.only("relations > multiple-primary-keys > many-to-many", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"],
+                enabledDrivers: ["mariadb"],
                 logging: true,
             })),
     )
