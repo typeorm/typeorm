@@ -2425,7 +2425,8 @@ export class SelectQueryBuilder<Entity>
         } else if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
-            this.connection.driver.options.type === "sap"
+            this.connection.driver.options.type === "sap" ||
+            this.connection.driver.options.type === "spanner"
         ) {
             if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
             if (limit) return " LIMIT " + limit

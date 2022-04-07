@@ -74,6 +74,11 @@ describe("github issues > #2298 - Repository filtering not considering related c
                             product: true,
                         },
                     },
+                    order: {
+                        ticketItems: {
+                            id: "asc",
+                        },
+                    },
                 })
 
                 loadedTicket.should.be.eql([

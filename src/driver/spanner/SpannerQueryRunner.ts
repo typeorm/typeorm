@@ -849,6 +849,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (
+            oldColumn.name !== newColumn.name ||
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
@@ -861,146 +862,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (oldColumn.name !== newColumn.name) {
-                // rename column
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
-                            oldColumn.name
-                        }" TO "${newColumn.name}"`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
-                            newColumn.name
-                        }" TO "${oldColumn.name}"`,
-                    ),
-                )
-
-                // rename column primary key constraint
-                if (oldColumn.isPrimary === true) {
-                    const primaryColumns = clonedTable.primaryColumns
-
-                    // build old primary constraint name
-                    const columnNames = primaryColumns.map(
-                        (column) => column.name,
-                    )
-                    const oldPkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            columnNames,
-                        )
-
-                    // replace old column name with new column name
-                    columnNames.splice(columnNames.indexOf(oldColumn.name), 1)
-                    columnNames.push(newColumn.name)
-
-                    // build new primary constraint name
-                    const newPkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            columnNames,
-                        )
-
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`,
-                        ),
-                    )
-                }
-
-                // rename index constraints
-                clonedTable.findColumnIndices(oldColumn).forEach((index) => {
-                    // build new constraint name
-                    index.columnNames.splice(
-                        index.columnNames.indexOf(oldColumn.name),
-                        1,
-                    )
-                    index.columnNames.push(newColumn.name)
-                    const { schema } = this.driver.parseTableName(table)
-                    const newIndexName =
-                        this.connection.namingStrategy.indexName(
-                            clonedTable,
-                            index.columnNames,
-                            index.where,
-                        )
-
-                    // build queries
-                    const up = schema
-                        ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"`
-                        : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`
-                    const down = schema
-                        ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"`
-                        : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`
-                    upQueries.push(new Query(up))
-                    downQueries.push(new Query(down))
-
-                    // replace constraint name
-                    index.name = newIndexName
-                })
-
-                // rename foreign key constraints
-                clonedTable
-                    .findColumnForeignKeys(oldColumn)
-                    .forEach((foreignKey) => {
-                        // build new constraint name
-                        foreignKey.columnNames.splice(
-                            foreignKey.columnNames.indexOf(oldColumn.name),
-                            1,
-                        )
-                        foreignKey.columnNames.push(newColumn.name)
-                        const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
-                                clonedTable,
-                                foreignKey.columnNames,
-                                this.getTablePath(foreignKey),
-                                foreignKey.referencedColumnNames,
-                            )
-
-                        // build queries
-                        upQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} RENAME CONSTRAINT "${
-                                    foreignKey.name
-                                }" TO "${newForeignKeyName}"`,
-                            ),
-                        )
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} RENAME CONSTRAINT "${newForeignKeyName}" TO "${
-                                    foreignKey.name
-                                }"`,
-                            ),
-                        )
-
-                        // replace constraint name
-                        foreignKey.name = newForeignKeyName
-                    })
-
-                // rename old column in the Table object
-                const oldTableColumn = clonedTable.columns.find(
-                    (column) => column.name === oldColumn.name,
-                )
-                clonedTable.columns[
-                    clonedTable.columns.indexOf(oldTableColumn!)
-                ].name = newColumn.name
-                oldColumn.name = newColumn.name
-            }
-
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
@@ -1821,10 +1682,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Clears all table contents.
-     * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     * Spanner does not support TRUNCATE TABLE statement, so we use DELETE FROM.
      */
     async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
+        await this.query(`DELETE FROM ${this.escapePath(tableName)} WHERE true`)
     }
 
     /**

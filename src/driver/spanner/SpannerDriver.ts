@@ -706,7 +706,7 @@ export class SpannerDriver implements Driver {
      * Returns true if driver supports fulltext indices.
      */
     isFullTextColumnTypeSupported(): boolean {
-        return true
+        return false
     }
 
     /**

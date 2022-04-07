@@ -42,6 +42,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
                     .where("post.title = :title", {
                         title: "post with categories",
                     })
+                    .addOrderBy("categories.id")
                     .getOne()
 
                 expect(loadedPost).not.to.be.null

@@ -18,7 +18,7 @@ const WrappedIntTransformer = {
 @Entity()
 export class User {
     @PrimaryColumn({
-        type: "int",
+        type: Number,
         transformer: WrappedIntTransformer,
         nullable: false,
     })
@@ -31,7 +31,7 @@ export class User {
 @Entity()
 export class Photo {
     @PrimaryColumn({
-        type: "int",
+        type: Number,
         transformer: WrappedIntTransformer,
         nullable: false,
     })
@@ -41,7 +41,7 @@ export class Photo {
     url: string
 
     @Column({
-        type: "int",
+        type: Number,
         transformer: WrappedIntTransformer,
         nullable: false,
     })

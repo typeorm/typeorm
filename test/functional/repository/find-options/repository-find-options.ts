@@ -222,6 +222,7 @@ describe("repository > find options", () => {
                                 name: "Cats",
                             },
                         ],
+                        order: { id: "ASC" },
                     })
 
                 expect(loadedCategories2).to.be.eql([

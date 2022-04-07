@@ -19,6 +19,6 @@ export class RecordContext extends BaseEntity {
     @ManyToOne((type) => User, (user) => user.contexts)
     public readonly user: User
 
-    @Column("simple-json")
-    public readonly meta: any
+    @Column()
+    public readonly meta: string
 }
