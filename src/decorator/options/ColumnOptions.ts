@@ -30,6 +30,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
 
     /**
      * Indicates if column's value can be set to NULL.
+     * Default value is "false".
      */
     nullable?: boolean
 
