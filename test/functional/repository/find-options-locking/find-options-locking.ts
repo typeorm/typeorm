@@ -190,6 +190,35 @@ describe("repository > find options > locking", () => {
             }),
         ))
 
+    it("should attach for key share lock statement on query if locking enabled", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (!(connection.driver.options.type === "postgres")) return
+
+                const executedSql: string[] = []
+
+                await connection.manager.transaction((entityManager) => {
+                    const originalQuery = entityManager.queryRunner!.query.bind(
+                        entityManager.queryRunner,
+                    )
+                    entityManager.queryRunner!.query = (...args: any[]) => {
+                        executedSql.push(args[0])
+                        return originalQuery(...args)
+                    }
+
+                    return entityManager
+                        .getRepository(PostWithVersion)
+                        .findOne({
+                            where: { id: 1 },
+                            lock: { mode: "for_key_share" },
+                        })
+                })
+
+                expect(executedSql.join(" ").includes("FOR KEY SHARE")).to.be
+                    .true
+            }),
+        ))
+
     it("should attach pessimistic write lock statement on query if locking enabled", () =>
         Promise.all(
             connections.map(async (connection) => {
@@ -603,6 +632,14 @@ describe("repository > find options > locking", () => {
                             relations: ["author"],
                             lock: {
                                 mode: "for_no_key_update",
+                                tables: ["post"],
+                            },
+                        }),
+                        entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
+                            relations: ["author"],
+                            lock: {
+                                mode: "for_key_share",
                                 tables: ["post"],
                             },
                         }),
