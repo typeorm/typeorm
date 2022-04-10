@@ -604,6 +604,39 @@ export class SqlServerQueryRunner
             })
         }
 
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -1016,6 +1049,34 @@ export class SqlServerQueryRunner
             )
         }
 
+        if (column.generatedType && column.asExpression) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.addColumn(column)
@@ -1093,7 +1154,9 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            newColumn.length !== oldColumn.length ||
+            newColumn.asExpression !== oldColumn.asExpression ||
+            newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
@@ -1802,6 +1865,33 @@ export class SqlServerQueryRunner
                     } FOR "${column.name}"`,
                 ),
             )
+        }
+
+        if (column.generatedType && column.asExpression) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
         }
 
         upQueries.push(
@@ -2542,12 +2632,10 @@ export class SqlServerQueryRunner
         }[] = []
 
         if (!tableNames) {
-            const databasesSql = `
-                SELECT DISTINCT
-                    "name"
-                FROM "master"."dbo"."sysdatabases"
-                WHERE "name" NOT IN ('master', 'model', 'msdb')
-            `
+            const databasesSql =
+                `SELECT DISTINCT "name" ` +
+                `FROM "master"."dbo"."sysdatabases" ` +
+                `WHERE "name" NOT IN ('master', 'model', 'msdb')`
             const dbDatabases: { name: string }[] = await this.query(
                 databasesSql,
             )
@@ -2630,7 +2718,12 @@ export class SqlServerQueryRunner
                     )
                     .join("OR")
 
-                return `SELECT * FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" WHERE (${condition})`
+                return (
+                    `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
+                    `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
+                    `LEFT JOIN "sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "column_name" ` +
+                    `WHERE (${condition})`
+                )
             })
             .join(" UNION ALL ")
 
@@ -2781,207 +2874,250 @@ export class SqlServerQueryRunner
                 )!
 
                 // create columns from the loaded columns
-                table.columns = dbColumns
-                    .filter(
-                        (dbColumn) =>
-                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbColumn["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"] &&
-                            dbColumn["TABLE_CATALOG"] ===
-                                dbTable["TABLE_CATALOG"],
-                    )
-                    .map((dbColumn) => {
-                        const columnConstraints = dbConstraints.filter(
-                            (dbConstraint) =>
-                                dbConstraint["TABLE_NAME"] ===
-                                    dbColumn["TABLE_NAME"] &&
-                                dbConstraint["TABLE_SCHEMA"] ===
-                                    dbColumn["TABLE_SCHEMA"] &&
-                                dbConstraint["TABLE_CATALOG"] ===
-                                    dbColumn["TABLE_CATALOG"] &&
-                                dbConstraint["COLUMN_NAME"] ===
-                                    dbColumn["COLUMN_NAME"],
+                table.columns = await Promise.all(
+                    dbColumns
+                        .filter(
+                            (dbColumn) =>
+                                dbColumn["TABLE_NAME"] ===
+                                    dbTable["TABLE_NAME"] &&
+                                dbColumn["TABLE_SCHEMA"] ===
+                                    dbTable["TABLE_SCHEMA"] &&
+                                dbColumn["TABLE_CATALOG"] ===
+                                    dbTable["TABLE_CATALOG"],
                         )
+                        .map(async (dbColumn) => {
+                            const columnConstraints = dbConstraints.filter(
+                                (dbConstraint) =>
+                                    dbConstraint["TABLE_NAME"] ===
+                                        dbColumn["TABLE_NAME"] &&
+                                    dbConstraint["TABLE_SCHEMA"] ===
+                                        dbColumn["TABLE_SCHEMA"] &&
+                                    dbConstraint["TABLE_CATALOG"] ===
+                                        dbColumn["TABLE_CATALOG"] &&
+                                    dbConstraint["COLUMN_NAME"] ===
+                                        dbColumn["COLUMN_NAME"],
+                            )
 
-                        const uniqueConstraints = columnConstraints.filter(
-                            (constraint) =>
-                                constraint["CONSTRAINT_TYPE"] === "UNIQUE",
-                        )
-                        const isConstraintComposite = uniqueConstraints.every(
-                            (uniqueConstraint) => {
-                                return dbConstraints.some(
-                                    (dbConstraint) =>
-                                        dbConstraint["CONSTRAINT_TYPE"] ===
-                                            "UNIQUE" &&
-                                        dbConstraint["CONSTRAINT_NAME"] ===
-                                            uniqueConstraint[
-                                                "CONSTRAINT_NAME"
-                                            ] &&
-                                        dbConstraint["TABLE_SCHEMA"] ===
-                                            dbColumn["TABLE_SCHEMA"] &&
-                                        dbConstraint["TABLE_CATALOG"] ===
-                                            dbColumn["TABLE_CATALOG"] &&
-                                        dbConstraint["COLUMN_NAME"] !==
-                                            dbColumn["COLUMN_NAME"],
-                                )
-                            },
-                        )
+                            const uniqueConstraints = columnConstraints.filter(
+                                (constraint) =>
+                                    constraint["CONSTRAINT_TYPE"] === "UNIQUE",
+                            )
+                            const isConstraintComposite =
+                                uniqueConstraints.every((uniqueConstraint) => {
+                                    return dbConstraints.some(
+                                        (dbConstraint) =>
+                                            dbConstraint["CONSTRAINT_TYPE"] ===
+                                                "UNIQUE" &&
+                                            dbConstraint["CONSTRAINT_NAME"] ===
+                                                uniqueConstraint[
+                                                    "CONSTRAINT_NAME"
+                                                ] &&
+                                            dbConstraint["TABLE_SCHEMA"] ===
+                                                dbColumn["TABLE_SCHEMA"] &&
+                                            dbConstraint["TABLE_CATALOG"] ===
+                                                dbColumn["TABLE_CATALOG"] &&
+                                            dbConstraint["COLUMN_NAME"] !==
+                                                dbColumn["COLUMN_NAME"],
+                                    )
+                                })
 
-                        const isPrimary = !!columnConstraints.find(
-                            (constraint) =>
-                                constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY",
-                        )
-                        const isGenerated = !!dbIdentityColumns.find(
-                            (column) =>
-                                column["TABLE_NAME"] ===
-                                    dbColumn["TABLE_NAME"] &&
-                                column["TABLE_SCHEMA"] ===
-                                    dbColumn["TABLE_SCHEMA"] &&
-                                column["TABLE_CATALOG"] ===
-                                    dbColumn["TABLE_CATALOG"] &&
-                                column["COLUMN_NAME"] ===
-                                    dbColumn["COLUMN_NAME"],
-                        )
+                            const isPrimary = !!columnConstraints.find(
+                                (constraint) =>
+                                    constraint["CONSTRAINT_TYPE"] ===
+                                    "PRIMARY KEY",
+                            )
+                            const isGenerated = !!dbIdentityColumns.find(
+                                (column) =>
+                                    column["TABLE_NAME"] ===
+                                        dbColumn["TABLE_NAME"] &&
+                                    column["TABLE_SCHEMA"] ===
+                                        dbColumn["TABLE_SCHEMA"] &&
+                                    column["TABLE_CATALOG"] ===
+                                        dbColumn["TABLE_CATALOG"] &&
+                                    column["COLUMN_NAME"] ===
+                                        dbColumn["COLUMN_NAME"],
+                            )
 
-                        const tableColumn = new TableColumn()
-                        tableColumn.name = dbColumn["COLUMN_NAME"]
-                        tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
+                            const tableColumn = new TableColumn()
+                            tableColumn.name = dbColumn["COLUMN_NAME"]
+                            tableColumn.type =
+                                dbColumn["DATA_TYPE"].toLowerCase()
 
-                        // check only columns that have length property
-                        if (
-                            this.driver.withLengthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1 &&
-                            dbColumn["CHARACTER_MAXIMUM_LENGTH"]
-                        ) {
-                            const length =
-                                dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString()
-                            if (length === "-1") {
-                                tableColumn.length = "MAX"
-                            } else {
-                                tableColumn.length =
-                                    !this.isDefaultColumnLength(
+                            // check only columns that have length property
+                            if (
+                                this.driver.withLengthColumnTypes.indexOf(
+                                    tableColumn.type as ColumnType,
+                                ) !== -1 &&
+                                dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                            ) {
+                                const length =
+                                    dbColumn[
+                                        "CHARACTER_MAXIMUM_LENGTH"
+                                    ].toString()
+                                if (length === "-1") {
+                                    tableColumn.length = "MAX"
+                                } else {
+                                    tableColumn.length =
+                                        !this.isDefaultColumnLength(
+                                            table,
+                                            tableColumn,
+                                            length,
+                                        )
+                                            ? length
+                                            : ""
+                                }
+                            }
+
+                            if (
+                                tableColumn.type === "decimal" ||
+                                tableColumn.type === "numeric"
+                            ) {
+                                if (
+                                    dbColumn["NUMERIC_PRECISION"] !== null &&
+                                    !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        length,
+                                        dbColumn["NUMERIC_PRECISION"],
                                     )
-                                        ? length
-                                        : ""
+                                )
+                                    tableColumn.precision =
+                                        dbColumn["NUMERIC_PRECISION"]
+                                if (
+                                    dbColumn["NUMERIC_SCALE"] !== null &&
+                                    !this.isDefaultColumnScale(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["NUMERIC_SCALE"],
+                                    )
+                                )
+                                    tableColumn.scale =
+                                        dbColumn["NUMERIC_SCALE"]
                             }
-                        }
 
-                        if (
-                            tableColumn.type === "decimal" ||
-                            tableColumn.type === "numeric"
-                        ) {
-                            if (
-                                dbColumn["NUMERIC_PRECISION"] !== null &&
-                                !this.isDefaultColumnPrecision(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            )
-                                tableColumn.precision =
-                                    dbColumn["NUMERIC_PRECISION"]
-                            if (
-                                dbColumn["NUMERIC_SCALE"] !== null &&
-                                !this.isDefaultColumnScale(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                            )
-                                tableColumn.scale = dbColumn["NUMERIC_SCALE"]
-                        }
-
-                        if (tableColumn.type === "nvarchar") {
-                            // Check if this is an enum
-                            const columnCheckConstraints =
-                                columnConstraints.filter(
-                                    (constraint) =>
-                                        constraint["CONSTRAINT_TYPE"] ===
-                                        "CHECK",
-                                )
-                            if (columnCheckConstraints.length) {
-                                // const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
-                                for (const checkConstraint of columnCheckConstraints) {
-                                    if (
-                                        this.isEnumCheckConstraint(
-                                            checkConstraint["CONSTRAINT_NAME"],
-                                        )
-                                    ) {
-                                        // This is an enum constraint, make column into an enum
-                                        tableColumn.enum = []
-                                        const enumValueRegexp = new RegExp(
-                                            "\\[" +
-                                                tableColumn.name +
-                                                "\\]='([^']+)'",
-                                            "g",
-                                        )
-                                        let result
-                                        while (
-                                            (result = enumValueRegexp.exec(
-                                                checkConstraint["definition"],
-                                            )) !== null
+                            if (tableColumn.type === "nvarchar") {
+                                // Check if this is an enum
+                                const columnCheckConstraints =
+                                    columnConstraints.filter(
+                                        (constraint) =>
+                                            constraint["CONSTRAINT_TYPE"] ===
+                                            "CHECK",
+                                    )
+                                if (columnCheckConstraints.length) {
+                                    // const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
+                                    for (const checkConstraint of columnCheckConstraints) {
+                                        if (
+                                            this.isEnumCheckConstraint(
+                                                checkConstraint[
+                                                    "CONSTRAINT_NAME"
+                                                ],
+                                            )
                                         ) {
-                                            tableColumn.enum.unshift(result[1])
+                                            // This is an enum constraint, make column into an enum
+                                            tableColumn.enum = []
+                                            const enumValueRegexp = new RegExp(
+                                                "\\[" +
+                                                    tableColumn.name +
+                                                    "\\]='([^']+)'",
+                                                "g",
+                                            )
+                                            let result
+                                            while (
+                                                (result = enumValueRegexp.exec(
+                                                    checkConstraint[
+                                                        "definition"
+                                                    ],
+                                                )) !== null
+                                            ) {
+                                                tableColumn.enum.unshift(
+                                                    result[1],
+                                                )
+                                            }
+                                            // Skip other column constraints
+                                            break
                                         }
-                                        // Skip other column constraints
-                                        break
                                     }
                                 }
                             }
-                        }
 
-                        tableColumn.default =
-                            dbColumn["COLUMN_DEFAULT"] !== null &&
-                            dbColumn["COLUMN_DEFAULT"] !== undefined
-                                ? this.removeParenthesisFromDefault(
-                                      dbColumn["COLUMN_DEFAULT"],
-                                  )
-                                : undefined
-                        tableColumn.isNullable =
-                            dbColumn["IS_NULLABLE"] === "YES"
-                        tableColumn.isPrimary = isPrimary
-                        tableColumn.isUnique =
-                            uniqueConstraints.length > 0 &&
-                            !isConstraintComposite
-                        tableColumn.isGenerated = isGenerated
-                        if (isGenerated)
-                            tableColumn.generationStrategy = "increment"
-                        if (tableColumn.default === "newsequentialid()") {
-                            tableColumn.isGenerated = true
-                            tableColumn.generationStrategy = "uuid"
-                            tableColumn.default = undefined
-                        }
-
-                        // todo: unable to get default charset
-                        // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
-                        if (dbColumn["COLLATION_NAME"])
-                            tableColumn.collation =
-                                dbColumn["COLLATION_NAME"] ===
-                                defaultCollation["COLLATION_NAME"]
-                                    ? undefined
-                                    : dbColumn["COLLATION_NAME"]
-
-                        if (
-                            tableColumn.type === "datetime2" ||
-                            tableColumn.type === "time" ||
-                            tableColumn.type === "datetimeoffset"
-                        ) {
-                            tableColumn.precision =
-                                !this.isDefaultColumnPrecision(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["DATETIME_PRECISION"],
-                                )
-                                    ? dbColumn["DATETIME_PRECISION"]
+                            tableColumn.default =
+                                dbColumn["COLUMN_DEFAULT"] !== null &&
+                                dbColumn["COLUMN_DEFAULT"] !== undefined
+                                    ? this.removeParenthesisFromDefault(
+                                          dbColumn["COLUMN_DEFAULT"],
+                                      )
                                     : undefined
-                        }
+                            tableColumn.isNullable =
+                                dbColumn["IS_NULLABLE"] === "YES"
+                            tableColumn.isPrimary = isPrimary
+                            tableColumn.isUnique =
+                                uniqueConstraints.length > 0 &&
+                                !isConstraintComposite
+                            tableColumn.isGenerated = isGenerated
+                            if (isGenerated)
+                                tableColumn.generationStrategy = "increment"
+                            if (tableColumn.default === "newsequentialid()") {
+                                tableColumn.isGenerated = true
+                                tableColumn.generationStrategy = "uuid"
+                                tableColumn.default = undefined
+                            }
 
-                        return tableColumn
-                    })
+                            // todo: unable to get default charset
+                            // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
+                            if (dbColumn["COLLATION_NAME"])
+                                tableColumn.collation =
+                                    dbColumn["COLLATION_NAME"] ===
+                                    defaultCollation["COLLATION_NAME"]
+                                        ? undefined
+                                        : dbColumn["COLLATION_NAME"]
+
+                            if (
+                                tableColumn.type === "datetime2" ||
+                                tableColumn.type === "time" ||
+                                tableColumn.type === "datetimeoffset"
+                            ) {
+                                tableColumn.precision =
+                                    !this.isDefaultColumnPrecision(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["DATETIME_PRECISION"],
+                                    )
+                                        ? dbColumn["DATETIME_PRECISION"]
+                                        : undefined
+                            }
+
+                            if (
+                                dbColumn["is_persisted"] !== null &&
+                                dbColumn["is_persisted"] !== undefined &&
+                                dbColumn["definition"]
+                            ) {
+                                tableColumn.generatedType =
+                                    dbColumn["is_persisted"] === true
+                                        ? "STORED"
+                                        : "VIRTUAL"
+                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                                const asExpressionQuery =
+                                    await this.selectTypeormMetadataSql({
+                                        database: dbTable["TABLE_CATALOG"],
+                                        schema: dbTable["TABLE_SCHEMA"],
+                                        table: dbTable["TABLE_NAME"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+                                if (results[0] && results[0].value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
+                                }
+                            }
+
+                            return tableColumn
+                        }),
+                )
 
                 // find unique constraints of table, group them by constraint name and build TableUnique.
                 const tableUniqueConstraints = OrmUtils.uniq(
@@ -3602,7 +3738,17 @@ export class SqlServerQueryRunner
 
         if (column.collation) c += " COLLATE " + column.collation
 
-        if (column.isNullable !== true) c += " NOT NULL"
+        if (column.asExpression) {
+            c += ` AS (${column.asExpression})`
+            if (column.generatedType === "STORED") {
+                c += ` PERSISTED`
+
+                // NOT NULL can be specified for computed columns only if PERSISTED is also specified
+                if (column.isNullable !== true) c += " NOT NULL"
+            }
+        } else {
+            if (column.isNullable !== true) c += " NOT NULL"
+        }
 
         if (
             column.isGenerated === true &&

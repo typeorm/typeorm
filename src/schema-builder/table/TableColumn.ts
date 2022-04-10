@@ -122,12 +122,12 @@ export class TableColumn {
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
