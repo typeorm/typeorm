@@ -23,14 +23,18 @@ describe("query runner > rename table", () => {
     it("should correctly rename table and revert rename", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // CockroachDB and Spanner does not support renaming constraints and removing PK.
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
+
+                const queryRunner = connection.createQueryRunner()
+
                 const sequenceQuery = (name: string) => {
                     return `SELECT COUNT(*) FROM information_schema.sequences WHERE sequence_schema = 'public' and sequence_name = '${name}'`
                 }
-
-                // CockroachDB does not support renaming constraints and removing PK.
-                if (connection.driver.options.type === "cockroachdb") return
-
-                const queryRunner = connection.createQueryRunner()
 
                 // check if sequence "faculty_id_seq" exist
                 if (connection.driver.options.type === "postgres") {
@@ -98,8 +102,12 @@ describe("query runner > rename table", () => {
     it("should correctly rename table with all constraints depend to that table and revert rename", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not support renaming constraints and removing PK.
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not support renaming constraints and removing PK.
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
 
@@ -142,8 +150,12 @@ describe("query runner > rename table", () => {
     it("should correctly rename table with custom schema and database and all its dependencies and revert rename", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not support renaming constraints and removing PK.
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not support renaming constraints and removing PK.
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 let table: Table | undefined

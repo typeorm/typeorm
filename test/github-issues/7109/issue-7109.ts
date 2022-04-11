@@ -26,7 +26,13 @@ describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgres
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
-                enabledDrivers: ["postgres", "mysql", "mariadb", "cockroachdb"],
+                enabledDrivers: [
+                    "postgres",
+                    "mysql",
+                    "mariadb",
+                    "cockroachdb",
+                    "spanner",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

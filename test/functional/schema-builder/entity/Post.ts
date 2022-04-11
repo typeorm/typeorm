@@ -14,7 +14,7 @@ export class Post {
     @PrimaryColumn()
     id: number
 
-    @Column({ nullable: true, unique: true })
+    @Column({ unique: true })
     version: string
 
     @Column({ nullable: true, default: "My post" })

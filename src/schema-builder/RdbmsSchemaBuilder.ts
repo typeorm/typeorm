@@ -66,8 +66,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
         // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
+        // In Spanner queries against the INFORMATION_SCHEMA can be used in a read-only transaction,
+        // but not in a read-write transaction.
         const isUsingTransactions =
             !(this.connection.driver.options.type === "cockroachdb") &&
+            !(this.connection.driver.options.type === "spanner") &&
             this.connection.options.migrationsTransactionMode !== "none"
 
         await this.queryRunner.beforeMigration()

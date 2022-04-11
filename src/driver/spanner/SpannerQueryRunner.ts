@@ -310,8 +310,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     : undefined,
                 json: true,
             }
-            await this.connect()
-            const stream = this.sessionTransaction.runStream(request)
+            const stream = this.driver.instanceDatabase.runStream(request)
 
             if (onEnd) {
                 stream.on("end", onEnd)
@@ -352,10 +351,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if database with the given name exist.
      */
     async hasDatabase(database: string): Promise<boolean> {
-        const result = await this.query(
-            `SELECT * FROM pg_database WHERE datname='${database}';`,
+        throw new TypeORMError(
+            `Check database queries are not supported by Spanner driver.`,
         )
-        return result.length ? true : false
     }
 
     /**
@@ -394,7 +392,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             tableOrName instanceof Table ? tableOrName.name : tableOrName
         const sql =
             `SELECT * FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
-            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' ` +
+            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE' ` +
             `AND \`TABLE_NAME\` = '${tableName}'`
         const result = await this.query(sql)
         return result.length ? true : false
@@ -589,127 +587,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         oldTableOrName: Table | string,
         newTableName: string,
     ): Promise<void> {
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-        const oldTable =
-            oldTableOrName instanceof Table
-                ? oldTableOrName
-                : await this.getCachedTable(oldTableOrName)
-        const newTable = oldTable.clone()
-
-        const { schema: schemaName, tableName: oldTableName } =
-            this.driver.parseTableName(oldTable)
-
-        newTable.name = schemaName
-            ? `${schemaName}.${newTableName}`
-            : newTableName
-
-        upQueries.push(
-            new Query(
-                `ALTER TABLE ${this.escapePath(
-                    oldTable,
-                )} RENAME TO "${newTableName}"`,
-            ),
+        throw new TypeORMError(
+            `Rename table queries are not supported by Spanner driver.`,
         )
-        downQueries.push(
-            new Query(
-                `ALTER TABLE ${this.escapePath(
-                    newTable,
-                )} RENAME TO "${oldTableName}"`,
-            ),
-        )
-
-        // rename column primary key constraint
-        if (newTable.primaryColumns.length > 0) {
-            const columnNames = newTable.primaryColumns.map(
-                (column) => column.name,
-            )
-
-            const oldPkName = this.connection.namingStrategy.primaryKeyName(
-                oldTable,
-                columnNames,
-            )
-            const newPkName = this.connection.namingStrategy.primaryKeyName(
-                newTable,
-                columnNames,
-            )
-
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        newTable,
-                    )} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        newTable,
-                    )} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`,
-                ),
-            )
-        }
-
-        // rename index constraints
-        newTable.indices.forEach((index) => {
-            // build new constraint name
-            const { schema } = this.driver.parseTableName(newTable)
-            const newIndexName = this.connection.namingStrategy.indexName(
-                newTable,
-                index.columnNames,
-                index.where,
-            )
-
-            // build queries
-            const up = schema
-                ? `ALTER INDEX "${schema}"."${index.name}" RENAME TO "${newIndexName}"`
-                : `ALTER INDEX "${index.name}" RENAME TO "${newIndexName}"`
-            const down = schema
-                ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"`
-                : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`
-            upQueries.push(new Query(up))
-            downQueries.push(new Query(down))
-
-            // replace constraint name
-            index.name = newIndexName
-        })
-
-        // rename foreign key constraints
-        newTable.foreignKeys.forEach((foreignKey) => {
-            // build new constraint name
-            const newForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
-                    newTable,
-                    foreignKey.columnNames,
-                    this.getTablePath(foreignKey),
-                    foreignKey.referencedColumnNames,
-                )
-
-            // build queries
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        newTable,
-                    )} RENAME CONSTRAINT "${
-                        foreignKey.name
-                    }" TO "${newForeignKeyName}"`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        newTable,
-                    )} RENAME CONSTRAINT "${newForeignKeyName}" TO "${
-                        foreignKey.name
-                    }"`,
-                ),
-            )
-
-            // replace constraint name
-            foreignKey.name = newForeignKeyName
-        })
-
-        await this.executeQueries(upQueries, downQueries)
     }
 
     /**
@@ -1449,49 +1329,62 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Removes all tables from the currently connected database.
      */
     async clearDatabase(): Promise<void> {
+        // drop index queries
+        const selectIndexDropsQuery =
+            `SELECT concat('DROP INDEX \`', INDEX_NAME, '\`') AS \`query\` ` +
+            `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` ` +
+            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`INDEX_TYPE\` = 'INDEX' AND \`SPANNER_IS_MANAGED\` = false`
+        const dropIndexQueries: ObjectLiteral[] = await this.query(
+            selectIndexDropsQuery,
+        )
+
+        // drop foreign key queries
+        const selectFKDropsQuery =
+            `SELECT concat('ALTER TABLE \`', TABLE_NAME, '\`', ' DROP CONSTRAINT \`', CONSTRAINT_NAME, '\`') AS \`query\` ` +
+            `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` ` +
+            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`CONSTRAINT_TYPE\` = 'FOREIGN KEY'`
+        const dropFKQueries: ObjectLiteral[] = await this.query(
+            selectFKDropsQuery,
+        )
+
+        // drop view queries
+        // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``
+        // const dropViewQueries: ObjectLiteral[] = await this.query(
+        //     selectViewDropsQuery,
+        // )
+
+        // drop table queries
+        const dropTablesQuery =
+            `SELECT concat('DROP TABLE \`', TABLE_NAME, '\`') AS \`query\` ` +
+            `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
+            `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
+        const dropTableQueries: ObjectLiteral[] = await this.query(
+            dropTablesQuery,
+        )
+
+        if (
+            !dropIndexQueries.length &&
+            !dropFKQueries.length &&
+            // !dropViewQueries.length &&
+            !dropTableQueries.length
+        )
+            return
+
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            // drop indices
-            const selectIndexDropsQuery =
-                `SELECT concat('DROP INDEX \`', INDEX_NAME, '\`') AS \`query\` ` +
-                `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`INDEX_TYPE\` = 'INDEX' AND \`SPANNER_IS_MANAGED\` = false`
-            const dropIndexQueries: ObjectLiteral[] = await this.query(
-                selectIndexDropsQuery,
-            )
             for (let query of dropIndexQueries) {
                 await this.updateDDL(query["query"])
             }
-
-            // drop foreign keys
-            const selectFKDropsQuery =
-                `SELECT concat('ALTER TABLE \`', TABLE_NAME, '\`', ' DROP CONSTRAINT \`', CONSTRAINT_NAME, '\`') AS \`query\` ` +
-                `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`CONSTRAINT_TYPE\` = 'FOREIGN KEY'`
-            const dropFKQueries: ObjectLiteral[] = await this.query(
-                selectFKDropsQuery,
-            )
             for (let query of dropFKQueries) {
                 await this.updateDDL(query["query"])
             }
 
-            // drop views
-            // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``;
-            // const dropViewQueries: ObjectLiteral[] = await this.query(selectViewDropsQuery);
             // for (let query of dropViewQueries) {
             //     await this.updateDDL(query["query"])
             // }
 
-            // drop tables
-            const dropTablesQuery =
-                `SELECT concat('DROP TABLE \`', TABLE_NAME, '\`') AS \`query\` ` +
-                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = ''`
-            const dropQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
-            for (let query of dropQueries) {
+            for (let query of dropTableQueries) {
                 await this.updateDDL(query["query"])
             }
 
@@ -1561,7 +1454,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `SELECT \`T\`.*, \`V\`.\`VIEW_DEFINITION\` FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
             )} \`T\` ` +
-            `INNER JOIN \`INFORMATION_SCHEMA\`.\`VIEWS\` \`V\` ON \`V\`.\`TABLE_SCHEMA\` = \`T\`.\`SCHEMA\` AND \`V\`.\`TABLE_NAME\` = \`T\`.\`NAME\` ` +
+            `INNER JOIN \`INFORMATION_SCHEMA\`.\`VIEWS\` \`V\` ON \`V\`.\`TABLE_NAME\` = \`T\`.\`NAME\` ` +
             `WHERE \`T\`.\`TYPE\` = '${MetadataTableType.VIEW}' ${
                 viewNames.length
                     ? ` AND \`T\`.\`NAME\` IN (${escapedViewNames})`
@@ -1589,13 +1482,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (!tableNames || !tableNames.length) {
             // Since we don't have any of this data we have to do a scan
-            const tablesSql = `SELECT \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = ''`
+            const tablesSql =
+                `SELECT \`TABLE_NAME\` ` +
+                `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
+                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesSql =
                 `SELECT \`TABLE_NAME\` ` +
                 `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
-                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' ` +
+                `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE' ` +
                 `AND \`TABLE_NAME\` IN (${tableNames
                     .map((tableName) => `'${tableName}'`)
                     .join(", ")})`
@@ -2198,6 +2094,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected isDMLQuery(query: string): boolean {
-        return query.startsWith("INSERT") || query.startsWith("DELETE")
+        return (
+            query.startsWith("INSERT") ||
+            query.startsWith("UPDATE") ||
+            query.startsWith("DELETE")
+        )
     }
 }
