@@ -214,11 +214,40 @@ await timber.remove()
     - for **SAP Hana**
 
         ```
-        npm i @sap/hana-client
-        npm i hdb-pool
+        npm install @sap/hana-client
+        npm install hdb-pool
         ```
 
         _SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/)._
+
+    - for **Google Cloud Spanner**
+
+        ```
+        npm install @google-cloud/spanner --save
+        ```
+
+        Provide authentication credentials to your application code
+        by setting the environment variable `GOOGLE_APPLICATION_CREDENTIALS`:
+
+        ```shell
+        # Linux/macOS
+        export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"
+
+        # Windows
+        set GOOGLE_APPLICATION_CREDENTIALS=KEY_PATH
+
+        # Replace KEY_PATH with the path of the JSON file that contains your service account key.
+        ```
+
+        To use Spanner with the emulator you should set `SPANNER_EMULATOR_HOST` environment variable:
+
+        ```shell
+        # Linux/macOS
+        export SPANNER_EMULATOR_HOST=localhost:9010
+
+        # Windows
+        set SPANNER_EMULATOR_HOST=localhost:9010
+        ```
 
     - for **MongoDB** (experimental)
 
@@ -255,7 +284,7 @@ npx typeorm init --name MyProject --database postgres
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `mongodb`,
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `sap`, `spanner`, `oracle`, `mongodb`,
 `cordova`, `react-native`, `expo`, `nativescript`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
@@ -553,7 +582,7 @@ AppDataSource.initialize()
 
 We are using Postgres in this example, but you can use any other supported database.
 To use another database, simply change the `type` in the options to the database type you are using:
-`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `cordova`, `nativescript`, `react-native`,
+`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `sap`, `spanner`, `cordova`, `nativescript`, `react-native`,
 `expo`, or `mongodb`.
 Also make sure to use your own host, port, username, password and database settings.
 

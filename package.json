@@ -74,6 +74,7 @@
     "postgresql-orm",
     "mariadb",
     "mariadb-orm",
+    "spanner",
     "sqlite",
     "sqlite-orm",
     "sql-server",

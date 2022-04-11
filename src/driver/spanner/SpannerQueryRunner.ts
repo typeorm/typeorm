@@ -1348,10 +1348,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         // drop view queries
-        // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``
-        // const dropViewQueries: ObjectLiteral[] = await this.query(
-        //     selectViewDropsQuery,
-        // )
+        const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``
+        const dropViewQueries: ObjectLiteral[] = await this.query(
+            selectViewDropsQuery,
+        )
 
         // drop table queries
         const dropTablesQuery =
@@ -1365,7 +1365,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             !dropIndexQueries.length &&
             !dropFKQueries.length &&
-            // !dropViewQueries.length &&
+            !dropViewQueries.length &&
             !dropTableQueries.length
         )
             return
@@ -1380,9 +1380,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 await this.updateDDL(query["query"])
             }
 
-            // for (let query of dropViewQueries) {
-            //     await this.updateDDL(query["query"])
-            // }
+            for (let query of dropViewQueries) {
+                await this.updateDDL(query["query"])
+            }
 
             for (let query of dropTableQueries) {
                 await this.updateDDL(query["query"])

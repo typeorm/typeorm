@@ -337,6 +337,10 @@ or
 `timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
 `nclob`, `rowid`, `urowid`
 
+### Column types for `spanner`
+
+`bool`, `int64`, `float64`, `numeric`, `string`, `json`, `bytes`, `date`, `timestamp`, `array`
+
 ### `enum` column type
 
 `enum` column type is supported by `postgres` and `mysql`. There are various possible column definitions:
