@@ -916,107 +916,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 }
             }
 
-            if (newColumn.isPrimary !== oldColumn.isPrimary) {
-                const primaryColumns = clonedTable.primaryColumns
-
-                // if primary column state changed, we must always drop existed constraint.
-                if (primaryColumns.length > 0) {
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
-                    const columnNames = primaryColumns
-                        .map((column) => `"${column.name}"`)
-                        .join(", ")
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP CONSTRAINT "${pkName}"`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`,
-                        ),
-                    )
-                }
-
-                if (newColumn.isPrimary === true) {
-                    primaryColumns.push(newColumn)
-                    // update column in table
-                    const column = clonedTable.columns.find(
-                        (column) => column.name === newColumn.name,
-                    )
-                    column!.isPrimary = true
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
-                    const columnNames = primaryColumns
-                        .map((column) => `"${column.name}"`)
-                        .join(", ")
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP CONSTRAINT "${pkName}"`,
-                        ),
-                    )
-                } else {
-                    const primaryColumn = primaryColumns.find(
-                        (c) => c.name === newColumn.name,
-                    )
-                    primaryColumns.splice(
-                        primaryColumns.indexOf(primaryColumn!),
-                        1,
-                    )
-
-                    // update column in table
-                    const column = clonedTable.columns.find(
-                        (column) => column.name === newColumn.name,
-                    )
-                    column!.isPrimary = false
-
-                    // if we have another primary keys, we must recreate constraint.
-                    if (primaryColumns.length > 0) {
-                        const pkName =
-                            this.connection.namingStrategy.primaryKeyName(
-                                clonedTable,
-                                primaryColumns.map((column) => column.name),
-                            )
-                        const columnNames = primaryColumns
-                            .map((column) => `"${column.name}"`)
-                            .join(", ")
-                        upQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`,
-                            ),
-                        )
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} DROP CONSTRAINT "${pkName}"`,
-                            ),
-                        )
-                    }
-                }
-            }
-
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
@@ -1033,22 +932,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                             columnNames: uniqueIndex.columnNames,
                         }),
                     )
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${
-                                newColumn.name
-                            }\`)`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${uniqueIndex.name}\``,
-                        ),
-                    )
+
+                    upQueries.push(this.createIndexSql(table, uniqueIndex))
+                    downQueries.push(this.dropIndexSql(table, uniqueIndex))
                 } else {
                     const uniqueIndex = clonedTable.indices.find((index) => {
                         return (
@@ -1072,22 +958,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         1,
                     )
 
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${uniqueIndex!.name}\``,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${
-                                newColumn.name
-                            }\`)`,
-                        ),
-                    )
+                    upQueries.push(this.dropIndexSql(table, uniqueIndex!))
+                    downQueries.push(this.createIndexSql(table, uniqueIndex!))
                 }
             }
 
@@ -1134,60 +1006,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const clonedTable = table.clone()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
-
-        // drop primary key constraint
-        if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                clonedTable.primaryColumns.map((column) => column.name),
-            )
-            const columnNames = clonedTable.primaryColumns
-                .map((primaryColumn) => `"${primaryColumn.name}"`)
-                .join(", ")
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        clonedTable,
-                    )} DROP CONSTRAINT "${pkName}"`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        clonedTable,
-                    )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`,
-                ),
-            )
-
-            // update column in table
-            const tableColumn = clonedTable.findColumnByName(column.name)
-            tableColumn!.isPrimary = false
-
-            // if primary key have multiple columns, we must recreate it without dropped column
-            if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    clonedTable.primaryColumns.map((column) => column.name),
-                )
-                const columnNames = clonedTable.primaryColumns
-                    .map((primaryColumn) => `"${primaryColumn.name}"`)
-                    .join(", ")
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            clonedTable,
-                        )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNames})`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            clonedTable,
-                        )} DROP CONSTRAINT "${pkName}"`,
-                    ),
-                )
-            }
-        }
 
         // drop column index
         const columnIndex = clonedTable.indices.find(
@@ -1275,70 +1093,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[],
     ): Promise<void> {
-        const table =
-            tableOrName instanceof Table
-                ? tableOrName
-                : await this.getCachedTable(tableOrName)
-        const clonedTable = table.clone()
-        const columnNames = columns.map((column) => column.name)
-        const upQueries: Query[] = []
-        const downQueries: Query[] = []
-
-        // if table already have primary columns, we must drop them.
-        const primaryColumns = clonedTable.primaryColumns
-        if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
-            const columnNamesString = primaryColumns
-                .map((column) => `"${column.name}"`)
-                .join(", ")
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} DROP CONSTRAINT "${pkName}"`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`,
-                ),
-            )
-        }
-
-        // update columns in table.
-        clonedTable.columns
-            .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
-
-        const pkName = this.connection.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
+        throw new Error(
+            "The keys of a table can't change; you can't add a key column to an existing table or remove a key column from an existing table.",
         )
-        const columnNamesString = columnNames
-            .map((columnName) => `"${columnName}"`)
-            .join(", ")
-        upQueries.push(
-            new Query(
-                `ALTER TABLE ${this.escapePath(
-                    table,
-                )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`,
-            ),
-        )
-        downQueries.push(
-            new Query(
-                `ALTER TABLE ${this.escapePath(
-                    table,
-                )} DROP CONSTRAINT "${pkName}"`,
-            ),
-        )
-
-        await this.executeQueries(upQueries, downQueries)
-        this.replaceCachedTable(table, clonedTable)
     }
 
     /**

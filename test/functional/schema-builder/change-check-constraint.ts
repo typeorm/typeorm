@@ -33,7 +33,9 @@ describe("schema builder > change check constraint", () => {
                     entityMetadata: teacherMetadata,
                     args: {
                         target: Teacher,
-                        expression: `"name" <> 'asd'`,
+                        expression: `${connection.driver.escape(
+                            "name",
+                        )} <> 'asd'`,
                     },
                 })
                 checkMetadata.build(connection.namingStrategy)

@@ -12,8 +12,6 @@ import { Photo } from "./entity/Photo"
 import { Book2, Book } from "./entity/Book"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
-process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
-// process.env.GOOGLE_APPLICATION_CREDENTIALS="/Users/messer/Documents/google/astute-cumulus-342713-80000a3b5bdb.json"
 describe("query runner > create table", () => {
     let connections: DataSource[]
     before(async () => {

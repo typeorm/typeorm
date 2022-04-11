@@ -14,10 +14,10 @@ export class Post {
     @PrimaryColumn()
     id: number
 
-    @Column({ unique: true })
+    @Column({ nullable: true, unique: true })
     version: string
 
-    @Column({ default: "My post" })
+    @Column({ nullable: true, default: "My post" })
     name: string
 
     @Column({ nullable: true })

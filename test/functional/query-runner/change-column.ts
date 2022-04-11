@@ -23,15 +23,20 @@ describe("query runner > change column", () => {
     it("should correctly change column and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing primary columns and renaming constraints
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing primary columns and renaming constraints
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")
 
                 const nameColumn = table!.findColumnByName("name")!
-                nameColumn!.default!.should.exist
+
                 nameColumn!.isUnique.should.be.false
+                nameColumn!.default!.should.exist
 
                 const changedNameColumn = nameColumn.clone()
                 changedNameColumn.default = undefined
@@ -100,8 +105,12 @@ describe("query runner > change column", () => {
     it("should correctly change column 'isGenerated' property and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing generated columns in existent tables
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing generated columns in existent tables
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")

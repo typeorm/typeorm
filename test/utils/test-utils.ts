@@ -346,6 +346,8 @@ getMetadataArgsStorage().entitySubscribers.push({
 
 export function createDataSource(options: DataSourceOptions): DataSource {
     if (options.type === "spanner") {
+        process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
+        // process.env.GOOGLE_APPLICATION_CREDENTIALS="/Users/messer/Documents/google/astute-cumulus-342713-80000a3b5bdb.json"
         if (Array.isArray(options.subscribers)) {
             options.subscribers.push(
                 GeneratedColumnReplacerSubscriber as Function,
