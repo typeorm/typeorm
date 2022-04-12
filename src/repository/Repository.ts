@@ -51,6 +51,7 @@ export class Repository<Entity extends ObjectLiteral> {
     get metadata() {
         return this.manager.connection.getMetadata(this.target)
     }
+    set metadata(newMetadata) {}
 
     // -------------------------------------------------------------------------
     // Constructor
