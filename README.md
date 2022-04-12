@@ -584,7 +584,6 @@ Now if you run your `index.ts`, a connection with the database will be initializ
 Now let's create a new photo to save it in the database:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -611,7 +610,6 @@ Using entity manager you can manipulate any entity in your app.
 For example, let's load our saved entity:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -630,7 +628,6 @@ Each entity has its own repository which handles all operations with its entity.
 When you deal with entities a lot, Repositories are more convenient to use than EntityManagers:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -657,7 +654,6 @@ Learn more about Repository [here](./docs/working-with-repository.md).
 Let's try more load operations using the Repository:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -691,7 +687,6 @@ console.log("Photos count: ", photosCount)
 Now let's load a single photo from the database, update it and save it:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -710,7 +705,6 @@ Now photo with `id = 1` will be updated in the database.
 Now let's remove our photo from the database:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -796,7 +790,6 @@ If you run the app, you'll see a newly generated table, and it will contain a co
 Now let's save a photo, its metadata and attach them to each other.
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 
@@ -937,7 +930,6 @@ Let's use `find*` methods first.
 `find*` methods allow you to specify an object with the `FindOneOptions` / `FindManyOptions` interface.
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 import { AppDataSource } from "./index"
@@ -957,7 +949,6 @@ Using find options is good and dead simple, but if you need a more complex query
 `QueryBuilder` allows more complex queries to be used in an elegant way:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 import { AppDataSource } from "./index"
