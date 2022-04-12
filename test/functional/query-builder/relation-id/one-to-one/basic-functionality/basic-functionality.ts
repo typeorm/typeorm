@@ -44,6 +44,7 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
                 let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryId", "post.category")
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts![0].categoryId).to.not.be.undefined
@@ -86,6 +87,7 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
                 let loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationIdAndMap("category.postId", "category.post")
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories![0].postId).to.not.be.undefined
@@ -96,6 +98,7 @@ describe("query builder > relation-id > one-to-one > basic-functionality", () =>
                 let loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationIdAndMap("category.postId", "category.post")
+                    .where("category.id = 1")
                     .getOne()
 
                 expect(loadedCategory!.postId).to.not.be.undefined

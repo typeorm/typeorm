@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, createConnection } from "../../../src"
+import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -38,10 +38,11 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
                     return
                 }
 
-                const connection = await createConnection(options)
-                const queryRunner = connection.createQueryRunner()
+                const dataSource = new DataSource(options)
+                await dataSource.initialize()
+                const queryRunner = dataSource.createQueryRunner()
 
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 
@@ -54,7 +55,7 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
 
                 // update entity
                 for (const query of upQueries) {
-                    await connection.query(query)
+                    await dataSource.query(query)
                 }
 
                 let table = await queryRunner.getTable("metric")
@@ -83,7 +84,7 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
 
                 // revert update
                 for (const query of downQueries.reverse()) {
-                    await connection.query(query)
+                    await dataSource.query(query)
                 }
 
                 table = await queryRunner.getTable("metric")
@@ -108,7 +109,7 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
                 expect(defaultOperator4!.default).to.equal(`'eq'`)
 
                 await queryRunner.release()
-                await connection.close()
+                await dataSource.close()
             }),
         ))
 })

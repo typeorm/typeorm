@@ -24,15 +24,20 @@ describe("query runner > change column", () => {
     it("should correctly change column and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing primary columns and renaming constraints
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing primary columns and renaming constraints
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")
 
                 const nameColumn = table!.findColumnByName("name")!
-                nameColumn!.default!.should.exist
+
                 nameColumn!.isUnique.should.be.false
+                nameColumn!.default!.should.exist
 
                 const changedNameColumn = nameColumn.clone()
                 changedNameColumn.default = undefined
@@ -101,8 +106,12 @@ describe("query runner > change column", () => {
     it("should correctly change column 'isGenerated' property and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing generated columns in existent tables
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing generated columns in existent tables
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")
@@ -175,8 +184,14 @@ describe("query runner > change column", () => {
     it("should correctly change generated as expression", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Only works on postgres
-                if (!(connection.driver.options.type === "postgres")) return
+                const isPostgres = connection.driver.options.type === "postgres"
+                const isSpanner = connection.driver.options.type === "spanner"
+                const shouldRun =
+                    (isPostgres &&
+                        (connection.driver as PostgresDriver)
+                            .isGeneratedColumnsSupported) ||
+                    isSpanner
+                if (!shouldRun) return
 
                 const queryRunner = connection.createQueryRunner()
 
@@ -191,7 +206,7 @@ describe("query runner > change column", () => {
 
                 let generatedColumn = new TableColumn({
                     name: "generated",
-                    type: "character varying",
+                    type: isSpanner ? "string" : "varchar",
                     generatedType: "STORED",
                     asExpression: "text || tag",
                 })

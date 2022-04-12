@@ -240,6 +240,7 @@ export class EntitySchemaTransformer {
                     unique: index.unique === true ? true : false,
                     spatial: index.spatial === true ? true : false,
                     fulltext: index.fulltext === true ? true : false,
+                    nullFiltered: index.nullFiltered === true ? true : false,
                     parser: index.parser,
                     synchronize: index.synchronize === false ? false : true,
                     where: index.where,

@@ -34,10 +34,12 @@ describe("persistence > one-to-many", function () {
                 const categoryRepository = connection.getRepository(Category)
 
                 const newCategory = categoryRepository.create()
+                newCategory.id = 1
                 newCategory.name = "Animals"
                 await categoryRepository.save(newCategory)
 
                 const newPost = postRepository.create()
+                newPost.id = 1
                 newPost.title = "All about animals"
                 await postRepository.save(newPost)
 
@@ -65,10 +67,12 @@ describe("persistence > one-to-many", function () {
                 const categoryRepository = connection.getRepository(Category)
 
                 const newCategory = categoryRepository.create()
+                newCategory.id = 1
                 newCategory.name = "Animals"
                 await categoryRepository.save(newCategory)
 
                 const newPost = postRepository.create()
+                newPost.id = 1
                 newPost.title = "All about animals"
                 newPost.categories = [newCategory]
                 await postRepository.save(newPost)
@@ -94,14 +98,17 @@ describe("persistence > one-to-many", function () {
                 const categoryRepository = connection.getRepository(Category)
 
                 const firstNewCategory = categoryRepository.create()
+                firstNewCategory.id = 1
                 firstNewCategory.name = "Animals"
                 await categoryRepository.save(firstNewCategory)
 
                 const secondNewCategory = categoryRepository.create()
+                secondNewCategory.id = 2
                 secondNewCategory.name = "Insects"
                 await categoryRepository.save(secondNewCategory)
 
                 const newPost = postRepository.create()
+                newPost.id = 1
                 newPost.title = "All about animals"
                 await postRepository.save(newPost)
 
@@ -136,14 +143,17 @@ describe("persistence > one-to-many", function () {
                 const categoryRepository = connection.getRepository(Category)
 
                 let firstNewCategory = categoryRepository.create()
+                firstNewCategory.id = 1
                 firstNewCategory.name = "Animals"
                 await categoryRepository.save(firstNewCategory)
 
                 let secondNewCategory = categoryRepository.create()
+                secondNewCategory.id = 2
                 secondNewCategory.name = "Insects"
                 await categoryRepository.save(secondNewCategory)
 
                 let newPost = postRepository.create()
+                newPost.id = 1
                 newPost.title = "All about animals"
                 await postRepository.save(newPost)
 
@@ -176,14 +186,17 @@ describe("persistence > one-to-many", function () {
                 const categoryRepository = connection.getRepository(Category)
 
                 let firstNewCategory = categoryRepository.create()
+                firstNewCategory.id = 1
                 firstNewCategory.name = "Animals"
                 await categoryRepository.save(firstNewCategory)
 
                 let secondNewCategory = categoryRepository.create()
+                secondNewCategory.id = 2
                 secondNewCategory.name = "Insects"
                 await categoryRepository.save(secondNewCategory)
 
                 let newPost = postRepository.create()
+                newPost.id = 1
                 newPost.title = "All about animals"
                 await postRepository.save(newPost)
 

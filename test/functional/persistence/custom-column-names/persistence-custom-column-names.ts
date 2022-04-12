@@ -1,6 +1,5 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { getConnectionManager } from "../../../../src"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Repository } from "../../../../src/repository/Repository"
 import { setupSingleTestingConnection } from "../../../utils/test-utils"
@@ -14,21 +13,21 @@ describe("persistence > custom-column-names", function () {
     // -------------------------------------------------------------------------
 
     // connect to db
-    let connection: DataSource
+    let dataSource: DataSource
     before(async () => {
         const options = setupSingleTestingConnection("mysql", {
             entities: [Post, Category, CategoryMetadata],
         })
         if (!options) return
 
-        connection = getConnectionManager().create(options)
+        dataSource = new DataSource(options)
     })
-    after(() => connection.close())
+    after(() => dataSource.close())
 
     // clean up database before each test
     function reloadDatabase() {
-        if (!connection) return
-        return connection.synchronize(true).catch((e) => {
+        if (!dataSource) return
+        return dataSource.synchronize(true).catch((e) => {
             throw e
         })
     }
@@ -37,10 +36,10 @@ describe("persistence > custom-column-names", function () {
     let categoryRepository: Repository<Category>
     let metadataRepository: Repository<CategoryMetadata>
     before(function () {
-        if (!connection) return
-        postRepository = connection.getRepository(Post)
-        categoryRepository = connection.getRepository(Category)
-        metadataRepository = connection.getRepository(CategoryMetadata)
+        if (!dataSource) return
+        postRepository = dataSource.getRepository(Post)
+        categoryRepository = dataSource.getRepository(Category)
+        metadataRepository = dataSource.getRepository(CategoryMetadata)
     })
 
     // -------------------------------------------------------------------------
@@ -48,7 +47,7 @@ describe("persistence > custom-column-names", function () {
     // -------------------------------------------------------------------------
 
     describe("attach exist entity to exist entity with many-to-one relation", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, newCategory: Category, loadedPost: Post
 
         before(reloadDatabase)
@@ -96,7 +95,7 @@ describe("persistence > custom-column-names", function () {
     })
 
     describe("attach new entity to exist entity with many-to-one relation", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, newCategory: Category, loadedPost: Post
 
         before(reloadDatabase)
@@ -139,7 +138,7 @@ describe("persistence > custom-column-names", function () {
     })
 
     describe("attach new entity to new entity with many-to-one relation", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, newCategory: Category, loadedPost: Post
 
         before(reloadDatabase)
@@ -177,7 +176,7 @@ describe("persistence > custom-column-names", function () {
     })
 
     describe("attach exist entity to exist entity with one-to-one relation", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post,
             newCategory: Category,
             newMetadata: CategoryMetadata,
@@ -241,7 +240,7 @@ describe("persistence > custom-column-names", function () {
     })
 
     describe("attach new entity to exist entity with one-to-one relation", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post,
             newCategory: Category,
             newMetadata: CategoryMetadata,

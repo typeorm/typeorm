@@ -18,5 +18,5 @@ export class Post {
     @OneToMany((type) => Category, (category) => category.post)
     categories: Category[]
 
-    categoryIds: number[]
+    categoryIds: any[]
 }

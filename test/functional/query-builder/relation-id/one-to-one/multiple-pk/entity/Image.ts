@@ -1,12 +1,12 @@
 import { Entity } from "../../../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Column } from "../../../../../../../src/decorator/columns/Column"
 import { OneToOne } from "../../../../../../../src/decorator/relations/OneToOne"
 import { Category } from "./Category"
+import { PrimaryColumn } from "../../../../../../../src"
 
 @Entity()
 export class Image {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column()

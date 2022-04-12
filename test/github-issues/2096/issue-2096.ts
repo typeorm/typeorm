@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { createConnection } from "../../../src"
+import { DataSource } from "../../../src"
 import { getTypeOrmConfig } from "../../utils/test-utils"
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
 
@@ -19,15 +19,16 @@ describe("github issues > #2096 [mysql] Database name isn't read from url", () =
 
             const url = `mysql://${username}:${password}@${host}:${port}/${database}`
 
-            const connection = await createConnection({
+            const dataSource = new DataSource({
                 name: "#2096",
                 url,
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 synchronize: true,
                 type: "mysql",
             })
-            expect(connection.isInitialized).to.eq(true)
-            await connection.close()
+            await dataSource.initialize()
+            expect(dataSource.isInitialized).to.eq(true)
+            await dataSource.destroy()
         }
     })
 })

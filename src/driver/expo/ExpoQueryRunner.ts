@@ -144,7 +144,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         const databaseConnection = await this.connect()
         return new Promise((ok, fail) => {
             databaseConnection.exec(
-                [{ sql: "PRAGMA foreign_keys = OFF;", args: [] }],
+                [{ sql: "PRAGMA foreign_keys = OFF", args: [] }],
                 false,
                 (err: any) => (err ? fail(err) : ok()),
             )
@@ -158,7 +158,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         const databaseConnection = await this.connect()
         return new Promise((ok, fail) => {
             databaseConnection.exec(
-                [{ sql: "PRAGMA foreign_keys = ON;", args: [] }],
+                [{ sql: "PRAGMA foreign_keys = ON", args: [] }],
                 false,
                 (err: any) => (err ? fail(err) : ok()),
             )

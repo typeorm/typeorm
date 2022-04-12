@@ -221,7 +221,8 @@ or
         "dirty_read" |
         "pessimistic_partial_write" |
         "pessimistic_write_or_fail" |
-        "for_no_key_update"
+        "for_no_key_update" |
+        "for_key_share"
 }
 ```
 
@@ -239,14 +240,14 @@ userRepository.findOne({
 Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
 
 ```text
-|                 | pessimistic_read         | pessimistic_write       | dirty_read    | pessimistic_partial_write   | pessimistic_write_or_fail   | for_no_key_update   |
-| --------------- | --------------------     | ----------------------- | ------------- | --------------------------- | --------------------------- | ------------------- |
-| MySQL           | LOCK IN SHARE MODE       | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED      | FOR UPDATE NOWAIT           |                     |
-| Postgres        | FOR SHARE                | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED      | FOR UPDATE NOWAIT           | FOR NO KEY UPDATE   |
-| Oracle          | FOR UPDATE               | FOR UPDATE              | (nothing)     |                             |                             |                     |
-| SQL Server      | WITH (HOLDLOCK, ROWLOCK) | WITH (UPDLOCK, ROWLOCK) | WITH (NOLOCK) |                             |                             |                     |
-| AuroraDataApi   | LOCK IN SHARE MODE       | FOR UPDATE              | (nothing)     |                             |                             |                     |
-| CockroachDB     |                          | FOR UPDATE              | (nothing)     |                             | FOR UPDATE NOWAIT           | FOR NO KEY UPDATE   |
+|                 | pessimistic_read         | pessimistic_write       | dirty_read    | pessimistic_partial_write   | pessimistic_write_or_fail   | for_no_key_update   | for_key_share |
+| --------------- | --------------------     | ----------------------- | ------------- | --------------------------- | --------------------------- | ------------------- | ------------- |
+| MySQL           | LOCK IN SHARE MODE       | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED      | FOR UPDATE NOWAIT           |                     |               |
+| Postgres        | FOR SHARE                | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED      | FOR UPDATE NOWAIT           | FOR NO KEY UPDATE   | FOR KEY SHARE |
+| Oracle          | FOR UPDATE               | FOR UPDATE              | (nothing)     |                             |                             |                     |               |
+| SQL Server      | WITH (HOLDLOCK, ROWLOCK) | WITH (UPDLOCK, ROWLOCK) | WITH (NOLOCK) |                             |                             |                     |               |
+| AuroraDataApi   | LOCK IN SHARE MODE       | FOR UPDATE              | (nothing)     |                             |                             |                     |               |
+| CockroachDB     |                          | FOR UPDATE              | (nothing)     |                             | FOR UPDATE NOWAIT           | FOR NO KEY UPDATE   |               |
 
 ```
 

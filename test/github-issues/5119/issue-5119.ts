@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource, createConnection } from "../../../src"
+import { DataSource } from "../../../src"
 import { fail } from "assert"
 
 describe("github issues > #5119 migration with foreign key that changes target", () => {
@@ -36,9 +36,10 @@ describe("github issues > #5119 migration with foreign key that changes target",
                     fail()
                     return
                 }
-                const connection = await createConnection(options)
+                const dataSource = new DataSource(options)
+                await dataSource.initialize()
                 try {
-                    const sqlInMemory = await connection.driver
+                    const sqlInMemory = await dataSource.driver
                         .createSchemaBuilder()
                         .log()
 
@@ -61,7 +62,7 @@ describe("github issues > #5119 migration with foreign key that changes target",
                         `ALTER TABLE "post" DROP CONSTRAINT "FK_4490d00e1925ca046a1f52ddf04"`,
                     ])
                 } finally {
-                    connection.close()
+                    dataSource.close()
                 }
             }),
         )

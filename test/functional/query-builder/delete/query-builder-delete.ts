@@ -133,7 +133,8 @@ describe("query builder > delete", () => {
                 const result = await connection
                     .createQueryBuilder()
                     .delete()
-                    .from(User)
+                    .from(User, "user")
+                    .where("name IS NOT NULL")
                     .execute()
 
                 expect(result.affected).to.equal(2)

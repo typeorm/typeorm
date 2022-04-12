@@ -41,6 +41,15 @@ export class IndexMetadata {
     isFulltext: boolean = false
 
     /**
+     * NULL_FILTERED indexes are particularly useful for indexing sparse columns, where most rows contain a NULL value.
+     * In these cases, the NULL_FILTERED index can be considerably smaller and more efficient to maintain than
+     * a normal index that includes NULL values.
+     *
+     * Works only in Spanner.
+     */
+    isNullFiltered: boolean = false
+
+    /**
      * Fulltext parser.
      * Works only in MySQL.
      */
@@ -134,6 +143,7 @@ export class IndexMetadata {
             this.isUnique = !!options.args.unique
             this.isSpatial = !!options.args.spatial
             this.isFulltext = !!options.args.fulltext
+            this.isNullFiltered = !!options.args.nullFiltered
             this.parser = options.args.parser
             this.where = options.args.where
             this.isSparse = options.args.sparse

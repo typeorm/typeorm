@@ -2262,13 +2262,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         database = currentDatabase
                     }
 
-                    return `
-                        SELECT \`TABLE_SCHEMA\`,
-                               \`TABLE_NAME\`
-                        FROM \`INFORMATION_SCHEMA\`.\`TABLES\`
-                        WHERE \`TABLE_SCHEMA\` = '${database}'
-                          AND \`TABLE_NAME\` = '${name}'
-                    `
+                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
                 })
                 .join(" UNION ")
 

@@ -20,3 +20,4 @@ export type DatabaseType =
     | "expo"
     | "better-sqlite3"
     | "capacitor"
+    | "spanner"

@@ -173,6 +173,8 @@ describe("github issues > #8076 Add relation options to all tree queries (missin
                     .getTreeRepository(Category)
                     .findRoots({ relations: ["members"] })
 
+                result.sort((a, b) => a.pk - b.pk)
+
                 expect(result).to.have.lengthOf(2)
                 expect(result[0].sites).equals(undefined)
                 expect(result[0].members).to.have.lengthOf(1)

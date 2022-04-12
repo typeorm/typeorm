@@ -197,7 +197,9 @@ export class EntityMetadataBuilder {
                                     "aurora-mysql" ||
                                 this.connection.driver.options.type ===
                                     "mssql" ||
-                                this.connection.driver.options.type === "sap"
+                                this.connection.driver.options.type === "sap" ||
+                                this.connection.driver.options.type ===
+                                    "spanner"
                             ) {
                                 const index = new IndexMetadata({
                                     entityMetadata:
@@ -222,6 +224,13 @@ export class EntityMetadataBuilder {
                                             )} IS NOT NULL`
                                         })
                                         .join(" AND ")
+                                }
+
+                                if (
+                                    this.connection.driver.options.type ===
+                                    "spanner"
+                                ) {
+                                    index.isNullFiltered = true
                                 }
 
                                 if (relation.embeddedMetadata) {
@@ -615,7 +624,7 @@ export class EntityMetadataBuilder {
                         propertyName: "mpath",
                         options: /*tree.column || */ {
                             name: namingStrategy.materializedPathColumnName,
-                            type: "varchar",
+                            type: String,
                             nullable: true,
                             default: "",
                         },
@@ -635,7 +644,7 @@ export class EntityMetadataBuilder {
                         propertyName: left,
                         options: /*tree.column || */ {
                             name: left,
-                            type: "integer",
+                            type: Number,
                             nullable: false,
                             default: 1,
                         },
@@ -653,7 +662,7 @@ export class EntityMetadataBuilder {
                         propertyName: right,
                         options: /*tree.column || */ {
                             name: right,
-                            type: "integer",
+                            type: Number,
                             nullable: false,
                             default: 2,
                         },
@@ -764,11 +773,12 @@ export class EntityMetadataBuilder {
                 })
         }
 
-        // Mysql and SAP HANA stores unique constraints as unique indices.
+        // This drivers stores unique constraints as unique indices.
         if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
-            this.connection.driver.options.type === "sap"
+            this.connection.driver.options.type === "sap" ||
+            this.connection.driver.options.type === "spanner"
         ) {
             const indices = this.metadataArgsStorage
                 .filterUniques(entityMetadata.inheritanceTree)

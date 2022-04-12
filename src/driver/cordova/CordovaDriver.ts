@@ -88,7 +88,7 @@ export class CordovaDriver extends AbstractSqliteDriver {
             // we need to enable foreign keys in sqlite to make sure all foreign key related features
             // working properly. this also makes onDelete to work with sqlite.
             connection.executeSql(
-                `PRAGMA foreign_keys = ON;`,
+                `PRAGMA foreign_keys = ON`,
                 [],
                 () => ok(),
                 (err: any) => fail(err),

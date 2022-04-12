@@ -214,11 +214,40 @@ await timber.remove()
     - for **SAP Hana**
 
         ```
-        npm i @sap/hana-client
-        npm i hdb-pool
+        npm install @sap/hana-client
+        npm install hdb-pool
         ```
 
         _SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/)._
+
+    - for **Google Cloud Spanner**
+
+        ```
+        npm install @google-cloud/spanner --save
+        ```
+
+        Provide authentication credentials to your application code
+        by setting the environment variable `GOOGLE_APPLICATION_CREDENTIALS`:
+
+        ```shell
+        # Linux/macOS
+        export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"
+
+        # Windows
+        set GOOGLE_APPLICATION_CREDENTIALS=KEY_PATH
+
+        # Replace KEY_PATH with the path of the JSON file that contains your service account key.
+        ```
+
+        To use Spanner with the emulator you should set `SPANNER_EMULATOR_HOST` environment variable:
+
+        ```shell
+        # Linux/macOS
+        export SPANNER_EMULATOR_HOST=localhost:9010
+
+        # Windows
+        set SPANNER_EMULATOR_HOST=localhost:9010
+        ```
 
     - for **MongoDB** (experimental)
 
@@ -248,14 +277,14 @@ The quickest way to get started with TypeORM is to use its CLI commands to gener
 Quick start works only if you are using TypeORM in a NodeJS application.
 If you are using other platforms, proceed to the [step-by-step guide](#step-by-step-guide).
 
-To create a new project using CLI, run the follwing command:
+To create a new project using CLI, run the following command:
 
 ```shell
 npx typeorm init --name MyProject --database postgres
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `mongodb`,
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `sap`, `spanner`, `oracle`, `mongodb`,
 `cordova`, `react-native`, `expo`, `nativescript`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
@@ -553,7 +582,7 @@ AppDataSource.initialize()
 
 We are using Postgres in this example, but you can use any other supported database.
 To use another database, simply change the `type` in the options to the database type you are using:
-`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `cordova`, `nativescript`, `react-native`,
+`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `sap`, `spanner`, `cordova`, `nativescript`, `react-native`,
 `expo`, or `mongodb`.
 Also make sure to use your own host, port, username, password and database settings.
 
@@ -584,7 +613,6 @@ Now if you run your `index.ts`, a connection with the database will be initializ
 Now let's create a new photo to save it in the database:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -611,7 +639,6 @@ Using entity manager you can manipulate any entity in your app.
 For example, let's load our saved entity:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -630,7 +657,6 @@ Each entity has its own repository which handles all operations with its entity.
 When you deal with entities a lot, Repositories are more convenient to use than EntityManagers:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -657,7 +683,6 @@ Learn more about Repository [here](./docs/working-with-repository.md).
 Let's try more load operations using the Repository:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -691,7 +716,6 @@ console.log("Photos count: ", photosCount)
 Now let's load a single photo from the database, update it and save it:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -710,7 +734,6 @@ Now photo with `id = 1` will be updated in the database.
 Now let's remove our photo from the database:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { AppDataSource } from "./index"
 
@@ -796,7 +819,6 @@ If you run the app, you'll see a newly generated table, and it will contain a co
 Now let's save a photo, its metadata and attach them to each other.
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 
@@ -937,7 +959,6 @@ Let's use `find*` methods first.
 `find*` methods allow you to specify an object with the `FindOneOptions` / `FindManyOptions` interface.
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 import { AppDataSource } from "./index"
@@ -957,7 +978,6 @@ Using find options is good and dead simple, but if you need a more complex query
 `QueryBuilder` allows more complex queries to be used in an elegant way:
 
 ```typescript
-import { DataSource } from "typeorm"
 import { Photo } from "./entity/Photo"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 import { AppDataSource } from "./index"
@@ -1275,7 +1295,9 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
 -   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
 -   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
+-   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
 -   Create/Drop database - [typeorm-extension](https://github.com/Tada5hi/typeorm-extension)
+-   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
 
 ## Contributing
 

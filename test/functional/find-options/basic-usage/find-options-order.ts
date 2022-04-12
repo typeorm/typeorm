@@ -393,6 +393,7 @@ describe("find options > order", () => {
                             },
                         },
                         order: {
+                            id: "asc",
                             author: {
                                 id: "desc",
                             },

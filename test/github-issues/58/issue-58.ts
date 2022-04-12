@@ -54,6 +54,7 @@ describe("github issues > #58 relations with multiple primary keys", () => {
                     .createQueryBuilder(Post, "post")
                     .innerJoinAndSelect("post.categories", "postCategory")
                     .innerJoinAndSelect("postCategory.category", "category")
+                    .addOrderBy("postCategory.categoryId")
                     .getOne()
 
                 expect(loadedPost!).not.to.be.null

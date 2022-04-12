@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Post } from "./entity/Post"
 import { Question } from "./entity/Question"
 import { Counters } from "./entity/Counters"
@@ -16,9 +16,10 @@ const options: DataSourceOptions = {
     entities: [Post, Question, Counters],
 }
 
-createConnection(options).then(
-    (connection) => {
-        let questionRepository = connection.getRepository(Question)
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    (dataSource) => {
+        let questionRepository = dataSource.getRepository(Question)
 
         const question = new Question()
         question.title = "Hello question!"

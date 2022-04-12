@@ -79,6 +79,14 @@ services:
       - default
       - typeorm
 
+  # google cloud spanner
+  spanner:
+    image: alexmesser/spanner-emulator
+    container_name: "typeorm-spanner"
+    ports:
+      - "9010:9010"
+      - "9020:9020"
+
   # sap hana (works only on linux)
   # hanaexpress:
   #   image: "store/saplabs/hanaexpress:2.00.040.00.20190729.1"

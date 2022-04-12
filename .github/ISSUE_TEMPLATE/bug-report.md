@@ -98,6 +98,7 @@ assignees: ''
 | `postgres`        | no            |
 | `react-native`    | no            |
 | `sap`             | no            |
+| `spanner`         | no            |
 | `sqlite`          | no            |
 | `sqlite-abstract` | no            |
 | `sqljs`           | no            |

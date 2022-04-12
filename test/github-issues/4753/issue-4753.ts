@@ -1,4 +1,3 @@
-import { getConnectionManager } from "../../../src"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
 import {
@@ -13,8 +12,8 @@ function isMySql(v: TestingConnectionOptions): v is MysqlConnectionOptions {
 }
 
 describe("github issues > #4753 MySQL Replication Config broken", () => {
-    let connections: DataSource[] = []
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[] = []
+    after(() => closeTestingConnections(dataSources))
 
     it("should connect without error when using replication", async () => {
         const connectionOptions: MysqlConnectionOptions | undefined =
@@ -26,8 +25,7 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
             // Skip if MySQL tests aren't enabled at all
             return
         }
-        const connectionManager = getConnectionManager()
-        const connection = connectionManager.create({
+        const dataSource = new DataSource({
             type: "mysql",
             replication: {
                 master: {
@@ -48,8 +46,8 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
             entities: [User],
         })
 
-        connections.push(connection)
-        await connection.connect()
-        connection.isInitialized.should.be.true
+        dataSources.push(dataSource)
+        await dataSource.connect()
+        dataSource.isInitialized.should.be.true
     })
 })

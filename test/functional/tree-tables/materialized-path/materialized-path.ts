@@ -222,6 +222,12 @@ describe("tree tables > materialized-path", () => {
                 await categoryRepository.save(a1)
 
                 const categoriesTree = await categoryRepository.findTrees()
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree[0].childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql([
                     {
                         id: a1.id,
@@ -292,6 +298,16 @@ describe("tree tables > materialized-path", () => {
                 await categoryRepository.save(b1)
 
                 const categoriesTree = await categoryRepository.findTrees()
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree[0].childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+                categoriesTree[1].childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree[1].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql([
                     {
                         id: a1.id,
@@ -366,6 +382,11 @@ describe("tree tables > materialized-path", () => {
                 await categoryRepository.save(a1)
 
                 const categoriesTree = await categoryRepository.findTrees()
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree[0].childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
                 categoriesTree.should.be.eql([
                     {
                         id: a1.id,
@@ -398,6 +419,13 @@ describe("tree tables > materialized-path", () => {
 
                 const categoriesTreeWithEmptyOptions =
                     await categoryRepository.findTrees({})
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTreeWithEmptyOptions[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+                categoriesTreeWithEmptyOptions[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
                 categoriesTreeWithEmptyOptions.should.be.eql([
                     {
                         id: a1.id,
@@ -440,6 +468,12 @@ describe("tree tables > materialized-path", () => {
 
                 const categoriesTreeWithDepthOne =
                     await categoryRepository.findTrees({ depth: 1 })
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTreeWithDepthOne[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTreeWithDepthOne.should.be.eql([
                     {
                         id: a1.id,
@@ -488,6 +522,13 @@ describe("tree tables > materialized-path", () => {
 
                 const categoriesTree =
                     await categoryRepository.findDescendantsTree(a1)
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree.childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree.childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql({
                     id: a1.id,
                     name: "a1",
@@ -545,6 +586,13 @@ describe("tree tables > materialized-path", () => {
 
                 const categoriesTree =
                     await categoryRepository.findDescendantsTree(a1)
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree.childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree.childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql({
                     id: a1.id,
                     name: "a1",
@@ -575,6 +623,15 @@ describe("tree tables > materialized-path", () => {
 
                 const categoriesTreeWithEmptyOptions =
                     await categoryRepository.findDescendantsTree(a1, {})
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTreeWithEmptyOptions.childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+                categoriesTreeWithEmptyOptions.childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTreeWithEmptyOptions.should.be.eql({
                     id: a1.id,
                     name: "a1",

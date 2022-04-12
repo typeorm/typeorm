@@ -57,7 +57,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
             connections.map(async (connection) => {
                 await insertSimpleTestData(connection)
 
-                const user = await connection.getRepository(User).findOne({
+                const [user] = await connection.getRepository(User).find({
                     relations: ["settings"],
                     // relationLoadStrategy: "join"
                 })
@@ -84,9 +84,9 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                     },
                 ])
 
-                const user = await connection
+                const [user] = await connection
                     .getRepository(User)
-                    .findOne({ relations: ["settings"] })
+                    .find({ relations: ["settings"] })
 
                 // check the saved items have correctly updated value
                 expect(user!).not.to.be.undefined
@@ -116,7 +116,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                     settings: [],
                 })
 
-                const user = await connection.getRepository(User).findOne({
+                const [user] = await connection.getRepository(User).find({
                     relations: ["settings"],
                 })
 

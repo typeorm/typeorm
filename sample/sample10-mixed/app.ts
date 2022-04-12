@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Post } from "./entity/Post"
 import { PostDetails } from "./entity/PostDetails"
 import { Image } from "./entity/Image"
@@ -17,9 +17,11 @@ const options: DataSourceOptions = {
     entities: [__dirname + "/entity/*"],
 }
 
-createConnection(options)
-    .then((connection) => {
-        let postRepository = connection.getRepository(Post)
+const dataSource = new DataSource(options)
+dataSource
+    .initialize()
+    .then((dataSource) => {
+        let postRepository = dataSource.getRepository(Post)
 
         let postCover = new Cover()
         postCover.url = "http://covers.com/post.jpg"

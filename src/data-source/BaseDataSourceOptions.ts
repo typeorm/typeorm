@@ -40,8 +40,7 @@ export interface BaseDataSourceOptions {
 
     /**
      * Migrations to be loaded for this connection.
-     * Accepts both migration classes and directories where from migrations need to be loaded.
-     * Directories support glob patterns.
+     * Accepts both migration classes and glob patterns representing migration files.
      */
     readonly migrations?: MixedList<Function | string>
 

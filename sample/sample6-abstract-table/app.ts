@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 import { PostAuthor } from "./entity/PostAuthor"
@@ -16,8 +16,9 @@ const options: DataSourceOptions = {
     entities: [__dirname + "/entity/*"],
 }
 
-createConnection(options).then(
-    (connection) => {
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    (dataSource) => {
         let category1 = new PostCategory()
         category1.name = "post category #1"
 
@@ -48,8 +49,8 @@ createConnection(options).then(
         blog.author = author
         blog.categories.push(category1, category2)
 
-        let postRepository = connection.getRepository(Post)
-        let blogRepository = connection.getRepository(Blog)
+        let postRepository = dataSource.getRepository(Post)
+        let blogRepository = dataSource.getRepository(Blog)
 
         postRepository
             .save(post)

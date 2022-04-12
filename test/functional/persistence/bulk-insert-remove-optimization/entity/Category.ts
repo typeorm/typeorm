@@ -1,12 +1,12 @@
 import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Post } from "./Post"
 import { Column } from "../../../../../src/decorator/columns/Column"
 import { ManyToMany } from "../../../../../src/decorator/relations/ManyToMany"
+import { PrimaryColumn } from "../../../../../src"
 
 @Entity()
 export class Category {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column()

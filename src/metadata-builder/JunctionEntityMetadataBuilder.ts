@@ -207,6 +207,7 @@ export class JunctionEntityMetadataBuilder {
 
         // create junction table foreign keys
         // Note: UPDATE CASCADE clause is not supported in Oracle.
+        // Note: UPDATE/DELETE CASCADE clauses are not supported in Spanner.
         entityMetadata.foreignKeys = relation.createForeignKeyConstraints
             ? [
                   new ForeignKeyMetadata({
@@ -214,9 +215,13 @@ export class JunctionEntityMetadataBuilder {
                       referencedEntityMetadata: relation.entityMetadata,
                       columns: junctionColumns,
                       referencedColumns: referencedColumns,
-                      onDelete: relation.onDelete || "CASCADE",
+                      onDelete:
+                          this.connection.driver.options.type === "spanner"
+                              ? "NO ACTION"
+                              : relation.onDelete || "CASCADE",
                       onUpdate:
-                          this.connection.driver.options.type === "oracle"
+                          this.connection.driver.options.type === "oracle" ||
+                          this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.onUpdate || "CASCADE",
                   }),
@@ -225,11 +230,15 @@ export class JunctionEntityMetadataBuilder {
                       referencedEntityMetadata: relation.inverseEntityMetadata,
                       columns: inverseJunctionColumns,
                       referencedColumns: inverseReferencedColumns,
-                      onDelete: relation.inverseRelation
-                          ? relation.inverseRelation.onDelete
-                          : "CASCADE",
+                      onDelete:
+                          this.connection.driver.options.type === "spanner"
+                              ? "NO ACTION"
+                              : relation.inverseRelation
+                              ? relation.inverseRelation.onDelete
+                              : "CASCADE",
                       onUpdate:
-                          this.connection.driver.options.type === "oracle"
+                          this.connection.driver.options.type === "oracle" ||
+                          this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
                               ? relation.inverseRelation.onUpdate

@@ -8,7 +8,7 @@ import {
 import { Faculty } from "./Faculty"
 
 @Entity()
-@TableInheritance({ column: { name: "type", type: "varchar" } })
+@TableInheritance({ column: { name: "type", type: String } })
 export class Staff {
     @PrimaryGeneratedColumn()
     id: number

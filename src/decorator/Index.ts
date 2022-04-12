@@ -135,6 +135,7 @@ export function Index(
             unique: options && options.unique ? true : false,
             spatial: options && options.spatial ? true : false,
             fulltext: options && options.fulltext ? true : false,
+            nullFiltered: options && options.nullFiltered ? true : false,
             parser: options ? options.parser : undefined,
             sparse: options && options.sparse ? true : false,
             background: options && options.background ? true : false,

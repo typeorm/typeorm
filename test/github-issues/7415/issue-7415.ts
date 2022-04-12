@@ -67,7 +67,10 @@ describe("github issues > #7415 Tree entities with embedded primary columns are 
                     ],
                 }
 
-                expect(descendantsTree).to.be.eql(expectedDescendantsTree)
+                expect(descendantsTree.id).to.be.eql(expectedDescendantsTree.id)
+                expect(descendantsTree.children).to.have.deep.members(
+                    expectedDescendantsTree.children,
+                )
 
                 const ancestorsTree = await repository.findAncestorsTree(a121)
 

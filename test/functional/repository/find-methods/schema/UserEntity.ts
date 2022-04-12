@@ -9,11 +9,11 @@ export const UserEntity = new EntitySchema({
             primary: true,
         },
         firstName: {
-            type: "varchar",
+            type: String,
             nullable: false,
         },
         secondName: {
-            type: "varchar",
+            type: String,
             nullable: false,
         },
     },

@@ -1,5 +1,8 @@
 import "../../utils/test-setup"
-import { setupTestingConnections } from "../../utils/test-utils"
+import {
+    createDataSource,
+    setupTestingConnections,
+} from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { expect } from "chai"
 import { DataSource } from "../../../src"
@@ -37,7 +40,7 @@ describe("base entity", () => {
         // reset data source just to make sure inside DataSource it's really being set
         User.useDataSource(null)
 
-        const dataSource = new DataSource(dataSourceOptions[0])
+        const dataSource = createDataSource(dataSourceOptions[0])
         await dataSource.initialize()
         await dataSource.synchronize(true)
 

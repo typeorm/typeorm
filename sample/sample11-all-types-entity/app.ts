@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { EverythingEntity, SampleEnum } from "./entity/EverythingEntity"
 
 const options: DataSourceOptions = {
@@ -14,8 +14,9 @@ const options: DataSourceOptions = {
     entities: [EverythingEntity],
 }
 
-createConnection(options).then(
-    (connection) => {
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    (dataSource) => {
         let entity = new EverythingEntity()
         entity.date = new Date(1980, 11, 1)
         entity.name = "max 255 chars name"
@@ -38,7 +39,7 @@ createConnection(options).then(
         entity.alsoJson = { hello: "olleh", world: "dlrow" }
         entity.enum = SampleEnum.ONE
 
-        let postRepository = connection.getRepository(EverythingEntity)
+        let postRepository = dataSource.getRepository(EverythingEntity)
 
         postRepository
             .save(entity)

@@ -1,7 +1,6 @@
 import "reflect-metadata"
 import * as fs from "fs"
 import { expect } from "chai"
-import { getSqljsManager } from "../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -26,13 +25,12 @@ describe("sqljs driver > load", () => {
 
     it("should load from a file", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const manager = getSqljsManager("sqljs")
-                await manager.loadDatabase(
+            connections.map(async (dataSource) => {
+                await dataSource.sqljsManager.loadDatabase(
                     "test/functional/sqljs/sqlite/test.sqlite",
                 )
 
-                const repository = connection.getRepository(Post)
+                const repository = dataSource.getRepository(Post)
                 const post = await repository.findOneBy({ title: "A post" })
 
                 expect(post).not.to.be.null
@@ -40,7 +38,8 @@ describe("sqljs driver > load", () => {
                     expect(post.title).to.be.equal("A post")
                 }
 
-                const exportedDatabase = manager.exportDatabase()
+                const exportedDatabase =
+                    dataSource.sqljsManager.exportDatabase()
                 expect(exportedDatabase).not.to.be.undefined
                 const originalFileContent = fs.readFileSync(
                     "test/functional/sqljs/sqlite/test.sqlite",
@@ -53,10 +52,9 @@ describe("sqljs driver > load", () => {
 
     it("should throw an error if the file doesn't exist", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const manager = getSqljsManager("sqljs")
+            connections.map(async (dataSource) => {
                 try {
-                    await manager.loadDatabase(
+                    await dataSource.sqljsManager.loadDatabase(
                         "test/functional/sqljs/sqlite/test2.sqlite",
                     )
                     expect(true).to.be.false

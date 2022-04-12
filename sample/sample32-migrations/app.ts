@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 
@@ -15,8 +15,10 @@ const options: DataSourceOptions = {
     entities: [Post, Author],
 }
 
-createConnection(options)
-    .then(async (connection) => {
+const dataSource = new DataSource(options)
+dataSource
+    .initialize()
+    .then(async (dataSource) => {
         // first insert all the data
         let author = new Author()
         author.firstName = "Umed"
@@ -26,7 +28,7 @@ createConnection(options)
         post.title = "hello"
         post.author = author
 
-        let postRepository = connection.getRepository(Post)
+        let postRepository = dataSource.getRepository(Post)
 
         await postRepository.save(post)
         console.log(
@@ -34,10 +36,10 @@ createConnection(options)
         )
 
         // close connection now
-        await connection.close()
+        await dataSource.destroy()
 
-        // now create a new connection
-        connection = await createConnection({
+        // now re-initialize data source
+        dataSource = new DataSource({
             type: "mysql",
             name: "mysql",
             host: "localhost",
@@ -49,13 +51,14 @@ createConnection(options)
             entities: [Post, Author],
             migrations: [__dirname + "/migrations/*{.js,.ts}"],
         })
+        await dataSource.initialize()
 
         // run all migrations
-        await connection.runMigrations()
+        await dataSource.runMigrations()
 
         // and undo migrations two times (because we have two migrations)
-        await connection.undoLastMigration()
-        await connection.undoLastMigration()
+        await dataSource.undoLastMigration()
+        await dataSource.undoLastMigration()
 
         console.log("Done. We run two migrations then reverted them.")
     })

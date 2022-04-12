@@ -25,6 +25,9 @@ describe("query builder > cte > recursive", () => {
             connections
                 .filter(filterByCteCapabilities("enabled"))
                 .map(async (connection) => {
+                    // CTE cannot reference itself in Spanner
+                    if (connection.options.type === "spanner") return
+
                     const qb = await connection
                         .createQueryBuilder()
                         .select([])

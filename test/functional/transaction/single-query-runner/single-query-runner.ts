@@ -82,9 +82,19 @@ describe("transaction > single query runner", () => {
                     title: "Hello World",
                 })
                 expect(loadedPost4).to.be.eql({ id: 1, title: "Hello World" })
-                await entityManager.query(
-                    `DELETE FROM ${connection.driver.escape("post")}`,
-                )
+
+                // in Spanner DELETE must have a WHERE clause
+                if (connection.driver.options.type === "spanner") {
+                    await entityManager.query(
+                        `DELETE FROM ${connection.driver.escape(
+                            "post",
+                        )} WHERE true`,
+                    )
+                } else {
+                    await entityManager.query(
+                        `DELETE FROM ${connection.driver.escape("post")}`,
+                    )
+                }
                 const loadedPost5 = await entityManager.findOneBy(Post, {
                     title: "Hello World",
                 })

@@ -397,10 +397,12 @@ export class MysqlDriver implements Driver {
             await queryRunner.release()
         }
 
-        const result = (await this.createQueryRunner("master").query(
-            `SELECT VERSION() AS \`version\``,
-        )) as { version: string }[]
+        const queryRunner = this.createQueryRunner("master")
+        const result: {
+            version: string
+        }[] = await queryRunner.query(`SELECT VERSION() AS \`version\``)
         const dbVersion = result[0].version
+        await queryRunner.release()
 
         if (this.options.type === "mariadb") {
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.0.5")) {

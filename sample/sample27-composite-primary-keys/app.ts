@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Post } from "./entity/Post"
 
 const options: DataSourceOptions = {
@@ -14,9 +14,10 @@ const options: DataSourceOptions = {
     entities: [Post],
 }
 
-createConnection(options).then(
-    async (connection) => {
-        let postRepository = connection.getRepository(Post)
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    async (dataSource) => {
+        let postRepository = dataSource.getRepository(Post)
 
         const post = new Post()
         post.id = 1

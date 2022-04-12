@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource, createConnection } from "../../../src"
+import { DataSource } from "../../../src"
 import { fail } from "assert"
 import { Query } from "../../../src/driver/Query"
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
@@ -42,9 +42,10 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
                     fail()
                 }
 
-                const migrationConnection = await createConnection(options)
+                const migrationDataSource = new DataSource(options)
+                await migrationDataSource.initialize()
                 try {
-                    const sqlInMemory = await migrationConnection.driver
+                    const sqlInMemory = await migrationDataSource.driver
                         .createSchemaBuilder()
                         .log()
 
@@ -59,7 +60,7 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
                     ])
                 } finally {
                     await connection.close()
-                    await migrationConnection.close()
+                    await migrationDataSource.close()
                 }
             }),
         )

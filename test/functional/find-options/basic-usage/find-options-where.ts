@@ -16,7 +16,9 @@ describe("find options > where", () => {
     let connections: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (connections = await createTestingConnections({
+                __dirname,
+            })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
@@ -207,6 +209,9 @@ describe("find options > where", () => {
                                 },
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -271,6 +276,9 @@ describe("find options > where", () => {
                                 likes: 1,
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -304,6 +312,9 @@ describe("find options > where", () => {
                                     firstName: "Gyro",
                                 },
                             },
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -351,6 +362,9 @@ describe("find options > where", () => {
                                 },
                             },
                         ],
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -426,6 +440,9 @@ describe("find options > where", () => {
                                 photos: MoreThan(1),
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts3.should.be.eql([
@@ -461,6 +478,9 @@ describe("find options > where", () => {
                         where: {
                             posts: MoreThan(1),
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 tags1.should.be.eql([
@@ -486,6 +506,7 @@ describe("find options > where", () => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()
+                post4.id = 4
                 post4.title = "Post #4"
                 post4.text = "About post #4"
                 post4.counters = new Counters()
@@ -500,6 +521,9 @@ describe("find options > where", () => {
                                 id: undefined,
                                 firstName: undefined,
                             },
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -538,6 +562,7 @@ describe("find options > where", () => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()
+                post4.id = 4
                 post4.title = "Post #4"
                 post4.text = "About post #4"
                 post4.counters = new Counters()
@@ -549,6 +574,9 @@ describe("find options > where", () => {
                     .setFindOptions({
                         where: {
                             author: true,
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()

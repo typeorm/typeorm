@@ -20,7 +20,7 @@ export class CommandUtils {
             )
         } catch (err) {
             throw new Error(
-                `Invalid file path given: "${dataSourceFilePath}". File must contain a TypeScript / JavaScript code and export a DataSource instance.`,
+                `Unable to open file: "${dataSourceFilePath}". ${err.message}`,
             )
         }
 

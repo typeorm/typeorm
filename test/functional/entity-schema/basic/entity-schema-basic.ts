@@ -24,6 +24,7 @@ describe("entity schemas > basic functionality", () => {
             connections.map(async (connection) => {
                 const postRepository = connection.getRepository(PostEntity)
                 const post = postRepository.create({
+                    id: 1,
                     title: "First Post",
                     text: "About first post",
                 })

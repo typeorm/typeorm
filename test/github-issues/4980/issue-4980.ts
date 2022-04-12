@@ -13,6 +13,7 @@ describe("github issues > #4980 (Postgres) onUpdate: 'CASCADE' doesn't work on m
     before(
         async () =>
             (connections = await createTestingConnections({
+                enabledDrivers: ["postgres"],
                 entities: [Author, Book],
             })),
     )
