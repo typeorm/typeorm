@@ -34,7 +34,6 @@ describe("database schema > generated columns > postgres", () => {
     it("should not generate queries when no model changes", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                await dataSource.driver.createSchemaBuilder().build()
                 const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()

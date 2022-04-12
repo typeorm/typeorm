@@ -507,7 +507,7 @@ export abstract class BaseQueryRunner {
             oldColumn.width !== newColumn.width || // MySQL only
             oldColumn.zerofill !== newColumn.zerofill || // MySQL only
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
-            oldColumn.asExpression !== newColumn.asExpression || // MySQL only
+            oldColumn.asExpression !== newColumn.asExpression ||
             (checkDefault && oldColumn.default !== newColumn.default) ||
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||

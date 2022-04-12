@@ -7,12 +7,12 @@ import {
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
 
-describe("database schema > generated columns > mssql", () => {
+describe("database schema > generated columns > oracle", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["oracle"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -39,29 +39,24 @@ describe("database schema > generated columns > mssql", () => {
                 let table = await queryRunner.getTable("post")
                 const virtualFullName =
                     table!.findColumnByName("virtualFullName")!
-                const storedFullName =
-                    table!.findColumnByName("storedFullName")!
                 const name = table!.findColumnByName("name")!
                 const nameHash = table!.findColumnByName("nameHash")!
 
                 virtualFullName.asExpression!.should.be.equal(
-                    `concat("firstName",' ',"lastName")`,
+                    `CONCAT("firstName", "lastName")`,
                 )
                 virtualFullName.generatedType!.should.be.equal("VIRTUAL")
-                storedFullName.asExpression!.should.be.equal(
-                    `CONCAT("firstName",' ',"lastName")`,
-                )
-                storedFullName.generatedType!.should.be.equal("STORED")
 
-                name.generatedType!.should.be.equal("STORED")
                 name.asExpression!.should.be.equal(
-                    `"firstName" + ' ' + "lastName"`,
+                    `"firstName" || ' ' || "lastName"`,
                 )
+                name.generatedType!.should.be.equal("VIRTUAL")
 
-                nameHash.generatedType!.should.be.equal("VIRTUAL")
                 nameHash.asExpression!.should.be.equal(
-                    `HashBytes('MD5',coalesce("firstName",'0'))`,
+                    `standard_hash(coalesce("firstName",'MD5'))`,
                 )
+                nameHash.generatedType!.should.be.equal("VIRTUAL")
+                nameHash.length!.should.be.equal("255")
 
                 await queryRunner.release()
             }),
@@ -74,51 +69,34 @@ describe("database schema > generated columns > mssql", () => {
 
                 let table = await queryRunner.getTable("post")
 
-                let storedColumn = new TableColumn({
-                    name: "storedColumn",
-                    type: "varchar",
-                    length: "200",
-                    generatedType: "STORED",
-                    asExpression: `"firstName" + ' ' + "lastName"`,
-                })
-
                 let virtualColumn = new TableColumn({
                     name: "virtualColumn",
                     type: "varchar",
-                    length: "200",
+                    length: "600",
                     generatedType: "VIRTUAL",
-                    asExpression: `"firstName" + ' ' + "lastName"`,
+                    asExpression: `"firstName" || '_' || "lastName"`,
                 })
 
-                await queryRunner.addColumn(table!, storedColumn)
                 await queryRunner.addColumn(table!, virtualColumn)
 
                 table = await queryRunner.getTable("post")
-
-                storedColumn = table!.findColumnByName("storedColumn")!
-                storedColumn.should.be.exist
-                storedColumn!.generatedType!.should.be.equal("STORED")
-                storedColumn!.asExpression!.should.be.equal(
-                    `"firstName" + ' ' + "lastName"`,
-                )
 
                 virtualColumn = table!.findColumnByName("virtualColumn")!
                 virtualColumn.should.be.exist
                 virtualColumn!.generatedType!.should.be.equal("VIRTUAL")
                 virtualColumn!.asExpression!.should.be.equal(
-                    `"firstName" + ' ' + "lastName"`,
+                    `"firstName" || '_' || "lastName"`,
                 )
 
                 // revert changes
                 await queryRunner.executeMemoryDownSql()
 
                 table = await queryRunner.getTable("post")
-                expect(table!.findColumnByName("storedColumn")).to.be.undefined
                 expect(table!.findColumnByName("virtualColumn")).to.be.undefined
 
                 // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedColumn', 'virtualColumn')`,
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'virtualColumn'`,
                 )
                 metadataRecords.length.should.be.equal(0)
 
@@ -132,18 +110,15 @@ describe("database schema > generated columns > mssql", () => {
                 const queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
-                await queryRunner.dropColumn(table!, "storedFullName")
                 await queryRunner.dropColumn(table!, "virtualFullName")
 
                 table = await queryRunner.getTable("post")
-                expect(table!.findColumnByName("storedFullName")).to.be
-                    .undefined
                 expect(table!.findColumnByName("virtualFullName")).to.be
                     .undefined
 
                 // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedFullName', 'virtualFullName')`,
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'virtualFullName'`,
                 )
                 metadataRecords.length.should.be.equal(0)
 
@@ -152,20 +127,12 @@ describe("database schema > generated columns > mssql", () => {
 
                 table = await queryRunner.getTable("post")
 
-                const storedFullName =
-                    table!.findColumnByName("storedFullName")!
-                storedFullName.should.be.exist
-                storedFullName!.generatedType!.should.be.equal("STORED")
-                storedFullName!.asExpression!.should.be.equal(
-                    `CONCAT("firstName",' ',"lastName")`,
-                )
-
                 const virtualFullName =
                     table!.findColumnByName("virtualFullName")!
                 virtualFullName.should.be.exist
                 virtualFullName!.generatedType!.should.be.equal("VIRTUAL")
                 virtualFullName!.asExpression!.should.be.equal(
-                    `concat("firstName",' ',"lastName")`,
+                    `CONCAT("firstName", "lastName")`,
                 )
 
                 await queryRunner.release()
@@ -179,9 +146,10 @@ describe("database schema > generated columns > mssql", () => {
 
                 let table = await queryRunner.getTable("post")
 
-                let storedFullName = table!.findColumnByName("storedFullName")!
-                const changedStoredFullName = storedFullName.clone()
-                changedStoredFullName.asExpression = `concat('Mr. ',"firstName",' ',"lastName")`
+                let virtualFullName =
+                    table!.findColumnByName("virtualFullName")!
+                const changedStoredFullName = virtualFullName.clone()
+                changedStoredFullName.asExpression = `'Mr.' || "firstName" || ' ' || "lastName"`
 
                 let name = table!.findColumnByName("name")!
                 const changedName = name.clone()
@@ -190,7 +158,7 @@ describe("database schema > generated columns > mssql", () => {
 
                 await queryRunner.changeColumns(table!, [
                     {
-                        oldColumn: storedFullName,
+                        oldColumn: virtualFullName,
                         newColumn: changedStoredFullName,
                     },
                     { oldColumn: name, newColumn: changedName },
@@ -198,9 +166,9 @@ describe("database schema > generated columns > mssql", () => {
 
                 table = await queryRunner.getTable("post")
 
-                storedFullName = table!.findColumnByName("storedFullName")!
-                storedFullName!.asExpression!.should.be.equal(
-                    `concat('Mr. ',"firstName",' ',"lastName")`,
+                virtualFullName = table!.findColumnByName("virtualFullName")!
+                virtualFullName!.asExpression!.should.be.equal(
+                    `'Mr.' || "firstName" || ' ' || "lastName"`,
                 )
 
                 name = table!.findColumnByName("name")!
@@ -218,15 +186,15 @@ describe("database schema > generated columns > mssql", () => {
 
                 table = await queryRunner.getTable("post")
 
-                storedFullName = table!.findColumnByName("storedFullName")!
-                storedFullName!.asExpression!.should.be.equal(
-                    `CONCAT("firstName",' ',"lastName")`,
+                virtualFullName = table!.findColumnByName("virtualFullName")!
+                virtualFullName!.asExpression!.should.be.equal(
+                    `CONCAT("firstName", "lastName")`,
                 )
 
                 name = table!.findColumnByName("name")!
-                name.generatedType!.should.be.equal("STORED")
+                name.generatedType!.should.be.equal("VIRTUAL")
                 name.asExpression!.should.be.equal(
-                    `"firstName" + ' ' + "lastName"`,
+                    `"firstName" || ' ' || "lastName"`,
                 )
 
                 await queryRunner.release()

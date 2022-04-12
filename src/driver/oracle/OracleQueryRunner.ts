@@ -498,6 +498,29 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             })
         }
 
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -863,6 +886,24 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
         }
 
+        if (column.generatedType && column.asExpression) {
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.addColumn(column)
@@ -944,7 +985,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
+            oldColumn.length !== newColumn.length ||
+            oldColumn.generatedType !== newColumn.generatedType ||
+            oldColumn.asExpression !== newColumn.asExpression
         ) {
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
@@ -1508,6 +1551,23 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} ADD ${this.buildCreateColumnSql(column)}`,
             ),
         )
+
+        if (column.generatedType && column.asExpression) {
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
 
         await this.executeQueries(upQueries, downQueries)
 
@@ -2167,257 +2227,300 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         ])
 
         // create tables for loaded tables
-        return dbTables.map((dbTable) => {
-            const table = new Table()
-            const owner =
-                dbTable["OWNER"] === currentSchema &&
-                (!this.driver.options.schema ||
-                    this.driver.options.schema === currentSchema)
-                    ? undefined
-                    : dbTable["OWNER"]
-            table.database = currentDatabase
-            table.schema = dbTable["OWNER"]
-            table.name = this.driver.buildTableName(
-                dbTable["TABLE_NAME"],
-                owner,
-            )
-
-            // create columns from the loaded columns
-            table.columns = dbColumns
-                .filter(
-                    (dbColumn) =>
-                        dbColumn["OWNER"] === dbTable["OWNER"] &&
-                        dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"],
+        return await Promise.all(
+            dbTables.map(async (dbTable) => {
+                const table = new Table()
+                const owner =
+                    dbTable["OWNER"] === currentSchema &&
+                    (!this.driver.options.schema ||
+                        this.driver.options.schema === currentSchema)
+                        ? undefined
+                        : dbTable["OWNER"]
+                table.database = currentDatabase
+                table.schema = dbTable["OWNER"]
+                table.name = this.driver.buildTableName(
+                    dbTable["TABLE_NAME"],
+                    owner,
                 )
-                .map((dbColumn) => {
-                    const columnConstraints = dbConstraints.filter(
-                        (dbConstraint) =>
-                            dbConstraint["OWNER"] === dbColumn["OWNER"] &&
-                            dbConstraint["TABLE_NAME"] ===
-                                dbColumn["TABLE_NAME"] &&
-                            dbConstraint["COLUMN_NAME"] ===
-                                dbColumn["COLUMN_NAME"],
-                    )
 
-                    const uniqueConstraints = columnConstraints.filter(
-                        (constraint) => constraint["CONSTRAINT_TYPE"] === "U",
-                    )
-                    const isConstraintComposite = uniqueConstraints.every(
-                        (uniqueConstraint) => {
-                            return dbConstraints.some(
+                // create columns from the loaded columns
+                table.columns = await Promise.all(
+                    dbColumns
+                        .filter(
+                            (dbColumn) =>
+                                dbColumn["OWNER"] === dbTable["OWNER"] &&
+                                dbColumn["TABLE_NAME"] ===
+                                    dbTable["TABLE_NAME"],
+                        )
+                        .map(async (dbColumn) => {
+                            const columnConstraints = dbConstraints.filter(
                                 (dbConstraint) =>
                                     dbConstraint["OWNER"] ===
                                         dbColumn["OWNER"] &&
                                     dbConstraint["TABLE_NAME"] ===
                                         dbColumn["TABLE_NAME"] &&
-                                    dbConstraint["COLUMN_NAME"] !==
-                                        dbColumn["COLUMN_NAME"] &&
-                                    dbConstraint["CONSTRAINT_NAME"] ===
-                                        uniqueConstraint["CONSTRAINT_NAME"] &&
-                                    dbConstraint["CONSTRAINT_TYPE"] === "U",
+                                    dbConstraint["COLUMN_NAME"] ===
+                                        dbColumn["COLUMN_NAME"],
                             )
-                        },
-                    )
 
-                    const isPrimary = !!columnConstraints.find(
-                        (constraint) => constraint["CONSTRAINT_TYPE"] === "P",
-                    )
-
-                    const tableColumn = new TableColumn()
-                    tableColumn.name = dbColumn["COLUMN_NAME"]
-                    tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
-                    if (tableColumn.type.indexOf("(") !== -1)
-                        tableColumn.type = tableColumn.type.replace(
-                            /\([0-9]*\)/,
-                            "",
-                        )
-
-                    // check only columns that have length property
-                    if (
-                        this.driver.withLengthColumnTypes.indexOf(
-                            tableColumn.type as ColumnType,
-                        ) !== -1
-                    ) {
-                        const length =
-                            tableColumn.type === "raw"
-                                ? dbColumn["DATA_LENGTH"]
-                                : dbColumn["CHAR_COL_DECL_LENGTH"]
-                        tableColumn.length =
-                            length &&
-                            !this.isDefaultColumnLength(
-                                table,
-                                tableColumn,
-                                length,
+                            const uniqueConstraints = columnConstraints.filter(
+                                (constraint) =>
+                                    constraint["CONSTRAINT_TYPE"] === "U",
                             )
-                                ? length.toString()
-                                : ""
-                    }
+                            const isConstraintComposite =
+                                uniqueConstraints.every((uniqueConstraint) => {
+                                    return dbConstraints.some(
+                                        (dbConstraint) =>
+                                            dbConstraint["OWNER"] ===
+                                                dbColumn["OWNER"] &&
+                                            dbConstraint["TABLE_NAME"] ===
+                                                dbColumn["TABLE_NAME"] &&
+                                            dbConstraint["COLUMN_NAME"] !==
+                                                dbColumn["COLUMN_NAME"] &&
+                                            dbConstraint["CONSTRAINT_NAME"] ===
+                                                uniqueConstraint[
+                                                    "CONSTRAINT_NAME"
+                                                ] &&
+                                            dbConstraint["CONSTRAINT_TYPE"] ===
+                                                "U",
+                                    )
+                                })
 
-                    if (
-                        tableColumn.type === "number" ||
-                        tableColumn.type === "float"
-                    ) {
-                        if (
-                            dbColumn["DATA_PRECISION"] !== null &&
-                            !this.isDefaultColumnPrecision(
-                                table,
-                                tableColumn,
-                                dbColumn["DATA_PRECISION"],
+                            const isPrimary = !!columnConstraints.find(
+                                (constraint) =>
+                                    constraint["CONSTRAINT_TYPE"] === "P",
                             )
-                        )
-                            tableColumn.precision = dbColumn["DATA_PRECISION"]
-                        if (
-                            dbColumn["DATA_SCALE"] !== null &&
-                            !this.isDefaultColumnScale(
-                                table,
-                                tableColumn,
-                                dbColumn["DATA_SCALE"],
-                            )
-                        )
-                            tableColumn.scale = dbColumn["DATA_SCALE"]
-                    } else if (
-                        (tableColumn.type === "timestamp" ||
-                            tableColumn.type === "timestamp with time zone" ||
-                            tableColumn.type ===
-                                "timestamp with local time zone") &&
-                        dbColumn["DATA_SCALE"] !== null
-                    ) {
-                        tableColumn.precision = !this.isDefaultColumnPrecision(
-                            table,
-                            tableColumn,
-                            dbColumn["DATA_SCALE"],
-                        )
-                            ? dbColumn["DATA_SCALE"]
-                            : undefined
-                    }
 
-                    tableColumn.default =
-                        dbColumn["DATA_DEFAULT"] !== null &&
-                        dbColumn["DATA_DEFAULT"] !== undefined &&
-                        dbColumn["DATA_DEFAULT"].trim() !== "NULL"
-                            ? (tableColumn.default =
-                                  dbColumn["DATA_DEFAULT"].trim())
-                            : undefined
+                            const tableColumn = new TableColumn()
+                            tableColumn.name = dbColumn["COLUMN_NAME"]
+                            tableColumn.type =
+                                dbColumn["DATA_TYPE"].toLowerCase()
+                            if (tableColumn.type.indexOf("(") !== -1)
+                                tableColumn.type = tableColumn.type.replace(
+                                    /\([0-9]*\)/,
+                                    "",
+                                )
 
-                    tableColumn.isNullable = dbColumn["NULLABLE"] === "Y"
-                    tableColumn.isUnique =
-                        uniqueConstraints.length > 0 && !isConstraintComposite
-                    tableColumn.isPrimary = isPrimary
-                    tableColumn.isGenerated =
-                        dbColumn["IDENTITY_COLUMN"] === "YES"
-                    if (tableColumn.isGenerated) {
-                        tableColumn.generationStrategy = "increment"
-                        tableColumn.default = undefined
-                    }
-                    tableColumn.comment = "" // todo
-                    return tableColumn
-                })
+                            // check only columns that have length property
+                            if (
+                                this.driver.withLengthColumnTypes.indexOf(
+                                    tableColumn.type as ColumnType,
+                                ) !== -1
+                            ) {
+                                const length =
+                                    tableColumn.type === "raw"
+                                        ? dbColumn["DATA_LENGTH"]
+                                        : dbColumn["CHAR_COL_DECL_LENGTH"]
+                                tableColumn.length =
+                                    length &&
+                                    !this.isDefaultColumnLength(
+                                        table,
+                                        tableColumn,
+                                        length,
+                                    )
+                                        ? length.toString()
+                                        : ""
+                            }
 
-            // find unique constraints of table, group them by constraint name and build TableUnique.
-            const tableUniqueConstraints = OrmUtils.uniq(
-                dbConstraints.filter((dbConstraint) => {
-                    return (
-                        dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                        dbConstraint["OWNER"] === dbTable["OWNER"] &&
-                        dbConstraint["CONSTRAINT_TYPE"] === "U"
-                    )
-                }),
-                (dbConstraint) => dbConstraint["CONSTRAINT_NAME"],
-            )
+                            if (
+                                tableColumn.type === "number" ||
+                                tableColumn.type === "float"
+                            ) {
+                                if (
+                                    dbColumn["DATA_PRECISION"] !== null &&
+                                    !this.isDefaultColumnPrecision(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["DATA_PRECISION"],
+                                    )
+                                )
+                                    tableColumn.precision =
+                                        dbColumn["DATA_PRECISION"]
+                                if (
+                                    dbColumn["DATA_SCALE"] !== null &&
+                                    !this.isDefaultColumnScale(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["DATA_SCALE"],
+                                    )
+                                )
+                                    tableColumn.scale = dbColumn["DATA_SCALE"]
+                            } else if (
+                                (tableColumn.type === "timestamp" ||
+                                    tableColumn.type ===
+                                        "timestamp with time zone" ||
+                                    tableColumn.type ===
+                                        "timestamp with local time zone") &&
+                                dbColumn["DATA_SCALE"] !== null
+                            ) {
+                                tableColumn.precision =
+                                    !this.isDefaultColumnPrecision(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["DATA_SCALE"],
+                                    )
+                                        ? dbColumn["DATA_SCALE"]
+                                        : undefined
+                            }
 
-            table.uniques = tableUniqueConstraints.map((constraint) => {
-                const uniques = dbConstraints.filter(
-                    (dbC) =>
-                        dbC["CONSTRAINT_NAME"] ===
-                        constraint["CONSTRAINT_NAME"],
+                            tableColumn.default =
+                                dbColumn["DATA_DEFAULT"] !== null &&
+                                dbColumn["DATA_DEFAULT"] !== undefined &&
+                                dbColumn["VIRTUAL_COLUMN"] === "NO" &&
+                                dbColumn["DATA_DEFAULT"].trim() !== "NULL"
+                                    ? (tableColumn.default =
+                                          dbColumn["DATA_DEFAULT"].trim())
+                                    : undefined
+
+                            tableColumn.isNullable =
+                                dbColumn["NULLABLE"] === "Y"
+                            tableColumn.isUnique =
+                                uniqueConstraints.length > 0 &&
+                                !isConstraintComposite
+                            tableColumn.isPrimary = isPrimary
+                            tableColumn.isGenerated =
+                                dbColumn["IDENTITY_COLUMN"] === "YES"
+                            if (tableColumn.isGenerated) {
+                                tableColumn.generationStrategy = "increment"
+                                tableColumn.default = undefined
+                            }
+                            tableColumn.comment = "" // todo
+
+                            if (dbColumn["VIRTUAL_COLUMN"] === "YES") {
+                                tableColumn.generatedType = "VIRTUAL"
+
+                                const asExpressionQuery =
+                                    await this.selectTypeormMetadataSql({
+                                        table: dbTable["TABLE_NAME"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+                                if (results[0] && results[0].value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
+                                }
+                            }
+
+                            return tableColumn
+                        }),
                 )
-                return new TableUnique({
-                    name: constraint["CONSTRAINT_NAME"],
-                    columnNames: uniques.map((u) => u["COLUMN_NAME"]),
-                })
-            })
 
-            // find check constraints of table, group them by constraint name and build TableCheck.
-            const tableCheckConstraints = OrmUtils.uniq(
-                dbConstraints.filter((dbConstraint) => {
-                    return (
-                        dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                        dbConstraint["OWNER"] === dbTable["OWNER"] &&
-                        dbConstraint["CONSTRAINT_TYPE"] === "C"
-                    )
-                }),
-                (dbConstraint) => dbConstraint["CONSTRAINT_NAME"],
-            )
+                // find unique constraints of table, group them by constraint name and build TableUnique.
+                const tableUniqueConstraints = OrmUtils.uniq(
+                    dbConstraints.filter((dbConstraint) => {
+                        return (
+                            dbConstraint["TABLE_NAME"] ===
+                                dbTable["TABLE_NAME"] &&
+                            dbConstraint["OWNER"] === dbTable["OWNER"] &&
+                            dbConstraint["CONSTRAINT_TYPE"] === "U"
+                        )
+                    }),
+                    (dbConstraint) => dbConstraint["CONSTRAINT_NAME"],
+                )
 
-            table.checks = tableCheckConstraints.map((constraint) => {
-                const checks = dbConstraints.filter(
-                    (dbC) =>
-                        dbC["TABLE_NAME"] === constraint["TABLE_NAME"] &&
-                        dbC["OWNER"] === constraint["OWNER"] &&
-                        dbC["CONSTRAINT_NAME"] ===
+                table.uniques = tableUniqueConstraints.map((constraint) => {
+                    const uniques = dbConstraints.filter(
+                        (dbC) =>
+                            dbC["CONSTRAINT_NAME"] ===
                             constraint["CONSTRAINT_NAME"],
-                )
-                return new TableCheck({
-                    name: constraint["CONSTRAINT_NAME"],
-                    columnNames: checks.map((c) => c["COLUMN_NAME"]),
-                    expression: constraint["SEARCH_CONDITION"],
-                })
-            })
-
-            // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-            const tableForeignKeyConstraints = OrmUtils.uniq(
-                dbForeignKeys.filter(
-                    (dbForeignKey) =>
-                        dbForeignKey["OWNER"] === dbTable["OWNER"] &&
-                        dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"],
-                ),
-                (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
-            )
-
-            table.foreignKeys = tableForeignKeyConstraints.map(
-                (dbForeignKey) => {
-                    const foreignKeys = dbForeignKeys.filter(
-                        (dbFk) =>
-                            dbFk["TABLE_NAME"] === dbForeignKey["TABLE_NAME"] &&
-                            dbFk["OWNER"] === dbForeignKey["OWNER"] &&
-                            dbFk["CONSTRAINT_NAME"] ===
-                                dbForeignKey["CONSTRAINT_NAME"],
                     )
-                    return new TableForeignKey({
-                        name: dbForeignKey["CONSTRAINT_NAME"],
-                        columnNames: foreignKeys.map(
-                            (dbFk) => dbFk["COLUMN_NAME"],
-                        ),
-                        referencedDatabase: table.database,
-                        referencedSchema: dbForeignKey["OWNER"],
-                        referencedTableName:
-                            dbForeignKey["REFERENCED_TABLE_NAME"],
-                        referencedColumnNames: foreignKeys.map(
-                            (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
-                        ),
-                        onDelete: dbForeignKey["ON_DELETE"],
-                        onUpdate: "NO ACTION", // Oracle does not have onUpdate option in FK's, but we need it for proper synchronization
-                    })
-                },
-            )
-
-            // create TableIndex objects from the loaded indices
-            table.indices = dbIndices
-                .filter(
-                    (dbIndex) =>
-                        dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                        dbIndex["OWNER"] === dbTable["OWNER"],
-                )
-                .map((dbIndex) => {
-                    return new TableIndex({
-                        name: dbIndex["INDEX_NAME"],
-                        columnNames: dbIndex["COLUMN_NAMES"].split(","),
-                        isUnique: dbIndex["UNIQUENESS"] === "UNIQUE",
+                    return new TableUnique({
+                        name: constraint["CONSTRAINT_NAME"],
+                        columnNames: uniques.map((u) => u["COLUMN_NAME"]),
                     })
                 })
 
-            return table
-        })
+                // find check constraints of table, group them by constraint name and build TableCheck.
+                const tableCheckConstraints = OrmUtils.uniq(
+                    dbConstraints.filter((dbConstraint) => {
+                        return (
+                            dbConstraint["TABLE_NAME"] ===
+                                dbTable["TABLE_NAME"] &&
+                            dbConstraint["OWNER"] === dbTable["OWNER"] &&
+                            dbConstraint["CONSTRAINT_TYPE"] === "C"
+                        )
+                    }),
+                    (dbConstraint) => dbConstraint["CONSTRAINT_NAME"],
+                )
+
+                table.checks = tableCheckConstraints.map((constraint) => {
+                    const checks = dbConstraints.filter(
+                        (dbC) =>
+                            dbC["TABLE_NAME"] === constraint["TABLE_NAME"] &&
+                            dbC["OWNER"] === constraint["OWNER"] &&
+                            dbC["CONSTRAINT_NAME"] ===
+                                constraint["CONSTRAINT_NAME"],
+                    )
+                    return new TableCheck({
+                        name: constraint["CONSTRAINT_NAME"],
+                        columnNames: checks.map((c) => c["COLUMN_NAME"]),
+                        expression: constraint["SEARCH_CONDITION"],
+                    })
+                })
+
+                // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
+                const tableForeignKeyConstraints = OrmUtils.uniq(
+                    dbForeignKeys.filter(
+                        (dbForeignKey) =>
+                            dbForeignKey["OWNER"] === dbTable["OWNER"] &&
+                            dbForeignKey["TABLE_NAME"] ===
+                                dbTable["TABLE_NAME"],
+                    ),
+                    (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
+                )
+
+                table.foreignKeys = tableForeignKeyConstraints.map(
+                    (dbForeignKey) => {
+                        const foreignKeys = dbForeignKeys.filter(
+                            (dbFk) =>
+                                dbFk["TABLE_NAME"] ===
+                                    dbForeignKey["TABLE_NAME"] &&
+                                dbFk["OWNER"] === dbForeignKey["OWNER"] &&
+                                dbFk["CONSTRAINT_NAME"] ===
+                                    dbForeignKey["CONSTRAINT_NAME"],
+                        )
+                        return new TableForeignKey({
+                            name: dbForeignKey["CONSTRAINT_NAME"],
+                            columnNames: foreignKeys.map(
+                                (dbFk) => dbFk["COLUMN_NAME"],
+                            ),
+                            referencedDatabase: table.database,
+                            referencedSchema: dbForeignKey["OWNER"],
+                            referencedTableName:
+                                dbForeignKey["REFERENCED_TABLE_NAME"],
+                            referencedColumnNames: foreignKeys.map(
+                                (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
+                            ),
+                            onDelete: dbForeignKey["ON_DELETE"],
+                            onUpdate: "NO ACTION", // Oracle does not have onUpdate option in FK's, but we need it for proper synchronization
+                        })
+                    },
+                )
+
+                // create TableIndex objects from the loaded indices
+                table.indices = dbIndices
+                    .filter(
+                        (dbIndex) =>
+                            dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbIndex["OWNER"] === dbTable["OWNER"],
+                    )
+                    .map((dbIndex) => {
+                        return new TableIndex({
+                            name: dbIndex["INDEX_NAME"],
+                            columnNames: dbIndex["COLUMN_NAMES"].split(","),
+                            isUnique: dbIndex["UNIQUENESS"] === "UNIQUE",
+                        })
+                    })
+
+                return table
+            }),
+        )
     }
 
     /**
@@ -2778,6 +2881,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             `"${column.name}" ` + this.connection.driver.createFullType(column)
         if (column.charset) c += " CHARACTER SET " + column.charset
         if (column.collation) c += " COLLATE " + column.collation
+
+        if (column.asExpression) c += ` AS (${column.asExpression}) VIRTUAL`
+
         if (column.default !== undefined && column.default !== null)
             // DEFAULT must be placed before NOT NULL
             c += " DEFAULT " + column.default
