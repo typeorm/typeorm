@@ -1,13 +1,16 @@
 import {
     DatabaseType,
     DataSource,
-    DataSourceOptions, Driver,
+    DataSourceOptions,
+    Driver,
     EntitySchema,
     EntitySubscriberInterface,
     getMetadataArgsStorage,
     InsertEvent,
     Logger,
-    NamingStrategyInterface, QueryRunner,
+    NamingStrategyInterface,
+    QueryRunner,
+    Table,
 } from "../../src"
 import { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
