@@ -238,7 +238,7 @@ export abstract class AbstractSqliteQueryRunner
         const tableName = InstanceChecker.isTable(tableOrName)
             ? tableOrName.name
             : tableOrName
-        const sql = `PRAGMA xtable_info(${this.escapePath(tableName)})`
+        const sql = `PRAGMA table_xinfo(${this.escapePath(tableName)})`
         const columns: ObjectLiteral[] = await this.query(sql)
         return !!columns.find((column) => column["name"] === columnName)
     }
@@ -1906,9 +1906,6 @@ export abstract class AbstractSqliteQueryRunner
             let oldColumnNames = oldTable.columns
                 .filter((column) => !column.generatedType)
                 .map((column) => `"${column.name}"`)
-
-            console.log(newColumnNames)
-            console.log(oldColumnNames)
 
             if (oldColumnNames.length < newColumnNames.length) {
                 newColumnNames = newTable.columns
