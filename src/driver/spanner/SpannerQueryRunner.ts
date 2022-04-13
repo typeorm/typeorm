@@ -507,6 +507,29 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             })
         }
 
+        // if table has column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -547,6 +570,29 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         upQueries.push(this.dropTableSql(table))
         downQueries.push(this.createTableSql(table, createForeignKeys))
+
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
@@ -651,6 +697,24 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.dropIndexSql(table, uniqueIndex))
         }
 
+        if (column.generatedType && column.asExpression) {
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.addColumn(column)
@@ -732,8 +796,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.name !== newColumn.name ||
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            oldColumn.generatedType !== newColumn.generatedType
+            oldColumn.isArray !== newColumn.isArray ||
+            oldColumn.generatedType !== newColumn.generatedType ||
+            oldColumn.asExpression !== newColumn.asExpression
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
@@ -842,9 +907,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(this.createIndexSql(table, uniqueIndex!))
                 }
             }
-
-            if (newColumn.generatedType !== oldColumn.generatedType) {
-            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -932,6 +994,23 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} ADD ${this.buildCreateColumnSql(column)}`,
             ),
         )
+
+        if (column.generatedType && column.asExpression) {
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
 
         await this.executeQueries(upQueries, downQueries)
 
@@ -1348,10 +1427,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         // drop view queries
-        const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``
-        const dropViewQueries: ObjectLiteral[] = await this.query(
-            selectViewDropsQuery,
-        )
+        // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``
+        // const dropViewQueries: ObjectLiteral[] = await this.query(
+        //     selectViewDropsQuery,
+        // )
 
         // drop table queries
         const dropTablesQuery =
@@ -1365,7 +1444,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             !dropIndexQueries.length &&
             !dropFKQueries.length &&
-            !dropViewQueries.length &&
+            // !dropViewQueries.length &&
             !dropTableQueries.length
         )
             return
@@ -1380,9 +1459,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 await this.updateDDL(query["query"])
             }
 
-            for (let query of dropViewQueries) {
-                await this.updateDDL(query["query"])
-            }
+            // for (let query of dropViewQueries) {
+            //     await this.updateDDL(query["query"])
+            // }
 
             for (let query of dropTableQueries) {
                 await this.updateDDL(query["query"])
@@ -1437,37 +1516,39 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
 
     protected async loadViews(viewNames?: string[]): Promise<View[]> {
-        const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
-        if (!hasTable) {
-            return []
-        }
+        // const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
+        // if (!hasTable) {
+        //     return []
+        // }
+        //
+        // if (!viewNames) {
+        //     viewNames = []
+        // }
+        //
+        // const escapedViewNames = viewNames
+        //     .map((viewName) => `'${viewName}'`)
+        //     .join(", ")
+        //
+        // const query =
+        //     `SELECT \`T\`.*, \`V\`.\`VIEW_DEFINITION\` FROM ${this.escapePath(
+        //         this.getTypeormMetadataTableName(),
+        //     )} \`T\` ` +
+        //     `INNER JOIN \`INFORMATION_SCHEMA\`.\`VIEWS\` \`V\` ON \`V\`.\`TABLE_NAME\` = \`T\`.\`NAME\` ` +
+        //     `WHERE \`T\`.\`TYPE\` = '${MetadataTableType.VIEW}' ${
+        //         viewNames.length
+        //             ? ` AND \`T\`.\`NAME\` IN (${escapedViewNames})`
+        //             : ""
+        //     }`
+        // const dbViews = await this.query(query)
+        // return dbViews.map((dbView: any) => {
+        //     const view = new View()
+        //     view.database = dbView["NAME"]
+        //     view.name = this.driver.buildTableName(dbView["NAME"])
+        //     view.expression = dbView["NAME"]
+        //     return view
+        // })
 
-        if (!viewNames) {
-            viewNames = []
-        }
-
-        const escapedViewNames = viewNames
-            .map((viewName) => `'${viewName}'`)
-            .join(", ")
-
-        const query =
-            `SELECT \`T\`.*, \`V\`.\`VIEW_DEFINITION\` FROM ${this.escapePath(
-                this.getTypeormMetadataTableName(),
-            )} \`T\` ` +
-            `INNER JOIN \`INFORMATION_SCHEMA\`.\`VIEWS\` \`V\` ON \`V\`.\`TABLE_NAME\` = \`T\`.\`NAME\` ` +
-            `WHERE \`T\`.\`TYPE\` = '${MetadataTableType.VIEW}' ${
-                viewNames.length
-                    ? ` AND \`T\`.\`NAME\` IN (${escapedViewNames})`
-                    : ""
-            }`
-        const dbViews = await this.query(query)
-        return dbViews.map((dbView: any) => {
-            const view = new View()
-            view.database = dbView["NAME"]
-            view.name = this.driver.buildTableName(dbView["NAME"])
-            view.expression = dbView["NAME"]
-            return view
-        })
+        return Promise.resolve([])
     }
 
     /**
@@ -1565,117 +1646,136 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 table.name = this.driver.buildTableName(dbTable["TABLE_NAME"])
 
                 // create columns from the loaded columns
-                table.columns = dbColumns
-                    .filter(
-                        (dbColumn) =>
-                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"],
-                    )
-                    .map((dbColumn) => {
-                        const columnUniqueIndices = dbIndices.filter(
-                            (dbIndex) => {
-                                return (
-                                    dbIndex["TABLE_NAME"] ===
-                                        dbTable["TABLE_NAME"] &&
-                                    dbIndex["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"] &&
-                                    dbIndex["IS_UNIQUE"] === true
-                                )
-                            },
+                table.columns = await Promise.all(
+                    dbColumns
+                        .filter(
+                            (dbColumn) =>
+                                dbColumn["TABLE_NAME"] ===
+                                dbTable["TABLE_NAME"],
                         )
-
-                        const tableMetadata =
-                            this.connection.entityMetadatas.find(
-                                (metadata) =>
-                                    this.getTablePath(table) ===
-                                    this.getTablePath(metadata),
+                        .map(async (dbColumn) => {
+                            const columnUniqueIndices = dbIndices.filter(
+                                (dbIndex) => {
+                                    return (
+                                        dbIndex["TABLE_NAME"] ===
+                                            dbTable["TABLE_NAME"] &&
+                                        dbIndex["COLUMN_NAME"] ===
+                                            dbColumn["COLUMN_NAME"] &&
+                                        dbIndex["IS_UNIQUE"] === true
+                                    )
+                                },
                             )
-                        const hasIgnoredIndex =
-                            columnUniqueIndices.length > 0 &&
-                            tableMetadata &&
-                            tableMetadata.indices.some((index) => {
-                                return columnUniqueIndices.some(
-                                    (uniqueIndex) => {
-                                        return (
-                                            index.name ===
+
+                            const tableMetadata =
+                                this.connection.entityMetadatas.find(
+                                    (metadata) =>
+                                        this.getTablePath(table) ===
+                                        this.getTablePath(metadata),
+                                )
+                            const hasIgnoredIndex =
+                                columnUniqueIndices.length > 0 &&
+                                tableMetadata &&
+                                tableMetadata.indices.some((index) => {
+                                    return columnUniqueIndices.some(
+                                        (uniqueIndex) => {
+                                            return (
+                                                index.name ===
+                                                    uniqueIndex["INDEX_NAME"] &&
+                                                index.synchronize === false
+                                            )
+                                        },
+                                    )
+                                })
+
+                            const isConstraintComposite =
+                                columnUniqueIndices.every((uniqueIndex) => {
+                                    return dbIndices.some(
+                                        (dbIndex) =>
+                                            dbIndex["INDEX_NAME"] ===
                                                 uniqueIndex["INDEX_NAME"] &&
-                                            index.synchronize === false
-                                        )
-                                    },
+                                            dbIndex["COLUMN_NAME"] !==
+                                                dbColumn["COLUMN_NAME"],
+                                    )
+                                })
+
+                            const tableColumn = new TableColumn()
+                            tableColumn.name = dbColumn["COLUMN_NAME"]
+
+                            let fullType =
+                                dbColumn["SPANNER_TYPE"].toLowerCase()
+                            if (fullType.indexOf("array") !== -1) {
+                                tableColumn.isArray = true
+                                fullType = fullType.substring(
+                                    fullType.indexOf("<") + 1,
+                                    fullType.indexOf(">"),
                                 )
-                            })
+                            }
 
-                        const isConstraintComposite = columnUniqueIndices.every(
-                            (uniqueIndex) => {
-                                return dbIndices.some(
-                                    (dbIndex) =>
-                                        dbIndex["INDEX_NAME"] ===
-                                            uniqueIndex["INDEX_NAME"] &&
-                                        dbIndex["COLUMN_NAME"] !==
-                                            dbColumn["COLUMN_NAME"],
+                            if (fullType.indexOf("(") !== -1) {
+                                tableColumn.type = fullType.substring(
+                                    0,
+                                    fullType.indexOf("("),
                                 )
-                            },
-                        )
+                            } else {
+                                tableColumn.type = fullType
+                            }
 
-                        const tableColumn = new TableColumn()
-                        tableColumn.name = dbColumn["COLUMN_NAME"]
-
-                        let fullType = dbColumn["SPANNER_TYPE"].toLowerCase()
-                        if (fullType.indexOf("array") !== -1) {
-                            tableColumn.isArray = true
-                            fullType = fullType.substring(
-                                fullType.indexOf("<") + 1,
-                                fullType.indexOf(">"),
-                            )
-                        }
-
-                        if (fullType.indexOf("(") !== -1) {
-                            tableColumn.type = fullType.substring(
-                                0,
-                                fullType.indexOf("("),
-                            )
-                        } else {
-                            tableColumn.type = fullType
-                        }
-
-                        if (
-                            this.driver.withLengthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1
-                        ) {
-                            tableColumn.length = fullType.substring(
-                                fullType.indexOf("(") + 1,
-                                fullType.indexOf(")"),
-                            )
-                        }
-
-                        if (dbColumn["IS_GENERATED"] === "ALWAYS") {
-                            tableColumn.asExpression =
-                                dbColumn["GENERATION_EXPRESSION"]
-                            tableColumn.generatedType =
-                                dbColumn["IS_STORED"] === "YES"
-                                    ? "STORED"
-                                    : "VIRTUAL"
-                        }
-
-                        tableColumn.isUnique =
-                            columnUniqueIndices.length > 0 &&
-                            !hasIgnoredIndex &&
-                            !isConstraintComposite
-                        tableColumn.isNullable =
-                            dbColumn["IS_NULLABLE"] === "YES"
-                        tableColumn.isPrimary = dbPrimaryKeys.some(
-                            (dbPrimaryKey) => {
-                                return (
-                                    dbPrimaryKey["TABLE_NAME"] ===
-                                        dbColumn["TABLE_NAME"] &&
-                                    dbPrimaryKey["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"]
+                            if (
+                                this.driver.withLengthColumnTypes.indexOf(
+                                    tableColumn.type as ColumnType,
+                                ) !== -1
+                            ) {
+                                tableColumn.length = fullType.substring(
+                                    fullType.indexOf("(") + 1,
+                                    fullType.indexOf(")"),
                                 )
-                            },
-                        )
+                            }
 
-                        return tableColumn
-                    })
+                            if (dbColumn["IS_GENERATED"] === "ALWAYS") {
+                                tableColumn.asExpression =
+                                    dbColumn["GENERATION_EXPRESSION"]
+                                tableColumn.generatedType = "STORED"
+
+                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                                const asExpressionQuery =
+                                    await this.selectTypeormMetadataSql({
+                                        table: dbTable["TABLE_NAME"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+
+                                if (results[0] && results[0].value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
+                                }
+                            }
+
+                            tableColumn.isUnique =
+                                columnUniqueIndices.length > 0 &&
+                                !hasIgnoredIndex &&
+                                !isConstraintComposite
+                            tableColumn.isNullable =
+                                dbColumn["IS_NULLABLE"] === "YES"
+                            tableColumn.isPrimary = dbPrimaryKeys.some(
+                                (dbPrimaryKey) => {
+                                    return (
+                                        dbPrimaryKey["TABLE_NAME"] ===
+                                            dbColumn["TABLE_NAME"] &&
+                                        dbPrimaryKey["COLUMN_NAME"] ===
+                                            dbColumn["COLUMN_NAME"]
+                                    )
+                                },
+                            )
+
+                            return tableColumn
+                        }),
+                )
 
                 const tableForeignKeys = dbForeignKeys.filter(
                     (dbForeignKey) => {
@@ -2056,10 +2156,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             column.name,
         )} ${this.connection.driver.createFullType(column)}`
 
-        if (column.asExpression) {
-            c += ` AS (${column.asExpression}) ${
-                column.generatedType ? column.generatedType : "STORED"
-            }`
+        // Spanner supports only STORED generated column type
+        if (column.generatedType === "STORED" && column.asExpression) {
+            c += ` AS (${column.asExpression}) STORED`
         } else {
             if (!column.isNullable) c += " NOT NULL"
         }

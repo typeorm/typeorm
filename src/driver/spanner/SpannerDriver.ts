@@ -635,54 +635,54 @@ export class SpannerDriver implements Driver {
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
-                tableColumn.isNullable !== columnMetadata.isNullable ||
+                !this.compareNullableValues(columnMetadata, tableColumn) ||
                 tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
 
             // DEBUG SECTION
-            if (isColumnChanged) {
-                console.log("table:", columnMetadata.entityMetadata.tableName)
-                console.log(
-                    "name:",
-                    tableColumn.name,
-                    columnMetadata.databaseName,
-                )
-                console.log(
-                    "type:",
-                    tableColumn.type,
-                    this.normalizeType(columnMetadata),
-                )
-                console.log(
-                    "length:",
-                    tableColumn.length,
-                    this.getColumnLength(columnMetadata),
-                )
-                console.log(
-                    "asExpression:",
-                    tableColumn.asExpression,
-                    columnMetadata.asExpression,
-                )
-                console.log(
-                    "generatedType:",
-                    tableColumn.generatedType,
-                    columnMetadata.generatedType,
-                )
-                console.log(
-                    "isPrimary:",
-                    tableColumn.isPrimary,
-                    columnMetadata.isPrimary,
-                )
-                console.log(
-                    "isNullable:",
-                    tableColumn.isNullable,
-                    columnMetadata.isNullable,
-                )
-                console.log(
-                    "isUnique:",
-                    tableColumn.isUnique,
-                    this.normalizeIsUnique(columnMetadata),
-                )
-                console.log("==========================================")
-            }
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName)
+            //     console.log(
+            //         "name:",
+            //         tableColumn.name,
+            //         columnMetadata.databaseName,
+            //     )
+            //     console.log(
+            //         "type:",
+            //         tableColumn.type,
+            //         this.normalizeType(columnMetadata),
+            //     )
+            //     console.log(
+            //         "length:",
+            //         tableColumn.length,
+            //         this.getColumnLength(columnMetadata),
+            //     )
+            //     console.log(
+            //         "asExpression:",
+            //         tableColumn.asExpression,
+            //         columnMetadata.asExpression,
+            //     )
+            //     console.log(
+            //         "generatedType:",
+            //         tableColumn.generatedType,
+            //         columnMetadata.generatedType,
+            //     )
+            //     console.log(
+            //         "isPrimary:",
+            //         tableColumn.isPrimary,
+            //         columnMetadata.isPrimary,
+            //     )
+            //     console.log(
+            //         "isNullable:",
+            //         tableColumn.isNullable,
+            //         columnMetadata.isNullable,
+            //     )
+            //     console.log(
+            //         "isUnique:",
+            //         tableColumn.isUnique,
+            //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log("==========================================")
+            // }
 
             return isColumnChanged
         })
@@ -736,6 +736,18 @@ export class SpannerDriver implements Driver {
                 "@google-cloud/spanner",
             )
         }
+    }
+
+    compareNullableValues(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        // Spanner does not support NULL/NOT NULL expressions for generated columns
+        if (columnMetadata.generatedType) {
+            return true
+        }
+
+        return columnMetadata.isNullable === tableColumn.isNullable
     }
 
     /**
