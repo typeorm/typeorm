@@ -64,6 +64,7 @@
   "bugs": {
     "url": "https://github.com/typeorm/typeorm/issues"
   },
+  "homepage": "https://typeorm.io",
   "tags": [
     "orm",
     "typescript",
