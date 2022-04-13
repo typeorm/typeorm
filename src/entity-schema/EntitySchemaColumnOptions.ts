@@ -171,12 +171,12 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     enum?: any[] | Object
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
