@@ -1113,7 +1113,9 @@ export class CockroachQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
+            oldColumn.length !== newColumn.length ||
+            oldColumn.generatedType !== newColumn.generatedType ||
+            oldColumn.asExpression !== newColumn.asExpression
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)

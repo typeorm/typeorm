@@ -171,7 +171,7 @@ describe("database schema > generated columns > cockroachdb", () => {
             }),
         ))
 
-    it.skip("should change generated column and revert change", () =>
+    it("should change generated column and revert change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
