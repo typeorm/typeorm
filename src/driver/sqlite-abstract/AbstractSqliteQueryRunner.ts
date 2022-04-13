@@ -1902,12 +1902,13 @@ export abstract class AbstractSqliteQueryRunner
             let newColumnNames = newTable.columns
                 .filter((column) => !column.generatedType)
                 .map((column) => `"${column.name}"`)
-                .join(", ")
 
             let oldColumnNames = oldTable.columns
                 .filter((column) => !column.generatedType)
                 .map((column) => `"${column.name}"`)
-                .join(", ")
+
+            console.log(newColumnNames)
+            console.log(oldColumnNames)
 
             if (oldColumnNames.length < newColumnNames.length) {
                 newColumnNames = newTable.columns
@@ -1919,7 +1920,6 @@ export abstract class AbstractSqliteQueryRunner
                         return !column.generatedType && oldColumn
                     })
                     .map((column) => `"${column.name}"`)
-                    .join(", ")
             } else if (oldColumnNames.length > newColumnNames.length) {
                 oldColumnNames = oldTable.columns
                     .filter((column) => {
@@ -1929,25 +1929,28 @@ export abstract class AbstractSqliteQueryRunner
                         )
                     })
                     .map((column) => `"${column.name}"`)
-                    .join(", ")
             }
 
             upQueries.push(
                 new Query(
                     `INSERT INTO ${this.escapePath(
                         newTable.name,
-                    )}(${newColumnNames}) SELECT ${oldColumnNames} FROM ${this.escapePath(
-                        oldTable.name,
-                    )}`,
+                    )}(${newColumnNames.join(
+                        ", ",
+                    )}) SELECT ${oldColumnNames.join(
+                        ", ",
+                    )} FROM ${this.escapePath(oldTable.name)}`,
                 ),
             )
             downQueries.push(
                 new Query(
                     `INSERT INTO ${this.escapePath(
                         oldTable.name,
-                    )}(${oldColumnNames}) SELECT ${newColumnNames} FROM ${this.escapePath(
-                        newTable.name,
-                    )}`,
+                    )}(${oldColumnNames.join(
+                        ", ",
+                    )}) SELECT ${newColumnNames.join(
+                        ", ",
+                    )} FROM ${this.escapePath(newTable.name)}`,
                 ),
             )
         }

@@ -56,10 +56,11 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("name")!.isNullable.should.be.true
 
                 // SQLite does not impose any length restrictions
-                if (!DriverUtils.isSQLiteFamily(connection.driver))
+                if (!DriverUtils.isSQLiteFamily(connection.driver)) {
                     table!
                         .findColumnByName("name")!
                         .length!.should.be.equal("500")
+                }
 
                 const textColumn = table!.findColumnByName("text")!
                 const changedTextColumn = textColumn.clone()
