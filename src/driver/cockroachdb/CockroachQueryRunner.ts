@@ -641,6 +641,37 @@ export class CockroachQueryRunner
                 )
             })
 
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 

@@ -208,4 +208,33 @@ describe("database schema > generated columns > postgres", () => {
                 await queryRunner.release()
             }),
         ))
+
+    it("should remove data from 'typeorm_metadata' when table dropped", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const generatedColumns = table!.columns.filter(
+                    (it) => it.generatedType,
+                )
+
+                await queryRunner.dropTable(table!)
+
+                // check if generated column records removed from typeorm_metadata table
+                let metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
+                )
+                metadataRecords.length.should.be.equal(0)
+
+                // revert changes
+                await queryRunner.executeMemoryDownSql()
+
+                metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
+                )
+                metadataRecords.length.should.be.equal(generatedColumns.length)
+
+                await queryRunner.release()
+            }),
+        ))
 })

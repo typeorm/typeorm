@@ -759,35 +759,84 @@ export abstract class AbstractSqliteDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
-            // console.log("default:", this.normalizeDefault(columnMetadata), columnMetadata.default);
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log("==========================================");
-
-            return (
+            const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                //  || tableColumn.comment !== columnMetadata.comment || // todo
                 this.normalizeDefault(columnMetadata) !== tableColumn.default ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
+                tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
-            )
+
+            // DEBUG SECTION
+            if (isColumnChanged) {
+                console.log("table:", columnMetadata.entityMetadata.tableName)
+                console.log(
+                    "name:",
+                    tableColumn.name,
+                    columnMetadata.databaseName,
+                )
+                console.log(
+                    "type:",
+                    tableColumn.type,
+                    this.normalizeType(columnMetadata),
+                )
+                console.log(
+                    "length:",
+                    tableColumn.length,
+                    columnMetadata.length,
+                )
+                console.log(
+                    "precision:",
+                    tableColumn.precision,
+                    columnMetadata.precision,
+                )
+                console.log("scale:", tableColumn.scale, columnMetadata.scale)
+                console.log(
+                    "default:",
+                    this.normalizeDefault(columnMetadata),
+                    columnMetadata.default,
+                )
+                console.log(
+                    "isPrimary:",
+                    tableColumn.isPrimary,
+                    columnMetadata.isPrimary,
+                )
+                console.log(
+                    "isNullable:",
+                    tableColumn.isNullable,
+                    columnMetadata.isNullable,
+                )
+                console.log(
+                    "generatedType:",
+                    tableColumn.generatedType,
+                    columnMetadata.generatedType,
+                )
+                console.log(
+                    "asExpression:",
+                    tableColumn.asExpression,
+                    columnMetadata.asExpression,
+                )
+                console.log(
+                    "isUnique:",
+                    tableColumn.isUnique,
+                    this.normalizeIsUnique(columnMetadata),
+                )
+                console.log(
+                    "isGenerated:",
+                    tableColumn.isGenerated,
+                    columnMetadata.isGenerated,
+                )
+            }
+
+            return isColumnChanged
         })
     }
 

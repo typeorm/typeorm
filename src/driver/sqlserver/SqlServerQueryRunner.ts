@@ -682,6 +682,39 @@ export class SqlServerQueryRunner
         upQueries.push(this.dropTableSql(table))
         downQueries.push(this.createTableSql(table, createForeignKeys))
 
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 

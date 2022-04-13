@@ -7,12 +7,12 @@ import {
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
 
-describe("database schema > generated columns > cockroachdb", () => {
+describe("database schema > generated columns > sqlite", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["cockroachdb"],
+            enabledDrivers: ["sqlite"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -42,25 +42,18 @@ describe("database schema > generated columns > cockroachdb", () => {
                 const storedFullName =
                     table!.findColumnByName("storedFullName")!
                 const name = table!.findColumnByName("name")!
-                const nameHash = table!.findColumnByName("nameHash")!
 
                 virtualFullName.asExpression!.should.be.equal(
-                    `concat("firstName",' ',"lastName")`,
+                    `"firstName" || ' ' || "lastName"`,
                 )
                 virtualFullName.generatedType!.should.be.equal("VIRTUAL")
                 storedFullName.asExpression!.should.be.equal(
-                    `CONCAT("firstName",' ',"lastName")`,
+                    `"firstName" || ' ' || "lastName"`,
                 )
                 storedFullName.generatedType!.should.be.equal("STORED")
 
-                name.generatedType!.should.be.equal("STORED")
                 name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
-
-                nameHash.generatedType!.should.be.equal("VIRTUAL")
-                nameHash.asExpression!.should.be.equal(
-                    `md5(coalesce("firstName",'0'))`,
-                )
-                nameHash.length!.should.be.equal("255")
+                name.generatedType!.should.be.equal("STORED")
 
                 await queryRunner.release()
             }),
@@ -78,7 +71,7 @@ describe("database schema > generated columns > cockroachdb", () => {
                     type: "varchar",
                     length: "200",
                     generatedType: "STORED",
-                    asExpression: `"firstName" || "lastName"`,
+                    asExpression: "firstName || lastName",
                 })
 
                 let virtualColumn = new TableColumn({
@@ -86,7 +79,7 @@ describe("database schema > generated columns > cockroachdb", () => {
                     type: "varchar",
                     length: "200",
                     generatedType: "VIRTUAL",
-                    asExpression: `"firstName" || "lastName"`,
+                    asExpression: "firstName || lastName",
                 })
 
                 await queryRunner.addColumn(table!, storedColumn)
@@ -98,14 +91,14 @@ describe("database schema > generated columns > cockroachdb", () => {
                 storedColumn.should.be.exist
                 storedColumn!.generatedType!.should.be.equal("STORED")
                 storedColumn!.asExpression!.should.be.equal(
-                    `"firstName" || "lastName"`,
+                    "firstName || lastName",
                 )
 
                 virtualColumn = table!.findColumnByName("virtualColumn")!
                 virtualColumn.should.be.exist
                 virtualColumn!.generatedType!.should.be.equal("VIRTUAL")
                 virtualColumn!.asExpression!.should.be.equal(
-                    `"firstName" || "lastName"`,
+                    "firstName || lastName",
                 )
 
                 // revert changes
@@ -156,7 +149,7 @@ describe("database schema > generated columns > cockroachdb", () => {
                 storedFullName.should.be.exist
                 storedFullName!.generatedType!.should.be.equal("STORED")
                 storedFullName!.asExpression!.should.be.equal(
-                    `CONCAT("firstName",' ',"lastName")`,
+                    `"firstName" || ' ' || "lastName"`,
                 )
 
                 const virtualFullName =
@@ -164,14 +157,14 @@ describe("database schema > generated columns > cockroachdb", () => {
                 virtualFullName.should.be.exist
                 virtualFullName!.generatedType!.should.be.equal("VIRTUAL")
                 virtualFullName!.asExpression!.should.be.equal(
-                    `concat("firstName",' ',"lastName")`,
+                    `"firstName" || ' ' || "lastName"`,
                 )
 
                 await queryRunner.release()
             }),
         ))
 
-    it.skip("should change generated column and revert change", () =>
+    it("should change generated column and revert change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
@@ -180,7 +173,7 @@ describe("database schema > generated columns > cockroachdb", () => {
 
                 let storedFullName = table!.findColumnByName("storedFullName")!
                 const changedStoredFullName = storedFullName.clone()
-                changedStoredFullName.asExpression = `concat('Mr. ',"firstName",' ',"lastName")`
+                changedStoredFullName.asExpression = `'Mr. ' || "firstName" || ' ' || "lastName"`
 
                 let name = table!.findColumnByName("name")!
                 const changedName = name.clone()
@@ -199,7 +192,7 @@ describe("database schema > generated columns > cockroachdb", () => {
 
                 storedFullName = table!.findColumnByName("storedFullName")!
                 storedFullName!.asExpression!.should.be.equal(
-                    `concat('Mr. ',"firstName",' ',"lastName")`,
+                    `'Mr. ' || "firstName" || ' ' || "lastName"`,
                 )
 
                 name = table!.findColumnByName("name")!
@@ -219,7 +212,7 @@ describe("database schema > generated columns > cockroachdb", () => {
 
                 storedFullName = table!.findColumnByName("storedFullName")!
                 storedFullName!.asExpression!.should.be.equal(
-                    `CONCAT("firstName",' ',"lastName")`,
+                    `"firstName" || ' ' || "lastName"`,
                 )
 
                 name = table!.findColumnByName("name")!

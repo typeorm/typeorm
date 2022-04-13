@@ -238,7 +238,7 @@ export abstract class AbstractSqliteQueryRunner
         const tableName = InstanceChecker.isTable(tableOrName)
             ? tableOrName.name
             : tableOrName
-        const sql = `PRAGMA table_info(${this.escapePath(tableName)})`
+        const sql = `PRAGMA xtable_info(${this.escapePath(tableName)})`
         const columns: ObjectLiteral[] = await this.query(sql)
         return !!columns.find((column) => column["name"] === columnName)
     }
@@ -311,6 +311,29 @@ export abstract class AbstractSqliteQueryRunner
             })
         }
 
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -345,6 +368,29 @@ export abstract class AbstractSqliteQueryRunner
 
         upQueries.push(this.dropTableSql(table, ifExist))
         downQueries.push(this.createTableSql(table, createForeignKeys))
+
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
@@ -1229,7 +1275,7 @@ export abstract class AbstractSqliteQueryRunner
                 // load columns and indices
                 const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] =
                     await Promise.all([
-                        this.loadPragmaRecords(tablePath, `table_info`),
+                        this.loadPragmaRecords(tablePath, `table_xinfo`),
                         this.loadPragmaRecords(tablePath, `index_list`),
                         this.loadPragmaRecords(tablePath, `foreign_key_list`),
                     ])
@@ -1275,90 +1321,117 @@ export abstract class AbstractSqliteQueryRunner
                 }
 
                 // create columns from the loaded columns
-                table.columns = dbColumns.map((dbColumn) => {
-                    const tableColumn = new TableColumn()
-                    tableColumn.name = dbColumn["name"]
-                    tableColumn.type = dbColumn["type"].toLowerCase()
-                    tableColumn.default =
-                        dbColumn["dflt_value"] !== null &&
-                        dbColumn["dflt_value"] !== undefined
-                            ? dbColumn["dflt_value"]
-                            : undefined
-                    tableColumn.isNullable = dbColumn["notnull"] === 0
-                    // primary keys are numbered starting with 1, columns that aren't primary keys are marked with 0
-                    tableColumn.isPrimary = dbColumn["pk"] > 0
-                    tableColumn.comment = "" // SQLite does not support column comments
-                    tableColumn.isGenerated =
-                        autoIncrementColumnName === dbColumn["name"]
-                    if (tableColumn.isGenerated) {
-                        tableColumn.generationStrategy = "increment"
-                    }
-
-                    if (tableColumn.type === "varchar") {
-                        // Check if this is an enum
-                        const enumMatch = sql.match(
-                            new RegExp(
-                                '"(' +
-                                    tableColumn.name +
-                                    ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)",
-                            ),
-                        )
-                        if (enumMatch) {
-                            // This is an enum
-                            tableColumn.enum = enumMatch[2]
-                                .substr(1, enumMatch[2].length - 2)
-                                .split("','")
+                table.columns = await Promise.all(
+                    dbColumns.map(async (dbColumn) => {
+                        const tableColumn = new TableColumn()
+                        tableColumn.name = dbColumn["name"]
+                        tableColumn.type = dbColumn["type"].toLowerCase()
+                        tableColumn.default =
+                            dbColumn["dflt_value"] !== null &&
+                            dbColumn["dflt_value"] !== undefined
+                                ? dbColumn["dflt_value"]
+                                : undefined
+                        tableColumn.isNullable = dbColumn["notnull"] === 0
+                        // primary keys are numbered starting with 1, columns that aren't primary keys are marked with 0
+                        tableColumn.isPrimary = dbColumn["pk"] > 0
+                        tableColumn.comment = "" // SQLite does not support column comments
+                        tableColumn.isGenerated =
+                            autoIncrementColumnName === dbColumn["name"]
+                        if (tableColumn.isGenerated) {
+                            tableColumn.generationStrategy = "increment"
                         }
-                    }
 
-                    // parse datatype and attempt to retrieve length, precision and scale
-                    let pos = tableColumn.type.indexOf("(")
-                    if (pos !== -1) {
-                        const fullType = tableColumn.type
-                        let dataType = fullType.substr(0, pos)
                         if (
-                            !!this.driver.withLengthColumnTypes.find(
-                                (col) => col === dataType,
-                            )
+                            dbColumn["hidden"] === 2 ||
+                            dbColumn["hidden"] === 3
                         ) {
-                            let len = parseInt(
-                                fullType.substring(
-                                    pos + 1,
-                                    fullType.length - 1,
+                            tableColumn.generatedType =
+                                dbColumn["hidden"] === 2 ? "VIRTUAL" : "STORED"
+
+                            const asExpressionQuery =
+                                await this.selectTypeormMetadataSql({
+                                    table: table.name,
+                                    type: MetadataTableType.GENERATED_COLUMN,
+                                    name: tableColumn.name,
+                                })
+
+                            const results = await this.query(
+                                asExpressionQuery.query,
+                                asExpressionQuery.parameters,
+                            )
+                            if (results[0] && results[0].value) {
+                                tableColumn.asExpression = results[0].value
+                            } else {
+                                tableColumn.asExpression = ""
+                            }
+                        }
+
+                        if (tableColumn.type === "varchar") {
+                            // Check if this is an enum
+                            const enumMatch = sql.match(
+                                new RegExp(
+                                    '"(' +
+                                        tableColumn.name +
+                                        ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)",
                                 ),
                             )
-                            if (len) {
-                                tableColumn.length = len.toString()
-                                tableColumn.type = dataType // remove the length part from the datatype
+                            if (enumMatch) {
+                                // This is an enum
+                                tableColumn.enum = enumMatch[2]
+                                    .substr(1, enumMatch[2].length - 2)
+                                    .split("','")
                             }
                         }
-                        if (
-                            !!this.driver.withPrecisionColumnTypes.find(
-                                (col) => col === dataType,
-                            )
-                        ) {
-                            const re = new RegExp(
-                                `^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`,
-                            )
-                            const matches = fullType.match(re)
-                            if (matches && matches[1]) {
-                                tableColumn.precision = +matches[1]
-                            }
+
+                        // parse datatype and attempt to retrieve length, precision and scale
+                        let pos = tableColumn.type.indexOf("(")
+                        if (pos !== -1) {
+                            const fullType = tableColumn.type
+                            let dataType = fullType.substr(0, pos)
                             if (
-                                !!this.driver.withScaleColumnTypes.find(
+                                !!this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
-                                if (matches && matches[2]) {
-                                    tableColumn.scale = +matches[2]
+                                let len = parseInt(
+                                    fullType.substring(
+                                        pos + 1,
+                                        fullType.length - 1,
+                                    ),
+                                )
+                                if (len) {
+                                    tableColumn.length = len.toString()
+                                    tableColumn.type = dataType // remove the length part from the datatype
                                 }
                             }
-                            tableColumn.type = dataType // remove the precision/scale part from the datatype
+                            if (
+                                !!this.driver.withPrecisionColumnTypes.find(
+                                    (col) => col === dataType,
+                                )
+                            ) {
+                                const re = new RegExp(
+                                    `^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`,
+                                )
+                                const matches = fullType.match(re)
+                                if (matches && matches[1]) {
+                                    tableColumn.precision = +matches[1]
+                                }
+                                if (
+                                    !!this.driver.withScaleColumnTypes.find(
+                                        (col) => col === dataType,
+                                    )
+                                ) {
+                                    if (matches && matches[2]) {
+                                        tableColumn.scale = +matches[2]
+                                    }
+                                }
+                                tableColumn.type = dataType // remove the precision/scale part from the datatype
+                            }
                         }
-                    }
 
-                    return tableColumn
-                })
+                        return tableColumn
+                    }),
+                )
 
                 // build foreign keys
                 const tableForeignKeyConstraints = OrmUtils.uniq(
@@ -1786,8 +1859,15 @@ export abstract class AbstractSqliteQueryRunner
             c += " AUTOINCREMENT"
         if (column.collation) c += " COLLATE " + column.collation
         if (column.isNullable !== true) c += " NOT NULL"
-        if (column.default !== undefined && column.default !== null)
-            c += " DEFAULT (" + column.default + ")"
+
+        if (column.asExpression) {
+            c += ` AS (${column.asExpression}) ${
+                column.generatedType ? column.generatedType : "VIRTUAL"
+            }`
+        } else {
+            if (column.default !== undefined && column.default !== null)
+                c += " DEFAULT (" + column.default + ")"
+        }
 
         return c
     }
@@ -1820,25 +1900,32 @@ export abstract class AbstractSqliteQueryRunner
         // migrate all data from the old table into new table
         if (migrateData) {
             let newColumnNames = newTable.columns
+                .filter((column) => !column.generatedType)
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             let oldColumnNames = oldTable.columns
+                .filter((column) => !column.generatedType)
                 .map((column) => `"${column.name}"`)
                 .join(", ")
-            if (oldTable.columns.length < newTable.columns.length) {
+
+            if (oldColumnNames.length < newColumnNames.length) {
                 newColumnNames = newTable.columns
                     .filter((column) => {
-                        return oldTable.columns.find(
+                        const oldColumn = oldTable.columns.find(
                             (c) => c.name === column.name,
                         )
+                        if (oldColumn && oldColumn.generatedType) return false
+                        return !column.generatedType && oldColumn
                     })
                     .map((column) => `"${column.name}"`)
                     .join(", ")
-            } else if (oldTable.columns.length > newTable.columns.length) {
+            } else if (oldColumnNames.length > newColumnNames.length) {
                 oldColumnNames = oldTable.columns
                     .filter((column) => {
-                        return newTable.columns.find(
-                            (c) => c.name === column.name,
+                        return (
+                            !column.generatedType &&
+                            newTable.columns.find((c) => c.name === column.name)
                         )
                     })
                     .map((column) => `"${column.name}"`)
@@ -1899,6 +1986,116 @@ export abstract class AbstractSqliteQueryRunner
             upQueries.push(this.createIndexSql(newTable, index))
             downQueries.push(this.dropIndexSql(index))
         })
+
+        // update generated columns in "typeorm_metadata" table
+        // Step 1: clear data for removed generated columns
+        oldTable.columns
+            .filter((column) => {
+                const newTableColumn = newTable.columns.find(
+                    (c) => c.name === column.name,
+                )
+                // we should delete record from "typeorm_metadata" if generated column was removed
+                // or it was changed to non-generated
+                return (
+                    column.generatedType &&
+                    column.asExpression &&
+                    (!newTableColumn ||
+                        (!newTableColumn.generatedType &&
+                            !newTableColumn.asExpression))
+                )
+            })
+            .forEach((column) => {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    table: oldTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
+
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: oldTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+
+                upQueries.push(deleteQuery)
+                downQueries.push(insertQuery)
+            })
+
+        // Step 2: add data for new generated columns
+        newTable.columns
+            .filter(
+                (column) =>
+                    column.generatedType &&
+                    column.asExpression &&
+                    !oldTable.columns.some((c) => c.name === column.name),
+            )
+            .forEach((column) => {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: newTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    table: newTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
+
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            })
+
+        // Step 3: update changed expressions
+        newTable.columns
+            .filter((column) => column.generatedType && column.asExpression)
+            .forEach((column) => {
+                const oldColumn = oldTable.columns.find(
+                    (c) =>
+                        c.name === column.name &&
+                        c.generatedType &&
+                        column.generatedType &&
+                        c.asExpression !== column.asExpression,
+                )
+
+                if (!oldColumn) return
+
+                // update expression
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    table: oldTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: oldColumn.name,
+                })
+
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: newTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+
+                upQueries.push(deleteQuery)
+                upQueries.push(insertQuery)
+
+                // revert update
+                const revertInsertQuery = this.insertTypeormMetadataSql({
+                    table: newTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: oldColumn.name,
+                    value: oldColumn.asExpression,
+                })
+
+                const revertDeleteQuery = this.deleteTypeormMetadataSql({
+                    table: oldTable.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
+
+                downQueries.push(revertInsertQuery)
+                downQueries.push(revertDeleteQuery)
+            })
 
         await this.executeQueries(upQueries, downQueries)
         this.replaceCachedTable(oldTable, newTable)

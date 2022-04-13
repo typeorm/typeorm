@@ -432,7 +432,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 downQueries.push(this.dropForeignKeySql(table, foreignKey)),
             )
 
-        // if table have column with generated type, we must add the expression to the metadata table
+        // if table has column with generated type, we must add the expression to the metadata table
         const generatedColumns = table.columns.filter(
             (column) => column.generatedType && column.asExpression,
         )
@@ -495,6 +495,33 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         upQueries.push(this.dropTableSql(table))
         downQueries.push(this.createTableSql(table, createForeignKeys))
+
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentDatabase = await this.getCurrentDatabase()
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
