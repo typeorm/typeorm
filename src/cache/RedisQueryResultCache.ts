@@ -62,6 +62,9 @@ export class RedisQueryResultCache implements QueryResultCache {
                     this.connection.logger.log("warn", err)
                 })
             }
+            if ("connect" in this.client) {
+                await this.client.connect()
+            }
         } else if (this.clientType === "ioredis") {
             if (cacheOptions && cacheOptions.port) {
                 if (cacheOptions.options) {
