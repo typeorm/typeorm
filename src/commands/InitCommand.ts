@@ -449,7 +449,7 @@ AppDataSource.initialize().then(async () => {
     )
 
     await AppDataSource.manager.save(
-        dataSource.manager.create(User, {
+        AppDataSource.manager.create(User, {
             firstName: "Phantom",
             lastName: "Assassin",
             age: 24
