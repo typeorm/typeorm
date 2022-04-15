@@ -1061,7 +1061,7 @@ export class EntityManager {
         ids: any[],
     ): Promise<Entity[]> {
         // if no ids passed, no need to execute a query - just return an empty array of values
-        if (!ids.length) return Promise.resolve([])
+        if (!ids?.length) return Promise.resolve([])
 
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
