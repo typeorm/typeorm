@@ -1,6 +1,7 @@
 import { ColumnType } from "../../driver/types/ColumnTypes"
 import { ValueTransformer } from "./ValueTransformer"
 import { ColumnCommonOptions } from "./ColumnCommonOptions"
+import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 
 /**
  * Describes all column's options.
@@ -67,7 +68,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Default database value.
      */
-    default?: any
+    default?: ColumnMetadata["default"]
 
     /**
      * ON UPDATE trigger. Works only for MySQL.

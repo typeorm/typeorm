@@ -542,7 +542,7 @@ List of available options in `ColumnOptions`:
 -   `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.
 -   `insert: boolean` - Indicates if column value is set the first time you insert the object. Default value is `true`.
 -   `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
--   `default: string` - Adds database-level column's `DEFAULT` value.
+-   `default: number | boolean | string | null | (number | boolean | string)[] | Record<string, object> | (() => string)` - Adds database-level column's `DEFAULT` value.
 -   `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
 -   `unique: boolean` - Marks column as unique column (creates unique constraint).
 -   `comment: string` - Database's column comment. Not supported by all database types.
