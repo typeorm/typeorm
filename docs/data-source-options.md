@@ -97,8 +97,6 @@ Different RDBMS-es have their own specific options.
 
 -   `cli.entitiesDir` - Directory where entities should be created by default by CLI.
 
--   `cli.migrationsDir` - Directory where migrations should be created by default by CLI.
-
 -   `cli.subscribersDir` - Directory where subscribers should be created by default by CLI.
 
 ## `mysql` / `mariadb` data source options

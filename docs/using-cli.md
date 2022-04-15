@@ -224,10 +224,12 @@ and writes all sql queries that must be executed to update the database.
 If no there were no changes generated, the command will exit with code 1.
 
 ```
-typeorm migration:generate -n UserMigration
+typeorm migration:generate path/to/Migration -d path/to/datasource
 ```
 
 The rule of thumb is to generate a migration after each entity change.
+the -d argument value should specify the path where your DataSource instance is defined.
+You can specify the path and name of the migration with the first argument.
 
 Learn more about [Migrations](./migrations.md).
 
