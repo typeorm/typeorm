@@ -1263,6 +1263,52 @@ The photo's albums will be left joined and their metadata will be inner joined.
 You'll use the query builder in your application a lot.
 Learn more about QueryBuilder [here](./docs/select-query-builder.md).
 
+## Possible problems
+### about swagger
+**about swagger ui error**
+- Empty dto
+- Cant find xxx Module
+```json
+// just config your project `ormconfig.json`
+{
+    "type": "****",
+  "host": "**********",
+  "port": ****,
+  "username": "****",
+  "password": "****",
+  "database": "****",
+
+  "entities": ["dist/**/*.entity.js"] // 🎯add this line, ❌not autoLoadEntities: true
+}
+```
+**about swagger runtimes error**
+
+- @OneToOne || @OneToMany
+- Custom type
+```ts
+import {
+  OneToMany,
+  Timestamp,
+} from 'typeorm';
+import { Record } from 'src/modules/records/entities/record.entity';
+
+@Entity('user')
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @OneToMany(() => Record, (record) => record.uid) // 🔃replace Record with () => Record
+  records: Record[];
+
+  @CreateDateColumn({ type: 'timestamp' })
+  create_time: () => Timestamp;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  update_time: () => Timestamp; // 🔃replace Timestamp with () => Timestamp 
+}
+
+```
+
 ## Samples
 
 Take a look at the samples in [sample](https://github.com/typeorm/typeorm/tree/master/sample) for examples of usage.
