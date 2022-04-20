@@ -14,6 +14,7 @@ import {InsertResult} from "../query-builder/result/InsertResult";
 import {QueryDeepPartialEntity} from "../query-builder/QueryPartialEntity";
 import {ObjectID} from "../driver/mongodb/typings";
 import {FindConditions} from "../find-options/FindConditions";
+import { MissingArgumentError } from "../error";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -64,6 +65,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * If entity composite compose ids, it will check them all.
      */
     hasId(entity: Entity): boolean {
+        if (!entity) {
+          throw new MissingArgumentError();
+        }
         return this.manager.hasId(this.metadata.target, entity);
     }
 
@@ -71,6 +75,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Gets entity mixed id.
      */
     getId(entity: Entity): any {
+        if (!entity) {
+          throw new MissingArgumentError();
+        }
         return this.manager.getId(this.metadata.target, entity);
     }
 
@@ -80,14 +87,14 @@ export class Repository<Entity extends ObjectLiteral> {
     create(): Entity;
 
     /**
-     * Creates a new entities and copies all entity properties from given objects into their new entities.
-     * Note that it copies only properties that present in entity schema.
+     * Creates new entities and copies all entity properties from given objects into their new entities.
+     * Note that it copies only properties that are present in entity schema.
      */
     create(entityLikeArray: DeepPartial<Entity>[]): Entity[];
 
     /**
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
-     * Note that it copies only properties that present in entity schema.
+     * Note that it copies only properties that are present in entity schema.
      */
     create(entityLike: DeepPartial<Entity>): Entity;
 
@@ -103,6 +110,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Merges multiple entities (or entity-like objects) into a given entity.
      */
     merge(mergeIntoEntity: Entity, ...entityLikes: DeepPartial<Entity>[]): Entity {
+        if (!mergeIntoEntity) {
+          throw new MissingArgumentError();
+        }
         return this.manager.merge(this.metadata.target as any, mergeIntoEntity, ...entityLikes);
     }
 
@@ -116,6 +126,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Returns undefined if entity with given id was not found.
      */
     preload(entityLike: DeepPartial<Entity>): Promise<Entity|undefined> {
+        if (!entityLike) {
+          throw new MissingArgumentError();
+        }
         return this.manager.preload(this.metadata.target as any, entityLike);
     }
 
@@ -147,7 +160,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * Saves one or many given entities.
      */
     save<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.save<T>(this.metadata.target as any, entityOrEntities as any, options);
+        if (!entityOrEntities) {
+          throw new MissingArgumentError();
+        }
+        return this.manager.save<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
@@ -164,6 +180,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Removes one or many given entities.
      */
     remove(entityOrEntities: Entity|Entity[], options?: RemoveOptions): Promise<Entity|Entity[]> {
+        if (!entityOrEntities) {
+          throw new MissingArgumentError();
+        }
         return this.manager.remove(this.metadata.target as any, entityOrEntities as any, options);
     }
 
@@ -191,7 +210,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * Records the delete date of one or many given entities.
      */
     softRemove<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.softRemove<T>(this.metadata.target as any, entityOrEntities as any, options);
+        if (!entityOrEntities) {
+          throw new MissingArgumentError();
+        }
+        return this.manager.softRemove<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
@@ -218,7 +240,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * Recovers one or many given entities.
      */
     recover<T extends DeepPartial<Entity>>(entityOrEntities: T|T[], options?: SaveOptions): Promise<T|T[]> {
-        return this.manager.recover<T>(this.metadata.target as any, entityOrEntities as any, options);
+        if (!entityOrEntities) {
+          throw new MissingArgumentError();
+        }
+        return this.manager.recover<Entity, T>(this.metadata.target as any, entityOrEntities as any, options);
     }
 
     /**
@@ -228,6 +253,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      */
     insert(entity: QueryDeepPartialEntity<Entity>|(QueryDeepPartialEntity<Entity>[])): Promise<InsertResult> {
+        if (!entity) {
+          throw new MissingArgumentError();
+        }
         return this.manager.insert(this.metadata.target as any, entity);
     }
 
@@ -238,6 +266,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not check if entity exist in the database.
      */
     update(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
+        if (!criteria)  {
+          throw new MissingArgumentError();
+        }
         return this.manager.update(this.metadata.target as any, criteria as any, partialEntity);
     }
 
@@ -248,6 +279,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not check if entity exist in the database.
      */
     delete(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<DeleteResult> {
+      if(!criteria) { 
+          throw new MissingArgumentError();
+        }
         return this.manager.delete(this.metadata.target as any, criteria as any);
     }
 
@@ -258,6 +292,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not check if entity exist in the database.
      */
     softDelete(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<UpdateResult> {
+        if (!criteria) {
+          throw new MissingArgumentError();
+        }
         return this.manager.softDelete(this.metadata.target as any, criteria as any);
     }
 
@@ -268,6 +305,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not check if entity exist in the database.
      */
     restore(criteria: string|string[]|number|number[]|Date|Date[]|ObjectID|ObjectID[]|FindConditions<Entity>): Promise<UpdateResult> {
+        if (!criteria) {
+          throw new MissingArgumentError();
+        }
         return this.manager.restore(this.metadata.target as any, criteria as any);
     }
 
@@ -302,6 +342,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given find options or conditions.
      */
     find(optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
+        if (!optionsOrConditions) {
+          throw new MissingArgumentError();
+        }
         return this.manager.find(this.metadata.target as any, optionsOrConditions as any);
     }
 
@@ -325,6 +368,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * but ignores pagination settings (from and take options).
      */
     findAndCount(optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<[ Entity[], number ]> {
+        if (!optionsOrConditions) {
+          throw new MissingArgumentError();
+        }
         return this.manager.findAndCount(this.metadata.target as any, optionsOrConditions as any);
     }
 
@@ -345,6 +391,12 @@ export class Repository<Entity extends ObjectLiteral> {
      * Optionally find options can be applied.
      */
     findByIds(ids: any[], optionsOrConditions?: FindManyOptions<Entity>|FindConditions<Entity>): Promise<Entity[]> {
+        if (!ids) {
+          throw new MissingArgumentError();
+        }
+        if (ids.length === 0) {
+          return Promise.resolve([]);
+        }
         return this.manager.findByIds(this.metadata.target as any, ids, optionsOrConditions as any);
     }
 
@@ -367,6 +419,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity that matches given conditions.
      */
     findOne(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity|undefined> {
+        if (!optionsOrConditions) {
+          throw new MissingArgumentError();
+        }
         return this.manager.findOne(this.metadata.target as any, optionsOrConditions as any, maybeOptions);
     }
 
@@ -389,6 +444,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity that matches given conditions.
      */
     findOneOrFail(optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>): Promise<Entity> {
+        if (!optionsOrConditions) {
+          throw new MissingArgumentError();
+        }
         return this.manager.findOneOrFail(this.metadata.target as any, optionsOrConditions as any, maybeOptions);
     }
 
@@ -414,6 +472,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Increments some column by provided value of the entities matched given conditions.
      */
     increment(conditions: FindConditions<Entity>, propertyPath: string, value: number | string): Promise<UpdateResult> {
+        if (!conditions) {
+          throw new MissingArgumentError();
+        }
         return this.manager.increment(this.metadata.target, conditions, propertyPath, value);
     }
 
@@ -421,6 +482,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Decrements some column by provided value of the entities matched given conditions.
      */
     decrement(conditions: FindConditions<Entity>, propertyPath: string, value: number | string): Promise<UpdateResult> {
+        if (!conditions) {
+          throw new MissingArgumentError();
+        }
         return this.manager.decrement(this.metadata.target, conditions, propertyPath, value);
     }
 

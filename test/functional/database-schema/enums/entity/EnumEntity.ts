@@ -86,4 +86,12 @@ export class EnumEntity {
     })
     enumWithoutdefault: StringEnum;
 
+    @Column({
+        type: 'enum',
+        enum: StringEnum,
+        nullable: true,
+        default: null,
+    })
+    nullableDefaultEnum: StringEnum;
+
 }

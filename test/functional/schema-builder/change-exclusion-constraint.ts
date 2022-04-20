@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "../../../src/connection/Connection";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {PromiseUtils} from "../../../src";
 import {Teacher} from "./entity/Teacher";
 import {Post} from "./entity/Post";
 import {ExclusionMetadata} from "../../../src/metadata/ExclusionMetadata";
@@ -20,7 +19,7 @@ describe("schema builder > change exclusion constraint", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly add new exclusion constraint", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly add new exclusion constraint", () => Promise.all(connections.map(async connection => {
 
         const teacherMetadata = connection.getMetadata(Teacher);
         const exclusionMetadata = new ExclusionMetadata({
@@ -40,9 +39,9 @@ describe("schema builder > change exclusion constraint", () => {
         await queryRunner.release();
 
         table!.exclusions.length.should.be.equal(1);
-    }));
+    })));
 
-    it("should correctly change exclusion", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change exclusion", () => Promise.all(connections.map(async connection => {
 
         const postMetadata = connection.getMetadata(Post);
         postMetadata.exclusions[0].expression = `USING gist ("tag" WITH =)`;
@@ -55,9 +54,9 @@ describe("schema builder > change exclusion constraint", () => {
         await queryRunner.release();
 
         table!.exclusions[0].expression!.indexOf("tag").should.be.not.equal(-1);
-    }));
+    })));
 
-    it("should correctly drop removed exclusion", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly drop removed exclusion", () => Promise.all(connections.map(async connection => {
 
         const postMetadata = connection.getMetadata(Post);
         postMetadata.exclusions = [];
@@ -69,6 +68,6 @@ describe("schema builder > change exclusion constraint", () => {
         await queryRunner.release();
 
         table!.exclusions.length.should.be.equal(0);
-    }));
+    })));
 
 });

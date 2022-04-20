@@ -1,7 +1,11 @@
 import {ColumnOptions, getMetadataArgsStorage} from "../../";
 import {
-    ColumnType, SimpleColumnType, SpatialColumnType, WithLengthColumnType,
-    WithPrecisionColumnType, WithWidthColumnType
+    ColumnType,
+    SimpleColumnType,
+    SpatialColumnType,
+    WithLengthColumnType,
+    WithPrecisionColumnType,
+    WithWidthColumnType
 } from "../../driver/types/ColumnTypes";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
 import {ColumnCommonOptions} from "../options/ColumnCommonOptions";
@@ -14,73 +18,73 @@ import {EmbeddedMetadataArgs} from "../../metadata-args/EmbeddedMetadataArgs";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {ColumnHstoreOptions} from "../options/ColumnHstoreOptions";
 import {ColumnWithWidthOptions} from "../options/ColumnWithWidthOptions";
-import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs";
+import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
  * decorator will be persisted to the database when entity be saved.
  */
-export function Column(): Function;
+export function Column(): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(options: ColumnOptions): Function;
+export function Column(options: ColumnOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: SimpleColumnType, options?: ColumnCommonOptions): Function;
+export function Column(type: SimpleColumnType, options?: ColumnCommonOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: SpatialColumnType, options?: ColumnCommonOptions & SpatialColumnOptions): Function;
+export function Column(type: SpatialColumnType, options?: ColumnCommonOptions & SpatialColumnOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: WithLengthColumnType, options?: ColumnCommonOptions & ColumnWithLengthOptions): Function;
+export function Column(type: WithLengthColumnType, options?: ColumnCommonOptions & ColumnWithLengthOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: WithWidthColumnType, options?: ColumnCommonOptions & ColumnWithWidthOptions): Function;
+export function Column(type: WithWidthColumnType, options?: ColumnCommonOptions & ColumnWithWidthOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: WithPrecisionColumnType, options?: ColumnCommonOptions & ColumnNumericOptions): Function;
+export function Column(type: WithPrecisionColumnType, options?: ColumnCommonOptions & ColumnNumericOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: "enum", options?: ColumnCommonOptions & ColumnEnumOptions): Function;
+export function Column(type: "enum", options?: ColumnCommonOptions & ColumnEnumOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: "simple-enum", options?: ColumnCommonOptions & ColumnEnumOptions): Function;
+export function Column(type: "simple-enum", options?: ColumnCommonOptions & ColumnEnumOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: "set", options?: ColumnCommonOptions & ColumnEnumOptions): Function;
+export function Column(type: "set", options?: ColumnCommonOptions & ColumnEnumOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHstoreOptions): Function;
+export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHstoreOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
@@ -90,13 +94,13 @@ export function Column(type: "hstore", options?: ColumnCommonOptions & ColumnHst
  * single table of the entity where Embedded is used. And on hydration all columns which supposed to be in the
  * embedded will be mapped to it from the single table.
  */
-export function Column(type: (type?: any) => Function, options?: ColumnEmbeddedOptions): Function;
+export function Column(type: (type?: any) => Function, options?: ColumnEmbeddedOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
-export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): Function {
+export function Column(typeOrOptions?: ((type?: any) => Function)|ColumnType|(ColumnOptions&ColumnEmbeddedOptions), options?: (ColumnOptions&ColumnEmbeddedOptions)): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         // normalize parameters

@@ -9,7 +9,7 @@ describe("indices > conditional index", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mssql", "postgres", "sqlite"], // only these drivers supports conditional indices
+            enabledDrivers: ["mssql", "postgres", "sqlite", "better-sqlite3"], // only these drivers supports conditional indices
             schemaCreate: true,
             dropSchema: true,
         });
@@ -37,7 +37,7 @@ describe("indices > conditional index", () => {
         expect(table!.indices[0].where).to.be.not.empty;
         expect(table!.indices[1].where).to.be.not.empty;
 
-        await queryRunner.dropIndices(table!, table!.indices);
+        await queryRunner.dropIndices(table!, [...table!.indices]);
 
         table = await queryRunner.getTable("post");
         table!.indices.length.should.be.equal(0);

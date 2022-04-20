@@ -14,7 +14,7 @@ describe("github issues > #4147 `SQLITE_ERROR: near \"-\": syntax error` when us
             (connections = await createTestingConnections({
                 entities: [new EntitySchema<Post>(PostSchema)],
                 dropSchema: true,
-                enabledDrivers: ["sqlite"]
+                enabledDrivers: ["sqlite", "better-sqlite3"]
             }))
     );
     beforeEach(() => reloadTestingDatabases(connections));

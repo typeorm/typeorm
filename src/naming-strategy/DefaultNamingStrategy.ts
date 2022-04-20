@@ -29,7 +29,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string {
         const name = customName || propertyName;
-        
+
         if (embeddedPrefixes.length)
             return camelCase(embeddedPrefixes.join("_")) + titleCase(name);
 
@@ -103,11 +103,12 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return "IDX_" + RandomGenerator.sha1(key).substr(0, 26);
     }
 
-    checkConstraintName(tableOrName: Table|string, expression: string): string {
+    checkConstraintName(tableOrName: Table|string, expression: string, isEnum?: boolean): string {
         const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
         const replacedTableName = tableName.replace(".", "_");
         const key = `${replacedTableName}_${expression}`;
-        return "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
+        const name = "CHK_" + RandomGenerator.sha1(key).substr(0, 26);
+        return isEnum ? `${name}_ENUM` : name;
     }
 
     exclusionConstraintName(tableOrName: Table|string, expression: string): string {

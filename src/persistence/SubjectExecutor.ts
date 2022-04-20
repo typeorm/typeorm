@@ -1,7 +1,6 @@
 import {SapDriver} from "../driver/sap/SapDriver";
 import {QueryRunner} from "../query-runner/QueryRunner";
 import {Subject} from "./Subject";
-import {PromiseUtils} from "../util/PromiseUtils";
 import {SubjectTopoligicalSorter} from "./SubjectTopoligicalSorter";
 import {SubjectChangedColumnsComputer} from "./SubjectChangedColumnsComputer";
 import {SubjectWithoutIdentifierError} from "../error/SubjectWithoutIdentifierError";
@@ -248,7 +247,7 @@ export class SubjectExecutor {
         const [groupedInsertSubjects, groupedInsertSubjectKeys] = this.groupBulkSubjects(this.insertSubjects, "insert");
 
         // then we run insertion in the sequential order which is important since we have an ordered subjects
-        await PromiseUtils.runInSequence(groupedInsertSubjectKeys, async groupName => {
+        for (const groupName of groupedInsertSubjectKeys) {
             const subjects = groupedInsertSubjects[groupName];
 
             // we must separately insert entities which does not have any values to insert
@@ -331,7 +330,7 @@ export class SubjectExecutor {
 
                 // insert subjects which must be inserted in separate requests (all default values)
                 if (singleInsertSubjects.length > 0) {
-                    await PromiseUtils.runInSequence(singleInsertSubjects, async subject => {
+                    for (const subject of singleInsertSubjects) {
                         subject.insertedValueSet = subject.createValueSetAndPopChangeMap(); // important to have because query builder sets inserted values into it
 
                         // for nested set we execute additional queries
@@ -359,7 +358,7 @@ export class SubjectExecutor {
                         } else if (subject.metadata.treeType === "materialized-path") {
                             await new MaterializedPathSubjectExecutor(this.queryRunner).insert(subject);
                         }
-                    });
+                    }
                 }
             }
 
@@ -374,7 +373,7 @@ export class SubjectExecutor {
                     });
                 }
             });
-        });
+        }
     }
 
     /**
@@ -429,15 +428,19 @@ export class SubjectExecutor {
                 }
 
                 const updateResult = await updateQueryBuilder.execute();
-                subject.generatedMap = updateResult.generatedMaps[0];
-                if (subject.generatedMap) {
+                let updateGeneratedMap = updateResult.generatedMaps[0];
+                if (updateGeneratedMap) {
                     subject.metadata.columns.forEach(column => {
-                        const value = column.getEntityValue(subject.generatedMap!);
+                        const value = column.getEntityValue(updateGeneratedMap!);
                         if (value !== undefined && value !== null) {
                             const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                            column.setEntityValue(subject.generatedMap!, preparedValue);
+                            column.setEntityValue(updateGeneratedMap!, preparedValue);
                         }
                     });
+                    if (!subject.generatedMap) {
+                        subject.generatedMap = {};
+                    }
+                    Object.assign(subject.generatedMap, updateGeneratedMap);
                 }
 
                 // experiments, remove probably, need to implement tree tables children removal
@@ -464,7 +467,7 @@ export class SubjectExecutor {
         // group insertion subjects to make bulk insertions
         const [groupedRemoveSubjects, groupedRemoveSubjectKeys] = this.groupBulkSubjects(this.removeSubjects, "delete");
 
-        await PromiseUtils.runInSequence(groupedRemoveSubjectKeys, async groupName => {
+        for (const groupName of groupedRemoveSubjectKeys) {
             const subjects = groupedRemoveSubjects[groupName];
             const deleteMaps = subjects.map(subject => {
                 if (!subject.identifier)
@@ -493,7 +496,7 @@ export class SubjectExecutor {
                     .callListeners(false)
                     .execute();
             }
-        });
+        }
     }
 
     /**

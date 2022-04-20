@@ -5,6 +5,7 @@
 * [`mysql` / `mariadb` connection options](#mysql--mariadb-connection-options)
 * [`postgres` / `cockroachdb` connection options](#postgres--cockroachdb-connection-options)
 * [`sqlite` connection options](#sqlite-connection-options)
+* [`better-sqlite3` connection options](#better-sqlite3-connection-options)
 * [`cordova` connection options](#cordova-connection-options)
 * [`react-native` connection options](#react-native-connection-options)
 * [`nativescript` connection options](#nativescript-connection-options)
@@ -22,7 +23,7 @@ Connection options is a connection configuration you pass to `createConnection`
 ## Common connection options
 
 * `type` - Database type. You must specify what database engine you use.
- Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "cordova", "nativescript",
+ Possible values are "mysql", "postgres", "cockroachdb", "mariadb", "sqlite", "better-sqlite3", "cordova", "nativescript",
  "oracle", "mssql", "mongodb", "sqljs", "react-native".
  This option is **required**.
 
@@ -181,9 +182,19 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 * `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
+* `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
+
 ## `sqlite` connection options
 
 * `database` - Database path. For example "./mydb.sql"
+
+## `better-sqlite3` connection options
+
+* `database` - Database path. For example "./mydb.sql"
+
+* `statementCacheSize` - Cache size of sqlite statement to speed up queries (default 100).
+
+* `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
 
 ## `cordova` connection options
 
@@ -358,6 +369,10 @@ See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 * `host` - Database host.
 
 * `port` - Database host port. Default mongodb port is `27017`.
+
+* `username` - Database username (replacement for `auth.user`).
+
+* `password` - Database password (replacement for `auth.password`).
 
 * `database` - Database name.
 

@@ -1,8 +1,21 @@
+import {promises as fs} from "fs";
 import {expect} from "chai";
 import {ConnectionOptions} from "../../../src/connection/ConnectionOptions";
 import {ConnectionOptionsReader} from "../../../src/connection/ConnectionOptionsReader";
+import path from "path";
+
+async function createDotenvFiles() {
+  // These files may not always exist
+  await fs.writeFile(path.join(__dirname, "configs/.env"), "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-env");
+  await fs.writeFile(path.join(__dirname, "configs/ormconfig.env"), "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-ormconfig-env");
+}
 
 describe("ConnectionOptionsReader", () => {
+  beforeEach(() => {
+    delete process.env['TYPEORM_CONNECTION'];
+    delete process.env['TYPEORM_DATABASE'];
+  });
+
   after(() => {
     delete process.env.TYPEORM_CONNECTION;
     delete process.env.TYPEORM_DATABASE;
@@ -26,22 +39,47 @@ describe("ConnectionOptionsReader", () => {
   });
 
   it("properly loads config with specified file path", async () => {
-    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config.js" });
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config" });
     const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
     expect(fileOptions.database).to.have.string("/test-js");
   });
 
   it("properly loads asynchronous config with specified file path", async () => {
-    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config-async.js" });
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config-async" });
     const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
     expect(fileOptions.database).to.have.string("/test-js-async");
   });
 
-  // TODO This test requires the configs/.env file be moved to the matching directory in build/compiled
-  it.skip("properly loads config from .env file", async () => {
-    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/.env" });
+  it("properly loads config with specified file path from esm in js", async () => {
+    const connectionOptionsReader = new ConnectionOptionsReader({ root: __dirname, configName: "configs/test-path-config-esm" });
+    const fileOptions: ConnectionOptions = await connectionOptionsReader.get("file");
+    expect(fileOptions.database).to.have.string("/test-js-esm");
+  });
+
+  it("properly loads config from .env file", async () => {
+    await createDotenvFiles();
+
+    const connectionOptionsReader = new ConnectionOptionsReader({ root:  __dirname, configName: "configs/.env" });
     const [ fileOptions ]: ConnectionOptions[] = await connectionOptionsReader.all();
-    expect(fileOptions.database).to.have.string("test-js");
-    expect(process.env.TYPEORM_DATABASE).to.equal("test-js");
+    expect(fileOptions.database).to.have.string("test-env");
+    expect(process.env.TYPEORM_DATABASE).to.equal("test-env");
+  });
+
+  it("properly loads config from ormconfig.env file", async () => {
+    await createDotenvFiles();
+
+    const connectionOptionsReader = new ConnectionOptionsReader({ root:  __dirname, configName: "configs/ormconfig.env" });
+    const [ fileOptions ]: ConnectionOptions[] = await connectionOptionsReader.all();
+    expect(fileOptions.database).to.have.string("test-ormconfig-env");
+    expect(process.env.TYPEORM_DATABASE).to.equal("test-ormconfig-env");
+  });
+
+  it("properly loads config ormconfig.env when given multiple choices", async () => {
+    await createDotenvFiles();
+
+    const connectionOptionsReader = new ConnectionOptionsReader({ root:  path.join(__dirname, "configs") });
+    const [ fileOptions ]: ConnectionOptions[] = await connectionOptionsReader.all();
+    expect(fileOptions.database).to.have.string("test-ormconfig-env");
+    expect(process.env.TYPEORM_DATABASE).to.equal("test-ormconfig-env");
   });
 });

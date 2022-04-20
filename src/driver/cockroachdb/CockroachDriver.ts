@@ -19,6 +19,7 @@ import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {CockroachQueryRunner} from "./CockroachQueryRunner";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -284,7 +285,7 @@ export class CockroachDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new CockroachQueryRunner(this, mode);
     }
 
@@ -478,12 +479,12 @@ export class CockroachDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
         const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
 
         if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+            return `(${defaultValue})`;
 
         } else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "true" : "false";
@@ -494,10 +495,7 @@ export class CockroachDriver implements Driver {
         } else if (typeof defaultValue === "string") {
             return `'${defaultValue}'${arrayCast}`;
 
-        } else if (defaultValue === null) {
-            return `null`;
-
-        } else if (typeof defaultValue === "object") {
+        } else if (typeof defaultValue === "object" && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`;
 
         } else {
@@ -617,8 +615,8 @@ export class CockroachDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
-                || tableColumn.scale !== columnMetadata.scale
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
+                || tableColumn.comment !== columnMetadata.comment
                 || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
@@ -647,6 +645,13 @@ export class CockroachDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return true;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return false;
     }
 
     /**

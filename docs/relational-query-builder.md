@@ -3,7 +3,6 @@
 `RelationQueryBuilder` is a special type of `QueryBuilder` which allows you to work with your relations.
 Using it, you can bind entities to each other in the database without the need to load any entities,
 or you can load related entities easily.
-Examples:
 
 For example, we have a `Post` entity and it has a many-to-many relation to `Category` called `categories`.
 Let's add a new category to this many-to-many relation:

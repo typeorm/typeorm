@@ -1,0 +1,1 @@
+{"version":3,"sources":["../browser/src/metadata/types/RelationTypes.ts"],"names":[],"mappings":"","file":"RelationTypes.js","sourcesContent":["/**\n * All types that relation can be.\n */\nexport type RelationType = \"one-to-one\"|\"one-to-many\"|\"many-to-one\"|\"many-to-many\";"],"sourceRoot":"../.."}

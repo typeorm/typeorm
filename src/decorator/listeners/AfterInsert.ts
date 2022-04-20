@@ -5,7 +5,7 @@ import {EntityListenerMetadataArgs} from "../../metadata-args/EntityListenerMeta
 /**
  * Calls a method on which this decorator is applied after this entity insertion.
  */
-export function AfterInsert() {
+export function AfterInsert(): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         getMetadataArgsStorage().entityListeners.push({

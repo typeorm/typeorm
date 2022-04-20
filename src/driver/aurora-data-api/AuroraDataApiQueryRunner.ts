@@ -16,10 +16,11 @@ import {TableIndexOptions} from "../../schema-builder/options/TableIndexOptions"
 import {TableUnique} from "../../schema-builder/table/TableUnique";
 import {BaseQueryRunner} from "../../query-runner/BaseQueryRunner";
 import {Broadcaster} from "../../subscriber/Broadcaster";
-import {ColumnType, PromiseUtils} from "../../index";
+import {ColumnType} from "../../index";
 import {TableCheck} from "../../schema-builder/table/TableCheck";
 import {IsolationLevel} from "../types/IsolationLevel";
 import {TableExclusion} from "../../schema-builder/table/TableExclusion";
+import {BroadcasterResult} from "../../subscriber/BroadcasterResult";
 
 /**
  * Runs queries on a single mysql database connection.
@@ -36,6 +37,8 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
     driver: AuroraDataApiDriver;
 
+    protected client: any
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -49,10 +52,11 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraDataApiDriver) {
+    constructor(driver: AuroraDataApiDriver, client: any) {
         super();
         this.driver = driver;
         this.connection = driver.connection;
+        this.client = client;
         this.broadcaster = new Broadcaster(this);
     }
 
@@ -86,8 +90,17 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (this.isTransactionActive)
             throw new TransactionAlreadyStartedError();
 
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionStartEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
         this.isTransactionActive = true;
-        await this.driver.client.startTransaction();
+        await this.client.startTransaction();
+
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionStartEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -98,8 +111,16 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.commitTransaction();
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionCommitEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        await this.client.commitTransaction();
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionCommitEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -110,8 +131,17 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        await this.driver.client.rollbackTransaction();
+        const beforeBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastBeforeTransactionRollbackEvent(beforeBroadcastResult);
+        if (beforeBroadcastResult.promises.length > 0) await Promise.all(beforeBroadcastResult.promises);
+
+        await this.client.rollbackTransaction();
+
         this.isTransactionActive = false;
+
+        const afterBroadcastResult = new BroadcasterResult();
+        this.broadcaster.broadcastAfterTransactionRollbackEvent(afterBroadcastResult);
+        if (afterBroadcastResult.promises.length > 0) await Promise.all(afterBroadcastResult.promises);
     }
 
     /**
@@ -121,7 +151,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
-        const result = await this.driver.client.query(query, parameters);
+        const result = await this.client.query(query, parameters);
 
         if (result.records) {
             return result.records;
@@ -469,7 +499,9 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Creates a new columns from the column in the table.
      */
     async addColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.addColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.addColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -682,7 +714,9 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Changes a column in the table.
      */
     async changeColumns(tableOrName: Table|string, changedColumns: { newColumn: TableColumn, oldColumn: TableColumn }[]): Promise<void> {
-        await PromiseUtils.runInSequence(changedColumns, changedColumn => this.changeColumn(tableOrName, changedColumn.oldColumn, changedColumn.newColumn));
+        for (const {oldColumn, newColumn} of changedColumns) {
+            await this.changeColumn(tableOrName, oldColumn, newColumn)
+        }
     }
 
     /**
@@ -774,7 +808,9 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
      * Drops the columns in the table.
      */
     async dropColumns(tableOrName: Table|string, columns: TableColumn[]): Promise<void> {
-        await PromiseUtils.runInSequence(columns, column => this.dropColumn(tableOrName, column));
+        for (const column of columns) {
+            await this.dropColumn(tableOrName, column);
+        }
     }
 
     /**
@@ -1297,7 +1333,7 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
 
                     if (tableColumn.type === "enum" || tableColumn.type === "simple-enum") {
                         const colType = dbColumn["COLUMN_TYPE"];
-                        const items = colType.substring(colType.indexOf("(") + 1, colType.indexOf(")")).split(",");
+                        const items = colType.substring(colType.indexOf("(") + 1, colType.lastIndexOf(")")).split(",");
                         tableColumn.enum = (items as string[]).map(item => {
                             return item.substring(1, item.length - 1);
                         });
@@ -1573,6 +1609,22 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
     }
 
     /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment || comment.length === 0) {
+            return `''`;
+        }
+
+        comment = comment
+            .replace("\\", "\\\\") // MySQL allows escaping characters via backslashes
+            .replace(/'/g, "''")
+            .replace("\0", ""); // Null bytes aren't allowed in comments
+
+        return `'${comment}'`;
+    }
+
+    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table|View|string, disableEscape?: boolean): string {
@@ -1614,13 +1666,35 @@ export class AuroraDataApiQueryRunner extends BaseQueryRunner implements QueryRu
         if (column.isGenerated && column.generationStrategy === "increment") // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTO_INCREMENT";
         if (column.comment)
-            c += ` COMMENT '${column.comment}'`;
+            c += ` COMMENT ${this.escapeComment(column.comment)}`;
         if (column.default !== undefined && column.default !== null)
             c += ` DEFAULT ${column.default}`;
         if (column.onUpdate)
             c += ` ON UPDATE ${column.onUpdate}`;
 
         return c;
+    }
+
+    /**
+     * Checks if column display width is by default.
+     */
+    protected isDefaultColumnWidth(table: Table, column: TableColumn, width: number): boolean {
+        // if table have metadata, we check if length is specified in column metadata
+        if (this.connection.hasMetadata(table.name)) {
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            if (columnMetadata && columnMetadata.width)
+                return false;
+        }
+
+        const defaultWidthForType = this.connection.driver.dataTypeDefaults
+            && this.connection.driver.dataTypeDefaults[column.type]
+            && this.connection.driver.dataTypeDefaults[column.type].width;
+
+        if (defaultWidthForType) {
+            return defaultWidthForType === width;
+        }
+        return false;
     }
 
 }

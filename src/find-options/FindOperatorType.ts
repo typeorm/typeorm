@@ -11,5 +11,6 @@ export type FindOperatorType = "not"
     | "in"
     | "any"
     | "isNull"
+    | "ilike"
     | "like"
     | "raw";

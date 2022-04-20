@@ -41,7 +41,7 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
         const [loadedPost1, loadedPost2] = await Promise.all([
           qb.clone().where({ id: 1 }).getOne(),
           qb.clone().where({ id: In([1]) }).getOne(),
-        ]);
+        ]) as Post[];
 
         loadedPost1!.should.be.eql({
           id: 1,
@@ -67,7 +67,7 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
         const [loadedPost1, loadedPost2] = await Promise.all([
           qb.clone().getOne(),
           qb.clone().getOne(),
-        ]);
+        ]) as Post[];
 
         loadedPost1!.should.be.eql({
           id: 1,

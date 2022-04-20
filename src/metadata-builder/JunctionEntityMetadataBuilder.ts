@@ -83,6 +83,8 @@ export class JunctionEntityMetadataBuilder {
                         collation: referencedColumn.collation,
                         zerofill: referencedColumn.zerofill,
                         unsigned: referencedColumn.zerofill ? true : referencedColumn.unsigned,
+                        enum: referencedColumn.enum,
+                        enumName: referencedColumn.enumName,
                         nullable: false,
                         primary: true,
                     }
@@ -113,6 +115,7 @@ export class JunctionEntityMetadataBuilder {
                         && (inverseReferencedColumn.generationStrategy === "uuid" || inverseReferencedColumn.type === "uuid")
                             ? "36"
                             : inverseReferencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
+                        width: inverseReferencedColumn.width, // fix https://github.com/typeorm/typeorm/issues/6442
                         type: inverseReferencedColumn.type,
                         precision: inverseReferencedColumn.precision,
                         scale: inverseReferencedColumn.scale,
@@ -120,6 +123,8 @@ export class JunctionEntityMetadataBuilder {
                         collation: inverseReferencedColumn.collation,
                         zerofill: inverseReferencedColumn.zerofill,
                         unsigned: inverseReferencedColumn.zerofill ? true : inverseReferencedColumn.unsigned,
+                        enum: inverseReferencedColumn.enum,
+                        enumName: inverseReferencedColumn.enumName,
                         name: columnName,
                         nullable: false,
                         primary: true,
@@ -137,7 +142,7 @@ export class JunctionEntityMetadataBuilder {
         entityMetadata.ownColumns.forEach(column => column.relationMetadata = relation);
 
         // create junction table foreign keys
-        entityMetadata.foreignKeys = [
+        entityMetadata.foreignKeys = relation.createForeignKeyConstraints ? [
             new ForeignKeyMetadata({
                 entityMetadata: entityMetadata,
                 referencedEntityMetadata: relation.entityMetadata,
@@ -152,7 +157,7 @@ export class JunctionEntityMetadataBuilder {
                 referencedColumns: inverseReferencedColumns,
                 onDelete: relation.onDelete || "CASCADE"
             }),
-        ];
+        ] : [];
 
         // create junction table indices
         entityMetadata.ownIndices = [

@@ -18,6 +18,7 @@ import {MysqlConnectionCredentialsOptions} from "./MysqlConnectionCredentialsOpt
 import {EntityMetadata} from "../../metadata/EntityMetadata";
 import {OrmUtils} from "../../util/OrmUtils";
 import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+import {ReplicationMode} from "../types/ReplicationMode";
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -385,7 +386,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master") {
+    createQueryRunner(mode: ReplicationMode) {
         return new MysqlQueryRunner(this, mode);
     }
 
@@ -578,31 +579,30 @@ export class MysqlDriver implements Driver {
     /**
      * Normalizes "default" value of the column.
      */
-    normalizeDefault(columnMetadata: ColumnMetadata): string {
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default;
 
-        if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {
+        if (defaultValue === null) {
+            return undefined
+
+        } else if (
+            (columnMetadata.type === "enum"
+            || columnMetadata.type === "simple-enum"
+            || typeof defaultValue === "string")
+            && defaultValue !== undefined) {
             return `'${defaultValue}'`;
-        }
 
-        if ((columnMetadata.type === "set") && defaultValue !== undefined) {
+        } else if ((columnMetadata.type === "set") && defaultValue !== undefined) {
             return `'${DateUtils.simpleArrayToString(defaultValue)}'`;
-        }
 
-        if (typeof defaultValue === "number") {
-            return "" + defaultValue;
+        } else if (typeof defaultValue === "number") {
+            return `'${defaultValue.toFixed(columnMetadata.scale)}'`;
 
         } else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "1" : "0";
 
         } else if (typeof defaultValue === "function") {
             return defaultValue();
-
-        } else if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`;
-
-        } else if (defaultValue === null) {
-            return `NULL`;
 
         } else {
             return defaultValue;
@@ -709,11 +709,13 @@ export class MysqlDriver implements Driver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+    createGeneratedMap(metadata: EntityMetadata, insertResult: any, entityIndex: number) {
         const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
             let value: any;
             if (generatedColumn.generationStrategy === "increment" && insertResult.insertId) {
-                value = insertResult.insertId;
+                // NOTE: When multiple rows is inserted by a single INSERT statement,
+                // `insertId` is the value generated for the first inserted row only.
+                value = insertResult.insertId + entityIndex;
             // } else if (generatedColumn.generationStrategy === "uuid") {
             //     console.log("getting db value:", generatedColumn.databaseName);
             //     value = generatedColumn.getEntityValue(uuidMap);
@@ -767,13 +769,13 @@ export class MysqlDriver implements Driver {
                 || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadataLength
                 || tableColumn.width !== columnMetadata.width
-                || tableColumn.precision !== columnMetadata.precision
-                || tableColumn.scale !== columnMetadata.scale
+                || (columnMetadata.precision !== undefined && tableColumn.precision !== columnMetadata.precision)
+                || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 || tableColumn.zerofill !== columnMetadata.zerofill
                 || tableColumn.unsigned !== columnMetadata.unsigned
                 || tableColumn.asExpression !== columnMetadata.asExpression
                 || tableColumn.generatedType !== columnMetadata.generatedType
-                // || tableColumn.comment !== columnMetadata.comment // todo
+                || tableColumn.comment !== columnMetadata.comment
                 || !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default)
                 || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")))
                 || tableColumn.onUpdate !== columnMetadata.onUpdate
@@ -796,6 +798,13 @@ export class MysqlDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return false;
+    }
+
+    /**
+     * Returns true if driver supports fulltext indices.
+     */
+    isFullTextColumnTypeSupported(): boolean {
+        return true;
     }
 
     /**
@@ -861,7 +870,8 @@ export class MysqlDriver implements Driver {
             password: credentials.password,
             database: credentials.database,
             port: credentials.port,
-            ssl: options.ssl
+            ssl: options.ssl,
+            socketPath: credentials.socketPath
         },
         options.acquireTimeout === undefined
           ? {}
@@ -909,7 +919,7 @@ export class MysqlDriver implements Driver {
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      */
-    protected compareDefaultValues(columnMetadataValue: string, databaseValue: string): boolean {
+    protected compareDefaultValues(columnMetadataValue: string | undefined, databaseValue: string | undefined): boolean {
         if (typeof columnMetadataValue === "string" && typeof databaseValue === "string") {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not

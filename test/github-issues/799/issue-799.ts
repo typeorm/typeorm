@@ -34,4 +34,14 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         assert.strictEqual(connection.isConnected, true);
     });
 
+    it("should create the whole path to database file for better-sqlite3", async function () {
+        connection = await createConnection({
+            "name": "better-sqlite3",
+            "type": "better-sqlite3",
+            "database": path
+        });
+
+        assert.strictEqual(connection.isConnected, true);
+    });
+
 });

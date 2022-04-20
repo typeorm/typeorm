@@ -4,7 +4,7 @@ See what amazing new features we are expecting to land in the next TypeORM versi
 
 ## Note on 1.0.0 release
 
-We are planning to release a final stable `1.0.0` version somewhere in Autumn 2018.
+We are planning to release a final stable `1.0.0` version in near future.
 However, TypeORM is already actively used in a number of big production systems.
 The main API is already very stable.
 TypeORM follows a semantic versioning and until `1.0.0`, breaking changes may appear in `0.x.x` versions.

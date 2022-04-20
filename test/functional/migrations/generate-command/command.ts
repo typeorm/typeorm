@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, /*reloadTestingDatabases*/} from "../../../utils/test-utils";
+import {createTestingConnections, closeTestingConnections} from "../../../utils/test-utils";
 import {Connection} from "../../../../src/connection/Connection";
 import { Category, Post } from "./entity";
 
@@ -7,14 +7,10 @@ describe("migrations > generate command", () => {
     let connections: Connection[];
     before(async () => connections = await createTestingConnections({
         migrations: [],
-        enabledDrivers: ["postgres"],
         schemaCreate: false,
         dropSchema: true,
         entities: [Post, Category],
-        logging: true,
-        schema: "public",
     }));
-    // beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
     it("can recognize model changes", () => Promise.all(connections.map(async connection => {
@@ -28,7 +24,6 @@ describe("migrations > generate command", () => {
 
         const sqlInMemory = await connection.driver.createSchemaBuilder().log();
 
-        console.log(sqlInMemory.upQueries);
         sqlInMemory.upQueries.length.should.be.equal(0);
         sqlInMemory.downQueries.length.should.be.equal(0);
 

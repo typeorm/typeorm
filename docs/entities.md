@@ -102,7 +102,7 @@ Learn more about parameters `@Entity` in [Decorators reference](decorator-refere
 
 ## Entity columns
 
-Since database table consist of columns your entities must consist of columns too.
+Since database tables consist of columns your entities must consist of columns too.
 Each entity class property you marked with `@Column` will be mapped to a database table column.
 
 ### Primary columns
@@ -311,7 +311,7 @@ or
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`
+`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`, `ltree`
 
 ### Column types for `cockroachdb`
 
@@ -480,7 +480,7 @@ Note you **MUST NOT** have any comma in values you write.
 There is a special column type called `simple-json` which can store any values which can be stored in database
 via JSON.stringify.
 Very useful when you do not have json type in your database and you want to store and load object
-without any hustle.
+without any hassle.
 For example:
 
 ```typescript
@@ -705,11 +705,11 @@ export class Category {
     @Column()
     description: string;
 
-    @OneToMany(type => Category, category => category.children)
+    @ManyToOne(type => Category, category => category.children)
     parent: Category;
 
-    @ManyToOne(type => Category, category => category.parent)
-    children: Category;
+    @OneToMany(type => Category, category => category.parent)
+    children: Category[];
 }
 
 ```

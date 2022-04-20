@@ -1,6 +1,6 @@
 import {expect} from "chai";
 import "reflect-metadata";
-import {Connection, PromiseUtils} from "../../../src";
+import {Connection} from "../../../src";
 import {AuroraDataApiDriver} from "../../../src/driver/aurora-data-api/AuroraDataApiDriver";
 import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
 import {MysqlDriver} from "../../../src/driver/mysql/MysqlDriver";
@@ -26,7 +26,7 @@ describe("schema builder > change column", () => {
     beforeEach(() => reloadTestingDatabases(connections));
     after(() => closeTestingConnections(connections));
 
-    it("should correctly change column name", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change column name", () => Promise.all(connections.map(async connection => {
         const postMetadata = connection.getMetadata(Post);
         const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
         nameColumn.propertyName = "title";
@@ -44,9 +44,9 @@ describe("schema builder > change column", () => {
         // revert changes
         nameColumn.propertyName = "name";
         nameColumn.build(connection);
-    }));
+    })));
 
-    it("should correctly change column length", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change column length", () => Promise.all(connections.map(async connection => {
         const postMetadata = connection.getMetadata(Post);
         const nameColumn = postMetadata.findColumnWithPropertyName("name")!;
         const textColumn = postMetadata.findColumnWithPropertyName("text")!;
@@ -71,9 +71,9 @@ describe("schema builder > change column", () => {
         // revert changes
         nameColumn.length = "255";
         textColumn.length = "255";
-    }));
+    })));
 
-    it("should correctly change column type", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change column type", () => Promise.all(connections.map(async connection => {
 
         const postMetadata = connection.getMetadata(Post);
         const versionColumn = postMetadata.findColumnWithPropertyName("version")!;
@@ -95,9 +95,9 @@ describe("schema builder > change column", () => {
         // revert changes
         versionColumn.type = "varchar";
         postVersionColumn.type = "varchar";
-    }));
+    })));
 
-    it("should correctly make column primary and generated", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly make column primary and generated", () => Promise.all(connections.map(async connection => {
         // CockroachDB does not allow changing PK
         if (connection.driver instanceof CockroachDriver)
             return;
@@ -130,9 +130,9 @@ describe("schema builder > change column", () => {
         idColumn.isGenerated = false;
         idColumn.generationStrategy = undefined;
         versionColumn.isPrimary = false;
-    }));
+    })));
 
-    it("should correctly change column `isGenerated` property when column is on foreign key", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change column `isGenerated` property when column is on foreign key", () => Promise.all(connections.map(async connection => {
         const teacherMetadata = connection.getMetadata("teacher");
         const idColumn = teacherMetadata.findColumnWithPropertyName("id")!;
         idColumn.isGenerated = false;
@@ -151,9 +151,9 @@ describe("schema builder > change column", () => {
         idColumn.isGenerated = true;
         idColumn.generationStrategy = "increment";
 
-    }));
+    })));
 
-    it("should correctly change non-generated column on to uuid-generated column", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change non-generated column on to uuid-generated column", () => Promise.all(connections.map(async connection => {
         // CockroachDB does not allow changing PK
         if (connection.driver instanceof CockroachDriver)
             return;
@@ -199,9 +199,9 @@ describe("schema builder > change column", () => {
         postMetadata.generatedColumns.splice(postMetadata.generatedColumns.indexOf(idColumn), 1);
         postMetadata.hasUUIDGeneratedColumns = false;
 
-    }));
+    })));
 
-    it("should correctly change generated column generation strategy", () => PromiseUtils.runInSequence(connections, async connection => {
+    it("should correctly change generated column generation strategy", () => Promise.all(connections.map(async connection => {
         // CockroachDB does not allow changing PK
         if (connection.driver instanceof CockroachDriver)
             return;
@@ -246,6 +246,37 @@ describe("schema builder > change column", () => {
         idColumn.type = "int";
         teacherColumn.type = "int";
 
-    }));
+    })));
 
+    it("should correctly change column comment", () => Promise.all(connections.map(async connection => {
+        // Skip thie contents of this test if not one of the drivers that support comments
+        if (!(connection.driver instanceof CockroachDriver || connection.driver instanceof PostgresDriver || connection.driver instanceof MysqlDriver)) {
+            return;
+        }
+
+        const teacherMetadata = connection.getMetadata("teacher");
+        const idColumn = teacherMetadata.findColumnWithPropertyName("id")!;
+
+        idColumn.comment = "The Teacher's Key";
+
+        await connection.synchronize();
+
+        const queryRunnerA = connection.createQueryRunner();
+        const teacherTableA = await queryRunnerA.getTable("teacher");
+        await queryRunnerA.release();
+
+        expect(teacherTableA!.findColumnByName("id")!.comment).to.be.equal("The Teacher's Key", connection.name);
+
+        // revert changes
+        idColumn.comment = "";
+
+        await connection.synchronize();
+
+        const queryRunnerB = connection.createQueryRunner();
+        const teacherTableB = await queryRunnerB.getTable("teacher");
+        await queryRunnerB.release();
+
+        expect(teacherTableB!.findColumnByName("id")!.comment).to.be.undefined;
+
+    })));
 });

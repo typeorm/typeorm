@@ -2,38 +2,44 @@ import {ColumnOptions, ColumnType, getMetadataArgsStorage} from "../../";
 import {ColumnTypeUndefinedError} from "../../error/ColumnTypeUndefinedError";
 import {PrimaryColumnCannotBeNullableError} from "../../error/PrimaryColumnCannotBeNullableError";
 import {ColumnMetadataArgs} from "../../metadata-args/ColumnMetadataArgs";
-import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs";
+import {GeneratedMetadataArgs} from "../../metadata-args/GeneratedMetadataArgs";
+
+/**
+ * Describes all primary key column's options.
+ * If specified, the nullable field must be set to false.
+ */
+export type PrimaryColumnOptions = ColumnOptions & { nullable?: false };
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
-export function PrimaryColumn(options?: ColumnOptions): Function;
+export function PrimaryColumn(options?: PrimaryColumnOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
-export function PrimaryColumn(type?: ColumnType, options?: ColumnOptions): Function;
+export function PrimaryColumn(type?: ColumnType, options?: PrimaryColumnOptions): PropertyDecorator;
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * Primary columns also creates a PRIMARY KEY for this column in a db.
  */
-export function PrimaryColumn(typeOrOptions?: ColumnType|ColumnOptions, options?: ColumnOptions): Function {
+export function PrimaryColumn(typeOrOptions?: ColumnType|PrimaryColumnOptions, options?: PrimaryColumnOptions): PropertyDecorator {
     return function (object: Object, propertyName: string) {
 
         // normalize parameters
         let type: ColumnType|undefined;
         if (typeof typeOrOptions === "string") {
-            type = <ColumnType> typeOrOptions;
+            type = typeOrOptions;
         } else {
-            options = Object.assign({}, <ColumnOptions> typeOrOptions);
+            options = Object.assign({}, <PrimaryColumnOptions> typeOrOptions);
         }
-        if (!options) options = {} as ColumnOptions;
+        if (!options) options = {} as PrimaryColumnOptions;
 
         // if type is not given explicitly then try to guess it
         const reflectMetadataType = Reflect && (Reflect as any).getMetadata ? (Reflect as any).getMetadata("design:type", object, propertyName) : undefined;
