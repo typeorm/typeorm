@@ -34,11 +34,12 @@ export class CommandUtils {
         }
 
         const dataSourceExports = []
-        for (let fileExport in dataSourceFileExports) {
+        for (const fileExport of dataSourceFileExports) {
+            const awaitedFileExport = await fileExport;
             if (
-                InstanceChecker.isDataSource(dataSourceFileExports[fileExport])
+                InstanceChecker.isDataSource(awaitedFileExport)
             ) {
-                dataSourceExports.push(dataSourceFileExports[fileExport])
+                dataSourceExports.push(awaitedFileExport)
             }
         }
 
