@@ -2520,6 +2520,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             tableColumn.name = dbColumn["COLUMN_NAME"]
                             tableColumn.type =
                                 dbColumn["DATA_TYPE"].toLowerCase()
+                            // sicne mysql 8.0, "geometrycollection" returned as "geomcollection"
+                            // typeorm still use "geometrycollection"
+                            if (tableColumn.type === "geomcollection") {
+                                tableColumn.type = "geometrycollection"
+                            }
 
                             tableColumn.zerofill =
                                 dbColumn["COLUMN_TYPE"].indexOf("zerofill") !==
