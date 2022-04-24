@@ -269,6 +269,22 @@ export class SqlServerQueryRunner
 
             if (raw?.hasOwnProperty("recordset")) {
                 result.records = raw.recordset
+                // mssql driver will return an array if duplicate columns exist
+                // The following will search for properties that return as an array, and then update the property with the last value
+                if (result.records?.length > 0) {
+                    const propsToTakeForDuplicate = []
+                    for (let prop in result.records[0]) {
+                        if (Array.isArray(result.records[0][prop])) {
+                            propsToTakeForDuplicate.push(prop)
+                        }
+                    }
+                    for (let record of result.records) {
+                        for (let prop of propsToTakeForDuplicate) {
+                            const lastIdx = record[prop].length - 1
+                            record[prop] = record[prop][lastIdx]
+                        }
+                    }
+                }
             }
 
             if (raw?.hasOwnProperty("rowsAffected")) {
