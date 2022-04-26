@@ -4,7 +4,7 @@
         "outDir": "build/compiled",
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
-        "target": "es5",
+        "target": "ES2019",
         "module": "commonjs",
         "moduleResolution": "node",
         "importHelpers": true,

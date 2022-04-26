@@ -1,16 +1,19 @@
-import {Column, Entity, OneToOne, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
+import {
+    Column,
+    Entity,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Post } from "./Post"
 
 @Entity("sample2_post_metadata")
 export class PostMetadata {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    description: string;
+    description: string
 
-    @OneToOne(type => Post, post => post.metadata)
-    post: Post;
-
+    @OneToOne((type) => Post, (post) => post.metadata)
+    post: Post
 }

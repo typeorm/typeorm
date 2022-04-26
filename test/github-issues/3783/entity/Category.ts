@@ -1,24 +1,22 @@
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src";
-import {TreeParent} from "../../../../src";
-import {TreeChildren} from "../../../../src";
-import {Entity} from "../../../../src";
-import {Tree} from "../../../../src";
+import { PrimaryGeneratedColumn } from "../../../../src"
+import { Column } from "../../../../src"
+import { TreeParent } from "../../../../src"
+import { TreeChildren } from "../../../../src"
+import { Entity } from "../../../../src"
+import { Tree } from "../../../../src"
 
 @Entity()
 @Tree("closure-table")
 export class Category {
-
     @PrimaryGeneratedColumn("uuid")
-    id: number;
+    id: number
 
     @Column()
-    name: string;
-    
+    name: string
+
     @TreeParent()
-    parentCategory: Category;
+    parentCategory: Category
 
     @TreeChildren({ cascade: true })
-    childCategories: Category[];
-
+    childCategories: Category[]
 }

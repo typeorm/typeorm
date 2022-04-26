@@ -1,71 +1,69 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {ManyToOne} from "../../../../../src/decorator/relations/ManyToOne";
-import {JoinColumn} from "../../../../../src/decorator/relations/JoinColumn";
-import {Category} from "./Category";
-import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
-import {Tag} from "./Tag";
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { ManyToOne } from "../../../../../src/decorator/relations/ManyToOne"
+import { JoinColumn } from "../../../../../src/decorator/relations/JoinColumn"
+import { Category } from "./Category"
+import { OneToOne } from "../../../../../src/decorator/relations/OneToOne"
+import { Tag } from "./Tag"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column({ nullable: true })
-    categoryName: string;
+    categoryName: string
 
     @Column({ type: "int", nullable: true })
-    categoryId: number;
+    categoryId: number
 
     @Column({ nullable: true })
-    tagName: string;
+    tagName: string
 
     @Column({ type: "int", nullable: true })
-    tagId: number;
+    tagId: number
 
-    @ManyToOne(type => Category)
+    @ManyToOne((type) => Category)
     @JoinColumn()
-    categoryWithEmptyJoinCol: Category;
+    categoryWithEmptyJoinCol: Category
 
-    @ManyToOne(type => Category)
+    @ManyToOne((type) => Category)
     @JoinColumn({ name: "categoryId" })
-    categoryWithoutRefColName: Category;
+    categoryWithoutRefColName: Category
 
-    @ManyToOne(type => Category)
+    @ManyToOne((type) => Category)
     @JoinColumn({ referencedColumnName: "name" })
-    categoryWithoutColName: Category;
+    categoryWithoutColName: Category
 
-    @ManyToOne(type => Category)
+    @ManyToOne((type) => Category)
     @JoinColumn({ name: "categoryIdentifier" })
-    categoryWithoutRefColName2: Category;
+    categoryWithoutRefColName2: Category
 
-    @ManyToOne(type => Category)
+    @ManyToOne((type) => Category)
     @JoinColumn({ name: "categoryName", referencedColumnName: "name" })
-    category: Category;
+    category: Category
 
-    @OneToOne(type => Tag)
+    @OneToOne((type) => Tag)
     @JoinColumn()
-    tagWithEmptyJoinCol: Tag;
+    tagWithEmptyJoinCol: Tag
 
-    @OneToOne(type => Tag)
+    @OneToOne((type) => Tag)
     @JoinColumn({ name: "tagId" })
-    tagWithoutRefColName: Tag;
+    tagWithoutRefColName: Tag
 
-    @OneToOne(type => Tag)
+    @OneToOne((type) => Tag)
     @JoinColumn({ referencedColumnName: "name" })
-    tagWithoutColName: Tag;
+    tagWithoutColName: Tag
 
-    @OneToOne(type => Tag)
+    @OneToOne((type) => Tag)
     @JoinColumn({ name: "tagIdentifier" })
-    tagWithoutRefColName2: Tag;
+    tagWithoutRefColName2: Tag
 
-    @OneToOne(type => Tag)
+    @OneToOne((type) => Tag)
     @JoinColumn({ name: "tagName", referencedColumnName: "name" })
-    tag: Tag;
-
+    tag: Tag
 }

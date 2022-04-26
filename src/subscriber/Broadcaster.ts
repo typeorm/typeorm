@@ -1,68 +1,107 @@
-import {EntitySubscriberInterface} from "./EntitySubscriberInterface";
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {BroadcasterResult} from "./BroadcasterResult";
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {RelationMetadata} from "../metadata/RelationMetadata";
+import { EntitySubscriberInterface } from "./EntitySubscriberInterface"
+import { ObjectLiteral } from "../common/ObjectLiteral"
+import { QueryRunner } from "../query-runner/QueryRunner"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { BroadcasterResult } from "./BroadcasterResult"
+import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { ObjectUtils } from "../util/ObjectUtils"
 
 interface BroadcasterEvents {
-    "BeforeTransactionCommit": () => void;
-    "AfterTransactionCommit": () => void;
-    "BeforeTransactionStart": () => void;
-    "AfterTransactionStart": () => void;
-    "BeforeTransactionRollback": () => void;
-    "AfterTransactionRollback": () => void;
+    BeforeTransactionCommit: () => void
+    AfterTransactionCommit: () => void
+    BeforeTransactionStart: () => void
+    AfterTransactionStart: () => void
+    BeforeTransactionRollback: () => void
+    AfterTransactionRollback: () => void
 
-    "BeforeUpdate": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]) => void;
-    "AfterUpdate": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]) => void;
+    BeforeUpdate: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+        updatedColumns?: ColumnMetadata[],
+        updatedRelations?: RelationMetadata[],
+    ) => void
+    AfterUpdate: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+        updatedColumns?: ColumnMetadata[],
+        updatedRelations?: RelationMetadata[],
+    ) => void
 
-    "BeforeInsert": (metadata: EntityMetadata, entity: ObjectLiteral | undefined) => void;
-    "AfterInsert": (metadata: EntityMetadata, entity: ObjectLiteral | undefined) => void;
+    BeforeInsert: (
+        metadata: EntityMetadata,
+        entity: ObjectLiteral | undefined,
+    ) => void
+    AfterInsert: (
+        metadata: EntityMetadata,
+        entity: ObjectLiteral | undefined,
+    ) => void
 
-    "BeforeRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
-    "AfterRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+    BeforeRemove: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ) => void
+    AfterRemove: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ) => void
 
-    "BeforeSoftRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
-    "AfterSoftRemove": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+    BeforeSoftRemove: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ) => void
+    AfterSoftRemove: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ) => void
 
-    "BeforeRecover": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
-    "AfterRecover": (metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral) => void;
+    BeforeRecover: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ) => void
+    AfterRecover: (
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ) => void
 
-    "Load": (metadata: EntityMetadata, entities: ObjectLiteral[]) => void;
+    Load: (metadata: EntityMetadata, entities: ObjectLiteral[]) => void
 }
-
 
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
 export class Broadcaster {
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private queryRunner: QueryRunner) {
-    }
+    constructor(private queryRunner: QueryRunner) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
-    async broadcast<U extends keyof BroadcasterEvents>(event: U, ...args: Parameters<BroadcasterEvents[U]>): Promise<void> {
-        const result = new BroadcasterResult();
+    async broadcast<U extends keyof BroadcasterEvents>(
+        event: U,
+        ...args: Parameters<BroadcasterEvents[U]>
+    ): Promise<void> {
+        const result = new BroadcasterResult()
 
-        const broadcastFunction = this[`broadcast${event}Event` as keyof this];
+        const broadcastFunction = this[`broadcast${event}Event` as keyof this]
 
         if (typeof broadcastFunction === "function") {
-            (broadcastFunction as any).call(
-                this,
-                result,
-                ...args
-            );
+            ;(broadcastFunction as any).call(this, result, ...args)
         }
 
-        await result.wait();
+        await result.wait()
     }
 
     /**
@@ -73,34 +112,40 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity: undefined | ObjectLiteral): void {
-
+    broadcastBeforeInsertEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity: undefined | ObjectLiteral,
+    ): void {
         if (entity && metadata.beforeInsertListeners.length) {
-            metadata.beforeInsertListeners.forEach(listener => {
+            metadata.beforeInsertListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.beforeInsert
+                ) {
                     const executionResult = subscriber.beforeInsert({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
-                        metadata: metadata
-                    });
+                        metadata: metadata,
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -112,21 +157,32 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void { // todo: send relations too?
+    broadcastBeforeUpdateEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+        updatedColumns?: ColumnMetadata[],
+        updatedRelations?: RelationMetadata[],
+    ): void {
+        // todo: send relations too?
         if (entity && metadata.beforeUpdateListeners.length) {
-            metadata.beforeUpdateListeners.forEach(listener => {
+            metadata.beforeUpdateListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.beforeUpdate
+                ) {
                     const executionResult = subscriber.beforeUpdate({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -135,13 +191,13 @@ export class Broadcaster {
                         metadata: metadata,
                         databaseEntity: databaseEntity,
                         updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || []
-                    });
+                        updatedRelations: updatedRelations || [],
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -153,21 +209,29 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+    broadcastBeforeRemoveEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ): void {
         if (entity && metadata.beforeRemoveListeners.length) {
-            metadata.beforeRemoveListeners.forEach(listener => {
+            metadata.beforeRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.beforeRemove
+                ) {
                     const executionResult = subscriber.beforeRemove({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -175,13 +239,13 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -193,21 +257,29 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeSoftRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+    broadcastBeforeSoftRemoveEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ): void {
         if (entity && metadata.beforeSoftRemoveListeners.length) {
-            metadata.beforeSoftRemoveListeners.forEach(listener => {
+            metadata.beforeSoftRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeSoftRemove) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.beforeSoftRemove
+                ) {
                     const executionResult = subscriber.beforeSoftRemove({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -215,13 +287,13 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -233,21 +305,29 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastBeforeRecoverEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
+    broadcastBeforeRecoverEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ): void {
         if (entity && metadata.beforeRecoverListeners.length) {
-            metadata.beforeRecoverListeners.forEach(listener => {
+            metadata.beforeRecoverListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRecover) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.beforeRecover
+                ) {
                     const executionResult = subscriber.beforeRecover({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -255,13 +335,13 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -273,34 +353,40 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterInsertEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral): void {
-
+    broadcastAfterInsertEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+    ): void {
         if (entity && metadata.afterInsertListeners.length) {
-            metadata.afterInsertListeners.forEach(listener => {
+            metadata.afterInsertListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.afterInsert
+                ) {
                     const executionResult = subscriber.afterInsert({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
                         entity: entity,
-                        metadata: metadata
-                    });
+                        metadata: metadata,
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -309,18 +395,18 @@ export class Broadcaster {
      */
     broadcastBeforeTransactionStartEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionStart) {
                     const executionResult = subscriber.beforeTransactionStart({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                    });
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -329,18 +415,18 @@ export class Broadcaster {
      */
     broadcastAfterTransactionStartEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionStart) {
                     const executionResult = subscriber.afterTransactionStart({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                    });
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -349,18 +435,18 @@ export class Broadcaster {
      */
     broadcastBeforeTransactionCommitEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionCommit) {
                     const executionResult = subscriber.beforeTransactionCommit({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                    });
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -369,18 +455,18 @@ export class Broadcaster {
      */
     broadcastAfterTransactionCommitEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionCommit) {
                     const executionResult = subscriber.afterTransactionCommit({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                    });
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -389,18 +475,19 @@ export class Broadcaster {
      */
     broadcastBeforeTransactionRollbackEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionRollback) {
-                    const executionResult = subscriber.beforeTransactionRollback({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                    });
+                    const executionResult =
+                        subscriber.beforeTransactionRollback({
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                        })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -409,18 +496,20 @@ export class Broadcaster {
      */
     broadcastAfterTransactionRollbackEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionRollback) {
-                    const executionResult = subscriber.afterTransactionRollback({
-                        connection: this.queryRunner.connection,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                    });
+                    const executionResult = subscriber.afterTransactionRollback(
+                        {
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                        },
+                    )
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -432,22 +521,31 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterUpdateEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral, updatedColumns?: ColumnMetadata[], updatedRelations?: RelationMetadata[]): void {
-
+    broadcastAfterUpdateEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+        updatedColumns?: ColumnMetadata[],
+        updatedRelations?: RelationMetadata[],
+    ): void {
         if (entity && metadata.afterUpdateListeners.length) {
-            metadata.afterUpdateListeners.forEach(listener => {
+            metadata.afterUpdateListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.afterUpdate
+                ) {
                     const executionResult = subscriber.afterUpdate({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -456,13 +554,13 @@ export class Broadcaster {
                         metadata: metadata,
                         databaseEntity: databaseEntity,
                         updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || []
-                    });
+                        updatedRelations: updatedRelations || [],
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -474,22 +572,29 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
-
+    broadcastAfterRemoveEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ): void {
         if (entity && metadata.afterRemoveListeners.length) {
-            metadata.afterRemoveListeners.forEach(listener => {
+            metadata.afterRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.afterRemove
+                ) {
                     const executionResult = subscriber.afterRemove({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -497,13 +602,13 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -515,22 +620,29 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterSoftRemoveEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
-
+    broadcastAfterSoftRemoveEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ): void {
         if (entity && metadata.afterSoftRemoveListeners.length) {
-            metadata.afterSoftRemoveListeners.forEach(listener => {
+            metadata.afterSoftRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterSoftRemove) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.afterSoftRemove
+                ) {
                     const executionResult = subscriber.afterSoftRemove({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -538,13 +650,13 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
@@ -556,22 +668,29 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastAfterRecoverEvent(result: BroadcasterResult, metadata: EntityMetadata, entity?: ObjectLiteral, databaseEntity?: ObjectLiteral): void {
-
+    broadcastAfterRecoverEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entity?: ObjectLiteral,
+        databaseEntity?: ObjectLiteral,
+    ): void {
         if (entity && metadata.afterRecoverListeners.length) {
-            metadata.afterRecoverListeners.forEach(listener => {
+            metadata.afterRecoverListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity)
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
 
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(subscriber => {
-                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRecover) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.afterRecover
+                ) {
                     const executionResult = subscriber.afterRecover({
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
@@ -579,21 +698,25 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity)
-                    });
+                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                    })
                     if (executionResult instanceof Promise)
-                        result.promises.push(executionResult);
-                    result.count++;
+                        result.promises.push(executionResult)
+                    result.count++
                 }
-            });
+            })
         }
     }
 
     /**
      * @deprecated Use `broadcastLoadForAllEvent`
      */
-    broadcastLoadEventsForAll(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
-        return this.broadcastLoadEvent(result, metadata, entities);
+    broadcastLoadEventsForAll(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entities: ObjectLiteral[],
+    ): void {
+        return this.broadcastLoadEvent(result, metadata, entities)
     }
 
     /**
@@ -604,52 +727,78 @@ export class Broadcaster {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    broadcastLoadEvent(result: BroadcasterResult, metadata: EntityMetadata, entities: ObjectLiteral[]): void {
+    broadcastLoadEvent(
+        result: BroadcasterResult,
+        metadata: EntityMetadata,
+        entities: ObjectLiteral[],
+    ): void {
         // Calculate which subscribers are fitting for the given entity type
-        const fittingSubscribers = this.queryRunner.connection.subscribers.filter(subscriber => this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad);
+        const fittingSubscribers =
+            this.queryRunner.connection.subscribers.filter(
+                (subscriber) =>
+                    this.isAllowedSubscriber(subscriber, metadata.target) &&
+                    subscriber.afterLoad,
+            )
 
-        if (metadata.relations.length || metadata.afterLoadListeners.length || fittingSubscribers.length) {
+        if (
+            metadata.relations.length ||
+            metadata.afterLoadListeners.length ||
+            fittingSubscribers.length
+        ) {
             // todo: check why need this?
-            const nonPromiseEntities = entities.filter(entity => !(entity instanceof Promise));
+            const nonPromiseEntities = entities.filter(
+                (entity) => !(entity instanceof Promise),
+            )
 
             // collect load events for all children entities that were loaded with the main entity
             if (metadata.relations.length) {
-                metadata.relations.forEach(relation => {
-                    nonPromiseEntities.forEach(entity => {
+                metadata.relations.forEach((relation) => {
+                    nonPromiseEntities.forEach((entity) => {
                         // in lazy relations we cannot simply access to entity property because it will cause a getter and a database query
-                        if (relation.isLazy && !entity.hasOwnProperty(relation.propertyName)) return;
+                        if (
+                            relation.isLazy &&
+                            !entity.hasOwnProperty(relation.propertyName)
+                        )
+                            return
 
-                        const value = relation.getEntityValue(entity);
-                        if (value instanceof Object) this.broadcastLoadEvent(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
-                    });
-                });
+                        const value = relation.getEntityValue(entity)
+                        if (ObjectUtils.isObject(value))
+                            this.broadcastLoadEvent(
+                                result,
+                                relation.inverseEntityMetadata,
+                                Array.isArray(value) ? value : [value],
+                            )
+                    })
+                })
             }
 
             if (metadata.afterLoadListeners.length) {
-                metadata.afterLoadListeners.forEach(listener => {
-                    nonPromiseEntities.forEach(entity => {
+                metadata.afterLoadListeners.forEach((listener) => {
+                    nonPromiseEntities.forEach((entity) => {
                         if (listener.isAllowed(entity)) {
-                            const executionResult = listener.execute(entity);
-                            if (executionResult instanceof Promise) result.promises.push(executionResult);
-                            result.count++;
+                            const executionResult = listener.execute(entity)
+                            if (executionResult instanceof Promise)
+                                result.promises.push(executionResult)
+                            result.count++
                         }
-                    });
-                });
+                    })
+                })
             }
 
-            fittingSubscribers.forEach(subscriber => {
-                nonPromiseEntities.forEach(entity => {
+            fittingSubscribers.forEach((subscriber) => {
+                nonPromiseEntities.forEach((entity) => {
                     const executionResult = subscriber.afterLoad!(entity, {
                         entity,
                         metadata,
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                    });
-                    if (executionResult instanceof Promise) result.promises.push(executionResult);
-                    result.count++;
-                });
-            });
+                    })
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult)
+                    result.count++
+                })
+            })
         }
     }
 
@@ -661,12 +810,16 @@ export class Broadcaster {
      * Checks if subscriber's methods can be executed by checking if its don't listen to the particular entity,
      * or listens our entity.
      */
-    protected isAllowedSubscriber(subscriber: EntitySubscriberInterface<any>, target: Function|string): boolean {
-        return  !subscriber.listenTo ||
+    protected isAllowedSubscriber(
+        subscriber: EntitySubscriberInterface<any>,
+        target: Function | string,
+    ): boolean {
+        return (
+            !subscriber.listenTo ||
             !subscriber.listenTo() ||
             subscriber.listenTo() === Object ||
             subscriber.listenTo() === target ||
-            subscriber.listenTo().isPrototypeOf(target);
+            subscriber.listenTo().isPrototypeOf(target)
+        )
     }
-
 }

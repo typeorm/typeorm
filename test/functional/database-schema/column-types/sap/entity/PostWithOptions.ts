@@ -1,37 +1,35 @@
-import {Entity} from "../../../../../../src";
-import {PrimaryColumn} from "../../../../../../src";
-import {Column} from "../../../../../../src";
+import { Entity } from "../../../../../../src"
+import { PrimaryColumn } from "../../../../../../src"
+import { Column } from "../../../../../../src"
 
 @Entity()
 export class PostWithOptions {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("dec", { precision: 10, scale: 2 })
-    dec: string;
+    dec: string
 
     @Column("decimal", { precision: 10, scale: 3 })
-    decimal: string;
+    decimal: string
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("varchar", { length: 50 })
-    varchar: string;
+    varchar: string
 
     @Column("nvarchar", { length: 50 })
-    nvarchar: string;
+    nvarchar: string
 
     @Column("alphanum", { length: 50 })
-    alphanum: string;
+    alphanum: string
 
     @Column("shorttext", { length: 50 })
-    shorttext: string;
-
+    shorttext: string
 }

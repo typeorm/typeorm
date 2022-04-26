@@ -1,21 +1,22 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
     @Column({ asExpression: "concat(`firstName`,' ',`lastName`)" })
-    virtualFullName: string;
+    virtualFullName: string
 
-    @Column({ asExpression: "concat(`firstName`,' ',`lastName`)", generatedType: "STORED" })
-    storedFullName: string;
-
+    @Column({
+        asExpression: "concat(`firstName`,' ',`lastName`)",
+        generatedType: "STORED",
+    })
+    storedFullName: string
 }

@@ -1,37 +1,36 @@
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Index} from "../../../../../src/decorator/Index";
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { Index } from "../../../../../src/decorator/Index"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("geometry", {
-      nullable: true
+        nullable: true,
     })
     @Index({
-      spatial: true
+        spatial: true,
     })
-    geom: object;
+    geom: object
 
     @Column("geometry", {
-      nullable: true,
-      spatialFeatureType: "Point"
+        nullable: true,
+        spatialFeatureType: "Point",
     })
-    pointWithoutSRID: object;
+    pointWithoutSRID: object
 
     @Column("geometry", {
-      nullable: true,
-      spatialFeatureType: "Point",
-      srid: 4326
+        nullable: true,
+        spatialFeatureType: "Point",
+        srid: 4326,
     })
-    point: object;
+    point: object
 
     @Column("geography", {
-      nullable: true
+        nullable: true,
     })
-    geog: object;
+    geog: object
 }

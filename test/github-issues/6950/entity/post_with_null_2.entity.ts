@@ -1,24 +1,27 @@
-import {BaseEntity, Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
 
 @Entity("post_test_2")
 export class Post extends BaseEntity {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column({
-        default: "This is default text."
+        default: "This is default text.",
     })
-    text: string;
+    text: string
 
     @Column({
         nullable: true,
         default: null,
-        type: 'varchar'
+        type: String,
     })
-    comments: string | null;
-
+    comments: string | null
 }

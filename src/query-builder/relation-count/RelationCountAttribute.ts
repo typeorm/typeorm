@@ -1,40 +1,43 @@
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {QueryBuilderUtils} from "../QueryBuilderUtils";
-import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {QueryExpressionMap} from "../QueryExpressionMap";
-import {SelectQueryBuilder} from "../SelectQueryBuilder";
-import {ObjectUtils} from "../../util/ObjectUtils";
-import { TypeORMError } from "../../error/TypeORMError";
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { QueryBuilderUtils } from "../QueryBuilderUtils"
+import { RelationMetadata } from "../../metadata/RelationMetadata"
+import { QueryExpressionMap } from "../QueryExpressionMap"
+import { SelectQueryBuilder } from "../SelectQueryBuilder"
+import { ObjectUtils } from "../../util/ObjectUtils"
+import { TypeORMError } from "../../error/TypeORMError"
 
 export class RelationCountAttribute {
-
     /**
      * Alias of the joined (destination) table.
      */
-    alias?: string;
+    alias?: string
 
     /**
      * Name of relation.
      */
-    relationName: string;
+    relationName: string
 
     /**
      * Property + alias of the object where to joined data should be mapped.
      */
-    mapToProperty: string;
+    mapToProperty: string
 
     /**
      * Extra condition applied to "ON" section of join.
      */
-    queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>;
+    queryBuilderFactory?: (
+        qb: SelectQueryBuilder<any>,
+    ) => SelectQueryBuilder<any>
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private expressionMap: QueryExpressionMap,
-                relationCountAttribute?: Partial<RelationCountAttribute>) {
-        ObjectUtils.assign(this, relationCountAttribute || {});
+    constructor(
+        private expressionMap: QueryExpressionMap,
+        relationCountAttribute?: Partial<RelationCountAttribute>,
+    ) {
+        ObjectUtils.assign(this, relationCountAttribute || {})
     }
 
     // -------------------------------------------------------------------------
@@ -42,7 +45,7 @@ export class RelationCountAttribute {
     // -------------------------------------------------------------------------
 
     get joinInverseSideMetadata(): EntityMetadata {
-        return this.relation.inverseEntityMetadata;
+        return this.relation.inverseEntityMetadata
     }
 
     /**
@@ -53,9 +56,11 @@ export class RelationCountAttribute {
      */
     get parentAlias(): string {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new TypeORMError(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(
+                `Given value must be a string representation of alias property`,
+            )
 
-        return this.relationName.split(".")[0];
+        return this.relationName.split(".")[0]
     }
 
     /**
@@ -65,16 +70,18 @@ export class RelationCountAttribute {
      * This value is extracted from entityOrProperty value.
      * This is available when join was made using "post.category" syntax.
      */
-    get relationProperty(): string|undefined {
+    get relationProperty(): string | undefined {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new TypeORMError(`Given value is a string representation of alias property`);
+            throw new TypeORMError(
+                `Given value is a string representation of alias property`,
+            )
 
-        return this.relationName.split(".")[1];
+        return this.relationName.split(".")[1]
     }
 
     get junctionAlias(): string {
-        const [parentAlias, relationProperty] = this.relationName.split(".");
-        return parentAlias + "_" + relationProperty + "_rc";
+        const [parentAlias, relationProperty] = this.relationName.split(".")
+        return parentAlias + "_" + relationProperty + "_rc"
     }
 
     /**
@@ -84,14 +91,22 @@ export class RelationCountAttribute {
      */
     get relation(): RelationMetadata {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new TypeORMError(`Given value is a string representation of alias property`);
+            throw new TypeORMError(
+                `Given value is a string representation of alias property`,
+            )
 
-        const [parentAlias, propertyPath] = this.relationName.split(".");
-        const relationOwnerSelection = this.expressionMap.findAliasByName(parentAlias);
-        const relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(propertyPath);
+        const [parentAlias, propertyPath] = this.relationName.split(".")
+        const relationOwnerSelection =
+            this.expressionMap.findAliasByName(parentAlias)
+        const relation =
+            relationOwnerSelection.metadata.findRelationWithPropertyPath(
+                propertyPath,
+            )
         if (!relation)
-            throw new TypeORMError(`Relation with property path ${propertyPath} in entity was not found.`);
-        return relation;
+            throw new TypeORMError(
+                `Relation with property path ${propertyPath} in entity was not found.`,
+            )
+        return relation
     }
 
     /**
@@ -100,15 +115,16 @@ export class RelationCountAttribute {
      */
     get metadata(): EntityMetadata {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new TypeORMError(`Given value is a string representation of alias property`);
+            throw new TypeORMError(
+                `Given value is a string representation of alias property`,
+            )
 
-        const parentAlias = this.relationName.split(".")[0];
-        const selection = this.expressionMap.findAliasByName(parentAlias);
-        return selection.metadata;
+        const parentAlias = this.relationName.split(".")[0]
+        const selection = this.expressionMap.findAliasByName(parentAlias)
+        return selection.metadata
     }
 
     get mapToPropertyPropertyName(): string {
-        return this.mapToProperty!.split(".")[1];
+        return this.mapToProperty!.split(".")[1]
     }
-
 }

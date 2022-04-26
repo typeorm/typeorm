@@ -1,24 +1,22 @@
-import { Entity } from "../../../../src/decorator/entity/Entity";
-import { Column } from "../../../../src/decorator/columns/Column";
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
 
-import { Gender } from "./GenderEnum";
+import { Gender } from "./GenderEnum"
 
 @Entity()
 export class Human {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column({
         type: "enum",
         enum: Gender,
         enumName: "genderEnum",
-        name: "Gender"
+        name: "Gender",
     })
-    gender: Gender;
-
+    gender: Gender
 }

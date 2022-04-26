@@ -1,23 +1,21 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Category} from "./Category";
-import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Category } from "./Category"
+import { ManyToMany } from "../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../src/decorator/relations/JoinTable"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
-    @ManyToMany(type => Category, {
-        cascade: ["insert"]
+    @ManyToMany((type) => Category, {
+        cascade: ["insert"],
     })
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }

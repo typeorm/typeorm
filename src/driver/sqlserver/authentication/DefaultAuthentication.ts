@@ -1,13 +1,13 @@
 export interface DefaultAuthentication {
-    type: "default";
+    type: "default"
     options: {
         /**
          * User name to use for sql server login.
          */
-        userName?: string;
+        userName?: string
         /**
          * Password to use for sql server login.
          */
-        password?: string;
-    };
+        password?: string
+    }
 }

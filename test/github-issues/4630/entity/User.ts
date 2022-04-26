@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn } from "../../../../src";
+import { Entity, Column, PrimaryGeneratedColumn } from "../../../../src"
 
 export enum Realm {
     Blackrock = "Blackrock",
@@ -8,8 +8,8 @@ export enum Realm {
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "enum", enum: Realm })
-    realm: Realm;
+    realm: Realm
 }
