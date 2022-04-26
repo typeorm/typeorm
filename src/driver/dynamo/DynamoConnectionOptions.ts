@@ -10,4 +10,9 @@ export interface DynamoConnectionOptions extends BaseConnectionOptions {
      */
     readonly type: "dynamodb";
 
+    /**
+     * Database name to connect to.
+     */
+    readonly database?: string;
+
 }
