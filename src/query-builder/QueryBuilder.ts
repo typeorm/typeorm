@@ -622,7 +622,7 @@ export abstract class QueryBuilder<Entity> {
      * schema name, otherwise returns escaped table name.
      */
     protected getTableName(tablePath: string): string {
-        if (this.expressionMap.mainAlias?.hasMetadata){
+        if (this.expressionMap.mainAlias?.hasMetadata) {
             return this.getTableNameFromMetadata()
         }
         return tablePath
@@ -655,15 +655,13 @@ export abstract class QueryBuilder<Entity> {
      * Allows for custom names containing dots (".")
      */
     protected getTableNameFromMetadata(): string {
-        const database = this.expressionMap.mainAlias?.metadata.database;
-        const schema = this.expressionMap.mainAlias?.metadata.schema;
+        const database = this.expressionMap.mainAlias?.metadata.database
+        const schema = this.expressionMap.mainAlias?.metadata.schema
         const tablePath = [
             this.escape(this.expressionMap.mainAlias!.metadata.tableName),
         ]
-        if (schema)
-            tablePath.unshift(this.escape(schema));
-        if (database)
-            tablePath.unshift(this.escape(database));
+        if (schema) tablePath.unshift(this.escape(schema))
+        if (database) tablePath.unshift(this.escape(database))
 
         return tablePath.join(".")
     }
