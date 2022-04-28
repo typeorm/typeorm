@@ -454,8 +454,10 @@ export class SapDriver implements Driver {
 
         return {
             database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) || driverSchema,
-            tableName: parts.length > 1 ? parts[1] : parts[0],
+            schema: parts.includes(driverSchema!) ? parts[0] : driverSchema,
+            tableName: parts.includes(driverSchema!)
+                ? parts.slice(1).join(".")
+                : parts.slice(0).join("."),
         }
     }
 

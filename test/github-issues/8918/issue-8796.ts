@@ -29,6 +29,8 @@ describe("github issues > #8918 Allow for custom names containg dots ('.')", () 
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
+                logging: true,
+                enabledDrivers: ["sap"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
