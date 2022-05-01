@@ -756,27 +756,27 @@ export abstract class QueryBuilder<Entity> {
                 replacements[column.propertyPath] = column.databaseName
             }
 
-            const replacementKeys = Object.keys(replacements)
-
-            if (replacementKeys.length) {
-                statement = statement.replace(
-                    new RegExp(
-                        // Avoid a lookbehind here since it's not well supported
-                        `([ =\(]|^.{0})` +
-                            `${escapeRegExp(
-                                replaceAliasNamePrefix,
-                            )}(${replacementKeys
-                                .map(escapeRegExp)
-                                .join("|")})` +
-                            `(?=[ =\)\,]|.{0}$)`,
-                        "gm",
-                    ),
-                    (_, pre, p) =>
-                        `${pre}${replacementAliasNamePrefix}${this.escape(
+            statement = statement.replace(
+                new RegExp(
+                    // Avoid a lookbehind here since it's not well supported
+                    `([ =\(]|^.{0})` + // any of ' =(' or start of line
+                        // followed by our prefix, e.g. 'tablename.' or ''
+                        `${escapeRegExp(
+                            replaceAliasNamePrefix,
+                        )}([^ =\(\)\,]+)` + // a possible property name: sequence of anything but ' =(),'
+                        // terminated by ' =),' or end of line
+                        `(?=[ =\)\,]|.{0}$)`,
+                    "gm",
+                ),
+                (match, pre, p) => {
+                    if (replacements[p]) {
+                        return `${pre}${replacementAliasNamePrefix}${this.escape(
                             replacements[p],
-                        )}`,
-                )
-            }
+                        )}`
+                    }
+                    return match
+                },
+            )
         }
 
         return statement
