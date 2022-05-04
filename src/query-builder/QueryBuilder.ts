@@ -622,9 +622,9 @@ export abstract class QueryBuilder<Entity> {
      * schema name, otherwise returns escaped table name.
      */
     protected getTableName(tablePath: string): string {
-        // if (this.expressionMap.mainAlias?.hasMetadata) {
-        //     return this.getTableNameFromMetadata()
-        // }
+        if (tablePath.split(".").length > 3) {
+            return this.getTableNameFromMetadata()
+        }
         return tablePath
             .split(".")
             .map((i) => {
