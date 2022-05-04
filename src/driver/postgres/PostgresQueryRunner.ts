@@ -709,8 +709,11 @@ export class PostgresQueryRunner
             ),
         )
 
-        // rename column primary key constraint
-        if (newTable.primaryColumns.length > 0) {
+        // rename column primary key constraint if it has default constraint name
+        if (
+            newTable.primaryColumns.length > 0 &&
+            !newTable.primaryColumns[0].primaryKeyConstraintName
+        ) {
             const columnNames = newTable.primaryColumns.map(
                 (column) => column.name,
             )
@@ -719,6 +722,7 @@ export class PostgresQueryRunner
                 oldTable,
                 columnNames,
             )
+
             const newPkName = this.connection.namingStrategy.primaryKeyName(
                 newTable,
                 columnNames,
@@ -769,6 +773,15 @@ export class PostgresQueryRunner
 
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
+            const oldUniqueName =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    oldTable,
+                    unique.columnNames,
+                )
+
+            // Skip renaming if Unique has user defined constraint name
+            if (unique.name !== oldUniqueName) return
+
             // build new constraint name
             const newUniqueName =
                 this.connection.namingStrategy.uniqueConstraintName(
@@ -802,6 +815,15 @@ export class PostgresQueryRunner
 
         // rename index constraints
         newTable.indices.forEach((index) => {
+            const oldIndexName = this.connection.namingStrategy.indexName(
+                oldTable,
+                index.columnNames,
+                index.where,
+            )
+
+            // Skip renaming if Index has user defined constraint name
+            if (index.name !== oldIndexName) return
+
             // build new constraint name
             const { schema } = this.driver.parseTableName(newTable)
             const newIndexName = this.connection.namingStrategy.indexName(
@@ -826,6 +848,17 @@ export class PostgresQueryRunner
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
+            const oldForeignKeyName =
+                this.connection.namingStrategy.foreignKeyName(
+                    oldTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
+
+            // Skip renaming if foreign key has user defined constraint name
+            if (foreignKey.name !== oldForeignKeyName) return
+
             // build new constraint name
             const newForeignKeyName =
                 this.connection.namingStrategy.foreignKeyName(
@@ -936,13 +969,17 @@ export class PostgresQueryRunner
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    primaryColumns.map((column) => column.name),
-                )
+                const pkName = primaryColumns[0].primaryKeyConstraintName
+                    ? primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          primaryColumns.map((column) => column.name),
+                      )
+
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
                     .join(", ")
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -960,13 +997,17 @@ export class PostgresQueryRunner
             }
 
             primaryColumns.push(column)
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -1204,7 +1245,10 @@ export class PostgresQueryRunner
                 }
 
                 // rename column primary key constraint
-                if (oldColumn.isPrimary === true) {
+                if (
+                    oldColumn.isPrimary === true &&
+                    !oldColumn.primaryKeyConstraintName
+                ) {
                     const primaryColumns = clonedTable.primaryColumns
 
                     // build old primary constraint name
@@ -1280,6 +1324,15 @@ export class PostgresQueryRunner
 
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
+                    const oldUniqueName =
+                        this.connection.namingStrategy.uniqueConstraintName(
+                            clonedTable,
+                            unique.columnNames,
+                        )
+
+                    // Skip renaming if Unique has user defined constraint name
+                    if (unique.name !== oldUniqueName) return
+
                     // build new constraint name
                     unique.columnNames.splice(
                         unique.columnNames.indexOf(oldColumn.name),
@@ -1318,6 +1371,16 @@ export class PostgresQueryRunner
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                    const oldIndexName =
+                        this.connection.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                            index.where,
+                        )
+
+                    // Skip renaming if Index has user defined constraint name
+                    if (index.name !== oldIndexName) return
+
                     // build new constraint name
                     index.columnNames.splice(
                         index.columnNames.indexOf(oldColumn.name),
@@ -1351,6 +1414,17 @@ export class PostgresQueryRunner
                 clonedTable
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
+                        const foreignKeyName =
+                            this.connection.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        // Skip renaming if foreign key has user defined constraint name
+                        if (foreignKey.name !== foreignKeyName) return
+
                         // build new constraint name
                         foreignKey.columnNames.splice(
                             foreignKey.columnNames.indexOf(oldColumn.name),
@@ -1621,14 +1695,17 @@ export class PostgresQueryRunner
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1652,14 +1729,17 @@ export class PostgresQueryRunner
                         (column) => column.name === newColumn.name,
                     )
                     column!.isPrimary = true
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1691,14 +1771,18 @@ export class PostgresQueryRunner
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName =
-                            this.connection.namingStrategy.primaryKeyName(
-                                clonedTable,
-                                primaryColumns.map((column) => column.name),
-                            )
+                        const pkName = primaryColumns[0]
+                            .primaryKeyConstraintName
+                            ? primaryColumns[0].primaryKeyConstraintName
+                            : this.connection.namingStrategy.primaryKeyName(
+                                  clonedTable,
+                                  primaryColumns.map((column) => column.name),
+                              )
+
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
                             .join(", ")
+
                         upQueries.push(
                             new Query(
                                 `ALTER TABLE ${this.escapePath(
@@ -2185,13 +2269,17 @@ export class PostgresQueryRunner
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                clonedTable.primaryColumns.map((column) => column.name),
-            )
+            const pkName = column.primaryKeyConstraintName
+                ? column.primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      clonedTable.primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -2213,13 +2301,20 @@ export class PostgresQueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    clonedTable.primaryColumns.map((column) => column.name),
-                )
+                const pkName = clonedTable.primaryColumns[0]
+                    .primaryKeyConstraintName
+                    ? clonedTable.primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          clonedTable.primaryColumns.map(
+                              (column) => column.name,
+                          ),
+                      )
+
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
                     .join(", ")
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -2368,13 +2463,14 @@ export class PostgresQueryRunner
     async createPrimaryKey(
         tableOrName: Table | string,
         columnNames: string[],
+        constraintName?: string,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
         const clonedTable = table.clone()
 
-        const up = this.createPrimaryKeySql(table, columnNames)
+        const up = this.createPrimaryKeySql(table, columnNames, constraintName)
 
         // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
         clonedTable.columns.forEach((column) => {
@@ -2405,13 +2501,17 @@ export class PostgresQueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -2433,13 +2533,17 @@ export class PostgresQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = this.connection.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
-        )
+        const pkName = primaryColumns[0].primaryKeyConstraintName
+            ? primaryColumns[0].primaryKeyConstraintName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  columnNames,
+              )
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
+
         upQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(
@@ -2462,7 +2566,10 @@ export class PostgresQueryRunner
     /**
      * Drops a primary key.
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
@@ -2470,6 +2577,7 @@ export class PostgresQueryRunner
         const down = this.createPrimaryKeySql(
             table,
             table.primaryColumns.map((column) => column.name),
+            constraintName,
         )
         await this.executeQueries(up, down)
         table.primaryColumns.forEach((column) => {
@@ -3386,10 +3494,51 @@ export class PostgresQueryRunner
                             }
                             tableColumn.isNullable =
                                 dbColumn["is_nullable"] === "YES"
-                            tableColumn.isPrimary = !!columnConstraints.find(
+
+                            const primaryConstraint = columnConstraints.find(
                                 (constraint) =>
                                     constraint["constraint_type"] === "PRIMARY",
                             )
+                            if (primaryConstraint) {
+                                tableColumn.isPrimary = true
+                                // find another columns involved in primary key constraint
+                                const anotherPrimaryConstraints =
+                                    dbConstraints.filter(
+                                        (constraint) =>
+                                            constraint["table_name"] ===
+                                                dbColumn["table_name"] &&
+                                            constraint["table_schema"] ===
+                                                dbColumn["table_schema"] &&
+                                            constraint["column_name"] !==
+                                                dbColumn["column_name"] &&
+                                            constraint["constraint_type"] ===
+                                                "PRIMARY",
+                                    )
+
+                                // collect all column names
+                                const columnNames =
+                                    anotherPrimaryConstraints.map(
+                                        (constraint) =>
+                                            constraint["column_name"],
+                                    )
+                                columnNames.push(dbColumn["column_name"])
+
+                                // build default primary key constraint name
+                                const pkName =
+                                    this.connection.namingStrategy.primaryKeyName(
+                                        table,
+                                        columnNames,
+                                    )
+
+                                // if primary key has user-defined constraint name, write it in table column
+                                if (
+                                    primaryConstraint["constraint_name"] !==
+                                    pkName
+                                ) {
+                                    tableColumn.primaryKeyConstraintName =
+                                        primaryConstraint["constraint_name"]
+                                }
+                            }
 
                             const uniqueConstraints = columnConstraints.filter(
                                 (constraint) =>
@@ -3809,11 +3958,13 @@ export class PostgresQueryRunner
             (column) => column.isPrimary,
         )
         if (primaryColumns.length > 0) {
-            const primaryKeyName =
-                this.connection.namingStrategy.primaryKeyName(
-                    table,
-                    primaryColumns.map((column) => column.name),
-                )
+            const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -4015,14 +4166,19 @@ export class PostgresQueryRunner
     /**
      * Builds create primary key sql.
      */
-    protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+    protected createPrimaryKeySql(
+        table: Table,
+        columnNames: string[],
+        constraintName?: string,
+    ): Query {
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
+
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
@@ -4034,11 +4190,15 @@ export class PostgresQueryRunner
      * Builds drop primary key sql.
      */
     protected dropPrimaryKeySql(table: Table): Query {
+        if (!table.primaryColumns.length)
+            throw new TypeORMError(`Table ${table} has no primary keys.`)
+
         const columnNames = table.primaryColumns.map((column) => column.name)
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+        const constraintName = table.primaryColumns[0].primaryKeyConstraintName
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,

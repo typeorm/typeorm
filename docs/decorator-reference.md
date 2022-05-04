@@ -199,6 +199,7 @@ export class User {
 -   `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
     You can specify array of values or specify a enum class.
 -   `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's necessary if you intend to use the same enum type in different tables.
+-   `primaryKeyConstraintName: string` - A name for the primary key constraint. If not specified, then constraint name is generated from the table name and the names of the involved columns.
 -   `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
 -   `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres (Only "STORED")](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
 -   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
@@ -213,6 +214,7 @@ Learn more about [entity columns](entities.md#entity-columns).
 
 Marks a property in your entity as a table primary column.
 Same as `@Column` decorator but sets its `primary` option to true.
+
 Example:
 
 ```typescript
@@ -222,6 +224,18 @@ export class User {
     id: number
 }
 ```
+
+`@PrimaryColumn()` supports custom primary key constraint name:
+
+```typescript
+@Entity()
+export class User {
+    @PrimaryColumn({ primaryKeyConstraintName: "pk_user_id" })
+    id: number
+}
+```
+
+> Note: when using `primaryKeyConstraintName` with multiple primary keys, the constraint name must be the same for all primary columns.
 
 Learn more about [entity columns](entities.md#entity-columns).
 
@@ -235,6 +249,16 @@ Example:
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
+    id: number
+}
+```
+
+`@PrimaryGeneratedColumn()` supports custom primary key constraint name:
+
+```typescript
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn({ primaryKeyConstraintName: "pk_user_id" })
     id: number
 }
 ```
@@ -464,7 +488,7 @@ Learn more about [many-to-many relations](many-to-many-relations.md).
 #### `@JoinColumn`
 
 Defines which side of the relation contains the join column with a foreign key and
-allows you to customize the join column name and referenced column name.
+allows you to customize the join column name, referenced column name and foreign key name.
 Example:
 
 ```typescript
@@ -474,6 +498,7 @@ export class Post {
     @JoinColumn({
         name: "cat_id",
         referencedColumnName: "name",
+        foreignKeyConstraintName: "fk_cat_id"
     })
     category: Category
 }
@@ -483,7 +508,9 @@ export class Post {
 
 Used for `many-to-many` relations and describes join columns of the "junction" table.
 Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
-You can change the name of the generated "junction" table and also the column names inside the junction table and their referenced columns with the `joinColumn`- and `inverseJoinColumn` attributes.
+You can change the name of the generated "junction" table, the column names inside the junction table, their referenced
+columns with the `joinColumn`- and `inverseJoinColumn` attributes, and the created foreign keys names.
+
 Example:
 
 ```typescript
@@ -495,10 +522,12 @@ export class Post {
         joinColumn: {
             name: "question",
             referencedColumnName: "id",
+            foreignKeyConstraintName: "fk_question_categories_questionId"
         },
         inverseJoinColumn: {
             name: "category",
             referencedColumnName: "id",
+            foreignKeyConstraintName: "fk_question_categories_categoryId"
         },
     })
     categories: Category[]

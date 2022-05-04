@@ -181,6 +181,8 @@ export class EntitySchemaTransformer {
                                 name: joinColumnOption.name,
                                 referencedColumnName:
                                     joinColumnOption.referencedColumnName,
+                                foreignKeyConstraintName:
+                                    joinColumnOption.foreignKeyConstraintName,
                             }
                             metadataArgsStorage.joinColumns.push(joinColumn)
                         }

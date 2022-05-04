@@ -58,6 +58,21 @@ export class EntityMetadataValidator {
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)
 
+        // if entity has multiple primary keys and uses custom constraint name,
+        // then all primary keys should have the same constraint name
+        if (entityMetadata.primaryColumns.length > 1) {
+            const areConstraintNamesEqual = entityMetadata.primaryColumns.every(
+                (columnMetadata, i, columnMetadatas) =>
+                    columnMetadata.primaryKeyConstraintName ===
+                    columnMetadatas[0].primaryKeyConstraintName,
+            )
+            if (!areConstraintNamesEqual) {
+                throw new TypeORMError(
+                    `Entity ${entityMetadata.name} has multiple primary columns with different constraint names. Constraint names should be the equal.`,
+                )
+            }
+        }
+
         // validate if table is using inheritance it has a discriminator
         // also validate if discriminator values are not empty and not repeated
         if (

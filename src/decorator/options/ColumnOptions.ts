@@ -128,10 +128,21 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Array of possible enumerated values.
      */
     enum?: (string | number)[] | Object
+
     /**
      * Exact name of enum
      */
     enumName?: string
+
+    /**
+     * If this column is primary key then this specifies the name for it.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * If this column is foreign key then this specifies the name for it.
+     */
+    foreignKeyConstraintName?: string
 
     /**
      * Generated column expression.
