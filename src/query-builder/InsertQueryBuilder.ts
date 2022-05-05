@@ -356,6 +356,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         overwrite: string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
+        conflictConditions?: string[],
     ): this
 
     /**
@@ -371,6 +372,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             | string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
+        conflictConditions?: string[],
     ): this {
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
@@ -379,6 +381,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 overwrite: statementOrOverwrite?.overwrite,
                 skipUpdateIfNoValuesChanged:
                     orUpdateOptions?.skipUpdateIfNoValuesChanged,
+                conditions: conflictConditions,
             }
             return this
         }
@@ -388,6 +391,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
+            conditions: conflictConditions,
         }
         return this
     }
@@ -482,6 +486,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     columns,
                     conflict,
                     skipUpdateIfNoValuesChanged,
+                    conditions,
                 } = this.expressionMap.onUpdate
 
                 let conflictTarget = "ON CONFLICT"
@@ -490,6 +495,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     conflictTarget += ` ( ${conflict
                         .map((column) => this.escape(column))
                         .join(", ")} )`
+                    if (
+                        Array.isArray(conditions) &&
+                        DriverUtils.isPostgresFamily(this.connection.driver)
+                    ) {
+                        conflictTarget += ` WHERE ( ${conditions.join(
+                            " AND ",
+                        )} )`
+                    }
                 } else if (conflict) {
                     conflictTarget += ` ON CONSTRAINT ${this.escape(conflict)}`
                 }
