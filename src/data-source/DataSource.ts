@@ -494,6 +494,7 @@ export class DataSource {
     async query(
         query: string,
         parameters?: any[],
+        options?: any,
         queryRunner?: QueryRunner,
     ): Promise<any> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
@@ -505,7 +506,7 @@ export class DataSource {
         const usedQueryRunner = queryRunner || this.createQueryRunner()
 
         try {
-            return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
+            return await usedQueryRunner.query(query, parameters, options) // await is needed here because we are using finally
         } finally {
             if (!queryRunner) await usedQueryRunner.release()
         }

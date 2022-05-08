@@ -26,6 +26,7 @@ import { TypeORMError } from "../../error"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { QueryResultCacheOptions } from "../../cache/QueryResultCacheOptions";
 
 /**
  * Runs queries on a single postgres database connection.
@@ -90,6 +91,9 @@ export class PostgresQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
+                    if (this.connection.queryResultCache) {
+                        this.databaseConnection.queryResultCache = this.connection.queryResultCache
+                    }
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
@@ -111,6 +115,9 @@ export class PostgresQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
+                    if (this.connection.queryResultCache) {
+                        this.databaseConnection.queryResultCache = this.connection.queryResultCache
+                    }
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
@@ -237,11 +244,75 @@ export class PostgresQueryRunner
     async query(
         query: string,
         parameters?: any[],
+        options?: any,
         useStructuredResult: boolean = false,
     ): Promise<any> {
+
+        if (options === true) {
+            useStructuredResult = true // for backwards compatibility
+        }
+
+        let cache = false
+        const queryId = query + " -- PARAMETERS: " + JSON.stringify(parameters)
+        // let cacheId: boolean| number = false;
+
+        let cacheDuration: boolean| number = false
+        if (options && options.cache) {
+            cache = true
+            cacheDuration = Math.abs(isNaN(Number(options.cache)) ?0: Number(options.cache))
+            // cacheId = cacheDuration
+        }
+
+        // console.log('Running PostgreSQL query')
+        //
+        // console.log('Parameters', parameters)
+        // console.log('options', options)
+
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
+
+        const cacheOptions =
+            (databaseConnection.options &&  databaseConnection.options.cache && typeof databaseConnection.options.cache === "object")
+                ? databaseConnection.options.cache
+                : {}
+        let savedQueryResultCacheOptions: QueryResultCacheOptions | undefined =
+            undefined
+        let cacheError = false
+
+        if (
+            databaseConnection.queryResultCache &&
+            (cache || cacheOptions.alwaysEnabled)
+        ) {
+            try {
+                savedQueryResultCacheOptions =
+                    await databaseConnection.queryResultCache.getFromCache(
+                        {
+                           // identifier: cacheId,
+                            query: queryId,
+                            duration:
+                                cacheDuration ||
+                                cacheOptions.duration ||
+                                1000,
+                        },
+                        this,
+                    )
+                if (
+                    savedQueryResultCacheOptions &&
+                    !databaseConnection.queryResultCache.isExpired(
+                        savedQueryResultCacheOptions,
+                    )
+                ) {
+                    return JSON.parse(savedQueryResultCacheOptions.result)
+                }
+            } catch (error) {
+                if (!cacheOptions.ignoreErrors) {
+                    throw error
+                }
+                cacheError = true
+            }
+        }
+
 
         this.driver.connection.logger.logQuery(query, parameters, this)
         try {
@@ -284,6 +355,33 @@ export class PostgresQueryRunner
                 }
 
                 if (!useStructuredResult) {
+                    if (!cacheError &&
+                        databaseConnection.queryResultCache &&
+                        (cache || cacheOptions.alwaysEnabled)
+                    ) {
+                        try {
+                            await databaseConnection.queryResultCache.storeInCache(
+                                {
+                                    //identifier: cacheId,
+                                    query: queryId,
+                                    time: new Date().getTime(),
+                                    duration:
+                                        cacheDuration ||
+                                        cacheOptions?.duration ||
+                                        1000,
+                                    result: JSON.stringify(result.raw),
+                                },
+                                savedQueryResultCacheOptions,
+                                this,
+                            )
+                        } catch (error) {
+                            if (!cacheOptions.ignoreErrors) {
+                                throw error
+                            }
+                        }
+
+
+                    }
                     return result.raw
                 }
             }

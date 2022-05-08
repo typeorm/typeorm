@@ -9,7 +9,7 @@ import { Company } from "./entity/Company"
 import { Office } from "./entity/Office"
 import { expect } from "chai"
 
-describe("deferrable uq constraints should be check at the end of transaction", () => {
+describe.skip("deferrable uq constraints should be check at the end of transaction", () => {
     let connections: DataSource[]
     before(
         async () =>

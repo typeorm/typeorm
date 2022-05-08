@@ -3552,7 +3552,7 @@ export class SelectQueryBuilder<Entity>
             }
         }
 
-        const results = await queryRunner.query(sql, parameters, true)
+        const results = await queryRunner.query(sql, parameters, null, true)
 
         if (
             !cacheError &&

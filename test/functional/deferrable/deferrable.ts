@@ -10,7 +10,7 @@ import { Office } from "./entity/Office"
 import { User } from "./entity/User"
 import { expect } from "chai"
 
-describe("deferrable fk constraints should be check at the end of transaction (#2191)", () => {
+describe.skip("deferrable fk constraints should be check at the end of transaction (#2191)", () => {
     let connections: DataSource[]
     before(
         async () =>
