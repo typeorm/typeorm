@@ -166,6 +166,23 @@ typeorm migration:revert
 This command will execute `down` in the latest executed migration.
 If you need to revert multiple migrations you must call this command multiple times.
 
+### Faking Migrations and Rollbacks
+
+You can also fake run a migration using the `--fake` flag (`-f` for short). This will add the migration
+to the migrations table without running it. This is useful for migrations created after manual changes
+have already been made to the database or when migrations have been run externally
+(e.g. by another tool or application), and you still would like to keep a consistent migration history.
+
+```
+typeorm migration:run --fake
+```
+
+This is also possible with rollbacks.
+
+```
+typeorm migration:revert --fake
+```
+
 ## Generating migrations
 
 TypeORM is able to automatically generate migration files with schema changes you made.

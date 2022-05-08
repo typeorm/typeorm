@@ -365,6 +365,7 @@ export class DataSource {
      */
     async runMigrations(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<Migration[]> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -372,6 +373,7 @@ export class DataSource {
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
             (options && options.transaction) || "all"
+        migrationExecutor.fake = (options && options.fake) || false
 
         const successMigrations =
             await migrationExecutor.executePendingMigrations()
@@ -384,6 +386,7 @@ export class DataSource {
      */
     async undoLastMigration(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<void> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -391,6 +394,7 @@ export class DataSource {
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
             (options && options.transaction) || "all"
+        migrationExecutor.fake = (options && options.fake) || false
 
         await migrationExecutor.undoLastMigration()
     }

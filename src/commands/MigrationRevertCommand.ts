@@ -26,6 +26,12 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 describe:
                     "Indicates if transaction should be used or not for migration revert. Enabled by default.",
             })
+            .option("fake", {
+                alias: "f",
+                type: "boolean",
+                default: false,
+                describe: "Fakes reverting the migration",
+            })
     }
 
     async handler(args: yargs.Arguments) {
