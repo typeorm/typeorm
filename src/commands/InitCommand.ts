@@ -665,16 +665,16 @@ Steps to run this project:
                 packageJson.dependencies["pg"] = "^8.4.0"
                 break
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^4.0.3"
+                packageJson.dependencies["sqlite3"] = "^5.0.2"
                 break
             case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] = "^7.0.0"
                 break
             case "oracle":
-                packageJson.dependencies["oracledb"] = "^1.13.1"
+                packageJson.dependencies["oracledb"] = "^5.1.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^4.0.4"
+                packageJson.dependencies["mssql"] = "^6.3.0"
                 break
             case "mongodb":
                 packageJson.dependencies["mongodb"] = "^3.0.8"
