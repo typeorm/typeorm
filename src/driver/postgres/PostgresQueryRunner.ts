@@ -240,7 +240,7 @@ export class PostgresQueryRunner
     }
 
     /**
-     * Executes a given SQL query.
+     *  Executes a given SQL query.
      */
     async query(
         query: string,
