@@ -3890,9 +3890,9 @@ export class SelectQueryBuilder<Entity>
                         ? (order[key] as any).nulls
                         : undefined
                 nulls =
-                    nulls === "first"
+                    nulls?.toLowerCase() === "first"
                         ? "NULLS FIRST"
-                        : nulls === "last"
+                        : nulls?.toLowerCase() === "last"
                         ? "NULLS LAST"
                         : undefined
 
