@@ -50,8 +50,13 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
     query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        opts?: any,
+        useStructuredResult: boolean = false,
     ): Promise<any> {
+        if (opts === true) {
+            useStructuredResult = true // for backwards compatibility
+        }
+
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const connection = this.driver.connection

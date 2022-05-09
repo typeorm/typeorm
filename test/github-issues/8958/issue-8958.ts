@@ -15,6 +15,7 @@ describe("github issues > #8958 Caching of raw queries", async () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["postgres"],
                 cache: true,
             })),
     )

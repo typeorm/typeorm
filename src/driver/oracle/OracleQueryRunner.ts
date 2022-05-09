@@ -192,8 +192,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        options?: any,
+        useStructuredResult: boolean = false,
     ): Promise<any> {
+        if (options === true) {
+            useStructuredResult = true // for backwards compatibility
+        }
+
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()

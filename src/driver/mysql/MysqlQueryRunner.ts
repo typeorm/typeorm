@@ -182,8 +182,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        options?: any,
+        useStructuredResult: boolean = false,
     ): Promise<any> {
+        if (options === true) {
+            useStructuredResult = true // for backwards compatibility
+        }
+
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         return new Promise(async (ok, fail) => {

@@ -107,6 +107,7 @@ export abstract class BaseQueryRunner {
     abstract query(
         query: string,
         parameters?: any[],
+        options?: any,
         useStructuredResult?: boolean,
     ): Promise<any>
 

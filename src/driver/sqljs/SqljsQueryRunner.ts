@@ -74,9 +74,14 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
      */
     async query(
         query: string,
-        parameters: any[] = [],
-        useStructuredResult = false,
+        parameters?: any[],
+        options?: any,
+        useStructuredResult: boolean = false,
     ): Promise<any> {
+        if (options === true) {
+            useStructuredResult = true // for backwards compatibility
+        }
+
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const command = query.trim().split(" ", 1)[0]

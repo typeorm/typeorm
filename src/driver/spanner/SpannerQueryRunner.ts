@@ -151,8 +151,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     async query(
         query: string,
         parameters?: any[],
+        options?: any,
         useStructuredResult: boolean = false,
     ): Promise<any> {
+        if (options === true) {
+            useStructuredResult = true // for backwards compatibility
+        }
+
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         try {
