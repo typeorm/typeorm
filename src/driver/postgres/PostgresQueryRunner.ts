@@ -17,6 +17,7 @@ import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { OrmUtils } from "../../util/OrmUtils"
+import { RandomGenerator } from "../../util/RandomGenerator"
 import { Query } from "../Query"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { PostgresDriver } from "./PostgresDriver"
@@ -253,20 +254,15 @@ export class PostgresQueryRunner
         }
 
         let cache = false
+        let cacheSha = false // flag to identify queries by sha instead of full query sql
         const queryId = query + " -- PARAMETERS: " + JSON.stringify(parameters)
-        // let cacheId: boolean| number = false;
 
         let cacheDuration: boolean| number = false
         if (options && options.cache) {
             cache = true
-            cacheDuration = Math.abs(isNaN(Number(options.cache)) ?0: Number(options.cache))
-            // cacheId = cacheDuration
+            if (options.cacheSha) cacheSha = true
+            cacheDuration = Math.abs(isNaN(Number(options.cache)) ? 0 : Number(options.cache))
         }
-
-        // console.log('Running PostgreSQL query')
-        //
-        // console.log('Parameters', parameters)
-        // console.log('options', options)
 
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
@@ -288,7 +284,7 @@ export class PostgresQueryRunner
                 savedQueryResultCacheOptions =
                     await databaseConnection.queryResultCache.getFromCache(
                         {
-                           // identifier: cacheId,
+                            identifier: cacheSha? RandomGenerator.sha1(queryId) : queryId,
                             query: queryId,
                             duration:
                                 cacheDuration ||
@@ -362,7 +358,7 @@ export class PostgresQueryRunner
                         try {
                             await databaseConnection.queryResultCache.storeInCache(
                                 {
-                                    //identifier: cacheId,
+                                    identifier: cacheSha? RandomGenerator.sha1(queryId) : queryId,
                                     query: queryId,
                                     time: new Date().getTime(),
                                     duration:

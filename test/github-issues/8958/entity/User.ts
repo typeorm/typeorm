@@ -1,8 +1,8 @@
-import { Column, Entity, PrimaryColumn } from "../../../../src"
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class User {
-    @PrimaryColumn({ nullable: false })
+    @PrimaryGeneratedColumn()
     id: number
 
     @Column()
@@ -12,5 +12,5 @@ export class User {
     lastName: string
 
     @Column()
-    github: string
+    isadmin: boolean
 }

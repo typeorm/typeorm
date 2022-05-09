@@ -4,6 +4,8 @@ You can cache results selected by these `QueryBuilder` methods: `getMany`, `getO
 
 You can also cache results selected by `find*` and `count*` methods of the `Repository` and `EntityManager`.
 
+You can also cache results of raw query results by providing options object to query() for PostgreSQL.
+
 To enable caching you need to explicitly enable it in data source options:
 
 ```typescript
@@ -63,6 +65,42 @@ const users = await dataSource.getRepository(User).find({
     cache: 60000,
 })
 ```
+
+Or using raw SQL queries:
+
+```typescript
+
+const sql = `WITH regional_sales AS (
+    SELECT region, SUM(amount) AS total_sales
+        FROM orders
+        GROUP BY region
+    ), top_regions AS (
+    SELECT region
+        FROM regional_sales
+        WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)
+    )
+    SELECT region,
+        product,
+        SUM(quantity) AS product_units,
+        SUM(amount) AS product_sales
+    FROM orders
+        WHERE region IN (SELECT region FROM top_regions)
+    GROUP BY region, product;`;
+
+/* This will cache query for 60 minutes
+   Cache Identifier will be sql query itself
+ */
+const data = await connection.manager.query(sql, undefined, {cache: 60*60_000});
+
+/* This will cache query for 60 minutes and
+   Cache Identifier will be sha1 of sql query
+ */
+const data2 = await connection.manager.query(sql, undefined, {cache: 60*60_000, cacheSha: true});
+
+
+```
+
+
 
 Or globally in data source options:
 
