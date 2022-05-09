@@ -27,7 +27,7 @@ import { TypeORMError } from "../../error"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { QueryResultCacheOptions } from "../../cache/QueryResultCacheOptions";
+import { QueryResultCacheOptions } from "../../cache/QueryResultCacheOptions"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -93,7 +93,8 @@ export class PostgresQueryRunner
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
                     if (this.connection.queryResultCache) {
-                        this.databaseConnection.queryResultCache = this.connection.queryResultCache
+                        this.databaseConnection.queryResultCache =
+                            this.connection.queryResultCache
                     }
 
                     const onErrorCallback = (err: Error) =>
@@ -117,7 +118,8 @@ export class PostgresQueryRunner
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
                     if (this.connection.queryResultCache) {
-                        this.databaseConnection.queryResultCache = this.connection.queryResultCache
+                        this.databaseConnection.queryResultCache =
+                            this.connection.queryResultCache
                     }
 
                     const onErrorCallback = (err: Error) =>
@@ -248,7 +250,6 @@ export class PostgresQueryRunner
         options?: any,
         useStructuredResult: boolean = false,
     ): Promise<any> {
-
         if (options === true) {
             useStructuredResult = true // for backwards compatibility
         }
@@ -257,11 +258,13 @@ export class PostgresQueryRunner
         let cacheSha = false // flag to identify queries by sha instead of full query sql
         const queryId = query + " -- PARAMETERS: " + JSON.stringify(parameters)
 
-        let cacheDuration: boolean| number = false
+        let cacheDuration: boolean | number = false
         if (options && options.cache) {
             cache = true
             if (options.cacheSha) cacheSha = true
-            cacheDuration = Math.abs(isNaN(Number(options.cache)) ? 0 : Number(options.cache))
+            cacheDuration = Math.abs(
+                isNaN(Number(options.cache)) ? 0 : Number(options.cache),
+            )
         }
 
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
@@ -269,7 +272,9 @@ export class PostgresQueryRunner
         const databaseConnection = await this.connect()
 
         const cacheOptions =
-            (databaseConnection.options &&  databaseConnection.options.cache && typeof databaseConnection.options.cache === "object")
+            databaseConnection.options &&
+            databaseConnection.options.cache &&
+            typeof databaseConnection.options.cache === "object"
                 ? databaseConnection.options.cache
                 : {}
         let savedQueryResultCacheOptions: QueryResultCacheOptions | undefined =
@@ -284,12 +289,12 @@ export class PostgresQueryRunner
                 savedQueryResultCacheOptions =
                     await databaseConnection.queryResultCache.getFromCache(
                         {
-                            identifier: cacheSha? RandomGenerator.sha1(queryId) : queryId,
+                            identifier: cacheSha
+                                ? RandomGenerator.sha1(queryId)
+                                : queryId,
                             query: queryId,
                             duration:
-                                cacheDuration ||
-                                cacheOptions.duration ||
-                                1000,
+                                cacheDuration || cacheOptions.duration || 1000,
                         },
                         this,
                     )
@@ -308,7 +313,6 @@ export class PostgresQueryRunner
                 cacheError = true
             }
         }
-
 
         this.driver.connection.logger.logQuery(query, parameters, this)
         try {
@@ -351,14 +355,17 @@ export class PostgresQueryRunner
                 }
 
                 if (!useStructuredResult) {
-                    if (!cacheError &&
+                    if (
+                        !cacheError &&
                         databaseConnection.queryResultCache &&
                         (cache || cacheOptions.alwaysEnabled)
                     ) {
                         try {
                             await databaseConnection.queryResultCache.storeInCache(
                                 {
-                                    identifier: cacheSha? RandomGenerator.sha1(queryId) : queryId,
+                                    identifier: cacheSha
+                                        ? RandomGenerator.sha1(queryId)
+                                        : queryId,
                                     query: queryId,
                                     time: new Date().getTime(),
                                     duration:
@@ -375,8 +382,6 @@ export class PostgresQueryRunner
                                 throw error
                             }
                         }
-
-
                     }
                     return result.raw
                 }

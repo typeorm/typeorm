@@ -15,7 +15,7 @@ describe("github issues > #8958 Caching of raw queries", async () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                cache: true
+                cache: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -53,7 +53,9 @@ describe("github issues > #8958 Caching of raw queries", async () => {
                 const sql1 = 'SELECT * FROM "user" u WHERE u.isadmin = true'
                 const cacheDuration = 1_000
 
-                const users1 = await connection.manager.query(sql1, undefined, {cache:cacheDuration})
+                const users1 = await connection.manager.query(sql1, undefined, {
+                    cache: cacheDuration,
+                })
 
                 expect(users1.length).to.be.equal(1)
 
@@ -69,14 +71,18 @@ describe("github issues > #8958 Caching of raw queries", async () => {
                 expect(users2.length).to.be.equal(2)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
-                const users3 = await connection.manager.query(sql1, undefined, {cache:cacheDuration})
+                const users3 = await connection.manager.query(sql1, undefined, {
+                    cache: cacheDuration,
+                })
                 expect(users3.length).to.be.equal(1)
 
                 // give some time for cache to expire
-                await sleep(cacheDuration+1)
+                await sleep(cacheDuration + 1)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
-                const users4 = await connection.manager.query(sql1, undefined, {cache:cacheDuration})
+                const users4 = await connection.manager.query(sql1, undefined, {
+                    cache: cacheDuration,
+                })
                 expect(users4.length).to.be.equal(2)
             }),
         ))
@@ -113,7 +119,10 @@ describe("github issues > #8958 Caching of raw queries", async () => {
                 const sql1 = 'SELECT * FROM "user" u WHERE u.isadmin = true'
                 const cacheDuration = 1_000
 
-                const users1 = await connection.manager.query(sql1, undefined, {cache:cacheDuration, cacheSha:true})
+                const users1 = await connection.manager.query(sql1, undefined, {
+                    cache: cacheDuration,
+                    cacheSha: true,
+                })
 
                 expect(users1.length).to.be.equal(1)
 
@@ -129,14 +138,20 @@ describe("github issues > #8958 Caching of raw queries", async () => {
                 expect(users2.length).to.be.equal(2)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
-                const users3 = await connection.manager.query(sql1, undefined, {cache:cacheDuration, cacheSha:true})
+                const users3 = await connection.manager.query(sql1, undefined, {
+                    cache: cacheDuration,
+                    cacheSha: true,
+                })
                 expect(users3.length).to.be.equal(1)
 
                 // give some time for cache to expire
-                await sleep(cacheDuration+1)
+                await sleep(cacheDuration + 1)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
-                const users4 = await connection.manager.query(sql1, undefined, {cache:cacheDuration, cacheSha:true})
+                const users4 = await connection.manager.query(sql1, undefined, {
+                    cache: cacheDuration,
+                    cacheSha: true,
+                })
                 expect(users4.length).to.be.equal(2)
             }),
         ))
