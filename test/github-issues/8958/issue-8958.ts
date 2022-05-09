@@ -6,9 +6,9 @@ import {
 } from "../../utils/test-utils"
 import { Connection } from "../../../src/connection/Connection"
 import { expect } from "chai"
-import { User } from "../8796/entity/User"
+import { User } from "../8958/entity/User"
 
-describe("github issues > #8796 New find select object api should support false values as expected", () => {
+describe("github issues > #8958 New find select object api should support false values as expected", () => {
     let connections: Connection[]
 
     const user: User = {
