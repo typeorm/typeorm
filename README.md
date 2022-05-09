@@ -1296,7 +1296,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
 -   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
--   Create/Drop database - [typeorm-extension](https://github.com/Tada5hi/typeorm-extension)
+-   Create, drop & seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
 -   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
 
 ## Contributing

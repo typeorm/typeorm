@@ -451,11 +451,17 @@ export abstract class AbstractSqliteQueryRunner
         )
         await this.executeQueries(up, down)
 
-        // rename old table;
-        oldTable.name = newTable.name
-
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
+            const oldUniqueName =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    oldTable,
+                    unique.columnNames,
+                )
+
+            // Skip renaming if Unique has user defined constraint name
+            if (unique.name !== oldUniqueName) return
+
             unique.name = this.connection.namingStrategy.uniqueConstraintName(
                 newTable,
                 unique.columnNames,
@@ -464,6 +470,17 @@ export abstract class AbstractSqliteQueryRunner
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
+            const oldForeignKeyName =
+                this.connection.namingStrategy.foreignKeyName(
+                    oldTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
+
+            // Skip renaming if foreign key has user defined constraint name
+            if (foreignKey.name !== oldForeignKeyName) return
+
             foreignKey.name = this.connection.namingStrategy.foreignKeyName(
                 newTable,
                 foreignKey.columnNames,
@@ -474,12 +491,24 @@ export abstract class AbstractSqliteQueryRunner
 
         // rename indices
         newTable.indices.forEach((index) => {
+            const oldIndexName = this.connection.namingStrategy.indexName(
+                oldTable,
+                index.columnNames,
+                index.where,
+            )
+
+            // Skip renaming if Index has user defined constraint name
+            if (index.name !== oldIndexName) return
+
             index.name = this.connection.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
             )
         })
+
+        // rename old table;
+        oldTable.name = newTable.name
 
         // recreate table with new constraint names
         await this.recreateTable(newTable, oldTable)
@@ -585,6 +614,12 @@ export abstract class AbstractSqliteQueryRunner
                 changedTable
                     .findColumnUniques(changedColumnSet.oldColumn)
                     .forEach((unique) => {
+                        const uniqueName =
+                            this.connection.namingStrategy.uniqueConstraintName(
+                                table,
+                                unique.columnNames,
+                            )
+
                         unique.columnNames.splice(
                             unique.columnNames.indexOf(
                                 changedColumnSet.oldColumn.name,
@@ -592,34 +627,60 @@ export abstract class AbstractSqliteQueryRunner
                             1,
                         )
                         unique.columnNames.push(changedColumnSet.newColumn.name)
-                        unique.name =
-                            this.connection.namingStrategy.uniqueConstraintName(
-                                changedTable,
-                                unique.columnNames,
-                            )
+
+                        // rename Unique only if it has default constraint name
+                        if (unique.name === uniqueName) {
+                            unique.name =
+                                this.connection.namingStrategy.uniqueConstraintName(
+                                    changedTable,
+                                    unique.columnNames,
+                                )
+                        }
                     })
 
                 changedTable
                     .findColumnForeignKeys(changedColumnSet.oldColumn)
-                    .forEach((fk) => {
-                        fk.columnNames.splice(
-                            fk.columnNames.indexOf(
+                    .forEach((foreignKey) => {
+                        const foreignKeyName =
+                            this.connection.namingStrategy.foreignKeyName(
+                                table,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        foreignKey.columnNames.splice(
+                            foreignKey.columnNames.indexOf(
                                 changedColumnSet.oldColumn.name,
                             ),
                             1,
                         )
-                        fk.columnNames.push(changedColumnSet.newColumn.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
-                            changedTable,
-                            fk.columnNames,
-                            this.getTablePath(fk),
-                            fk.referencedColumnNames,
+                        foreignKey.columnNames.push(
+                            changedColumnSet.newColumn.name,
                         )
+
+                        // rename FK only if it has default constraint name
+                        if (foreignKey.name === foreignKeyName) {
+                            foreignKey.name =
+                                this.connection.namingStrategy.foreignKeyName(
+                                    changedTable,
+                                    foreignKey.columnNames,
+                                    this.getTablePath(foreignKey),
+                                    foreignKey.referencedColumnNames,
+                                )
+                        }
                     })
 
                 changedTable
                     .findColumnIndices(changedColumnSet.oldColumn)
                     .forEach((index) => {
+                        const indexName =
+                            this.connection.namingStrategy.indexName(
+                                table,
+                                index.columnNames,
+                                index.where,
+                            )
+
                         index.columnNames.splice(
                             index.columnNames.indexOf(
                                 changedColumnSet.oldColumn.name,
@@ -627,11 +688,16 @@ export abstract class AbstractSqliteQueryRunner
                             1,
                         )
                         index.columnNames.push(changedColumnSet.newColumn.name)
-                        index.name = this.connection.namingStrategy.indexName(
-                            changedTable,
-                            index.columnNames,
-                            index.where,
-                        )
+
+                        // rename Index only if it has default constraint name
+                        if (index.name === indexName) {
+                            index.name =
+                                this.connection.namingStrategy.indexName(
+                                    changedTable,
+                                    index.columnNames,
+                                    index.where,
+                                )
+                        }
                     })
             }
             const originalColumn = changedTable.columns.find(
@@ -1433,11 +1499,31 @@ export abstract class AbstractSqliteQueryRunner
                     }),
                 )
 
+                // find unique constraints from CREATE TABLE sql
+                let fkResult
+                const fkMappings: {
+                    name: string
+                    columns: string[]
+                    referencedTableName: string
+                }[] = []
+                const fkRegex =
+                    /CONSTRAINT "([^"]*)" FOREIGN KEY \((.*?)\) REFERENCES "([^"]*)" /g
+                while ((fkResult = fkRegex.exec(sql)) !== null) {
+                    fkMappings.push({
+                        name: fkResult[1],
+                        columns: fkResult[2]
+                            .substr(1, fkResult[2].length - 2)
+                            .split(`", "`),
+                        referencedTableName: fkResult[3],
+                    })
+                }
+
                 // build foreign keys
                 const tableForeignKeyConstraints = OrmUtils.uniq(
                     dbForeignKeys,
                     (dbForeignKey) => dbForeignKey["id"],
                 )
+
                 table.foreignKeys = tableForeignKeyConstraints.map(
                     (foreignKey) => {
                         const ownForeignKeys = dbForeignKeys.filter(
@@ -1451,17 +1537,20 @@ export abstract class AbstractSqliteQueryRunner
                         const referencedColumnNames = ownForeignKeys.map(
                             (dbForeignKey) => dbForeignKey["to"],
                         )
-                        // build foreign key name, because we can not get it directly.
-                        const fkName =
-                            this.connection.namingStrategy.foreignKeyName(
-                                table,
-                                columnNames,
-                                foreignKey.referencedTableName,
-                                foreignKey.referencedColumnNames,
-                            )
+
+                        // find related foreign key mapping
+                        const fkMapping = fkMappings.find(
+                            (it) =>
+                                it.referencedTableName ===
+                                    foreignKey["table"] &&
+                                it.columns.every(
+                                    (column) =>
+                                        columnNames.indexOf(column) !== -1,
+                                ),
+                        )
 
                         return new TableForeignKey({
-                            name: fkName,
+                            name: fkMapping!.name,
                             columnNames: columnNames,
                             referencedTableName: foreignKey["table"],
                             referencedColumnNames: referencedColumnNames,
