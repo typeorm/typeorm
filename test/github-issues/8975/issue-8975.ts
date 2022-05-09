@@ -3,7 +3,7 @@ import { exec } from "child_process"
 import { dirname } from "path"
 import rimraf from "rimraf"
 
-describe("cli init command", () => {
+describe.only("cli init command", () => {
     const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
     const databaseOptions = [
         "mysql",
@@ -71,6 +71,6 @@ describe("cli init command", () => {
                     done()
                 },
             )
-        })
+        }).timeout(90000)
     }
 })
