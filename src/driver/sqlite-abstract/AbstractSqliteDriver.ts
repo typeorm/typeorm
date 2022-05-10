@@ -126,6 +126,8 @@ export abstract class AbstractSqliteDriver implements Driver {
         "date",
         "time",
         "datetime",
+        "json",
+        "timestamp"
     ]
 
     /**
