@@ -536,20 +536,28 @@ export class DataSource {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Query Builder is not supported by MongoDB.`)
 
+        let qb: SelectQueryBuilder<Entity>
         if (alias) {
             alias = DriverUtils.buildAlias(this.driver, alias)
             const metadata = this.getMetadata(
                 entityOrRunner as EntityTarget<Entity>,
             )
-            return new SelectQueryBuilder(this, queryRunner)
+            qb = new SelectQueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias)
         } else {
-            return new SelectQueryBuilder(
+            qb = new SelectQueryBuilder(
                 this,
                 entityOrRunner as QueryRunner | undefined,
             )
         }
+        if (this.options.type === "postgres" && this.options.commentCallback) {
+            let comment = this.options.commentCallback()
+            if (comment) {
+                qb.comment(comment)
+            }
+        }
+        return qb
     }
 
     /**

@@ -83,4 +83,10 @@ export interface PostgresConnectionOptions
      * the service using this connection. Defaults to 'undefined'
      */
     readonly applicationName?: string
+
+    /**
+     * Allow the application to dynamically insert a comment to SQL
+     * commands, to allow for advanced debugging.
+     */
+    readonly commentCallback?: () => string | undefined
 }
