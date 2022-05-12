@@ -257,7 +257,7 @@ export class PostgresQueryRunner
         let cache = false
         let cacheSha = false // flag to identify queries by sha instead of full query sql
         const queryId = query + " -- PARAMETERS: " + JSON.stringify(parameters)
-        let cachePrefix = ''
+        let cachePrefix = ""
 
         const databaseConnection = await this.connect()
 
@@ -268,7 +268,13 @@ export class PostgresQueryRunner
             cacheDuration = Math.abs(
                 isNaN(Number(options.cache)) ? 0 : Number(options.cache),
             )
-            if (databaseConnection.queryResultCache?.connection?.options?.cache?.options?.prefix) cachePrefix = databaseConnection.queryResultCache?.connection?.options?.cache?.options?.prefix
+            if (
+                databaseConnection.queryResultCache?.connection?.options?.cache
+                    ?.options?.prefix
+            )
+                cachePrefix =
+                    databaseConnection.queryResultCache?.connection?.options
+                        ?.cache?.options?.prefix
         }
 
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
@@ -366,7 +372,8 @@ export class PostgresQueryRunner
                             await databaseConnection.queryResultCache.storeInCache(
                                 {
                                     identifier: cacheSha
-                                        ? cachePrefix + RandomGenerator.sha1(queryId)
+                                        ? cachePrefix +
+                                          RandomGenerator.sha1(queryId)
                                         : cachePrefix + queryId,
                                     query: queryId,
                                     time: new Date().getTime(),
