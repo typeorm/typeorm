@@ -82,20 +82,24 @@ export class PlainObjectToNewEntityTransformer {
                             )
                         })
 
+                        const inverseEntityMetadata =
+                            relation.inverseEntityMetadata.findChildMetadata(
+                                objectRelatedValueItem,
+                            )
+
                         // if such item already exist then merge new data into it, if its not we create a new entity and merge it into the array
                         if (!objectRelatedValueEntity) {
                             objectRelatedValueEntity =
-                                relation.inverseEntityMetadata.create(
-                                    undefined,
-                                    { fromDeserializer: true },
-                                )
+                                inverseEntityMetadata.create(undefined, {
+                                    fromDeserializer: true,
+                                })
                             entityRelatedValue.push(objectRelatedValueEntity)
                         }
 
                         this.groupAndTransform(
                             objectRelatedValueEntity,
                             objectRelatedValueItem,
-                            relation.inverseEntityMetadata,
+                            inverseEntityMetadata,
                             getLazyRelationsPromiseValue,
                         )
                     })
@@ -110,18 +114,25 @@ export class PlainObjectToNewEntityTransformer {
                         return
                     }
 
+                    const inverseEntityMetadata =
+                        relation.inverseEntityMetadata.findChildMetadata(
+                            objectRelatedValue,
+                        )
+
                     if (!entityRelatedValue) {
-                        entityRelatedValue =
-                            relation.inverseEntityMetadata.create(undefined, {
+                        entityRelatedValue = inverseEntityMetadata.create(
+                            undefined,
+                            {
                                 fromDeserializer: true,
-                            })
+                            },
+                        )
                         relation.setEntityValue(entity, entityRelatedValue)
                     }
 
                     this.groupAndTransform(
                         entityRelatedValue,
                         objectRelatedValue,
-                        relation.inverseEntityMetadata,
+                        inverseEntityMetadata,
                         getLazyRelationsPromiseValue,
                     )
                 }
