@@ -476,6 +476,10 @@ export abstract class AbstractSqliteDriver implements Driver {
                 } else if (typeof value === "number") {
                     return String(value)
                 }
+                
+                if (typeof value === "boolean") {
+                    return value ? "1" : "0";
+                }
 
                 if (value instanceof Date) {
                     escapedParameters.push(
