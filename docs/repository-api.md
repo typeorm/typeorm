@@ -283,7 +283,7 @@ const [timbers, timbersCount] = await repository.findAndCount({
     but ignores pagination settings (from and take options).
 
 ```typescript
-const [timbers, timbersCount] = await repository.findAndCount({
+const [timbers, timbersCount] = await repository.findAndCountBy({
     firstName: "Timber",
 })
 ```
@@ -301,7 +301,7 @@ const timber = await repository.findOne({
 -   `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
 
 ```typescript
-const timber = await repository.findOne({ firstName: "Timber" })
+const timber = await repository.findOneBy({ firstName: "Timber" })
 ```
 
 -   `findOneOrFail` - Finds the first entity that matches some id or find options.
