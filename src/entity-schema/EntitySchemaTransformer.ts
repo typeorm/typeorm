@@ -99,6 +99,7 @@ export class EntitySchemaTransformer {
                     charset: regularColumn.charset,
                     collation: regularColumn.collation,
                     enum: regularColumn.enum,
+                    enumName: regularColumn.enumName,
                     asExpression: regularColumn.asExpression,
                     generatedType: regularColumn.generatedType,
                     hstoreType: regularColumn.hstoreType,

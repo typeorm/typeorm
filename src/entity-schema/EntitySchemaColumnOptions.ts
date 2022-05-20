@@ -171,6 +171,11 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     enum?: any[] | Object
 
     /**
+     * Exact name of enum
+     */
+    enumName?: string
+
+    /**
      * Generated column expression.
      */
     asExpression?: string
