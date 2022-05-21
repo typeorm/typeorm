@@ -162,7 +162,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Switches on/off AUTOCOMMIT mode
+     * @description Switches on/off AUTOCOMMIT mode
+     * @link https://help.sap.com/docs/HANA_SERVICE_CF/7c78579ce9b14a669c1f3295b0d8ca16/d538d11053bd4f3f847ec5ce817a3d4c.html?locale=en-US
      */
     async setAutoCommit(options: { status: "on" | "off" }) {
         const connection = await this.connect()
