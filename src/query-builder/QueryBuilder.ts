@@ -24,7 +24,6 @@ import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundErro
 import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { escapeRegExp } from "../util/escapeRegExp"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -702,8 +701,12 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Replaces all entity's propertyName to name in the given statement.
      */
-
     protected replacePropertyNames(statement: string) {
+        // Escape special characters in regular expressions
+        // Per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+        const escapeRegExp = (s: String) =>
+            s.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
+
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
             const replaceAliasNamePrefix = this.expressionMap
