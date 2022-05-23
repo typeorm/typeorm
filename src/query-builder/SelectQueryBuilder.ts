@@ -4154,6 +4154,16 @@ export class SelectQueryBuilder<Entity>
                                     " " +
                                     parseInt(where[key].value),
                             )
+                        } else if (where[key].type === "isNull") {
+                            if (relation.isManyToOne) {
+                                andConditions.push(
+                                    `${alias}.${propertyPath} IS NULL`,
+                                )
+                            } else {
+                                throw new Error(
+                                    `This relation isn't supported by given find operator`,
+                                )
+                            }
                         }
                     } else {
                         // const joinAlias = alias + "_" + relation.propertyName;
