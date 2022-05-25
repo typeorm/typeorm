@@ -1,5 +1,5 @@
-import {Entity, OneToMany, PrimaryGeneratedColumn} from "../../../../src";
-import {Document} from "./Document";
+import { Entity, OneToMany, PrimaryGeneratedColumn } from "../../../../src"
+import { Document } from "./Document"
 
 @Entity()
 export class User {

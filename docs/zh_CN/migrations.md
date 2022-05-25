@@ -138,7 +138,7 @@ typeorm migration:run
 `ts-node`的示例：
 
 ```
-ts-node ./node_modules/typeorm/cli.js migration:run
+npx typeorm-ts-node-commonjs migration:run
 ```
 
 此命令将执行所有挂起的迁移，并按其时间戳排序的顺序运行它们。

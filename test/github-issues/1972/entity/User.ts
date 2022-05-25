@@ -1,16 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src/index";
+import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src/index"
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    public id: number;
+    public id: number
 
     @Column()
-    public name: string;
+    public name: string
 
     constructor(user?: { name: string }) {
         if (user) {
-            this.name = user.name;
+            this.name = user.name
         }
     }
 }

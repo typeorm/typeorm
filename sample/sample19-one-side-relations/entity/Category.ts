@@ -1,12 +1,10 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
 
 @Entity("sample19_category")
 export class Category {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
-
+    name: string
 }

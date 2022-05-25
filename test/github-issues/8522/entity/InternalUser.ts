@@ -1,6 +1,5 @@
-import { ChildEntity } from "../../../../src";
-import { User } from "./User";
+import { ChildEntity } from "../../../../src"
+import { User } from "./User"
 
-@ChildEntity('internal')
-export class InternalUser extends User {
-}
+@ChildEntity("internal")
+export class InternalUser extends User {}

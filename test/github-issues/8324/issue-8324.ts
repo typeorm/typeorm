@@ -5,7 +5,7 @@ import {Food} from "./entity/Food";
 import {Meal} from "./entity/Meal";
 import {expect} from "chai";
 
-describe("github issues > #8324 Mongodb: When a document is updated, all embedded arrays must be mapped correctly", () => {
+describe.only("github issues > #8324 Mongodb: When a document is updated, all embedded arrays must be mapped correctly", () => {
 
     let connections: Connection[];
     before(async () => {

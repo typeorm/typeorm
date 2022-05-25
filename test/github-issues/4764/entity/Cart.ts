@@ -5,37 +5,37 @@ import {
     OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src";
-import { CartItems } from "./CartItems";
-import { User } from "./User";
+} from "../../../../src"
+import { CartItems } from "./CartItems"
+import { User } from "./User"
 
 @Entity()
 export class Cart {
     @PrimaryGeneratedColumn()
-    ID!: number;
+    ID!: number
 
     @Column()
-    UNID!: number;
+    UNID!: number
 
     @Column()
-    Type!: string;
+    Type!: string
 
     @Column()
-    Cycle?: number;
+    Cycle?: number
 
     @Column()
-    Term?: string;
+    Term?: string
 
     @Column()
-    RegDate!: Date;
+    RegDate!: Date
 
     @Column()
-    ModifiedDate!: Date;
+    ModifiedDate!: Date
 
     @OneToMany((type) => CartItems, (t) => t.Cart)
-    CartItems?: CartItems[];
+    CartItems?: CartItems[]
 
     @OneToOne((type) => User, (t) => t.Cart)
     @JoinColumn({ name: "UNID" })
-    User?: User;
+    User?: User
 }

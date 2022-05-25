@@ -1,20 +1,18 @@
-import { Column, Entity, PrimaryGeneratedColumn } from '../../../../src';
-
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn({
-        type: 'integer',
-        name: 'id',
+        type: "integer",
+        name: "id",
     })
-    oldId: number;
+    oldId: number
 
     @Column({
         nullable: false,
         unique: true,
         length: 38,
-        name: 'new_id',
+        name: "new_id",
     })
-    id: string;
+    id: string
 }

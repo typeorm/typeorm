@@ -1,19 +1,17 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
-import {ManyToMany} from "../../../src/decorator/relations/ManyToMany";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
+import { Post } from "./Post"
+import { ManyToMany } from "../../../src/decorator/relations/ManyToMany"
 
 @Entity("sample5_post_category")
 export class PostCategory {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @ManyToMany(type => Post, post => post.categories, {
-        cascade: true
+    @ManyToMany((type) => Post, (post) => post.categories, {
+        cascade: true,
     })
-    posts: Post[] = [];
-
+    posts: Post[] = []
 }

@@ -1,26 +1,24 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Index} from "../../../../src/decorator/Index";
-import {OneToOne} from "../../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
-import {User} from "./User";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Index } from "../../../../src/decorator/Index"
+import { OneToOne } from "../../../../src/decorator/relations/OneToOne"
+import { JoinColumn } from "../../../../src/decorator/relations/JoinColumn"
+import { User } from "./User"
 
 @Entity()
 @Index("table_index_userId_mid", (post: Item) => [post.userId, post.mid])
 export class Item {
-
     @PrimaryGeneratedColumn()
-    postId: number;
+    postId: number
 
-    @OneToOne(type => User, users => users.userId)
+    @OneToOne((type) => User, (users) => users.userId)
     @JoinColumn({ name: "userId" })
-    userData: User;
+    userData: User
 
-    @Column({ type: "int"})
-    userId: number;
+    @Column()
+    userId: number
 
-    @Column({ type: "int" })
-    mid: number;
-
+    @Column()
+    mid: number
 }

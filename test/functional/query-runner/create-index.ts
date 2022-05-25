@@ -1,72 +1,95 @@
-import "reflect-metadata";
-import {Connection} from "../../../src/connection/Connection";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Table} from "../../../src/schema-builder/table/Table";
-import {TableIndex} from "../../../src/schema-builder/table/TableIndex";
+import "reflect-metadata"
+import { DataSource } from "../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { Table } from "../../../src/schema-builder/table/Table"
+import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create index", () => {
-
-    let connections: Connection[];
+    let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-        });
-    });
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
-    it("should correctly create index and revert creation", () => Promise.all(connections.map(async connection => {
-
-        const queryRunner = connection.createQueryRunner();
-        await queryRunner.createTable(new Table({
-            name: "question",
-            columns: [
-                {
-                    name: "id",
-                    type: "int",
-                    isPrimary: true
-                },
-                {
-                    name: "name",
-                    type: "varchar",
-                },
-                {
-                    name: "description",
-                    type: "varchar",
+    it("should correctly create index and revert creation", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                let numericType = "int"
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    numericType = "integer"
+                } else if (connection.driver.options.type === "spanner") {
+                    numericType = "int64"
                 }
-            ]
-        }), true);
 
-        // clear sqls in memory to avoid removing tables when down queries executed.
-        queryRunner.clearSqlMemory();
+                let stringType = "varchar"
+                if (connection.driver.options.type === "spanner") {
+                    stringType = "string"
+                }
 
-        const index = new TableIndex({ columnNames: ["name", "description"] });
-        await queryRunner.createIndex("question", index);
+                const queryRunner = connection.createQueryRunner()
+                await queryRunner.createTable(
+                    new Table({
+                        name: "question",
+                        columns: [
+                            {
+                                name: "id",
+                                type: numericType,
+                                isPrimary: true,
+                            },
+                            {
+                                name: "name",
+                                type: stringType,
+                            },
+                            {
+                                name: "description",
+                                type: stringType,
+                            },
+                        ],
+                    }),
+                    true,
+                )
 
-        const uniqueIndex = new TableIndex({ columnNames: ["description"], isUnique: true });
-        await queryRunner.createIndex("question", uniqueIndex);
+                // clear sqls in memory to avoid removing tables when down queries executed.
+                queryRunner.clearSqlMemory()
 
-        let table = await queryRunner.getTable("question");
+                const index = new TableIndex({
+                    columnNames: ["name", "description"],
+                })
+                await queryRunner.createIndex("question", index)
 
-        // CockroachDB stores unique indices as UNIQUE constraints
-        if (connection.driver instanceof CockroachDriver) {
-            table!.indices.length.should.be.equal(1);
-            table!.uniques.length.should.be.equal(1);
+                const uniqueIndex = new TableIndex({
+                    columnNames: ["description"],
+                    isUnique: true,
+                })
+                await queryRunner.createIndex("question", uniqueIndex)
 
-        } else {
-            table!.indices.length.should.be.equal(2);
-        }
+                let table = await queryRunner.getTable("question")
 
-        await queryRunner.executeMemoryDownSql();
+                // CockroachDB stores unique indices as UNIQUE constraints
+                if (connection.driver.options.type === "cockroachdb") {
+                    table!.indices.length.should.be.equal(1)
+                    table!.uniques.length.should.be.equal(1)
+                } else {
+                    table!.indices.length.should.be.equal(2)
+                }
 
-        table = await queryRunner.getTable("question");
-        table!.indices.length.should.be.equal(0);
-        table!.uniques.length.should.be.equal(0);
+                await queryRunner.executeMemoryDownSql()
 
-        await queryRunner.release();
-    })));
+                table = await queryRunner.getTable("question")
+                table!.indices.length.should.be.equal(0)
+                table!.uniques.length.should.be.equal(0)
 
-});
+                await queryRunner.release()
+            }),
+        ))
+})

@@ -1,12 +1,12 @@
-import { PrimaryGeneratedColumn, UpdateDateColumn } from "../../../../src";
+import { PrimaryGeneratedColumn, UpdateDateColumn } from "../../../../src"
 
-import { Entity } from "../../../../src/decorator/entity/Entity";
+import { Entity } from "../../../../src/decorator/entity/Entity"
 
 @Entity("foo")
 export class Foo {
     @PrimaryGeneratedColumn({ name: "id" })
-    id: number;
+    id: number
 
     @UpdateDateColumn({ name: "updated_at" })
-    updatedAt: Date;
+    updatedAt: Date
 }

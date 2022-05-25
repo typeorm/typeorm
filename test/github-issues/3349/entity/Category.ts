@@ -1,12 +1,12 @@
-import {PrimaryColumn} from "../../../../src";
-import {Column} from "../../../../src";
-import {Entity} from "../../../../src";
+import { PrimaryColumn } from "../../../../src"
+import { Column } from "../../../../src"
+import { Entity } from "../../../../src"
 
 @Entity()
 export class Category {
     @PrimaryColumn()
-    public id!: number;
+    public id!: number
 
     @Column()
-    public myField!: number;
+    public myField!: number
 }

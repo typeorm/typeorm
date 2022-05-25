@@ -1,12 +1,10 @@
-import {Entity, PrimaryColumn, PrimaryGeneratedColumn} from "../../../../src";
+import { Entity, PrimaryColumn, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @PrimaryColumn()
-    name: string;
-
+    name: string
 }

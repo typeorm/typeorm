@@ -1,22 +1,20 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
-import {Category} from "./Category";
-import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src/index"
+import { Category } from "./Category"
+import { ManyToMany } from "../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../src/decorator/relations/JoinTable"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    count: number;
+    count: number
 
-    @ManyToMany(type => Category)
+    @ManyToMany((type) => Category)
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }

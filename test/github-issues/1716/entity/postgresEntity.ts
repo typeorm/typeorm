@@ -1,27 +1,25 @@
-import { PrimaryColumn, Entity, Column } from "../../../../src";
+import { PrimaryColumn, Entity, Column } from "../../../../src"
 
 @Entity()
 export class PostgresEntity {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column("time")
-    fieldTime: Date;
+    fieldTime: Date
 
     @Column("time with time zone")
-    fieldTimeWithTimeZone: Date;
+    fieldTimeWithTimeZone: Date
 
     @Column("time without time zone")
-    fieldTimeWithoutTimeZone: Date;
+    fieldTimeWithoutTimeZone: Date
 
     @Column("timestamp")
-    fieldTimestamp: Date;
+    fieldTimestamp: Date
 
     @Column("timestamp without time zone")
-    fieldTimestampWithoutTimeZone: Date;
+    fieldTimestampWithoutTimeZone: Date
 
     @Column("timestamp with time zone")
-    fieldTimestampWithTimeZone: Date;
-
+    fieldTimestampWithTimeZone: Date
 }

@@ -1,23 +1,19 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryColumn } from "../../../../../../src"
 
 @Entity()
 export class PostWithoutTypes {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    boolean: boolean;
+    boolean: boolean
 
     @Column()
-    blob: Buffer;
+    blob: Buffer
 
     @Column()
-    datetime: Date;
-
+    datetime: Date
 }

@@ -1,22 +1,22 @@
-import { EntitySchema } from "../../../../src";
+import { EntitySchema } from "../../../../src"
 
-import PostTag from "./PostTag";
-import PostAttachment from "./PostAttachment";
+import PostTag from "./PostTag"
+import PostAttachment from "./PostAttachment"
 
-let id = 0;
+let id = 0
 
 export default class Post {
-    postId: number;
+    postId: number
 
-    otherId: number;
+    otherId: number
 
-    tags: PostTag[];
+    tags: PostTag[]
 
-    attachments: PostAttachment[];
+    attachments: PostAttachment[]
 
     constructor() {
-        this.postId = id++;
-        this.otherId = id++;
+        this.postId = id++
+        this.otherId = id++
     }
 }
 
@@ -27,26 +27,26 @@ export const PostSchema = new EntitySchema<Post>({
         otherId: {
             type: Number,
             primary: true,
-            nullable: false
+            nullable: false,
         },
         postId: {
             type: Number,
             primary: true,
-            nullable: false
-        }
+            nullable: false,
+        },
     },
     relations: {
         tags: {
             target: () => PostTag,
             type: "one-to-many",
             inverseSide: "post",
-            cascade: true
+            cascade: true,
         },
         attachments: {
             target: () => PostAttachment,
             type: "one-to-many",
             inverseSide: "post",
-            cascade: true
-        }
-    }
-});
+            cascade: true,
+        },
+    },
+})

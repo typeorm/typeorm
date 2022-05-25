@@ -1,27 +1,25 @@
-import {Column} from "../../../../src/decorator/columns/Column";
-import {TableInheritance} from "../../../../src/decorator/entity/TableInheritance";
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
+import { Column } from "../../../../src/decorator/columns/Column"
+import { TableInheritance } from "../../../../src/decorator/entity/TableInheritance"
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
 
 export enum PersonType {
     Employee = 1,
     Homesitter = 2,
-    Student = 3
+    Student = 3,
 }
 
 @Entity("issue184_person")
-@TableInheritance({ column: { name: "type", type: "int"} })
-export abstract class Person  {
-
+@TableInheritance({ column: { name: "type", type: "int" } })
+export abstract class Person {
     @PrimaryColumn()
-    id: string;
+    id: string
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
-    type: PersonType;
-
+    type: PersonType
 }

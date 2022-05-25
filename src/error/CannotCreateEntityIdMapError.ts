@@ -1,6 +1,6 @@
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import {ObjectLiteral} from "../common/ObjectLiteral";
-import {TypeORMError} from "./TypeORMError";
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { ObjectLiteral } from "../common/ObjectLiteral"
+import { TypeORMError } from "./TypeORMError"
 
 /**
  * Thrown when user tries to create entity id map from the mixed id value,
@@ -8,12 +8,19 @@ import {TypeORMError} from "./TypeORMError";
  */
 export class CannotCreateEntityIdMapError extends TypeORMError {
     constructor(metadata: EntityMetadata, id: any) {
-        super();
+        super()
 
-        const objectExample = metadata.primaryColumns.reduce((object, column, index) => {
-            column.setEntityValue(object, index + 1);
-            return object;
-        }, {} as ObjectLiteral);
-        this.message = `Cannot use given entity id "${id}" because "${metadata.targetName}" contains multiple primary columns, you must provide object in following form: ${JSON.stringify(objectExample)} as an id.`;
+        const objectExample = metadata.primaryColumns.reduce(
+            (object, column, index) => {
+                column.setEntityValue(object, index + 1)
+                return object
+            },
+            {} as ObjectLiteral,
+        )
+        this.message = `Cannot use given entity id "${id}" because "${
+            metadata.targetName
+        }" contains multiple primary columns, you must provide object in following form: ${JSON.stringify(
+            objectExample,
+        )} as an id.`
     }
 }
