@@ -1,13 +1,13 @@
-import {Connection} from "../../../src";
+import {DataSource} from "../../../src";
 import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
 import {Day} from "./entity/Day";
 import {Food} from "./entity/Food";
 import {Meal} from "./entity/Meal";
 import {expect} from "chai";
 
-describe.only("github issues > #8324 Mongodb: When a document is updated, all embedded arrays must be mapped correctly", () => {
+describe("github issues > #8324 Mongodb: When a document is updated, all embedded arrays must be mapped correctly", () => {
 
-    let connections: Connection[];
+    let connections: DataSource[];
     before(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["mongodb"],
@@ -35,12 +35,13 @@ describe.only("github issues > #8324 Mongodb: When a document is updated, all em
 
         await dayRepository.save(day);
 
-        const [persisted] = await dayRepository.findByIds([day._id.toHexString()]);
+        const persisted = await dayRepository.findOneBy({_id: day._id});
 
-        expect(persisted.meals.length).to.equal(1);
-        expect(persisted.meals[0].mealId).to.equal("meal-id-after");
-        expect(persisted.meals[0].foods.length).to.equal(1);
-        expect(persisted.meals[0].foods[0].productId).to.equal("product-id-after");
+        expect(persisted).not.to.be.undefined;
+        expect(persisted?.meals.length).to.equal(1);
+        expect(persisted?.meals[0].mealId).to.equal("meal-id-after");
+        expect(persisted?.meals[0].foods.length).to.equal(1);
+        expect(persisted?.meals[0].foods[0].productId).to.equal("product-id-after");
     })));
 
     it("should add empty arrays", () => Promise.all(connections.map(async connection => {
@@ -58,11 +59,12 @@ describe.only("github issues > #8324 Mongodb: When a document is updated, all em
 
         await dayRepository.save(day);
 
-        const [persisted] = await dayRepository.findByIds([day._id.toHexString()]);
+        const persisted = await dayRepository.findOneBy({_id: day._id});
 
-        expect(persisted.meals.length).to.equal(1);
-        expect(persisted.meals[0].mealId).to.equal("meal-id-after");
-        expect(persisted.meals[0].foods.length).to.equal(0);
+        expect(persisted).not.to.be.undefined;
+        expect(persisted?.meals.length).to.equal(1);
+        expect(persisted?.meals[0].mealId).to.equal("meal-id-after");
+        expect(persisted?.meals[0].foods.length).to.equal(0);
     })));
 
 });
