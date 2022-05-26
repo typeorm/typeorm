@@ -14,6 +14,7 @@
   },
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "node": {
         "import": "./index.mjs",
         "require": "./index.js"
@@ -24,7 +25,10 @@
         "default": "./index.js"
       }
     },
-    "./browser": "./browser/index.js",
+    "./browser": {
+      "types": "./index.d.ts",
+      "default": "./browser/index.js"
+    },
     "./*.js": "./*.js",
     "./*": {
       "require": "./*.js",
