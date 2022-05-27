@@ -861,9 +861,20 @@ export class EntityMetadata {
             this.inheritancePattern === "STI" &&
             this.childEntityMetadatas.length > 0
         ) {
-            return this.childEntityMetadatas.find(
-                (meta) => value.constructor === meta.target,
-            ) || this
+            // There could be a column on the base class that can manually be set to override the type.
+            let manuallySetDiscriminatorValue: unknown
+            if (this.discriminatorColumn) {
+                manuallySetDiscriminatorValue =
+                    value[this.discriminatorColumn.propertyName]
+            }
+            return (
+                this.childEntityMetadatas.find(
+                    (meta) =>
+                        manuallySetDiscriminatorValue ===
+                            meta.discriminatorValue ||
+                        value.constructor === meta.target,
+                ) || this
+            )
         }
         return this
     }
