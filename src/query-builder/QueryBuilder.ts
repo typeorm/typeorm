@@ -389,7 +389,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets parameter name and its value.
      *
-     * The key for this parametere may contain numbers, letters, underscores, or periods.
+     * The key for this parameter may contain numbers, letters, underscores, or periods.
      */
     setParameter(key: string, value: any): this {
         if (typeof value === "function") {
@@ -723,7 +723,7 @@ export abstract class QueryBuilder<Entity> {
             // * Relation Property Path to first join column key
             // * Relation Property Path + Column Path
             // * Column Database Name
-            // * Column Propety Name
+            // * Column Property Name
             // * Column Property Path
 
             for (const relation of alias.metadata.relations) {

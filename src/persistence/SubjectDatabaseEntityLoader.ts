@@ -156,7 +156,7 @@ export class SubjectDatabaseEntityLoader {
 
     /**
      * Finds subjects where entity like given subject's entity.
-     * Comparision made by entity id.
+     * Comparison made by entity id.
      * Multiple subjects may be returned if duplicates are present in the subject array.
      * This will likely result in the same row being updated multiple times during a transaction.
      */

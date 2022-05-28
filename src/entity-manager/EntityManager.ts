@@ -134,7 +134,7 @@ export class EntityManager {
 
         if (!runInTransaction) {
             throw new TypeORMError(
-                `Transaction method requires callback in second paramter if isolation level is supplied.`,
+                `Transaction method requires callback in second parameter if isolation level is supplied.`,
             )
         }
 

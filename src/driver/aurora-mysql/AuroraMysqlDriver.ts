@@ -67,7 +67,7 @@ export class AuroraMysqlDriver implements Driver {
     database?: string
 
     /**
-     * Schema name used to performn all write queries.
+     * Schema name used to perform all write queries.
      */
     schema?: string
 
