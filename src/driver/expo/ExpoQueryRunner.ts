@@ -250,9 +250,12 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     await this.rollbackTransaction()
                     fail(err)
                 },
-                () => {
-                    this.isTransactionActive = false
-                    this.transaction = undefined
+                async () => {
+                    try {
+                        await this.commitTransaction()
+                    } catch (e) {
+                        fail(e)
+                    }
                 },
             )
         })
