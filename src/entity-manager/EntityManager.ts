@@ -703,11 +703,12 @@ export class EntityManager {
 
         const overwriteColumns = metadata.columns.filter(
             (col) =>
-                (!conflictColumns.includes(col) &&
+                !conflictColumns.includes(col) &&
                 (entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
-                ) || col.isUpdateDate))
+                ) ||
+                    col.isUpdateDate),
         )
 
         return this.createQueryBuilder()
