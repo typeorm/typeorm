@@ -211,7 +211,7 @@ module.exports = class PostRefactoringTIMESTAMP {
 
     async down(queryRunner) {
         await queryRunner.query(
-            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
+            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
         )
     }
 }
