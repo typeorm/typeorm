@@ -3215,7 +3215,7 @@ export class SelectQueryBuilder<Entity>
         ) {
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
-            const [selects, orderBys] =
+            const [, orderBys] =
                 this.createOrderByCombinedWithSelectExpression("distinctAlias")
             const metadata = this.expressionMap.mainAlias.metadata
             const mainAliasName = this.expressionMap.mainAlias.name
@@ -3251,7 +3251,6 @@ export class SelectQueryBuilder<Entity>
                 queryRunner,
             )
                 .select(`DISTINCT ${querySelects.join(", ")}`)
-                .addSelect(selects)
                 .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
