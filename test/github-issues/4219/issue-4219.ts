@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { plainToClass } from "class-transformer"
+import { plainToInstance } from "class-transformer"
 
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
@@ -10,7 +10,7 @@ describe("github issues > #4219 class-transformer-shim: support metadata reflect
             url: "typeorm.io",
         }
 
-        const user = plainToClass(User, {
+        const user = plainToInstance(User, {
             someDate: "Sat Jun 01 2019",
             oneToOnePhoto: photoLiteral,
             oneToManyPhotos: [photoLiteral],

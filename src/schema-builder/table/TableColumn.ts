@@ -151,6 +151,11 @@ export class TableColumn {
      */
     srid?: number
 
+    /**
+     * Column ordering
+     */
+     order: number
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -184,6 +189,7 @@ export class TableColumn {
             this.generatedType = options.generatedType
             this.spatialFeatureType = options.spatialFeatureType
             this.srid = options.srid
+            this.order = options.order || 0
         }
     }
 
@@ -223,6 +229,7 @@ export class TableColumn {
             comment: this.comment,
             spatialFeatureType: this.spatialFeatureType,
             srid: this.srid,
+            order: this.order,
         })
     }
 }

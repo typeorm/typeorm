@@ -239,6 +239,16 @@ export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
 
     /**
+     * Reorder table columns
+     * @param columns unordered table columns
+     */
+    protected getOrderedTableColumns(columns: TableColumn[]): TableColumn[] {
+        return columns.sort((a, b) => {
+            return a.order - b.order
+        })
+    }
+
+    /**
      * Gets view from previously loaded views, otherwise loads it from database.
      */
     protected async getCachedView(viewName: string): Promise<View> {

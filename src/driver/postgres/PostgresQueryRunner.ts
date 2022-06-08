@@ -3840,7 +3840,7 @@ export class PostgresQueryRunner
      * Builds create table sql.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
+        const columnDefinitions = this.getOrderedTableColumns(table.columns)
             .map((column) => this.buildCreateColumnSql(table, column))
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`

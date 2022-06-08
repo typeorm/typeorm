@@ -329,6 +329,11 @@ export class ColumnMetadata {
      */
     srid?: number
 
+    /**
+     * Column ordering
+     */
+    order?: number
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -462,6 +467,8 @@ export class ColumnMetadata {
             this.spatialFeatureType = options.args.options.spatialFeatureType
         if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid
+        if (options.args.options.order !== undefined)
+            this.order = options.args.options.order
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {

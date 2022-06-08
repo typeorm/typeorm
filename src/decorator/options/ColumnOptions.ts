@@ -187,4 +187,9 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number
+
+    /**
+     * Column ordering
+     */
+    order?: number
 }

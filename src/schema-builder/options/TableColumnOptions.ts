@@ -150,4 +150,9 @@ export interface TableColumnOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number
+
+    /**
+     * Column ordering
+     */
+    order?: number
 }
