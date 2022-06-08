@@ -4,6 +4,7 @@ import * as yargs from "yargs"
 import chalk from "chalk"
 import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
+import { DataSource } from "../data-source"
 
 /**
  * Creates a new migration file.
@@ -14,6 +15,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     builder(args: yargs.Argv) {
         return args
+            .option("dataSource", {
+                alias: "d",
+                type: "string",
+                describe:
+                    "Path to the file where your DataSource instance is defined.",
+            })
             .option("o", {
                 alias: "outputJs",
                 type: "boolean",
@@ -30,11 +37,25 @@ export class MigrationCreateCommand implements yargs.CommandModule {
     }
 
     async handler(args: yargs.Arguments) {
+        let dataSource: DataSource | undefined = undefined
+
         try {
+            if (args.dataSource) {
+                dataSource = await CommandUtils.loadDataSource(
+                    path.resolve(process.cwd(), args.dataSource as string),
+                )
+            }
+
+            const migrationsDir = dataSource?.options.migrationsOutDir || ""
+
             const timestamp = CommandUtils.getTimestamp(args.timestamp)
             const inputPath = (args.path as string).startsWith("/")
                 ? (args.path as string)
-                : path.resolve(process.cwd(), args.path as string)
+                : path.resolve(
+                      process.cwd(),
+                      migrationsDir,
+                      args.path as string,
+                  )
             const filename = path.basename(inputPath)
             const fullPath =
                 path.dirname(inputPath) + "/" + timestamp + "-" + filename

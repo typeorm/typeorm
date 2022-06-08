@@ -45,6 +45,11 @@ export interface BaseDataSourceOptions {
     readonly migrations?: MixedList<Function | string>
 
     /**
+     * Migration output directory for CLI commands (Relative)
+     */
+    readonly migrationsOutDir?: string
+
+    /**
      * Migrations table name, in case of different name from "migrations".
      * Accepts single string name.
      */

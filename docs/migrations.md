@@ -56,8 +56,9 @@ This place is called "migrations".
 
 Before creating a new migration you need to setup your data source options properly:
 
+`data-source.ts`
 ```ts
-{
+export const dataSource = new DataSource({
     type: "mysql",
     host: "localhost",
     port: 3306,
@@ -67,6 +68,7 @@ Before creating a new migration you need to setup your data source options prope
     entities: [/*...*/],
     migrations: [/*...*/],
     migrationsTableName: "custom_migration_table",
+    migrationsOutDir: 'database/migrations',
 }
 ```
 
@@ -78,11 +80,17 @@ Here we setup three options:
 Once you setup connection options you can create a new migration using CLI:
 
 ```
-typeorm migration:create -n PostRefactoring
+typeorm migration:create PostRefactoring
+```
+
+To use the data source options configured above, run with the `-d` arg:
+
+```
+typeorm migration:create PostRefactoring -d data-source.ts
 ```
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
-After you run the command you can see a new file generated in the "migration" directory
+After you run the command you can see a new file generated in the migrations directory
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
 Now you can open the file and add your migration sql queries there.
 
@@ -174,7 +182,7 @@ Let's say you have a `Post` entity with a `title` column, and you have changed t
 You can run following command:
 
 ```
-typeorm migration:generate -n PostRefactoring
+typeorm migration:generate PostRefactoring -d data-source.ts
 ```
 
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
