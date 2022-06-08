@@ -1,7 +1,0 @@
-{
-  "type": "module",
-  "name": "sample6-abstract-table",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT"
-}

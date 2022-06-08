@@ -6,12 +6,12 @@ import { PostAuthor } from "./entity/PostAuthor"
 import { Blog } from "./entity/Blog"
 
 const options: DataSourceOptions = {
-    type: "postgres",
+    type: "mysql",
     host: "localhost",
-    port: 5432,
-    username: "postgres",
-    password: "",
-    database: "typeorm",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
     synchronize: true,
     entities: [__dirname + "/entity/*"],
 }
