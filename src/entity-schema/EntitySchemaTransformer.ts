@@ -107,6 +107,7 @@ export class EntitySchemaTransformer {
                     transformer: regularColumn.transformer,
                     spatialFeatureType: regularColumn.spatialFeatureType,
                     srid: regularColumn.srid,
+                    order: regularColumn.order,
                 },
             }
             metadataArgsStorage.columns.push(columnArgs)

@@ -2889,7 +2889,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create table sql
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
+        const columnDefinitions = this.getOrderedTableColumns(table.columns)
             .map((column) => this.buildCreateColumnSql(column, true))
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`

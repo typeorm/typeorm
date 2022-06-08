@@ -3460,7 +3460,7 @@ export class SqlServerQueryRunner
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
+        const columnDefinitions = this.getOrderedTableColumns(table.columns)
             .map((column) =>
                 this.buildCreateColumnSql(table, column, false, true),
             )
