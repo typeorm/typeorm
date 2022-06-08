@@ -393,24 +393,29 @@ export class RelationLoader {
         const promiseIndex = "__promise_" + relation.propertyName + "__" // in what property of the entity loading promise will be stored
         const resolveIndex = "__has_" + relation.propertyName + "__" // indicates if relation data already was loaded or not, we need this flag if loaded data is empty
 
+        const createLazyPromise = (generator: () => PromiseLike<any>) => {
+            let promise: PromiseLike<any> | undefined
+            return {
+                then: (onFulfilled: any, onRejected: any) => (promise ?? (promise = generator())).then(onFulfilled, onRejected)
+            }
+        }
+
         const setData = (entity: ObjectLiteral, value: any) => {
             entity[dataIndex] = value
             entity[resolveIndex] = true
             delete entity[promiseIndex]
             return value
         }
-        const setPromise = (entity: ObjectLiteral, value: Promise<any>) => {
+        const setPromise = (entity: ObjectLiteral, value: PromiseLike<any>) => {
             delete entity[resolveIndex]
             delete entity[dataIndex]
-            entity[promiseIndex] = value
-            value.then(
+            return entity[promiseIndex] = createLazyPromise(() => value.then(
                 // ensure different value is not assigned yet
                 (result) =>
                     entity[promiseIndex] === value
                         ? setData(entity, result)
                         : result,
-            )
-            return value
+            ))
         }
 
         Object.defineProperty(entity, relation.propertyName, {
@@ -427,7 +432,7 @@ export class RelationLoader {
                     return this[promiseIndex]
 
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
-                const loader = relationLoader
+                const loader = createLazyPromise(() => relationLoader
                     .load(relation, this, queryRunner)
                     .then((result) =>
                         relation.isOneToOne || relation.isManyToOne
@@ -435,7 +440,7 @@ export class RelationLoader {
                                 ? null
                                 : result[0]
                             : result,
-                    )
+                    ))
                 return setPromise(this, loader)
             },
             set: function (value: any | Promise<any>) {
