@@ -154,7 +154,7 @@ export class TableColumn {
     /**
      * Column ordering
      */
-     order: number
+    order: number
 
     // -------------------------------------------------------------------------
     // Constructor
