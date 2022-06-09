@@ -396,7 +396,11 @@ export class RelationLoader {
         const createLazyPromise = (generator: () => PromiseLike<any>) => {
             let promise: PromiseLike<any> | undefined
             return {
-                then: (onFulfilled: any, onRejected: any) => (promise ?? (promise = generator())).then(onFulfilled, onRejected)
+                then: (onFulfilled: any, onRejected: any) =>
+                    (promise ?? (promise = generator())).then(
+                        onFulfilled,
+                        onRejected,
+                    ),
             }
         }
 
@@ -409,12 +413,14 @@ export class RelationLoader {
         const setPromise = (entity: ObjectLiteral, value: PromiseLike<any>) => {
             delete entity[resolveIndex]
             delete entity[dataIndex]
-            return entity[promiseIndex] = createLazyPromise(() => value.then(
-                // ensure different value is not assigned yet
-                (result) =>
-                    entity[promiseIndex] === value
-                        ? setData(entity, result)
-                        : result,
+            return (entity[promiseIndex] = createLazyPromise(() =>
+                value.then(
+                    // ensure different value is not assigned yet
+                    (result) =>
+                        entity[promiseIndex] === value
+                            ? setData(entity, result)
+                            : result,
+                ),
             ))
         }
 
@@ -432,15 +438,17 @@ export class RelationLoader {
                     return this[promiseIndex]
 
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
-                const loader = createLazyPromise(() => relationLoader
-                    .load(relation, this, queryRunner)
-                    .then((result) =>
-                        relation.isOneToOne || relation.isManyToOne
-                            ? result.length === 0
-                                ? null
-                                : result[0]
-                            : result,
-                    ))
+                const loader = createLazyPromise(() =>
+                    relationLoader
+                        .load(relation, this, queryRunner)
+                        .then((result) =>
+                            relation.isOneToOne || relation.isManyToOne
+                                ? result.length === 0
+                                    ? null
+                                    : result[0]
+                                : result,
+                        ),
+                )
                 return setPromise(this, loader)
             },
             set: function (value: any | Promise<any>) {
