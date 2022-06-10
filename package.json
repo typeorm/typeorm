@@ -17,7 +17,8 @@
       "types": "./index.d.ts",
       "node": {
         "import": "./index.mjs",
-        "require": "./index.js"
+        "require": "./index.js",
+        "types": "./index.d.ts"
       },
       "browser": {
         "require": "./index.js",
