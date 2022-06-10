@@ -36,7 +36,8 @@ export abstract class AbstractSqliteQueryRunner
      */
     driver: AbstractSqliteDriver
 
-    protected transactionPromise: Promise<any> | null = null
+    private transactionPromiseResolver = (x?: any) => {};
+    transactionPromise: Promise<any> | null = null
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -93,10 +94,15 @@ export abstract class AbstractSqliteQueryRunner
             )
 
         this.isTransactionActive = true
+        this.transactionPromise = new Promise((resolve, reject) => {
+            this.transactionPromiseResolver = resolve
+        })
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
             this.isTransactionActive = false
+            this.transactionPromiseResolver();
+            this.transactionPromise = null;
             throw err
         }
 
@@ -133,6 +139,8 @@ export abstract class AbstractSqliteQueryRunner
         } else {
             await this.query("COMMIT")
             this.isTransactionActive = false
+            this.transactionPromiseResolver();
+            this.transactionPromise = null;
         }
         this.transactionDepth -= 1
 
@@ -155,6 +163,8 @@ export abstract class AbstractSqliteQueryRunner
         } else {
             await this.query("ROLLBACK")
             this.isTransactionActive = false
+            this.transactionPromiseResolver();
+            this.transactionPromise = null;
         }
         this.transactionDepth -= 1
 

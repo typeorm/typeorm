@@ -165,13 +165,13 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
         if (PlatformTools.type === "node") {
             try {
-                const content = Buffer.from(this.databaseConnection.export())
+                const content = Buffer.from(await this.saveExport())
                 await PlatformTools.writeFile(path, content)
             } catch (e) {
                 throw new TypeORMError(`Could not save database, error: ${e}`)
             }
         } else {
-            const database: Uint8Array = this.databaseConnection.export()
+            const database: Uint8Array = await this.saveExport()
             // convert Uint8Array to number array to improve local-storage storage
             const databaseArray = [].slice.call(database)
             if (this.options.useLocalForage) {
@@ -203,7 +203,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     async autoSave() {
         if (this.options.autoSave) {
             if (this.options.autoSaveCallback) {
-                await this.options.autoSaveCallback(this.export())
+                await this.options.autoSaveCallback(await this.saveExport())
             } else {
                 await this.save()
             }
@@ -214,6 +214,19 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Returns the current database as Uint8Array.
      */
     export(): Uint8Array {
+        return this.databaseConnection.export()
+    }
+
+    /**
+     * Returns the current database as Uint8Array after checking for active transactions.
+     * sqljs' export function ends all transactions. If the autosave-function executes a save while an transaction is active,
+     * an error is thrown as soon as typeorm tries to end the transaction. Therefore delay the saving for after the
+     * transaction is done
+     */
+    async saveExport(): Promise<Uint8Array> {
+        if (this.queryRunner instanceof SqljsQueryRunner){
+            await this.queryRunner.transactionPromise;
+        }
         return this.databaseConnection.export()
     }
 
