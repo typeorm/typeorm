@@ -1285,7 +1285,9 @@ export class EntityManager {
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
      */
-    getRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): Repository<Entity> {
         // find already created repository instance and return it if found
         const repository = this.repositories.find(
             (repository) => repository.target === target,
@@ -1351,7 +1353,9 @@ export class EntityManager {
      * sets current EntityManager instance to it. Used to work with custom repositories
      * in transactions.
      */
-    withRepository<Entity extends ObjectLiteral, R extends Repository<Entity>>(repository: R): R {
+    withRepository<Entity extends ObjectLiteral, R extends Repository<Entity>>(
+        repository: R,
+    ): R {
         const repositoryConstructor =
             repository.constructor as typeof Repository
         const { target, manager, queryRunner, ...otherRepositoryProperties } =

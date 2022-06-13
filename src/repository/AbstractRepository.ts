@@ -85,7 +85,9 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     /**
      * Gets the original ORM repository for the given entity class.
      */
-    protected getRepositoryFor<T extends ObjectLiteral>(entity: ObjectType<T>): Repository<T> {
+    protected getRepositoryFor<T extends ObjectLiteral>(
+        entity: ObjectType<T>,
+    ): Repository<T> {
         return this.manager.getRepository(entity)
     }
 

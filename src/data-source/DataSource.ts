@@ -428,7 +428,9 @@ export class DataSource {
     /**
      * Gets repository for the given entity.
      */
-    getRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): Repository<Entity> {
         return this.manager.getRepository(target)
     }
 
