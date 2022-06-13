@@ -1079,7 +1079,7 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Overrides cursor's toArray and next methods to convert results to entity automatically.
      */
-    protected applyEntityTransformationToCursor<Entity>(
+    protected applyEntityTransformationToCursor<Entity extends ObjectLiteral>(
         metadata: EntityMetadata,
         cursor: Cursor<Entity> | AggregationCursor<Entity>,
     ) {
