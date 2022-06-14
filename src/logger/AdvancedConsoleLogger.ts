@@ -7,7 +7,7 @@ import { Logger } from "./Logger"
  * Performs logging of the events in TypeORM.
  * This version of logger uses console to log events and use syntax highlighting.
  */
-export class AdvancedConsoleLogger implements Logger {
+export class AdvancedConsoleLogger implements Logger: any{
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
