@@ -7,7 +7,7 @@ import { Logger } from "./Logger"
  * Performs logging of the events in TypeORM.
  * This version of logger uses console to log events and use syntax highlighting.
  */
-export class AdvancedConsoleLogger implements Logger: any{
+export class AdvancedConsoleLogger implements Logger {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -21,7 +21,11 @@ export class AdvancedConsoleLogger implements Logger: any{
     /**
      * Logs query and parameters used in it.
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    logQuery(
+        query: string,
+        parameters?: any[],
+        queryRunner?: QueryRunner,
+    ): any {
         if (
             this.options === "all" ||
             this.options === true ||
