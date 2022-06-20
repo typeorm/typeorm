@@ -1,0 +1,1 @@
+{"version":3,"sources":["../browser/src/query-builder/InsertOrUpdateOptions.ts"],"names":[],"mappings":"","file":"InsertOrUpdateOptions.js","sourcesContent":["export type InsertOrUpdateOptions = {\n    skipUpdateIfNoValuesChanged?: boolean\n}\n"],"sourceRoot":".."}

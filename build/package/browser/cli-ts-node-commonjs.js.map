@@ -1,0 +1,1 @@
+{"version":3,"sources":["../browser/src/cli-ts-node-commonjs.ts"],"names":[],"mappings":";AACA,OAAO,CAAC,SAAS,CAAC,CAAC,QAAQ,EAAE,CAAA;AAC7B,OAAO,OAAO,CAAA","file":"cli-ts-node-commonjs.js","sourcesContent":["#!/usr/bin/env node\nrequire(\"ts-node\").register()\nimport \"./cli\"\n"],"sourceRoot":"."}
