@@ -1,1 +1,0 @@
-{"version":3,"sources":["../browser/src/data-source/index.ts"],"names":[],"mappings":"AAAA,cAAc,cAAc,CAAA;AAC5B,cAAc,qBAAqB,CAAA","file":"index.js","sourcesContent":["export * from \"./DataSource\"\nexport * from \"./DataSourceOptions\"\n"],"sourceRoot":".."}

@@ -1,1 +1,0 @@
-{"version":3,"sources":["../browser/src/driver/types/UpsertType.ts"],"names":[],"mappings":"","file":"UpsertType.js","sourcesContent":["export type UpsertType = \"on-conflict-do-update\" | \"on-duplicate-key-update\"\n"],"sourceRoot":"../.."}
