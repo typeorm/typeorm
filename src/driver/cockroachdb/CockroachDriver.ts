@@ -120,6 +120,7 @@ export class CockroachDriver implements Driver {
         "blob",
         "date",
         "enum",
+        "geometry",
         "numeric",
         "decimal",
         "dec",
