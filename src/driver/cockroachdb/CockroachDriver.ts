@@ -119,6 +119,7 @@ export class CockroachDriver implements Driver {
         "bytea",
         "blob",
         "date",
+        "enum",
         "numeric",
         "decimal",
         "dec",
