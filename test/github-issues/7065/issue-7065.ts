@@ -50,7 +50,7 @@ describe("github issues > #7065 ChildEntity type relationship produces unexpecte
                     where: {
                         id: 1,
                     },
-                    relations: ["emails", "phones"],
+                    relations: { emails: true, phones: true },
                 })
 
                 expect(result!.emails.length).eq(1)

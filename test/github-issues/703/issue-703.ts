@@ -39,7 +39,7 @@ describe("github issues > #703.findOne does not return an empty array on OneToMa
                         where: {
                             id: 1,
                         },
-                        relations: ["categories"],
+                        relations: { categories: true },
                     })
 
                 loadedPost!.id.should.be.equal(1)

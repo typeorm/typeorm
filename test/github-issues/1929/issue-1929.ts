@@ -30,7 +30,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
                 product = new Product("test3", "label3", 30)
                 await productRepository.save(product)
                 await productRepository.find({
-                    select: ["name", "label"],
+                    select: { name: true, label: true },
                     order: { name: 1 },
                 })
             }),
@@ -47,7 +47,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
                 product = new Product("test3", "label3", 30)
                 await productRepository.save(product)
                 await productRepository.findAndCount({
-                    select: ["name", "label"],
+                    select: { name: true, label: true },
                     order: { name: 1 },
                 })
             }),
@@ -65,7 +65,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
                 const product3 = await productRepository.save(product)
                 await productRepository.find({
                     where: { _id: product3.id },
-                    select: ["name", "label"],
+                    select: { name: true, label: true },
                     order: { name: 1 },
                 })
             }),
@@ -82,7 +82,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
                 product = new Product("test3", "label3", 30)
                 await productRepository.findOne({
                     where: { name: "test2" },
-                    select: ["name", "label"],
+                    select: { name: true, label: true },
                     order: { name: 1 },
                 })
             }),

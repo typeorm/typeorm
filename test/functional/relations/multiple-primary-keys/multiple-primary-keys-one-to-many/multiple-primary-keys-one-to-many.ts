@@ -58,7 +58,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                 await insertSimpleTestData(connection)
 
                 const [user] = await connection.getRepository(User).find({
-                    relations: ["settings"],
+                    relations: { settings: true },
                     // relationLoadStrategy: "join"
                 })
 
@@ -86,7 +86,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
                 const [user] = await connection
                     .getRepository(User)
-                    .find({ relations: ["settings"] })
+                    .find({ relations: { settings: true } })
 
                 // check the saved items have correctly updated value
                 expect(user!).not.to.be.undefined
@@ -117,7 +117,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
                 })
 
                 const [user] = await connection.getRepository(User).find({
-                    relations: ["settings"],
+                    relations: { settings: true },
                 })
 
                 // check that no relational items are found

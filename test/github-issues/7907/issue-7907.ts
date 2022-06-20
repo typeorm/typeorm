@@ -1,0 +1,44 @@
+import "reflect-metadata"
+import { expect } from "chai"
+import { Connection } from "../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { Post } from "./entity/Post"
+
+describe("github issues > #7907 add support for mongodb driver v4", () => {
+    let connections: Connection[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [Post],
+                enabledDrivers: ["mongodb"],
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
+
+    it("should find the Post without throw error: Cannot read property 'prototype' of undefined", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postMongoRepository = connection.getMongoRepository(Post)
+
+                // save a post
+                const post = new Post()
+                post.title = "Post"
+                post.text = "This is a simple post"
+                await postMongoRepository.save(post)
+
+                const findPosts = async () => {
+                    return postMongoRepository.find()
+                }
+                const posts = await findPosts()
+
+                expect(findPosts).to.not.throw()
+                expect(posts).to.have.lengthOf(1)
+                expect(posts[0]).to.be.instanceOf(Post)
+            }),
+        ))
+})
