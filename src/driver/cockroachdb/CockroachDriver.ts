@@ -611,9 +611,7 @@ export class CockroachDriver implements Driver {
         isGenerated?: boolean
         generationStrategy?: "increment" | "uuid" | "rowid"
     }): string {
-        if (column.generationStrategy === "rowid" && column.type === Number) {
-            return "bigint"
-        } else if (
+        if (
             column.type === Number ||
             column.type === "integer" ||
             column.type === "int" ||
