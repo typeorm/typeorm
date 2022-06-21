@@ -429,6 +429,42 @@ export class CockroachDriver implements Driver {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
+        } else if (
+            columnMetadata.type === "enum" ||
+            columnMetadata.type === "simple-enum"
+        ) {
+            if (columnMetadata.isArray) {
+                if (value === "{}") return []
+
+                // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
+                value = (value as string)
+                    .substr(1, (value as string).length - 2)
+                    .split(",")
+                    .map((val) => {
+                        // replace double quotes from the beginning and from the end
+                        if (val.startsWith(`"`) && val.endsWith(`"`))
+                            val = val.slice(1, -1)
+                        // replace double escaped backslash to single escaped e.g. \\\\ -> \\
+                        val = val.replace(/(\\\\)/g, "\\")
+                        // replace escaped double quotes to non-escaped e.g. \"asd\" -> "asd"
+                        return val.replace(/(\\")/g, '"')
+                    })
+
+                // convert to number if that exists in possible enum options
+                value = value.map((val: string) => {
+                    return !isNaN(+val) &&
+                        columnMetadata.enum!.indexOf(parseInt(val)) >= 0
+                        ? parseInt(val)
+                        : val
+                })
+            } else {
+                // convert to number if that exists in possible enum options
+                value =
+                    !isNaN(+value) &&
+                    columnMetadata.enum!.indexOf(parseInt(value)) >= 0
+                        ? parseInt(value)
+                        : value
+            }
         }
 
         if (columnMetadata.transformer)
