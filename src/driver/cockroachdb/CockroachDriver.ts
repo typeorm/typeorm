@@ -121,6 +121,7 @@ export class CockroachDriver implements Driver {
         "date",
         "enum",
         "geometry",
+        "geography",
         "numeric",
         "decimal",
         "dec",
@@ -165,7 +166,7 @@ export class CockroachDriver implements Driver {
     /**
      * Gets list of spatial column data types.
      */
-    spatialTypes: ColumnType[] = []
+    spatialTypes: ColumnType[] = ["geometry", "geography"]
 
     /**
      * Gets list of column data types that support length by a driver.
@@ -741,6 +742,14 @@ export class CockroachDriver implements Driver {
             column.precision !== undefined
         ) {
             type += "(" + column.precision + ")"
+        } else if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
+            if (column.spatialFeatureType != null && column.srid != null) {
+                type = `${column.type}(${column.spatialFeatureType},${column.srid})`
+            } else if (column.spatialFeatureType != null) {
+                type = `${column.type}(${column.spatialFeatureType})`
+            } else {
+                type = column.type
+            }
         }
 
         if (column.isArray) type += " array"
