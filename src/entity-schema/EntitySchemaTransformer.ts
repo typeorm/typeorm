@@ -236,7 +236,7 @@ export class EntitySchemaTransformer {
         }
 
         // add relation id metadata args from the schema
-        if(options.relationIds) {
+        if (options.relationIds) {
             Object.keys(options.relationIds).forEach((relationIdName) => {
                 const relationIdOptions = options.relationIds![relationIdName]!
                 const relationId: RelationIdMetadataArgs = {
@@ -244,7 +244,7 @@ export class EntitySchemaTransformer {
                     relation: relationIdOptions.relationName,
                     target: options.target || options.name,
                     alias: relationIdOptions.alias,
-                    queryBuilderFactory: relationIdOptions.queryBuilderFactory
+                    queryBuilderFactory: relationIdOptions.queryBuilderFactory,
                 }
                 metadataArgsStorage.relationIds.push(relationId)
             })
