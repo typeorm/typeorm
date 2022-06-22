@@ -1042,6 +1042,10 @@ export abstract class QueryBuilder<Entity> {
                     .slice(1)
                     .join(", ")})`
             case "any":
+                if (driver.options.type === "cockroachdb") {
+                    return `${condition.parameters[0]}::STRING = ANY(${condition.parameters[1]}::STRING[])`
+                }
+
                 return `${condition.parameters[0]} = ANY(${condition.parameters[1]})`
             case "isNull":
                 return `${condition.parameters[0]} IS NULL`
