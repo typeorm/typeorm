@@ -865,7 +865,10 @@ export class CockroachDriver implements Driver {
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim()
+                    (columnMetadata.asExpression || "").trim() ||
+                (tableColumn.spatialFeatureType || "").toLowerCase() !==
+                    (columnMetadata.spatialFeatureType || "").toLowerCase() ||
+                tableColumn.srid !== columnMetadata.srid
             )
         })
     }
