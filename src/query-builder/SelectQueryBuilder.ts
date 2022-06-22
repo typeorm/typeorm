@@ -2669,7 +2669,11 @@ export class SelectQueryBuilder<Entity>
                     selectionPath = `${asText}(${selectionPath})`
                 }
 
-                if (this.connection.driver.options.type === "postgres")
+                if (
+                    ["postgres", "cockroachdb"].includes(
+                        this.connection.driver.options.type,
+                    )
+                )
                     if (column.precision) {
                         // cast to JSON to trigger parsing in the driver
                         selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
