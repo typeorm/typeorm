@@ -78,7 +78,7 @@ Here we setup three options:
 Once you setup connection options you can create a new migration using CLI:
 
 ```
-typeorm migration:create /path-to-migrations-dir/PostRefactoring
+typeorm migration:create ./path-to-migrations-dir/PostRefactoring
 
 ```
 
