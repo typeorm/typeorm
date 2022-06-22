@@ -39,7 +39,7 @@ import { TypeORMError } from "../error"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { ObjectLiteral } from "../common/ObjectLiteral.js"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
