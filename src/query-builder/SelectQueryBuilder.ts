@@ -2104,7 +2104,10 @@ export class SelectQueryBuilder<Entity>
             }
         }
 
-        if (driver.options.type === "postgres" && selectDistinctOn.length > 0) {
+        if (
+            DriverUtils.isPostgresFamily(driver) &&
+            selectDistinctOn.length > 0
+        ) {
             const selectDistinctOnMap = selectDistinctOn
                 .map((on) => this.replacePropertyNames(on))
                 .join(", ")
@@ -2669,11 +2672,7 @@ export class SelectQueryBuilder<Entity>
                     selectionPath = `${asText}(${selectionPath})`
                 }
 
-                if (
-                    ["postgres", "cockroachdb"].includes(
-                        this.connection.driver.options.type,
-                    )
-                )
+                if (DriverUtils.isPostgresFamily(this.connection.driver))
                     if (column.precision) {
                         // cast to JSON to trigger parsing in the driver
                         selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`

@@ -584,8 +584,9 @@ export class UpdateQueryBuilder<Entity>
                                     expression = `${geomFromText}(${paramName})`
                                 }
                             } else if (
-                                this.connection.driver.options.type ===
-                                    "postgres" &&
+                                DriverUtils.isPostgresFamily(
+                                    this.connection.driver,
+                                ) &&
                                 this.connection.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
