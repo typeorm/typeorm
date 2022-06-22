@@ -36,7 +36,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { ObjectLiteral } from "../common/ObjectLiteral.js"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
