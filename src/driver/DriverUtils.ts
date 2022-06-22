@@ -33,7 +33,9 @@ export class DriverUtils {
     }
 
     static isPostgresFamily(driver: Driver): boolean {
-        return ["postgres", "aurora-postgres"].includes(driver.options.type)
+        return ["postgres", "aurora-postgres", "cockroachdb"].includes(
+            driver.options.type,
+        )
     }
 
     /**
