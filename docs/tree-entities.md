@@ -164,7 +164,7 @@ To bind tree entities to each other, it is required to set the parent in the chi
 for example:
 
 ```typescript
-const a1 = new Category("a1")
+const a1 = new Category()
 a1.name = "a1"
 await dataSource.manager.save(a1)
 
