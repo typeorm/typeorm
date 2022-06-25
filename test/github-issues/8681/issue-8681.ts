@@ -25,7 +25,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
     it("should .save() and .create() complex deep partial entities", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const myThing: DeepPartial<Thing> = {
+                const myThing = {
                     items: [{ id: 1 }, { id: 2 }],
                 }
 
