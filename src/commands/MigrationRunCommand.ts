@@ -72,7 +72,8 @@ export class MigrationRunCommand implements yargs.CommandModule {
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration run:", err)
 
-            if (dataSource) await dataSource.destroy()
+            if (dataSource && dataSource.isInitialized)
+                await dataSource.destroy()
 
             process.exit(1)
         }
