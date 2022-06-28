@@ -1,3 +1,10 @@
+## [0.3.6](https://github.com/typeorm/typeorm/compare/0.3.5...0.3.6) (2022-04-12)
+
+### Features
+
+* add `for_key_share` ("FOR KEY SHARE") lock mode for postgres driver ([#8879](https://github.com/typeorm/typeorm/issues/8879)) ([4687be8](https://github.com/typeorm/typeorm/commit/4687be8b77b0f807b2fe4b1e2278e05d0dbd4431)), closes [#8878](https://github.com/typeorm/typeorm/issues/8878)
+* new driver: Cloud Spanner ([#8730](https://github.com/typeorm/typeorm/issues/8730)) ([62518ae](https://github.com/typeorm/typeorm/commit/62518ae1226f22b2f230afa615532c92f1544f01))
+
 ## [0.3.5](https://github.com/typeorm/typeorm/compare/0.3.4...0.3.5) (2022-04-05)
 
 ### Bug Fixes

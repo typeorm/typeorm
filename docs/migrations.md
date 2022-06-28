@@ -78,7 +78,8 @@ Here we setup three options:
 Once you setup connection options you can create a new migration using CLI:
 
 ```
-typeorm migration:create -n PostRefactoring
+typeorm migration:create ./path-to-migrations-dir/PostRefactoring
+
 ```
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
@@ -211,7 +212,7 @@ module.exports = class PostRefactoringTIMESTAMP {
 
     async down(queryRunner) {
         await queryRunner.query(
-            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
+            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
         )
     }
 }

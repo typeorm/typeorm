@@ -9,7 +9,10 @@ import { expect } from "chai"
 import { EntitySchema, InsertResult } from "../../../src"
 
 describe("github issues > #1510 entity schema does not support mode=objectId", () => {
-    const UserEntity = new EntitySchema<any>({
+    const UserEntity = new EntitySchema<{
+        _id: number
+        name: string
+    }>({
         name: "User",
         tableName: "test_1510_users",
         columns: {
@@ -25,7 +28,10 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
         },
     })
 
-    const UserWithoutObjectIDEntity = new EntitySchema<any>({
+    const UserWithoutObjectIDEntity = new EntitySchema<{
+        _id: number
+        name: string
+    }>({
         name: "UserWithoutObjectID",
         tableName: "test_1510_users2",
         columns: {
@@ -57,7 +63,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
     it("throws an error because there is no object id defined", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository("UserWithoutObjectID")
+                const repo = connection.getRepository(UserWithoutObjectIDEntity)
 
                 try {
                     await repo.insert({
@@ -74,7 +80,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
     it("should create entities without throwing an error when objectId is defined", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository("User")
+                const repo = connection.getRepository(UserEntity)
 
                 const result: InsertResult = await repo.insert({
                     name: "Dotan",
