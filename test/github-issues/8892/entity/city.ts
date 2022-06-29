@@ -23,7 +23,7 @@ export class City {
     }[]
 
     @ManyToMany(() => Zip, (zip) => zip.cities, {
-        cascade: true,
+        // cascade: true,
     })
     @JoinTable()
     zips: Zip[]
