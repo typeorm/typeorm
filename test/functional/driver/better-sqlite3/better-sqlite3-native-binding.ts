@@ -14,7 +14,7 @@ const pathToBetterSqliteNode = join(
     "../../../../../../node_modules/better-sqlite3/build/Release/better_sqlite3.node",
 )
 
-describe.only("option nativeBinding for better-sqlite3", () => {
+describe("option nativeBinding for better-sqlite3", () => {
     let connections: DataSource[]
     before(
         async () =>
