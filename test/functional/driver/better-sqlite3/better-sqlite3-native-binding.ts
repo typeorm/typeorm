@@ -33,9 +33,11 @@ describe.only("option nativeBinding for better-sqlite3", () => {
         Promise.all(
             connections.map(async (connection) => {
                 expect(
-                    (connection.driver.options as BetterSqlite3ConnectionOptions)
-                        .nativeBinding,
-                ).to.be.eql(pathToBetterSqliteNode);
+                    (
+                        connection.driver
+                            .options as BetterSqlite3ConnectionOptions
+                    ).nativeBinding,
+                ).to.be.eql(pathToBetterSqliteNode)
             }),
         ))
 })
