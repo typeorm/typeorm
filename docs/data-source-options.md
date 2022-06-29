@@ -202,6 +202,8 @@ Different RDBMS-es have their own specific options.
 
 -   `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
 
+-   `nativeBinding` - Relative or absolute path to the native addon (better_sqlite3.node).
+
 ## `capacitor` data source options
 
 -   `database` - Database name (capacitor-sqlite will add the suffix `SQLite.db`)
