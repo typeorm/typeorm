@@ -627,12 +627,37 @@ export class ColumnMetadata {
                 const propertyName = propertyNames.shift()
 
                 if (propertyName) {
-                    const submap = extractEmbeddedColumnValue(
-                        propertyNames,
-                        value[propertyName],
-                    )
-                    if (Object.keys(submap).length > 0) {
-                        return { [propertyName]: submap }
+                    //MongoDb embedded arrays need to be extracted with additional recursive calls. Otherwise, the arrays are not persisted
+                    const isMongoColumn = this.entityMetadata.connection.options.type === "mongodb";
+                    if(isMongoColumn) {
+                        if(Array.isArray(value)) {
+                            const mappedArray: any = [];
+
+                            value.forEach((arrayElement) => {
+                                const mappedArrayElement = extractEmbeddedColumnValue(propertyNames, arrayElement[propertyName]);
+                                if (Object.keys(mappedArrayElement).length > 0) {
+                                    mappedArray.push({ [propertyName]: mappedArrayElement });
+                                } else {
+                                    if(Array.isArray(mappedArrayElement)) {
+                                        mappedArray.push({ [propertyName]: [] });
+                                    } else {
+                                        mappedArray.push({ [propertyName]: {} });
+                                    }
+                                }
+                            });
+
+                            return mappedArray;
+                        } else {
+                            const submap = extractEmbeddedColumnValue(propertyNames, value[propertyName]);
+                            if (Object.keys(submap).length > 0) {
+                                return { [propertyName]: submap };
+                            }
+                        }
+                    } else {
+                        const submap = extractEmbeddedColumnValue(propertyNames, value[propertyName]);
+                        if (Object.keys(submap).length > 0) {
+                            return { [propertyName]: submap };
+                        }
                     }
                     return {}
                 }
