@@ -1,9 +1,9 @@
 import mkdirp from "mkdirp"
 import path from "path"
-import { DriverPackageNotInstalledError } from '../../error'
-import { DriverOptionNotSetError } from '../../error'
+import { DriverPackageNotInstalledError } from "../../error"
+import { DriverOptionNotSetError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from '../../data-source'
+import { DataSource } from "../../data-source"
 import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
@@ -148,7 +148,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             fileMustExist,
             timeout,
             verbose,
-            nativeBinding
+            nativeBinding,
         })
         // in the options, if encryption key for SQLCipher is setted.
         // Must invoke key pragma before trying to do any other interaction with the database.
