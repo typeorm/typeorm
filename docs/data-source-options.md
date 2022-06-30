@@ -306,7 +306,7 @@ Different RDBMS-es have their own specific options.
 
 -   `options.packetSize` - The size of TDS packets (subject to negotiation with the server). Should be a power of 2. (default: `4096`).
 
--   `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `true`).
+-   `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `false`).
 
 -   `options.abortTransactionOnError` - A boolean determining whether to rollback a transaction automatically if any
     error is encountered during the given transaction's execution. This sets the value for `SET XACT_ABORT` during the
