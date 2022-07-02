@@ -12,7 +12,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
     : Property extends Array<infer I>
     ? FindOptionsWhereProperty<NonNullable<I>>
     : Property extends Function
-    ? never
+    ? any
     : Property extends Buffer
     ? Property | FindOperator<Property>
     : Property extends Date
