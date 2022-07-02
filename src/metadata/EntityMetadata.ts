@@ -847,16 +847,18 @@ export class EntityMetadata {
     }
 
     /**
-     * In the case of SingleTableInheritance, find the correct child metadata
+     * In the case of SingleTableInheritance, find the correct metadata
      * for a given value.
      *
      * @param value The value to find the metadata for.
-     * @returns The found metadata for the child entity or the base metadata if no child was found.
+     * @returns The found metadata for the entity or the base metadata if no matching metadata
+     *          was found in the whole inheritance tree.
      */
-    findChildMetadata(value: any): EntityMetadata {
+    findInheritanceMetadata(value: any): EntityMetadata {
         // Check for single table inheritance and find the correct metadata in that case.
         // Goal is to use the correct discriminator as we could have a repository
         // for an (abstract) base class and thus the target would not match.
+
         if (
             this.inheritancePattern === "STI" &&
             this.childEntityMetadatas.length > 0
@@ -887,7 +889,7 @@ export class EntityMetadata {
         value: any,
         relation: RelationMetadata,
     ): EntityMetadata {
-        return relation.inverseEntityMetadata.findChildMetadata(value)
+        return relation.inverseEntityMetadata.findInheritanceMetadata(value)
     }
 
     // -------------------------------------------------------------------------

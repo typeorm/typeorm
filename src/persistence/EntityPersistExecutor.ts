@@ -83,7 +83,7 @@ export class EntityPersistExecutor {
 
                         let metadata = this.connection
                             .getMetadata(entityTarget)
-                            .findChildMetadata(entity)
+                            .findInheritanceMetadata(entity)
 
                         subjects.push(
                             new Subject({

@@ -83,7 +83,7 @@ export class PlainObjectToNewEntityTransformer {
                         })
 
                         const inverseEntityMetadata =
-                            relation.inverseEntityMetadata.findChildMetadata(
+                            relation.inverseEntityMetadata.findInheritanceMetadata(
                                 objectRelatedValueItem,
                             )
 
@@ -115,7 +115,7 @@ export class PlainObjectToNewEntityTransformer {
                     }
 
                     const inverseEntityMetadata =
-                        relation.inverseEntityMetadata.findChildMetadata(
+                        relation.inverseEntityMetadata.findInheritanceMetadata(
                             objectRelatedValue,
                         )
 
