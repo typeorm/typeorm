@@ -64,6 +64,7 @@ export class MigrationExecutor {
     public async executeMigration(migration: Migration): Promise<Migration> {
         return this.withQueryRunner(async (queryRunner) => {
             await this.createMigrationsTableIfNotExist(queryRunner)
+            await this.createMetaDataTableIfNotExist(queryRunner)
             await queryRunner.beforeMigration()
             await (migration.instance as any).up(queryRunner)
             await queryRunner.afterMigration()
@@ -86,6 +87,7 @@ export class MigrationExecutor {
     public async getExecutedMigrations(): Promise<Migration[]> {
         return this.withQueryRunner(async (queryRunner) => {
             await this.createMigrationsTableIfNotExist(queryRunner)
+            await this.createMetaDataTableIfNotExist(queryRunner)
 
             return await this.loadExecutedMigrations(queryRunner)
         })
@@ -135,6 +137,7 @@ export class MigrationExecutor {
             this.queryRunner || this.connection.createQueryRunner()
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
+        await this.createMetaDataTableIfNotExist(queryRunner)
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(
             queryRunner,
@@ -174,6 +177,7 @@ export class MigrationExecutor {
             this.queryRunner || this.connection.createQueryRunner()
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
+        await this.createMetaDataTableIfNotExist(queryRunner)
 
         // create the typeorm_metadata table if necessary
         const schemaBuilder = this.connection.driver.createSchemaBuilder()
@@ -319,6 +323,7 @@ export class MigrationExecutor {
 
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
+        await this.createMetaDataTableIfNotExist(queryRunner)
 
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(
@@ -448,6 +453,81 @@ export class MigrationExecutor {
                                     .migrationName,
                             }),
                             isNullable: false,
+                        },
+                    ],
+                }),
+            )
+        }
+    }
+
+    /**
+     * Creates table for typeorm metadata named "typeorm_metadata" if options.metadataTableName is not set.
+     */
+    protected async createMetaDataTableIfNotExist(
+        queryRunner: QueryRunner,
+    ): Promise<void> {
+        const metaDataTableName =
+            this.connection.metadataTableName ?? "typeorm_metadata"
+        const tableExist = await queryRunner.hasTable(metaDataTableName)
+        if (!tableExist) {
+            await queryRunner.createTable(
+                new Table({
+                    database: this.migrationsDatabase,
+                    schema: this.migrationsSchema,
+                    name:
+                        queryRunner.connection.options.metadataTableName ??
+                        "typeorm_metadata",
+                    columns: [
+                        {
+                            name: "type",
+                            type: this.connection.driver.normalizeType({
+                                type: this.connection.driver.mappedDataTypes
+                                    .metadataType,
+                            }),
+                            isNullable: false,
+                        },
+                        {
+                            name: "database",
+                            type: this.connection.driver.normalizeType({
+                                type: this.connection.driver.mappedDataTypes
+                                    .metadataDatabase,
+                            }),
+                            default: null,
+                            isNullable: true,
+                        },
+                        {
+                            name: "schema",
+                            type: this.connection.driver.normalizeType({
+                                type: this.connection.driver.mappedDataTypes
+                                    .metadataSchema,
+                            }),
+                            default: null,
+                            isNullable: true,
+                        },
+                        {
+                            name: "table",
+                            type: this.connection.driver.normalizeType({
+                                type: this.connection.driver.mappedDataTypes
+                                    .metadataTable,
+                            }),
+                            default: null,
+                            isNullable: true,
+                        },
+                        {
+                            name: "name",
+                            type: this.connection.driver.normalizeType({
+                                type: this.connection.driver.mappedDataTypes
+                                    .metadataName,
+                            }),
+                            default: null,
+                            isNullable: true,
+                        },
+                        {
+                            name: "value",
+                            type: this.connection.driver.normalizeType({
+                                type: this.connection.driver.mappedDataTypes
+                                    .metadataValue,
+                            }),
                         },
                     ],
                 }),
