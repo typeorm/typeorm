@@ -26,7 +26,7 @@ export type FindOptionsSelectProperty<Property> = Property extends Promise<
  */
 export type FindOptionsSelect<Entity> = {
     [P in keyof Entity]?: P extends "toString"
-        ? any
+        ? unknown
         : FindOptionsSelectProperty<NonNullable<Entity[P]>>
 }
 
