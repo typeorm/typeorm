@@ -12,7 +12,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
     : Property extends Array<infer I>
     ? FindOptionsWhereProperty<NonNullable<I>>
     : Property extends Function
-    ? never
+    ? unknown
     : Property extends Buffer
     ? Property | FindOperator<Property>
     : Property extends Date
@@ -32,5 +32,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
  * Used for find operations.
  */
 export type FindOptionsWhere<Entity> = {
-    [P in keyof Entity]?: FindOptionsWhereProperty<NonNullable<Entity[P]>>
+    [P in keyof Entity]?: P extends "toString"
+        ? unknown
+        : FindOptionsWhereProperty<NonNullable<Entity[P]>>
 }

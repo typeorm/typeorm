@@ -573,7 +573,7 @@ describe("find options > where", () => {
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
                         where: {
-                            author: true,
+                            doSomething: 12,
                         },
                         order: {
                             id: "asc",
