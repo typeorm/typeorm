@@ -838,8 +838,10 @@ const photosSums = await dataSource
     .groupBy("user.id")
     .getRawMany()
 
-// result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
+// result will be like this: [{ id: '1', sum: '25' }, { id: '2', sum: '13' }, ...]
 ```
+Note: When using `getRawOne()` or `getRawMany()`, parameters in a row are usually returned as string. 
+Because they return the values returned from database driver
 
 ## Streaming result data
 
