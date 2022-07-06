@@ -60,6 +60,9 @@ export class ConnectionOptionsEnvReader {
                 migrationsTableName: PlatformTools.getEnvVariable(
                     "TYPEORM_MIGRATIONS_TABLE_NAME",
                 ),
+                migrationsTransactionMode: PlatformTools.getEnvVariable(
+                    "TYPEORM_MIGRATIONS_TRANSACTION_MODE",
+                ),
                 metadataTableName: PlatformTools.getEnvVariable(
                     "TYPEORM_METADATA_TABLE_NAME",
                 ),
