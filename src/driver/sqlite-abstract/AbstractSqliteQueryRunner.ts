@@ -1690,7 +1690,11 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Builds create table sql.
      */
-    protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
+    protected createTableSql(
+        table: Table,
+        createForeignKeys?: boolean,
+        temporaryTable?: boolean,
+    ): Query {
         const primaryColumns = table.columns.filter(
             (column) => column.isPrimary,
         )
@@ -1711,6 +1715,14 @@ export abstract class AbstractSqliteQueryRunner
         let sql = `CREATE TABLE ${this.escapePath(
             table.name,
         )} (${columnDefinitions}`
+
+        let [databaseNew, tableName] = this.splitTablePath(table.name)
+        const newTableName = temporaryTable
+            ? `${databaseNew ? `${databaseNew}.` : ""}${tableName.replace(
+                  /^temporary_/,
+                  "",
+              )}`
+            : table.name
 
         // need for `addColumn()` method, because it recreates table.
         table.columns
@@ -1739,7 +1751,7 @@ export abstract class AbstractSqliteQueryRunner
                     const uniqueName = unique.name
                         ? unique.name
                         : this.connection.namingStrategy.uniqueConstraintName(
-                              table,
+                              newTableName,
                               unique.columnNames,
                           )
                     const columnNames = unique.columnNames
@@ -1758,7 +1770,7 @@ export abstract class AbstractSqliteQueryRunner
                     const checkName = check.name
                         ? check.name
                         : this.connection.namingStrategy.checkConstraintName(
-                              table,
+                              newTableName,
                               check.expression!,
                           )
                     return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
@@ -1788,7 +1800,7 @@ export abstract class AbstractSqliteQueryRunner
                         .join(", ")
                     if (!fk.name)
                         fk.name = this.connection.namingStrategy.foreignKeyName(
-                            table,
+                            newTableName,
                             fk.columnNames,
                             this.getTablePath(fk),
                             fk.referencedColumnNames,
@@ -1983,7 +1995,7 @@ export abstract class AbstractSqliteQueryRunner
         }temporary_${tableNameNew}`
 
         // create new table
-        upQueries.push(this.createTableSql(newTable, true))
+        upQueries.push(this.createTableSql(newTable, true, true))
         downQueries.push(this.dropTableSql(newTable))
 
         // migrate all data from the old table into new table
