@@ -623,10 +623,13 @@ export abstract class QueryBuilder<Entity> {
      * schema name, otherwise returns escaped table name.
      */
     protected getTableName(tablePath: string): string {
-        const tablePathArray = tablePath.split(".");
-        if (this.connection.driver.options.type === 'oracle' && tablePathArray.length == 2) {
+        const tablePathArray = tablePath.split(".")
+        if (
+            this.connection.driver.options.type === "oracle" &&
+            tablePathArray.length == 2
+        ) {
             // do not escape schema name in oracle
-            return tablePathArray[0] + "." + this.escape(tablePathArray[1]);
+            return tablePathArray[0] + "." + this.escape(tablePathArray[1])
         } else {
             return tablePathArray
                 .map((i) => {
