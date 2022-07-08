@@ -103,21 +103,21 @@ Most tests will benefit from using this template as a starting point:
 ```ts
 import "reflect-metadata";
 import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { Connection } from "../../../src/connection/Connection";
+import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai";
 
 describe("github issues > #<issue number> <issue title>", () => {
 
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
+    let dataSources: DataSource[];
+    before(async () => dataSources = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchema: true,
     }));
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+    beforeEach(() => reloadTestingDatabases(dataSources));
+    after(() => closeTestingConnections(dataSources));
 
-    it("should <put a detailed description of what it should do here>", () => Promise.all(connections.map(async connection => {
+    it("should <put a detailed description of what it should do here>", () => Promise.all(dataSources.map(async dataSource => {
 
        // tests go here
 
