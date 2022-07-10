@@ -36,6 +36,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -298,7 +299,7 @@ export class EntityManager {
     /**
      * Merges two entities into one new entity.
      */
-    merge<Entity>(
+    merge<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         mergeIntoEntity: Entity,
         ...entityLikes: DeepPartial<Entity>[]
@@ -321,7 +322,7 @@ export class EntityManager {
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
      */
-    async preload<Entity>(
+    async preload<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         entityLike: DeepPartial<Entity>,
     ): Promise<Entity | undefined> {
@@ -398,7 +399,7 @@ export class EntityManager {
     /**
      * Saves a given entity in the database.
      */
-    save<Entity, T extends DeepPartial<Entity>>(
+    save<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: T | T[],
         maybeOptions?: SaveOptions,
@@ -468,7 +469,7 @@ export class EntityManager {
     /**
      * Removes a given entity from the database.
      */
-    remove<Entity>(
+    remove<Entity extends ObjectLiteral>(
         targetOrEntity: (Entity | Entity[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: Entity | Entity[],
         maybeOptions?: RemoveOptions,
@@ -538,7 +539,7 @@ export class EntityManager {
     /**
      * Records the delete date of one or many given entities.
      */
-    softRemove<Entity, T extends DeepPartial<Entity>>(
+    softRemove<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: T | T[],
         maybeOptions?: SaveOptions,
@@ -611,7 +612,7 @@ export class EntityManager {
     /**
      * Recovers one or many given entities.
      */
-    recover<Entity, T extends DeepPartial<Entity>>(
+    recover<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
         maybeEntityOrOptions?: T | T[],
         maybeOptions?: SaveOptions,
@@ -843,7 +844,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    softDelete<Entity>(
+    softDelete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -897,7 +898,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    restore<Entity>(
+    restore<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -1284,7 +1285,9 @@ export class EntityManager {
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
      */
-    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): Repository<Entity> {
         // find already created repository instance and return it if found
         const repository = this.repositories.find(
             (repository) => repository.target === target,
@@ -1317,7 +1320,7 @@ export class EntityManager {
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
      */
-    getTreeRepository<Entity>(
+    getTreeRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): TreeRepository<Entity> {
         // tree tables aren't supported by some drivers (mongodb)
@@ -1339,7 +1342,7 @@ export class EntityManager {
     /**
      * Gets mongodb repository for the given entity class.
      */
-    getMongoRepository<Entity>(
+    getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): MongoRepository<Entity> {
         return this.connection.getMongoRepository<Entity>(target)
@@ -1350,7 +1353,9 @@ export class EntityManager {
      * sets current EntityManager instance to it. Used to work with custom repositories
      * in transactions.
      */
-    withRepository<Entity, R extends Repository<Entity>>(repository: R): R {
+    withRepository<Entity extends ObjectLiteral, R extends Repository<Entity>>(
+        repository: R,
+    ): R {
         const repositoryConstructor =
             repository.constructor as typeof Repository
         const { target, manager, queryRunner, ...otherRepositoryProperties } =

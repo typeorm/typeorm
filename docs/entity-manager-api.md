@@ -304,7 +304,7 @@ const userRepository = manager.getMongoRepository(User)
     Learn more about [Custom repositories](custom-repository.md).
 
 ```typescript
-const myUserRepository = manager.getCustomRepository(UserRepository)
+const myUserRepository = manager.withRepository(UserRepository)
 ```
 
 -   `release` - Releases query runner of an entity manager.
