@@ -121,4 +121,10 @@ export class Post {
 
     @Column("simple-enum", { enum: FruitEnum })
     simpleClassEnum1: FruitEnum
+
+    @Column("json")
+    json: { param: string }
+
+    @Column("timestamp", { name: "created_at", default:  "CURRENT_TIMESTAMP"})
+    createdAt: Date;
 }

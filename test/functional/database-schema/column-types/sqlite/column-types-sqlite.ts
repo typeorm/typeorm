@@ -63,6 +63,8 @@ describe("database schema > column types > sqlite", () => {
                 post.simpleJson = { param: "VALUE" }
                 post.simpleEnum = "A"
                 post.simpleClassEnum1 = FruitEnum.Apple
+                post.json = { param: "hello" }
+                post.createdAt = new Date()
                 await postRepository.save(post)
 
                 const loadedPost = (await postRepository.findOneBy({ id: 1 }))!
@@ -109,6 +111,10 @@ describe("database schema > column types > sqlite", () => {
                 loadedPost.simpleClassEnum1.should.be.equal(
                     post.simpleClassEnum1,
                 )
+                loadedPost.json.should.be.equal(post.json)
+                loadedPost.createdAt
+                    .valueOf()
+                    .should.be.equal(post.createdAt.valueOf())
 
                 table!.findColumnByName("id")!.type.should.be.equal("integer")
                 table!.findColumnByName("name")!.type.should.be.equal("varchar")
@@ -200,6 +206,12 @@ describe("database schema > column types > sqlite", () => {
                 table!
                     .findColumnByName("simpleClassEnum1")!
                     .enum![2].should.be.equal("banana")
+                table!
+                    .findColumnByName("json")!
+                    .type.should.be.equal("json")
+                table!
+                    .findColumnByName("created_at")!
+                    .type.should.be.equal("created_at")
             }),
         ))
 
