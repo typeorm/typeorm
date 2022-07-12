@@ -14,6 +14,7 @@ import { RelationMetadata } from "../metadata/RelationMetadata"
 import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { TypeORMError } from "../error"
 import { WhereClause } from "./WhereClause"
+import { UpsertType } from "../driver/types/UpsertType"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -114,6 +115,7 @@ export class QueryExpressionMap {
         columns?: string[]
         overwrite?: string[]
         skipUpdateIfNoValuesChanged?: boolean
+        upsertType?: UpsertType
     }
 
     /**

@@ -1,32 +1,33 @@
-import { Driver } from "../Driver"
-import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { DriverUtils } from "../DriverUtils"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import { Table } from "../../schema-builder/table/Table"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { View } from "../../schema-builder/view/View"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { DateUtils } from "../../util/DateUtils"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { ObjectUtils } from "../../util/ObjectUtils"
+import { OrmUtils } from "../../util/OrmUtils"
+import { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
+import { DataTypeDefaults } from "../types/DataTypeDefaults"
+import { MappedColumnTypes } from "../types/MappedColumnTypes"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { UpsertType } from "../types/UpsertType"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import { CockroachConnectionOptions } from "./CockroachConnectionOptions"
-import { DateUtils } from "../../util/DateUtils"
-import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
 import { CockroachQueryRunner } from "./CockroachQueryRunner"
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { ObjectUtils } from "../../util/ObjectUtils"
-import { InstanceChecker } from "../../util/InstanceChecker"
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -161,7 +162,10 @@ export class CockroachDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-conflict-do-update"
+    readonly supportedUpsertTypes: UpsertType[] = [
+        "on-conflict-do-update",
+        "upsert",
+    ]
 
     /**
      * Gets list of spatial column data types.

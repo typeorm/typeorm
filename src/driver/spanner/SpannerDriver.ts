@@ -99,7 +99,7 @@ export class SpannerDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = undefined
+    readonly supportedUpsertTypes = undefined
 
     /**
      * Gets list of spatial column data types.

@@ -178,6 +178,7 @@ await repository.upsert(
     {
         conflictPaths: ["externalId"],
         skipUpdateIfNoValuesChanged: true, // supported by postgres, skips update if it would not change row values
+        upsertType: "upsert", //  "on-conflict-do-update" | "on-duplicate-key-update" | "upsert" - optionally provide an UpsertType - 'upsert' is currently only sypported by CockroachDB
     },
 )
 /** executes

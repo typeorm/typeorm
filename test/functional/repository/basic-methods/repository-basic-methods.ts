@@ -440,7 +440,7 @@ describe("repository > basic methods", () => {
         it("should first create then update an entity", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes) return
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
                     )
@@ -541,7 +541,7 @@ describe("repository > basic methods", () => {
         it("should bulk upsert", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes) return
 
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
@@ -589,7 +589,7 @@ describe("repository > basic methods", () => {
         it("should not overwrite unspecified properties", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes) return
 
                     const postObjects = connection.getRepository(Post)
                     const externalId = "external-no-overwrite-unrelated"
@@ -688,7 +688,7 @@ describe("repository > basic methods", () => {
         it("should upsert with embedded columns", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes) return
 
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
@@ -746,7 +746,7 @@ describe("repository > basic methods", () => {
         it("should upsert on one-to-one relation", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes) return
 
                     const oneToOneRepository = connection.getRepository(
                         OneToOneRelationEntity,
@@ -784,7 +784,7 @@ describe("repository > basic methods", () => {
         it("should bulk upsert with embedded columns", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes) return
 
                     const embeddedConstraintObjects =
                         connection.getRepository(EmbeddedUQEntity)
@@ -837,7 +837,7 @@ describe("repository > basic methods", () => {
         it("should throw if using an unsupported driver", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType != null) return
+                    if (connection.driver.supportedUpsertTypes) return
 
                     const postRepository = connection.getRepository(Post)
                     const externalId = "external-2"
