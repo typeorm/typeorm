@@ -25,7 +25,9 @@ export type FindOptionsOrderProperty<Property> = Property extends Promise<
  * Order by find options.
  */
 export type FindOptionsOrder<Entity> = {
-    [P in keyof Entity]?: FindOptionsOrderProperty<NonNullable<Entity[P]>>
+    [P in keyof Entity]?: P extends "toString"
+        ? unknown
+        : FindOptionsOrderProperty<NonNullable<Entity[P]>>
 }
 
 /**

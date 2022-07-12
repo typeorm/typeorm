@@ -32,5 +32,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
  * Used for find operations.
  */
 export type FindOptionsWhere<Entity> = {
-    [P in keyof Entity]?: FindOptionsWhereProperty<NonNullable<Entity[P]>>
+    [P in keyof Entity]?: P extends "toString"
+        ? unknown
+        : FindOptionsWhereProperty<NonNullable<Entity[P]>>
 }
