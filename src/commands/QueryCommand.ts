@@ -71,10 +71,12 @@ export class QueryCommand implements yargs.CommandModule {
             await queryRunner.release()
             await dataSource.destroy()
         } catch (err) {
-            if (queryRunner) await (queryRunner as QueryRunner).release()
-            if (dataSource) await dataSource.destroy()
-
             PlatformTools.logCmdErr("Error during query execution:", err)
+
+            if (queryRunner) await (queryRunner as QueryRunner).release()
+            if (dataSource && dataSource.isInitialized)
+                await dataSource.destroy()
+
             process.exit(1)
         }
     }

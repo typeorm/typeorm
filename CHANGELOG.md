@@ -1,3 +1,47 @@
+## [0.3.7](https://github.com/typeorm/typeorm/compare/0.3.6...0.3.7) (2022-06-29)
+
+### Bug Fixes
+
+* add missing `enumName` support for EntitySchema ([#9024](https://github.com/typeorm/typeorm/issues/9024)) ([676fd1b](https://github.com/typeorm/typeorm/commit/676fd1bf772db535bd2c084ebadd9f5c0661ca5e))
+* add missing connect call on RedisQueryResultCache connect ([#8894](https://github.com/typeorm/typeorm/issues/8894)) ([7dfb69f](https://github.com/typeorm/typeorm/commit/7dfb69f3664458d6f9f299f5bdbce4bed0b7994f))
+* add SET TRANSACTION AUTOCOMMIT DDL statements (SAP HANA) ([#9020](https://github.com/typeorm/typeorm/issues/9020)) ([cac648e](https://github.com/typeorm/typeorm/commit/cac648e633e0011d42a8a0c4ebcf900f6675d645))
+* call dataSource.destroy() only on initialized dataSource in CLI commands ([#9146](https://github.com/typeorm/typeorm/issues/9146)) ([a100a7a](https://github.com/typeorm/typeorm/commit/a100a7a7f1c17432549e5e93fb141d0f52062213))
+* expo infinite loop on SAVEPOINT ([#8984](https://github.com/typeorm/typeorm/issues/8984)) ([ec23922](https://github.com/typeorm/typeorm/commit/ec23922da745fde7c1e7e353777327f40fbaca28))
+* fixes recursive document to entity attributes mapping ([#9050](https://github.com/typeorm/typeorm/issues/9050)) ([40155d6](https://github.com/typeorm/typeorm/commit/40155d6ceed1f33f26da548681644c17625605e7)), closes [#9049](https://github.com/typeorm/typeorm/issues/9049)
+* log command error prior to calling destroy ([#9135](https://github.com/typeorm/typeorm/issues/9135)) ([bf17381](https://github.com/typeorm/typeorm/commit/bf17381fd2f949b36394b3cfa0199831d41f67dc))
+* make soft-remove and recover events importable from index ([#9110](https://github.com/typeorm/typeorm/issues/9110)) ([e296126](https://github.com/typeorm/typeorm/commit/e2961263e07ee058d5b1c3706cea21b3ae24d776)), closes [#9108](https://github.com/typeorm/typeorm/issues/9108)
+* migration successful now displays name of the migration file ([#8904](https://github.com/typeorm/typeorm/issues/8904)) ([49cbe23](https://github.com/typeorm/typeorm/commit/49cbe232776a5cbe4369a5fed08221dcff8d59e2))
+* release newly created runner when no runner provided in DbQueryResultCache ([#8969](https://github.com/typeorm/typeorm/issues/8969)) ([ec05f1d](https://github.com/typeorm/typeorm/commit/ec05f1d58a08b3cdb72243856a186fef738a236e)), closes [#4866](https://github.com/typeorm/typeorm/issues/4866)
+* resolve cli init peer dependency issues ([#8977](https://github.com/typeorm/typeorm/issues/8977)) ([f7578d4](https://github.com/typeorm/typeorm/commit/f7578d48ef160634744b591636b903728ea79120)), closes [#8975](https://github.com/typeorm/typeorm/issues/8975)
+* resolve ESM module declaration file correctly ([#9097](https://github.com/typeorm/typeorm/issues/9097)) ([506133e](https://github.com/typeorm/typeorm/commit/506133e2179529bf3add2b0b982613835d321af6))
+* support for TypeScript 4.8 ([#9106](https://github.com/typeorm/typeorm/issues/9106)) ([d924b70](https://github.com/typeorm/typeorm/commit/d924b705e5ea4ff57c853e8848eeb1f3b90c0a71)), closes [/github.com/microsoft/TypeScript/issues/49461#issuecomment-1154443477](https://github.com//github.com/microsoft/TypeScript/issues/49461/issues/issuecomment-1154443477)
+* update mssql peerDependency ([#8887](https://github.com/typeorm/typeorm/issues/8887)) ([9adab34](https://github.com/typeorm/typeorm/commit/9adab34e5d8744c134690f855111d21f5d29cf12))
+* wrong entity transform of relation id when referenced column is a primary key ([#8959](https://github.com/typeorm/typeorm/issues/8959)) ([6e888dd](https://github.com/typeorm/typeorm/commit/6e888dd0a13110f386ed538161740ae059491b91))
+
+### Features
+
+* add `for_key_share` ("FOR KEY SHARE") lock mode for postgres driver ([#8879](https://github.com/typeorm/typeorm/issues/8879)) ([4687be8](https://github.com/typeorm/typeorm/commit/4687be8b77b0f807b2fe4b1e2278e05d0dbd4431)), closes [#8878](https://github.com/typeorm/typeorm/issues/8878)
+* add nativeBinding option to better-sqlite3 driver ([#9157](https://github.com/typeorm/typeorm/issues/9157)) ([bcdddc3](https://github.com/typeorm/typeorm/commit/bcdddc32bddeb3d141c03372971ee27d743b9ab8))
+* add spanner as a db option for the init command ([#9121](https://github.com/typeorm/typeorm/issues/9121)) ([e61cade](https://github.com/typeorm/typeorm/commit/e61cade32fbcd491e4d8e27aea7b35b5a946c879))
+* allow explicitly named primary keys, foreign keys, and indices ([#8900](https://github.com/typeorm/typeorm/issues/8900)) ([78df84c](https://github.com/typeorm/typeorm/commit/78df84c732ce085caf4b5ccf37477ef93b38f4d0)), closes [#1355](https://github.com/typeorm/typeorm/issues/1355)
+* Cloud Spanner support ([#8730](https://github.com/typeorm/typeorm/issues/8730)) ([62518ae](https://github.com/typeorm/typeorm/commit/62518ae1226f22b2f230afa615532c92f1544f01))
+* fix issues with generated columns and add support in other drivers ([#8806](https://github.com/typeorm/typeorm/issues/8806)) ([0418ebc](https://github.com/typeorm/typeorm/commit/0418ebcaf6835dfffe3c3db1f66d20bfe3e5b09d)), closes [#8761](https://github.com/typeorm/typeorm/issues/8761)
+* implement support for relationids in entity schemas ([#9129](https://github.com/typeorm/typeorm/issues/9129)) ([e24cced](https://github.com/typeorm/typeorm/commit/e24cced8f63206a607deff6445cfcccf63c3a0c8))
+* support TS 4.7+ node16/nodenext module mode ([#9043](https://github.com/typeorm/typeorm/issues/9043)) ([862a402](https://github.com/typeorm/typeorm/commit/862a4027af14e5c3632c2a76c44b62ef0277338a))
+* upgrade ioredis to v5 ([#8997](https://github.com/typeorm/typeorm/issues/8997)) ([723f1e5](https://github.com/typeorm/typeorm/commit/723f1e514bf261bc1539bdaf86fd0a72a1e42a46))
+
+### Performance Improvements
+
+* don't recompile escapeRegExp for every query ([#8956](https://github.com/typeorm/typeorm/issues/8956)) ([189592c](https://github.com/typeorm/typeorm/commit/189592c77980e766f92f6eb77dbd7412db106086)), closes [#8955](https://github.com/typeorm/typeorm/issues/8955)
+* partially lift matching from regexp to js ([#9032](https://github.com/typeorm/typeorm/issues/9032)) ([bbdc20f](https://github.com/typeorm/typeorm/commit/bbdc20f8cafc63e768f248213eafe65f163cb6e5)), closes [#3857](https://github.com/typeorm/typeorm/issues/3857) [#8955](https://github.com/typeorm/typeorm/issues/8955) [#8956](https://github.com/typeorm/typeorm/issues/8956) [/github.com/typeorm/typeorm/issues/3857#issuecomment-699505893](https://github.com//github.com/typeorm/typeorm/issues/3857/issues/issuecomment-699505893)
+
+## [0.3.6](https://github.com/typeorm/typeorm/compare/0.3.5...0.3.6) (2022-04-12)
+
+### Features
+
+* add `for_key_share` ("FOR KEY SHARE") lock mode for postgres driver ([#8879](https://github.com/typeorm/typeorm/issues/8879)) ([4687be8](https://github.com/typeorm/typeorm/commit/4687be8b77b0f807b2fe4b1e2278e05d0dbd4431)), closes [#8878](https://github.com/typeorm/typeorm/issues/8878)
+* new driver: Cloud Spanner ([#8730](https://github.com/typeorm/typeorm/issues/8730)) ([62518ae](https://github.com/typeorm/typeorm/commit/62518ae1226f22b2f230afa615532c92f1544f01))
+
 ## [0.3.5](https://github.com/typeorm/typeorm/compare/0.3.4...0.3.5) (2022-04-05)
 
 ### Bug Fixes

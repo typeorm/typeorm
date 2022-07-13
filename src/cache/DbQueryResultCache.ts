@@ -298,12 +298,10 @@ export class DbQueryResultCache implements QueryResultCache {
         identifiers: string[],
         queryRunner?: QueryRunner,
     ): Promise<void> {
+        let _queryRunner: QueryRunner = queryRunner || this.getQueryRunner()
         await Promise.all(
             identifiers.map((identifier) => {
-                const qb =
-                    this.getQueryRunner(
-                        queryRunner,
-                    ).manager.createQueryBuilder()
+                const qb = _queryRunner.manager.createQueryBuilder()
                 return qb
                     .delete()
                     .from(this.queryResultCacheTable)
@@ -313,6 +311,10 @@ export class DbQueryResultCache implements QueryResultCache {
                     .execute()
             }),
         )
+
+        if (!queryRunner) {
+            await _queryRunner.release()
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -322,9 +324,7 @@ export class DbQueryResultCache implements QueryResultCache {
     /**
      * Gets a query runner to work with.
      */
-    protected getQueryRunner(
-        queryRunner: QueryRunner | undefined,
-    ): QueryRunner {
+    protected getQueryRunner(queryRunner?: QueryRunner): QueryRunner {
         if (queryRunner) return queryRunner
 
         return this.connection.createQueryRunner()

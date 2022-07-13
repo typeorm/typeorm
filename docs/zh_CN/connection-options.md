@@ -208,7 +208,7 @@
 
 - `options.packetSize` - TDS数据包的大小（需要与服务器协商）。 应该是2的幂。（默认值：`4096`）。
 
-- `options.useUTC` - 布尔值，用于确定是以UTC还是本地时间。(默认：`true`)。
+- `options.useUTC` - 布尔值，用于确定是以UTC还是本地时间。(默认：`false`)。
 
 - `options.abortTransactionOnError` - 如果在给定事务执行期间遇到任何错误，则确定是否自动回滚事务的布尔值。 这将在连接的初始SQL阶段设置`SET XACT_ABORT`的值（[文档](http://msdn.microsoft.com/en-us/library/ms188792.aspx))。
 

@@ -26,6 +26,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { promisify } from "util"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -109,6 +110,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         this.isTransactionActive = true
 
+        /**
+         * Disable AUTOCOMMIT while running transaction.
+         *  Otherwise, COMMIT/ROLLBACK doesn't work in autocommit mode.
+         */
+        await this.setAutoCommit({ status: "off" })
+
         if (isolationLevel) {
             await this.query(
                 `SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`,
@@ -132,6 +139,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.query("COMMIT")
         this.isTransactionActive = false
 
+        await this.setAutoCommit({ status: "on" })
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
 
@@ -149,7 +157,27 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.query("ROLLBACK")
         this.isTransactionActive = false
 
+        await this.setAutoCommit({ status: "on" })
         await this.broadcaster.broadcast("AfterTransactionRollback")
+    }
+
+    /**
+     * @description Switches on/off AUTOCOMMIT mode
+     * @link https://help.sap.com/docs/HANA_SERVICE_CF/7c78579ce9b14a669c1f3295b0d8ca16/d538d11053bd4f3f847ec5ce817a3d4c.html?locale=en-US
+     */
+    async setAutoCommit(options: { status: "on" | "off" }) {
+        const connection = await this.connect()
+
+        const execute = promisify(connection.exec.bind(connection))
+
+        connection.setAutoCommit(options.status === "on")
+
+        const query = `SET TRANSACTION AUTOCOMMIT DDL ${options.status.toUpperCase()};`
+        try {
+            await execute(query)
+        } catch (error) {
+            throw new QueryFailedError(query, [], error)
+        }
     }
 
     /**
@@ -169,8 +197,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         try {
             const databaseConnection = await this.connect()
-            // we disable autocommit because ROLLBACK does not work in autocommit mode
-            databaseConnection.setAutoCommit(!this.isTransactionActive)
+
             this.driver.connection.logger.logQuery(query, parameters, this)
             const queryStartTime = +new Date()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
