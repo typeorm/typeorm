@@ -93,12 +93,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -114,12 +114,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
