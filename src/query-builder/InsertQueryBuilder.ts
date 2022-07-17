@@ -330,7 +330,10 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Adds additional ignore statement supported in databases.
      */
     orIgnore(statement: string | boolean | string[] = true): this {
-        this.expressionMap.onIgnore = Array.isArray(statement) ? statement : !!statement
+        this.expressionMap.onIgnore =
+            Array.isArray(statement) || typeof statement === "string"
+                ? statement
+                : !!statement
         return this
     }
 

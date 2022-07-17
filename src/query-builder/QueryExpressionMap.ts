@@ -104,7 +104,7 @@ export class QueryExpressionMap {
     /**
      * Optional on ignore statement used in insertion query in databases.
      */
-    onIgnore: boolean | string[] = false
+    onIgnore: boolean | string | string[] = false
 
     /**
      * Optional on update statement used in insertion query in databases.
