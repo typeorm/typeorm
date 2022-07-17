@@ -437,7 +437,166 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             query += ` AS ${this.escape(this.alias)}`
         }
 
-        if (isMergeInto) {
+        if (!isMergeInto) {
+            // add columns expression
+            if (columnsExpression) {
+                query += `(${columnsExpression})`
+            } else {
+                if (
+                    !valuesExpression &&
+                    (DriverUtils.isMySQLFamily(this.connection.driver) ||
+                        this.connection.driver.options.type === "aurora-mysql")
+                )
+                    // special syntax for mysql DEFAULT VALUES insertion
+                    query += "()"
+            }
+
+            // add OUTPUT expression
+            if (
+                returningExpression &&
+                this.connection.driver.options.type === "mssql"
+            ) {
+                query += ` OUTPUT ${returningExpression}`
+            }
+
+            // add VALUES expression
+            if (valuesExpression) {
+                if (
+                    this.connection.driver.options.type === "oracle" &&
+                    this.getValueSets().length > 1
+                ) {
+                    query += ` ${valuesExpression}`
+                } else {
+                    query += ` VALUES ${valuesExpression}`
+                }
+            } else {
+                if (
+                    DriverUtils.isMySQLFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "aurora-mysql"
+                ) {
+                    // special syntax for mysql DEFAULT VALUES insertion
+                    query += " VALUES ()"
+                } else {
+                    query += ` DEFAULT VALUES`
+                }
+            }
+            if (
+                this.connection.driver.supportedUpsertType ===
+                "on-conflict-do-update"
+            ) {
+                if (this.expressionMap.onIgnore) {
+                    query += " ON CONFLICT DO NOTHING "
+                } else if (this.expressionMap.onConflict) {
+                    query += ` ON CONFLICT ${this.expressionMap.onConflict} `
+                } else if (this.expressionMap.onUpdate) {
+                    const {
+                        overwrite,
+                        columns,
+                        conflict,
+                        skipUpdateIfNoValuesChanged,
+                    } = this.expressionMap.onUpdate
+
+                    let conflictTarget = "ON CONFLICT"
+
+                    if (Array.isArray(conflict)) {
+                        conflictTarget += ` ( ${conflict
+                            .map((column) => this.escape(column))
+                            .join(", ")} )`
+                    } else if (conflict) {
+                        conflictTarget += ` ON CONSTRAINT ${this.escape(
+                            conflict,
+                        )}`
+                    }
+
+                    if (Array.isArray(overwrite)) {
+                        query += ` ${conflictTarget} DO UPDATE SET `
+                        query += overwrite
+                            ?.map(
+                                (column) =>
+                                    `${this.escape(
+                                        column,
+                                    )} = EXCLUDED.${this.escape(column)}`,
+                            )
+                            .join(", ")
+                        query += " "
+                    } else if (columns) {
+                        query += ` ${conflictTarget} DO UPDATE SET `
+                        query += columns
+                            .map(
+                                (column) =>
+                                    `${this.escape(column)} = :${column}`,
+                            )
+                            .join(", ")
+                        query += " "
+                    }
+
+                    if (
+                        Array.isArray(overwrite) &&
+                        skipUpdateIfNoValuesChanged &&
+                        DriverUtils.isPostgresFamily(this.connection.driver)
+                    ) {
+                        query += ` WHERE (`
+                        query += overwrite
+                            .map(
+                                (column) =>
+                                    `${tableName}.${this.escape(
+                                        column,
+                                    )} IS DISTINCT FROM EXCLUDED.${this.escape(
+                                        column,
+                                    )}`,
+                            )
+                            .join(" OR ")
+                        query += ") "
+                    }
+                }
+            } else if (
+                this.connection.driver.supportedUpsertType ===
+                "on-duplicate-key-update"
+            ) {
+                if (this.expressionMap.onUpdate) {
+                    const { overwrite, columns } = this.expressionMap.onUpdate
+
+                    if (Array.isArray(overwrite)) {
+                        query += " ON DUPLICATE KEY UPDATE "
+                        query += overwrite
+                            .map(
+                                (column) =>
+                                    `${this.escape(
+                                        column,
+                                    )} = VALUES(${this.escape(column)})`,
+                            )
+                            .join(", ")
+                        query += " "
+                    } else if (Array.isArray(columns)) {
+                        query += " ON DUPLICATE KEY UPDATE "
+                        query += columns
+                            .map(
+                                (column) =>
+                                    `${this.escape(column)} = :${column}`,
+                            )
+                            .join(", ")
+                        query += " "
+                    }
+                }
+            } else {
+                if (this.expressionMap.onUpdate) {
+                    throw new TypeORMError(
+                        `onUpdate is not supported by the current database driver`,
+                    )
+                }
+            }
+
+            // add RETURNING expression
+            if (
+                returningExpression &&
+                (DriverUtils.isPostgresFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "cockroachdb" ||
+                    DriverUtils.isMySQLFamily(this.connection.driver))
+            ) {
+                query += ` RETURNING ${returningExpression}`
+            }
+        } else {
             /* query template plan:
                 MERGE INTO [tableName!] [ if table_alias { if MSSQL { AS table_alias } elif ORACLE { table_alias } } ]
                     USING (VALUES [valuesExpression!]) AS source ; mandatory
@@ -549,171 +708,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }
 
             query = `${query};`
-        } else {
-            // add columns expression
-            if (columnsExpression) {
-                query += `(${columnsExpression})`
-            } else {
-                if (
-                    !valuesExpression &&
-                    (DriverUtils.isMySQLFamily(this.connection.driver) ||
-                        this.connection.driver.options.type === "aurora-mysql")
-                )
-                    // special syntax for mysql DEFAULT VALUES insertion
-                    query += "()"
-            }
-
-            // add OUTPUT expression
-            if (
-                returningExpression &&
-                this.connection.driver.options.type === "mssql"
-            ) {
-                query += ` OUTPUT ${returningExpression}`
-            }
-
-            // add VALUES expression
-            if (valuesExpression) {
-                if (
-                    this.connection.driver.options.type === "oracle" &&
-                    this.getValueSets().length > 1
-                ) {
-                    query += ` ${valuesExpression}`
-                } else {
-                    query += ` VALUES ${valuesExpression}`
-                }
-            } else {
-                if (
-                    DriverUtils.isMySQLFamily(this.connection.driver) ||
-                    this.connection.driver.options.type === "aurora-mysql"
-                ) {
-                    // special syntax for mysql DEFAULT VALUES insertion
-                    query += " VALUES ()"
-                } else {
-                    query += ` DEFAULT VALUES`
-                }
-            }
-            if (
-                this.connection.driver.supportedUpsertType ===
-                "on-conflict-do-update"
-            ) {
-                if (this.expressionMap.onIgnore) {
-                    if (Array.isArray(this.expressionMap.onIgnore)) {
-                        query += ` ON CONFLICT ( ${this.expressionMap.onIgnore
-                            .map((column) => this.escape(column))
-                            .join(", ")} ) DO NOTHING `
-                    } else {
-                        query += " ON CONFLICT DO NOTHING "
-                    }
-                } else if (this.expressionMap.onConflict) {
-                    query += ` ON CONFLICT ${this.expressionMap.onConflict} `
-                } else if (this.expressionMap.onUpdate) {
-                    const {
-                        overwrite,
-                        columns,
-                        conflict,
-                        skipUpdateIfNoValuesChanged,
-                    } = this.expressionMap.onUpdate
-
-                    let conflictTarget = "ON CONFLICT"
-
-                    if (Array.isArray(conflict)) {
-                        conflictTarget += ` ( ${conflict
-                            .map((column) => this.escape(column))
-                            .join(", ")} )`
-                    } else if (conflict) {
-                        conflictTarget += ` ON CONSTRAINT ${this.escape(
-                            conflict,
-                        )}`
-                    }
-
-                    if (Array.isArray(overwrite)) {
-                        query += ` ${conflictTarget} DO UPDATE SET `
-                        query += overwrite
-                            ?.map(
-                                (column) =>
-                                    `${this.escape(
-                                        column,
-                                    )} = EXCLUDED.${this.escape(column)}`,
-                            )
-                            .join(", ")
-                        query += " "
-                    } else if (columns) {
-                        query += ` ${conflictTarget} DO UPDATE SET `
-                        query += columns
-                            .map(
-                                (column) =>
-                                    `${this.escape(column)} = :${column}`,
-                            )
-                            .join(", ")
-                        query += " "
-                    }
-
-                    if (
-                        Array.isArray(overwrite) &&
-                        skipUpdateIfNoValuesChanged &&
-                        DriverUtils.isPostgresFamily(this.connection.driver)
-                    ) {
-                        query += ` WHERE (`
-                        query += overwrite
-                            .map(
-                                (column) =>
-                                    `${tableName}.${this.escape(
-                                        column,
-                                    )} IS DISTINCT FROM EXCLUDED.${this.escape(
-                                        column,
-                                    )}`,
-                            )
-                            .join(" OR ")
-                        query += ") "
-                    }
-                }
-            } else if (
-                this.connection.driver.supportedUpsertType ===
-                "on-duplicate-key-update"
-            ) {
-                if (this.expressionMap.onUpdate) {
-                    const { overwrite, columns } = this.expressionMap.onUpdate
-
-                    if (Array.isArray(overwrite)) {
-                        query += " ON DUPLICATE KEY UPDATE "
-                        query += overwrite
-                            .map(
-                                (column) =>
-                                    `${this.escape(
-                                        column,
-                                    )} = VALUES(${this.escape(column)})`,
-                            )
-                            .join(", ")
-                        query += " "
-                    } else if (Array.isArray(columns)) {
-                        query += " ON DUPLICATE KEY UPDATE "
-                        query += columns
-                            .map(
-                                (column) =>
-                                    `${this.escape(column)} = :${column}`,
-                            )
-                            .join(", ")
-                        query += " "
-                    }
-                }
-            } else {
-                if (this.expressionMap.onUpdate) {
-                    throw new TypeORMError(
-                        `onUpdate is not supported by the current database driver`,
-                    )
-                }
-            }
-
-            // add RETURNING expression
-            if (
-                returningExpression &&
-                (DriverUtils.isPostgresFamily(this.connection.driver) ||
-                    this.connection.driver.options.type === "oracle" ||
-                    this.connection.driver.options.type === "cockroachdb" ||
-                    DriverUtils.isMySQLFamily(this.connection.driver))
-            ) {
-                query += ` RETURNING ${returningExpression}`
-            }
         }
 
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
