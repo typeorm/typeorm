@@ -405,15 +405,18 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     protected createInsertExpression() {
         const tableName = this.getTableName(this.getMainTableName())
         const valuesExpression = this.createValuesExpression() // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
-        const returningExpression =
-            this.connection.driver.options.type === "oracle" &&
-            this.getValueSets().length > 1
-                ? null
-                : this.createReturningExpression("insert") // oracle doesnt support returning with multi-row insert
-        const columnsExpression = this.createColumnNamesExpression()
         const isMergeInto =
             this.connection.driver.supportedUpsertType ===
-            "merge-on-conflict-do-update"
+                "merge-on-conflict-do-update" &&
+            (this.expressionMap.onIgnore ||
+                this.expressionMap.onConflict ||
+                this.expressionMap.onUpdate)
+        const returningExpression =
+            this.connection.driver.options.type === "oracle" &&
+            (this.getValueSets().length > 1 || isMergeInto)
+                ? null // oracle doesnt support returning with multi-row insert nor on merge statement
+                : this.createReturningExpression("insert")
+        const columnsExpression = this.createColumnNamesExpression()
         let query = `${isMergeInto ? "MERGE" : "INSERT"} `
 
         if (
@@ -429,13 +432,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             this.alias !== this.getMainTableName() &&
             DriverUtils.isPostgresFamily(this.connection.driver)
         ) {
-            query += ` AS "${this.alias}"`
+            query += ` AS ${this.escape(this.alias)}`
         }
 
         if (isMergeInto) {
             /* query template plan:
-                MERGE INTO [tableName!] [ if table_alias { AS table_alias } ]
-                    USING ([valuesExpression!]) AS values ; mandatory
+                MERGE INTO [tableName!] [ if table_alias { if MSSQL { AS table_alias } elif ORACLE { table_alias } } ]
+                    USING (VALUES [valuesExpression!]) AS source ; mandatory
                     ON {onConflict!} ; here this is problematic, this means we cannot do unbounded ignore which is based on constarint violation
                     [ if !onIgnore { WHEN MATCHED THEN {onUpdate} } ]
                     WHEN NOT MATCHED THEN INSERT ([columnsExpression]) VALUES ([VALUE_COLUMNS])
@@ -444,51 +447,80 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 Otherwise:
                     [ if returningExpression { error(not supported) } ]
                 VALUE_COLUMNS:
-                    columnsExpression.map(name => `values.${clean(name, tableName)}`)
+                    columnsExpression.map(name => `source.${clean(name, tableName)}`)
             */
 
-            query += ` USING ${valuesExpression} AS values`
+            const [alias, source] = [
+                this.alias !== this.getMainTableName()
+                    ? this.alias
+                    : this.getMainTableName(),
+                "source",
+            ].map((name) => this.escape(name))
 
-            // You are on your own if you are using raw onConflict
+            const mapColumn = (column: string) =>
+                `${alias}.${this.escape(column)} = ${source}.${this.escape(
+                    column,
+                )}`
+
+            if (this.connection.driver.options.type === "oracle") {
+                if (alias !== this.getMainTableName()) {
+                    query += ` ${alias}`
+                }
+
+                // the column names should have had been assigned to valuesExpression, so we can select source.{column name} right away
+                query += ` USING (${valuesExpression}) ${source}`
+            }
+
+            if (this.connection.driver.options.type === "mssql") {
+                if (alias !== this.getMainTableName()) {
+                    query += ` AS ${alias}`
+                }
+
+                query += ` USING (VALUES ${valuesExpression}) AS ${source} (${columnsExpression})`
+            }
+
             if (this.expressionMap.onIgnore) {
-                throw new TypeORMError(
-                    `merge statement does not support unbounded ignore`,
-                )
+                let condition: string
+                if (Array.isArray(this.expressionMap.onIgnore)) {
+                    condition = this.expressionMap.onIgnore
+                        .map(mapColumn)
+                        .join(", ")
+                } else if (typeof this.expressionMap.onIgnore === "string") {
+                    condition = mapColumn(this.expressionMap.onIgnore)
+                } else {
+                    throw new TypeORMError(
+                        `merge statement does not support unbounded ignore`,
+                    )
+                }
+                query += ` ON ( ${condition} )`
             } else if (this.expressionMap.onConflict) {
+                // You are on your own if you are using raw onConflict
                 query += ` ON ${this.expressionMap.onConflict} `
             } else if (this.expressionMap.onUpdate) {
                 // ON ([conflictTarget]) WHEN MATCHED THEN {onUpdate}
                 const { overwrite, columns, conflict } =
                     this.expressionMap.onUpdate
 
-                let conflictTarget = "ON"
-
+                let conflictTarget: string = ""
                 if (Array.isArray(conflict)) {
-                    conflictTarget += ` (${conflict
-                        .map((column) => this.escape(column))
-                        .join(", ")} )`
+                    conflictTarget = `( ${conflict.map(mapColumn).join(", ")} )`
                 } else if (conflict) {
-                    conflictTarget += ` ${this.escape(conflict)}`
+                    conflictTarget = mapColumn(conflict)
                 }
 
+                let updates: string = ""
                 if (Array.isArray(overwrite)) {
-                    query += ` ${conflictTarget} WHEN MATCHED THEN UPDATE SET `
-                    query += overwrite
-                        ?.map(
+                    updates = overwrite?.map(mapColumn).join(", ")
+                } else if (columns) {
+                    updates = columns
+                        .map(
                             (column) =>
-                                `${this.escape(column)} = values.${this.escape(
-                                    column,
-                                )}`,
+                                `${alias}.${this.escape(column)} = :${column}`,
                         )
                         .join(", ")
-                    query += " "
-                } else if (columns) {
-                    query += ` ${conflictTarget} WHEN MATCHED THEN UPDATE SET `
-                    query += columns
-                        .map((column) => `${this.escape(column)} = :${column}`)
-                        .join(", ")
-                    query += " "
                 }
+
+                query += ` ON ${conflictTarget} WHEN MATCHED THEN UPDATE SET ${updates} `
             }
 
             // WHEN NOT MATCHED THEN INSERT ([columnsExpression]) VALUES ([VALUE_COLUMNS])
@@ -498,9 +530,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     .split(", ")
                     .map((column) => {
                         const [first, ...rest] = column.split(".")
-                        return this.escape(
-                            column === first ? column : `values.${rest.join()}`,
-                        )
+                        const name = column === first ? column : rest.join()
+                        return `${source}.${name}`
                     })
                     .join(", ")
                 query += `(${columnsExpression}) VALUES (${valuesColumns})`
@@ -516,6 +547,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     )
                 }
             }
+
+            query = `${query};`
         } else {
             // add columns expression
             if (columnsExpression) {
@@ -556,7 +589,13 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 "on-conflict-do-update"
             ) {
                 if (this.expressionMap.onIgnore) {
-                    query += " ON CONFLICT DO NOTHING "
+                    if (Array.isArray(this.expressionMap.onIgnore)) {
+                        query += ` ON CONFLICT ( ${this.expressionMap.onIgnore
+                            .map((column) => this.escape(column))
+                            .join(", ")} ) DO NOTHING `
+                    } else {
+                        query += " ON CONFLICT DO NOTHING "
+                    }
                 } else if (this.expressionMap.onConflict) {
                     query += ` ON CONFLICT ${this.expressionMap.onConflict} `
                 } else if (this.expressionMap.onUpdate) {
