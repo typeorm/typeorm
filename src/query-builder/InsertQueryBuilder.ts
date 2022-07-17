@@ -403,7 +403,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
      * Creates INSERT express used to perform insert query.
      */
     protected createInsertExpression() {
-        const tableName = this.getTableName(this.getMainTableName())
+        const mainTableName = this.getMainTableName()
+        const tableName = this.getTableName(mainTableName)
         const valuesExpression = this.createValuesExpression() // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const isMergeInto =
             this.connection.driver.supportedUpsertType ===
@@ -428,8 +429,9 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
 
         query += `INTO ${tableName}`
 
+        let aliasIsNotRedundant = this.alias !== mainTableName
         if (
-            this.alias !== this.getMainTableName() &&
+            aliasIsNotRedundant &&
             DriverUtils.isPostgresFamily(this.connection.driver)
         ) {
             query += ` AS ${this.escape(this.alias)}`
@@ -439,7 +441,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             /* query template plan:
                 MERGE INTO [tableName!] [ if table_alias { if MSSQL { AS table_alias } elif ORACLE { table_alias } } ]
                     USING (VALUES [valuesExpression!]) AS source ; mandatory
-                    ON {onConflict!} ; here this is problematic, this means we cannot do unbounded ignore which is based on constarint violation
+                    ON {onConflict!} ; here this is problematic, this means we cannot do unbounded ignore which is based on constraint violation
                     [ if !onIgnore { WHEN MATCHED THEN {onUpdate} } ]
                     WHEN NOT MATCHED THEN INSERT ([columnsExpression]) VALUES ([VALUE_COLUMNS])
                 For MSSQL:
@@ -451,9 +453,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             */
 
             const [alias, source] = [
-                this.alias !== this.getMainTableName()
-                    ? this.alias
-                    : this.getMainTableName(),
+                aliasIsNotRedundant ? this.alias : mainTableName,
                 "source",
             ].map((name) => this.escape(name))
 
@@ -463,7 +463,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 )}`
 
             if (this.connection.driver.options.type === "oracle") {
-                if (alias !== this.getMainTableName()) {
+                if (aliasIsNotRedundant) {
                     query += ` ${alias}`
                 }
 
@@ -472,7 +472,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             }
 
             if (this.connection.driver.options.type === "mssql") {
-                if (alias !== this.getMainTableName()) {
+                if (aliasIsNotRedundant) {
                     query += ` AS ${alias}`
                 }
 
