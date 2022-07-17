@@ -329,8 +329,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Adds additional ignore statement supported in databases.
      */
-    orIgnore(statement: string | boolean = true): this {
-        this.expressionMap.onIgnore = !!statement
+    orIgnore(statement: string | boolean | string[] = true): this {
+        this.expressionMap.onIgnore = Array.isArray(statement) ? statement : !!statement
         return this
     }
 
