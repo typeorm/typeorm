@@ -563,6 +563,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     query += "()"
             }
 
+            // add OUTPUT expression
+            if (
+                returningExpression &&
+                this.connection.driver.options.type === "mssql"
+            ) {
+                query += ` OUTPUT ${returningExpression}`
+            }
+
             // add VALUES expression
             if (valuesExpression) {
                 if (
