@@ -3,7 +3,7 @@ import {
     Entity,
     ManyToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { TestEntity3 } from "./TestEntity3"
 
 @Entity()

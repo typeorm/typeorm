@@ -4,7 +4,7 @@ import {
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../src"
+} from "../typeorm"
 
 @Entity()
 export class User {

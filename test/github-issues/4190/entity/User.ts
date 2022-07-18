@@ -5,7 +5,7 @@ import {
     OneToMany,
     OneToOne,
     JoinColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Photo } from "./Photo"
 import { Profile } from "./Profile"
 

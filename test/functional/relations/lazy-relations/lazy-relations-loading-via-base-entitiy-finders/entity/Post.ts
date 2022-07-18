@@ -1,9 +1,9 @@
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../../src/decorator/columns/Column"
+import { Entity } from "../typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../typeorm/decorator/columns/Column"
 import { Category } from "./Category"
-import { ManyToOne } from "../../../../../../src/decorator/relations/ManyToOne"
-import { BaseEntity } from "../../../../../../src"
+import { ManyToOne } from "../typeorm/decorator/relations/ManyToOne"
+import { BaseEntity } from "../typeorm"
 
 @Entity()
 export class Post extends BaseEntity {

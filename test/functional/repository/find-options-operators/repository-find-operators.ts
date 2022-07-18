@@ -18,9 +18,9 @@ import {
     MoreThan,
     MoreThanOrEqual,
     Not,
-} from "../../../../src"
+} from "typeorm"
 import { Post } from "./entity/Post"
-import { Raw } from "../../../../src/find-options/operator/Raw"
+import { Raw } from "typeorm/find-options/operator/Raw"
 import { PersonAR } from "./entity/PersonAR"
 import { expect } from "chai"
 

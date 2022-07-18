@@ -1,7 +1,7 @@
-import { Entity } from "../../../../src/index"
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
+import { Entity } from "typeorm/index"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { Dog } from "./Dog"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 
 @Entity()
 export class Cat {

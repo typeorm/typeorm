@@ -3,8 +3,8 @@ import {
     PrimaryGeneratedColumn,
     ManyToMany,
     JoinTable,
-} from "../../../../src"
-import { Column } from "../../../../src/decorator/columns/Column"
+} from "typeorm"
+import { Column } from "typeorm/decorator/columns/Column"
 import { Category } from "./Category"
 
 @Entity("questions")

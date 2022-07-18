@@ -5,7 +5,7 @@ import {
     JoinColumn,
     ManyToOne,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Sailing } from "./Sailing"
 
 @Entity()

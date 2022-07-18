@@ -3,7 +3,7 @@ import {
     EntitySubscriberInterface,
     EventSubscriber,
     InsertEvent,
-} from "../../../../src"
+} from "typeorm"
 
 /**
  * Subscriber which checks the validity of the entity passed to beforeInsert().

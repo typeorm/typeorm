@@ -1,6 +1,6 @@
-import { Entity } from "../../../../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
-import { ManyToMany } from "../../../../../../../src/decorator/relations/ManyToMany"
+import { Entity } from "../../typeorm/decorator/entity/Entity"
+import { PrimaryColumn } from "../../typeorm/decorator/columns/PrimaryColumn"
+import { ManyToMany } from "../../typeorm/decorator/relations/ManyToMany"
 import { Post } from "./Post"
 
 @Entity()

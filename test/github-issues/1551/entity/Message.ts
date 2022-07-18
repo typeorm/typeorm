@@ -10,7 +10,7 @@ import {
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src/index"
+} from "typeorm/index"
 
 export enum MessageType {
     TEXT,

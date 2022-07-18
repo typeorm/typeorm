@@ -4,9 +4,9 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
-import { Table } from "../../../src/schema-builder/table/Table"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { TableColumn } from "../typeorm/schema-builder/table/TableColumn"
+import { Table } from "../typeorm/schema-builder/table/Table"
 
 describe("github issues > #2259 Missing type for generated columns", () => {
     let connections: DataSource[]

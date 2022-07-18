@@ -1,12 +1,12 @@
 import "../../../utils/test-setup"
-import { DataSource, EntityManager } from "../../../../src"
+import { DataSource, EntityManager } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post, PostStatus } from "./entity/Post"
-import { ArrayOverlap } from "../../../../src/find-options/operator/ArrayOverlap"
+import { ArrayOverlap } from "typeorm/find-options/operator/ArrayOverlap"
 
 describe("find options > find operators > ArrayOverlap", () => {
     let connections: DataSource[]

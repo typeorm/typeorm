@@ -1,12 +1,12 @@
 import "../../../utils/test-setup"
-import { DataSource, EntityManager } from "../../../../src"
+import { DataSource, EntityManager } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post, PostStatus } from "./entity/Post"
-import { ArrayContains } from "../../../../src/find-options/operator/ArrayContains"
+import { ArrayContains } from "typeorm/find-options/operator/ArrayContains"
 
 describe("find options > find operators > ArrayContains", () => {
     let connections: DataSource[]

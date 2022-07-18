@@ -1,6 +1,6 @@
-import { ChildEntity } from "../../../../../../../src/decorator/entity/ChildEntity"
+import { ChildEntity } from "../../typeorm/decorator/entity/ChildEntity"
 import { Staff } from "./Staff"
-import { Column } from "../../../../../../../src"
+import { Column } from "../../typeorm"
 
 @ChildEntity("RESEARCHER")
 export class Researcher extends Staff {

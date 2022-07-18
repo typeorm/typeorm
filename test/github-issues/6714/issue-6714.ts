@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { Session as baseEntity } from "./entity/session"
 import { Session as changedEntity } from "./entity/sessionchanged"

@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn } from "../../../../src"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { Index } from "../../../../src/decorator/Index"
+import { Entity, PrimaryGeneratedColumn } from "typeorm"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Index } from "typeorm/decorator/Index"
 
 @Entity()
 @Index(["name"], { fulltext: true })

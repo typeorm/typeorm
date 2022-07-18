@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { EntityManager } from "../../../../src"
+import { EntityManager } from "typeorm"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Photo } from "./entity/Photo"

@@ -3,7 +3,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     ObjectLiteral,
-} from "../../../../src/index"
+} from "typeorm/index"
 
 @Entity()
 export class Post {

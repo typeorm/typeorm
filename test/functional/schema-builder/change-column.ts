@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,7 +8,7 @@ import {
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { PostVersion } from "./entity/PostVersion"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 
 describe("schema builder > change column", () => {
     let connections: DataSource[]

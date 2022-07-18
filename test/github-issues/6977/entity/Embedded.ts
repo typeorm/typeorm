@@ -1,4 +1,4 @@
-import { Column, ManyToOne } from "../../../../src"
+import { Column, ManyToOne } from "typeorm"
 import { User } from "./User"
 
 export class Embedded {

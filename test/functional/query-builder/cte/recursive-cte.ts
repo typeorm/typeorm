@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { Connection } from "../../../../src"
+import { Connection } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

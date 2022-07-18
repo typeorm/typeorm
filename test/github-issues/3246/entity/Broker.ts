@@ -5,7 +5,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     OneToMany,
-} from "../../../../src"
+} from "typeorm"
 import { Order } from "./Order"
 
 @Entity()

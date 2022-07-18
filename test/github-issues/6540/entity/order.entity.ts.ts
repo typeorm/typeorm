@@ -3,7 +3,7 @@ import {
     Column,
     Entity,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 
 export enum OrderStatus {
     placed = "placed",

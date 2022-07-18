@@ -4,7 +4,7 @@ import {
     JoinTable,
     ManyToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Photo } from "./Photo"
 
 @Entity()

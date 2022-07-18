@@ -3,7 +3,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
 
 describe("github issues > #108 Error with constraint names on postgres", () => {

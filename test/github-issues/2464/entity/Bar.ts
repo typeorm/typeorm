@@ -3,9 +3,9 @@ import {
     Column,
     ManyToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Entity } from "typeorm/decorator/entity/Entity"
 import { Foo } from "./Foo"
 
 @Entity()

@@ -1,4 +1,4 @@
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

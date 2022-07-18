@@ -1,7 +1,7 @@
-import { Column } from "../../../../src"
-import { PrimaryGeneratedColumn } from "../../../../src"
-import { Entity } from "../../../../src"
-import { ManyToMany } from "../../../../src"
+import { Column } from "typeorm"
+import { PrimaryGeneratedColumn } from "typeorm"
+import { Entity } from "typeorm"
+import { ManyToMany } from "typeorm"
 import { Note } from "./Note"
 
 @Entity()

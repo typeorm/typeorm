@@ -5,7 +5,7 @@ import {
     ManyToMany,
     ManyToOne,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Employee } from "./Employee"
 
 @Entity()

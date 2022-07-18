@@ -4,7 +4,7 @@ import {
     ManyToOne,
     OneToMany,
     JoinColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Year } from "./year"
 import { UserMonth } from "./user-month"
 

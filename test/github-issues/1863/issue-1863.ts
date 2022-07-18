@@ -1,10 +1,10 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { Table } from "../../../src"
+import { Table } from "../typeorm"
 
 describe("github issues > #1863 createTable.uniques doesn't work when the columnNames only has one item", () => {
     let connections: DataSource[]

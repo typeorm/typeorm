@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, OneToOne } from "../../../../src/index"
+import { Entity, PrimaryGeneratedColumn, OneToOne } from "typeorm/index"
 
 import { Tournament } from "./Tournament"
 

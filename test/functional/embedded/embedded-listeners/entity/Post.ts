@@ -1,8 +1,8 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../src/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
 import { PostInformation } from "./PostInformation"
-import { Index } from "../../../../../src/decorator/Index"
+import { Index } from "typeorm/decorator/Index"
 
 @Entity()
 export class Post {

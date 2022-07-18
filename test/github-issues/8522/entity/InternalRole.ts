@@ -1,4 +1,4 @@
-import { ChildEntity } from "../../../../src"
+import { ChildEntity } from "typeorm"
 import { Role } from "./Role"
 
 @ChildEntity("internal")

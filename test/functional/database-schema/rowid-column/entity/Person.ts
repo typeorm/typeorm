@@ -1,8 +1,8 @@
-import { Generated } from "../../../../../src"
-import { PrimaryColumn } from "../../../../../src"
-import { PrimaryGeneratedColumn } from "../../../../../src"
-import { Entity } from "../../../../../src"
-import { Column } from "../../../../../src"
+import { Generated } from "typeorm"
+import { PrimaryColumn } from "typeorm"
+import { PrimaryGeneratedColumn } from "typeorm"
+import { Entity } from "typeorm"
+import { Column } from "typeorm"
 
 @Entity()
 export class Person {

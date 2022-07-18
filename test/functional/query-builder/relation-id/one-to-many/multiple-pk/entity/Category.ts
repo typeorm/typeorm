@@ -1,8 +1,8 @@
-import { Entity } from "../../../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../../../src/decorator/columns/Column"
-import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
-import { ManyToOne } from "../../../../../../../src/decorator/relations/ManyToOne"
-import { OneToMany } from "../../../../../../../src/decorator/relations/OneToMany"
+import { Entity } from "../../typeorm/decorator/entity/Entity"
+import { Column } from "../../typeorm/decorator/columns/Column"
+import { PrimaryColumn } from "../../typeorm/decorator/columns/PrimaryColumn"
+import { ManyToOne } from "../../typeorm/decorator/relations/ManyToOne"
+import { OneToMany } from "../../typeorm/decorator/relations/OneToMany"
 import { Post } from "./Post"
 import { Image } from "./Image"
 

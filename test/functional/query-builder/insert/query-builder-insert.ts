@@ -5,10 +5,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query builder > insert", () => {
     let connections: DataSource[]

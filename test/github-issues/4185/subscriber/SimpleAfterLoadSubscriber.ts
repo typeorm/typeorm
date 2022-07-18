@@ -1,5 +1,5 @@
 import { Post } from "../entity/Post"
-import { EntitySubscriberInterface, EventSubscriber } from "../../../../src"
+import { EntitySubscriberInterface, EventSubscriber } from "typeorm"
 
 // "Old" subscribers which only take one parameter should still compile and work
 

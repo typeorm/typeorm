@@ -1,6 +1,6 @@
-import { PrimaryGeneratedColumn, UpdateDateColumn } from "../../../../src"
+import { PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
 
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Entity } from "typeorm/decorator/entity/Entity"
 
 @Entity("foo")
 export class Foo {

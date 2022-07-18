@@ -1,6 +1,6 @@
-import { DefaultNamingStrategy } from "../../../../src/naming-strategy/DefaultNamingStrategy"
-import { NamingStrategyInterface } from "../../../../src/naming-strategy/NamingStrategyInterface"
-import { Table } from "../../../../src"
+import { DefaultNamingStrategy } from "typeorm/naming-strategy/DefaultNamingStrategy"
+import { NamingStrategyInterface } from "typeorm/naming-strategy/NamingStrategyInterface"
+import { Table } from "typeorm"
 
 export class NamingStrategyUnderTest
     extends DefaultNamingStrategy

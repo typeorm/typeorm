@@ -4,8 +4,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { UpdateResult } from "../../../../src"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { UpdateResult } from "typeorm"
 import { Post } from "./entity/Post"
 import { PostBigInt } from "./entity/PostBigInt"
 import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity"

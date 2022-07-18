@@ -3,7 +3,7 @@ import {
     Column,
     Entity,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity("foo_test")
 export class Foo extends BaseEntity {

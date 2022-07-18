@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, ManyToMany, Entity } from "../../../../src"
+import { PrimaryGeneratedColumn, ManyToMany, Entity } from "typeorm"
 import { Author } from "./Author"
 
 @Entity("book")

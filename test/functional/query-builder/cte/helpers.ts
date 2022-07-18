@@ -1,5 +1,5 @@
-import { Connection } from "../../../../src"
-import { CteCapabilities } from "../../../../src/driver/types/CteCapabilities"
+import { Connection } from "typeorm"
+import { CteCapabilities } from "typeorm/driver/types/CteCapabilities"
 
 export function filterByCteCapabilities(
     capability: keyof CteCapabilities,

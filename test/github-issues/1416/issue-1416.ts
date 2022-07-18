@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { Author } from "./entity/Author"
 import { Photo } from "./entity/Photo"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 import { expect } from "chai"
 

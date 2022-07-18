@@ -1,5 +1,5 @@
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
 
 @Entity({ name: "users", synchronize: false })
 export class User {

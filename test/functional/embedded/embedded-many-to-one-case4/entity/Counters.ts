@@ -1,6 +1,6 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { JoinColumn } from "../../../../../src/decorator/relations/JoinColumn"
-import { ManyToOne } from "../../../../../src/decorator/relations/ManyToOne"
+import { Column } from "typeorm/decorator/columns/Column"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { User } from "./User"
 import { Subcounters } from "./Subcounters"
 

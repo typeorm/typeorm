@@ -3,7 +3,7 @@ import {
     Entity,
     ObjectID,
     ObjectIdColumn,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 export class Configuration {

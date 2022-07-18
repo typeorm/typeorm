@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import { expect } from "chai"
 import { DummyHSTOREEntity } from "./entity/hstore-entity"
 

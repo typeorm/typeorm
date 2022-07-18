@@ -1,7 +1,7 @@
 import { expect } from "chai"
 
-import { AlreadyHasActiveConnectionError } from "../../../../src/error/AlreadyHasActiveConnectionError"
-import { CannotGetEntityManagerNotConnectedError } from "../../../../src/error/CannotGetEntityManagerNotConnectedError"
+import { AlreadyHasActiveConnectionError } from "typeorm/error/AlreadyHasActiveConnectionError"
+import { CannotGetEntityManagerNotConnectedError } from "typeorm/error/CannotGetEntityManagerNotConnectedError"
 
 describe("errors > prototype tree", () => {
     it("prototype tree makes sense", () => {

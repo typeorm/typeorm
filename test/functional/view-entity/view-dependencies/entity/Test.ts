@@ -4,7 +4,7 @@ import {
     JoinColumn,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "typeorm"
 import { ViewC } from "./ViewC"
 import { ViewB } from "./ViewB"
 import { ViewA } from "./ViewA"

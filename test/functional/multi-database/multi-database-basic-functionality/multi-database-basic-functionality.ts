@@ -1,6 +1,6 @@
 import "../../../utils/test-setup"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,7 +10,7 @@ import { Answer } from "./entity/Answer"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { User } from "./entity/User"
-import { filepathToName } from "../../../../src/util/PathUtils"
+import { filepathToName } from "typeorm/util/PathUtils"
 import rimraf from "rimraf"
 import path from "path"
 import fs from "fs"

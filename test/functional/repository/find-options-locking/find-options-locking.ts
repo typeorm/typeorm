@@ -11,14 +11,14 @@ import {
     OptimisticLockCanNotBeUsedError,
     OptimisticLockVersionMismatchError,
     PessimisticLockTransactionRequiredError,
-} from "../../../../src"
+} from "typeorm"
 import { PostWithVersion } from "./entity/PostWithVersion"
 import { expect } from "chai"
 import { PostWithoutVersionAndUpdateDate } from "./entity/PostWithoutVersionAndUpdateDate"
 import { PostWithUpdateDate } from "./entity/PostWithUpdateDate"
 import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdatedDate"
 import { Post } from "./entity/Post"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("repository > find options > locking", () => {
     let connections: DataSource[]

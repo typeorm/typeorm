@@ -3,7 +3,7 @@ import {
     JoinTable,
     ManyToMany,
     Entity,
-} from "../../../../src"
+} from "typeorm"
 import { Book } from "./Book"
 
 @Entity("author")

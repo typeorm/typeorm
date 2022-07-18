@@ -1,4 +1,4 @@
-import { Column, Entity, Index } from "../../../../src"
+import { Column, Entity, Index } from "typeorm"
 
 @Index("cluster_clu_created_fef900_idx", ["created_at"], {})
 @Index("cluster_cluster_pkey", ["uuid"], { unique: true })

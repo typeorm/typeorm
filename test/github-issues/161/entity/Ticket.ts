@@ -1,9 +1,9 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { OneToOne } from "../../../../src/decorator/relations/OneToOne"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
 import { Request } from "./Request"
-import { JoinColumn } from "../../../../src/decorator/relations/JoinColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
+import { Column } from "typeorm/decorator/columns/Column"
 
 @Entity()
 export class Ticket {

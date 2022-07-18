@@ -1,4 +1,4 @@
-import { TableInheritance, Column, Entity } from "../../../../src"
+import { TableInheritance, Column, Entity } from "typeorm"
 
 import { BaseEntity } from "./BaseEntity"
 

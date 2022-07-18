@@ -1,5 +1,5 @@
-import { Column, PrimaryGeneratedColumn } from "../../../../../src"
-import { Entity } from "../../../../../src"
+import { Column, PrimaryGeneratedColumn } from "typeorm"
+import { Entity } from "typeorm"
 
 export enum Operator {
     LT = "lessthan",

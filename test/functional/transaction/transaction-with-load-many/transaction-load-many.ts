@@ -5,11 +5,11 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src"
+import { DataSource } from "typeorm"
 import { Post } from "./entity/Post"
-import { MysqlDriver } from "../../../../src/driver/mysql/MysqlDriver"
-import { PostgresDriver } from "../../../../src/driver/postgres/PostgresDriver"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { MysqlDriver } from "typeorm/driver/mysql/MysqlDriver"
+import { PostgresDriver } from "typeorm/driver/postgres/PostgresDriver"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("transaction > transaction with load many", () => {
     let connections: DataSource[]

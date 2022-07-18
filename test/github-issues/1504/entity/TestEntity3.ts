@@ -4,7 +4,7 @@ import {
     OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { TestEntity2 } from "./TestEntity2"
 import { TestEntity4 } from "./TestEntity4"
 

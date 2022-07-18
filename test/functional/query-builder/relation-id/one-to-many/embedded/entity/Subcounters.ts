@@ -1,6 +1,6 @@
-import { Column } from "../../../../../../../src/decorator/columns/Column"
-import { OneToMany } from "../../../../../../../src/decorator/relations/OneToMany"
-import { PrimaryGeneratedColumn } from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../typeorm/decorator/columns/Column"
+import { OneToMany } from "../../typeorm/decorator/relations/OneToMany"
+import { PrimaryGeneratedColumn } from "../../typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { User } from "./User"
 
 export class Subcounters {

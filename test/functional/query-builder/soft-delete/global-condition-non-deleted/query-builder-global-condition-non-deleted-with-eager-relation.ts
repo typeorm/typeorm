@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { PostWithRelation } from "./entity/PostWithRelation"
 
 // This test is neccessary because finding with eager relation will be run in the different way

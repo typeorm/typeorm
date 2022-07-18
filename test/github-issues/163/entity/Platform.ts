@@ -1,8 +1,8 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Index } from "../../../../src/decorator/Index"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { ManyToMany } from "../../../../src/decorator/relations/ManyToMany"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Index } from "typeorm/decorator/Index"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
 import { Game } from "./Game"
 
 @Entity("platforms")

@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, PrimaryColumn } from "../../../../src"
+import { BaseEntity, Entity, PrimaryColumn } from "typeorm"
 
 @Entity("accounts")
 export class Account extends BaseEntity {

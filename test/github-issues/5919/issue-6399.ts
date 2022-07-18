@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import Sinon from "sinon"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

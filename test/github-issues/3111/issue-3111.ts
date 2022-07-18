@@ -4,9 +4,9 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
-import { InsertValuesMissingError } from "../../../src/error/InsertValuesMissingError"
+import { InsertValuesMissingError } from "../typeorm/error/InsertValuesMissingError"
 import { Test, DEFAULT_VALUE } from "./entity/Test"
 
 describe("github issues > #3111 Inserting with query builder attempts to insert a default row when values is empty array", () => {

@@ -1,6 +1,6 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
-import { ForeignKeyMetadata } from "../../../src/metadata/ForeignKeyMetadata"
+import { DataSource } from "../typeorm"
+import { ForeignKeyMetadata } from "../typeorm/metadata/ForeignKeyMetadata"
 import {
     closeTestingConnections,
     createTestingConnections,

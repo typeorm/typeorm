@@ -1,7 +1,7 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { ConnectionMetadataBuilder } from "../../../../src/connection/ConnectionMetadataBuilder"
-import { EntityMetadataValidator } from "../../../../src/metadata-builder/EntityMetadataValidator"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { ConnectionMetadataBuilder } from "typeorm/connection/ConnectionMetadataBuilder"
+import { EntityMetadataValidator } from "typeorm/metadata-builder/EntityMetadataValidator"
 import { expect } from "chai"
 
 describe("entity-metadata-validator", () => {

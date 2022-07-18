@@ -3,7 +3,7 @@ import {
     PrimaryGeneratedColumn,
     Column,
     OneToOne,
-} from "../../../../src"
+} from "typeorm"
 import { SessionSettings } from "./SessionSettings"
 
 @Entity({

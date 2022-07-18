@@ -4,7 +4,7 @@ import {
     RelationId,
     OneToMany,
     Entity,
-} from "../../../../src"
+} from "typeorm"
 import { Root } from "./Root"
 import { Shared } from "./Shared"
 

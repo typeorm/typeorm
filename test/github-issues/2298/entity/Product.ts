@@ -1,4 +1,4 @@
-import { Entity, OneToMany, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { TicketProduct } from "./TicketProduct"
 
 @Entity()

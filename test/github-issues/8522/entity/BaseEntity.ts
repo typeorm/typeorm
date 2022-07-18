@@ -2,7 +2,7 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
-} from "../../../../src"
+} from "typeorm"
 
 export class BaseEntity {
     @PrimaryGeneratedColumn()

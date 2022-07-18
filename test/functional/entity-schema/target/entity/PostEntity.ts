@@ -1,4 +1,4 @@
-import { EntitySchema } from "../../../../../src"
+import { EntitySchema } from "typeorm"
 import { Post } from "../model/Post"
 
 export const PostEntity = new EntitySchema<Post>({

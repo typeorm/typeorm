@@ -1,7 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src/index"
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm/index"
 import { Category } from "./Category"
-import { JoinTable } from "../../../../src/decorator/relations/JoinTable"
-import { ManyToMany } from "../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "typeorm/decorator/relations/JoinTable"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
 
 @Entity()
 export class Animal {

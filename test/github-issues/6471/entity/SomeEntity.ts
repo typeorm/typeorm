@@ -1,5 +1,5 @@
-import { Column, Unique, PrimaryGeneratedColumn } from "../../../../src"
-import { Entity } from "../../../../src"
+import { Column, Unique, PrimaryGeneratedColumn } from "typeorm"
+import { Entity } from "typeorm"
 
 export enum CreationMechanism {
     SOURCE_A = "SOURCE_A",

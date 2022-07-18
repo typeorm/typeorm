@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { Order } from "./entity/Order"
 import { OrderCustomer } from "./entity/OrderCustomer"

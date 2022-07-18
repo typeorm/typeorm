@@ -3,7 +3,7 @@ import {
     Entity,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src/index"
+} from "typeorm/index"
 import { EventRole } from "./EventRole"
 
 @Entity()

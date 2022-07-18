@@ -3,7 +3,7 @@ import {
     JoinColumn,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { ExampleText } from "./ExampleText"
 
 @Entity()

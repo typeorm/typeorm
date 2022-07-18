@@ -1,6 +1,6 @@
-import { DataSource, ValueTransformer } from "../../../../../src"
-import { ViewColumn } from "../../../../../src/decorator/columns/ViewColumn"
-import { ViewEntity } from "../../../../../src/decorator/entity-view/ViewEntity"
+import { DataSource, ValueTransformer } from "typeorm"
+import { ViewColumn } from "typeorm/decorator/columns/ViewColumn"
+import { ViewEntity } from "typeorm/decorator/entity-view/ViewEntity"
 import { Album } from "./Album"
 import { Photo } from "./Photo"
 

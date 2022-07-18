@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import { MigrationInterface, QueryRunner } from "typeorm"
 
 export class WithoutView1623518107000 implements MigrationInterface {
     name = "WithoutView1623518107000"

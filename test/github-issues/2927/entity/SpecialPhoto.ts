@@ -1,4 +1,4 @@
-import { ChildEntity, Column } from "../../../../src"
+import { ChildEntity, Column } from "typeorm"
 import { ContentType } from "./Content"
 import { Photo } from "./Photo"
 

@@ -1,7 +1,7 @@
-import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
-import { UpdateDateColumn } from "../../../../../src/decorator/columns/UpdateDateColumn"
-import { CreateDateColumn } from "../../../../../src/decorator/columns/CreateDateColumn"
-import { VersionColumn } from "../../../../../src/decorator/columns/VersionColumn"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { UpdateDateColumn } from "typeorm/decorator/columns/UpdateDateColumn"
+import { CreateDateColumn } from "typeorm/decorator/columns/CreateDateColumn"
+import { VersionColumn } from "typeorm/decorator/columns/VersionColumn"
 
 export class PostEmbedded {
     @PrimaryColumn()

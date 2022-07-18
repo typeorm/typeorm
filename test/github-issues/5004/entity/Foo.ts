@@ -1,6 +1,6 @@
-import { Column } from "../../../../src/decorator/columns/Column"
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Index } from "../../../../src/decorator/Index"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Index } from "typeorm/decorator/Index"
 
 @Entity()
 export class Foo {

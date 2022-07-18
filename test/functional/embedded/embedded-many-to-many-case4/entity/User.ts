@@ -1,8 +1,8 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { ManyToMany } from "../../../../../src/decorator/relations/ManyToMany"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
 import { Post } from "./Post"
-import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
 
 @Entity()
 export class User {

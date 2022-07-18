@@ -6,9 +6,9 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { Foo } from "./entity/Foo"
-import { QueryFailedError } from "../../../src"
+import { QueryFailedError } from "../typeorm"
 import { expect } from "chai"
 
 describe("github issues > #2464 - ManyToMany onDelete option not working", () => {

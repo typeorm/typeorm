@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, OneToMany, PrimaryColumn } from "../../../../src"
+import { BaseEntity, Entity, OneToMany, PrimaryColumn } from "typeorm"
 import { AccessEvent } from "./AccessEvent"
 
 enum Providers {

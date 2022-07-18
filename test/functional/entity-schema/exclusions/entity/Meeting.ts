@@ -1,4 +1,4 @@
-import { EntitySchema } from "../../../../../src/index"
+import { EntitySchema } from "typeorm/index"
 
 export const MeetingSchema = new EntitySchema<any>({
     name: "Meeting",

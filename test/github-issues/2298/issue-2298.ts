@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, In } from "../../../src"
+import { DataSource, In } from "../typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

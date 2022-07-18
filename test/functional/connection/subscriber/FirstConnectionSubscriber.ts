@@ -1,6 +1,6 @@
-import { EntitySubscriberInterface } from "../../../../src/subscriber/EntitySubscriberInterface"
-import { EventSubscriber } from "../../../../src/decorator/listeners/EventSubscriber"
-import { InsertEvent } from "../../../../src/subscriber/event/InsertEvent"
+import { EntitySubscriberInterface } from "typeorm/subscriber/EntitySubscriberInterface"
+import { EventSubscriber } from "typeorm/decorator/listeners/EventSubscriber"
+import { InsertEvent } from "typeorm/subscriber/event/InsertEvent"
 
 @EventSubscriber()
 export class FirstConnectionSubscriber implements EntitySubscriberInterface {

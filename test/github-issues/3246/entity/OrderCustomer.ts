@@ -6,7 +6,7 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 export class OrderCustomer {

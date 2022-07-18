@@ -1,6 +1,6 @@
-import { JoinTable, Entity, ManyToMany } from "../../../../src"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { JoinTable, Entity, ManyToMany } from "typeorm"
+import { Column } from "typeorm/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { PostWithVeryLongName } from "./PostWithVeryLongName"
 
 @Entity()

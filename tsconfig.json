@@ -19,7 +19,12 @@
         "pretty": true,
         "strictNullChecks": true,
         "noUnusedLocals": true,
-        "downlevelIteration": true
+        "downlevelIteration": true,
+        "baseUrl": "./",
+        "paths": {
+          "typeorm": ["./src"],
+          "typeorm/*": ["./src/*"]
+        }
     },
     "include": [
       "sample",

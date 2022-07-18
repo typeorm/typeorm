@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { PostgresConnectionOptions } from "../typeorm/driver/postgres/PostgresConnectionOptions"
 
 describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
     let connection: DataSource

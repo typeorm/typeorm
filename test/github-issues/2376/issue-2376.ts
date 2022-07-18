@@ -1,12 +1,12 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { expect } from "chai"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 
 describe("github issues > #2376 Naming single column unique constraint with decorator not working as expected", () => {
     let connections: DataSource[]

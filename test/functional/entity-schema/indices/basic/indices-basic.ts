@@ -4,9 +4,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
-import { EntityMetadata } from "../../../../../src/metadata/EntityMetadata"
-import { IndexMetadata } from "../../../../../src/metadata/IndexMetadata"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { EntityMetadata } from "typeorm/metadata/EntityMetadata"
+import { IndexMetadata } from "typeorm/metadata/IndexMetadata"
 import { expect } from "chai"
 import { PersonSchema } from "./entity/Person"
 

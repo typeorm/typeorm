@@ -4,7 +4,7 @@ import {
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Grandchild } from "./Grandchild"
 import { Parent } from "./Parent"
 

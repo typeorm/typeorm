@@ -1,14 +1,14 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { TableColumn } from "../typeorm/schema-builder/table/TableColumn"
 import {
     closeTestingConnections,
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { PostgresDriver } from "../typeorm/driver/postgres/PostgresDriver"
 
 describe("query runner > add column", () => {
     let connections: DataSource[]

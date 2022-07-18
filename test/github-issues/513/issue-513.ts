@@ -4,11 +4,11 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { ObjectLiteral } from "../../../src/common/ObjectLiteral"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { ObjectLiteral } from "../typeorm/common/ObjectLiteral"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
-import { DateUtils } from "../../../src/util/DateUtils"
+import { DateUtils } from "../typeorm/util/DateUtils"
 
 describe("github issues > #513 Incorrect time/datetime types for SQLite", () => {
     let connections: DataSource[]

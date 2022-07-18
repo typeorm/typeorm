@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn } from "../../../../src"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity, PrimaryGeneratedColumn } from "typeorm"
+import { Column } from "typeorm/decorator/columns/Column"
 
 @Entity("Error")
 export class Error {

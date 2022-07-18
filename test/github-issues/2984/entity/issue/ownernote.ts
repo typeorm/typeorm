@@ -1,4 +1,4 @@
-import { ChildEntity, Column } from "../../../../../src"
+import { ChildEntity, Column } from "typeorm"
 import { Note } from "./note"
 
 @ChildEntity()

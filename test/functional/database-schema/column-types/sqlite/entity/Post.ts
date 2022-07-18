@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from "../../../../../../src"
+import { Column, Entity, PrimaryColumn } from "../typeorm"
 import { FruitEnum } from "../enum/FruitEnum"
 
 @Entity()

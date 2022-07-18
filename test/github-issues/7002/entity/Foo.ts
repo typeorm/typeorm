@@ -5,7 +5,7 @@ import {
     JoinColumn,
     OneToOne,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Bar } from "./Bar"
 
 @Entity()

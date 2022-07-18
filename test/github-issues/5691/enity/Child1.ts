@@ -4,7 +4,7 @@ import {
     OneToMany,
     PrimaryGeneratedColumn,
     RelationId,
-} from "../../../../src"
+} from "typeorm"
 import { Root } from "./Root"
 import { Shared } from "./Shared"
 

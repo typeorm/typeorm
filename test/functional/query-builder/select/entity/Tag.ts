@@ -4,7 +4,7 @@ import {
     Entity,
     ManyToMany,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "typeorm"
 
 @Entity()
 export class Tag {

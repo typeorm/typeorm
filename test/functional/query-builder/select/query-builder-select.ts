@@ -11,13 +11,13 @@ import {
     In,
     IsNull,
     Raw,
-} from "../../../../src"
+} from "typeorm"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 import { HeroImage } from "./entity/HeroImage"
 import { ExternalPost } from "./entity/ExternalPost"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query builder > select", () => {
     let connections: DataSource[]

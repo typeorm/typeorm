@@ -4,7 +4,7 @@ import {
     OneToOne,
     JoinColumn,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 import { User } from "./User"
 
 @Entity()

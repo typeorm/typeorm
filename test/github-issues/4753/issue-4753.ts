@@ -1,5 +1,5 @@
-import { DataSource } from "../../../src/data-source/DataSource"
-import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { MysqlConnectionOptions } from "../typeorm/driver/mysql/MysqlConnectionOptions"
 import {
     closeTestingConnections,
     getTypeOrmConfig,

@@ -5,9 +5,9 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Animal } from "./entity/Animal"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
-import { VersionUtils } from "../../../src/util/VersionUtils"
+import { VersionUtils } from "../typeorm/util/VersionUtils"
 
 describe('github issues > #7235 Use "INSERT...RETURNING" in MariaDB.', () => {
     const runOnSpecificVersion = (version: string, fn: Function) => async () =>

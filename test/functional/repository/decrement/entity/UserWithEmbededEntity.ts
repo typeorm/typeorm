@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from "../../../../../src"
+import { Column, Entity, PrimaryColumn } from "typeorm"
 
 class FriendStats {
     @Column({ default: 0 })

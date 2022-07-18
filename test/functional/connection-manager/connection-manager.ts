@@ -1,17 +1,17 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { setupSingleTestingConnection } from "../../utils/test-utils"
-import { ConnectionManager } from "../../../src/connection/ConnectionManager"
-import { MysqlDriver } from "../../../src/driver/mysql/MysqlDriver"
-import { PrimaryGeneratedColumn } from "../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../src/decorator/columns/Column"
-import { Entity } from "../../../src/decorator/entity/Entity"
+import { ConnectionManager } from "../typeorm/connection/ConnectionManager"
+import { MysqlDriver } from "../typeorm/driver/mysql/MysqlDriver"
+import { PrimaryGeneratedColumn } from "../typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { Entity } from "../typeorm/decorator/entity/Entity"
 
 // Uncomment when testing the aurora data API driver
-// import {AuroraMysqlDriver} from "../../../src/driver/aurora-mysql/AuroraMysqlDriver";
-// import {AuroraDataApiConnectionOptions} from "../../../src/driver/aurora-mysql/AuroraDataApiConnectionOptions";
-// import {AuroraPostgresDriver} from "../../../src/driver/postgres/PostgresDriver";
-// import {AuroraPostgresConnectionOptions} from "../../../src/driver/aurora-postgres/AuroraPostgresConnectionOptions";
+// import {AuroraMysqlDriver} from "../typeorm/driver/aurora-mysql/AuroraMysqlDriver";
+// import {AuroraDataApiConnectionOptions} from "../typeorm/driver/aurora-mysql/AuroraDataApiConnectionOptions";
+// import {AuroraPostgresDriver} from "../typeorm/driver/postgres/PostgresDriver";
+// import {AuroraPostgresConnectionOptions} from "../typeorm/driver/aurora-postgres/AuroraPostgresConnectionOptions";
 
 describe("ConnectionManager", () => {
     @Entity()

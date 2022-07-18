@@ -1,7 +1,7 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src/data-source/DataSource"
-import { EntityMetadataValidator } from "../../../../../src/metadata-builder/EntityMetadataValidator"
-import { ConnectionMetadataBuilder } from "../../../../../src/connection/ConnectionMetadataBuilder"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { EntityMetadataValidator } from "typeorm/metadata-builder/EntityMetadataValidator"
+import { ConnectionMetadataBuilder } from "typeorm/connection/ConnectionMetadataBuilder"
 import { expect } from "chai"
 
 describe("relations > eager relations > circular eager relations", () => {

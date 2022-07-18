@@ -1,10 +1,10 @@
-import { EntitySchemaTransformer } from "../../../src/entity-schema/EntitySchemaTransformer"
+import { EntitySchemaTransformer } from "../typeorm/entity-schema/EntitySchemaTransformer"
 
 import { expect } from "chai"
 
 import { Post, PostSchema } from "./entity/Post"
 import { Author, AuthorSchema } from "./entity/Author"
-import { EntitySchema } from "../../../src"
+import { EntitySchema } from "../typeorm"
 
 describe("github issues > #5444 EntitySchema missing support for multiple joinColumns in relations", () => {
     it("Update query returns the number of affected rows", async () => {

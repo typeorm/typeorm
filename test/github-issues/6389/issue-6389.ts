@@ -1,4 +1,4 @@
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 import { expect } from "chai"
 
 describe("github issues > #6389 MongoDB URI Connection string with query params", () => {

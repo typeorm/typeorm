@@ -5,13 +5,13 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { User } from "./entity/User"
-import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
+import { LimitOnUpdateNotSupportedError } from "typeorm/error/LimitOnUpdateNotSupportedError"
 import { Photo } from "./entity/Photo"
-import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
-import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { UpdateValuesMissingError } from "typeorm/error/UpdateValuesMissingError"
+import { EntityPropertyNotFoundError } from "typeorm/error/EntityPropertyNotFoundError"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query builder > update", () => {
     let connections: DataSource[]

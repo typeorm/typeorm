@@ -3,7 +3,7 @@ import {
     Entity,
     Index,
     PrimaryGeneratedColumn,
-} from "../../../../../../src"
+} from "../typeorm"
 
 @Entity()
 @Index("IDX_NAME", ["name"])

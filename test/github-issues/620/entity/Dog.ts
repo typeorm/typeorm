@@ -1,6 +1,6 @@
-import { Entity } from "../../../../src/index"
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { OneToMany } from "../../../../src/decorator/relations/OneToMany"
+import { Entity } from "typeorm/index"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { OneToMany } from "typeorm/decorator/relations/OneToMany"
 import { Cat } from "./Cat"
 
 @Entity()

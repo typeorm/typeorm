@@ -1,4 +1,4 @@
-import { Column, PrimaryGeneratedColumn } from "../../../../src/index"
+import { Column, PrimaryGeneratedColumn } from "typeorm/index"
 
 export abstract class AbstractEntity {
     @PrimaryGeneratedColumn() id: number

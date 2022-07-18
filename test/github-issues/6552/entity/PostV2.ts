@@ -1,6 +1,6 @@
-import { ObjectID, ObjectIdColumn } from "../../../../src"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { ObjectID, ObjectIdColumn } from "typeorm"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
 
 @Entity()
 export class PostV2 {

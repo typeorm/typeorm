@@ -1,4 +1,4 @@
-import { ChildEntity, ManyToOne } from "../../../../src"
+import { ChildEntity, ManyToOne } from "typeorm"
 import { Contact } from "./Contact"
 import { User } from "./User"
 

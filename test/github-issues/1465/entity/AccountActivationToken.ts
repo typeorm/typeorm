@@ -1,7 +1,7 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { TableInheritance } from "../../../../src/decorator/entity/TableInheritance"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { TableInheritance } from "typeorm/decorator/entity/TableInheritance"
 import { Token } from "./Token"
-import { OneToOne, JoinColumn } from "../../../../src/index"
+import { OneToOne, JoinColumn } from "typeorm/index"
 import { Account } from "./Account"
 
 @Entity()

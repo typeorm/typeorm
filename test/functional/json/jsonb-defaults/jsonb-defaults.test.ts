@@ -1,6 +1,6 @@
 import "../../../utils/test-setup"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../src"
+import { DataSource } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

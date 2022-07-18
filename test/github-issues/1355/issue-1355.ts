@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import { Animal } from "./entity/Animal"
 
 describe("github issues > #1355 Allow explicitly named primary keys, foreign keys, and indices", () => {

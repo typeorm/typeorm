@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Table } from "../../../src/schema-builder/table/Table"
+import { Table } from "../typeorm/schema-builder/table/Table"
 
 describe("query runner > create primary key", () => {
     let connections: DataSource[]

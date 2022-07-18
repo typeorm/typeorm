@@ -1,5 +1,5 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { BeforeInsert, BeforeUpdate } from "../../../../../src"
+import { Column } from "typeorm/decorator/columns/Column"
+import { BeforeInsert, BeforeUpdate } from "typeorm"
 import { PostCounter } from "./PostCounter"
 
 export class PostInformation {

@@ -1,5 +1,5 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
 
 export class Subcounters {
     @PrimaryColumn()

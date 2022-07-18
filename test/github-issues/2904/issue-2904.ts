@@ -1,4 +1,4 @@
-import { DeepPartial } from "../../../src"
+import { DeepPartial } from "../typeorm"
 import { Comment } from "./entity/Comment"
 
 describe("github issues > #2904 Type DeepPartial issue when used with generics", () => {

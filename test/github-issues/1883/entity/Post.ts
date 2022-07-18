@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity, PrimaryGeneratedColumn } from "typeorm"
 import { FruitEnum } from "../enum/FruitEnum"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Column } from "typeorm/decorator/columns/Column"
 
 @Entity()
 export class Post {

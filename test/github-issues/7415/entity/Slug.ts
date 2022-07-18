@@ -1,4 +1,4 @@
-import { PrimaryColumn } from "../../../../src"
+import { PrimaryColumn } from "typeorm"
 
 export class Slug {
     @PrimaryColumn()

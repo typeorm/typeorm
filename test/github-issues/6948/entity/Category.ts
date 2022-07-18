@@ -5,7 +5,7 @@ import {
     Tree,
     TreeParent,
     TreeChildren,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 @Tree("materialized-path")

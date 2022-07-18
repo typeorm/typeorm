@@ -1,5 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
-import { Index } from "../../../../../src/decorator/Index"
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { Index } from "typeorm/decorator/Index"
 
 @Index(["name", "text"], { where: `"name" IS NOT NULL AND "text" IS NOT NULL` })
 @Entity()

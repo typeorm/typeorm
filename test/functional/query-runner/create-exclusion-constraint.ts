@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { DataSource, Table } from "../../../src"
+import { DataSource, Table } from "../typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { TableExclusion } from "../../../src/schema-builder/table/TableExclusion"
+import { TableExclusion } from "../typeorm/schema-builder/table/TableExclusion"
 
 describe("query runner > create exclusion constraint", () => {
     let connections: DataSource[]

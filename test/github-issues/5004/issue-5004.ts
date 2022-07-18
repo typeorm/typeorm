@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { getMetadataArgsStorage } from "../../../src"
+import { getMetadataArgsStorage } from "../typeorm"
 import { Foo } from "./entity/Foo"
 
 describe("github issues > #5004 expireAfterSeconds 0 can't be passed to Index decorator", () => {

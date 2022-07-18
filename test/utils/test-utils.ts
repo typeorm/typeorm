@@ -11,11 +11,11 @@ import {
     NamingStrategyInterface,
     QueryRunner,
     Table,
-} from "../../src"
-import { QueryResultCache } from "../../src/cache/QueryResultCache"
+} from "typeorm"
+import { QueryResultCache } from "typeorm/cache/QueryResultCache"
 import path from "path"
-import { ObjectUtils } from "../../src/util/ObjectUtils"
-import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import { ObjectUtils } from "typeorm/util/ObjectUtils"
+import { EntitySubscriberMetadataArgs } from "typeorm/metadata-args/EntitySubscriberMetadataArgs"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.

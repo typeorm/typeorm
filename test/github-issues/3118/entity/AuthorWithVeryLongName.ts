@@ -1,5 +1,5 @@
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column, Entity, ManyToOne, OneToMany } from "../../../../src"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column, Entity, ManyToOne, OneToMany } from "typeorm"
 import { GroupWithVeryLongName } from "./GroupWithVeryLongName"
 import { PostWithVeryLongName } from "./PostWithVeryLongName"
 

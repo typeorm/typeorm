@@ -6,7 +6,7 @@ import {
     ManyToOne,
     PrimaryGeneratedColumn,
     Unique,
-} from "../../../../src"
+} from "typeorm"
 import { Block } from "./Block"
 
 @Entity({ synchronize: true })

@@ -7,7 +7,7 @@ import {
     Tree,
     TreeChildren,
     TreeParent,
-} from "../../../../src"
+} from "typeorm"
 import { Site } from "./Site"
 
 @Entity()

@@ -1,9 +1,9 @@
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { ObjectIdColumn } from "../../../../../../src/decorator/columns/ObjectIdColumn"
-import { ObjectID } from "../../../../../../src/driver/mongodb/typings"
-import { CreateDateColumn } from "../../../../../../src/decorator/columns/CreateDateColumn"
-import { UpdateDateColumn } from "../../../../../../src/decorator/columns/UpdateDateColumn"
+import { Entity } from "../typeorm/decorator/entity/Entity"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { ObjectIdColumn } from "../typeorm/decorator/columns/ObjectIdColumn"
+import { ObjectID } from "../typeorm/driver/mongodb/typings"
+import { CreateDateColumn } from "../typeorm/decorator/columns/CreateDateColumn"
+import { UpdateDateColumn } from "../typeorm/decorator/columns/UpdateDateColumn"
 
 @Entity()
 export class Post {

@@ -1,6 +1,6 @@
 import { assert } from "chai"
-import { DataSource, ObjectLiteral, TreeRepository } from "../../../src"
-import { NestedSetMultipleRootError } from "../../../src/error/NestedSetMultipleRootError"
+import { DataSource, ObjectLiteral, TreeRepository } from "../typeorm"
+import { NestedSetMultipleRootError } from "../typeorm/error/NestedSetMultipleRootError"
 import {
     closeTestingConnections,
     createTestingConnections,

@@ -1,5 +1,5 @@
-import { Entity, PrimaryColumn } from "../../../../src"
-import { ManyToMany } from "../../../../src/decorator/relations/ManyToMany"
+import { Entity, PrimaryColumn } from "typeorm"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
 import { Post } from "./Post"
 
 @Entity()

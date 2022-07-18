@@ -1,4 +1,4 @@
-import { Column, JoinTable, ManyToMany } from "../../../../../src"
+import { Column, JoinTable, ManyToMany } from "typeorm"
 import { Author } from "./Author"
 
 export class Counters {

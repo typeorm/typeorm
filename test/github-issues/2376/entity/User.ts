@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from "../../../../src"
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm"
 
 @Entity()
 @Unique(["age"])

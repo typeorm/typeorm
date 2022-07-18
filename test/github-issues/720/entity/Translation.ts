@@ -1,11 +1,11 @@
-import { Index } from "../../../../src/decorator/Index"
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
-import { JoinColumn } from "../../../../src/decorator/relations/JoinColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Index } from "typeorm/decorator/Index"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
+import { Column } from "typeorm/decorator/columns/Column"
 import { Message } from "./Message"
 import { Locale } from "./Locale"
-import { PrimaryColumn } from "../../../../src"
+import { PrimaryColumn } from "typeorm"
 
 @Entity()
 @Index(["locale", "message"], { unique: true })

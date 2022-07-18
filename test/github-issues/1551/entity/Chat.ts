@@ -6,7 +6,7 @@ import {
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src/index"
+} from "typeorm/index"
 import { Message } from "./Message"
 import { User } from "./User"
 

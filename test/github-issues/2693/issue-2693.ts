@@ -4,9 +4,9 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { Migration } from "../../../src/migration/Migration"
-import { QueryFailedError } from "../../../src/error/QueryFailedError"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { Migration } from "../typeorm/migration/Migration"
+import { QueryFailedError } from "../typeorm/error/QueryFailedError"
 
 describe("github issues > #2875 Option to run migrations in 1-transaction-per-migration mode", () => {
     let connections: DataSource[]

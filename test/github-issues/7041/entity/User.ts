@@ -5,7 +5,7 @@ import {
     OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Admin } from "./Admin"
 import { OrganizationMembership } from "./OrganizationMembership"
 

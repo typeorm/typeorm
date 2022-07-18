@@ -3,7 +3,7 @@ import {
     EventSubscriber,
     LoadEvent,
     UpdateEvent,
-} from "../../../../src"
+} from "typeorm"
 import { Setting } from "./Setting"
 
 @EventSubscriber()

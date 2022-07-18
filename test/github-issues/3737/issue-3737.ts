@@ -1,4 +1,4 @@
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 import { expect } from "chai"
 
 describe("github issues > #3737 Should URL-decode the user info of a data source URI", () => {

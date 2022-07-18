@@ -5,7 +5,7 @@ import {
     OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { User } from "./User"
 
 @Entity()

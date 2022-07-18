@@ -1,5 +1,5 @@
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
 
 @Entity()
 export class Post {

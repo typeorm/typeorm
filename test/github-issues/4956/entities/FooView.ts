@@ -1,4 +1,4 @@
-import { DataSource, ViewColumn, ViewEntity } from "../../../../src"
+import { DataSource, ViewColumn, ViewEntity } from "typeorm"
 
 import { Foo } from "./Foo"
 

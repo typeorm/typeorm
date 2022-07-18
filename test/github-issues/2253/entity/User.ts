@@ -4,7 +4,7 @@ import {
     Entity,
     PrimaryColumn,
     TableInheritance,
-} from "../../../../src"
+} from "typeorm"
 
 @TableInheritance({ column: "type" })
 @Entity()

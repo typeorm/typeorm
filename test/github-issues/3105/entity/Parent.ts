@@ -1,4 +1,4 @@
-import { Entity, OneToMany, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child"
 
 @Entity("test_parent")

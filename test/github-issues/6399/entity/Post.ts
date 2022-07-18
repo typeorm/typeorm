@@ -5,7 +5,7 @@ import {
     PrimaryGeneratedColumn,
     TableInheritance,
     ChildEntity,
-} from "../../../../src"
+} from "typeorm"
 import { Comment } from "./Comment"
 
 @Entity()

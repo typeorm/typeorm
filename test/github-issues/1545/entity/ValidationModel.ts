@@ -1,4 +1,4 @@
-import { Column, OneToMany, Entity } from "../../../../src/index"
+import { Column, OneToMany, Entity } from "typeorm/index"
 import { DataModel } from "./DataModel"
 
 @Entity()

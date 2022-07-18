@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryColumn } from "../../../../../src"
+import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm"
 import { Photo } from "./Photo"
 
 @Entity()

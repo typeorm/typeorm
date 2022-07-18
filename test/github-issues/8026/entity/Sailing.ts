@@ -4,7 +4,7 @@ import {
     JoinColumn,
     OneToMany,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 import { ScheduledSailing } from "./ScheduledSailing"
 
 @Entity()

@@ -1,10 +1,10 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Entity } from "typeorm/decorator/entity/Entity"
 import {
     OneToMany,
     Column,
     DeleteDateColumn,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { User } from "./User"
 
 @Entity()

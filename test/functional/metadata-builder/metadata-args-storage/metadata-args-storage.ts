@@ -2,7 +2,7 @@ import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { ContentModule } from "./entity/ContentModule"
 import { Unit } from "./entity/Unit"
-import { MetadataUtils } from "../../../../src/metadata-builder/MetadataUtils"
+import { MetadataUtils } from "typeorm/metadata-builder/MetadataUtils"
 
 describe("metadata builder > MetadataArgsUtils", () => {
     it("getInheritanceTree", () => {

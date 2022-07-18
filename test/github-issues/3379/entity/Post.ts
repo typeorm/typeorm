@@ -1,6 +1,6 @@
-import { Index, PrimaryGeneratedColumn } from "../../../../src"
-import { Column } from "../../../../src"
-import { Entity } from "../../../../src"
+import { Index, PrimaryGeneratedColumn } from "typeorm"
+import { Column } from "typeorm"
+import { Entity } from "typeorm"
 
 @Index("name_index", ["name"])
 @Entity()

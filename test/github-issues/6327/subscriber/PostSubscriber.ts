@@ -1,7 +1,7 @@
 import { expect } from "chai"
-import { EntitySubscriberInterface, EventSubscriber } from "../../../../src"
-import { RecoverEvent } from "../../../../src/subscriber/event/RecoverEvent"
-import { SoftRemoveEvent } from "../../../../src/subscriber/event/SoftRemoveEvent"
+import { EntitySubscriberInterface, EventSubscriber } from "typeorm"
+import { RecoverEvent } from "typeorm/subscriber/event/RecoverEvent"
+import { SoftRemoveEvent } from "typeorm/subscriber/event/SoftRemoveEvent"
 import { Post } from "../entity/Post"
 
 @EventSubscriber()

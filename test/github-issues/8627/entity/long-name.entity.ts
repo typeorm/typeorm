@@ -1,5 +1,5 @@
-import { PrimaryGeneratedColumn, ManyToMany, JoinTable } from "../../../../src"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm"
+import { Entity } from "typeorm/decorator/entity/Entity"
 import {
     AnotherReallyLongNameForAnEntityBecauseThisIsNecessaryB,
     AnotherRealLongNameForAnEntityBecauseThisIsNecessaryC,

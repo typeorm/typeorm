@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 
 describe("github issues > #2984 Discriminator conflict reported even for non-inherited tables", () => {
     let connections: DataSource[]

@@ -3,7 +3,7 @@ import {
     Entity,
     ManyToOne,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Category } from "./Category"
 import { Post } from "./Post"
 

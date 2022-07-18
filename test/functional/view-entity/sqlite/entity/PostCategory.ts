@@ -1,6 +1,6 @@
-import { ValueTransformer } from "../../../../../src"
-import { ViewColumn } from "../../../../../src/decorator/columns/ViewColumn"
-import { ViewEntity } from "../../../../../src/decorator/entity-view/ViewEntity"
+import { ValueTransformer } from "typeorm"
+import { ViewColumn } from "typeorm/decorator/columns/ViewColumn"
+import { ViewEntity } from "typeorm/decorator/entity-view/ViewEntity"
 
 export const uppercase: ValueTransformer = {
     to: (entityValue: string) => {},

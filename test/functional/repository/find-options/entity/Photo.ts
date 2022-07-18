@@ -1,10 +1,10 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Entity } from "typeorm/decorator/entity/Entity"
 import {
     JoinTable,
     ManyToMany,
     PrimaryGeneratedColumn,
-} from "../../../../../src/index"
-import { Column } from "../../../../../src/decorator/columns/Column"
+} from "typeorm/index"
+import { Column } from "typeorm/decorator/columns/Column"
 import { Category } from "./Category"
 
 @Entity()

@@ -5,7 +5,7 @@ import {
     ManyToOne,
     PrimaryGeneratedColumn,
     Unique,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 @Unique(["clientId", "key"])

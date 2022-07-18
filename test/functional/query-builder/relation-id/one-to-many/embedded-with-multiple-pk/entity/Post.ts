@@ -1,7 +1,7 @@
-import { Entity } from "../../../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { Entity } from "../../typeorm/decorator/entity/Entity"
+import { Column } from "../../typeorm/decorator/columns/Column"
 import { Counters } from "./Counters"
-import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
+import { PrimaryColumn } from "../../typeorm/decorator/columns/PrimaryColumn"
 
 @Entity()
 export class Post {

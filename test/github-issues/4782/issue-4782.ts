@@ -4,9 +4,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
-import { VersionUtils } from "../../../src/util/VersionUtils"
+import { VersionUtils } from "../typeorm/util/VersionUtils"
 
 describe("github issues > #4782 mariadb driver wants to recreate create/update date columns CURRENT_TIMESTAMP(6) === current_timestamp(6)", () => {
     let connections: DataSource[]

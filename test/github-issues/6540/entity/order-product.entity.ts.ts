@@ -3,7 +3,7 @@ import {
     Column,
     Entity,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { OrderStatus } from "./order.entity.ts"
 
 @Entity()

@@ -6,7 +6,7 @@ import {
     ManyToMany,
     ManyToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Category } from "./Category"
 import { Breed } from "./Breed"
 

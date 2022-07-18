@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,7 +12,7 @@ import { Category } from "./entity/Category"
 import { Person } from "./entity/Person"
 import { Question } from "./entity/Question"
 import { Answer } from "./entity/Answer"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("multi-schema-and-database > basic-functionality", () => {
     describe("custom-table-schema", () => {

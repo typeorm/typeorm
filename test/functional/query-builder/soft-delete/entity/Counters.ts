@@ -1,5 +1,5 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { DeleteDateColumn } from "../../../../../src/decorator/columns/DeleteDateColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { DeleteDateColumn } from "typeorm/decorator/columns/DeleteDateColumn"
 export class Counters {
     @Column({ default: 1 })
     likes: number

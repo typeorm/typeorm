@@ -5,7 +5,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { Connection } from "../../../../src/connection/Connection"
+import { Connection } from "typeorm/connection/Connection"
 import { Foo } from "./entity/foo"
 import { filterByCteCapabilities } from "./helpers"
 

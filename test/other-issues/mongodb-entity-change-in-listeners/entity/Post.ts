@@ -1,8 +1,8 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { BeforeUpdate } from "../../../../src/decorator/listeners/BeforeUpdate"
-import { UpdateDateColumn } from "../../../../src/decorator/columns/UpdateDateColumn"
-import { AfterLoad, ObjectIdColumn } from "../../../../src"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { BeforeUpdate } from "typeorm/decorator/listeners/BeforeUpdate"
+import { UpdateDateColumn } from "typeorm/decorator/columns/UpdateDateColumn"
+import { AfterLoad, ObjectIdColumn } from "typeorm"
 
 @Entity()
 export class Post {

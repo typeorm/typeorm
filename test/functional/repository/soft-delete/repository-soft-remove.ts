@@ -5,10 +5,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { PostWithoutDeleteDate } from "./entity/PostWithoutDeleteDate"
-import { MissingDeleteDateColumnError } from "../../../../src/error/MissingDeleteDateColumnError"
+import { MissingDeleteDateColumnError } from "typeorm/error/MissingDeleteDateColumnError"
 
 describe("repository > soft-remove", () => {
     let connections: DataSource[]

@@ -1,9 +1,9 @@
-import { PrimaryGeneratedColumn } from "../../../../src"
-import { Column } from "../../../../src"
-import { TreeParent } from "../../../../src"
-import { TreeChildren } from "../../../../src"
-import { Entity } from "../../../../src"
-import { Tree } from "../../../../src"
+import { PrimaryGeneratedColumn } from "typeorm"
+import { Column } from "typeorm"
+import { TreeParent } from "typeorm"
+import { TreeChildren } from "typeorm"
+import { Entity } from "typeorm"
+import { Tree } from "typeorm"
 
 @Entity()
 @Tree("closure-table")

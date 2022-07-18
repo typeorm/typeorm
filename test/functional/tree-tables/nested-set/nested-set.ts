@@ -1,7 +1,7 @@
 import "../../../utils/test-setup"
 import "reflect-metadata"
 import { Category } from "./entity/Category"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

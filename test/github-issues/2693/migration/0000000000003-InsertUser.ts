@@ -1,5 +1,5 @@
-import { MigrationInterface } from "../../../../src/migration/MigrationInterface"
-import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import { MigrationInterface } from "typeorm/migration/MigrationInterface"
+import { QueryRunner } from "typeorm/query-runner/QueryRunner"
 import { User } from "../entity/user"
 
 export class InsertUser0000000000003 implements MigrationInterface {

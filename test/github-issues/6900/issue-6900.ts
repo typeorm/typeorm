@@ -4,10 +4,10 @@ import {
     reloadTestingDatabases,
     setupTestingConnections,
 } from "../../utils/test-utils"
-import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
-import { DataSource, DataSourceOptions, MongoClient } from "../../../src"
+import { MongoDriver } from "../typeorm/driver/mongodb/MongoDriver"
+import { DataSource, DataSourceOptions, MongoClient } from "../typeorm"
 import { Warn } from "./entity/Warn"
-import { MongoConnectionOptions } from "../../../src/driver/mongodb/MongoConnectionOptions"
+import { MongoConnectionOptions } from "../typeorm/driver/mongodb/MongoConnectionOptions"
 
 describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given database, creates new database "test" instead', () => {
     let connections: DataSource[] = []

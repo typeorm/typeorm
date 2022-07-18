@@ -4,7 +4,7 @@ import {
     Index,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { PlanOfRecord } from "./PlanOfRecord"
 
 @Entity({ synchronize: true })

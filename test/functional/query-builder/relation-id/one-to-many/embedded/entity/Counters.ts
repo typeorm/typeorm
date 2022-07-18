@@ -1,7 +1,7 @@
-import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { Column } from "../../typeorm/decorator/columns/Column"
 import { Category } from "./Category"
 import { Subcounters } from "./Subcounters"
-import { OneToMany } from "../../../../../../../src/decorator/relations/OneToMany"
+import { OneToMany } from "../../typeorm/decorator/relations/OneToMany"
 
 export class Counters {
     @Column()

@@ -3,7 +3,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     ValueTransformer,
-} from "../../../../../src"
+} from "typeorm"
 
 const encode: ValueTransformer = {
     to: (entityValue: string) => {

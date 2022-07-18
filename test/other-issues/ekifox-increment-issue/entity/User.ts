@@ -1,6 +1,6 @@
-import { Entity } from "../../../../src"
-import { Column } from "../../../../src"
-import { PrimaryColumn } from "../../../../src"
+import { Entity } from "typeorm"
+import { Column } from "typeorm"
+import { PrimaryColumn } from "typeorm"
 
 @Entity()
 export class User {

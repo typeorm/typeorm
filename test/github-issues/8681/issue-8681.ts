@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource, DeepPartial, Repository } from "../../../src"
+import { DataSource, DeepPartial, Repository } from "../typeorm"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,

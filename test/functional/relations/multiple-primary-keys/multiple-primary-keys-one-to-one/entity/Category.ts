@@ -1,10 +1,10 @@
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { OneToOne } from "../../../../../../src/decorator/relations/OneToOne"
+import { Entity } from "../typeorm/decorator/entity/Entity"
+import { PrimaryColumn } from "../typeorm/decorator/columns/PrimaryColumn"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { OneToOne } from "../typeorm/decorator/relations/OneToOne"
 import { Post } from "./Post"
 import { Tag } from "./Tag"
-import { Unique } from "../../../../../../src"
+import { Unique } from "../typeorm"
 
 @Entity()
 @Unique(["code", "version", "description"])

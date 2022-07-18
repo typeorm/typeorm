@@ -1,4 +1,4 @@
-import { EntitySchema } from "../../../../../src"
+import { EntitySchema } from "typeorm"
 import { Category } from "../model/Category"
 
 export const CategoryEntity = new EntitySchema<Category>({

@@ -1,4 +1,4 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from "../../../../src"
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 @Index(["token"], { unique: false })

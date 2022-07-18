@@ -4,7 +4,7 @@ import {
     Entity,
     ManyToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Category } from "./Category"
 
 @Entity()

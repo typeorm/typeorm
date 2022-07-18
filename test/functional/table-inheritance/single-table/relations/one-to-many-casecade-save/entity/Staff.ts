@@ -4,7 +4,7 @@ import {
     ManyToOne,
     PrimaryGeneratedColumn,
     TableInheritance,
-} from "../../../../../../../src"
+} from "../../typeorm"
 import { Faculty } from "./Faculty"
 
 @Entity()

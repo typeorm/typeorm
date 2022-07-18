@@ -1,8 +1,8 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
-import { JoinColumn } from "../../../../src/decorator/relations/JoinColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
+import { Column } from "typeorm/decorator/columns/Column"
 import { Device } from "./Device"
 
 @Entity("device_instances")

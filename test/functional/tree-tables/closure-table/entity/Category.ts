@@ -1,9 +1,9 @@
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { TreeParent } from "../../../../../src/decorator/tree/TreeParent"
-import { TreeChildren } from "../../../../../src/decorator/tree/TreeChildren"
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { Tree } from "../../../../../src/decorator/tree/Tree"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { TreeParent } from "typeorm/decorator/tree/TreeParent"
+import { TreeChildren } from "typeorm/decorator/tree/TreeChildren"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Tree } from "typeorm/decorator/tree/Tree"
 
 @Entity()
 @Tree("closure-table")

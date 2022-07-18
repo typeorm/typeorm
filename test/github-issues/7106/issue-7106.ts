@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,7 +8,7 @@ import {
 } from "../../utils/test-utils"
 import { ShortTableName } from "./entity/ShortTableName"
 import { ReallyReallyVeryVeryVeryLongTableName } from "./entity/ReallyReallyVeryVeryVeryLongTableName"
-import { QueryFailedError } from "../../../src/error/QueryFailedError"
+import { QueryFailedError } from "../typeorm/error/QueryFailedError"
 
 /**
  * @see https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS

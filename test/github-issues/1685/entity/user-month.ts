@@ -4,7 +4,7 @@ import {
     ManyToOne,
     BeforeInsert,
     JoinColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Month } from "./month"
 import { User } from "./user"
 

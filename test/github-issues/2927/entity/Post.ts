@@ -1,4 +1,4 @@
-import { ChildEntity, Column } from "../../../../src"
+import { ChildEntity, Column } from "typeorm"
 import { Content, ContentType } from "./Content"
 
 @ChildEntity(ContentType.Post)

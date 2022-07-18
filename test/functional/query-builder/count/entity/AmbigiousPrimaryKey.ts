@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn } from "../../../../../src"
+import { Entity, PrimaryColumn } from "typeorm"
 
 @Entity("ambig_primary_key")
 export class AmbigiousPrimaryKey {

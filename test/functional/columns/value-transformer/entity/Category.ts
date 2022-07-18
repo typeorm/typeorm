@@ -3,7 +3,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     ValueTransformer,
-} from "../../../../../src"
+} from "typeorm"
 import { encrypt, lowercase } from "./User"
 
 const trim: ValueTransformer = {

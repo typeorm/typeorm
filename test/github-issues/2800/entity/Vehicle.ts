@@ -2,7 +2,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     TableInheritance,
-} from "../../../../src"
+} from "typeorm"
 
 export abstract class Engine {}
 

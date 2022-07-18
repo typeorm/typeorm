@@ -2,7 +2,7 @@ import "../../../utils/test-setup"
 import { expect } from "chai"
 import { Album } from "./entity/Album"
 import { Category } from "./entity/Category"
-import { DataSource } from "../../../../src"
+import { DataSource } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

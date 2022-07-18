@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,7 +7,7 @@ import {
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
-import { EntityNotFoundError } from "../../../src/error/EntityNotFoundError"
+import { EntityNotFoundError } from "../typeorm/error/EntityNotFoundError"
 
 describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () => {
     let connections: DataSource[]

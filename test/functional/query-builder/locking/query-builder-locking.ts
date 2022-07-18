@@ -4,20 +4,20 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { PostWithVersion } from "./entity/PostWithVersion"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { PostWithoutVersionAndUpdateDate } from "./entity/PostWithoutVersionAndUpdateDate"
 import { PostWithUpdateDate } from "./entity/PostWithUpdateDate"
 import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdatedDate"
-import { OptimisticLockVersionMismatchError } from "../../../../src/error/OptimisticLockVersionMismatchError"
-import { OptimisticLockCanNotBeUsedError } from "../../../../src/error/OptimisticLockCanNotBeUsedError"
-import { NoVersionOrUpdateDateColumnError } from "../../../../src/error/NoVersionOrUpdateDateColumnError"
-import { PessimisticLockTransactionRequiredError } from "../../../../src/error/PessimisticLockTransactionRequiredError"
-import { LockNotSupportedOnGivenDriverError } from "../../../../src/error/LockNotSupportedOnGivenDriverError"
-import { VersionUtils } from "../../../../src/util/VersionUtils"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { OptimisticLockVersionMismatchError } from "typeorm/error/OptimisticLockVersionMismatchError"
+import { OptimisticLockCanNotBeUsedError } from "typeorm/error/OptimisticLockCanNotBeUsedError"
+import { NoVersionOrUpdateDateColumnError } from "typeorm/error/NoVersionOrUpdateDateColumnError"
+import { PessimisticLockTransactionRequiredError } from "typeorm/error/PessimisticLockTransactionRequiredError"
+import { LockNotSupportedOnGivenDriverError } from "typeorm/error/LockNotSupportedOnGivenDriverError"
+import { VersionUtils } from "typeorm/util/VersionUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query builder > locking", () => {
     let connections: DataSource[]

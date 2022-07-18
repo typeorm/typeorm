@@ -5,7 +5,7 @@ import {
     Exclusion,
     PrimaryColumn,
     Unique,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 @Unique(["text", "tag"])

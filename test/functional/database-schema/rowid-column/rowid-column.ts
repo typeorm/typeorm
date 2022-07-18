@@ -3,7 +3,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 
 describe("database-schema > rowid-column", () => {
     let connections: DataSource[]

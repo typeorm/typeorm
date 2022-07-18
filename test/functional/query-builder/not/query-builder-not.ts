@@ -5,9 +5,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { User } from "./entity/User"
-import { NotBrackets } from "../../../../src/query-builder/NotBrackets"
+import { NotBrackets } from "typeorm/query-builder/NotBrackets"
 
 describe("query builder > not", () => {
     let connections: DataSource[]

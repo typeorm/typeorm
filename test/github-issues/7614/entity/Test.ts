@@ -1,4 +1,4 @@
-import { Column, Entity, Index, PrimaryColumn } from "../../../../src"
+import { Column, Entity, Index, PrimaryColumn } from "typeorm"
 
 enum ExternalUserProvider {
     A = "A",

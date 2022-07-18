@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, Generated } from "../../../../src"
+import { Entity, PrimaryColumn, Column, Generated } from "typeorm"
 
 @Entity()
 export class User {

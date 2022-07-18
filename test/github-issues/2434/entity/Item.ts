@@ -1,6 +1,6 @@
-import { CreateDateColumn, Column } from "../../../../src"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { CreateDateColumn, Column } from "typeorm"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
 
 @Entity("ITEM")
 export class Item {

@@ -1,4 +1,4 @@
-import { Entity, OneToOne, JoinColumn, PrimaryColumn } from "../../../../src"
+import { Entity, OneToOne, JoinColumn, PrimaryColumn } from "typeorm"
 import { Session } from "./Session"
 
 @Entity({

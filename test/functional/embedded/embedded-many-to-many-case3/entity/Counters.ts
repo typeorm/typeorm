@@ -1,7 +1,7 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { ManyToMany } from "../../../../../src/decorator/relations/ManyToMany"
-import { JoinTable } from "../../../../../src/decorator/relations/JoinTable"
-import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
+import { JoinTable } from "typeorm/decorator/relations/JoinTable"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
 import { Subcounters } from "./Subcounters"
 import { User } from "./User"
 

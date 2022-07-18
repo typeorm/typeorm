@@ -6,13 +6,13 @@ import {
     reloadTestingDatabases,
     sleep,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import sinon from "sinon"
-import { FileLogger } from "../../../../src"
+import { FileLogger } from "typeorm"
 import { promisify } from "util"
 import { readFile, unlink } from "fs"
 

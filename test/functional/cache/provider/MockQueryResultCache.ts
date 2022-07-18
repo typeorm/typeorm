@@ -1,12 +1,12 @@
-import { ObjectLiteral } from "../../../../src/common/ObjectLiteral"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { PostgresConnectionOptions } from "../../../../src/driver/postgres/PostgresConnectionOptions"
-import { MssqlParameter } from "../../../../src/driver/sqlserver/MssqlParameter"
-import { SqlServerConnectionOptions } from "../../../../src/driver/sqlserver/SqlServerConnectionOptions"
-import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
-import { Table } from "../../../../src/schema-builder/table/Table"
-import { QueryResultCache } from "../../../../src/cache/QueryResultCache"
-import { QueryResultCacheOptions } from "../../../../src/cache/QueryResultCacheOptions"
+import { ObjectLiteral } from "typeorm/common/ObjectLiteral"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions"
+import { MssqlParameter } from "typeorm/driver/sqlserver/MssqlParameter"
+import { SqlServerConnectionOptions } from "typeorm/driver/sqlserver/SqlServerConnectionOptions"
+import { QueryRunner } from "typeorm/query-runner/QueryRunner"
+import { Table } from "typeorm/schema-builder/table/Table"
+import { QueryResultCache } from "typeorm/cache/QueryResultCache"
+import { QueryResultCacheOptions } from "typeorm/cache/QueryResultCacheOptions"
 
 /**
  * Caches query result into current database, into separate table called "mock-query-result-cache".

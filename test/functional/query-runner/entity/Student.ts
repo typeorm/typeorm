@@ -4,7 +4,7 @@ import {
     PrimaryGeneratedColumn,
     ManyToOne,
     Index,
-} from "../../../../src"
+} from "typeorm"
 import { Faculty } from "./Faculty"
 import { Teacher } from "./Teacher"
 

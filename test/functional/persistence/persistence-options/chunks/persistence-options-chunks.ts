@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 
 describe("persistence > persistence options > chunks", () => {
     // -------------------------------------------------------------------------

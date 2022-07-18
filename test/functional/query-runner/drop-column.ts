@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 
 describe("query runner > drop column", () => {
     let connections: DataSource[]

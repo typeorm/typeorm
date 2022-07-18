@@ -1,8 +1,8 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Tree } from "../../../../src/decorator/tree/Tree"
-import { TreeChildren } from "../../../../src/decorator/tree/TreeChildren"
-import { TreeParent } from "../../../../src/decorator/tree/TreeParent"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Tree } from "typeorm/decorator/tree/Tree"
+import { TreeChildren } from "typeorm/decorator/tree/TreeChildren"
+import { TreeParent } from "typeorm/decorator/tree/TreeParent"
 
 @Entity({ name: "users", schema: "admin" })
 @Tree("nested-set")

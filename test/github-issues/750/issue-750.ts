@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
+import { IndexMetadata } from "../typeorm/metadata/IndexMetadata"
 import { expect } from "chai"
 
 describe("github issues > #750 Need option for Mysql's full text search", () => {

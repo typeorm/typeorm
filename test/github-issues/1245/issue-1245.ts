@@ -4,10 +4,10 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
-import { In } from "../../../src"
+import { In } from "../typeorm"
 
 describe("github issues > #1245 `findByIds` ignores `FindManyOptions`", () => {
     let connections: DataSource[]

@@ -4,7 +4,7 @@ import {
     OneToOne,
     PrimaryGeneratedColumn,
     RelationId,
-} from "../../../../src"
+} from "typeorm"
 import { ChildEntity } from "./ChildEntity"
 
 @Entity()

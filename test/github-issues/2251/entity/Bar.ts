@@ -1,5 +1,5 @@
-import { Column, ManyToOne, PrimaryGeneratedColumn } from "../../../../src"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Entity } from "typeorm/decorator/entity/Entity"
 import { Foo } from "./Foo"
 
 @Entity()

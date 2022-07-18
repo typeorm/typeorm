@@ -3,7 +3,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     TableInheritance,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 @TableInheritance({ column: { type: String, name: "type" } })

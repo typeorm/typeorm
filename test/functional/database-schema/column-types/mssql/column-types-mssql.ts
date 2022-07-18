@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,7 +8,7 @@ import {
 } from "../../../../utils/test-utils"
 import { PostWithOptions } from "./entity/PostWithOptions"
 import { PostWithoutTypes } from "./entity/PostWithoutTypes"
-import { DateUtils } from "../../../../../src/util/DateUtils"
+import { DateUtils } from "typeorm/util/DateUtils"
 import { FruitEnum } from "./enum/FruitEnum"
 
 describe("database schema > column types > mssql", () => {

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,7 +7,7 @@ import {
 } from "../../utils/test-utils"
 import { Teacher } from "./entity/Teacher"
 import { Post } from "./entity/Post"
-import { ExclusionMetadata } from "../../../src/metadata/ExclusionMetadata"
+import { ExclusionMetadata } from "../typeorm/metadata/ExclusionMetadata"
 
 describe("schema builder > change exclusion constraint", () => {
     let connections: DataSource[]

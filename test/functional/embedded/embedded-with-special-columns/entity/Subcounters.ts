@@ -1,5 +1,5 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { VersionColumn } from "../../../../../src/decorator/columns/VersionColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { VersionColumn } from "typeorm/decorator/columns/VersionColumn"
 
 export class Subcounters {
     @VersionColumn()

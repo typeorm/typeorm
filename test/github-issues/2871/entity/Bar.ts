@@ -1,6 +1,6 @@
-import { BaseEntity, Column, PrimaryGeneratedColumn } from "../../../../src"
+import { BaseEntity, Column, PrimaryGeneratedColumn } from "typeorm"
 
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Entity } from "typeorm/decorator/entity/Entity"
 
 import { DocumentEnum } from "../documentEnum"
 import { getEnumValues } from "../enumTools"

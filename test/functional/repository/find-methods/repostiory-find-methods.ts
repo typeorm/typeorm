@@ -5,10 +5,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { User } from "./model/User"
-import { EntityNotFoundError } from "../../../../src/error/EntityNotFoundError"
+import { EntityNotFoundError } from "typeorm/error/EntityNotFoundError"
 import { UserEntity } from "./schema/UserEntity"
 
 describe("repository > find methods", () => {

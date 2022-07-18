@@ -1,6 +1,6 @@
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { LoadEvent } from "../../../../src/subscriber/event/LoadEvent"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { LoadEvent } from "typeorm/subscriber/event/LoadEvent"
 
 @Entity()
 export class Post {

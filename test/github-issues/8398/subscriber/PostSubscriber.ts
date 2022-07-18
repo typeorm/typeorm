@@ -4,7 +4,7 @@ import {
     RecoverEvent,
     SoftRemoveEvent,
     UpdateEvent,
-} from "../../../../src"
+} from "typeorm"
 import { Post } from "../entity/Post"
 
 @EventSubscriber()

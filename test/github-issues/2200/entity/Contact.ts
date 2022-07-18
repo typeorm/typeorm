@@ -2,7 +2,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     OneToMany,
-} from "../../../../src/index"
+} from "typeorm/index"
 import { Booking } from "./Booking"
 
 @Entity()

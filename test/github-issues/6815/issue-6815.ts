@@ -1,6 +1,6 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { EntityManager } from "../../../src/entity-manager/EntityManager"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { EntityManager } from "../typeorm/entity-manager/EntityManager"
 import {
     createTestingConnections,
     closeTestingConnections,

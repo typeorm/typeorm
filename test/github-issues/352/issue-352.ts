@@ -4,10 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
-import { MssqlParameter } from "../../../src/driver/sqlserver/MssqlParameter"
+import { MssqlParameter } from "../typeorm/driver/sqlserver/MssqlParameter"
 
 describe("github issues > #352 double precision round to int in mssql", () => {
     let connections: DataSource[]

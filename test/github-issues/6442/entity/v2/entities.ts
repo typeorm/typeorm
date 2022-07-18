@@ -5,7 +5,7 @@ import {
     Entity,
     Column,
     JoinTable,
-} from "../../../../../src"
+} from "typeorm"
 
 @Entity()
 export class FooEntity {

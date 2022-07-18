@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src/index"
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm/index"
 
 @Entity({ database: "db_1" })
 export class User {

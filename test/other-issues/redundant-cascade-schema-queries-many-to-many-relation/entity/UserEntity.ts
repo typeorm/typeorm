@@ -1,4 +1,4 @@
-import { EntitySchema } from "../../../../src"
+import { EntitySchema } from "typeorm"
 import { Team } from "./TeamEntity"
 
 export type User = {

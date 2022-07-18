@@ -1,13 +1,13 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Table } from "../../../src/schema-builder/table/Table"
-import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Table } from "../typeorm/schema-builder/table/Table"
+import { TableIndex } from "../typeorm/schema-builder/table/TableIndex"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 
 describe("query runner > create index", () => {
     let connections: DataSource[]

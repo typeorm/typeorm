@@ -4,8 +4,8 @@ import {
     Tree,
     TreeParent,
     TreeChildren,
-} from "../../../../src"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+} from "typeorm"
+import { Entity } from "typeorm/decorator/entity/Entity"
 
 @Entity()
 @Tree("materialized-path")

@@ -7,7 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 
 describe("query builder > relational query builder > set operation > one-to-one relation", () => {
     let connections: DataSource[]

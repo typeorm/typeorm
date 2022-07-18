@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { Booking } from "./entity/Booking"
 import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
 

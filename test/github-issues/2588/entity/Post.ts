@@ -3,7 +3,7 @@ import {
     PrimaryGeneratedColumn,
     Column,
     OneToMany,
-} from "../../../../src"
+} from "typeorm"
 import { PostReview } from "./PostReview"
 
 @Entity()

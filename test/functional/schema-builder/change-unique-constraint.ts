@@ -1,7 +1,7 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
-import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
-import { UniqueMetadata } from "../../../src/metadata/UniqueMetadata"
+import { DataSource } from "../typeorm"
+import { IndexMetadata } from "../typeorm/metadata/IndexMetadata"
+import { UniqueMetadata } from "../typeorm/metadata/UniqueMetadata"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,7 +9,7 @@ import {
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { Teacher } from "./entity/Teacher"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 
 describe("schema builder > change unique constraint", () => {
     let connections: DataSource[]

@@ -3,7 +3,7 @@ import {
     PrimaryGeneratedColumn,
     ManyToOne,
     JoinColumn,
-} from "../../../../src/index"
+} from "typeorm/index"
 import { Contact } from "./Contact"
 
 @Entity()

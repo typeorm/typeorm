@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src"
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 export enum AccountPermission {
     Thing1 = 1,

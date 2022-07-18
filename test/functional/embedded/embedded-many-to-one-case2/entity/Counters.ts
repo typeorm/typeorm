@@ -1,5 +1,5 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { OneToMany } from "../../../../../src/decorator/relations/OneToMany"
+import { Column } from "typeorm/decorator/columns/Column"
+import { OneToMany } from "typeorm/decorator/relations/OneToMany"
 import { User } from "./User"
 import { Subcounters } from "./Subcounters"
 

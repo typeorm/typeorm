@@ -1,9 +1,9 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { BaseEntity } from "../../../../src/repository/BaseEntity"
-import { OneToOne } from "../../../../src/decorator/relations/OneToOne"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { BaseEntity } from "typeorm/repository/BaseEntity"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
 import { Foo } from "./Foo"
-import { JoinColumn } from "../../../../src/decorator/relations/JoinColumn"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
 
 @Entity()
 export class Bar extends BaseEntity {

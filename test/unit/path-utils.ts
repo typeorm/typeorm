@@ -1,4 +1,4 @@
-import { isAbsolute, toPortablePath } from "../../src/util/PathUtils"
+import { isAbsolute, toPortablePath } from "typeorm/util/PathUtils"
 import { expect } from "chai"
 
 describe(`path-utils`, () => {

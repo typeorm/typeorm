@@ -5,7 +5,7 @@ import {
     OneToMany,
     PrimaryGeneratedColumn,
     RelationId,
-} from "../../../../src"
+} from "typeorm"
 import { Child1 } from "./Child1"
 import { Child2 } from "./Child2"
 import { Shared } from "./Shared"

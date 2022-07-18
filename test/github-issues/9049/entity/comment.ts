@@ -1,5 +1,5 @@
 import { Value } from "./value"
-import { Column } from "../../../../src"
+import { Column } from "typeorm"
 
 export class Comment {
     @Column(() => Value, { array: true })

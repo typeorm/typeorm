@@ -1,11 +1,11 @@
-import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { ManyToMany } from "../../../../../../src/decorator/relations/ManyToMany"
+import { PrimaryColumn } from "../typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "../typeorm/decorator/entity/Entity"
+import { ManyToMany } from "../typeorm/decorator/relations/ManyToMany"
 import { Photo } from "./Photo"
-import { OneToMany } from "../../../../../../src/decorator/relations/OneToMany"
-import { JoinTable } from "../../../../../../src/decorator/relations/JoinTable"
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { DeleteDateColumn } from "../../../../../../src/decorator/columns/DeleteDateColumn"
+import { OneToMany } from "../typeorm/decorator/relations/OneToMany"
+import { JoinTable } from "../typeorm/decorator/relations/JoinTable"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { DeleteDateColumn } from "../typeorm/decorator/columns/DeleteDateColumn"
 
 @Entity()
 export class User {

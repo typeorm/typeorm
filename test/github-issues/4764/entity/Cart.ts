@@ -5,7 +5,7 @@ import {
     OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { CartItems } from "./CartItems"
 import { User } from "./User"
 

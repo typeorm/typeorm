@@ -1,7 +1,7 @@
-import { JoinColumn } from "../../../../../src/decorator/relations/JoinColumn"
-import { Column, PrimaryColumn, ManyToOne } from "../../../../../src/index"
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { BaseEntity } from "../../../../../src/repository/BaseEntity"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
+import { Column, PrimaryColumn, ManyToOne } from "typeorm/index"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { BaseEntity } from "typeorm/repository/BaseEntity"
 
 import { User } from "./user"
 import { Record } from "./record"

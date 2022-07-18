@@ -1,5 +1,5 @@
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { ChildEntity } from "../../../../../../src/decorator/entity/ChildEntity"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { ChildEntity } from "../typeorm/decorator/entity/ChildEntity"
 import { Employee } from "./Employee"
 
 @ChildEntity()

@@ -1,7 +1,7 @@
-import { Column } from "../../../../../../../src/decorator/columns/Column"
-import { OneToOne } from "../../../../../../../src/decorator/relations/OneToOne"
-import { JoinColumn } from "../../../../../../../src/decorator/relations/JoinColumn"
-import { PrimaryGeneratedColumn } from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../typeorm/decorator/columns/Column"
+import { OneToOne } from "../../typeorm/decorator/relations/OneToOne"
+import { JoinColumn } from "../../typeorm/decorator/relations/JoinColumn"
+import { PrimaryGeneratedColumn } from "../../typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { User } from "./User"
 
 export class Subcounters {

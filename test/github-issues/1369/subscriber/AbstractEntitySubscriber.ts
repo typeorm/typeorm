@@ -3,7 +3,7 @@ import {
     EventSubscriber,
     InsertEvent,
     UpdateEvent,
-} from "../../../../src/index"
+} from "typeorm/index"
 import { AbstractEntity } from "../entity/AbstractEntity"
 
 @EventSubscriber()

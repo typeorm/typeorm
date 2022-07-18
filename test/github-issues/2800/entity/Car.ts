@@ -1,5 +1,5 @@
 import { Engine, Vehicle } from "./Vehicle"
-import { ChildEntity, Column } from "../../../../src"
+import { ChildEntity, Column } from "typeorm"
 
 export class CarEngine extends Engine {
     @Column()

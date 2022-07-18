@@ -1,7 +1,7 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { ValueTransformer } from "../../../../../src/decorator/options/ValueTransformer"
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ValueTransformer } from "typeorm/decorator/options/ValueTransformer"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 
 class TagTransformer implements ValueTransformer {
     to(value: string[]): string {

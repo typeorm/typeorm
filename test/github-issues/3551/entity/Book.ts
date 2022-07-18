@@ -1,4 +1,4 @@
-import { Entity, ObjectIdColumn, Column, ObjectID } from "../../../../src"
+import { Entity, ObjectIdColumn, Column, ObjectID } from "typeorm"
 
 export class Page {
     @Column()

@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column } from "../../../../src/index"
+import { Entity, PrimaryColumn, Column } from "typeorm/index"
 
 @Entity()
 export class Plan {

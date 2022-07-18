@@ -1,6 +1,6 @@
-import { DataSource } from "../../../../../src"
-import { ViewColumn } from "../../../../../src/decorator/columns/ViewColumn"
-import { ViewEntity } from "../../../../../src/decorator/entity-view/ViewEntity"
+import { DataSource } from "typeorm"
+import { ViewColumn } from "typeorm/decorator/columns/ViewColumn"
+import { ViewEntity } from "typeorm/decorator/entity-view/ViewEntity"
 import { Category } from "./Category"
 import { Post } from "./Post"
 

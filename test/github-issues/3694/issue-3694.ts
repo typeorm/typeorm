@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource, ObjectLiteral } from "../../../src"
+import { DataSource, ObjectLiteral } from "../typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

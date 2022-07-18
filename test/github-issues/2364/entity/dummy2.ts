@@ -1,5 +1,5 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Column, PrimaryColumn } from "../../../../src"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class Dummy2 {

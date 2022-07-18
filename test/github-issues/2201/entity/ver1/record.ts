@@ -1,6 +1,6 @@
-import { PrimaryColumn, OneToMany } from "../../../../../src/index"
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { BaseEntity } from "../../../../../src/repository/BaseEntity"
+import { PrimaryColumn, OneToMany } from "typeorm/index"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { BaseEntity } from "typeorm/repository/BaseEntity"
 
 import { RecordContext } from "./context"
 

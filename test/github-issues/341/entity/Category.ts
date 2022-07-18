@@ -1,8 +1,8 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
 import { Post } from "./Post"
-import { OneToOne } from "../../../../src/decorator/relations/OneToOne"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
 
 @Entity()
 export class Category {

@@ -1,7 +1,7 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { CreateDateColumn } from "../../../../../src/decorator/columns/CreateDateColumn"
-import { UpdateDateColumn } from "../../../../../src/decorator/columns/UpdateDateColumn"
-import { DeleteDateColumn } from "../../../../../src/decorator/columns/DeleteDateColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { CreateDateColumn } from "typeorm/decorator/columns/CreateDateColumn"
+import { UpdateDateColumn } from "typeorm/decorator/columns/UpdateDateColumn"
+import { DeleteDateColumn } from "typeorm/decorator/columns/DeleteDateColumn"
 import { Subcounters } from "./Subcounters"
 
 export class Counters {

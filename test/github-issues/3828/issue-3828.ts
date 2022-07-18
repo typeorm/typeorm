@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { MyEntity } from "./entity/Entity"
 
 describe("github issues > #3828 Conflicting PR to fix postgres schema:log with uppercase table names and enums", () => {

@@ -6,23 +6,23 @@ import {
     reloadTestingDatabases,
     sleep,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { QueryBuilder } from "../../../../src/query-builder/QueryBuilder"
+import { QueryBuilder } from "typeorm/query-builder/QueryBuilder"
 import { User } from "./model/User"
 import questionSchema from "./model-schema/QuestionSchema"
 import userSchema from "./model-schema/UserSchema"
 import { Question } from "./model/Question"
 import { Blog } from "./entity/Blog"
 import { Category } from "./entity/Category"
-import { DeepPartial } from "../../../../src/common/DeepPartial"
-import { EntitySchema, Like, Repository, TypeORMError } from "../../../../src"
+import { DeepPartial } from "typeorm/common/DeepPartial"
+import { EntitySchema, Like, Repository, TypeORMError } from "typeorm"
 import { ExternalIdPrimaryKeyEntity } from "./entity/ExternalIdPrimaryKeyEntity"
 import { EmbeddedUQEntity } from "./entity/EmbeddedUQEntity"
 import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey"
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns"
 import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
-import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
+import { UpsertOptions } from "typeorm/repository/UpsertOptions"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)

@@ -4,7 +4,7 @@ import {
     Entity,
     OneToMany,
     PrimaryColumn,
-} from "../../../../../../src"
+} from "../typeorm"
 import { Setting } from "./Setting"
 
 @Entity()

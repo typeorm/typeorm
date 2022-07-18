@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn } from "../../../../src"
+import { Column, CreateDateColumn } from "typeorm"
 
 export class Comment {
     @CreateDateColumn()

@@ -4,7 +4,7 @@ import {
     Column,
     PrimaryGeneratedColumn,
     JoinColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Post } from "./Post"
 
 @Entity()

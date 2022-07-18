@@ -3,7 +3,7 @@ import {
     Entity,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { Child } from "./Child"
 
 @Entity()

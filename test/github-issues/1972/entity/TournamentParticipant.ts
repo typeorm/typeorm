@@ -2,7 +2,7 @@ import {
     Entity,
     TableInheritance,
     PrimaryGeneratedColumn,
-} from "../../../../src/index"
+} from "typeorm/index"
 
 @Entity()
 @TableInheritance({

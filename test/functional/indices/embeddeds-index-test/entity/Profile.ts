@@ -1,5 +1,5 @@
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { Index } from "../../../../../src/decorator/Index"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Index } from "typeorm/decorator/Index"
 
 export class Profile {
     @Column()

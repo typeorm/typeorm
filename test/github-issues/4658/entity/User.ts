@@ -1,6 +1,6 @@
-import { Entity } from "../../../../src"
-import { PrimaryColumn } from "../../../../src"
-import { CreateDateColumn, UpdateDateColumn } from "../../../../src"
+import { Entity } from "typeorm"
+import { PrimaryColumn } from "typeorm"
+import { CreateDateColumn, UpdateDateColumn } from "typeorm"
 
 @Entity()
 export class User {

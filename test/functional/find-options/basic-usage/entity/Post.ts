@@ -5,7 +5,7 @@ import {
     ManyToMany,
     ManyToOne,
     PrimaryColumn,
-} from "../../../../../src"
+} from "typeorm"
 import { Tag } from "./Tag"
 import { Author } from "./Author"
 import { Counters } from "./Counters"

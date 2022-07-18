@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -7,7 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { Table, TableColumn } from "../../../../../src"
+import { Table, TableColumn } from "typeorm"
 
 describe("database schema > column types > postgres-enum", () => {
     let connections: DataSource[]

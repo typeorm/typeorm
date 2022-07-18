@@ -3,7 +3,7 @@ import {
     Entity,
     UpdateDateColumn,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 export class Post {

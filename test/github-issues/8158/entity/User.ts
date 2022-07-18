@@ -5,7 +5,7 @@ import {
     OneToOne,
     PrimaryGeneratedColumn,
     Unique,
-} from "../../../../src"
+} from "typeorm"
 import { UserMeta } from "./UserMeta"
 
 @Entity()

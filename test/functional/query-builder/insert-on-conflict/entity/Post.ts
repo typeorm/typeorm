@@ -1,7 +1,7 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { Unique } from "../../../../../src/decorator/Unique"
-import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Unique } from "typeorm/decorator/Unique"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
 
 @Entity()
 @Unique(["date"])

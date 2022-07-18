@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn } from "../../../../../src"
+import { Entity, Column, PrimaryColumn } from "typeorm"
 
 export enum NumericEnum {
     ADMIN,

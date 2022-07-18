@@ -5,13 +5,13 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import { Counters } from "./entity/Counters"
-import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
+import { EntityPropertyNotFoundError } from "typeorm/error/EntityPropertyNotFoundError"
 
 describe("repository > find options > relations", () => {
     // -------------------------------------------------------------------------

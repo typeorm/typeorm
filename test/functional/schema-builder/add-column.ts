@@ -1,13 +1,13 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
-import { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
-import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
+import { DataSource } from "../typeorm"
+import { ColumnMetadataArgs } from "../typeorm/metadata-args/ColumnMetadataArgs"
+import { ColumnMetadata } from "../typeorm/metadata/ColumnMetadata"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 
 describe("schema builder > add column", () => {
     let connections: DataSource[]

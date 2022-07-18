@@ -1,9 +1,9 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { CreateDateColumn } from "../../../../src/decorator/columns/CreateDateColumn"
-import { UpdateDateColumn } from "../../../../src/decorator/columns/UpdateDateColumn"
-import { VersionColumn } from "../../../../src/decorator/columns/VersionColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { CreateDateColumn } from "typeorm/decorator/columns/CreateDateColumn"
+import { UpdateDateColumn } from "typeorm/decorator/columns/UpdateDateColumn"
+import { VersionColumn } from "typeorm/decorator/columns/VersionColumn"
 
 @Entity()
 export class Post {

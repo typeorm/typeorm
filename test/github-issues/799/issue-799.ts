@@ -2,7 +2,7 @@ import "reflect-metadata"
 import * as assert from "assert"
 import rimraf from "rimraf"
 import { dirname } from "path"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { getTypeOrmConfig } from "../../utils/test-utils"
 
 describe("github issues > #799 sqlite: 'database' path should be created", () => {

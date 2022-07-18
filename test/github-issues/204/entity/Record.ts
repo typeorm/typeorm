@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
 import { RecordData } from "./RecordData"
 import { RecordConfig } from "./RecordConfig"
 

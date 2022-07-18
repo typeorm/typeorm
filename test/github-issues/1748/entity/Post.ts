@@ -1,7 +1,7 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { ValueTransformer } from "../../../../src/decorator/options/ValueTransformer"
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { ValueTransformer } from "typeorm/decorator/options/ValueTransformer"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Column } from "typeorm/decorator/columns/Column"
 
 export class Uuid {
     private value: string

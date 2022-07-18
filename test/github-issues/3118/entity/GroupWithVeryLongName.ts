@@ -1,5 +1,5 @@
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column, Entity, OneToMany } from "../../../../src"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column, Entity, OneToMany } from "typeorm"
 import { AuthorWithVeryLongName } from "./AuthorWithVeryLongName"
 
 @Entity()

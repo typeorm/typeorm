@@ -1,5 +1,5 @@
 import { City } from "./city"
-import { Entity, ManyToMany, ManyToOne, PrimaryColumn } from "../../../../src"
+import { Entity, ManyToMany, ManyToOne, PrimaryColumn } from "typeorm"
 import { Country } from "./country"
 
 @Entity()

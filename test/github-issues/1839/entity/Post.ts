@@ -1,5 +1,5 @@
-import { Entity, ManyToMany, PrimaryColumn } from "../../../../src"
-import { JoinTable } from "../../../../src/decorator/relations/JoinTable"
+import { Entity, ManyToMany, PrimaryColumn } from "typeorm"
+import { JoinTable } from "typeorm/decorator/relations/JoinTable"
 import { Category } from "./Category"
 
 @Entity()

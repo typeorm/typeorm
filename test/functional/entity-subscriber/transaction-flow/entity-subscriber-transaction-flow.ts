@@ -2,7 +2,7 @@ import {
     DataSource,
     EntitySubscriberInterface,
     EventSubscriber,
-} from "../../../../src"
+} from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

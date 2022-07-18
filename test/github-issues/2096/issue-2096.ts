@@ -1,8 +1,8 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import { getTypeOrmConfig } from "../../utils/test-utils"
-import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
+import { MysqlConnectionOptions } from "../typeorm/driver/mysql/MysqlConnectionOptions"
 
 describe("github issues > #2096 [mysql] Database name isn't read from url", () => {
     it("should be possible to define a database by connection url for mysql", async () => {

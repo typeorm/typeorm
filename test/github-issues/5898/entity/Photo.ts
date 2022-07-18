@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryColumn } from "../../../../src"
+import { Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm"
 import { Album } from "./Album"
 
 @Entity()

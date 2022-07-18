@@ -1,6 +1,6 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSourceOptions } from "../typeorm/data-source/DataSourceOptions"
 import {
     createTestingConnections,
     closeTestingConnections,

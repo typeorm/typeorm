@@ -3,7 +3,7 @@ import {
     Entity,
     ManyToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 import { UserEntity } from "./UserEntity"
 import { OrganizationEntity } from "./OrganizationEntity"
 

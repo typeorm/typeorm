@@ -6,7 +6,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../../src"
+import { DataSource } from "typeorm"
 
 describe("query builder > parameters", () => {
     let connections: DataSource[]

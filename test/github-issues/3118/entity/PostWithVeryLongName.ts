@@ -1,6 +1,6 @@
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { AuthorWithVeryLongName } from "./AuthorWithVeryLongName"
-import { ManyToMany, Entity, ManyToOne, Column } from "../../../../src"
+import { ManyToMany, Entity, ManyToOne, Column } from "typeorm"
 import { CategoryWithVeryLongName } from "./CategoryWithVeryLongName"
 
 @Entity()

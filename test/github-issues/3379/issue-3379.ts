@@ -4,8 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, Table } from "../../../src"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DataSource, Table } from "../typeorm"
+import { DriverUtils } from "../typeorm/driver/DriverUtils"
 
 describe("github issues > #3379 Migration will keep create and drop indexes if index name is the same across tables", () => {
     let connections: DataSource[]

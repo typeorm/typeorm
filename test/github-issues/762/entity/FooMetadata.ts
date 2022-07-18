@@ -1,4 +1,4 @@
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Column } from "typeorm/decorator/columns/Column"
 import { FooChildMetadata } from "./FooChildMetadata"
 
 export class FooMetadata {

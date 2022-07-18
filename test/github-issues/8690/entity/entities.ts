@@ -5,7 +5,7 @@ import {
     OneToMany,
     JoinColumn,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 
 // This is a contrived and silly example of a primary
 // column transformer but it's enough to show the issue.

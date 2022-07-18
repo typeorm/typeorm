@@ -4,10 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
-import { IsNull } from "../../../../../src"
+import { IsNull } from "typeorm"
 
 // todo: fix later
 describe.skip("persistence > cascades > remove", () => {

@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import { assert } from "chai"
 import { User } from "./entity/User"
 import { TournamentUserParticipant } from "./entity/TournamentUserParticipant"

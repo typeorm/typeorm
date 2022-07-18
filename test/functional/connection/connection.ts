@@ -13,13 +13,13 @@ import {
     createTestingConnections,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { Repository } from "../../../src/repository/Repository"
-import { TreeRepository } from "../../../src/repository/TreeRepository"
-import { NoConnectionForRepositoryError } from "../../../src/error/NoConnectionForRepositoryError"
-import { EntityManager } from "../../../src/entity-manager/EntityManager"
-import { CannotGetEntityManagerNotConnectedError } from "../../../src/error/CannotGetEntityManagerNotConnectedError"
-import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { Repository } from "../typeorm/repository/Repository"
+import { TreeRepository } from "../typeorm/repository/TreeRepository"
+import { NoConnectionForRepositoryError } from "../typeorm/error/NoConnectionForRepositoryError"
+import { EntityManager } from "../typeorm/entity-manager/EntityManager"
+import { CannotGetEntityManagerNotConnectedError } from "../typeorm/error/CannotGetEntityManagerNotConnectedError"
+import { PostgresConnectionOptions } from "../typeorm/driver/postgres/PostgresConnectionOptions"
 
 describe("Connection", () => {
     // const resourceDir = __dirname + "/../../../../../test/functional/connection/";

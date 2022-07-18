@@ -1,7 +1,7 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { UpdateDateColumn } from "../../../../src/decorator/columns/UpdateDateColumn"
-import { ObjectID, ObjectIdColumn } from "../../../../src"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { UpdateDateColumn } from "typeorm/decorator/columns/UpdateDateColumn"
+import { ObjectID, ObjectIdColumn } from "typeorm"
 
 @Entity()
 export class Post {

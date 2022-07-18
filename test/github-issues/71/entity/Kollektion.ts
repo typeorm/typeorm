@@ -1,7 +1,7 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { Generated } from "../../../../src/decorator/Generated"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Generated } from "typeorm/decorator/Generated"
 
 @Entity("kollektion")
 export class Kollektion {

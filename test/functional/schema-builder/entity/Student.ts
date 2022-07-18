@@ -1,10 +1,10 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../src/decorator/columns/Column"
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { Faculty } from "./Faculty"
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { Teacher } from "./Teacher"
-import { Index } from "../../../../src/decorator/Index"
+import { Index } from "typeorm/decorator/Index"
 
 @Entity()
 @Index("student_name_index", ["name"])

@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { snakeCase } from "../../../src/util/StringUtils"
+import { snakeCase } from "../typeorm/util/StringUtils"
 
 describe("StringUtils", () => {
     describe("snakeCase", () => {

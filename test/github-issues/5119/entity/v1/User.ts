@@ -2,7 +2,7 @@ import {
     Column,
     Entity,
     PrimaryGeneratedColumn,
-} from "../../../../../src/index"
+} from "typeorm/index"
 
 @Entity()
 export class User {

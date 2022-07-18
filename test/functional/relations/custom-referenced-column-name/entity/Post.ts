@@ -1,10 +1,10 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { ManyToOne } from "../../../../../src/decorator/relations/ManyToOne"
-import { JoinColumn } from "../../../../../src/decorator/relations/JoinColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
 import { Category } from "./Category"
-import { OneToOne } from "../../../../../src/decorator/relations/OneToOne"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
 import { Tag } from "./Tag"
 
 @Entity()

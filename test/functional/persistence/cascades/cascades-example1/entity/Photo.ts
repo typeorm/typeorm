@@ -1,6 +1,6 @@
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../../../src"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { Entity } from "../typeorm/decorator/entity/Entity"
+import { PrimaryColumn } from "../typeorm"
 
 @Entity()
 export class Photo {

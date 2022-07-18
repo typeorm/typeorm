@@ -2,7 +2,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     ManyToOne,
-} from "../../../../../src/index"
+} from "typeorm/index"
 import { User } from "./User"
 
 @Entity()

@@ -1,6 +1,6 @@
-import { EventSubscriber } from "../../../../../../src/decorator/listeners/EventSubscriber"
-import { EntitySubscriberInterface } from "../../../../../../src/subscriber/EntitySubscriberInterface"
-import { InsertEvent } from "../../../../../../src/subscriber/event/InsertEvent"
+import { EventSubscriber } from "../typeorm/decorator/listeners/EventSubscriber"
+import { EntitySubscriberInterface } from "../typeorm/subscriber/EntitySubscriberInterface"
+import { InsertEvent } from "../typeorm/subscriber/event/InsertEvent"
 
 @EventSubscriber()
 export class TestQuestionSubscriber implements EntitySubscriberInterface {

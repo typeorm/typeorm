@@ -2,7 +2,7 @@ import {
     EntitySubscriberInterface,
     EventSubscriber,
     UpdateEvent,
-} from "../../../../../src"
+} from "typeorm"
 
 @EventSubscriber()
 export class MockSubscriber implements EntitySubscriberInterface {

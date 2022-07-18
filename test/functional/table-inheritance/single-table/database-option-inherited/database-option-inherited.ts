@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import { DataSource } from "typeorm"
 
 describe("table-inheritance > single-table > database-option-inherited", () => {
     let connections: DataSource[]

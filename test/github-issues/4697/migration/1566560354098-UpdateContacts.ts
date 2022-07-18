@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import { MigrationInterface, QueryRunner } from "typeorm"
 import { Item } from "../entity/item.entity"
 
 export class UpdateContacts1566560354098 implements MigrationInterface {

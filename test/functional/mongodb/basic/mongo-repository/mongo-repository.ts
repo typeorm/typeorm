@@ -1,13 +1,13 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { MongoRepository } from "../../../../../src/repository/MongoRepository"
+import { MongoRepository } from "typeorm/repository/MongoRepository"
 
 describe("mongodb > MongoRepository", () => {
     let connections: DataSource[]

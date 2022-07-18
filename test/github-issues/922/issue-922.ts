@@ -4,9 +4,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { ObjectLiteral } from "../../../src"
+import { ObjectLiteral } from "../typeorm"
 
 describe("github issues > #922 Support HSTORE column type", () => {
     let connections: DataSource[]

@@ -5,7 +5,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 export class ProductBrand extends BaseEntity {

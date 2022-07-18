@@ -1,4 +1,4 @@
-import { ViewColumn, ViewEntity } from "../../../../../src"
+import { ViewColumn, ViewEntity } from "typeorm"
 
 @ViewEntity({
     name: "view_a",

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import { expect } from "chai"
 import {
     closeTestingConnections,

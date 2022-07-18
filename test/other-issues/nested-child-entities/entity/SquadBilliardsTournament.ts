@@ -1,4 +1,4 @@
-import { ChildEntity } from "../../../../src/index"
+import { ChildEntity } from "typeorm/index"
 
 import { BilliardsTournament } from "./BilliardsTournament"
 

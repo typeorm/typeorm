@@ -3,11 +3,11 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { Human } from "./entity/Human"
 import { Animal } from "./entity/Animal"
 import { Gender } from "./entity/GenderEnum"
-import { EntityManager } from "../../../src/entity-manager/EntityManager"
+import { EntityManager } from "../typeorm/entity-manager/EntityManager"
 import { expect } from "chai"
 
 describe("github issues > #4106 Specify enum type name in postgres", () => {

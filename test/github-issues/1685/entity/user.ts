@@ -1,4 +1,4 @@
-import { PrimaryColumn, Entity, OneToMany } from "../../../../src"
+import { PrimaryColumn, Entity, OneToMany } from "typeorm"
 import { UserMonth } from "./user-month"
 
 @Entity()

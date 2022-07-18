@@ -1,4 +1,4 @@
-import { EntityRepository, AbstractRepository } from "../../../../src"
+import { EntityRepository, AbstractRepository } from "typeorm"
 import { Broker } from "../entity/Broker"
 
 @EntityRepository(Broker)

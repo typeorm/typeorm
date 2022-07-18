@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Connection } from "../../../src/connection/Connection"
+import { Connection } from "../typeorm/connection/Connection"
 import { expect } from "chai"
 import { TestEntity } from "./entity/TestEntity"
 

@@ -4,7 +4,7 @@ import {
     ManyToMany,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../src/index"
+} from "typeorm/index"
 import { Chat } from "./Chat"
 import { Message } from "./Message"
 import { Recipient } from "./Recipient"

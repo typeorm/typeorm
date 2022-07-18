@@ -7,7 +7,7 @@ import {
     ManyToOne,
     OneToMany,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 export class Order {

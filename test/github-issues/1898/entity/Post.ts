@@ -4,8 +4,8 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
-} from "../../../../src"
-import { Column } from "../../../../src/decorator/columns/Column"
+} from "typeorm"
+import { Column } from "typeorm/decorator/columns/Column"
 
 @Entity()
 export class Post extends BaseEntity {

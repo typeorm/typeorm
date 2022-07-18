@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Child } from "./Child"
 
 @Entity()

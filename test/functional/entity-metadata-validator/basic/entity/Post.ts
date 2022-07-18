@@ -1,9 +1,9 @@
-import { OneToOne } from "../../../../../src/decorator/relations/OneToOne"
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { RelationCount } from "../../../../../src/decorator/relations/RelationCount"
-import { ManyToMany } from "../../../../../src/decorator/relations/ManyToMany"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { RelationCount } from "typeorm/decorator/relations/RelationCount"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
 import { Category } from "./Category"
 
 @Entity()

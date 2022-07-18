@@ -1,11 +1,11 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { ManyToMany } from "../../../../../src/decorator/relations/ManyToMany"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
 import { Category } from "./Category"
-import { ManyToOne } from "../../../../../src/decorator/relations/ManyToOne"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { User } from "./User"
-import { JoinTable } from "../../../../../src/decorator/relations/JoinTable"
+import { JoinTable } from "typeorm/decorator/relations/JoinTable"
 
 @Entity()
 export class Post {

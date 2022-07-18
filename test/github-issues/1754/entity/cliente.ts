@@ -4,7 +4,7 @@ import {
     PrimaryGeneratedColumn,
     ManyToOne,
     JoinColumn,
-} from "../../../../src"
+} from "typeorm"
 import { TipoCliente } from "./tipo-cliente"
 
 @Entity()

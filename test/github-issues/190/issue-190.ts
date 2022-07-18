@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("github issues > #190 too many SQL variables when using setMaxResults in SQLite", () => {

@@ -4,7 +4,7 @@ import {
     Entity,
     ManyToOne,
     PrimaryColumn,
-} from "../../../../src"
+} from "typeorm"
 import { User } from "./User"
 import { Organization } from "./Organization"
 

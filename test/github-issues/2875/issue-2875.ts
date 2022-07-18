@@ -4,8 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { Migration } from "../../../src/migration/Migration"
+import { DataSource } from "../typeorm/data-source/DataSource"
+import { Migration } from "../typeorm/migration/Migration"
 
 describe("github issues > #2875 runMigrations() function is not returning a list of migrated files", () => {
     let connections: DataSource[]

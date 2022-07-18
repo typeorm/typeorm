@@ -5,7 +5,7 @@ import {
     OneToOne,
     ManyToOne,
     JoinColumn,
-} from "../../../../src/index"
+} from "typeorm/index"
 import { PhotoMetadata } from "./PhotoMetadata"
 import { Author } from "./Author"
 

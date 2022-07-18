@@ -1,4 +1,4 @@
-import { EntitySchemaOptions } from "../../../../src/entity-schema/EntitySchemaOptions"
+import { EntitySchemaOptions } from "typeorm/entity-schema/EntitySchemaOptions"
 import { Post } from "./Post"
 
 export class Author {

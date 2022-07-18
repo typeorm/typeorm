@@ -9,7 +9,7 @@ import {
     DeleteDateColumn,
     Entity,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 export class Post {

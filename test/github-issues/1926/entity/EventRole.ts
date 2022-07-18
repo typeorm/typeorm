@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from "../../../../src"
+import { Column, Entity, ManyToOne, PrimaryColumn } from "typeorm"
 import { Event } from "./Event"
 import { Role } from "./Role"
 

@@ -7,7 +7,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
-} from "../../../../src"
+} from "typeorm"
 import { OrderCustomer } from "./OrderCustomer"
 import { Broker } from "./Broker"
 

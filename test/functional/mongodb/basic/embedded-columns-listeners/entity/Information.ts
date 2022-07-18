@@ -1,5 +1,5 @@
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { AfterLoad, BeforeInsert } from "../../../../../../src"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { AfterLoad, BeforeInsert } from "../typeorm"
 
 export class Information {
     @Column()

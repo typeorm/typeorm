@@ -3,7 +3,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Unique,
-} from "../../../../../../src"
+} from "../typeorm"
 
 @Entity()
 @Unique("UQ_NAME", ["name"])

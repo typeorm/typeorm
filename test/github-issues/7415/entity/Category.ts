@@ -1,4 +1,4 @@
-import { Column, Entity, Tree, TreeChildren, TreeParent } from "../../../../src"
+import { Column, Entity, Tree, TreeChildren, TreeParent } from "typeorm"
 import { Slug } from "./Slug"
 
 @Entity()

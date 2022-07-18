@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import { DataSource } from "../typeorm"
 import { Post } from "./entity/Post"
 import {
     createTestingConnections,

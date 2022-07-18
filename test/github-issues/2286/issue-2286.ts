@@ -4,11 +4,11 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { Example } from "./entity/Example"
-import { Between } from "../../../src"
+import { Between } from "../typeorm"
 
 describe("github issues > #2286 find operators like MoreThan and LessThan doesn't work properly for date fields", () => {
     let connections: DataSource[]

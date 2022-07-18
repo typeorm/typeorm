@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import { DataSource } from "typeorm"
 import { Author } from "./entity/Author"
 import { Employee } from "./entity/Employee"
 import { PostItNote } from "./entity/PostItNote"

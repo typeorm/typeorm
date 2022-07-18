@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import { DataSource, LessThan, MoreThan } from "../../../../src"
+import { DataSource, LessThan, MoreThan } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

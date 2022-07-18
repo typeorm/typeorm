@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from "../../../../src"
+import { Column, Entity, PrimaryColumn } from "typeorm"
 
 export enum Role {
     GuildMaster = "Guild Master",

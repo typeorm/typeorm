@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import { MigrationInterface, QueryRunner } from "typeorm"
 import { Item } from "../entity/item.entity"
 import { Config } from "../entity/config.entity"
 

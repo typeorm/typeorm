@@ -1,8 +1,8 @@
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { Column } from "../typeorm/decorator/columns/Column"
+import { Entity } from "../typeorm/decorator/entity/Entity"
 import { Profile } from "./Profile"
-import { OneToOne } from "../../../../../../src/decorator/relations/OneToOne"
-import { PrimaryColumn } from "../../../../../../src"
+import { OneToOne } from "../typeorm/decorator/relations/OneToOne"
+import { PrimaryColumn } from "../typeorm"
 
 @Entity()
 export class User {

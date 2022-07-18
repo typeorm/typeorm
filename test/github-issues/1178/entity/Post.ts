@@ -1,6 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src/index"
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm/index"
 import { User } from "./User"
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 
 @Entity()
 export class Post {

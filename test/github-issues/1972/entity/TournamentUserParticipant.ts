@@ -1,4 +1,4 @@
-import { ChildEntity, JoinColumn, OneToOne } from "../../../../src/index"
+import { ChildEntity, JoinColumn, OneToOne } from "typeorm/index"
 import { TournamentParticipant } from "./TournamentParticipant"
 import { User } from "./User"
 

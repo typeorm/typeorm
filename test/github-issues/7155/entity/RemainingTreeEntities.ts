@@ -6,7 +6,7 @@ import {
     Tree,
     TreeChildren,
     TreeParent,
-} from "../../../../src"
+} from "typeorm"
 
 @Entity()
 @Tree("closure-table")

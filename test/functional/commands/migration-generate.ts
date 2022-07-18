@@ -3,15 +3,15 @@ import {
     ConnectionOptionsReader,
     DatabaseType,
     DataSourceOptions,
-} from "../../../src"
+} from "../typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
     setupTestingConnections,
 } from "../../utils/test-utils"
-import { CommandUtils } from "../../../src/commands/CommandUtils"
-import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand"
+import { CommandUtils } from "../typeorm/commands/CommandUtils"
+import { MigrationGenerateCommand } from "../typeorm/commands/MigrationGenerateCommand"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-generate"
 

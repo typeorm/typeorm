@@ -1,7 +1,7 @@
-import { PrimaryGeneratedColumn } from "../../../../src"
-import { Entity } from "../../../../src"
-import { JoinColumn } from "../../../../src"
-import { ManyToOne } from "../../../../src"
+import { PrimaryGeneratedColumn } from "typeorm"
+import { Entity } from "typeorm"
+import { JoinColumn } from "typeorm"
+import { ManyToOne } from "typeorm"
 import { Author } from "./Author"
 
 @Entity()

@@ -5,7 +5,7 @@ import {
     ManyToMany,
     PrimaryGeneratedColumn,
     RelationId,
-} from "../../../../src"
+} from "typeorm"
 import { Zip } from "./zip"
 
 @Entity()

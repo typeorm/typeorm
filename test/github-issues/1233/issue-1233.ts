@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("github issues > #1233 column updatedDate must appear in the GROUP BY clause or be used in an aggregate function", () => {
