@@ -1,0 +1,20 @@
+{
+  "jsc": {
+    "externalHelpers": true,
+    "keepClassNames": true,
+    "parser": {
+      "decorators": true,
+      "preserveAllComments": true,
+      "syntax": "typescript"
+    },
+    "target": "es2019",
+    "transform": {
+      "decoratorMetadata": true,
+      "legacyDecorator": true
+    }
+  },
+  "module": {
+    "type": "commonjs"
+  },
+  "sourceMaps": true
+}

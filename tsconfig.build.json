@@ -1,0 +1,10 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "outDir": "build/package",
+      "emitDeclarationOnly": true
+    },
+    "include": [
+      "src"
+    ]
+}

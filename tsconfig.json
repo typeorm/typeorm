@@ -31,5 +31,8 @@
         "temp",
         "build",
         "node_modules"
-    ]
+    ],
+    "ts-node": {
+      "swc": true
+    }
 }

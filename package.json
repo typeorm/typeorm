@@ -91,6 +91,9 @@
     "cloud-spanner-orm"
   ],
   "devDependencies": {
+    "@swc-node/register": "^1.5.1",
+    "@swc/cli": "^0.1.57",
+    "@swc/core": "^1.2.218",
     "@types/app-root-path": "^1.2.4",
     "@types/chai": "^4.2.15",
     "@types/chai-as-promised": "^7.1.3",
@@ -128,6 +131,7 @@
     "mssql": "^7.3.0",
     "mysql": "^2.18.1",
     "mysql2": "^2.2.5",
+    "npm-run-all": "^4.1.5",
     "pg": "^8.5.1",
     "pg-query-stream": "^4.0.0",
     "prettier": "^2.5.1",
@@ -217,6 +221,7 @@
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.2",
+    "@swc/helpers": "^0.4.3",
     "app-root-path": "^3.0.0",
     "buffer": "^6.0.3",
     "chalk": "^4.1.0",
@@ -235,9 +240,15 @@
     "yargs": "^17.3.1"
   },
   "scripts": {
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
-    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
-    "compile": "rimraf ./build && tsc",
+    "test": "mocha ./test/**/*.ts",
+    "compile": "run-s compile:clean compile:packages",
+    "compile:clean": "rimraf ./build",
+    "compile:browser": "run-p compile:browser:**",
+    "compile:browser:src": "swc build/browser --ignore build/browser/cli.**.ts -C module.type=es6 -d build/package",
+    "compile:browser:declaration": "tsc --project tsconfig.browser.json",
+    "compile:packages": "run-p compile:packages:**",
+    "compile:packages:src": "swc src -d build/package",
+    "compile:packages:declaration": "tsc --project tsconfig.build.json",
     "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
     "pack": "gulp pack",
