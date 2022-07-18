@@ -10,8 +10,7 @@ const del = require("del");
 const shell = require("gulp-shell");
 const replace = require("gulp-replace");
 const rename = require("gulp-rename");
-const sourcemaps = require("gulp-sourcemaps");
-const ts = require("gulp-typescript");
+const header = require('gulp-header');
 
 @Gulpclass()
 export class Gulpfile {
@@ -161,6 +160,17 @@ export class Gulpfile {
     }
 
     /**
+     * Prepend node shebang in CLI entry files.
+     */
+    @Task()
+    async packageCliFixHeader() {
+        return gulp.src('build/package/cli**.js')
+            .pipe(header('#!/usr/bin/env node\n'))
+            .pipe(gulp.dest('build/package'));
+    }
+
+
+    /**
      * Removes /// <reference from compiled sources.
      */
     @Task()
@@ -169,16 +179,6 @@ export class Gulpfile {
             .pipe(replace(`/// <reference types="node" />`, ""))
             .pipe(replace(`/// <reference types="chai" />`, ""))
             .pipe(gulp.dest("./build/package"));
-    }
-
-    /**
-     * Moves all compiled files to the final package directory.
-     */
-    @Task()
-    packageClearPackageDirectory(cb: Function) {
-        return del([
-            "build/package/src/**"
-        ], cb);
     }
 
     /**
@@ -217,17 +217,16 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyTemplates"],
-            ["packageCompile", "browserCompile"],
-            "packageMoveCompiledFiles",
-            "packageCreateEsmIndex",
-            [
+            gulp.parallel(["browserCopySources", "browserCopyTemplates"]),
+            gulp.parallel(["browserCompile", "packageCompile"]),
+            gulp.parallel(["packageCreateEsmIndex", "packageCliFixHeader"]),
+            gulp.parallel([
                 "browserClearPackageDirectory",
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
                 "packageCopyReadme",
                 "packageCopyShims"
-            ],
+            ]),
         ];
     }
 

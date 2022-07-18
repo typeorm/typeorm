@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import "reflect-metadata"
 import yargs from "yargs"
 import { SchemaSyncCommand } from "./commands/SchemaSyncCommand"

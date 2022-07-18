@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { spawnSync } from "child_process"
 
 if ((process.env["NODE_OPTIONS"] || "").includes("--loader ts-node"))
