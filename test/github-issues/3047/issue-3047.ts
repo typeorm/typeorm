@@ -4,10 +4,10 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { User } from "./entity/User"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("github issues > #3047 Mysqsl on duplicate key update use current values", () => {
     let connections: DataSource[]

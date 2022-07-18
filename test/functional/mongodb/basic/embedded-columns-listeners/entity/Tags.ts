@@ -1,5 +1,5 @@
-import { Column } from "../typeorm/decorator/columns/Column"
-import { BeforeInsert } from "../typeorm"
+import { Column } from "typeorm/decorator/columns/Column"
+import { BeforeInsert } from "typeorm"
 
 export class Tags {
     @Column()

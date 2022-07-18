@@ -2,13 +2,13 @@ import "reflect-metadata"
 import * as path from "path"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { PlatformTools } from "../typeorm/platform/PlatformTools"
+import { PlatformTools } from "typeorm/platform/PlatformTools"
 
 describe("sqljs driver > startup", () => {
     let connections: DataSource[]

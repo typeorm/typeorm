@@ -5,10 +5,10 @@ import {
     reloadTestingDatabases,
     generateRandomText,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { Category } from "./entity/category.entity"
-import { TreeRepository } from "../typeorm"
+import { TreeRepository } from "typeorm"
 
 describe("github issues > #8556 TreeRepository.findDescendants/Tree should return empty if tree parent entity does not exist", () => {
     let connections: DataSource[]

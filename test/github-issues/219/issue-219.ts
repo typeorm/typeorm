@@ -4,9 +4,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { IsNull } from "../typeorm"
+import { IsNull } from "typeorm"
 
 describe("github issues > #219 FindOptions should be able to resolve null values", () => {
     let connections: DataSource[]

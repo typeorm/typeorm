@@ -1,6 +1,6 @@
-import { Entity } from "../../typeorm/decorator/entity/Entity"
-import { ManyToMany } from "../../typeorm/decorator/relations/ManyToMany"
-import { PrimaryColumn } from "../../typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
 import { Post } from "./Post"
 
 @Entity()

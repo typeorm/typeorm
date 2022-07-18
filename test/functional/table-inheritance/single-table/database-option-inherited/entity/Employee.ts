@@ -1,4 +1,4 @@
-import { ChildEntity, Column } from "../typeorm"
+import { ChildEntity, Column } from "typeorm"
 
 import { Person } from "./Person"
 

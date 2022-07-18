@@ -4,10 +4,10 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { File } from "./entity/file.entity"
-import { TreeRepository } from "../typeorm"
+import { TreeRepository } from "typeorm"
 
 describe("github issues > #2518 TreeRepository.findDescendantsTree does not load descendants when relationship id property exist", () => {
     let connections: DataSource[]

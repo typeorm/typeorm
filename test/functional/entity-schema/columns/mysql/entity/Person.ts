@@ -1,4 +1,4 @@
-import { EntitySchema } from "../typeorm"
+import { EntitySchema } from "typeorm"
 
 export const PersonSchema = new EntitySchema<any>({
     name: "Person",

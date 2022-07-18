@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe.skip("github issues > #1147 FindOptions should be able to accept custom where condition", () => {

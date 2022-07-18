@@ -1,10 +1,4 @@
-import {
-    Column,
-    Entity,
-    JoinColumn,
-    OneToOne,
-    PrimaryColumn,
-} from "typeorm"
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm"
 import { Foo } from "./Foo"
 
 @Entity()

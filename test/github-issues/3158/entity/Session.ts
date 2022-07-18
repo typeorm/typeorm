@@ -1,9 +1,4 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    OneToOne,
-} from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from "typeorm"
 import { SessionSettings } from "./SessionSettings"
 
 @Entity({

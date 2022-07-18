@@ -1,9 +1,4 @@
-import {
-    Column,
-    Entity,
-    OneToMany,
-    PrimaryGeneratedColumn,
-} from "typeorm"
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Email } from "./Email"
 import { Phone } from "./Phone"
 

@@ -1,5 +1,5 @@
-import { Column } from "../../typeorm/decorator/columns/Column"
-import { ManyToOne } from "../../typeorm/decorator/relations/ManyToOne"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { Category } from "./Category"
 import { Subcounters } from "./Subcounters"
 

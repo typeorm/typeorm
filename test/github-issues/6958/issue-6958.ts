@@ -4,8 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
-import { PostgresDriver } from "../typeorm/driver/postgres/PostgresDriver"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { PostgresDriver } from "typeorm/driver/postgres/PostgresDriver"
 import { expect } from "chai"
 
 describe("github issues > #6958 Promises never get resolved in specific cases", () => {

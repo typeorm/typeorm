@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
 
 describe("github issues > #6699 MaxListenersExceededWarning occurs on Postgres", () => {

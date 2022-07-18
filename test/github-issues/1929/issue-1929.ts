@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { Product } from "./entity/Product"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

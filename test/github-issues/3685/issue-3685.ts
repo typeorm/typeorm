@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { Brackets, DataSource } from "../typeorm"
+import { Brackets, DataSource } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

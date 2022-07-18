@@ -1,6 +1,6 @@
 import appRootPath from "app-root-path"
 import sinon from "sinon"
-import { DataSource, FileLogger } from "../typeorm"
+import { DataSource, FileLogger } from "typeorm"
 import {
     createTestingConnections,
     reloadTestingDatabases,
@@ -8,7 +8,7 @@ import {
     TestingOptions,
 } from "../../utils/test-utils"
 import { Username } from "./entity/Username"
-import { PlatformTools } from "../typeorm/platform/PlatformTools"
+import { PlatformTools } from "typeorm/platform/PlatformTools"
 
 describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     let connections: DataSource[]

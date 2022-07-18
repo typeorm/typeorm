@@ -5,10 +5,10 @@ import {
     reloadTestingDatabases,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { fail } from "assert"
-import { Query } from "../typeorm/driver/Query"
-import { MysqlConnectionOptions } from "../typeorm/driver/mysql/MysqlConnectionOptions"
+import { Query } from "typeorm/driver/Query"
+import { MysqlConnectionOptions } from "typeorm/driver/mysql/MysqlConnectionOptions"
 
 describe("github issues > #6442 JoinTable does not respect inverseJoinColumns referenced column width", () => {
     let connections: DataSource[]

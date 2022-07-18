@@ -1,12 +1,12 @@
 import "reflect-metadata"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Table } from "../typeorm/schema-builder/table/Table"
-import { TableUnique } from "../typeorm/schema-builder/table/TableUnique"
+import { Table } from "typeorm/schema-builder/table/Table"
+import { TableUnique } from "typeorm/schema-builder/table/TableUnique"
 
 describe("query runner > create unique constraint", () => {
     let connections: DataSource[]

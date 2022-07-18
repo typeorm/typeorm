@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { OrmUtils } from "../typeorm/util/OrmUtils"
+import { OrmUtils } from "typeorm/util/OrmUtils"
 
 describe("OrmUtils.mergeDeep", () => {
     it("should handle simple values.", () => {

@@ -5,9 +5,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { User } from "../../functional/query-builder/update/entity/User"
-import { EntityPropertyNotFoundError } from "../typeorm/error/EntityPropertyNotFoundError"
+import { EntityPropertyNotFoundError } from "typeorm/error/EntityPropertyNotFoundError"
 
 describe("github issues > #3416 Unknown fields are stripped from WHERE clause", () => {
     let connections: DataSource[]

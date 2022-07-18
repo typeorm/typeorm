@@ -4,9 +4,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
-import { EntitySchema, InsertResult } from "../typeorm"
+import { EntitySchema, InsertResult } from "typeorm"
 
 describe("github issues > #1510 entity schema does not support mode=objectId", () => {
     const UserEntity = new EntitySchema<{

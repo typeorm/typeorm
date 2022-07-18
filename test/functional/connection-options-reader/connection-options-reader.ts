@@ -1,7 +1,7 @@
 import { promises as fs, existsSync } from "fs"
 import { expect } from "chai"
-import { DataSourceOptions } from "../typeorm/data-source/DataSourceOptions"
-import { ConnectionOptionsReader } from "../typeorm/connection/ConnectionOptionsReader"
+import { DataSourceOptions } from "typeorm/data-source/DataSourceOptions"
+import { ConnectionOptionsReader } from "typeorm/connection/ConnectionOptionsReader"
 import path from "path"
 
 async function createDotenvFiles() {

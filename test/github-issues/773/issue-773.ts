@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("github issues > #773 @PrimaryGeneratedColumn not returning auto generated id from oracle database", () => {

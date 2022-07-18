@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,7 +9,7 @@ import {
 } from "../../utils/test-utils"
 import { Plan } from "./entity/Plan"
 import { Item } from "./entity/Item"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("github issues > #1476 subqueries", () => {
     let connections: DataSource[] = []

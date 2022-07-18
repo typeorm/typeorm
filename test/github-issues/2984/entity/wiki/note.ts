@@ -1,8 +1,4 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    TableInheritance,
-} from "typeorm"
+import { Entity, PrimaryGeneratedColumn, TableInheritance } from "typeorm"
 
 @Entity({ name: "wikiNote" })
 @TableInheritance({ column: { type: String, name: "type" } })

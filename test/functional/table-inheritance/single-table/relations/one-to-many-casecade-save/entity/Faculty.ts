@@ -1,8 +1,8 @@
-import { Column } from "../../typeorm/decorator/columns/Column"
-import { Entity } from "../../typeorm/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { Staff } from "./Staff"
-import { OneToMany } from "../../typeorm"
+import { OneToMany } from "typeorm"
 
 @Entity()
 export class Faculty {

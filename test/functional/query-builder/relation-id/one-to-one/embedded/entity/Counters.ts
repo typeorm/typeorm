@@ -1,8 +1,8 @@
-import { Column } from "../../typeorm/decorator/columns/Column"
+import { Column } from "typeorm/decorator/columns/Column"
 import { Category } from "./Category"
 import { Subcounters } from "./Subcounters"
-import { OneToOne } from "../../typeorm/decorator/relations/OneToOne"
-import { JoinColumn } from "../../typeorm/decorator/relations/JoinColumn"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
 
 export class Counters {
     @Column()

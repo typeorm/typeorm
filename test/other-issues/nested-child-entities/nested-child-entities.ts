@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 
 import { TournamentGraph } from "./entity/TournamentGraph"
 import { SquadBilliardsTournament } from "./entity/SquadBilliardsTournament"

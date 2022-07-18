@@ -1,9 +1,4 @@
-import {
-    BaseEntity,
-    JoinTable,
-    ManyToMany,
-    PrimaryColumn,
-} from "typeorm"
+import { BaseEntity, JoinTable, ManyToMany, PrimaryColumn } from "typeorm"
 
 import { Bar } from "./Bar"
 import { Entity } from "typeorm/decorator/entity/Entity"

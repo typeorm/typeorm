@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 
 describe("github issues > #587 Ordering of fields in composite indexes defined using Index decorator", () => {
     let connections: DataSource[]

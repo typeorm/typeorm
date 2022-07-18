@@ -4,10 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Animal } from "./entity/Animal"
-import { OffsetWithoutLimitNotSupportedError } from "../typeorm/error/OffsetWithoutLimitNotSupportedError"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { OffsetWithoutLimitNotSupportedError } from "typeorm/error/OffsetWithoutLimitNotSupportedError"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("github issues > #1099 BUG - QueryBuilder MySQL skip sql is wrong", () => {
     let connections: DataSource[]

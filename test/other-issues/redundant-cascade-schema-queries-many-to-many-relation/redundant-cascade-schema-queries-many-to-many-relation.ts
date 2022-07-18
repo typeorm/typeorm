@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { TeamEntity } from "./entity/TeamEntity"
 import { UserEntity } from "./entity/UserEntity"
 

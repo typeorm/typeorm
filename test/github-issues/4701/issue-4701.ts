@@ -5,7 +5,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 
 describe("github issues > #4701 Duplicate migrations are executed.", () => {
     let connections: DataSource[]

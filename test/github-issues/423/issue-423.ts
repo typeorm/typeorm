@@ -3,7 +3,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 
 describe("github issues > #423 Cannot use Group as Table name && cannot autoSchemeSync when use alias Entity", () => {
     let connections: DataSource[]

@@ -1,4 +1,4 @@
-import { DeepPartial } from "../typeorm"
+import { DeepPartial } from "typeorm"
 import { Comment } from "./entity/Comment"
 
 describe("github issues > #6580 DeepPartial does not handle `any` and `{[k: string]}`", () => {

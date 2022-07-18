@@ -3,7 +3,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Group } from "./entity/Group"
 
 describe("github issues > #1089 UUID in ClosureEntity", () => {

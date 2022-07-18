@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { Post } from "./entity/Post"
 import { Item } from "./entity/Item"
 import {

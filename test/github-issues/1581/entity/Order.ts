@@ -1,13 +1,7 @@
 import { DeliverySlot } from "./DeliverySlot"
 import { User } from "./User"
 import { OrderItem } from "./OrderItem"
-import {
-    Column,
-    Entity,
-    ManyToOne,
-    OneToMany,
-    PrimaryColumn,
-} from "typeorm"
+import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class Order {

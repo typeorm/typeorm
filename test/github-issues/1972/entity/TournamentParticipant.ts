@@ -1,8 +1,4 @@
-import {
-    Entity,
-    TableInheritance,
-    PrimaryGeneratedColumn,
-} from "typeorm/index"
+import { Entity, TableInheritance, PrimaryGeneratedColumn } from "typeorm/index"
 
 @Entity()
 @TableInheritance({

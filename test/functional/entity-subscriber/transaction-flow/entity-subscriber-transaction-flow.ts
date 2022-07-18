@@ -1,8 +1,4 @@
-import {
-    DataSource,
-    EntitySubscriberInterface,
-    EventSubscriber,
-} from "typeorm"
+import { DataSource, EntitySubscriberInterface, EventSubscriber } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

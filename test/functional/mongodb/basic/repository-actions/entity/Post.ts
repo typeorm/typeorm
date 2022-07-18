@@ -1,8 +1,8 @@
-import { Entity } from "../typeorm/decorator/entity/Entity"
+import { Entity } from "typeorm/decorator/entity/Entity"
 import { Counters } from "./Counters"
-import { Column } from "../typeorm/decorator/columns/Column"
-import { ObjectIdColumn } from "../typeorm/decorator/columns/ObjectIdColumn"
-import { ObjectID } from "../typeorm/driver/mongodb/typings"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ObjectIdColumn } from "typeorm/decorator/columns/ObjectIdColumn"
+import { ObjectID } from "typeorm/driver/mongodb/typings"
 
 @Entity()
 export class Post {

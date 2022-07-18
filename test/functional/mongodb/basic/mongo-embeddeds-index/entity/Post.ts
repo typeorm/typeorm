@@ -1,8 +1,8 @@
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { Column } from "../typeorm/decorator/columns/Column"
-import { ObjectIdColumn } from "../typeorm/decorator/columns/ObjectIdColumn"
-import { Index } from "../typeorm/decorator/Index"
-import { ObjectID } from "../typeorm/driver/mongodb/typings"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ObjectIdColumn } from "typeorm/decorator/columns/ObjectIdColumn"
+import { Index } from "typeorm/decorator/Index"
+import { ObjectID } from "typeorm/driver/mongodb/typings"
 import { Information } from "./Information"
 
 @Entity()

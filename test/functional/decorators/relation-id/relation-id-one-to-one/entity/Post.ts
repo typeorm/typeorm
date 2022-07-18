@@ -1,10 +1,10 @@
-import { PrimaryColumn } from "../typeorm/decorator/columns/PrimaryColumn"
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { Column } from "../typeorm/decorator/columns/Column"
-import { OneToOne } from "../typeorm/decorator/relations/OneToOne"
-import { JoinColumn } from "../typeorm/decorator/relations/JoinColumn"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
 import { Category } from "./Category"
-import { RelationId } from "../typeorm/decorator/relations/RelationId"
+import { RelationId } from "typeorm/decorator/relations/RelationId"
 
 @Entity()
 export class Post {

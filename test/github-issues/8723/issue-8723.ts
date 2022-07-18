@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Connection } from "../typeorm/connection/Connection"
+import { Connection } from "typeorm/connection/Connection"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
 

@@ -1,8 +1,8 @@
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { ManyToOne } from "../typeorm/decorator/relations/ManyToOne"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { Event } from "./Event"
 import { User } from "./User"
-import { PrimaryColumn } from "../typeorm"
+import { PrimaryColumn } from "typeorm"
 
 @Entity()
 export class EventMember {

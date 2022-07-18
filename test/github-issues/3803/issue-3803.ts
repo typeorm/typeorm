@@ -3,11 +3,11 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
-import { EntitySchema } from "../typeorm"
+import { DataSource } from "typeorm"
+import { EntitySchema } from "typeorm"
 import { Post, PostSchema } from "./entity/Post"
 import { expect } from "chai"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("github issues > #3803 column option unique sqlite error", () => {
     let connections: DataSource[]

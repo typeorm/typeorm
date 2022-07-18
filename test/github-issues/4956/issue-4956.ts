@@ -5,7 +5,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { afterEach } from "mocha"
 import { expect } from "chai"
 

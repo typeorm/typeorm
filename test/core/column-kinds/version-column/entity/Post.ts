@@ -1,9 +1,4 @@
-import {
-    Column,
-    Entity,
-    PrimaryGeneratedColumn,
-    VersionColumn,
-} from "typeorm"
+import { Column, Entity, PrimaryGeneratedColumn, VersionColumn } from "typeorm"
 
 @Entity()
 export class Post {

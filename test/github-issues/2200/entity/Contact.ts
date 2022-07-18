@@ -1,8 +1,4 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    OneToMany,
-} from "typeorm/index"
+import { Entity, PrimaryGeneratedColumn, OneToMany } from "typeorm/index"
 import { Booking } from "./Booking"
 
 @Entity()

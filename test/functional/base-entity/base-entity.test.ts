@@ -5,7 +5,7 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { expect } from "chai"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 
 describe("base entity", () => {
     it("test if DataSource calls `useDataSource` of the provided entities", async () => {

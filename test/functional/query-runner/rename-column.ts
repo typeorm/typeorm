@@ -1,11 +1,11 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table } from "../typeorm"
+import { DataSource, Table } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query runner > rename column", () => {
     let connections: DataSource[]

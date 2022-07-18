@@ -2,7 +2,7 @@ import "reflect-metadata"
 
 import { assert } from "chai"
 
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

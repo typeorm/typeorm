@@ -1,6 +1,6 @@
-import { Entity } from "../typeorm"
-import { PrimaryColumn } from "../typeorm"
-import { Column } from "../typeorm"
+import { Entity } from "typeorm"
+import { PrimaryColumn } from "typeorm"
+import { Column } from "typeorm"
 
 @Entity()
 export class Post {

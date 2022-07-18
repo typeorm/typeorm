@@ -1,9 +1,4 @@
-import {
-    AfterLoad,
-    Column,
-    Entity,
-    PrimaryGeneratedColumn,
-} from "typeorm"
+import { AfterLoad, Column, Entity, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class Category {

@@ -1,8 +1,8 @@
 import { expect } from "chai"
 import { writeFileSync, unlinkSync } from "fs"
-import { ConnectionOptionsReader } from "../typeorm/connection/ConnectionOptionsReader"
-import { importClassesFromDirectories } from "../typeorm/util/DirectoryExportedClassesLoader"
-import { LoggerFactory } from "../typeorm/logger/LoggerFactory"
+import { ConnectionOptionsReader } from "typeorm/connection/ConnectionOptionsReader"
+import { importClassesFromDirectories } from "typeorm/util/DirectoryExportedClassesLoader"
+import { LoggerFactory } from "typeorm/logger/LoggerFactory"
 
 describe("github issues > #6284 cli support for cjs extension", () => {
     it("will load a cjs file", async () => {

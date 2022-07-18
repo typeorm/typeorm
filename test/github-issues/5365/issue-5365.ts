@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { User } from "./entity/UserEntity"
 
 import { expect } from "chai"

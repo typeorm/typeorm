@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { View } from "../typeorm/schema-builder/view/View"
+import { View } from "typeorm/schema-builder/view/View"
 import { expect } from "chai"
 
 describe("query runner > create view", () => {

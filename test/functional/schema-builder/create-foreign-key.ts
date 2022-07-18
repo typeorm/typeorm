@@ -1,12 +1,12 @@
 import "reflect-metadata"
-import { DataSource } from "../typeorm/data-source/DataSource"
-import { UniqueMetadata } from "../typeorm/metadata/UniqueMetadata"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { UniqueMetadata } from "typeorm/metadata/UniqueMetadata"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { ForeignKeyMetadata } from "../typeorm/metadata/ForeignKeyMetadata"
+import { ForeignKeyMetadata } from "typeorm/metadata/ForeignKeyMetadata"
 
 describe("schema builder > create foreign key", () => {
     let connections: DataSource[]

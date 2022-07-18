@@ -1,11 +1,7 @@
 import { Entity } from "typeorm/decorator/entity/Entity"
 import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { Column } from "typeorm/decorator/columns/Column"
-import {
-    CreateDateColumn,
-    ManyToOne,
-    UpdateDateColumn,
-} from "typeorm"
+import { CreateDateColumn, ManyToOne, UpdateDateColumn } from "typeorm"
 import { Category } from "./Category"
 
 @Entity()

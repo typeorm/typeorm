@@ -1,16 +1,16 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { Table } from "../typeorm/schema-builder/table/Table"
-import { TableOptions } from "../typeorm/schema-builder/options/TableOptions"
+import { Table } from "typeorm/schema-builder/table/Table"
+import { TableOptions } from "typeorm/schema-builder/options/TableOptions"
 import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import { Book2, Book } from "./entity/Book"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query runner > create table", () => {
     let connections: DataSource[]

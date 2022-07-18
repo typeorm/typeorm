@@ -1,9 +1,4 @@
-import {
-    BaseEntity,
-    Column,
-    Entity,
-    PrimaryGeneratedColumn,
-} from "typeorm"
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm"
 import { OrderStatus } from "./order.entity.ts"
 
 @Entity()

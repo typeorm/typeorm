@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, Repository } from "../typeorm/index"
+import { DataSource, Repository } from "typeorm/index"
 import {
     reloadTestingDatabases,
     createTestingConnections,

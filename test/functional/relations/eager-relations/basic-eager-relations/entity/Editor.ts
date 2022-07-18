@@ -1,10 +1,10 @@
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { OneToOne } from "../typeorm/decorator/relations/OneToOne"
-import { JoinColumn } from "../typeorm/decorator/relations/JoinColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
 import { User } from "./User"
-import { ManyToOne } from "../typeorm/decorator/relations/ManyToOne"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { Post } from "./Post"
-import { PrimaryColumn } from "../typeorm"
+import { PrimaryColumn } from "typeorm"
 
 @Entity()
 export class Editor {

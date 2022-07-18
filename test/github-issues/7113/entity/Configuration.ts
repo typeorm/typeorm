@@ -1,9 +1,4 @@
-import {
-    DeleteDateColumn,
-    Entity,
-    ObjectID,
-    ObjectIdColumn,
-} from "typeorm"
+import { DeleteDateColumn, Entity, ObjectID, ObjectIdColumn } from "typeorm"
 
 @Entity()
 export class Configuration {

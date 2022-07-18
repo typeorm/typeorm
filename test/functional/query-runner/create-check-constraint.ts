@@ -1,12 +1,12 @@
 import "reflect-metadata"
-import { DataSource, Table } from "../typeorm"
+import { DataSource, Table } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { TableCheck } from "../typeorm/schema-builder/table/TableCheck"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { TableCheck } from "typeorm/schema-builder/table/TableCheck"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query runner > create check constraint", () => {
     let connections: DataSource[]

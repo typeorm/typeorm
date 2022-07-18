@@ -1,7 +1,7 @@
-import { Column } from "../typeorm/decorator/columns/Column"
-import { PrimaryColumn } from "../typeorm/decorator/columns/PrimaryColumn"
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { ManyToOne } from "../typeorm/decorator/relations/ManyToOne"
+import { Column } from "typeorm/decorator/columns/Column"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { Category } from "./Category"
 
 @Entity()

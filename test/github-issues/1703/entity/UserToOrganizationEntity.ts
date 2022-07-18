@@ -1,9 +1,4 @@
-import {
-    Column,
-    Entity,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-} from "typeorm"
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
 import { UserEntity } from "./UserEntity"
 import { OrganizationEntity } from "./OrganizationEntity"
 

@@ -1,9 +1,4 @@
-import {
-    Entity,
-    JoinColumn,
-    OneToOne,
-    PrimaryGeneratedColumn,
-} from "typeorm"
+import { Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 import { TestChild } from "./TestChild"
 
 @Entity()

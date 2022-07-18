@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { TestEntity1 } from "./entity/TestEntity1"
 
 describe("github issues > #1504 Cannot eagerly query Entity with relation more than 3 levels deep", () => {

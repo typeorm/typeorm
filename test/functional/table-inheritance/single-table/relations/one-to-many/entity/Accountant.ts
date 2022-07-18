@@ -1,5 +1,5 @@
-import { ChildEntity } from "../../typeorm/decorator/entity/ChildEntity"
-import { OneToMany } from "../../typeorm/decorator/relations/OneToMany"
+import { ChildEntity } from "typeorm/decorator/entity/ChildEntity"
+import { OneToMany } from "typeorm/decorator/relations/OneToMany"
 import { Employee } from "./Employee"
 import { Department } from "./Department"
 

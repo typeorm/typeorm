@@ -1,5 +1,5 @@
 import { Name, NameEntitySchema } from "./Name"
-import { EntitySchema } from "../typeorm"
+import { EntitySchema } from "typeorm"
 
 export interface User {
     id: string

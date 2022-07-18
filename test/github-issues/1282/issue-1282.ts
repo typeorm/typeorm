@@ -5,10 +5,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Animal } from "./entity/Animal"
 import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
-import { ColumnMetadata } from "../typeorm/metadata/ColumnMetadata"
+import { ColumnMetadata } from "typeorm/metadata/ColumnMetadata"
 
 describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumnName if it is called from the owning or owned (inverse) context ", () => {
     let connections: DataSource[]

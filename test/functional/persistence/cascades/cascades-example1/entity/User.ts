@@ -1,8 +1,8 @@
-import { Column } from "../typeorm/decorator/columns/Column"
-import { Entity } from "../typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
 import { Profile } from "./Profile"
-import { OneToOne } from "../typeorm/decorator/relations/OneToOne"
-import { PrimaryColumn } from "../typeorm"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { PrimaryColumn } from "typeorm"
 
 @Entity()
 export class User {

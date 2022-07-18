@@ -1,9 +1,4 @@
-import {
-    Column,
-    Entity,
-    OneToMany,
-    PrimaryGeneratedColumn,
-} from "typeorm"
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Student } from "./Student"
 
 @Entity()

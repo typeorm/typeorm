@@ -13,13 +13,13 @@ import {
     createTestingConnections,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
-import { Repository } from "../typeorm/repository/Repository"
-import { TreeRepository } from "../typeorm/repository/TreeRepository"
-import { NoConnectionForRepositoryError } from "../typeorm/error/NoConnectionForRepositoryError"
-import { EntityManager } from "../typeorm/entity-manager/EntityManager"
-import { CannotGetEntityManagerNotConnectedError } from "../typeorm/error/CannotGetEntityManagerNotConnectedError"
-import { PostgresConnectionOptions } from "../typeorm/driver/postgres/PostgresConnectionOptions"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { Repository } from "typeorm/repository/Repository"
+import { TreeRepository } from "typeorm/repository/TreeRepository"
+import { NoConnectionForRepositoryError } from "typeorm/error/NoConnectionForRepositoryError"
+import { EntityManager } from "typeorm/entity-manager/EntityManager"
+import { CannotGetEntityManagerNotConnectedError } from "typeorm/error/CannotGetEntityManagerNotConnectedError"
+import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions"
 
 describe("Connection", () => {
     // const resourceDir = __dirname + "/../../../../../test/functional/connection/";

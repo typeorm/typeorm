@@ -4,9 +4,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
-import { Table } from "../typeorm"
+import { Table } from "typeorm"
 import { xfail } from "../../utils/xfail"
 
 describe("github issues > #3387 named columns", () => {

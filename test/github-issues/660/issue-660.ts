@@ -4,10 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { User } from "./entity/User"
 import { expect } from "chai"
-import { ReturningStatementNotSupportedError } from "../typeorm/error/ReturningStatementNotSupportedError"
+import { ReturningStatementNotSupportedError } from "typeorm/error/ReturningStatementNotSupportedError"
 
 describe("github issues > #660 Specifying a RETURNING or OUTPUT clause with QueryBuilder", () => {
     let connections: DataSource[]

@@ -1,14 +1,14 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { TableColumn } from "../typeorm"
-import { PostgresDriver } from "../typeorm/driver/postgres/PostgresDriver"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { TableColumn } from "typeorm"
+import { PostgresDriver } from "typeorm/driver/postgres/PostgresDriver"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("query runner > change column", () => {
     let connections: DataSource[]

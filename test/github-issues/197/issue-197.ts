@@ -4,8 +4,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
-import { EntityMetadata } from "../typeorm"
+import { DataSource } from "typeorm"
+import { EntityMetadata } from "typeorm"
 import { Person } from "./entity/person"
 
 describe("github issues > #197 Fails to drop indexes when removing fields", () => {

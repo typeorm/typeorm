@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 
 describe("github issues > #1139 mysql primary generated uuid ER_TOO_LONG_KEY", () => {
     let connections: DataSource[]

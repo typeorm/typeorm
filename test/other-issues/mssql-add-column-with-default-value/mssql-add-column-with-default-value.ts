@@ -2,7 +2,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { Post } from "./entity/Post-Succeed"
 
 describe("mssql -> add column to existing table", () => {

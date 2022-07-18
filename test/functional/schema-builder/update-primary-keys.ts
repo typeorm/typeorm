@@ -1,12 +1,12 @@
 import "reflect-metadata"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Question } from "./entity/Question"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("schema builder > update primary keys", () => {
     let connections: DataSource[]

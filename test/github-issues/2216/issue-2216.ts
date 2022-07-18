@@ -1,11 +1,11 @@
 import sinon from "sinon"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { EntityManager, QueryRunner, SimpleConsoleLogger } from "../typeorm"
+import { EntityManager, QueryRunner, SimpleConsoleLogger } from "typeorm"
 import { Foo } from "./entity/Foo"
 import { expect } from "chai"
 

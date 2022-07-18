@@ -1,9 +1,4 @@
-import {
-    CreateDateColumn,
-    Entity,
-    ManyToOne,
-    PrimaryColumn,
-} from "typeorm"
+import { CreateDateColumn, Entity, ManyToOne, PrimaryColumn } from "typeorm"
 import { Category } from "./Category"
 import { Post } from "./Post"
 

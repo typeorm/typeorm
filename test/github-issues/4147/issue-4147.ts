@@ -3,8 +3,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
-import { EntitySchema } from "../typeorm"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { EntitySchema } from "typeorm"
 import { Post, PostSchema } from "./entity/Post"
 
 describe('github issues > #4147 `SQLITE_ERROR: near "-": syntax error` when use sqlite, simple-enum', () => {

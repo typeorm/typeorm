@@ -1,9 +1,4 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    OneToOne,
-} from "typeorm/index"
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from "typeorm/index"
 import { Photo } from "./Photo"
 
 @Entity()

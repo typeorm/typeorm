@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("DriverUtils", () => {
     describe("parse mongo url", () => {

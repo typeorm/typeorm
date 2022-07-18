@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Car } from "./entity/Car"
 
 describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced", () => {

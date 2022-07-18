@@ -4,10 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
 import sinon from "sinon"
-import { SelectQueryBuilder } from "../typeorm"
+import { SelectQueryBuilder } from "typeorm"
 import { assert } from "chai"
 
 describe("github issues > #6266 Many identical selects after insert bunch of items", () => {

@@ -1,9 +1,4 @@
-import {
-    BaseEntity,
-    Column,
-    ManyToMany,
-    PrimaryGeneratedColumn,
-} from "typeorm"
+import { BaseEntity, Column, ManyToMany, PrimaryGeneratedColumn } from "typeorm"
 
 import { Entity } from "typeorm/decorator/entity/Entity"
 import { Foo } from "./Foo"

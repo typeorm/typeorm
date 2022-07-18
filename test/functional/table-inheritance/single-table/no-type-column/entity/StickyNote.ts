@@ -1,4 +1,4 @@
-import * as TypeOrm from "../typeorm"
+import * as TypeOrm from "typeorm"
 import { Note } from "./Note"
 import { Author } from "./Author"
 

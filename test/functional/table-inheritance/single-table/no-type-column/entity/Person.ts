@@ -1,4 +1,4 @@
-import * as TypeOrm from "../typeorm"
+import * as TypeOrm from "typeorm"
 import { Note } from "./Note"
 
 @TypeOrm.Entity({ name: "person" })

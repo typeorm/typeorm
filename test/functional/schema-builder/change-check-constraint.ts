@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,8 +7,8 @@ import {
 } from "../../utils/test-utils"
 import { Teacher } from "./entity/Teacher"
 import { Post } from "./entity/Post"
-import { CheckMetadata } from "../typeorm/metadata/CheckMetadata"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { CheckMetadata } from "typeorm/metadata/CheckMetadata"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 
 describe("schema builder > change check constraint", () => {
     let connections: DataSource[]

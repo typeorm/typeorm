@@ -4,9 +4,9 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { Table, TableColumn } from "../typeorm"
+import { Table, TableColumn } from "typeorm"
 
 describe("github issues > #1997 enum type not working in postgres when defined in a custom schema", () => {
     let connections: DataSource[]

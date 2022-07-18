@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, QueryRunner } from "../typeorm"
+import { DataSource, QueryRunner } from "typeorm"
 import {
     createTestingConnections,
     closeTestingConnections,

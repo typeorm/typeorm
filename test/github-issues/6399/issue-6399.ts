@@ -1,4 +1,4 @@
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { expect } from "chai"
 import {
     closeTestingConnections,

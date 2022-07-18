@@ -3,7 +3,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     TableInheritance,
-} from "../typeorm"
+} from "typeorm"
 
 @Entity({ database: "test" })
 @TableInheritance({ column: { name: "type", type: "varchar" } })

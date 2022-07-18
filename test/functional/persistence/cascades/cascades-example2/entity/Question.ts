@@ -1,8 +1,8 @@
-import { Column } from "../typeorm"
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "typeorm"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
 import { Answer } from "./Answer"
-import { OneToMany } from "../typeorm/decorator/relations/OneToMany"
+import { OneToMany } from "typeorm/decorator/relations/OneToMany"
 
 @Entity()
 export class Question {

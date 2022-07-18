@@ -1,9 +1,4 @@
-import {
-    PrimaryGeneratedColumn,
-    JoinTable,
-    ManyToMany,
-    Entity,
-} from "typeorm"
+import { PrimaryGeneratedColumn, JoinTable, ManyToMany, Entity } from "typeorm"
 import { Book } from "./Book"
 
 @Entity("author")

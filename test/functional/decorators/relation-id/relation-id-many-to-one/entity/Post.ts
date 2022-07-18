@@ -1,9 +1,9 @@
-import { PrimaryColumn } from "../typeorm/decorator/columns/PrimaryColumn"
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { Column } from "../typeorm/decorator/columns/Column"
-import { ManyToOne } from "../typeorm/decorator/relations/ManyToOne"
-import { JoinColumn } from "../typeorm/decorator/relations/JoinColumn"
-import { RelationId } from "../typeorm/decorator/relations/RelationId"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
+import { RelationId } from "typeorm/decorator/relations/RelationId"
 import { Category } from "./Category"
 
 @Entity()

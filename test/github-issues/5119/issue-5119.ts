@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { fail } from "assert"
 
 describe("github issues > #5119 migration with foreign key that changes target", () => {

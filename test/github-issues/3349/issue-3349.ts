@@ -4,9 +4,9 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { Category } from "./entity/Category"
-import { In } from "../typeorm"
+import { In } from "typeorm"
 import { expect } from "chai"
 
 describe("github issues > #3349 Multiple where conditions with parameters", () => {

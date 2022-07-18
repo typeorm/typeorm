@@ -1,9 +1,9 @@
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../typeorm/decorator/columns/PrimaryGeneratedColumn"
-import { ManyToOne } from "../typeorm/decorator/relations/ManyToOne"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "typeorm/decorator/columns/PrimaryGeneratedColumn"
+import { ManyToOne } from "typeorm/decorator/relations/ManyToOne"
 import { User } from "./User"
-import { Column } from "../typeorm/decorator/columns/Column"
-import { DeleteDateColumn } from "../typeorm/decorator/columns/DeleteDateColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { DeleteDateColumn } from "typeorm/decorator/columns/DeleteDateColumn"
 
 @Entity()
 export class Photo {

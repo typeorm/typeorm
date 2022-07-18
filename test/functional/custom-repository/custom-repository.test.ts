@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { expect } from "chai"
 
 describe("custom repository", () => {

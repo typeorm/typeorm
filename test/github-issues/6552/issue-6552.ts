@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "../../utils/test-setup"
-import { DataSource } from "../typeorm/data-source/DataSource"
-import { PlatformTools } from "../typeorm/platform/PlatformTools"
+import { DataSource } from "typeorm/data-source/DataSource"
+import { PlatformTools } from "typeorm/platform/PlatformTools"
 import {
     closeTestingConnections,
     createTestingConnections,

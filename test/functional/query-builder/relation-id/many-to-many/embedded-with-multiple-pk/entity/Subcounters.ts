@@ -1,7 +1,7 @@
-import { Column } from "../../typeorm/decorator/columns/Column"
-import { ManyToMany } from "../../typeorm/decorator/relations/ManyToMany"
-import { JoinTable } from "../../typeorm/decorator/relations/JoinTable"
-import { PrimaryColumn } from "../../typeorm/decorator/columns/PrimaryColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
+import { JoinTable } from "typeorm/decorator/relations/JoinTable"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
 import { User } from "./User"
 
 export class Subcounters {

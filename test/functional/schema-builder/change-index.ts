@@ -1,14 +1,14 @@
 import "reflect-metadata"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { IndexMetadata } from "../typeorm/metadata/IndexMetadata"
+import { IndexMetadata } from "typeorm/metadata/IndexMetadata"
 import { Teacher } from "./entity/Teacher"
 import { Student } from "./entity/Student"
-import { TableIndex } from "../typeorm/schema-builder/table/TableIndex"
+import { TableIndex } from "typeorm/schema-builder/table/TableIndex"
 import { expect } from "chai"
 
 describe("schema builder > change index", () => {

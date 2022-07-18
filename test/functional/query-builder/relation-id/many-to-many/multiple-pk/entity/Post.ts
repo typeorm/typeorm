@@ -1,8 +1,8 @@
-import { ManyToMany } from "../../typeorm/decorator/relations/ManyToMany"
-import { Entity } from "../../typeorm/decorator/entity/Entity"
-import { Column } from "../../typeorm/decorator/columns/Column"
-import { JoinTable } from "../../typeorm/decorator/relations/JoinTable"
-import { PrimaryColumn } from "../../typeorm/decorator/columns/PrimaryColumn"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { JoinTable } from "typeorm/decorator/relations/JoinTable"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
 import { Category } from "./Category"
 
 @Entity()

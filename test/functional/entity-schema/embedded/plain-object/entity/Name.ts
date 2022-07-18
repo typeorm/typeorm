@@ -1,4 +1,4 @@
-import { EntitySchema } from "../typeorm"
+import { EntitySchema } from "typeorm"
 
 export interface Name {
     first: string

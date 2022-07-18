@@ -4,13 +4,13 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm/data-source/DataSource"
+import { DataSource } from "typeorm/data-source/DataSource"
 import { expect } from "chai"
 import { InternalUser } from "./entity/InternalUser"
 import { InternalRole } from "./entity/InternalRole"
 import { User } from "./entity/User"
 import { Role } from "./entity/Role"
-import { BaseEntity, TypeORMError } from "../typeorm"
+import { BaseEntity, TypeORMError } from "typeorm"
 import { ClientRole } from "./entity/ClientRole"
 import { afterEach } from "mocha"
 

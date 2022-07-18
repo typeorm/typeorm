@@ -1,4 +1,4 @@
-import { DataSource, Equal } from "../typeorm"
+import { DataSource, Equal } from "typeorm"
 import {
     closeTestingConnections,
     createTestingConnections,

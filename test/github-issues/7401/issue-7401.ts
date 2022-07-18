@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
 import { expect } from "chai"
 
 describe('github issues > #7401 MongoDB replica set connection string not support with method "parseConnectionUrl" & "buildConnectionUrl"', () => {

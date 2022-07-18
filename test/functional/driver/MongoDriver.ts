@@ -1,8 +1,8 @@
 import { expect } from "chai"
 import sinon from "sinon"
-import { DataSource } from "../typeorm"
-import { DriverUtils } from "../typeorm/driver/DriverUtils"
-import { MongoDriver } from "../typeorm/driver/mongodb/MongoDriver"
+import { DataSource } from "typeorm"
+import { DriverUtils } from "typeorm/driver/DriverUtils"
+import { MongoDriver } from "typeorm/driver/mongodb/MongoDriver"
 
 describe("MongoDriver", () => {
     async function getConnectionUrlFromFakedMongoClient(

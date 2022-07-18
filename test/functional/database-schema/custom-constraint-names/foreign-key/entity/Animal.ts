@@ -6,7 +6,7 @@ import {
     ManyToOne,
     OneToOne,
     PrimaryGeneratedColumn,
-} from "../typeorm"
+} from "typeorm"
 import { Category } from "./Category"
 import { Breed } from "./Breed"
 import { Name } from "./Name"

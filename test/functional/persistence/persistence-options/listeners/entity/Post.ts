@@ -4,7 +4,7 @@ import {
     Column,
     Entity,
     PrimaryColumn,
-} from "../typeorm"
+} from "typeorm"
 
 @Entity()
 export class Post {

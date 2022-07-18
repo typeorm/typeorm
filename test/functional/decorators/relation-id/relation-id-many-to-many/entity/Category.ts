@@ -1,11 +1,11 @@
-import { PrimaryColumn } from "../typeorm/decorator/columns/PrimaryColumn"
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { Column } from "../typeorm/decorator/columns/Column"
-import { ManyToMany } from "../typeorm/decorator/relations/ManyToMany"
-import { JoinTable } from "../typeorm/decorator/relations/JoinTable"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { Column } from "typeorm/decorator/columns/Column"
+import { ManyToMany } from "typeorm/decorator/relations/ManyToMany"
+import { JoinTable } from "typeorm/decorator/relations/JoinTable"
 import { Post } from "./Post"
 import { Image } from "./Image"
-import { RelationId } from "../typeorm/decorator/relations/RelationId"
+import { RelationId } from "typeorm/decorator/relations/RelationId"
 
 @Entity()
 export class Category {

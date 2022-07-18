@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../typeorm"
+import { DataSource } from "typeorm"
 import { Address } from "./entity/Address"
 import { ActionDetails } from "./entity/ActionDetails"
 import { ActionLog } from "./entity/ActionLog"

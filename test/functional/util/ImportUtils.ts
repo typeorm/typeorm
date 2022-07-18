@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import fs from "fs"
 import path from "path"
-import { importOrRequireFile } from "../typeorm/util/ImportUtils"
+import { importOrRequireFile } from "typeorm/util/ImportUtils"
 
 describe("ImportUtils.importOrRequireFile", () => {
     const rmdirSync = (dir: string) => {

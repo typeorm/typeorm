@@ -1,6 +1,6 @@
-import { Entity } from "../typeorm/decorator/entity/Entity"
-import { PrimaryColumn } from "../typeorm/decorator/columns/PrimaryColumn"
-import { Column } from "../typeorm/decorator/columns/Column"
+import { Entity } from "typeorm/decorator/entity/Entity"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { Column } from "typeorm/decorator/columns/Column"
 
 @Entity()
 export class PostWithoutTypes {

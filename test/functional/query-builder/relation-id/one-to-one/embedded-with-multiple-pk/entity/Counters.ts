@@ -1,7 +1,7 @@
-import { Column } from "../../typeorm/decorator/columns/Column"
-import { PrimaryColumn } from "../../typeorm/decorator/columns/PrimaryColumn"
-import { OneToOne } from "../../typeorm/decorator/relations/OneToOne"
-import { JoinColumn } from "../../typeorm/decorator/relations/JoinColumn"
+import { Column } from "typeorm/decorator/columns/Column"
+import { PrimaryColumn } from "typeorm/decorator/columns/PrimaryColumn"
+import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { JoinColumn } from "typeorm/decorator/relations/JoinColumn"
 import { Category } from "./Category"
 import { Subcounters } from "./Subcounters"
 

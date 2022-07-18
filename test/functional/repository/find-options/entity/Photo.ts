@@ -1,9 +1,5 @@
 import { Entity } from "typeorm/decorator/entity/Entity"
-import {
-    JoinTable,
-    ManyToMany,
-    PrimaryGeneratedColumn,
-} from "typeorm/index"
+import { JoinTable, ManyToMany, PrimaryGeneratedColumn } from "typeorm/index"
 import { Column } from "typeorm/decorator/columns/Column"
 import { Category } from "./Category"
 

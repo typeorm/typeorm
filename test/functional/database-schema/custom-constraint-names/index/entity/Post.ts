@@ -1,9 +1,4 @@
-import {
-    Column,
-    Entity,
-    Index,
-    PrimaryGeneratedColumn,
-} from "../typeorm"
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 @Index("IDX_NAME", ["name"])
