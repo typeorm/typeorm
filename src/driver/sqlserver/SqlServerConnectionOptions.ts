@@ -272,6 +272,12 @@ export interface SqlServerConnectionOptions
          * A boolean, that when true will abort a query when an overflow or divide-by-zero error occurs during query execution.
          */
         readonly enableArithAbort?: boolean
+
+        /**
+         * Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server.
+         * (default: node-mssql)
+         */
+        readonly appName?: string
     }
 
     /**
