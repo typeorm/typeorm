@@ -1,10 +1,10 @@
 import { expect } from "chai"
 import { exec } from "child_process"
 import { dirname } from "path"
-import rimraf from "rimraf"
+import { promises as fs } from 'fs'
 
 describe.only("cli init command", () => {
-    const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
+    const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.ts`
     const databaseOptions = [
         "mysql",
         "mariadb",
@@ -16,61 +16,27 @@ describe.only("cli init command", () => {
         "mssql",
         "mongodb",
     ]
-    const testProjectName = Date.now() + "TestProject"
-    const builtSrcDirectory = "build/compiled/src"
-
-    before(async () => {
-        const chmodPromise = new Promise<void>((resolve) => {
-            exec(`chmod 755 ${cliPath}`, (error, stdout, stderr) => {
-                expect(error).to.not.exist
-                expect(stderr).to.be.empty
-
-                resolve()
-            })
-        })
-
-        const copyPromise = new Promise<void>((resolve) => {
-            exec(
-                `cp package.json ${builtSrcDirectory}`,
-                (error, stdout, stderr) => {
-                    expect(error).to.not.exist
-                    expect(stderr).to.be.empty
-
-                    resolve()
-                },
-            )
-        })
-
-        await Promise.all([chmodPromise, copyPromise])
-    })
-
-    after((done) => {
-        rimraf(`./${builtSrcDirectory}/package.json`, (error) => {
-            expect(error).to.not.exist
-
-            done()
-        })
-    })
-
-    afterEach((done) => {
-        rimraf(`./${testProjectName}`, (error) => {
-            expect(error).to.not.exist
-
-            done()
-        })
-    })
 
     for (const databaseOption of databaseOptions) {
-        it(`should work with ${databaseOption} option`, (done) => {
-            exec(
-                `${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
-                (error, stdout, stderr) => {
-                    expect(error).to.not.exist
-                    expect(stderr).to.be.empty
-
-                    done()
-                },
-            )
+        it(`should work with ${databaseOption} option`,  async () => {
+            const projectName = await new Promise((resolve, reject) => {
+                const testProjectName = `TestProject${process.hrtime.bigint()}`
+                exec(
+                    `npx --yes cross-env TYPEORM_TEST=true node -r @swc-node/register ${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
+                    (error, stdout, stderr) => {
+                        expect(error).to.not.exist
+                        if (error) {
+                            reject(error)
+                        }
+                        expect(stderr).to.be.empty
+                        if (stderr) {
+                            reject(stderr)
+                        }
+                        resolve(testProjectName)
+                    },
+                )
+            })
+            await fs.rm(`./${projectName}`, { recursive: true, force: true })
         }).timeout(90000)
     }
 })
