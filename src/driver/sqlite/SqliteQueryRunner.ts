@@ -68,14 +68,9 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
             const queryStartTime = +new Date()
             const isInsertQuery = query.startsWith("INSERT ")
             const isDeleteQuery = query.startsWith("DELETE ")
-            const isUpdateQuery = query.startsWith("UPDATE ")
 
             const execute = async () => {
-                if (isInsertQuery || isDeleteQuery || isUpdateQuery) {
-                    await databaseConnection.run(query, parameters, handler)
-                } else {
-                    await databaseConnection.all(query, parameters, handler)
-                }
+                await databaseConnection.all(query, parameters, handler)
             }
 
             const handler = function (err: any, rows: any) {
@@ -114,7 +109,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                 } else {
                     const result = new QueryResult()
 
-                    if (isInsertQuery) {
+                    if (isInsertQuery || isDeleteQuery) {
                         result.raw = this["lastID"]
                     } else {
                         result.raw = rows
