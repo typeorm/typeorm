@@ -1,11 +1,14 @@
 {
-  "require": [
-    "@swc-node/register"
-  ],
   "bail": true,
+  "extension": [
+    "ts", "js"
+  ],
   "file": [
     "./test/utils/test-setup.ts"
   ],
   "recursive": true,
+  "require": [
+    "ts-node/register"
+  ],
   "timeout": 60000
 }

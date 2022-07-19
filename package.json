@@ -143,6 +143,7 @@
     "sql.js": "^1.4.0",
     "sqlite3": "^5.0.3",
     "ts-node": "^10.7.0",
+    "tsconfig-paths": "^4.0.0",
     "typeorm-aurora-data-api-driver": "^2.0.0",
     "typescript": "^4.6.2"
   },
@@ -241,7 +242,7 @@
     "yargs": "^17.3.1"
   },
   "scripts": {
-    "test": "mocha ./test/**/*.ts",
+    "test": "mocha",
     "compile": "run-s compile:clean compile:packages",
     "compile:clean": "rimraf ./build",
     "compile:browser": "run-p compile:browser:**",
