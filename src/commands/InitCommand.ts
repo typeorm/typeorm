@@ -668,7 +668,7 @@ Steps to run this project:
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
         Object.assign(packageJson.dependencies, {
-            typeorm: require("../package.json").version,
+            typeorm: require(process.env.TYPEORM_TEST ? "../../package.json" : "../package.json").version,
             "reflect-metadata": "^0.1.13",
         })
 
