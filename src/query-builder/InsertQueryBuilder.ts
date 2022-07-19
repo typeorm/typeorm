@@ -572,7 +572,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             (DriverUtils.isPostgresFamily(this.connection.driver) ||
                 this.connection.driver.options.type === "oracle" ||
                 this.connection.driver.options.type === "cockroachdb" ||
-                DriverUtils.isMySQLFamily(this.connection.driver))
+                DriverUtils.isMySQLFamily(this.connection.driver) ||
+                DriverUtils.isSQLiteFamily(this.connection.driver))
         ) {
             query += ` RETURNING ${returningExpression}`
         }
