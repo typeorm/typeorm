@@ -93,7 +93,7 @@
   "devDependencies": {
     "@swc-node/register": "^1.5.1",
     "@swc/cli": "^0.1.57",
-    "@swc/core": "^1.2.218",
+    "@swc/core": "1.2.205",
     "@types/app-root-path": "^1.2.4",
     "@types/chai": "^4.2.15",
     "@types/chai-as-promised": "^7.1.3",
