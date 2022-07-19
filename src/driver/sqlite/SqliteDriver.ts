@@ -215,4 +215,8 @@ export class SqliteDriver extends AbstractSqliteDriver {
                 : path.join(process.cwd(), optionsDb),
         )
     }
+
+    isReturningSqlSupported(): boolean {
+        return ((this.sqlite.VERSION_NUMBER / 1000) | 0) % 1000 >= 35
+    }
 }

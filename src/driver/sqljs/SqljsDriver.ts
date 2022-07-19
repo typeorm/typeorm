@@ -23,6 +23,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
     options: SqljsConnectionOptions
 
+    private version: string
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -53,6 +55,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     async connect(): Promise<void> {
         this.databaseConnection = await this.createDatabaseConnection()
+        this.version = this.databaseConnection.exec(
+            "SELECT sqlite_version()",
+        )[0].values[0][0]
     }
 
     /**
@@ -306,5 +311,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js")
             }
         }
+    }
+
+    isReturningSqlSupported(): boolean {
+        return Number(this.version.split(".")[1]) >= 35
     }
 }

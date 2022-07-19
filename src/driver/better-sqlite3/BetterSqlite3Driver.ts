@@ -1,7 +1,9 @@
 import mkdirp from "mkdirp"
 import path from "path"
-import { DriverPackageNotInstalledError } from "../../error"
-import { DriverOptionNotSetError } from "../../error"
+import {
+    DriverOptionNotSetError,
+    DriverPackageNotInstalledError,
+} from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source"
 import { ColumnType } from "../types/ColumnTypes"
@@ -221,5 +223,16 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
                 ? optionsDb
                 : path.join(this.options.baseDirectory!, optionsDb),
         )
+    }
+
+    isReturningSqlSupported(): boolean {
+        const minor = Number(
+            this.databaseConnection
+                .prepare("SELECT sqlite_version()")
+                .pluck()
+                .get()
+                .split(".")[1],
+        )
+        return minor >= 35
     }
 }
