@@ -149,6 +149,8 @@
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0",
     "@sap/hana-client": "^2.12.25",
+    "@swc-node/register": "^1.5.1",
+    "@swc/core": "1.2.205",
     "better-sqlite3": "^7.1.2",
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",

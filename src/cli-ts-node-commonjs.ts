@@ -1,4 +1,4 @@
 require("ts-node").register({
-    swc: true
+    swc: true,
 })
 import "./cli"
