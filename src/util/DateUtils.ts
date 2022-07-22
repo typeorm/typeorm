@@ -28,11 +28,11 @@ export class DateUtils {
     static mixedDateToDateString(value: string | Date): string {
         if (value instanceof Date)
             return (
-                this.formatZerolessValue(value.getFullYear()) +
+                this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
-                this.formatZerolessValue(value.getMonth() + 1) +
+                this.formatZerolessValue(value.getMonth() + 1, 2) +
                 "-" +
-                this.formatZerolessValue(value.getDate())
+                this.formatZerolessValue(value.getDate(), 2)
             )
 
         return value
@@ -88,11 +88,11 @@ export class DateUtils {
     ): string | any {
         if (value instanceof Date)
             return (
-                this.formatZerolessValue(value.getHours()) +
+                this.formatZerolessValue(value.getHours(), 2) +
                 ":" +
-                this.formatZerolessValue(value.getMinutes()) +
+                this.formatZerolessValue(value.getMinutes(), 2) +
                 (!skipSeconds
-                    ? ":" + this.formatZerolessValue(value.getSeconds())
+                    ? ":" + this.formatZerolessValue(value.getSeconds(), 2)
                     : "")
             )
 
@@ -151,17 +151,17 @@ export class DateUtils {
         }
         if (value instanceof Date) {
             let finalValue =
-                this.formatZerolessValue(value.getFullYear()) +
+                this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
-                this.formatZerolessValue(value.getMonth() + 1) +
+                this.formatZerolessValue(value.getMonth() + 1, 2) +
                 "-" +
-                this.formatZerolessValue(value.getDate()) +
+                this.formatZerolessValue(value.getDate(), 2) +
                 " " +
-                this.formatZerolessValue(value.getHours()) +
+                this.formatZerolessValue(value.getHours(), 2) +
                 ":" +
-                this.formatZerolessValue(value.getMinutes()) +
+                this.formatZerolessValue(value.getMinutes(), 2) +
                 ":" +
-                this.formatZerolessValue(value.getSeconds())
+                this.formatZerolessValue(value.getSeconds(), 2)
 
             if (useMilliseconds)
                 finalValue += `.${this.formatMilliseconds(
@@ -183,17 +183,17 @@ export class DateUtils {
         }
         if (value instanceof Date) {
             return (
-                this.formatZerolessValue(value.getUTCFullYear()) +
+                this.formatZerolessValue(value.getUTCFullYear(), 4) +
                 "-" +
-                this.formatZerolessValue(value.getUTCMonth() + 1) +
+                this.formatZerolessValue(value.getUTCMonth() + 1, 2) +
                 "-" +
-                this.formatZerolessValue(value.getUTCDate()) +
+                this.formatZerolessValue(value.getUTCDate(), 2) +
                 " " +
-                this.formatZerolessValue(value.getUTCHours()) +
+                this.formatZerolessValue(value.getUTCHours(), 2) +
                 ":" +
-                this.formatZerolessValue(value.getUTCMinutes()) +
+                this.formatZerolessValue(value.getUTCMinutes(), 2) +
                 ":" +
-                this.formatZerolessValue(value.getUTCSeconds()) +
+                this.formatZerolessValue(value.getUTCSeconds(), 2) +
                 "." +
                 this.formatMilliseconds(value.getUTCMilliseconds())
             )
@@ -258,12 +258,15 @@ export class DateUtils {
     // -------------------------------------------------------------------------
 
     /**
-     * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
+     * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".
      */
-    private static formatZerolessValue(value: number): string {
-        if (value < 10) return "0" + value
+    private static formatZerolessValue(
+        value: number,
+        totalLength: number,
+    ): string {
+        const pad = "0".repeat(totalLength)
 
-        return String(value)
+        return String(`${pad}${value}`).slice(-totalLength)
     }
 
     /**
