@@ -239,7 +239,7 @@ export interface SqlServerConnectionOptions
 
         /**
          * A boolean determining whether or not the connection will be encrypted. Set to true if you're on
-         * Windows Azure. (default: false).
+         * Windows Azure. (default: true).
          */
         readonly encrypt?: boolean
 
