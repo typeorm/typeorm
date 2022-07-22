@@ -30,9 +30,9 @@ export class DateUtils {
             return (
                 this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
-                this.formatZerolessValue(value.getMonth() + 1, 2) +
+                this.formatZerolessValue(value.getMonth() + 1) +
                 "-" +
-                this.formatZerolessValue(value.getDate(), 2)
+                this.formatZerolessValue(value.getDate())
             )
 
         return value
@@ -88,11 +88,11 @@ export class DateUtils {
     ): string | any {
         if (value instanceof Date)
             return (
-                this.formatZerolessValue(value.getHours(), 2) +
+                this.formatZerolessValue(value.getHours()) +
                 ":" +
-                this.formatZerolessValue(value.getMinutes(), 2) +
+                this.formatZerolessValue(value.getMinutes()) +
                 (!skipSeconds
-                    ? ":" + this.formatZerolessValue(value.getSeconds(), 2)
+                    ? ":" + this.formatZerolessValue(value.getSeconds())
                     : "")
             )
 
@@ -153,15 +153,15 @@ export class DateUtils {
             let finalValue =
                 this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
-                this.formatZerolessValue(value.getMonth() + 1, 2) +
+                this.formatZerolessValue(value.getMonth() + 1) +
                 "-" +
-                this.formatZerolessValue(value.getDate(), 2) +
+                this.formatZerolessValue(value.getDate()) +
                 " " +
-                this.formatZerolessValue(value.getHours(), 2) +
+                this.formatZerolessValue(value.getHours()) +
                 ":" +
-                this.formatZerolessValue(value.getMinutes(), 2) +
+                this.formatZerolessValue(value.getMinutes()) +
                 ":" +
-                this.formatZerolessValue(value.getSeconds(), 2)
+                this.formatZerolessValue(value.getSeconds())
 
             if (useMilliseconds)
                 finalValue += `.${this.formatMilliseconds(
@@ -185,15 +185,15 @@ export class DateUtils {
             return (
                 this.formatZerolessValue(value.getUTCFullYear(), 4) +
                 "-" +
-                this.formatZerolessValue(value.getUTCMonth() + 1, 2) +
+                this.formatZerolessValue(value.getUTCMonth() + 1) +
                 "-" +
-                this.formatZerolessValue(value.getUTCDate(), 2) +
+                this.formatZerolessValue(value.getUTCDate()) +
                 " " +
-                this.formatZerolessValue(value.getUTCHours(), 2) +
+                this.formatZerolessValue(value.getUTCHours()) +
                 ":" +
-                this.formatZerolessValue(value.getUTCMinutes(), 2) +
+                this.formatZerolessValue(value.getUTCMinutes()) +
                 ":" +
-                this.formatZerolessValue(value.getUTCSeconds(), 2) +
+                this.formatZerolessValue(value.getUTCSeconds()) +
                 "." +
                 this.formatMilliseconds(value.getUTCMilliseconds())
             )
@@ -260,10 +260,7 @@ export class DateUtils {
     /**
      * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".
      */
-    private static formatZerolessValue(
-        value: number,
-        totalLength: number,
-    ): string {
+    private static formatZerolessValue(value: number, totalLength = 2): string {
         const pad = "0".repeat(totalLength)
 
         return String(`${pad}${value}`).slice(-totalLength)
