@@ -47,11 +47,11 @@ describe("benchmark > QueryBuilder > wide join", () => {
 
         /**
          * On a M1 macbook air, 5 runs:
-         * 3501ms
-         * 3574ms
-         * 3575ms
-         * 3563ms
-         * 3567ms
+         * 1861ms
+         * 1850ms
+         * 1859ms
+         * 1859ms
+         * 1884ms
          */
     })
 })

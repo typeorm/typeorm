@@ -7,7 +7,7 @@ export interface TableForeignKeyOptions {
     // -------------------------------------------------------------------------
 
     /**
-     * Name of the table which contains this foreign key.
+     * Name of the foreign key.
      */
     name?: string
 

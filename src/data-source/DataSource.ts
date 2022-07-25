@@ -39,6 +39,7 @@ import { TypeORMError } from "../error"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -427,7 +428,9 @@ export class DataSource {
     /**
      * Gets repository for the given entity.
      */
-    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): Repository<Entity> {
         return this.manager.getRepository(target)
     }
 
@@ -435,7 +438,7 @@ export class DataSource {
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
      */
-    getTreeRepository<Entity>(
+    getTreeRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): TreeRepository<Entity> {
         return this.manager.getTreeRepository(target)
@@ -445,7 +448,7 @@ export class DataSource {
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
      */
-    getMongoRepository<Entity>(
+    getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): MongoRepository<Entity> {
         if (!(this.driver.options.type === "mongodb"))

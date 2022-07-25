@@ -12,7 +12,9 @@ import { Repository } from "./Repository"
  *
  * @see Repository
  */
-export class TreeRepository<Entity> extends Repository<Entity> {
+export class TreeRepository<
+    Entity extends ObjectLiteral,
+> extends Repository<Entity> {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
