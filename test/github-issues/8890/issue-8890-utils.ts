@@ -2,8 +2,10 @@ import "reflect-metadata"
 import { EntityManager } from "../../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
+import { Profile } from "./entity/Profile"
+import { User } from "./entity/User"
 
-export async function prepareData(manager: EntityManager) {
+export async function prepareDataManyToOne(manager: EntityManager) {
     const author1 = new Author()
     author1.id = 1
     author1.firstName = "Timber"
@@ -53,4 +55,41 @@ export async function prepareData(manager: EntityManager) {
     post5.author = author3
 
     await manager.save([post1, post2, post3, post4, post5])
+}
+
+export async function prepareDataOneToOne(manager: EntityManager) {
+    const profile1 = new Profile()
+    profile1.id = 1
+    profile1.image = "image-1.jpg"
+
+    const profile2 = new Profile()
+    profile2.id = 2
+    profile2.image = "image-2.jpg"
+
+    const profile3 = new Profile()
+    profile3.id = 3
+    profile3.image = "image-3.jpg"
+
+    await manager.save([profile1, profile2, profile3])
+
+    const user1 = new User()
+    user1.id = 1
+    user1.username = "user #1"
+    user1.profile = profile1
+
+    const user2 = new User()
+    user2.id = 2
+    user2.username = "user #2"
+    user2.profile = profile2
+
+    const user3 = new User()
+    user3.id = 3
+    user3.username = "user #3"
+    user3.profile = profile3
+
+    const user4 = new User()
+    user4.id = 4
+    user4.username = "user #4"
+
+    await manager.save([user1, user2, user3, user4])
 }

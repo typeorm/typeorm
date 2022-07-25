@@ -4155,7 +4155,11 @@ export class SelectQueryBuilder<Entity>
                                     parseInt(where[key].value),
                             )
                         } else {
-                            if (relation.isManyToOne) {
+                            if (
+                                relation.isManyToOne ||
+                                (relation.isOneToOne &&
+                                    relation.isOneToOneOwner)
+                            ) {
                                 const aliasPath = `${alias}.${propertyPath}`
 
                                 andConditions.push(
