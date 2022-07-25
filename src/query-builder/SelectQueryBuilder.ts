@@ -4154,10 +4154,17 @@ export class SelectQueryBuilder<Entity>
                                     " " +
                                     parseInt(where[key].value),
                             )
-                        } else if (where[key].type === "isNull") {
+                        } else {
                             if (relation.isManyToOne) {
+                                const aliasPath = `${alias}.${propertyPath}`
+
                                 andConditions.push(
-                                    `${alias}.${propertyPath} IS NULL`,
+                                    this.createWhereConditionExpression(
+                                        this.getWherePredicateCondition(
+                                            aliasPath,
+                                            where[key],
+                                        ),
+                                    ),
                                 )
                             } else {
                                 throw new Error(

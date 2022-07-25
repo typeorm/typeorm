@@ -1,9 +1,4 @@
-import {
-    Column,
-    Entity,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-} from "../../../../src"
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "../../../../src"
 import { Author } from "./Author"
 
 @Entity()
@@ -20,5 +15,5 @@ export class Post {
     @ManyToOne(() => Author, (author) => author.posts, {
         nullable: true,
     })
-    author: Author
+    author: Author | null
 }

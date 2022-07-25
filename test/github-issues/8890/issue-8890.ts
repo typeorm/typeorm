@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, IsNull } from "../../../src"
+import { DataSource, In, IsNull } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,19 +10,19 @@ import { Post } from "./entity/Post"
 import { prepareData } from "./issue-8890-utils"
 
 describe("github issues > #8890 it should be possible to query IS NULL on ManyToOne relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("where IsNull", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -32,8 +32,9 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
                             author: IsNull(),
                         },
                     })
-                    .orderBy("id", "ASC")
+                    .orderBy("post.id", "ASC")
                     .getMany()
+
                 posts.should.be.eql([
                     {
                         id: 2,
@@ -44,6 +45,81 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
+                    },
+                ])
+            }),
+        ))
+
+    it("where In", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                await prepareData(connection.manager)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: {
+                            author: In([2, 3]),
+                        },
+                    })
+                    .orderBy("post.id", "ASC")
+                    .getMany()
+
+                posts.should.be.eql([
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                    },
+                    {
+                        id: 5,
+                        title: "Post #5",
+                        text: "About post #5",
+                    },
+                ])
+            }),
+        ))
+
+    it("where IsNull OR In", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                await prepareData(connection.manager)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: [
+                            {
+                                author: In([2, 3]),
+                            },
+                            {
+                                author: IsNull(),
+                            },
+                        ],
+                    })
+                    .orderBy("post.id", "ASC")
+                    .getMany()
+
+                posts.should.be.eql([
+                    {
+                        id: 2,
+                        title: "Post #2",
+                        text: "About post #2",
+                    },
+                    {
+                        id: 3,
+                        title: "Post #3",
+                        text: "About post #3",
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                    },
+                    {
+                        id: 5,
+                        title: "Post #5",
+                        text: "About post #5",
                     },
                 ])
             }),
