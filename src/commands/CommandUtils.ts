@@ -35,6 +35,10 @@ export class CommandUtils {
 
         const dataSourceExports = []
         for (let fileExport in dataSourceFileExports) {
+            const isPromise = typeof dataSourceFileExports[fileExport] === "object"
+                && typeof dataSourceFileExports[fileExport].then === "function";
+
+            dataSourceFileExports[fileExport] = isPromise ? await dataSourceFileExports[fileExport] : dataSourceFileExports[fileExport];
             if (
                 InstanceChecker.isDataSource(dataSourceFileExports[fileExport])
             ) {
