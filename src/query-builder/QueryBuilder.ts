@@ -855,9 +855,10 @@ export abstract class QueryBuilder<Entity> {
          * Time travel queries for CockroachDB
          */
         if (
-            (this.connection.driver.options as CockroachConnectionOptions)
+            this.expressionMap.queryType === "select" &&
+            ((this.connection.driver.options as CockroachConnectionOptions)
                 .timeTravelQueries ||
-            this.expressionMap.useTimeTravelQueries
+                this.expressionMap.useTimeTravelQueries)
         ) {
             condition =
                 " AS OF SYSTEM TIME " +
