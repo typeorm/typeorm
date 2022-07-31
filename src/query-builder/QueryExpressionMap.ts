@@ -15,6 +15,7 @@ import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { TypeORMError } from "../error"
 import { WhereClause } from "./WhereClause"
 import { UpsertType } from "../driver/types/UpsertType"
+import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -307,6 +308,18 @@ export class QueryExpressionMap {
     useTransaction: boolean = false
 
     /**
+     * Indicates if query should be time travel query
+     * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
+     */
+    useTimeTravelQueries: boolean = false
+
+    /**
+     * Indicates the historical timestamp function to use for time travel queries
+     * https://www.cockroachlabs.com/docs/stable/follower-reads.html#follower-read-types
+     */
+    timeTravelQueryTimestampFn: string = "follower_read_timestamp()"
+
+    /**
      * Extra parameters.
      *
      * @deprecated Use standard parameters instead
@@ -339,6 +352,10 @@ export class QueryExpressionMap {
         if (connection.options.relationLoadStrategy) {
             this.relationLoadStrategy = connection.options.relationLoadStrategy
         }
+
+        this.useTimeTravelQueries =
+            (connection.options as CockroachConnectionOptions)
+                ?.timeTravelQueries || false
     }
 
     // -------------------------------------------------------------------------
@@ -513,6 +530,8 @@ export class QueryExpressionMap {
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
+        map.useTimeTravelQueries = this.useTimeTravelQueries
+        map.timeTravelQueryTimestampFn = this.timeTravelQueryTimestampFn
         map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(

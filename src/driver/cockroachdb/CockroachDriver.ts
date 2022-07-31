@@ -322,6 +322,13 @@ export class CockroachDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
+        // enable time travel queries
+        if (this.options.timeTravelQueries) {
+            await this.connection.query(
+                `SET default_transaction_use_follower_reads = 'on';`,
+            )
+        }
+
         return Promise.resolve()
     }
 

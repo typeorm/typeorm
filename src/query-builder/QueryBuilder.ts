@@ -25,6 +25,7 @@ import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
+import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -848,13 +849,30 @@ export abstract class QueryBuilder<Entity> {
             conditionsArray.push(condition)
         }
 
-        if (!conditionsArray.length) {
-            return ""
-        } else if (conditionsArray.length === 1) {
-            return ` WHERE ${conditionsArray[0]}`
-        } else {
-            return ` WHERE ( ${conditionsArray.join(" ) AND ( ")} )`
+        let condition = ""
+
+        /**
+         * Time travel queries for CockroachDB
+         */
+        if (
+            (this.connection.driver.options as CockroachConnectionOptions)
+                .timeTravelQueries ||
+            this.expressionMap.useTimeTravelQueries
+        ) {
+            condition =
+                " AS OF SYSTEM TIME " +
+                this.expressionMap.timeTravelQueryTimestampFn // TODO: Does this function need to be escaped somehow?
         }
+
+        if (!conditionsArray.length) {
+            condition += ""
+        } else if (conditionsArray.length === 1) {
+            condition += ` WHERE ${conditionsArray[0]}`
+        } else {
+            condition += ` WHERE ( ${conditionsArray.join(" ) AND ( ")} )`
+        }
+
+        return condition
     }
 
     /**

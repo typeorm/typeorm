@@ -1295,6 +1295,24 @@ export class SelectQueryBuilder<Entity>
     }
 
     /**
+     * Enables time travelling for the current query (only supported by cockroach currently)
+     */
+    timeTravelQuery(timestampFn?: string): this {
+        if (this.connection.driver.options.type !== "cockroachdb") {
+            throw new TypeORMError(
+                `SelectQueryBuilder.timeTravelQuery is only supported by cockroachdb.`,
+            )
+        }
+
+        this.expressionMap.useTimeTravelQueries = true
+
+        if (timestampFn) {
+            this.expressionMap.timeTravelQueryTimestampFn = timestampFn
+        }
+        return this
+    }
+
+    /**
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
