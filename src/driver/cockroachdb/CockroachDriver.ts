@@ -164,7 +164,7 @@ export class CockroachDriver implements Driver {
      */
     readonly supportedUpsertTypes: UpsertType[] = [
         "on-conflict-do-update",
-        "upsert",
+        "primary-key",
     ]
 
     /**

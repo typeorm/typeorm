@@ -6,7 +6,7 @@ import { UpsertType } from "../driver/types/UpsertType"
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface UpsertOptions<Entity> {
-    // TODO: Make conflictPaths optional if usertype is set to 'upsert'
+    // TODO: Make conflictPaths optional if upsertType is set to 'primary-key'
     conflictPaths: string[]
     /**
      * If true, postgres will skip the update if no values would be changed (reduces writes)

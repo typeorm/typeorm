@@ -412,7 +412,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         const columnsExpression = this.createColumnNamesExpression()
         let query = "INSERT "
 
-        if (this.expressionMap.onUpdate?.upsertType === "upsert") {
+        if (this.expressionMap.onUpdate?.upsertType === "primary-key") {
             query = "UPSERT "
         }
 
@@ -474,7 +474,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 query += ` DEFAULT VALUES`
             }
         }
-        if (this.expressionMap.onUpdate?.upsertType !== "upsert") {
+        if (this.expressionMap.onUpdate?.upsertType !== "primary-key") {
             if (
                 this.connection.driver.supportedUpsertTypes?.includes(
                     "on-conflict-do-update",
