@@ -641,6 +641,16 @@ export class DataSource {
                     )
                 }
             }
+            if (
+                target !== null &&
+                typeof target === "function" &&
+                typeof target.name === "string"
+            ) {
+                return (
+                    metadata.name === target.name ||
+                    metadata.tableName === target.name
+                )
+            }
 
             return false
         })
