@@ -189,6 +189,21 @@ describe("mongodb > MongoRepository", () => {
 
     // Github issue #9250
     describe("with DeletedDataColumn", () => {
+        it("with $or query", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository =
+                        connection.getMongoRepository(PostWithDeleted)
+                    await seedPosts(postRepository)
+                    const loadedPosts = await postRepository.find({
+                        where: {
+                            $or: [{ deletedAt: { $ne: null } }],
+                        },
+                    })
+                    expect(loadedPosts).to.have.length(3)
+                }),
+            ))
+
         it("filter delete data", () =>
             Promise.all(
                 connections.map(async (connection) => {
