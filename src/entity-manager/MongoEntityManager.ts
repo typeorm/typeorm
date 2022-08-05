@@ -1170,12 +1170,13 @@ export class MongoEntityManager extends EntityManager {
         deleteDateColumn: ColumnMetadata,
         query?: ObjectLiteral,
     ) {
+        const { $or, ...restQuery } = query ?? {}
         cursor.filter({
             $or: [
-                { [deleteDateColumn.propertyName]: { $exists: false } },
                 { [deleteDateColumn.propertyName]: { $eq: null } },
+                ...(Array.isArray($or) ? $or : []),
             ],
-            ...query,
+            ...restQuery,
         })
     }
 
