@@ -3683,7 +3683,7 @@ export class SelectQueryBuilder<Entity>
                     select[key] as FindOptionsSelect<any>,
                     metadata,
                     alias,
-                    key,
+                    propertyPath,
                 )
 
                 // } else if (relation) {
