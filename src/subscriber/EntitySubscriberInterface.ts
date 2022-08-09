@@ -7,6 +7,7 @@ import { InsertEvent } from "./event/InsertEvent"
 import { LoadEvent } from "./event/LoadEvent"
 import { SoftRemoveEvent } from "./event/SoftRemoveEvent"
 import { RecoverEvent } from "./event/RecoverEvent"
+import { AfterQueryEvent, BeforeQueryEvent } from "./event/QueryEvent"
 
 /**
  * Classes that implement this interface are subscribers that subscribe for the specific events in the ORM.
@@ -27,6 +28,16 @@ export interface EntitySubscriberInterface<Entity = any> {
      * compilation for existing subscribers).
      */
     afterLoad?(entity: Entity, event?: LoadEvent<Entity>): Promise<any> | void
+
+    /**
+     * Called before query is executed.
+     */
+    beforeQuery?(event: BeforeQueryEvent<Entity>): Promise<any> | void
+
+    /**
+     * Called after query is executed.
+     */
+    afterQuery?(event: AfterQueryEvent<Entity>): Promise<any> | void
 
     /**
      * Called before entity is inserted to the database.

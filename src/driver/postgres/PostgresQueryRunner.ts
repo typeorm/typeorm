@@ -26,6 +26,7 @@ import { TypeORMError } from "../../error"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -242,8 +243,11 @@ export class PostgresQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
+        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+
         try {
             const queryStartTime = +new Date()
             const raw = await databaseConnection.query(query, parameters)
@@ -252,6 +256,17 @@ export class PostgresQueryRunner
                 this.driver.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -296,7 +311,20 @@ export class PostgresQueryRunner
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err
+            )
+
             throw new QueryFailedError(query, parameters, err)
+        } finally {
+            if (broadcasterResult.promises.length > 0)
+                await Promise.all(broadcasterResult.promises)
         }
     }
 

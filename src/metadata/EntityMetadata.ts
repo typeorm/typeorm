@@ -458,7 +458,7 @@ export class EntityMetadata {
     afterLoadListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER INSERT" type.
+     * Listener metadatas with "BEFORE INSERT" type.
      */
     beforeInsertListeners: EntityListenerMetadata[] = []
 
@@ -468,7 +468,7 @@ export class EntityMetadata {
     afterInsertListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER UPDATE" type.
+     * Listener metadatas with "BEFORE UPDATE" type.
      */
     beforeUpdateListeners: EntityListenerMetadata[] = []
 
@@ -478,7 +478,7 @@ export class EntityMetadata {
     afterUpdateListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER REMOVE" type.
+     * Listener metadatas with "BEFORE REMOVE" type.
      */
     beforeRemoveListeners: EntityListenerMetadata[] = []
 
