@@ -28,7 +28,7 @@ describe("MongoDriver", () => {
         // Take the promise parameter that we receive in the callback, call it, so the underlying promise gets resolved.
         const firstMethodCall = connect.args[0]
         const callback = firstMethodCall[2]
-        callback(undefined, {})
+        callback(undefined, { startSession: sinon.fake() })
         await connectPromise
 
         return firstMethodCall[0]

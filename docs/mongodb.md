@@ -404,3 +404,35 @@ Updates multiple documents within the collection based on the filter.
 #### `updateOne`
 
 Updates a single document within the collection based on the filter.
+
+
+## Using transactions
+
+Transactions are only supported on replicasets in MongoDB. Enabling transactions for mongodb can be done through connection parameters:
+
+```typescript
+import { DataSource } from "typeorm"
+
+const myDataSource = new DataSource({
+    type: "mongodb",
+    ...,
+    enableTransactions: true
+})
+```
+
+With this connection parameter set, MongoDB queries can make use of `startTransaction()`, `commitTransaction()` and `rollbackTransaction()`,
+as demonstrated in following code snippet:
+
+```typescript
+const queryRunner = myDataSource.createQueryRunner()
+await queryRunner.startTransaction()
+try {
+    // execute your changes
+    await queryRunner.commitTransaction();
+} catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
+} finally {
+    await queryRunner.release();
+}
+```

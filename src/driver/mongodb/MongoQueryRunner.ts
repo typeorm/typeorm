@@ -10,6 +10,7 @@ import {
     BulkWriteOpResultObject,
     ChangeStream,
     ChangeStreamOptions,
+    ClientSession,
     Code,
     Collection,
     CollectionAggregationOptions,
@@ -46,8 +47,9 @@ import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { TypeORMError } from "../../error"
+import { TransactionNotStartedError, TypeORMError } from "../../error"
 import { ReplicationMode } from "../types/ReplicationMode"
+import { MongoConnectionOptions } from "./MongoConnectionOptions"
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -81,9 +83,13 @@ export class MongoQueryRunner implements QueryRunner {
 
     /**
      * Indicates if transaction is active in this query executor.
-     * Always false for mongodb since mongodb does not support transactions.
      */
     isTransactionActive = false
+
+    /**
+     * Session for a.o. managing transactions
+     */
+    session: ClientSession | undefined
 
     /**
      * Stores temporarily user data.
@@ -149,7 +155,10 @@ export class MongoQueryRunner implements QueryRunner {
         pipeline: ObjectLiteral[],
         options?: CollectionAggregationOptions,
     ): AggregationCursor<any> {
-        return this.getCollection(collectionName).aggregate(pipeline, options)
+        return this.getCollection(collectionName).aggregate(pipeline, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -160,10 +169,10 @@ export class MongoQueryRunner implements QueryRunner {
         operations: ObjectLiteral[],
         options?: CollectionBulkWriteOptions,
     ): Promise<BulkWriteOpResultObject> {
-        return await this.getCollection(collectionName).bulkWrite(
-            operations,
-            options,
-        )
+        return await this.getCollection(collectionName).bulkWrite(operations, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -176,7 +185,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<any> {
         return await this.getCollection(collectionName).countDocuments(
             query || {},
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -190,7 +199,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<string> {
         return await this.getCollection(collectionName).createIndex(
             fieldOrSpec,
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -215,10 +224,10 @@ export class MongoQueryRunner implements QueryRunner {
         query: ObjectLiteral,
         options?: CollectionOptions,
     ): Promise<DeleteWriteOpResultObject> {
-        return await this.getCollection(collectionName).deleteMany(
-            query,
-            options,
-        )
+        return await this.getCollection(collectionName).deleteMany(query, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -229,10 +238,10 @@ export class MongoQueryRunner implements QueryRunner {
         query: ObjectLiteral,
         options?: CollectionOptions,
     ): Promise<DeleteWriteOpResultObject> {
-        return await this.getCollection(collectionName).deleteOne(
-            query,
-            options,
-        )
+        return await this.getCollection(collectionName).deleteOne(query, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -244,11 +253,10 @@ export class MongoQueryRunner implements QueryRunner {
         query: ObjectLiteral,
         options?: { readPreference?: ReadPreference | string },
     ): Promise<any> {
-        return await this.getCollection(collectionName).distinct(
-            key,
-            query,
-            options,
-        )
+        return await this.getCollection(collectionName).distinct(key, query, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -259,10 +267,10 @@ export class MongoQueryRunner implements QueryRunner {
         indexName: string,
         options?: CollectionOptions,
     ): Promise<any> {
-        return await this.getCollection(collectionName).dropIndex(
-            indexName,
-            options,
-        )
+        return await this.getCollection(collectionName).dropIndex(indexName, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -282,7 +290,7 @@ export class MongoQueryRunner implements QueryRunner {
     ): Promise<FindAndModifyWriteOpResultObject> {
         return await this.getCollection(collectionName).findOneAndDelete(
             query,
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -298,7 +306,7 @@ export class MongoQueryRunner implements QueryRunner {
         return await this.getCollection(collectionName).findOneAndReplace(
             query,
             replacement,
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -314,7 +322,7 @@ export class MongoQueryRunner implements QueryRunner {
         return await this.getCollection(collectionName).findOneAndUpdate(
             query,
             update,
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -366,7 +374,7 @@ export class MongoQueryRunner implements QueryRunner {
             reduce,
             finalize,
             command,
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -406,9 +414,10 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: CollectionOptions,
     ): OrderedBulkOperation {
-        return this.getCollection(collectionName).initializeOrderedBulkOp(
-            options,
-        )
+        return this.getCollection(collectionName).initializeOrderedBulkOp({
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -418,9 +427,10 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: CollectionOptions,
     ): UnorderedBulkOperation {
-        return this.getCollection(collectionName).initializeUnorderedBulkOp(
-            options,
-        )
+        return this.getCollection(collectionName).initializeUnorderedBulkOp({
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -431,10 +441,10 @@ export class MongoQueryRunner implements QueryRunner {
         docs: ObjectLiteral[],
         options?: CollectionInsertManyOptions,
     ): Promise<InsertWriteOpResult> {
-        return await this.getCollection(collectionName).insertMany(
-            docs,
-            options,
-        )
+        return await this.getCollection(collectionName).insertMany(docs, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -445,7 +455,10 @@ export class MongoQueryRunner implements QueryRunner {
         doc: ObjectLiteral,
         options?: CollectionInsertOneOptions,
     ): Promise<InsertOneWriteOpResult> {
-        return await this.getCollection(collectionName).insertOne(doc, options)
+        return await this.getCollection(collectionName).insertOne(doc, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -465,7 +478,10 @@ export class MongoQueryRunner implements QueryRunner {
             readPreference?: ReadPreference | string
         },
     ): CommandCursor {
-        return this.getCollection(collectionName).listIndexes(options)
+        return this.getCollection(collectionName).listIndexes({
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -477,11 +493,10 @@ export class MongoQueryRunner implements QueryRunner {
         reduce: Function | string,
         options?: MapReduceOptions,
     ): Promise<any> {
-        return await this.getCollection(collectionName).mapReduce(
-            map,
-            reduce,
-            options,
-        )
+        return await this.getCollection(collectionName).mapReduce(map, reduce, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -492,9 +507,10 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: ParallelCollectionScanOptions,
     ): Promise<Cursor<any>[]> {
-        return await this.getCollection(collectionName).parallelCollectionScan(
-            options,
-        )
+        return await this.getCollection(collectionName).parallelCollectionScan({
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -524,11 +540,10 @@ export class MongoQueryRunner implements QueryRunner {
         doc: ObjectLiteral,
         options?: ReplaceOneOptions,
     ): Promise<UpdateWriteOpResult> {
-        return await this.getCollection(collectionName).replaceOne(
-            query,
-            doc,
-            options,
-        )
+        return await this.getCollection(collectionName).replaceOne(query, doc, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -549,7 +564,10 @@ export class MongoQueryRunner implements QueryRunner {
         pipeline?: Object[],
         options?: ChangeStreamOptions,
     ): ChangeStream {
-        return this.getCollection(collectionName).watch(pipeline, options)
+        return this.getCollection(collectionName).watch(pipeline, {
+            ...options,
+            session: this.session,
+        })
     }
 
     /**
@@ -564,7 +582,7 @@ export class MongoQueryRunner implements QueryRunner {
         return await this.getCollection(collectionName).updateMany(
             query,
             update,
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -580,7 +598,7 @@ export class MongoQueryRunner implements QueryRunner {
         return await this.getCollection(collectionName).updateOne(
             query,
             update,
-            options,
+            { ...options, session: this.session },
         )
     }
 
@@ -615,21 +633,82 @@ export class MongoQueryRunner implements QueryRunner {
      * Starts transaction.
      */
     async startTransaction(): Promise<void> {
-        // transactions are not supported by mongodb driver, so simply don't do anything here
+        if (!this.options.enableTransactions) return
+
+        this.isTransactionActive = true
+
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionStart")
+        } catch (err) {
+            this.isTransactionActive = false
+            throw err
+        }
+
+        await new Promise<void>(async (ok, fail) => {
+            try {
+                this.session = this.databaseConnection.startSession()
+                this.session.startTransaction()
+                this.connection.logger.logQuery("BEGIN TRANSACTION")
+                ok()
+            } catch (e) {
+                fail(e)
+            }
+        })
+
+        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**
      * Commits transaction.
      */
     async commitTransaction(): Promise<void> {
-        // transactions are not supported by mongodb driver, so simply don't do anything here
+        if (!this.options.enableTransactions) return
+
+        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+
+        await this.broadcaster.broadcast("BeforeTransactionCommit")
+
+        return new Promise<void>(async (ok, fail) => {
+            try {
+                await this.session?.commitTransaction()
+                this.session?.endSession()
+                this.isTransactionActive = false
+                this.session = undefined
+
+                await this.broadcaster.broadcast("AfterTransactionCommit")
+
+                ok()
+                this.connection.logger.logQuery("COMMIT")
+            } catch (e) {
+                fail(e)
+            }
+        })
     }
 
     /**
      * Rollbacks transaction.
      */
     async rollbackTransaction(): Promise<void> {
-        // transactions are not supported by mongodb driver, so simply don't do anything here
+        if (!this.options.enableTransactions) return
+
+        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+
+        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        return new Promise<void>(async (ok, fail) => {
+            try {
+                await this.session?.abortTransaction()
+                this.session?.endSession()
+                this.isTransactionActive = false
+                this.session = undefined
+
+                await this.broadcaster.broadcast("AfterTransactionRollback")
+
+                ok()
+                this.connection.logger.logQuery("ROLLBACK")
+            } catch (e) {
+                fail(e)
+            }
+        })
     }
 
     /**
@@ -659,7 +738,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Insert a new row with given values into the given table.
      * Returns value of inserted object id.
 
-    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> { // todo: fix any
+     async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> { // todo: fix any
         const results = await this.databaseConnection
             .collection(collectionName)
             .insertOne(keyValues);
@@ -673,7 +752,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Updates rows that match given conditions in the given table.
 
-    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> { // todo: fix any
+     async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> { // todo: fix any
         await this.databaseConnection
             .collection(collectionName)
             .updateOne(conditions, valuesMap);
@@ -682,7 +761,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Deletes from the given table by a given conditions.
 
-    async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
+     async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
         if (typeof conditions === "string")
             throw new TypeORMError(`String condition is not supported by MongoDB driver.`);
 
@@ -1329,5 +1408,12 @@ export class MongoQueryRunner implements QueryRunner {
         return this.databaseConnection
             .db(this.connection.driver.database!)
             .collection(collectionName)
+    }
+
+    /**
+     * Gets configuration options from the database
+     */
+    protected get options(): MongoConnectionOptions {
+        return this.connection.options as MongoConnectionOptions
     }
 }
