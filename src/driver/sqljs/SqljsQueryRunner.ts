@@ -86,7 +86,11 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
 
         const queryStartTime = +new Date()
         let statement: any
@@ -130,7 +134,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 true,
                 queryExecutionTime,
                 records,
-                undefined
+                undefined,
             )
 
             const result = new QueryResult()
@@ -168,7 +172,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 false,
                 undefined,
                 undefined,
-                err
+                err,
             )
 
             throw new QueryFailedError(query, parameters, err)

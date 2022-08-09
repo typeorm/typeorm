@@ -193,7 +193,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const broadcasterResult = new BroadcasterResult()
 
                 this.driver.connection.logger.logQuery(query, parameters, this)
-                this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+                this.broadcaster.broadcastBeforeQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                )
 
                 const queryStartTime = +new Date()
                 databaseConnection.query(
@@ -231,7 +235,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 false,
                                 undefined,
                                 undefined,
-                                err
+                                err,
                             )
                             if (broadcasterResult.promises.length > 0)
                                 await Promise.all(broadcasterResult.promises)
@@ -247,7 +251,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 true,
                                 queryExecutionTime,
                                 raw,
-                                undefined
+                                undefined,
                             )
                             if (broadcasterResult.promises.length > 0)
                                 await Promise.all(broadcasterResult.promises)

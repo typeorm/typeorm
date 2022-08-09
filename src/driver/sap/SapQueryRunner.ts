@@ -201,7 +201,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const databaseConnection = await this.connect()
 
             this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
 
             const queryStartTime = +new Date()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
@@ -229,7 +233,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 true,
                 queryExecutionTime,
                 raw,
-                undefined
+                undefined,
             )
 
             if (
@@ -290,7 +294,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 false,
                 undefined,
                 undefined,
-                err
+                err,
             )
             throw err
         } finally {

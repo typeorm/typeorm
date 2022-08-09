@@ -201,7 +201,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
 
         const queryStartTime = +new Date()
 
@@ -230,7 +234,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 true,
                 queryExecutionTime,
                 raw,
-                undefined
+                undefined,
             )
 
             if (
@@ -293,7 +297,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 false,
                 undefined,
                 undefined,
-                err
+                err,
             )
 
             throw new QueryFailedError(query, parameters, err)

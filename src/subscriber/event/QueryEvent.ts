@@ -26,12 +26,12 @@ export interface QueryEvent<Entity> {
     /**
      * Query that is being executed.
      */
-    query: string;
+    query: string
 
     /**
      * Parameters used in the query.
      */
-    parameters?: any[];
+    parameters?: any[]
 }
 
 export interface BeforeQueryEvent<Entity> extends QueryEvent<Entity> {}
@@ -40,20 +40,20 @@ export interface AfterQueryEvent<Entity> extends QueryEvent<Entity> {
     /**
      * Whether the query was successful.
      */
-    success: boolean;
+    success: boolean
 
     /**
      * The duration of the query execution.
      */
-    executionTime?: number;
+    executionTime?: number
 
     /**
      * The raw results from the database if the query was successful.
      */
-    rawResults?: any;
+    rawResults?: any
 
     /**
      * The error thrown if the query was unsuccessful.
      */
-    error?: any;
+    error?: any
 }

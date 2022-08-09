@@ -185,7 +185,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             try {
                 this.driver.connection.logger.logQuery(query, parameters, this)
-                this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+                this.broadcaster.broadcastBeforeQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                )
 
                 rawResult = await executor.run({
                     sql: query,
@@ -222,7 +226,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 true,
                 queryExecutionTime,
                 rawResult,
-                undefined
+                undefined,
             )
 
             if (
@@ -263,7 +267,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 false,
                 undefined,
                 undefined,
-                err
+                err,
             )
             throw new QueryFailedError(query, parameters, err)
         } finally {

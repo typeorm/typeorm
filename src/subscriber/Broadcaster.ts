@@ -422,7 +422,7 @@ export class Broadcaster {
     /**
      * Broadcasts "AFTER_QUERY" event.
      */
-     broadcastAfterQueryEvent(
+    broadcastAfterQueryEvent(
         result: BroadcasterResult,
         query: string,
         parameters: undefined | any[],

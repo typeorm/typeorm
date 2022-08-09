@@ -56,7 +56,11 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
 
         const queryStartTime = +new Date()
 
@@ -83,7 +87,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 true,
                 queryExecutionTime,
                 raw,
-                undefined
+                undefined,
             )
 
             if (
@@ -131,7 +135,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 false,
                 undefined,
                 undefined,
-                err
+                err,
             )
 
             throw new QueryFailedError(query, parameters, err)

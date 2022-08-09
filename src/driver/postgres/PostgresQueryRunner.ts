@@ -246,7 +246,11 @@ export class PostgresQueryRunner
         const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
 
         try {
             const queryStartTime = +new Date()
@@ -264,7 +268,7 @@ export class PostgresQueryRunner
                 true,
                 queryExecutionTime,
                 raw,
-                undefined
+                undefined,
             )
 
             if (
@@ -318,7 +322,7 @@ export class PostgresQueryRunner
                 false,
                 undefined,
                 undefined,
-                err
+                err,
             )
 
             throw new QueryFailedError(query, parameters, err)

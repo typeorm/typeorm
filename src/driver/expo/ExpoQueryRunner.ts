@@ -168,7 +168,11 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             const broadcasterResult = new BroadcasterResult()
 
             this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
 
             const queryStartTime = +new Date()
             // All Expo SQL queries are executed in a transaction context
@@ -196,7 +200,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                                 true,
                                 queryExecutionTime,
                                 raw,
-                                undefined
+                                undefined,
                             )
 
                             if (
@@ -255,7 +259,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                                 false,
                                 undefined,
                                 undefined,
-                                err
+                                err,
                             )
                             if (broadcasterResult.promises.length > 0)
                                 await Promise.all(broadcasterResult.promises)

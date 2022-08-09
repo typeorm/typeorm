@@ -213,7 +213,11 @@ export class SqlServerQueryRunner
 
         try {
             this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(broadcasterResult, query, parameters)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
 
             const pool = await (this.mode === "slave"
                 ? this.driver.obtainSlaveConnection()
@@ -258,7 +262,7 @@ export class SqlServerQueryRunner
                         true,
                         queryExecutionTime,
                         raw,
-                        undefined
+                        undefined,
                     )
 
                     if (
@@ -320,7 +324,7 @@ export class SqlServerQueryRunner
                 false,
                 undefined,
                 undefined,
-                err
+                err,
             )
 
             throw err
