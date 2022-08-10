@@ -317,7 +317,7 @@ export class QueryExpressionMap {
      * Indicates the historical timestamp function to use for time travel queries
      * https://www.cockroachlabs.com/docs/stable/follower-reads.html#follower-read-types
      */
-    timeTravelQueryTimestampFn: string = "follower_read_timestamp()"
+    timeTravelQueryTimestampFn: string | false = "follower_read_timestamp()"
 
     /**
      * Extra parameters.
