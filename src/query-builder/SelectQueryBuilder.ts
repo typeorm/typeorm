@@ -1305,7 +1305,7 @@ export class SelectQueryBuilder<Entity>
         }
 
         if (timestampFn !== false) {
-            this.expressionMap.useTimeTravelQueries = true
+            this.expressionMap.timeTravel = true
 
             if (timestampFn) {
                 this.expressionMap.timeTravelQueryTimestampFn = timestampFn
@@ -2904,6 +2904,13 @@ export class SelectQueryBuilder<Entity>
 
             if (this.findOptions.withDeleted) {
                 this.withDeleted()
+            }
+
+            if (this.findOptions.timeTravel) {
+                this.timeTravelQuery(
+                    this.findOptions.timeTravelFn ||
+                        this.expressionMap.timeTravelQueryTimestampFn,
+                )
             }
 
             if (this.findOptions.select) {

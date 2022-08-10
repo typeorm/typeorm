@@ -311,7 +311,7 @@ export class QueryExpressionMap {
      * Indicates if query should be time travel query
      * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
      */
-    useTimeTravelQueries: boolean = false
+    timeTravel: boolean | string = false
 
     /**
      * Indicates the historical timestamp function to use for time travel queries
@@ -353,7 +353,7 @@ export class QueryExpressionMap {
             this.relationLoadStrategy = connection.options.relationLoadStrategy
         }
 
-        this.useTimeTravelQueries =
+        this.timeTravel =
             (connection.options as CockroachConnectionOptions)
                 ?.timeTravelQueries || false
     }
@@ -530,7 +530,7 @@ export class QueryExpressionMap {
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
-        map.useTimeTravelQueries = this.useTimeTravelQueries
+        map.timeTravel = this.timeTravel
         map.timeTravelQueryTimestampFn = this.timeTravelQueryTimestampFn
         map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
