@@ -49,7 +49,7 @@ describe("persistence > orphanage > disable", () => {
 
 
 
-            const userToUpdate = (await userRepo.findOne(userId))!;
+            const userToUpdate = (await userRepo.findOneBy({id:userId}))!;
             userToUpdate.settings = [
 				// untouched setting
                 userToUpdate.settings[0],
@@ -65,7 +65,7 @@ describe("persistence > orphanage > disable", () => {
         });
 
         it("should not delete setting with orphanedRowAction=disabed", async () => {
-            const user = await userRepo.findOne(userId);
+            const user = await userRepo.findOneBy({id:userId});
             expect(user).not.to.be.undefined;
             expect(user!.settings).to.have.lengthOf(4);
         });
