@@ -1,21 +1,20 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Post} from "./Post";
-import {OneToMany} from "../../../../src/decorator/relations/OneToMany";
-import {DeleteDateColumn} from "../../../../src";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Post } from "./Post"
+import { OneToMany } from "../../../../src/decorator/relations/OneToMany"
+import { DeleteDateColumn } from "../../../../src"
 
 @Entity()
 export class Category {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @OneToMany(() => Post, post => post.category, {
+    @OneToMany(() => Post, (post) => post.category, {
         cascade: true,
-        eager: true
+        eager: true,
     })
-    posts: Post[];
+    posts: Post[]
 
     @DeleteDateColumn()
-    deletedAt?: Date;
+    deletedAt?: Date
 }

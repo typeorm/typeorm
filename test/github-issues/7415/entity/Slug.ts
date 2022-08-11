@@ -1,10 +1,10 @@
-import { PrimaryColumn } from "../../../../src";
+import { PrimaryColumn } from "../../../../src"
 
 export class Slug {
     @PrimaryColumn()
-    slug: string;
+    slug: string
 
     constructor(slug: string) {
-        this.slug = slug;
+        this.slug = slug
     }
 }

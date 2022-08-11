@@ -1,23 +1,23 @@
-import { Entity } from "../../../../src/decorator/entity/Entity";
+import { Entity } from "../../../../src/decorator/entity/Entity"
 import {
     ManyToOne,
     Column,
     DeleteDateColumn,
     PrimaryGeneratedColumn,
-} from "../../../../src";
-import { Role } from "./Role";
+} from "../../../../src"
+import { Role } from "./Role"
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @ManyToOne((_) => Role, (role) => role.users)
-    role: Role;
+    role: Role
 
     @DeleteDateColumn()
-    deleteAt?: Date;
+    deleteAt?: Date
 }

@@ -1,12 +1,10 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Product {
-
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: string
 
     @Column()
-    liked: boolean;
-
+    liked: boolean
 }

@@ -1,7 +1,7 @@
-import { Entity, PrimaryColumn } from "../../../../src";
+import { Entity, PrimaryColumn } from "../../../../src"
 
 @Entity("UsersObject")
 export class UsersObject {
-  @PrimaryColumn({ type: "int" })
-    id!: number;
+    @PrimaryColumn({ type: "int" })
+    id!: number
 }

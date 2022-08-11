@@ -5,40 +5,42 @@ Let's take for example `User` and `Profile` entities.
 User can have only a single profile, and a single profile is owned by only a single user.
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class Profile {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    gender: string;
+    gender: string
 
     @Column()
-    photo: string;
-
+    photo: string
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
-import {Profile} from "./Profile";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    OneToOne,
+    JoinColumn,
+} from "typeorm"
+import { Profile } from "./Profile"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @OneToOne(() => Profile)
     @JoinColumn()
-    profile: Profile;
-
+    profile: Profile
 }
 ```
 
@@ -71,15 +73,15 @@ Again, `@JoinColumn` must be set only on one side of relation - the side that mu
 Example how to save such a relation:
 
 ```typescript
-const profile = new Profile();
-profile.gender = "male";
-profile.photo = "me.jpg";
-await connection.manager.save(profile);
+const profile = new Profile()
+profile.gender = "male"
+profile.photo = "me.jpg"
+await dataSource.manager.save(profile)
 
-const user = new User();
-user.name = 'Joe Smith';
-user.profile = profile;
-await connection.manager.save(user);
+const user = new User()
+user.name = "Joe Smith"
+user.profile = profile
+await dataSource.manager.save(user)
 ```
 
 With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
@@ -87,18 +89,21 @@ With [cascades](./relations.md#cascades) enabled you can save this relation with
 To load user with profile inside you must specify relation in `FindOptions`:
 
 ```typescript
-const userRepository = connection.getRepository(User);
-const users = await userRepository.find({ relations: ["profile"] });
+const users = await dataSource.getRepository(User).find({
+    relations: {
+        profile: true,
+    },
+})
 ```
 
 Or using `QueryBuilder` you can join them:
 
 ```typescript
-const users = await connection
+const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("user.profile", "profile")
-    .getMany();
+    .getMany()
 ```
 
 With eager loading enabled on a relation, you don't have to specify relations in the find command as it will ALWAYS be loaded automatically. If you use QueryBuilder eager relations are disabled, you have to use `leftJoinAndSelect` to load the relation.
@@ -110,56 +115,58 @@ Bi-directional are relations with decorators on both sides of a relation.
 We just created a uni-directional relation. Let's make it bi-directional:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne} from "typeorm";
-import {User} from "./User";
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from "typeorm"
+import { User } from "./User"
 
 @Entity()
 export class Profile {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    gender: string;
+    gender: string
 
     @Column()
-    photo: string;
+    photo: string
 
-    @OneToOne(() => User, user => user.profile) // specify inverse side as a second parameter
-    user: User;
-
+    @OneToOne(() => User, (user) => user.profile) // specify inverse side as a second parameter
+    user: User
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from "typeorm";
-import {Profile} from "./Profile";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    OneToOne,
+    JoinColumn,
+} from "typeorm"
+import { Profile } from "./Profile"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToOne(() => Profile, profile => profile.user) // specify inverse side as a second parameter
+    @OneToOne(() => Profile, (profile) => profile.user) // specify inverse side as a second parameter
     @JoinColumn()
-    profile: Profile;
-
+    profile: Profile
 }
 ```
 
 We just made our relation bi-directional. Note, inverse relation does not have a `@JoinColumn`.
-`@JoinColumn` must only be on one side of the relation -  on the table that will own the foreign key.
+`@JoinColumn` must only be on one side of the relation - on the table that will own the foreign key.
 
 Bi-directional relations allow you to join relations from both sides using `QueryBuilder`:
 
 ```typescript
-const profiles = await connection
+const profiles = await dataSource
     .getRepository(Profile)
     .createQueryBuilder("profile")
     .leftJoinAndSelect("profile.user", "user")
-    .getMany();
+    .getMany()
 ```

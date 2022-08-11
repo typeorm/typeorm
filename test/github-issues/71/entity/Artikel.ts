@@ -1,32 +1,30 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../src/decorator/relations/ManyToOne";
-import {Kollektion} from "./Kollektion";
-import {JoinColumn} from "../../../../src/decorator/relations/JoinColumn";
-import {Generated} from "../../../../src/decorator/Generated";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
+import { Kollektion } from "./Kollektion"
+import { JoinColumn } from "../../../../src/decorator/relations/JoinColumn"
+import { Generated } from "../../../../src/decorator/Generated"
 
 @Entity("artikel")
 export class Artikel {
-
-    @PrimaryColumn("int", { name: "artikel_id" })
+    @PrimaryColumn({ name: "artikel_id" })
     @Generated()
-    id: number;
+    id: number
 
     @Column({ name: "artikel_nummer" })
-    nummer: string;
+    nummer: string
 
     @Column({ name: "artikel_name" })
-    name: string;
+    name: string
 
     @Column({ name: "artikel_extrabarcode" })
-    extrabarcode: string;
+    extrabarcode: string
 
     @Column({ name: "artikel_saison" })
-    saison: string;
+    saison: string
 
-    @ManyToOne(type => Kollektion, { cascade: true })
+    @ManyToOne((type) => Kollektion, { cascade: true })
     @JoinColumn({ name: "id_kollektion" })
-    kollektion: Kollektion;
-
+    kollektion: Kollektion
 }

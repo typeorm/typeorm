@@ -1,18 +1,16 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Counters} from "./Counters";
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { Counters } from "./Counters"
 
 @Entity()
 export class Photo {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    url: string;
+    url: string
 
-    @Column(type => Counters)
-    counters: Counters;
-
+    @Column((type) => Counters)
+    counters: Counters
 }

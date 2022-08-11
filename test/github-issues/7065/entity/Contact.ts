@@ -1,14 +1,19 @@
-import { Column, Entity, PrimaryGeneratedColumn, TableInheritance } from "../../../../src";
+import {
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+    TableInheritance,
+} from "../../../../src"
 
 @Entity()
-@TableInheritance({ column: { type: "varchar", name: "type" } })
+@TableInheritance({ column: { type: String, name: "type" } })
 export class Contact {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    userId: number;
+    userId: number
 
     @Column()
-    value: string;
+    value: string
 }

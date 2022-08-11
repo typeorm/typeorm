@@ -31,10 +31,10 @@ const class_transformer_1 = require("class-transformer"); // import {Type} from 
 function getDesignTypeFunction(object, propertyName) {
   if (
     typeof Reflect !== "undefined" &&
-    Reflect.getMetadata instanceof Function
+      typeof Reflect.getMetadata === "function"
   ) {
-    var type = Reflect.getMetadata("design:type", object, propertyName);
-    if (type instanceof Function) {
+    const type = Reflect.getMetadata("design:type", object, propertyName);
+    if (typeof type === "function") {
       return function() {
         return type;
       };
@@ -48,9 +48,9 @@ function getDesignTypeFunction(object, propertyName) {
  */
 function makePropertyDecorator(typeFunction) {
   return function(object, propertyName) {
-    if (!(typeFunction instanceof Function)) {
+    if (typeof typeFunction !== "function") {
       typeFunction = getDesignTypeFunction(object, propertyName);
-    } 
+    }
     if (typeFunction) {
       class_transformer_1.Type(typeFunction)(object, propertyName);
     }

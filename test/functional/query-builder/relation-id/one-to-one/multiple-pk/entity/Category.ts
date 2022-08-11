@@ -1,35 +1,33 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Post} from "./Post";
-import {Image} from "./Image";
-import {OneToOne} from "../../../../../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../../../../../src/decorator/relations/JoinColumn";
+import { Entity } from "../../../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
+import { Post } from "./Post"
+import { Image } from "./Image"
+import { OneToOne } from "../../../../../../../src/decorator/relations/OneToOne"
+import { JoinColumn } from "../../../../../../../src/decorator/relations/JoinColumn"
 
 @Entity()
 export class Category {
+    @PrimaryColumn()
+    id: number
 
     @PrimaryColumn()
-    id: number;
-
-    @PrimaryColumn()
-    code: number;
+    code: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    isRemoved: boolean = false;
+    isRemoved: boolean = false
 
-    @OneToOne(type => Post, post => post.category)
-    post: Post;
+    @OneToOne((type) => Post, (post) => post.category)
+    post: Post
 
-    @OneToOne(type => Image, image => image.category)
+    @OneToOne((type) => Image, (image) => image.category)
     @JoinColumn()
-    image: Image;
+    image: Image
 
-    postId: number;
+    postId: number
 
-    imageId: number;
-
+    imageId: number
 }

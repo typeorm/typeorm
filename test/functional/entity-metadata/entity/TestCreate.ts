@@ -1,18 +1,18 @@
-import { Column } from "../../../../src/decorator/columns/Column";
-import { Entity } from "../../../../src/decorator/entity/Entity";
-import { PrimaryGeneratedColumn } from "../../../../src";
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class TestCreate {
     constructor() {
-        this.hasCalledConstructor = true;
+        this.hasCalledConstructor = true
     }
 
-    hasCalledConstructor = false;
+    hasCalledConstructor = false
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    foo: string = 'bar';
+    foo: string = "bar"
 }

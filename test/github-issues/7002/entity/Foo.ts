@@ -5,21 +5,24 @@ import {
     JoinColumn,
     OneToOne,
     PrimaryColumn,
-} from "../../../../src";
-import { Bar } from "./Bar";
+} from "../../../../src"
+import { Bar } from "./Bar"
 
 @Entity()
 export class Foo {
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    text: string;
+    text: string
 
-    @OneToOne(() => Bar, b => b.foo, { primary: true })
+    @PrimaryColumn()
+    barId: number
+
+    @OneToOne(() => Bar, (b) => b.foo)
     @JoinColumn({ name: "id", referencedColumnName: "id" })
-    bar: Bar;
+    bar: Bar
 
     @CreateDateColumn()
-    d: Date;
+    d: Date
 }

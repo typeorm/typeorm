@@ -1,5 +1,7 @@
-export default [{
-  type: "sqlite",
-  name: "file",
-  database: "test-js-esm"
-}];
+export default [
+    {
+        type: "sqlite",
+        name: "file",
+        database: "test-js-esm",
+    },
+]

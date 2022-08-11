@@ -1,16 +1,15 @@
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Entity} from "../../../../src";
-import {JoinColumn} from "../../../../src";
-import {ManyToOne} from "../../../../src";
-import {Author} from "./Author";
+import { PrimaryGeneratedColumn } from "../../../../src"
+import { Entity } from "../../../../src"
+import { JoinColumn } from "../../../../src"
+import { ManyToOne } from "../../../../src"
+import { Author } from "./Author"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: string
 
-    @ManyToOne(type => Author)
+    @ManyToOne((type) => Author)
     @JoinColumn()
-    author: Author;
+    author: Author
 }

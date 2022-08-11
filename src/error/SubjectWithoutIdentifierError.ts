@@ -1,5 +1,5 @@
-import {Subject} from "../persistence/Subject";
-import {TypeORMError} from "./TypeORMError";
+import { Subject } from "../persistence/Subject"
+import { TypeORMError } from "./TypeORMError"
 
 /**
  * Thrown when operation is going to be executed on a subject without identifier.
@@ -9,7 +9,7 @@ import {TypeORMError} from "./TypeORMError";
 export class SubjectWithoutIdentifierError extends TypeORMError {
     constructor(subject: Subject) {
         super(
-            `Internal error. Subject ${subject.metadata.targetName} must have an identifier to perform operation.`
-        );
+            `Internal error. Subject ${subject.metadata.targetName} must have an identifier to perform operation.`,
+        )
     }
 }

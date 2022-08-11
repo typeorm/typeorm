@@ -1,12 +1,12 @@
-import {EntitySchemaOptions} from "../../../../src/entity-schema/EntitySchemaOptions";
-import {Post} from "./Post";
+import { EntitySchemaOptions } from "../../../../src/entity-schema/EntitySchemaOptions"
+import { Post } from "./Post"
 
 export class Author {
-    id: number;
+    id: number
 
-    name: string;
+    name: string
 
-    posts: Post[];
+    posts: Post[]
 }
 
 export const AuthorSchema: EntitySchemaOptions<Author> = {
@@ -17,18 +17,18 @@ export const AuthorSchema: EntitySchemaOptions<Author> = {
     columns: {
         id: {
             primary: true,
-            type: Number
+            type: Number,
         },
 
         name: {
-            type: "varchar"
-        }
+            type: String,
+        },
     },
-    
+
     relations: {
         posts: {
             target: () => Post,
-            type: "one-to-many"
-        }
-    }
-};
+            type: "one-to-many",
+        },
+    },
+}

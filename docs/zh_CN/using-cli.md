@@ -24,7 +24,7 @@
 你可以在项目中设置 ts-node 以简化操作，如下所示：
 
 ```
-npm install -g ts-node
+npm install ts-node --save-dev
 ```
 
 在 package.json 中的 scripts 下添加 typeorm 命令
@@ -32,7 +32,7 @@ npm install -g ts-node
 ```
 "script" {
     ...
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js"
+    "typeorm": "typeorm-ts-node-commonjs"
 }
 ```
 

@@ -1,161 +1,194 @@
-import "reflect-metadata";
-import {SapDriver} from "../../../../src/driver/sap/SapDriver";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {Post} from "./entity/Post";
-import {Category} from "./entity/Category";
-import {expect} from "chai";
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src/data-source/DataSource"
+import { Post } from "./entity/Post"
+import { Category } from "./entity/Category"
+import { expect } from "chai"
 
 describe("transaction > transaction with full isolation support", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["mysql", "mssql", "postgres", "sap"], // todo: for some reasons mariadb tests are not passing here
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
-  let connections: Connection[];
-  before(async () => connections = await createTestingConnections({
-      entities: [__dirname + "/entity/*{.js,.ts}"],
-      enabledDrivers: ["mysql", "mssql", "postgres", "sap"] // todo: for some reasons mariadb tests are not passing here
-  }));
-  beforeEach(() => reloadTestingDatabases(connections));
-  after(() => closeTestingConnections(connections));
+    it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // SAP does not support READ UNCOMMITTED isolation level
+                if (connection.driver.options.type === "sap") return
 
-  it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () => Promise.all(connections.map(async connection => {
-      // SAP does not support READ UNCOMMITTED isolation level
-      if (connection.driver instanceof SapDriver)
-          return;
+                let postId: number | undefined = undefined,
+                    categoryId: number | undefined = undefined
 
-      let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
+                await connection.manager.transaction(
+                    "READ UNCOMMITTED",
+                    async (entityManager) => {
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
 
-      await connection.manager.transaction("READ UNCOMMITTED", async entityManager => {
+                        const category = new Category()
+                        category.name = "Category #1"
+                        await entityManager.save(category)
 
-          const post = new Post();
-          post.title = "Post #1";
-          await entityManager.save(post);
+                        postId = post.id
+                        categoryId = category.id
+                    },
+                )
 
-          const category = new Category();
-          category.name = "Category #1";
-          await entityManager.save(category);
+                const post = await connection.manager.findOne(Post, {
+                    where: { title: "Post #1" },
+                })
+                expect(post).not.to.be.null
+                post!.should.be.eql({
+                    id: postId,
+                    title: "Post #1",
+                })
 
-          postId = post.id;
-          categoryId = category.id;
+                const category = await connection.manager.findOne(Category, {
+                    where: { name: "Category #1" },
+                })
+                expect(category).not.to.be.null
+                category!.should.be.eql({
+                    id: categoryId,
+                    name: "Category #1",
+                })
+            }),
+        ))
 
-      });
+    it("should execute all operations in a single transaction with READ COMMITTED isolation level", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                let postId: number | undefined = undefined,
+                    categoryId: number | undefined = undefined
 
-      const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
-      expect(post).not.to.be.undefined;
-      post!.should.be.eql({
-          id: postId,
-          title: "Post #1"
-      });
+                await connection.manager.transaction(
+                    "READ COMMITTED",
+                    async (entityManager) => {
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
 
-      const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
-      expect(category).not.to.be.undefined;
-      category!.should.be.eql({
-          id: categoryId,
-          name: "Category #1"
-      });
+                        const category = new Category()
+                        category.name = "Category #1"
+                        await entityManager.save(category)
 
-  })));
+                        postId = post.id
+                        categoryId = category.id
+                    },
+                )
 
-  it("should execute all operations in a single transaction with READ COMMITTED isolation level", () => Promise.all(connections.map(async connection => {
+                const post = await connection.manager.findOne(Post, {
+                    where: { title: "Post #1" },
+                })
+                expect(post).not.to.be.null
+                post!.should.be.eql({
+                    id: postId,
+                    title: "Post #1",
+                })
 
-      let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
+                const category = await connection.manager.findOne(Category, {
+                    where: { name: "Category #1" },
+                })
+                expect(category).not.to.be.null
+                category!.should.be.eql({
+                    id: categoryId,
+                    name: "Category #1",
+                })
+            }),
+        ))
 
-      await connection.manager.transaction("READ COMMITTED", async entityManager => {
+    it("should execute all operations in a single transaction with REPEATABLE READ isolation level", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                let postId: number | undefined = undefined,
+                    categoryId: number | undefined = undefined
 
-          const post = new Post();
-          post.title = "Post #1";
-          await entityManager.save(post);
+                await connection.manager.transaction(
+                    "REPEATABLE READ",
+                    async (entityManager) => {
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
 
-          const category = new Category();
-          category.name = "Category #1";
-          await entityManager.save(category);
+                        const category = new Category()
+                        category.name = "Category #1"
+                        await entityManager.save(category)
 
-          postId = post.id;
-          categoryId = category.id;
+                        postId = post.id
+                        categoryId = category.id
+                    },
+                )
 
-      });
+                const post = await connection.manager.findOne(Post, {
+                    where: { title: "Post #1" },
+                })
+                expect(post).not.to.be.null
+                post!.should.be.eql({
+                    id: postId,
+                    title: "Post #1",
+                })
 
-      const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
-      expect(post).not.to.be.undefined;
-      post!.should.be.eql({
-          id: postId,
-          title: "Post #1"
-      });
+                const category = await connection.manager.findOne(Category, {
+                    where: { name: "Category #1" },
+                })
+                expect(category).not.to.be.null
+                category!.should.be.eql({
+                    id: categoryId,
+                    name: "Category #1",
+                })
+            }),
+        ))
 
-      const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
-      expect(category).not.to.be.undefined;
-      category!.should.be.eql({
-          id: categoryId,
-          name: "Category #1"
-      });
+    it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                let postId: number | undefined = undefined,
+                    categoryId: number | undefined = undefined
 
-  })));
+                await connection.manager.transaction(
+                    "SERIALIZABLE",
+                    async (entityManager) => {
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
 
-  it("should execute all operations in a single transaction with REPEATABLE READ isolation level", () => Promise.all(connections.map(async connection => {
+                        const category = new Category()
+                        category.name = "Category #1"
+                        await entityManager.save(category)
 
-      let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
+                        postId = post.id
+                        categoryId = category.id
+                    },
+                )
 
-      await connection.manager.transaction("REPEATABLE READ", async entityManager => {
+                const post = await connection.manager.findOne(Post, {
+                    where: { title: "Post #1" },
+                })
+                expect(post).not.to.be.null
+                post!.should.be.eql({
+                    id: postId,
+                    title: "Post #1",
+                })
 
-          const post = new Post();
-          post.title = "Post #1";
-          await entityManager.save(post);
-
-          const category = new Category();
-          category.name = "Category #1";
-          await entityManager.save(category);
-
-          postId = post.id;
-          categoryId = category.id;
-
-      });
-
-      const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
-      expect(post).not.to.be.undefined;
-      post!.should.be.eql({
-          id: postId,
-          title: "Post #1"
-      });
-
-      const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
-      expect(category).not.to.be.undefined;
-      category!.should.be.eql({
-          id: categoryId,
-          name: "Category #1"
-      });
-
-  })));
-
-  it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () => Promise.all(connections.map(async connection => {
-
-      let postId: number|undefined = undefined, categoryId: number|undefined = undefined;
-
-      await connection.manager.transaction("SERIALIZABLE", async entityManager => {
-
-          const post = new Post();
-          post.title = "Post #1";
-          await entityManager.save(post);
-
-          const category = new Category();
-          category.name = "Category #1";
-          await entityManager.save(category);
-
-          postId = post.id;
-          categoryId = category.id;
-
-      });
-
-      const post = await connection.manager.findOne(Post, { where: { title: "Post #1" }});
-      expect(post).not.to.be.undefined;
-      post!.should.be.eql({
-          id: postId,
-          title: "Post #1"
-      });
-
-      const category = await connection.manager.findOne(Category, { where: { name: "Category #1" }});
-      expect(category).not.to.be.undefined;
-      category!.should.be.eql({
-          id: categoryId,
-          name: "Category #1"
-      });
-
-  })));
-});
+                const category = await connection.manager.findOne(Category, {
+                    where: { name: "Category #1" },
+                })
+                expect(category).not.to.be.null
+                category!.should.be.eql({
+                    id: categoryId,
+                    name: "Category #1",
+                })
+            }),
+        ))
+})

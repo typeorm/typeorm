@@ -1,21 +1,17 @@
-import {Category} from "./Category";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { Category } from "./Category"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { OneToMany } from "../../../../../src/decorator/relations/OneToMany"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../../src"
 
 @Entity()
 export class Post {
+    @PrimaryColumn()
+    id: number
 
-    @PrimaryGeneratedColumn()
-    id: number;
+    @OneToMany((type) => Category, (category) => category.post)
+    categories: Category[] | null
 
-    @OneToMany(type => Category, category => category.post)
-    categories: Category[]|null;
-
-    @Column({
-        default: "supervalue"
-    })
-    title: string;
-
+    @Column()
+    title: string
 }

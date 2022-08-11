@@ -1,15 +1,13 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src/index";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src/index"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("hstore", { hstoreType: "object" })
-    hstoreObj: Object;
+    hstoreObj: Object
 
     @Column("hstore", { hstoreType: "string" })
-    hstoreStr: string;
-
+    hstoreStr: string
 }

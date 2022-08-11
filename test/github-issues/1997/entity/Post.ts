@@ -1,14 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
-@Entity({schema: "schema"})
+@Entity({ schema: "schema" })
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("enum", { enum: ["A", "B", "C"] })
-    enum: string;
+    enum: string
 
     @Column()
-    name: string;
+    name: string
 }

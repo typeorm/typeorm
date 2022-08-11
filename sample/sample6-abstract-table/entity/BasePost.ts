@@ -1,11 +1,9 @@
-import {Column, PrimaryGeneratedColumn} from "../../../src/index";
+import { Column, PrimaryGeneratedColumn } from "../../../src/index"
 
 export class BasePost {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
-
+    title: string
 }

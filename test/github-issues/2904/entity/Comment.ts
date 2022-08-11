@@ -1,12 +1,9 @@
-import {
-    Column,
-    CreateDateColumn,
-} from "../../../../src";
+import { Column, CreateDateColumn } from "../../../../src"
 
 export class Comment {
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt: Date
 
     @Column()
-    savedBy: string;
+    savedBy: string
 }

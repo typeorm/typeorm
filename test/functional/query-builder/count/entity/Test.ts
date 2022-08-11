@@ -1,13 +1,13 @@
-import {Entity, PrimaryColumn} from "../../../../../src";
+import { Entity, PrimaryColumn } from "../../../../../src"
 
 @Entity("tests")
 export class Test {
     @PrimaryColumn()
-    varcharField: string;
+    varcharField: string
 
     @PrimaryColumn("uuid")
-    uuidField: string;
+    uuidField: string
 
     @PrimaryColumn()
-    intField: number;
+    intField: number
 }

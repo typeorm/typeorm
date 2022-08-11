@@ -1,10 +1,11 @@
-import {TableCheckOptions} from "../options/TableCheckOptions";
-import {CheckMetadata} from "../../metadata/CheckMetadata";
+import { TableCheckOptions } from "../options/TableCheckOptions"
+import { CheckMetadata } from "../../metadata/CheckMetadata"
 
 /**
  * Database's table check constraint stored in this class.
  */
 export class TableCheck {
+    readonly "@instanceof" = Symbol.for("TableCheck")
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -13,26 +14,26 @@ export class TableCheck {
     /**
      * Constraint name.
      */
-    name?: string;
+    name?: string
 
     /**
      * Column that contains this constraint.
      */
-    columnNames?: string[] = [];
+    columnNames?: string[] = []
 
     /**
      * Check expression.
      */
-    expression?: string;
+    expression?: string
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(options: TableCheckOptions) {
-        this.name = options.name;
-        this.columnNames = options.columnNames;
-        this.expression = options.expression;
+        this.name = options.name
+        this.columnNames = options.columnNames
+        this.expression = options.expression
     }
 
     // -------------------------------------------------------------------------
@@ -47,7 +48,7 @@ export class TableCheck {
             name: this.name,
             columnNames: this.columnNames ? [...this.columnNames] : [],
             expression: this.expression,
-        });
+        })
     }
 
     // -------------------------------------------------------------------------
@@ -60,8 +61,7 @@ export class TableCheck {
     static create(checkMetadata: CheckMetadata): TableCheck {
         return new TableCheck(<TableCheckOptions>{
             name: checkMetadata.name,
-            expression: checkMetadata.expression
-        });
+            expression: checkMetadata.expression,
+        })
     }
-
 }

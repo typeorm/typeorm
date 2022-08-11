@@ -1,25 +1,23 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
-import {Category} from "./Category";
-import {Subcounters} from "./Subcounters";
+import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { ManyToOne } from "../../../../../../../src/decorator/relations/ManyToOne"
+import { Category } from "./Category"
+import { Subcounters } from "./Subcounters"
 
 export class Counters {
+    @Column()
+    likes: number
 
     @Column()
-    likes: number;
+    comments: number
 
     @Column()
-    comments: number;
+    favorites: number
 
-    @Column()
-    favorites: number;
+    @ManyToOne((type) => Category, (category) => category.posts)
+    category: Category
 
-    @ManyToOne(type => Category, category => category.posts)
-    category: Category;
+    @Column(() => Subcounters, { prefix: "sub" })
+    subcounters: Subcounters
 
-    @Column(() => Subcounters)
-    subcounters: Subcounters;
-
-    categoryId: number;
-
+    categoryId: number
 }

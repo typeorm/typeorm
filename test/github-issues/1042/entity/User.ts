@@ -1,25 +1,23 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Profile} from "./Profile";
-import {Information} from "./Information";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Profile } from "./Profile"
+import { Information } from "./Information"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    registeredAt: Date;
+    registeredAt: Date
 
     @Column("json")
-    profile: Profile;
+    profile: Profile
 
-    @Column(type => Information)
-    information: Information;
-
+    @Column((type) => Information)
+    information: Information
 }

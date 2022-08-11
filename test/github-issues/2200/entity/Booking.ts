@@ -1,15 +1,21 @@
-import {Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn} from "../../../../src/index";
-import { Contact } from "./Contact";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    ManyToOne,
+    JoinColumn,
+} from "../../../../src/index"
+import { Contact } from "./Contact"
 
 @Entity()
 export class Booking {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @ManyToOne(type => Contact, contact => contact.bookings, { eager: true })
-    @JoinColumn({
-      name: "contact_id",
+    @ManyToOne((type) => Contact, (contact) => contact.bookings, {
+        eager: true,
     })
-    contact: Contact;
+    @JoinColumn({
+        name: "contact_id",
+    })
+    contact: Contact
 }

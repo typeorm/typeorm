@@ -1,5 +1,5 @@
-import {Column, PrimaryGeneratedColumn} from "../../../../src";
-import {Entity} from "../../../../src/decorator/entity/Entity";
+import { Column, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity } from "../../../../src/decorator/entity/Entity"
 
 export enum Limit {
     Foo = "foo",
@@ -9,8 +9,8 @@ export enum Limit {
 @Entity()
 export class MyTable {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "simple-enum", enum: Limit })
-    limit: Limit;
+    limit: Limit
 }
