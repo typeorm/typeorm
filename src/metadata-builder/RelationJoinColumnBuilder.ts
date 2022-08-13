@@ -87,9 +87,13 @@ export class RelationJoinColumnBuilder {
             deferrable: relation.deferrable,
         })
 
-        // Oracle does not allow both primary and unique constraints on the same column
+        /** Oracle does not allow both primary and unique constraints on the same column,
+         * In PostgreSQL also there is an issue on it: https://github.com/typeorm/typeorm/issues/9229
+         */
         if (
-            this.connection.driver.options.type === "oracle" &&
+            ["oracle", "postgres"].find(
+                (db) => db === this.connection.driver.options.type,
+            ) &&
             columns.every((column) => column.isPrimary)
         )
             return { foreignKey, columns, uniqueConstraint: undefined }
