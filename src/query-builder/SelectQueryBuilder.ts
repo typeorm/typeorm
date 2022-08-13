@@ -1310,6 +1310,8 @@ export class SelectQueryBuilder<Entity>
             if (timestampFn) {
                 this.expressionMap.timeTravelQueryTimestampFn = timestampFn
             }
+        } else if (timestampFn === false) {
+            this.expressionMap.timeTravel = false
         }
 
         return this
@@ -3277,13 +3279,30 @@ export class SelectQueryBuilder<Entity>
                 },
             )
 
+            const originalQuery = this.clone()
+
+            const originalQueryUsesTimeTravel =
+                originalQuery.expressionMap.timeTravel
+
+            const originalTimeTravelQueryFn =
+                originalQuery.expressionMap.timeTravelQueryTimestampFn
+
             rawResults = await new SelectQueryBuilder(
                 this.connection,
                 queryRunner,
             )
                 .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .from(
+                    `(${originalQuery
+                        .orderBy()
+                        .timeTravelQuery(false)
+                        .getQuery()})`,
+                    "distinctAlias",
+                )
+                .timeTravelQuery(
+                    originalQueryUsesTimeTravel && originalTimeTravelQueryFn,
+                )
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)

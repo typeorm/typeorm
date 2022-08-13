@@ -796,6 +796,27 @@ export abstract class QueryBuilder<Entity> {
         return `/* ${this.expressionMap.comment.replace("*/", "")} */ `
     }
 
+    protected createTimeTravelQuery(): string {
+        /**
+         * Time travel queries for CockroachDB
+         */
+
+        if (
+            this.expressionMap.queryType === "select" &&
+            ((this.connection.driver.options as CockroachConnectionOptions)
+                .timeTravelQueries ||
+                this.expressionMap.timeTravel) &&
+            this.expressionMap.timeTravelQueryTimestampFn
+        ) {
+            return (
+                " AS OF SYSTEM TIME " +
+                this.expressionMap.timeTravelQueryTimestampFn
+            ) // TODO: Does this function need to be escaped somehow?
+        }
+
+        return ""
+    }
+
     /**
      * Creates "WHERE" expression.
      */
@@ -851,21 +872,8 @@ export abstract class QueryBuilder<Entity> {
 
         let condition = ""
 
-        /**
-         * Time travel queries for CockroachDB
-         */
-
-        if (
-            this.expressionMap.queryType === "select" &&
-            ((this.connection.driver.options as CockroachConnectionOptions)
-                .timeTravelQueries ||
-                this.expressionMap.timeTravel) &&
-            this.expressionMap.timeTravelQueryTimestampFn
-        ) {
-            condition =
-                " AS OF SYSTEM TIME " +
-                this.expressionMap.timeTravelQueryTimestampFn // TODO: Does this function need to be escaped somehow?
-        }
+        // time travel
+        condition += this.createTimeTravelQuery()
 
         if (!conditionsArray.length) {
             condition += ""
