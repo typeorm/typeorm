@@ -599,7 +599,7 @@ export class ColumnMetadata {
         entity: ObjectLiteral,
         options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        const returnNulls = false // options && options.skipNulls === false ? false : true; // todo: remove if current will not bring problems, uncomment if it will.
+        const returnNulls = options && options.skipNulls === false ? false : true;
 
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
