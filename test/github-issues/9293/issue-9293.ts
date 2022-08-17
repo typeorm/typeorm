@@ -10,7 +10,7 @@ import Offer from "./entity/offer.entity"
 import Lender from "./entity/lender.entity"
 import { Repository, SelectQueryBuilder } from "../../../src"
 
-describe("github issues > #9293 No quotes while using orderBy, groupBy by custom column ", () => {
+describe("github issues > #9293 No quotes while using orderBy, groupBy by custom column", () => {
     console.log("github issues > #9293")
     let connections: DataSource[]
 

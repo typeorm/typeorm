@@ -2346,9 +2346,10 @@ export class SelectQueryBuilder<Entity>
             this.expressionMap.groupBys
                 .map((columnName) => {
                     const statementName = this.replacePropertyNames(columnName)
-                    const quotedName = !statementName.startsWith('"')
-                        ? this.escape(statementName)
-                        : statementName
+                    const quotedName =
+                        statementName.indexOf('"') !== 0
+                            ? this.escape(statementName)
+                            : statementName
 
                     return quotedName
                 })
@@ -2369,9 +2370,10 @@ export class SelectQueryBuilder<Entity>
                         if (typeof orderBys[columnName] === "string") {
                             const statementName =
                                 this.replacePropertyNames(columnName)
-                            const quotedName = !statementName.startsWith('"')
-                                ? this.escape(statementName)
-                                : statementName
+                            const quotedName =
+                                statementName.indexOf('"') !== 0
+                                    ? this.escape(statementName)
+                                    : statementName
                             return quotedName + " " + orderBys[columnName]
                         } else {
                             return (
