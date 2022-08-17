@@ -12,6 +12,7 @@ import { Repository, SelectQueryBuilder } from "../../../src"
 
 describe("github issues > #9293 No quotes while using orderBy, groupBy by custom column", () => {
     console.log("github issues > #9293")
+
     let connections: DataSource[]
 
     const getBaseQuery = (
