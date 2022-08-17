@@ -2343,7 +2343,12 @@ export class SelectQueryBuilder<Entity>
             return ""
         return (
             " GROUP BY " +
-            this.replacePropertyNames(this.expressionMap.groupBys.join(", "))
+            this.expressionMap.groupBys.map((columnName) => {
+                const statementName = this.replacePropertyNames(columnName)
+                const quotedName = !statementName.startsWith("\"") ? this.escape(statementName) : statementName
+
+                return quotedName
+            }).join(", ")
         )
     }
 
@@ -2358,8 +2363,10 @@ export class SelectQueryBuilder<Entity>
                 Object.keys(orderBys)
                     .map((columnName) => {
                         if (typeof orderBys[columnName] === "string") {
+                            const statementName = this.replacePropertyNames(columnName)
+                            const quotedName = !statementName.startsWith("\"") ? this.escape(statementName) : statementName
                             return (
-                                this.replacePropertyNames(columnName) +
+                                quotedName +
                                 " " +
                                 orderBys[columnName]
                             )
@@ -3459,7 +3466,7 @@ export class SelectQueryBuilder<Entity>
                                 select.aliasName === orderCriteria,
                         )
                     )
-                        return this.escape(parentAlias) + "." + orderCriteria
+                        return this.escape(parentAlias) + "." + this.escape(orderCriteria)
 
                     return ""
                 }
@@ -3495,7 +3502,7 @@ export class SelectQueryBuilder<Entity>
                     )
                 ) {
                     orderByObject[
-                        this.escape(parentAlias) + "." + orderCriteria
+                        this.escape(parentAlias) + "." + this.escape(orderCriteria)
                     ] = orderBys[orderCriteria]
                 } else {
                     orderByObject[orderCriteria] = orderBys[orderCriteria]

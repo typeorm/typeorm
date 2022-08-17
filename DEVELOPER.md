@@ -46,7 +46,7 @@ git clone git@github.com:<github username>/typeorm.git
 # Go to the TypeORM directory:
 cd typeorm
 
-# Add the main TyepORM repository as an upstream remote to your repository:
+# Add the main TypeORM repository as an upstream remote to your repository:
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
 ## Installing NPM Modules
