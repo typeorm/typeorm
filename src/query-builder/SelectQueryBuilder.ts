@@ -2343,12 +2343,16 @@ export class SelectQueryBuilder<Entity>
             return ""
         return (
             " GROUP BY " +
-            this.expressionMap.groupBys.map((columnName) => {
-                const statementName = this.replacePropertyNames(columnName)
-                const quotedName = !statementName.startsWith("\"") ? this.escape(statementName) : statementName
+            this.expressionMap.groupBys
+                .map((columnName) => {
+                    const statementName = this.replacePropertyNames(columnName)
+                    const quotedName = !statementName.startsWith('"')
+                        ? this.escape(statementName)
+                        : statementName
 
-                return quotedName
-            }).join(", ")
+                    return quotedName
+                })
+                .join(", ")
         )
     }
 
@@ -2363,13 +2367,12 @@ export class SelectQueryBuilder<Entity>
                 Object.keys(orderBys)
                     .map((columnName) => {
                         if (typeof orderBys[columnName] === "string") {
-                            const statementName = this.replacePropertyNames(columnName)
-                            const quotedName = !statementName.startsWith("\"") ? this.escape(statementName) : statementName
-                            return (
-                                quotedName +
-                                " " +
-                                orderBys[columnName]
-                            )
+                            const statementName =
+                                this.replacePropertyNames(columnName)
+                            const quotedName = !statementName.startsWith('"')
+                                ? this.escape(statementName)
+                                : statementName
+                            return quotedName + " " + orderBys[columnName]
                         } else {
                             return (
                                 this.replacePropertyNames(columnName) +
@@ -3466,7 +3469,11 @@ export class SelectQueryBuilder<Entity>
                                 select.aliasName === orderCriteria,
                         )
                     )
-                        return this.escape(parentAlias) + "." + this.escape(orderCriteria)
+                        return (
+                            this.escape(parentAlias) +
+                            "." +
+                            this.escape(orderCriteria)
+                        )
 
                     return ""
                 }
@@ -3502,7 +3509,9 @@ export class SelectQueryBuilder<Entity>
                     )
                 ) {
                     orderByObject[
-                        this.escape(parentAlias) + "." + this.escape(orderCriteria)
+                        this.escape(parentAlias) +
+                            "." +
+                            this.escape(orderCriteria)
                     ] = orderBys[orderCriteria]
                 } else {
                     orderByObject[orderCriteria] = orderBys[orderCriteria]

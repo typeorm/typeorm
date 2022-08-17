@@ -1,35 +1,39 @@
-import 'reflect-metadata'
+import "reflect-metadata"
 import {
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
-} from '../../utils/test-utils'
-import { DataSource } from '../../../src/data-source/DataSource'
-import { expect } from 'chai'
-import Offer from './entity/offer.entity'
-import Lender from './entity/lender.entity'
-import { Repository, SelectQueryBuilder } from '../../../src'
+} from "../../utils/test-utils"
+import { DataSource } from "../../../src/data-source/DataSource"
+import { expect } from "chai"
+import Offer from "./entity/offer.entity"
+import Lender from "./entity/lender.entity"
+import { Repository, SelectQueryBuilder } from "../../../src"
 
-describe.only('github issues > #9293 No quotes while using orderBy, groupBy by custom column ', () => {
-    console.log('github issues > #9293')
+describe("github issues > #9293 No quotes while using orderBy, groupBy by custom column ", () => {
+    console.log("github issues > #9293")
     let connections: DataSource[]
 
-    const getBaseQuery = (repo: Repository<Offer>, rateSumAlias: string): SelectQueryBuilder<Offer> => {
-        return repo.createQueryBuilder('Offer')
-            .addSelect('1', rateSumAlias)
-            .innerJoinAndSelect('Offer.lender', 'Lender')
-            .groupBy('Offer.id')
-            .addGroupBy('Lender.id')
+    const getBaseQuery = (
+        repo: Repository<Offer>,
+        rateSumAlias: string,
+    ): SelectQueryBuilder<Offer> => {
+        return repo
+            .createQueryBuilder("Offer")
+            .addSelect("1", rateSumAlias)
+            .innerJoinAndSelect("Offer.lender", "Lender")
+            .groupBy("Offer.id")
+            .addGroupBy("Lender.id")
             .addGroupBy(rateSumAlias)
-            .orderBy('Lender.id', 'ASC')
-            .addOrderBy('Offer.id', 'ASC')
-            .addOrderBy(rateSumAlias, 'ASC')
+            .orderBy("Lender.id", "ASC")
+            .addOrderBy("Offer.id", "ASC")
+            .addOrderBy(rateSumAlias, "ASC")
     }
 
     const prepareData = async (connection: DataSource): Promise<void> => {
         console.log(connection.name)
         const lender = new Lender()
-        lender.name = 'lender'
+        lender.name = "lender"
         await connection.manager.save(lender)
 
         const offer = new Offer()
@@ -38,43 +42,50 @@ describe.only('github issues > #9293 No quotes while using orderBy, groupBy by c
         await connection.manager.save(offer)
     }
 
-    const rateSumAlias = 'rateSum'
+    const rateSumAlias = "rateSum"
 
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [ __dirname + '/entity/*{.js,.ts}' ],
-                enabledDrivers: [ 'postgres'/*, 'mariadb', 'mysql'*/ ],
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["postgres" /*, 'mariadb', 'mysql'*/],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it('should quote value from addSelect in orderBy and groupBy with SELECT DISTINCT', async () => {
+    it("should quote value from addSelect in orderBy and groupBy with SELECT DISTINCT", async () => {
         for (const connection of connections) {
             await prepareData(connection)
 
-            const baseQuery = getBaseQuery(connection.getRepository(Offer), rateSumAlias)
+            const baseQuery = getBaseQuery(
+                connection.getRepository(Offer),
+                rateSumAlias,
+            )
 
-            const { entities, raw } = await baseQuery.skip(1).take(10).getRawAndEntities()
+            const { entities, raw } = await baseQuery
+                .skip(1)
+                .take(10)
+                .getRawAndEntities()
 
-            expect(entities).to.be.an('array')
-            expect(raw).to.be.an('array')
+            expect(entities).to.be.an("array")
+            expect(raw).to.be.an("array")
         }
     })
 
-    it('should quote value from addSelect in orderBy and groupBy without SELECT DISTINCT', async () => {
-
-
+    it("should quote value from addSelect in orderBy and groupBy without SELECT DISTINCT", async () => {
         for (const connection of connections) {
             await prepareData(connection)
 
-            const baseQuery = getBaseQuery(connection.getRepository(Offer), rateSumAlias)
+            const baseQuery = getBaseQuery(
+                connection.getRepository(Offer),
+                rateSumAlias,
+            )
 
             const { entities, raw } = await baseQuery.getRawAndEntities()
 
-            expect(entities).to.be.an('array')
-            expect(raw).to.be.an('array')
+            expect(entities).to.be.an("array")
+            expect(raw).to.be.an("array")
         }
     })
 })
