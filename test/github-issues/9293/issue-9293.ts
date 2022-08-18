@@ -70,6 +70,7 @@ describe("github issues > #9293 No quotes while using orderBy, groupBy by custom
                 .getRawAndEntities()
 
             expect(entities).to.be.an("array")
+
             expect(raw).to.be.an("array")
         }
     })
