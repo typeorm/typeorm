@@ -4,7 +4,7 @@ Many-to-one / one-to-many is a relation where A contains multiple instances of B
 Let's take for example `User` and `Photo` entities.
 User can have multiple photos, but each photo is owned by only one single user.
 
-```typescript
+````typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm"
 import { User } from "./User"
 
