@@ -32,7 +32,6 @@ describe("github issues > #9293 No quotes while using orderBy, groupBy by custom
     }
 
     const prepareData = async (connection: DataSource): Promise<void> => {
-        console.log(connection.name)
         const lender = new Lender()
         lender.name = "lender"
         await connection.manager.save(lender)
