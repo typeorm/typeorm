@@ -1176,6 +1176,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         })
     }
 
+    protected getExistsCondition(subQuery: any): [string, any[]] {
+        const query = subQuery
+            .clone()
+            .orderBy()
+            .groupBy()
+            .offset(undefined)
+            .limit(undefined)
+            .skip(undefined)
+            .take(undefined)
+            .select("1")
+            .setOption("disable-global-order")
+
+        return [`EXISTS (${query.getQuery()})`, query.getParameters()]
+    }
+
     private findColumnsForPropertyPath(
         propertyPath: string,
     ): [Alias, string[], ColumnMetadata[]] {

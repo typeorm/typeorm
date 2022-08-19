@@ -249,6 +249,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return this
     }
 
+    fromDummy(): SelectQueryBuilder<any> {
+        return this.from(this.connection.driver.dummyTableName ?? "(SELECT 1 AS dummy_column)", "dummy_table");
+    }
+
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
@@ -1191,6 +1195,27 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
+     * Sets a new where EXISTS clause
+     */
+    whereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.where(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new AND where EXISTS clause
+     */
+    andWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.andWhere(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new OR where EXISTS clause
+     */
+    orWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.orWhere(...this.getExistsCondition(subQuery))
+    }
+
+    /**
      * Adds new AND WHERE with conditions for the given ids.
      *
      * Ids are mixed.
@@ -1730,6 +1755,50 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             this.expressionMap.queryEntity = false
             const results = await this.executeCountQuery(queryRunner)
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction()
+            }
+
+            return results
+        } catch (error) {
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {}
+            }
+            throw error
+        } finally {
+            if (queryRunner !== this.queryRunner)
+                // means we created our own query runner
+                await queryRunner.release()
+        }
+    }
+
+    /**
+     * Gets exists
+     * Returns whether any rows exists matching current query.
+     */
+    async getExists(): Promise<boolean> {
+        if (this.expressionMap.lockMode === "optimistic")
+            throw new OptimisticLockCanNotBeUsedError()
+
+        const queryRunner = this.obtainQueryRunner()
+        let transactionStartedByUs: boolean = false
+        try {
+            // start transaction if it was enabled
+            if (
+                this.expressionMap.useTransaction === true &&
+                queryRunner.isTransactionActive === false
+            ) {
+                await queryRunner.startTransaction()
+                transactionStartedByUs = true
+            }
+
+            this.expressionMap.queryEntity = false
+            const results = await this.executeExistsQuery(queryRunner)
 
             // close transaction if we started it
             if (transactionStartedByUs) {
@@ -2910,6 +2979,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!results || !results[0] || !results[0]["cnt"]) return 0
 
         return parseInt(results[0]["cnt"])
+    }
+
+    protected async executeExistsQuery(
+        queryRunner: QueryRunner,
+    ): Promise<boolean> {
+        const results = await this.connection
+            .createQueryBuilder()
+            .fromDummy()
+            .select("1", "row_exists")
+            .whereExists(this)
+            .limit(1)
+            .loadRawResults(queryRunner)
+
+        return results.length > 0
     }
 
     protected applyFindOptions() {

@@ -947,6 +947,23 @@ export class EntityManager {
     }
 
     /**
+     * Checks whether any entity exists with the given condition
+     */
+    exists<Entity>(
+        entityClass: EntityTarget<Entity>,
+        options?: FindManyOptions<Entity>,
+    ): Promise<boolean> {
+        const metadata = this.connection.getMetadata(entityClass)
+        return this.createQueryBuilder(
+            entityClass,
+            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
+                metadata.name,
+        )
+            .setFindOptions(options || {})
+            .getExists()
+    }
+
+    /**
      * Counts entities that match given options.
      * Useful for pagination.
      */
