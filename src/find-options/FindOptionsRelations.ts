@@ -3,6 +3,11 @@ import { ObjectID } from "../driver/mongodb/typings"
 /**
  * A single property handler for FindOptionsRelations.
  */
+
+export type JoinType = {
+    ["*type"]?: "left" | "inner"
+}
+
 export type FindOptionsRelationsProperty<Property> = Property extends Promise<
     infer I
 >
@@ -18,7 +23,7 @@ export type FindOptionsRelationsProperty<Property> = Property extends Promise<
     : Property extends ObjectID
     ? never
     : Property extends object
-    ? FindOptionsRelations<Property> | boolean
+    ? (FindOptionsRelations<Property> & JoinType) | boolean | "left" | "inner"
     : boolean
 
 /**

@@ -3696,14 +3696,24 @@ export class SelectQueryBuilder<Entity>
                 )
                 if (
                     relationValue === true ||
-                    typeof relationValue === "object"
+                    typeof relationValue === "object" ||
+                    relationValue === "inner" ||
+                    relationValue === "left"
                 ) {
                     if (this.expressionMap.relationLoadStrategy === "query") {
                         this.relationMetadatas.push(relation)
                     } else {
                         // join
+                        const type =
+                            relationValue === true
+                                ? "left"
+                                : typeof relationValue === "string"
+                                ? relationValue
+                                : typeof relationValue["*type"] === "undefined"
+                                ? "left"
+                                : relationValue["*type"]
                         this.joins.push({
-                            type: "left",
+                            type,
                             select: true,
                             selection:
                                 selection &&
@@ -3736,8 +3746,12 @@ export class SelectQueryBuilder<Entity>
                     typeof relationValue === "object" &&
                     this.expressionMap.relationLoadStrategy === "join"
                 ) {
+                    const {
+                        ["*type"]: removedProperty,
+                        ...relationValueContinue
+                    } = relationValue
                     this.buildRelations(
-                        relationValue,
+                        relationValueContinue,
                         typeof selection === "object"
                             ? OrmUtils.deepValue(
                                   selection,

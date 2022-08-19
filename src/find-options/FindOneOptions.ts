@@ -32,7 +32,7 @@ export interface FindOneOptions<Entity = any> {
     where?: FindOptionsWhere<Entity>[] | FindOptionsWhere<Entity>
 
     /**
-     * Indicates what relations of entity should be loaded (simplified left join form).
+     * Indicates what relations of entity should be loaded (by left join or inner join, left join is the default).
      */
     relations?: FindOptionsRelations<Entity> | FindOptionsRelationByString
 
