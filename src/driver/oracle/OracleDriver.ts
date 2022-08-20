@@ -993,6 +993,9 @@ export class OracleDriver implements Driver {
                 password: credentials.password,
                 connectString: credentials.connectString,
             },
+            {
+                poolMax: options.poolSize,
+            },
             options.extra || {},
         )
 

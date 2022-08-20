@@ -62,6 +62,8 @@ Different RDBMS-es have their own specific options.
 -   `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
     then logger will log this query.
 
+-   `poolSize` - Configure maximum number of active connections is the pool.
+
 -   `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
 
 -   `entityPrefix` - Prefixes with the given string all tables (or collections) on this data source.

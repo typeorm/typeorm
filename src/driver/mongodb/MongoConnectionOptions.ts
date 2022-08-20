@@ -53,11 +53,6 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
     readonly driver?: any
 
     /**
-     * Set the maximum poolSize for each individual server or proxy connection.
-     */
-    readonly poolSize?: number
-
-    /**
      * Use ssl connection (needs to have a mongod server with ssl support). Default: false
      */
     readonly ssl?: boolean

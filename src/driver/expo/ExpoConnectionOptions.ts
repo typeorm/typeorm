@@ -18,4 +18,6 @@ export interface ExpoConnectionOptions extends BaseDataSourceOptions {
      * Driver module
      */
     readonly driver: any
+
+    readonly poolSize?: never
 }

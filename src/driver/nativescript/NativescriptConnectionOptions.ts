@@ -50,4 +50,6 @@ export interface NativescriptConnectionOptions extends BaseDataSourceOptions {
      * Flags to pass to SQLite when opening the database on Android. (see https://developer.android.com/reference/android/database/sqlite/SQLiteDatabase.html)
      */
     readonly androidFlags?: number
+
+    readonly poolSize?: never
 }

@@ -44,4 +44,6 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean
+
+    readonly poolSize?: never
 }

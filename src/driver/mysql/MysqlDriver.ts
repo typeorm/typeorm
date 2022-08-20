@@ -1222,6 +1222,7 @@ export class MysqlDriver implements Driver {
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
+            { connectionLimit: options.poolSize },
             options.extra || {},
         )
     }

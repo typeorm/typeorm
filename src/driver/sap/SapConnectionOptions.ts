@@ -66,4 +66,6 @@ export interface SapConnectionOptions
          */
         readonly poolErrorHandler?: (err: any) => any
     }
+
+    readonly poolSize?: never
 }

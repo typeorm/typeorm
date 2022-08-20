@@ -37,4 +37,6 @@ export interface AuroraMysqlConnectionOptions
      * (Default: true)
      */
     readonly legacySpatialSupport?: boolean
+
+    readonly poolSize?: never
 }

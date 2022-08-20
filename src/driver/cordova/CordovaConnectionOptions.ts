@@ -24,4 +24,6 @@ export interface CordovaConnectionOptions extends BaseDataSourceOptions {
      * Storage Location
      */
     readonly location: string
+
+    readonly poolSize?: never
 }
