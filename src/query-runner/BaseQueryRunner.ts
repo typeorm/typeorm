@@ -243,9 +243,27 @@ export abstract class BaseQueryRunner {
      * @param columns unordered table columns
      */
     protected getOrderedTableColumns(columns: TableColumn[]): TableColumn[] {
-        return columns.sort((a, b) => {
-            return a.order - b.order
-        })
+        //Find out the max order number defnied
+        //So we can assign to columns which does not have order number defined
+        const orders = columns.map(column => {
+            return column.order || null;
+        });
+        const max = Math.max(...orders);
+
+        //Now Sort columns, if order is undefined or null then push them in last
+        //We can do that by adding +1 to max and assigned to column for sorting
+        return columns.sort(function(a, b){
+        	if (a.order && b.order) {
+            	return a.order - b.order;
+            }
+            if (typeof b.order === 'undefined' || b.order === null) {
+            	b.order = ++max;
+            }
+        	if (typeof a.order === 'undefined' || a.order === null) {
+            	a.order = ++max;
+            }
+            return a.order - b.order;
+        });
     }
 
     /**
