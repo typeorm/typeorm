@@ -375,13 +375,16 @@ export class PostgresDriver implements Driver {
 
         const results = (await this.executeQuery(
             connection,
-            "SHOW server_version;",
+            "SELECT version();",
         )) as {
             rows: {
-                server_version: string
+                version: string
             }[]
         }
-        const versionString = results.rows[0].server_version
+        const versionString = results.rows[0].version.replace(
+            /^PostgreSQL ([\d\.]+) .*$/,
+            "$1",
+        )
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
             versionString,
             "12.0",
