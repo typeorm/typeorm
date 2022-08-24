@@ -1,8 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Personalization {
-  @PrimaryGeneratedColumn("uuid") public id: number;
+    @PrimaryGeneratedColumn("uuid") public id: number
 
-  @Column() public logo: string;
+    @Column() public logo: string
 }

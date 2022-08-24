@@ -1,16 +1,14 @@
-import { Entity, OneToOne, JoinColumn, PrimaryColumn } from "../../../../src";
-import { Session } from "./Session";
+import { Entity, OneToOne, JoinColumn, PrimaryColumn } from "../../../../src"
+import { Session } from "./Session"
 
 @Entity({
-    name: "SessionSettings"
+    name: "SessionSettings",
 })
-export class SessionSettings  {
-
+export class SessionSettings {
     @PrimaryColumn()
-    sessionId: number;
+    sessionId: number
 
-    @OneToOne(type => Session, session => session.id)
-    @JoinColumn({ name: "sessionId", referencedColumnName: "id"})
-    session?: Session;
-
+    @OneToOne((type) => Session, (session) => session.id)
+    @JoinColumn({ name: "sessionId", referencedColumnName: "id" })
+    session?: Session
 }

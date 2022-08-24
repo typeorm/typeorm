@@ -1,15 +1,13 @@
-import {Entity, ManyToMany, PrimaryColumn} from "../../../../src";
-import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
-import {Category} from "./Category";
+import { Entity, ManyToMany, PrimaryColumn } from "../../../../src"
+import { JoinTable } from "../../../../src/decorator/relations/JoinTable"
+import { Category } from "./Category"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn({ collation: "utf8_unicode_ci", charset: "utf8" })
-    id: string;
+    id: string
 
-    @ManyToMany(type => Category, category => category.posts)
+    @ManyToMany((type) => Category, (category) => category.posts)
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }

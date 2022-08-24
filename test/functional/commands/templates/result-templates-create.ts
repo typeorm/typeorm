@@ -19,5 +19,16 @@ module.exports = class testMigration1610975184784 {
 
     async down(queryRunner) {
     }
-}`
-};
+}`,
+    timestamp: `import {MigrationInterface, QueryRunner} from "typeorm";
+
+export class testMigration1641163894670 implements MigrationInterface {
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+    }
+
+}`,
+}

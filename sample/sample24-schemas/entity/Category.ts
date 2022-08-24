@@ -1,9 +1,7 @@
-import {Post} from "./Post";
+import { Post } from "./Post"
 
 export interface Category {
-
-    id?: number;
-    description: string;
-    posts?: Post[];
-
+    id?: number
+    description: string
+    posts?: Post[]
 }

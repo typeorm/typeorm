@@ -1,10 +1,11 @@
-import {IndexMetadata} from "../../metadata/IndexMetadata";
-import {TableIndexOptions} from "../options/TableIndexOptions";
+import { IndexMetadata } from "../../metadata/IndexMetadata"
+import { TableIndexOptions } from "../options/TableIndexOptions"
 
 /**
  * Database's table index stored in this class.
  */
 export class TableIndex {
+    readonly "@instanceof" = Symbol.for("TableIndex")
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -13,53 +14,63 @@ export class TableIndex {
     /**
      * Index name.
      */
-    name?: string;
+    name?: string
 
     /**
      * Columns included in this index.
      */
-    columnNames: string[] = [];
+    columnNames: string[] = []
 
     /**
      * Indicates if this index is unique.
      */
-    isUnique: boolean;
+    isUnique: boolean
 
     /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL.
      */
-    isSpatial: boolean;
+    isSpatial: boolean
 
     /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
      * Works only in MySQL.
      */
-    isFulltext: boolean;
+    isFulltext: boolean
+
+    /**
+     * NULL_FILTERED indexes are particularly useful for indexing sparse columns, where most rows contain a NULL value.
+     * In these cases, the NULL_FILTERED index can be considerably smaller and more efficient to maintain than
+     * a normal index that includes NULL values.
+     *
+     * Works only in Spanner.
+     */
+    isNullFiltered: boolean
 
     /**
      * Fulltext parser.
      * Works only in MySQL.
      */
-    parser?: string;
+    parser?: string
 
     /**
      * Index filter condition.
      */
-    where: string;
+    where: string
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(options: TableIndexOptions) {
-        this.name = options.name;
-        this.columnNames = options.columnNames;
-        this.isUnique = !!options.isUnique;
-        this.isSpatial = !!options.isSpatial;
-        this.isFulltext = !!options.isFulltext;
-        this.parser = options.parser;
-        this.where = options.where ? options.where : "";
+        this.name = options.name
+        this.columnNames = options.columnNames
+        this.isUnique = !!options.isUnique
+        this.isSpatial = !!options.isSpatial
+        this.isFulltext = !!options.isFulltext
+        this.isNullFiltered = !!options.isNullFiltered
+        this.parser = options.parser
+        this.where = options.where ? options.where : ""
     }
 
     // -------------------------------------------------------------------------
@@ -76,9 +87,10 @@ export class TableIndex {
             isUnique: this.isUnique,
             isSpatial: this.isSpatial,
             isFulltext: this.isFulltext,
+            isNullFiltered: this.isNullFiltered,
             parser: this.parser,
-            where: this.where
-        });
+            where: this.where,
+        })
     }
 
     // -------------------------------------------------------------------------
@@ -91,13 +103,15 @@ export class TableIndex {
     static create(indexMetadata: IndexMetadata): TableIndex {
         return new TableIndex(<TableIndexOptions>{
             name: indexMetadata.name,
-            columnNames: indexMetadata.columns.map(column => column.databaseName),
+            columnNames: indexMetadata.columns.map(
+                (column) => column.databaseName,
+            ),
             isUnique: indexMetadata.isUnique,
             isSpatial: indexMetadata.isSpatial,
             isFulltext: indexMetadata.isFulltext,
+            isNullFiltered: indexMetadata.isNullFiltered,
             parser: indexMetadata.parser,
-            where: indexMetadata.where
-        });
+            where: indexMetadata.where,
+        })
     }
-
 }

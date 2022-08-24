@@ -1,13 +1,13 @@
-import {Column, Entity, ObjectIdColumn, PrimaryColumn} from "../../../../src";
+import { Column, Entity, ObjectIdColumn, PrimaryColumn } from "../../../../src"
 
 @Entity("test")
 export class TestEntity {
     @ObjectIdColumn()
-    _id: string;
+    _id: string
 
     @PrimaryColumn()
-    id: string;
+    id: string
 
     @Column()
-    name: string;
+    name: string
 }

@@ -1,16 +1,16 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
 
 @Entity()
 export class TwoUniqueColumnsEntity {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: string
 
     @Column({ unique: true })
-    externalId: string;
+    externalId: string
 
     @Column({ unique: true })
-    email: string;
+    email: string
 
     @Column()
-    name: string;
+    name: string
 }

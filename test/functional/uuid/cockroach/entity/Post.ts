@@ -1,16 +1,14 @@
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Generated} from "../../../../../src/decorator/Generated";
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { Generated } from "../../../../../src/decorator/Generated"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: string;
+    id: string
 
     @Column()
     @Generated("uuid")
-    uuid: string;
-
+    uuid: string
 }

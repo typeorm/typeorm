@@ -1,4 +1,4 @@
-import { Column, Entity } from "../../../../src";
+import { Column, Entity } from "../../../../src"
 
 @Entity({ name: "first" })
 export default class Testing {
@@ -7,5 +7,5 @@ export default class Testing {
         primary: true,
         unique: true,
     })
-    public id!: number;
+    public id!: number
 }

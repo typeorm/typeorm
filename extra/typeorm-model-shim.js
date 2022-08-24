@@ -76,6 +76,16 @@ exports.AfterInsert = AfterInsert;
 }
 exports.AfterLoad = AfterLoad;
 
+/* export */ function AfterSoftRemove() {
+    return function () {};
+}
+exports.AfterSoftRemove = AfterSoftRemove;
+
+/* export */ function AfterRecover() {
+    return function () {};
+}
+exports.AfterRecover = AfterRecover;
+
 /* export */ function AfterRemove() {
     return function () {};
 }
@@ -90,6 +100,16 @@ exports.AfterUpdate = AfterUpdate;
     return function () {};
 }
 exports.BeforeInsert = BeforeInsert;
+
+/* export */ function BeforeSoftRemove() {
+    return function () {};
+}
+exports.BeforeSoftRemove = BeforeSoftRemove;
+
+/* export */ function BeforeRecover() {
+    return function () {};
+}
+exports.BeforeRecover = BeforeRecover;
 
 /* export */ function BeforeRemove() {
     return function () {};

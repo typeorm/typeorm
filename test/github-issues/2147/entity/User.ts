@@ -1,27 +1,34 @@
-
-import {Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique} from "../../../../src";
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    Unique,
+} from "../../../../src"
 
 @Entity()
 @Unique(["clientId", "key"])
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    public key: number;
+    public key: number
 
-    @Column({name: "client_id"})
-    public clientId: number;
+    @Column({ name: "client_id" })
+    public clientId: number
 
     @Column()
-    public name: string;
+    public name: string
 
-    @Column({ name: "updated_by"})
-    public updatedById: number;
+    @Column({ name: "updated_by" })
+    public updatedById: number
 
-    @ManyToOne(type => User)
-    @JoinColumn([{name: "client_id", referencedColumnName: "clientId"}, { name: "updated_by", referencedColumnName: "key"}])
-    public updatedBy: Promise<User>;
-
+    @ManyToOne((type) => User)
+    @JoinColumn([
+        { name: "client_id", referencedColumnName: "clientId" },
+        { name: "updated_by", referencedColumnName: "key" },
+    ])
+    public updatedBy: Promise<User>
 }

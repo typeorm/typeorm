@@ -1,20 +1,21 @@
-import { EntitySchema } from "../../../../src";
+import { EntitySchema } from "../../../../src"
 
-import Post from "./Post";
+import Post from "./Post"
 
-let id = 0;
+let id = 0
 
 export default class PostTag {
-    tagId: number;
+    postId: number
+    tagId: number
 
-    tagOtherId: string;
+    tagOtherId: string
 
-    tagPostId: string;
+    tagPostId: string
 
-    post: Post;
+    post: Post
 
-    constructor () {
-        this.tagId = id++;
+    constructor() {
+        this.tagId = id++
     }
 }
 
@@ -24,28 +25,27 @@ export const PostTagSchema = new EntitySchema<PostTag>({
     columns: {
         tagOtherId: {
             type: Number,
-            primary: true
+            primary: true,
         },
         tagPostId: {
             type: Number,
-            primary: true
+            primary: true,
         },
         tagId: {
             type: Number,
             primary: true,
-            nullable: false
-        }
+            nullable: false,
+        },
     },
     relations: {
         post: {
-            primary: true,
             nullable: false,
             target: () => Post,
             type: "many-to-one",
             joinColumn: [
                 { name: "tagPostId", referencedColumnName: "postId" },
-                { name: "tagOtherId", referencedColumnName: "otherId" }
-            ]
-        }
-    }
-});
+                { name: "tagOtherId", referencedColumnName: "otherId" },
+            ],
+        },
+    },
+})

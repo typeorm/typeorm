@@ -1,23 +1,20 @@
-import { PrimaryColumn, Entity, Column } from "../../../../src";
-
+import { PrimaryColumn, Entity, Column } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({
         nullable: true,
         transformer: {
             from(val: string | undefined | null) {
-                return val === null ? "This is null" : val;
+                return val === null ? "This is null" : val
             },
             to(val: string | undefined | null) {
-                return val;
-            }
-        }
+                return val
+            },
+        },
     })
-    text: string;
-
+    text: string
 }

@@ -1,24 +1,27 @@
-import {Column, Entity, OneToOne, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
+import {
+    Column,
+    Entity,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Post } from "./Post"
 
 @Entity("sample2_post_details")
 export class PostDetails {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    authorName: string;
+    authorName: string
 
     @Column()
-    comment: string;
+    comment: string
 
     @Column()
-    metadata: string;
-    
-    @OneToOne(type => Post, post => post.details, {
-        cascade: true
+    metadata: string
+
+    @OneToOne((type) => Post, (post) => post.details, {
+        cascade: true,
     })
-    post: Post;
-
+    post: Post
 }

@@ -1,19 +1,19 @@
-import {Column, Entity, PrimaryColumn} from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../src"
 
 export enum TaskNotificationType {
-    ASSIGNED
+    ASSIGNED,
 }
 
-@Entity('taskNotifications')
+@Entity("taskNotifications")
 export class TaskNotification {
     @PrimaryColumn()
     id: number
 
     @Column({
-        type: 'enum',
+        type: "enum",
         enum: TaskNotificationType,
-        enumName: 'TaskNotificationType',
+        enumName: "TaskNotificationType",
         default: TaskNotificationType.ASSIGNED,
     })
-    type: TaskNotificationType;
+    type: TaskNotificationType
 }

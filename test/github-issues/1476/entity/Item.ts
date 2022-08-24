@@ -1,11 +1,10 @@
-import { Entity, PrimaryColumn, Column } from "../../../../src/index";
-
+import { Entity, PrimaryColumn, Column } from "../../../../src/index"
 
 @Entity()
 export class Item {
     @PrimaryColumn()
-    itemId: number;
+    itemId: number
 
     @Column()
-    planId: number;
+    planId: number
 }

@@ -1,4 +1,4 @@
-import {TypeORMError} from "./TypeORMError";
+import { TypeORMError } from "./TypeORMError"
 
 /**
  * Thrown when user tries to build a query with RETURNING / OUTPUT statement,
@@ -7,7 +7,7 @@ import {TypeORMError} from "./TypeORMError";
 export class ReturningStatementNotSupportedError extends TypeORMError {
     constructor() {
         super(
-            `OUTPUT or RETURNING clause only supported by Microsoft SQL Server or PostgreSQL databases.`
-        );
+            `OUTPUT or RETURNING clause only supported by Microsoft SQL Server or PostgreSQL or MariaDB databases.`,
+        )
     }
 }

@@ -1,32 +1,30 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {CreateDateColumn} from "../../../../src/decorator/columns/CreateDateColumn";
-import {UpdateDateColumn} from "../../../../src/decorator/columns/UpdateDateColumn";
-import {VersionColumn} from "../../../../src/decorator/columns/VersionColumn";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { CreateDateColumn } from "../../../../src/decorator/columns/CreateDateColumn"
+import { UpdateDateColumn } from "../../../../src/decorator/columns/UpdateDateColumn"
+import { VersionColumn } from "../../../../src/decorator/columns/VersionColumn"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @CreateDateColumn()
-    createDate: string;
+    createDate: string
 
     @UpdateDateColumn()
-    updateDate: string;
+    updateDate: string
 
     @Column({ default: 100 })
-    order: number;
+    order: number
 
     @VersionColumn()
-    version: number;
+    version: number
 
     @Column({ default: 0 })
-    triggerValue: number;
-
+    triggerValue: number
 }

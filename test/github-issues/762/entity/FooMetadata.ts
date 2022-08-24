@@ -1,12 +1,10 @@
-import {Column} from "../../../../src/decorator/columns/Column";
-import {FooChildMetadata} from "./FooChildMetadata";
+import { Column } from "../../../../src/decorator/columns/Column"
+import { FooChildMetadata } from "./FooChildMetadata"
 
 export class FooMetadata {
-
     @Column({ nullable: true })
-    bar: number;
+    bar: number
 
-    @Column(type => FooChildMetadata)
-    child?: FooChildMetadata;
-
+    @Column((type) => FooChildMetadata)
+    child?: FooChildMetadata
 }

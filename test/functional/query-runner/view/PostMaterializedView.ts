@@ -1,4 +1,4 @@
-import {ViewColumn, ViewEntity} from "../../../../src";
+import { ViewColumn, ViewEntity } from "../../../../src"
 
 @ViewEntity({
     expression: `SELECT * FROM "post"`,
@@ -9,5 +9,5 @@ export class PostMaterializedView {
     id: number
 
     @ViewColumn()
-    type: string;
+    type: string
 }

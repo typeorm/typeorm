@@ -1,73 +1,52 @@
 # Working with Query Runner
 
-* [What is `QueryRunner`](#what-is-queryrunner)
-* [Creating a queryRunner](#creating-a-new-queryrunner)
-* [Using queryRunner](#using-queryrunner)
-* [Working with `QueryRunner`](#working-with-queryrunner)
-    
+-   [What is `QueryRunner`](#what-is-queryrunner)
+-   [Creating a new `QueryRunner` instance](#creating-a-new-queryrunner-instance)
+-   [Using `QueryRunner`](#using-queryrunner)
+
 ## What is `QueryRunner`
 
-Your interaction with the database is only possible once you setup a connection.
-TypeORM's `Connection` does not setup a database connection as it might seem, instead it sets up a connection pool.
-If you are interested in a real database connection, you should use `QueryRunner`.
-Each instance of `QueryRunner` is a separate isolated database connection. Using query runners you can control your queries to execute using single database connection and manually control your database transaction.
+Each new `QueryRunner` instance takes a single connection from connection pool, if RDBMS supports connection pooling.
+For databases not supporting connection pools, it uses the same connection across data source.
 
-## Creating a new queryRunner
+## Creating a new `QueryRunner` instance
 
-To create a new instance of `QueryRunner` you should first create a connection pool, in any of the ways described on the `Connection` documentation. Once a connection has established, use the `createQueryRunner` function to create an isolated connection.
-
-`createQueryRunner` Creates a query runner used to perform queries on a single database connection.
- 
+Use `createQueryRunner` method to create a new `QueryRunner`:
 
 ```typescript
-import { getConnection, QueryRunner } from 'typeorm';
-// can be used once createConnection is called and is resolved
-const connection: Connection = getConnection();
-
-const queryRunner: QueryRunner = connection.createQueryRunner();
-```
-## Using queryRunner
-
-After creating an instance of `QueryRunner` use connect to activate the connection.
-
-```typescript
-import { getConnection, QueryRunner } from 'typeorm';
-// can be used once createConnection is called and is resolved
-const connection: Connection = getConnection();
-
-const queryRunner: QueryRunner = connection.createQueryRunner();
-
-await queryRunner.connect(); // performs connection
+const queryRunner = dataSource.createQueryRunner()
 ```
 
-Since the `QueryRunner` is used to manage an isolated database connection, make sure to release it when it is not needed anymore to make it available to the connection pool again. After connection is released it is not possible to use the query runner methods.
+## Using `QueryRunner`
 
-## Working with `QueryRunner`
-
-Once you set your queryRunner up, you can use it with an interface similar to the `Connection` interface:
+After you create a new instance of `QueryRunner` use `connect` method to actually obtain a connection from the connection pool:
 
 ```typescript
-import { getConnection, QueryRunner } from 'typeorm';
-import { User } from "../entity/User";
+const queryRunner = dataSource.createQueryRunner()
+await queryRunner.connect()
+```
 
-export class UserController {
+**Important**: make sure to release it when it is not needed anymore to make it available to the connection pool again:
 
+```typescript
+await queryRunner.release()
+```
 
-    @Get("/users")
-    getAll(): Promise<User[]> {
-        // can be used once createConnection is called and is resolved
-        const connection: Connection = getConnection();
+After connection is released it is not possible to use the query runner methods.
 
-        const queryRunner: QueryRunner = connection.createQueryRunner();
+`QueryRunner` has bunch of methods you can use, it also has its own `EntityManager` instance,
+which you can use through `manager` property in order to run `EntityManager` methods on a particular database connection
+used by `QueryRunner` instance:
 
-        await queryRunner.connect(); // performs connection
+```typescript
+const queryRunner = connection.createQueryRunner()
 
-        const users = await queryRunner.manager.find(User);
-        
-        await queryRunner.release(); // release connection
-		
-        return users;
-    }
+// take a connection from the connection pool
+await queryRunner.connect()
 
-}
+// use this particular connection to execute queries
+const users = await queryRunner.manager.find(User)
+
+// don't forget to release connection after you are done using it
+await queryRunner.release()
 ```

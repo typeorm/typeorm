@@ -1,20 +1,9 @@
 version: "3"
 services:
-  # mysql-5.5
-  #mysql5.5:
-  #  image: "mysql:5.5"
-  #  container_name: "typeorm-mysql-5.5"
-  #  ports:
-  #    - "3306:3306"
-  #  environment:
-  #    MYSQL_ROOT_PASSWORD: "admin"
-  #    MYSQL_USER: "test"
-  #    MYSQL_PASSWORD: "test"
-  #    MYSQL_DATABASE: "test"
 
   # mysql
   mysql:
-    image: "mysql:5.7.24"
+    image: "mysql:5.7.37"
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
@@ -24,9 +13,23 @@ services:
       MYSQL_PASSWORD: "test"
       MYSQL_DATABASE: "test"
 
+  # mysql v8
+#  mysql8:
+#    image: "mysql:8"
+#    container_name: "typeorm-mysql8"
+#    ports:
+#      - "3308:3306"
+#    environment:
+#      MYSQL_ROOT_PASSWORD: "admin"
+#      MYSQL_USER: "test"
+#      MYSQL_PASSWORD: "test"
+#      MYSQL_DATABASE: "test"
+#    volumes:
+#      - mysql8_volume:/var/lib/mysql
+
   # mariadb
   mariadb:
-    image: "mariadb:10.4.8"
+    image: "mariadb:10.5.13"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -90,6 +93,14 @@ services:
       - default
       - typeorm
 
+  # google cloud spanner
+  spanner:
+    image: alexmesser/spanner-emulator
+    container_name: "typeorm-spanner"
+    ports:
+      - "9010:9010"
+      - "9020:9020"
+
   # sap hana (works only on linux)
   # hanaexpress:
   #   image: "store/saplabs/hanaexpress:2.00.040.00.20190729.1"
@@ -120,7 +131,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:3.4.18"
+    image: "mongo:5.0.6"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -130,8 +141,10 @@ services:
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
+
 #volumes:
 #  volume-hana-xe:
+#  mysql8_volume:
 
 networks:
   typeorm:

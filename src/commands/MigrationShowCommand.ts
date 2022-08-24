@@ -1,61 +1,51 @@
-import {createConnection} from "../globals";
-import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
-import {Connection} from "../connection/Connection";
-import * as process from "process";
-import * as yargs from "yargs";
-import chalk from "chalk";
+import { DataSource } from "../data-source"
+import * as process from "process"
+import * as yargs from "yargs"
+import { PlatformTools } from "../platform/PlatformTools"
+import path from "path"
+import { CommandUtils } from "./CommandUtils"
 
 /**
- * Runs migration command.
+ * Shows all migrations and whether they have been run or not.
  */
 export class MigrationShowCommand implements yargs.CommandModule {
+    command = "migration:show"
+    describe = "Show all migrations and whether they have been run or not"
 
-  command = "migration:show";
-  describe = "Show all migrations and whether they have been run or not";
-
-  builder(args: yargs.Argv) {
-    return args
-      .option("connection", {
-        alias: "c",
-        default: "default",
-        describe: "Name of the connection on which run a query."
-      })
-      .option("config", {
-        alias: "f",
-        default: "ormconfig",
-        describe: "Name of the file with connection configuration."
-      });
-  }
-
-  async handler(args: yargs.Arguments) {
-    let connection: Connection|undefined = undefined;
-    try {
-      const connectionOptionsReader = new ConnectionOptionsReader({
-        root: process.cwd(),
-        configName: args.config as any
-      });
-      const connectionOptions = await connectionOptionsReader.get(args.connection as any);
-      Object.assign(connectionOptions, {
-        subscribers: [],
-        synchronize: false,
-        migrationsRun: false,
-        dropSchema: false,
-        logging: ["query", "error", "schema"]
-      });
-      connection = await createConnection(connectionOptions);
-      const unappliedMigrations = await connection.showMigrations();
-      await connection.close();
-
-      // return error code if there are unapplied migrations for CI
-      process.exit(unappliedMigrations ? 1 : 0);
-
-    } catch (err) {
-      if (connection) await (connection as Connection).close();
-
-      console.log(chalk.black.bgRed("Error during migration show:"));
-      console.error(err);
-      process.exit(1);
+    builder(args: yargs.Argv) {
+        return args.option("dataSource", {
+            alias: "d",
+            describe:
+                "Path to the file where your DataSource instance is defined.",
+            demandOption: true,
+        })
     }
-  }
 
+    async handler(args: yargs.Arguments) {
+        let dataSource: DataSource | undefined = undefined
+        try {
+            dataSource = await CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
+            )
+            dataSource.setOptions({
+                subscribers: [],
+                synchronize: false,
+                migrationsRun: false,
+                dropSchema: false,
+                logging: ["schema"],
+            })
+            await dataSource.initialize()
+            await dataSource.showMigrations()
+            await dataSource.destroy()
+
+            process.exit(0)
+        } catch (err) {
+            PlatformTools.logCmdErr("Error during migration show:", err)
+
+            if (dataSource && dataSource.isInitialized)
+                await dataSource.destroy()
+
+            process.exit(1)
+        }
+    }
 }

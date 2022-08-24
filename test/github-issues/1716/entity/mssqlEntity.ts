@@ -1,21 +1,19 @@
-import { PrimaryColumn, Entity, Column } from "../../../../src";
+import { PrimaryColumn, Entity, Column } from "../../../../src"
 
 @Entity()
 export class MssqlEntity {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column("time")
-    fieldTime: Date;
+    fieldTime: Date
 
     @Column("datetime")
-    fieldDatetime: Date;
+    fieldDatetime: Date
 
     @Column("datetime2")
-    fieldDatetime2: Date;
+    fieldDatetime2: Date
 
     @Column("datetimeoffset")
-    fieldDatetimeoffset: Date;
-
+    fieldDatetimeoffset: Date
 }

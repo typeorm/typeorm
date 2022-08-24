@@ -1,14 +1,19 @@
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "../../../../src/";
-import { Person } from "./person";
+import {
+    Entity,
+    Column,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+} from "../../../../src/"
+import { Person } from "./person"
 
 @Entity()
 export class Note {
     @PrimaryGeneratedColumn()
-    public id: number;
+    public id: number
 
     @Column()
-    public label: string;
+    public label: string
 
-    @ManyToOne(type => Person, { lazy: true })
-    public owner: Promise<Person> | Person;
+    @ManyToOne((type) => Person, (person) => person.notes, { lazy: true })
+    public owner: Promise<Person> | Person
 }

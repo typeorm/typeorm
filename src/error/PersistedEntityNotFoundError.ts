@@ -1,4 +1,4 @@
-import {TypeORMError} from "./TypeORMError";
+import { TypeORMError } from "./TypeORMError"
 
 /**
  * Thrown . Theoretically can't be thrown.
@@ -6,7 +6,7 @@ import {TypeORMError} from "./TypeORMError";
 export class PersistedEntityNotFoundError extends TypeORMError {
     constructor() {
         super(
-            `Internal error. Persisted entity was not found in the list of prepared operated entities.`
-        );
+            `Internal error. Persisted entity was not found in the list of prepared operated entities.`,
+        )
     }
 }
