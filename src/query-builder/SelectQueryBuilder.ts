@@ -1485,6 +1485,12 @@ export class SelectQueryBuilder<Entity>
             | "pessimistic_read"
             | "pessimistic_write"
             | "dirty_read"
+            /*
+                "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
+                will be removed in a future version.
+
+                Use setOnLocked instead.
+             */
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
             | "for_no_key_update"
@@ -1502,6 +1508,12 @@ export class SelectQueryBuilder<Entity>
             | "pessimistic_read"
             | "pessimistic_write"
             | "dirty_read"
+            /*
+                "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
+                will be removed in a future version.
+
+                Use setOnLocked instead.
+             */
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
             | "for_no_key_update"
@@ -1512,6 +1524,14 @@ export class SelectQueryBuilder<Entity>
         this.expressionMap.lockMode = lockMode
         this.expressionMap.lockVersion = lockVersion
         this.expressionMap.lockTables = lockTables
+        return this
+    }
+
+    /**
+     * Sets lock handling by adding NO WAIT or SKIP LOCKED.
+     */
+    setOnLocked(onLocked: "nowait" | "skip_locked"): this {
+        this.expressionMap.onLocked = onLocked
         return this
     }
 
@@ -2104,7 +2124,10 @@ export class SelectQueryBuilder<Entity>
             }
         }
 
-        if (driver.options.type === "postgres" && selectDistinctOn.length > 0) {
+        if (
+            DriverUtils.isPostgresFamily(driver) &&
+            selectDistinctOn.length > 0
+        ) {
             const selectDistinctOnMap = selectDistinctOn
                 .map((on) => this.replacePropertyNames(on))
                 .join(", ")
@@ -2491,7 +2514,7 @@ export class SelectQueryBuilder<Entity>
         if (this.expressionMap.lockTables) {
             if (
                 !(
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 )
             ) {
@@ -2505,15 +2528,31 @@ export class SelectQueryBuilder<Entity>
             lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ")
         }
 
+        let onLockExpression = ""
+        if (this.expressionMap.onLocked === "nowait") {
+            onLockExpression = " NOWAIT"
+        } else if (this.expressionMap.onLocked === "skip_locked") {
+            onLockExpression = " SKIP LOCKED"
+        }
         switch (this.expressionMap.lockMode) {
             case "pessimistic_read":
                 if (
-                    DriverUtils.isMySQLFamily(driver) ||
+                    driver.options.type === "mysql" ||
                     driver.options.type === "aurora-mysql"
                 ) {
+                    if (
+                        DriverUtils.isReleaseVersionOrGreater(driver, "8.0.0")
+                    ) {
+                        return (
+                            " FOR SHARE" + lockTablesClause + onLockExpression
+                        )
+                    } else {
+                        return " LOCK IN SHARE MODE"
+                    }
+                } else if (driver.options.type === "mariadb") {
                     return " LOCK IN SHARE MODE"
-                } else if (driver.options.type === "postgres") {
-                    return " FOR SHARE" + lockTablesClause
+                } else if (DriverUtils.isPostgresFamily(driver)) {
+                    return " FOR SHARE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "oracle") {
                     return " FOR UPDATE"
                 } else if (driver.options.type === "mssql") {
@@ -2527,19 +2566,19 @@ export class SelectQueryBuilder<Entity>
                     driver.options.type === "aurora-mysql" ||
                     driver.options.type === "oracle"
                 ) {
-                    return " FOR UPDATE"
+                    return " FOR UPDATE" + onLockExpression
                 } else if (
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 ) {
-                    return " FOR UPDATE" + lockTablesClause
+                    return " FOR UPDATE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "mssql") {
                     return ""
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
             case "pessimistic_partial_write":
-                if (driver.options.type === "postgres") {
+                if (DriverUtils.isPostgresFamily(driver)) {
                     return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
                 } else if (DriverUtils.isMySQLFamily(driver)) {
                     return " FOR UPDATE SKIP LOCKED"
@@ -2548,7 +2587,7 @@ export class SelectQueryBuilder<Entity>
                 }
             case "pessimistic_write_or_fail":
                 if (
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 ) {
                     return " FOR UPDATE" + lockTablesClause + " NOWAIT"
@@ -2557,24 +2596,27 @@ export class SelectQueryBuilder<Entity>
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
-
             case "for_no_key_update":
                 if (
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 ) {
-                    return " FOR NO KEY UPDATE" + lockTablesClause
+                    return (
+                        " FOR NO KEY UPDATE" +
+                        lockTablesClause +
+                        onLockExpression
+                    )
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
-
             case "for_key_share":
-                if (driver.options.type === "postgres") {
-                    return " FOR KEY SHARE" + lockTablesClause
+                if (DriverUtils.isPostgresFamily(driver)) {
+                    return (
+                        " FOR KEY SHARE" + lockTablesClause + onLockExpression
+                    )
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
-
             default:
                 return ""
         }
@@ -2669,7 +2711,7 @@ export class SelectQueryBuilder<Entity>
                     selectionPath = `${asText}(${selectionPath})`
                 }
 
-                if (this.connection.driver.options.type === "postgres")
+                if (DriverUtils.isPostgresFamily(this.connection.driver))
                     if (column.precision) {
                         // cast to JSON to trigger parsing in the driver
                         selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
@@ -2753,7 +2795,7 @@ export class SelectQueryBuilder<Entity>
 
         if (
             this.connection.driver.options.type === "cockroachdb" ||
-            this.connection.driver.options.type === "postgres"
+            DriverUtils.isPostgresFamily(this.connection.driver)
         ) {
             // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
             // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
@@ -3118,6 +3160,10 @@ export class SelectQueryBuilder<Entity>
                         undefined,
                         tableNames,
                     )
+
+                    if (this.findOptions.lock.onLocked) {
+                        this.setOnLocked(this.findOptions.lock.onLocked)
+                    }
                 }
             }
 

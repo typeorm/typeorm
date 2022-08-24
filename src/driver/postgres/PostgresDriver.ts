@@ -72,6 +72,11 @@ export class PostgresDriver implements Driver {
     options: PostgresConnectionOptions
 
     /**
+     * Version of Postgres. Requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
+
+    /**
      * Database name used to perform all write queries.
      */
     database?: string
@@ -385,6 +390,7 @@ export class PostgresDriver implements Driver {
             /^PostgreSQL ([\d\.]+) .*$/,
             "$1",
         )
+        this.version = versionString
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
             versionString,
             "12.0",
