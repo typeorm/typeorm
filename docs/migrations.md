@@ -223,10 +223,10 @@ The rule of thumb for generating migrations is that you generate them after **ea
 
 ## DataSoure option
 
-If you need to run/revert your migrations use the `-d` (alias for `--dataSource`) and pass the path to the file where your DataSource instance is defined as an argument
+If you need to run/revert/generate/show your migrations use the `-d` (alias for `--dataSource`) and pass the path to the file where your DataSource instance is defined as an argument
 
 ```
-typeorm -d <your-dataSource-path> migration:{run|revert}
+typeorm -d <your-data-source-path> migration:{run|revert}
 ```
 
 ## Timestamp option
