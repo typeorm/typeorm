@@ -1560,7 +1560,7 @@ export abstract class AbstractSqliteQueryRunner
 
                 // find unique constraints from CREATE TABLE sql
                 let uniqueRegexResult
-                const uniqueMappings: { name: string; columns: string[] }[] = [];
+                const uniqueMappings: { name: string; columns: string[] }[] = []
                 const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE ?\((.*?)\)/g
                 while ((uniqueRegexResult = uniqueRegex.exec(sql)) !== null) {
                     uniqueMappings.push({
@@ -1606,8 +1606,8 @@ export abstract class AbstractSqliteQueryRunner
                         const foundMapping = uniqueMappings.find((mapping) => {
                             return mapping!.columns.every(
                                 (column) => indexColumns.indexOf(column) !== -1,
-                            );
-                        });
+                            )
+                        })
 
                         return new TableUnique({
                             name: foundMapping
@@ -1828,7 +1828,10 @@ export abstract class AbstractSqliteQueryRunner
 
         sql += `)`
 
-        let tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(table) === this.getTablePath(metadata));
+        let tableMetadata = this.connection.entityMetadatas.find(
+            (metadata) =>
+                this.getTablePath(table) === this.getTablePath(metadata),
+        )
         if (!tableMetadata && table.name.startsWith("temporary_")) {
             // For sqlite, some schema migration operations require building an entirely new table and copying the data back. These new tables
             // have an added prefix of `temporary_`... these completely new tables don't have an entry in the entityMetadatas, so we will accidentally
@@ -1836,8 +1839,12 @@ export abstract class AbstractSqliteQueryRunner
             const realTable = new Table({
                 ...table,
                 name: table.name.replace("temporary_", ""),
-            });
-            tableMetadata = this.connection.entityMetadatas.find(metadata => this.getTablePath(realTable) === this.getTablePath(metadata));
+            })
+            tableMetadata = this.connection.entityMetadatas.find(
+                (metadata) =>
+                    this.getTablePath(realTable) ===
+                    this.getTablePath(metadata),
+            )
         }
 
         if (tableMetadata && tableMetadata.withoutRowid) {
