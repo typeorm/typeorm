@@ -3599,7 +3599,7 @@ export class PostgresQueryRunner
                                         dbColumn["column_default"],
                                     )
                                 ) {
-                                    if (dbColumn["data_type"] === "uuid") {
+                                    if (tableColumn.type === "uuid") {
                                         tableColumn.isGenerated = true
                                         tableColumn.generationStrategy = "uuid"
                                     } else {
