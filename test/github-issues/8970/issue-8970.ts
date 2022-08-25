@@ -1,62 +1,33 @@
 import "reflect-metadata"
-
 import {
     closeTestingConnections,
     createTestingConnections,
+    reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DatabaseType, DataSource } from "../../../src"
+import { DataSource } from "../../../src"
 import { TestEntity } from "./entities/TestEntity"
 import { expect } from "chai"
 
 describe("query builder order nulls first/last", async () => {
     let dataSources: DataSource[]
-    const enabledDrivers: DatabaseType[] = [
-        "postgres",
-        "sqlite",
-        "better-sqlite3",
-    ]
 
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entities/*{.js,.ts}"],
-            enabledDrivers,
+            enabledDrivers: ["postgres", "sqlite", "better-sqlite3"],
             schemaCreate: true,
             dropSchema: false,
         })
-
-        for (const dataSource of dataSources) {
-            const repository = dataSource.getRepository(TestEntity)
-
-            for (let i = 0; i < 5; i++) {
-                const entity = new TestEntity()
-                entity.testColumn = ""
-
-                await repository.save(entity)
-            }
-
-            for (let i = 0; i < 5; i++) {
-                const entity = new TestEntity()
-
-                await repository.save(entity)
-            }
-        }
     })
-
-    after(async () => {
-        for (const dataSource of dataSources) {
-            await dataSource.dropDatabase()
-        }
-
-        await closeTestingConnections(dataSources)
-    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     const runTest = async (
-        dataSource: DataSource | undefined,
+        dataSource: DataSource,
         firstOrLastString: "first" | "FIRST" | "last" | "LAST",
     ) => {
-        if (!dataSource) return
-
         const repository = dataSource.getRepository(TestEntity)
+
         const testArray = await repository.find({
             order: {
                 testColumn: { direction: "DESC", nulls: firstOrLastString },
@@ -70,37 +41,29 @@ describe("query builder order nulls first/last", async () => {
         expect(test?.testColumn).to.be.null
     }
 
-    for (const enabledDriver of enabledDrivers) {
-        it(`first should work with lowercase (${enabledDriver})`, async () => {
-            const dataSource = dataSources.find(
-                (dataSource) => dataSource.options.type === enabledDriver,
-            )
-            expect(dataSource).to.exist
-            await runTest(dataSource, "first")
-        })
+    it(`should work with uppercase/lowercase first/last`, async () => {
+        return Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(TestEntity)
 
-        it(`FIRST should work with uppercase (${enabledDriver})`, async () => {
-            const dataSource = dataSources.find(
-                (dataSource) => dataSource.options.type === enabledDriver,
-            )
-            expect(dataSource).to.exist
-            await runTest(dataSource, "FIRST")
-        })
+                for (let i = 0; i < 5; i++) {
+                    const entity = new TestEntity()
+                    entity.testColumn = ""
 
-        it(`last should work with lowercase (${enabledDriver})`, async () => {
-            const dataSource = dataSources.find(
-                (dataSource) => dataSource.options.type === enabledDriver,
-            )
-            expect(dataSource).to.exist
-            await runTest(dataSource, "last")
-        })
+                    await repository.save(entity)
+                }
 
-        it(`LAST should work with uppercase (${enabledDriver})`, async () => {
-            const dataSource = dataSources.find(
-                (dataSource) => dataSource.options.type === enabledDriver,
-            )
-            expect(dataSource).to.exist
-            await runTest(dataSource, "LAST")
-        })
-    }
+                for (let i = 0; i < 5; i++) {
+                    const entity = new TestEntity()
+
+                    await repository.save(entity)
+                }
+
+                await runTest(dataSource, "first")
+                await runTest(dataSource, "FIRST")
+                await runTest(dataSource, "last")
+                await runTest(dataSource, "LAST")
+            }),
+        )
+    })
 })
