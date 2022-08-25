@@ -2,6 +2,7 @@ import { PostgresConnectionOptions } from "../driver/postgres/PostgresConnection
 import { Query } from "../driver/Query"
 import { SqlInMemory } from "../driver/SqlInMemory"
 import { SqlServerConnectionOptions } from "../driver/sqlserver/SqlServerConnectionOptions"
+import { TableIndex } from "../schema-builder/table/TableIndex"
 import { View } from "../schema-builder/view/View"
 import { DataSource } from "../data-source/DataSource"
 import { Table } from "../schema-builder/table/Table"
@@ -346,6 +347,47 @@ export abstract class BaseQueryRunner {
     }
 
     /**
+     * Generates SQL query to select record from typeorm metadata table.
+     */
+    protected selectTypeormMetadataSql({
+        database,
+        schema,
+        table,
+        type,
+        name,
+    }: {
+        database?: string
+        schema?: string
+        table?: string
+        type: MetadataTableType
+        name: string
+    }): Query {
+        const qb = this.connection.createQueryBuilder()
+        const selectQb = qb
+            .select()
+            .from(this.getTypeormMetadataTableName(), "t")
+            .where(`${qb.escape("type")} = :type`, { type })
+            .andWhere(`${qb.escape("name")} = :name`, { name })
+
+        if (database) {
+            selectQb.andWhere(`${qb.escape("database")} = :database`, {
+                database,
+            })
+        }
+
+        if (schema) {
+            selectQb.andWhere(`${qb.escape("schema")} = :schema`, { schema })
+        }
+
+        if (table) {
+            selectQb.andWhere(`${qb.escape("table")} = :table`, { table })
+        }
+
+        const [query, parameters] = selectQb.getQueryAndParameters()
+        return new Query(query, parameters)
+    }
+
+    /**
      * Generates SQL query to insert a record into typeorm metadata table.
      */
     protected insertTypeormMetadataSql({
@@ -466,7 +508,7 @@ export abstract class BaseQueryRunner {
             oldColumn.width !== newColumn.width || // MySQL only
             oldColumn.zerofill !== newColumn.zerofill || // MySQL only
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
-            oldColumn.asExpression !== newColumn.asExpression || // MySQL only
+            oldColumn.asExpression !== newColumn.asExpression ||
             (checkDefault && oldColumn.default !== newColumn.default) ||
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
@@ -608,5 +650,17 @@ export abstract class BaseQueryRunner {
         for (const { query, parameters } of upQueries) {
             await this.query(query, parameters)
         }
+    }
+
+    /**
+     * Generated an index name for a table and index
+     */
+    protected generateIndexName(table: Table, index: TableIndex): string {
+        // new index may be passed without name. In this case we generate index name manually.
+        return this.connection.namingStrategy.indexName(
+            table,
+            index.columnNames,
+            index.where,
+        )
     }
 }

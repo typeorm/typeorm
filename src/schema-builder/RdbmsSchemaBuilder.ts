@@ -15,7 +15,6 @@ import { TableCheck } from "./table/TableCheck"
 import { TableExclusion } from "./table/TableExclusion"
 import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
-import { PostgresDriver } from "../driver/postgres/PostgresDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 
 /**
@@ -66,8 +65,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
         // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
+        // In Spanner queries against the INFORMATION_SCHEMA can be used in a read-only transaction,
+        // but not in a read-write transaction.
         const isUsingTransactions =
             !(this.connection.driver.options.type === "cockroachdb") &&
+            !(this.connection.driver.options.type === "spanner") &&
             this.connection.options.migrationsTransactionMode !== "none"
 
         await this.queryRunner.beforeMigration()
@@ -113,16 +115,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
+     * Create the typeorm_metadata table if necessary.
      */
     async createMetadataTableIfNecessary(
         queryRunner: QueryRunner,
     ): Promise<void> {
         if (
             this.viewEntityToSyncMetadatas.length > 0 ||
-            (this.connection.driver.options.type === "postgres" &&
-                (this.connection.driver as PostgresDriver)
-                    .isGeneratedColumnsSupported)
+            this.hasGeneratedColumns()
         ) {
             await this.createTypeormMetadataTable(queryRunner)
         }
@@ -190,6 +190,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 // sort views in creation order by dependencies
                 .sort(ViewUtils.viewMetadataCmp)
         )
+    }
+
+    /**
+     * Checks if there are at least one generated column.
+     */
+    protected hasGeneratedColumns(): boolean {
+        return this.connection.entityMetadatas.some((entityMetadata) => {
+            return entityMetadata.columns.some((column) => column.generatedType)
+        })
     }
 
     /**
@@ -813,7 +822,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (
                 !(
                     DriverUtils.isMySQLFamily(this.connection.driver) ||
-                    this.connection.driver.options.type === "aurora-mysql"
+                    this.connection.driver.options.type === "aurora-mysql" ||
+                    this.connection.driver.options.type === "spanner"
                 )
             ) {
                 for (const changedColumn of changedColumns) {
@@ -1170,7 +1180,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Creates typeorm service table for storing user defined Views.
+     * Creates typeorm service table for storing user defined Views and generate columns.
      */
     protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema
@@ -1181,6 +1191,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             database,
         )
 
+        // Spanner requires at least one primary key in a table.
+        // Since we don't have unique column in "typeorm_metadata" table
+        // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
+        const isPrimary = this.connection.driver.options.type === "spanner"
         await queryRunner.createTable(
             new Table({
                 database: database,
@@ -1194,6 +1208,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataType,
                         }),
                         isNullable: false,
+                        isPrimary,
                     },
                     {
                         name: "database",
@@ -1202,6 +1217,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataDatabase,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "schema",
@@ -1210,6 +1226,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataSchema,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "table",
@@ -1218,6 +1235,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataTable,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "name",
@@ -1226,6 +1244,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataName,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "value",
@@ -1234,6 +1253,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataValue,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                 ],
             }),

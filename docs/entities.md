@@ -161,11 +161,11 @@ When you save entities using `save` it always tries to find an entity in the dat
 If id/ids are found then it will update this row in the database.
 If there is no row with the id/ids, a new row will be inserted.
 
-To find an entity by id you can use `manager.findOne` or `repository.findOne`. Example:
+To find an entity by id you can use `manager.findOneBy` or `repository.findOneBy`. Example:
 
 ```typescript
 // find one by id with single primary key
-const person = await dataSource.manager.findBy(Person, { id: 1 })
+const person = await dataSource.manager.findOneBy(Person, { id: 1 })
 const person = await dataSource.getRepository(Person).findOneBy({ id: 1 })
 
 // find one by id with composite primary keys
@@ -336,6 +336,10 @@ or
 `decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`,
 `timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
 `nclob`, `rowid`, `urowid`
+
+### Column types for `spanner`
+
+`bool`, `int64`, `float64`, `numeric`, `string`, `json`, `bytes`, `date`, `timestamp`, `array`
 
 ### `enum` column type
 

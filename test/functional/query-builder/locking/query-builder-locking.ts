@@ -35,7 +35,8 @@ describe("query builder > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 )
                     return
 
@@ -56,7 +57,8 @@ describe("query builder > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 )
                     return
 
@@ -87,7 +89,8 @@ describe("query builder > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 )
                     return
 
@@ -153,6 +156,41 @@ describe("query builder > locking", () => {
                             entityManager
                                 .createQueryBuilder(PostWithVersion, "post")
                                 .setLock("for_no_key_update")
+                                .where("post.id = :id", { id: 1 })
+                                .getOne().should.not.be.rejected,
+                        ])
+                    })
+                }
+                return
+            }),
+        ))
+
+    it("should throw error if for key share lock used without transaction", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type === "postgres") {
+                    return connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("for_key_share")
+                        .where("post.id = :id", { id: 1 })
+                        .getOne()
+                        .should.be.rejectedWith(
+                            PessimisticLockTransactionRequiredError,
+                        )
+                }
+                return
+            }),
+        ))
+
+    it("should not throw error if for key share lock used with transaction", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type === "postgres") {
+                    return connection.manager.transaction((entityManager) => {
+                        return Promise.all([
+                            entityManager
+                                .createQueryBuilder(PostWithVersion, "post")
+                                .setLock("for_key_share")
                                 .where("post.id = :id", { id: 1 })
                                 .getOne().should.not.be.rejected,
                         ])
@@ -336,7 +374,8 @@ describe("query builder > locking", () => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 )
                     return
 
@@ -379,7 +418,8 @@ describe("query builder > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 )
                     return
 
@@ -398,7 +438,8 @@ describe("query builder > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 )
                     return
 
@@ -454,6 +495,37 @@ describe("query builder > locking", () => {
                         .getSql()
 
                     expect(sql.indexOf("FOR NO KEY UPDATE") !== -1).to.be.true
+                }
+                return
+            }),
+        ))
+
+    it("should not attach for key share lock statement on query if locking is not used", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type === "postgres") {
+                    const sql = connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .where("post.id = :id", { id: 1 })
+                        .getSql()
+
+                    expect(sql.indexOf("FOR KEY SHARE") === -1).to.be.true
+                }
+                return
+            }),
+        ))
+
+    it("should attach for key share lock statement on query if locking enabled", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type === "postgres") {
+                    const sql = connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("for_key_share")
+                        .where("post.id = :id", { id: 1 })
+                        .getSql()
+
+                    expect(sql.indexOf("FOR KEY SHARE") !== -1).to.be.true
                 }
                 return
             }),
@@ -723,7 +795,8 @@ describe("query builder > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 )
                     return connection.manager.transaction((entityManager) => {
                         return Promise.all([
@@ -779,6 +852,28 @@ describe("query builder > locking", () => {
                             entityManager
                                 .createQueryBuilder(PostWithVersion, "post")
                                 .setLock("for_no_key_update")
+                                .where("post.id = :id", { id: 1 })
+                                .getOne()
+                                .should.be.rejectedWith(
+                                    LockNotSupportedOnGivenDriverError,
+                                ),
+                        ])
+                    })
+                }
+
+                return
+            }),
+        ))
+
+    it("should throw error if for key share locking not supported by given driver", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (!(connection.driver.options.type === "postgres")) {
+                    return connection.manager.transaction((entityManager) => {
+                        return Promise.all([
+                            entityManager
+                                .createQueryBuilder(PostWithVersion, "post")
+                                .setLock("for_key_share")
                                 .where("post.id = :id", { id: 1 })
                                 .getOne()
                                 .should.be.rejectedWith(

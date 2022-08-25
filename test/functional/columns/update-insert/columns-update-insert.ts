@@ -22,6 +22,10 @@ describe("columns > update and insert control", () => {
     it("should respect column update and insert properties", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "spanner") {
+                    return
+                }
+
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first

@@ -117,6 +117,7 @@ describe("query builder > joins", () => {
                         .leftJoinAndSelect("post.categories", "categories")
                         .leftJoinAndSelect("categories.images", "images")
                         .where("post.id = :id", { id: 1 })
+                        .orderBy("post.id, categories.id")
                         .getOne()
 
                     expect(loadedPost!.tag).to.not.be.undefined

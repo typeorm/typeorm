@@ -5,7 +5,7 @@ import {
 } from "../../../../../src"
 
 @Entity({ name: "wikiNote" })
-@TableInheritance({ column: { type: "varchar", name: "type" } })
+@TableInheritance({ column: { type: String, name: "type" } })
 export class Note {
     @PrimaryGeneratedColumn()
     public id: number

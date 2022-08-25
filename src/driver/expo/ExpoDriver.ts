@@ -77,7 +77,7 @@ export class ExpoDriver extends AbstractSqliteDriver {
                 databaseConnection.transaction(
                     (tsx: any) => {
                         tsx.executeSql(
-                            `PRAGMA foreign_keys = ON;`,
+                            `PRAGMA foreign_keys = ON`,
                             [],
                             (t: any, result: any) => {
                                 ok(databaseConnection)

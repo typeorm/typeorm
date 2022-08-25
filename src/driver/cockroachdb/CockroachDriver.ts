@@ -4,6 +4,7 @@ import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { DriverUtils } from "../DriverUtils"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { CteCapabilities } from "../types/CteCapabilities"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import { CockroachConnectionOptions } from "./CockroachConnectionOptions"
 import { DateUtils } from "../../util/DateUtils"
@@ -229,6 +230,13 @@ export class CockroachDriver implements Driver {
      * for CockroarchDb.
      */
     maxAliasLength?: number
+
+    cteCapabilities: CteCapabilities = {
+        enabled: true,
+        writable: true,
+        materializedHint: true,
+        requiresRecursiveHint: true,
+    }
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -807,7 +815,10 @@ export class CockroachDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
-                tableColumn.isGenerated !== columnMetadata.isGenerated
+                tableColumn.isGenerated !== columnMetadata.isGenerated ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
+                (tableColumn.asExpression || "").trim() !==
+                    (columnMetadata.asExpression || "").trim()
             )
         })
     }
@@ -915,6 +926,7 @@ export class CockroachDriver implements Driver {
                 database: credentials.database,
                 port: credentials.port,
                 ssl: credentials.ssl,
+                application_name: options.applicationName,
             },
             options.extra || {},
         )

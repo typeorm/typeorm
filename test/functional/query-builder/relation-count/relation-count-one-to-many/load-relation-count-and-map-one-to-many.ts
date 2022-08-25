@@ -52,6 +52,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
                         "post.categoryCount",
                         "post.categories",
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts[0]!.categoryCount).to.be.equal(2)
@@ -191,6 +192,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
                                 isRemoved: true,
                             }),
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts[0]!.categoryCount).to.be.equal(2)

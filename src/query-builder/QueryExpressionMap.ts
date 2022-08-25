@@ -2,6 +2,8 @@ import { Alias } from "./Alias"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { OrderByCondition } from "../find-options/OrderByCondition"
 import { JoinAttribute } from "./JoinAttribute"
+import { QueryBuilder } from "./QueryBuilder"
+import { QueryBuilderCteOptions } from "./QueryBuilderCte"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { DataSource } from "../data-source/DataSource"
@@ -187,6 +189,7 @@ export class QueryExpressionMap {
         | "pessimistic_partial_write"
         | "pessimistic_write_or_fail"
         | "for_no_key_update"
+        | "for_key_share"
 
     /**
      * Current version of the entity, used for locking.
@@ -210,7 +213,7 @@ export class QueryExpressionMap {
     parameters: ObjectLiteral = {}
 
     /**
-     * Indicates if alias, table names and column names will be ecaped by driver, or not.
+     * Indicates if alias, table names and column names will be escaped by driver, or not.
      *
      * todo: rename to isQuotingDisabled, also think if it should be named "escaping"
      */
@@ -319,6 +322,12 @@ export class QueryExpressionMap {
      * These are included in the entity index order.
      */
     locallyGenerated: { [key: number]: ObjectLiteral } = {}
+
+    commonTableExpressions: {
+        queryBuilder: QueryBuilder<any> | string
+        alias: string
+        options: QueryBuilderCteOptions
+    }[] = []
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -504,6 +513,16 @@ export class QueryExpressionMap {
         map.useTransaction = this.useTransaction
         map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
+        map.commonTableExpressions = this.commonTableExpressions.map(
+            (cteOptions) => ({
+                alias: cteOptions.alias,
+                queryBuilder:
+                    typeof cteOptions.queryBuilder === "string"
+                        ? cteOptions.queryBuilder
+                        : cteOptions.queryBuilder.clone(),
+                options: cteOptions.options,
+            }),
+        )
         return map
     }
 }

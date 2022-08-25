@@ -185,15 +185,14 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     ),
                 )
             } else {
-                await CommandUtils.createFile(
-                    path.dirname(fullPath) + "/" + filename,
-                    fileContent,
-                )
+                const migrationFileName =
+                    path.dirname(fullPath) + "/" + filename
+                await CommandUtils.createFile(migrationFileName, fileContent)
 
                 console.log(
                     chalk.green(
                         `Migration ${chalk.blue(
-                            fullPath + extension,
+                            migrationFileName,
                         )} has been generated successfully.`,
                     ),
                 )

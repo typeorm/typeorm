@@ -4,7 +4,7 @@ import { Entity } from "../../../../../../src/decorator/entity/Entity"
 import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 
 @Entity()
-@TableInheritance({ column: { name: "type", type: "int" } })
+@TableInheritance({ column: { name: "type", type: Number } })
 export class Person {
     @PrimaryGeneratedColumn()
     id: number

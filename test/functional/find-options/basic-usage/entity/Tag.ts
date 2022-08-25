@@ -1,14 +1,9 @@
-import {
-    Column,
-    Entity,
-    ManyToMany,
-    PrimaryGeneratedColumn,
-} from "../../../../../src"
+import { Column, Entity, ManyToMany, PrimaryColumn } from "../../../../../src"
 import { Post } from "./Post"
 
 @Entity()
 export class Tag {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column()

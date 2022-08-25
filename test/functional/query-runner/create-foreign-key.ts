@@ -7,6 +7,7 @@ import {
 } from "../../utils/test-utils"
 import { Table } from "../../../src/schema-builder/table/Table"
 import { TableForeignKey } from "../../../src/schema-builder/table/TableForeignKey"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create foreign key", () => {
     let connections: DataSource[]
@@ -23,6 +24,18 @@ describe("query runner > create foreign key", () => {
     it("should correctly create foreign key and revert creation", () =>
         Promise.all(
             connections.map(async (connection) => {
+                let numericType = "int"
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    numericType = "integer"
+                } else if (connection.driver.options.type === "spanner") {
+                    numericType = "int64"
+                }
+
+                let stringType = "varchar"
+                if (connection.driver.options.type === "spanner") {
+                    stringType = "string"
+                }
+
                 const queryRunner = connection.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
@@ -30,12 +43,12 @@ describe("query runner > create foreign key", () => {
                         columns: [
                             {
                                 name: "id",
-                                type: "int",
+                                type: numericType,
                                 isPrimary: true,
                             },
                             {
                                 name: "name",
-                                type: "varchar",
+                                type: stringType,
                             },
                         ],
                     }),
@@ -48,19 +61,19 @@ describe("query runner > create foreign key", () => {
                         columns: [
                             {
                                 name: "id",
-                                type: "int",
+                                type: numericType,
                                 isPrimary: true,
                             },
                             {
                                 name: "name",
-                                type: "varchar",
+                                type: stringType,
                             },
                             {
                                 name: "questionId",
                                 isUnique:
                                     connection.driver.options.type ===
                                     "cockroachdb", // CockroachDB requires UNIQUE constraints on referenced columns
-                                type: "int",
+                                type: numericType,
                             },
                         ],
                     }),

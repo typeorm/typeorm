@@ -12,7 +12,9 @@ import { Repository } from "./Repository"
  *
  * @see Repository
  */
-export class TreeRepository<Entity> extends Repository<Entity> {
+export class TreeRepository<
+    Entity extends ObjectLiteral,
+> extends Repository<Entity> {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -413,13 +415,13 @@ export class TreeRepository<Entity> extends Repository<Entity> {
         custom: CustomRepository &
             ThisType<TreeRepository<Entity> & CustomRepository>,
     ): TreeRepository<Entity> & CustomRepository {
-        const thisRepo: any = this.constructor
+        const thisRepo = this.constructor as new (...args: any[]) => typeof this
         const { target, manager, queryRunner } = this
-        const cls = new (class extends thisRepo {
-            constructor() {
-                super(target, manager, queryRunner)
-            }
-        })()
+        const cls = new (class extends thisRepo {})(
+            target,
+            manager,
+            queryRunner,
+        )
         Object.assign(cls, custom)
         return cls as any
     }

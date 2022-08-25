@@ -43,7 +43,9 @@ describe("custom repository", () => {
                             await transactionalManager.withRepository(
                                 CustomRepository,
                             )
-                        await CustomRepository.save({ name: "Natures Prophet" })
+                        await transactionalCustomRepository.save({
+                            name: "Natures Prophet",
+                        })
                         const user =
                             await transactionalCustomRepository.findOneByName(
                                 "Natures Prophet",

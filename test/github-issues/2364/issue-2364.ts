@@ -21,6 +21,9 @@ describe("github issues > #2364 should generate id value if @Column generated:tr
         await reloadTestingDatabases(connections)
         await Promise.all(
             connections.map(async (connection) => {
+                // Spanner does not support auto-increment columns
+                if (connection.driver.options.type === "spanner") return
+
                 const repository1 = connection.getRepository(Dummy)
                 const repository2 = connection.getRepository(Dummy2)
                 let dummyObj1 = new Dummy()

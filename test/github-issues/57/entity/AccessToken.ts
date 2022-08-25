@@ -7,7 +7,7 @@ import { User } from "./User"
 
 @Entity()
 export class AccessToken {
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     @Generated()
     primaryKey: number
 

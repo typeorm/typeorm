@@ -22,7 +22,11 @@ describe("query runner > drop primary key", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // CockroachDB does not allow dropping primary key
-                if (connection.driver.options.type === "cockroachdb") return
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
 

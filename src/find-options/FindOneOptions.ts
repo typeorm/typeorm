@@ -77,6 +77,7 @@ export interface FindOneOptions<Entity = any> {
                   | "pessimistic_partial_write"
                   | "pessimistic_write_or_fail"
                   | "for_no_key_update"
+                  | "for_key_share"
               tables?: string[]
           }
 

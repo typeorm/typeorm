@@ -1,12 +1,21 @@
-import { DataSource } from "../../src/data-source/DataSource"
-import { DataSourceOptions } from "../../src/data-source/DataSourceOptions"
-import { DatabaseType } from "../../src/driver/types/DatabaseType"
-import { EntitySchema } from "../../src/entity-schema/EntitySchema"
-import { createConnections } from "../../src/index"
-import { NamingStrategyInterface } from "../../src/naming-strategy/NamingStrategyInterface"
+import {
+    DatabaseType,
+    DataSource,
+    DataSourceOptions,
+    Driver,
+    EntitySchema,
+    EntitySubscriberInterface,
+    getMetadataArgsStorage,
+    InsertEvent,
+    Logger,
+    NamingStrategyInterface,
+    QueryRunner,
+    Table,
+} from "../../src"
 import { QueryResultCache } from "../../src/cache/QueryResultCache"
-import { Logger } from "../../src/logger/Logger"
 import path from "path"
+import { ObjectUtils } from "../../src/util/ObjectUtils"
+import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -52,12 +61,12 @@ export interface TestingOptions {
     /**
      * Migrations needs to be included in connection for the given test suite.
      */
-    migrations?: string[]
+    migrations?: (string | Function)[]
 
     /**
      * Subscribers needs to be included in the connection for the given test suite.
      */
-    subscribers?: string[] | Function[]
+    subscribers?: (string | Function)[]
 
     /**
      * Indicates if schema sync should be performed or not.
@@ -293,6 +302,76 @@ export function setupTestingConnections(
         })
 }
 
+class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {
+    static globalIncrementValues: { [entityName: string]: number } = {}
+    beforeInsert(event: InsertEvent<any>): Promise<any> | void {
+        event.metadata.columns.map((column) => {
+            if (column.generationStrategy === "increment") {
+                if (
+                    !GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ]
+                ) {
+                    GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ] = 0
+                }
+                GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                    event.metadata.tableName
+                ] += 1
+
+                column.setEntityValue(
+                    event.entity,
+                    GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ],
+                )
+            } else if (
+                (column.isCreateDate || column.isUpdateDate) &&
+                !column.getEntityValue(event.entity)
+            ) {
+                column.setEntityValue(event.entity, new Date())
+            } else if (
+                !column.isCreateDate &&
+                !column.isUpdateDate &&
+                !column.isVirtual &&
+                column.default !== undefined &&
+                column.getEntityValue(event.entity) === undefined
+            ) {
+                column.setEntityValue(event.entity, column.default)
+            }
+        })
+    }
+}
+getMetadataArgsStorage().entitySubscribers.push({
+    target: GeneratedColumnReplacerSubscriber,
+} as EntitySubscriberMetadataArgs)
+
+export function createDataSource(options: DataSourceOptions): DataSource {
+    if (options.type === "spanner") {
+        process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
+        // process.env.GOOGLE_APPLICATION_CREDENTIALS =
+        //     "/Users/messer/Documents/google/typeorm-spanner-3b57e071cbf0.json"
+        if (Array.isArray(options.subscribers)) {
+            options.subscribers.push(
+                GeneratedColumnReplacerSubscriber as Function,
+            )
+        } else if (ObjectUtils.isObject(options.subscribers)) {
+            options.subscribers["GeneratedColumnReplacer"] =
+                GeneratedColumnReplacerSubscriber
+        } else {
+            options = {
+                ...options,
+                subscribers: {
+                    GeneratedColumnReplacer: GeneratedColumnReplacerSubscriber,
+                },
+            }
+        }
+    }
+
+    return new DataSource(options)
+}
+
 /**
  * Creates a testing connections based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
@@ -300,11 +379,16 @@ export function setupTestingConnections(
 export async function createTestingConnections(
     options?: TestingOptions,
 ): Promise<DataSource[]> {
-    const connections = await createConnections(
-        setupTestingConnections(options),
-    )
+    const dataSourceOptions = setupTestingConnections(options)
+    const dataSources: DataSource[] = []
+    for (let options of dataSourceOptions) {
+        const dataSource = createDataSource(options)
+        await dataSource.initialize()
+        dataSources.push(dataSource)
+    }
+
     await Promise.all(
-        connections.map(async (connection) => {
+        dataSources.map(async (connection) => {
             // create new databases
             const databases: string[] = []
             connection.entityMetadatas.forEach((metadata) => {
@@ -388,7 +472,7 @@ export async function createTestingConnections(
         }),
     )
 
-    return connections
+    return dataSources
 }
 
 /**
@@ -408,6 +492,7 @@ export function closeTestingConnections(connections: DataSource[]) {
  * Reloads all databases for all given connections.
  */
 export function reloadTestingDatabases(connections: DataSource[]) {
+    GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
     return Promise.all(
         connections.map((connection) => connection.synchronize(true)),
     )
@@ -431,4 +516,73 @@ export function sleep(ms: number): Promise<void> {
     return new Promise<void>((ok) => {
         setTimeout(ok, ms)
     })
+}
+
+/**
+ * Creates typeorm service table for storing user defined Views and generate columns.
+ */
+export async function createTypeormMetadataTable(
+    driver: Driver,
+    queryRunner: QueryRunner,
+) {
+    const schema = driver.schema
+    const database = driver.database
+    const typeormMetadataTable = driver.buildTableName(
+        "typeorm_metadata",
+        schema,
+        database,
+    )
+
+    await queryRunner.createTable(
+        new Table({
+            database: database,
+            schema: schema,
+            name: typeormMetadataTable,
+            columns: [
+                {
+                    name: "type",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataType,
+                    }),
+                    isNullable: false,
+                },
+                {
+                    name: "database",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataDatabase,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "schema",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataSchema,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "table",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataTable,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "name",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataName,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "value",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataValue,
+                    }),
+                    isNullable: true,
+                },
+            ],
+        }),
+        true,
+    )
 }

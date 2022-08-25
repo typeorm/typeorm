@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Post } from "./entity/Post"
 
 const options: DataSourceOptions = {
@@ -11,34 +11,35 @@ const options: DataSourceOptions = {
     entities: [Post],
 }
 
-createConnection(options).then(
-    async (connection) => {
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    async (dataSource) => {
         const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.likesCount = 100
 
-        await connection.getRepository(Post).save(post)
+        await dataSource.getRepository(Post).save(post)
         console.log("Post has been saved: ", post)
 
-        const loadedPost = await connection.getRepository(Post).findOneBy({
+        const loadedPost = await dataSource.getRepository(Post).findOneBy({
             text: "Hello how are you?",
         })
         console.log("Post has been loaded: ", loadedPost)
 
         // take last 5 of saved posts
-        const allPosts = await connection.getRepository(Post).find({ take: 5 })
+        const allPosts = await dataSource.getRepository(Post).find({ take: 5 })
         console.log("All posts: ", allPosts)
 
         // perform mongodb-specific query using cursor which returns properly initialized entities
-        const cursor1 = connection
+        const cursor1 = dataSource
             .getMongoRepository(Post)
             .createEntityCursor({ title: "hello" })
         console.log("Post retrieved via cursor #1: ", await cursor1.next())
         console.log("Post retrieved via cursor #2: ", await cursor1.next())
 
         // we can also perform mongodb-specific queries using mongodb-specific entity manager
-        const cursor2 = connection.mongoManager.createEntityCursor(Post, {
+        const cursor2 = dataSource.mongoManager.createEntityCursor(Post, {
             title: "hello",
         })
         console.log(

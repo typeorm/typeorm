@@ -179,7 +179,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
      * (because it can clear all your database).
      */
     async clearDatabase(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = OFF;`)
+        await this.query(`PRAGMA foreign_keys = OFF`)
         try {
             const selectViewDropsQuery = `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`
             const dropViewQueries: ObjectLiteral[] = await this.query(
@@ -198,7 +198,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 dropTableQueries.map((q) => this.query(q["query"])),
             )
         } finally {
-            await this.query(`PRAGMA foreign_keys = ON;`)
+            await this.query(`PRAGMA foreign_keys = ON`)
         }
     }
 

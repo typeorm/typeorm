@@ -545,6 +545,37 @@ export class CockroachQueryRunner
                 })
         }
 
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -609,6 +640,37 @@ export class CockroachQueryRunner
                     ),
                 )
             })
+
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
@@ -679,7 +741,10 @@ export class CockroachQueryRunner
         )
 
         // rename column primary key constraint
-        if (newTable.primaryColumns.length > 0) {
+        if (
+            newTable.primaryColumns.length > 0 &&
+            !newTable.primaryColumns[0].primaryKeyConstraintName
+        ) {
             const columnNames = newTable.primaryColumns.map(
                 (column) => column.name,
             )
@@ -711,6 +776,15 @@ export class CockroachQueryRunner
 
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
+            const oldUniqueName =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    oldTable,
+                    unique.columnNames,
+                )
+
+            // Skip renaming if Unique has user defined constraint name
+            if (unique.name !== oldUniqueName) return
+
             // build new constraint name
             const newUniqueName =
                 this.connection.namingStrategy.uniqueConstraintName(
@@ -744,6 +818,15 @@ export class CockroachQueryRunner
 
         // rename index constraints
         newTable.indices.forEach((index) => {
+            const oldIndexName = this.connection.namingStrategy.indexName(
+                oldTable,
+                index.columnNames,
+                index.where,
+            )
+
+            // Skip renaming if Index has user defined constraint name
+            if (index.name !== oldIndexName) return
+
             // build new constraint name
             const { schema } = this.driver.parseTableName(newTable)
             const newIndexName = this.connection.namingStrategy.indexName(
@@ -768,6 +851,17 @@ export class CockroachQueryRunner
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
+            const oldForeignKeyName =
+                this.connection.namingStrategy.foreignKeyName(
+                    oldTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
+
+            // Skip renaming if foreign key has user defined constraint name
+            if (foreignKey.name !== oldForeignKeyName) return
+
             // build new constraint name
             const newForeignKeyName =
                 this.connection.namingStrategy.foreignKeyName(
@@ -843,12 +937,15 @@ export class CockroachQueryRunner
         if (column.isPrimary) {
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
-            // todo: altering pk is not supported yet https://github.com/cockroachdb/cockroach/issues/19141
+            // todo: https://go.crdb.dev/issue-v/48026/v21.1
             if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    primaryColumns.map((column) => column.name),
-                )
+                const pkName = primaryColumns[0].primaryKeyConstraintName
+                    ? primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          primaryColumns.map((column) => column.name),
+                      )
+
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
                     .join(", ")
@@ -869,10 +966,13 @@ export class CockroachQueryRunner
             }
 
             primaryColumns.push(column)
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -890,6 +990,31 @@ export class CockroachQueryRunner
                     )} DROP CONSTRAINT "${pkName}"`,
                 ),
             )
+        }
+
+        if (column.generatedType && column.asExpression) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
         }
 
         // create column index
@@ -1026,7 +1151,9 @@ export class CockroachQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
+            oldColumn.length !== newColumn.length ||
+            oldColumn.generatedType !== newColumn.generatedType ||
+            oldColumn.asExpression !== newColumn.asExpression
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
@@ -1053,7 +1180,10 @@ export class CockroachQueryRunner
                 )
 
                 // rename column primary key constraint
-                if (oldColumn.isPrimary === true) {
+                if (
+                    oldColumn.isPrimary === true &&
+                    !oldColumn.primaryKeyConstraintName
+                ) {
                     const primaryColumns = clonedTable.primaryColumns
 
                     // build old primary constraint name
@@ -1095,6 +1225,15 @@ export class CockroachQueryRunner
 
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
+                    const oldUniqueName =
+                        this.connection.namingStrategy.uniqueConstraintName(
+                            clonedTable,
+                            unique.columnNames,
+                        )
+
+                    // Skip renaming if Unique has user defined constraint name
+                    if (unique.name !== oldUniqueName) return
+
                     // build new constraint name
                     unique.columnNames.splice(
                         unique.columnNames.indexOf(oldColumn.name),
@@ -1133,6 +1272,16 @@ export class CockroachQueryRunner
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                    const oldIndexName =
+                        this.connection.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                            index.where,
+                        )
+
+                    // Skip renaming if Index has user defined constraint name
+                    if (index.name !== oldIndexName) return
+
                     // build new constraint name
                     index.columnNames.splice(
                         index.columnNames.indexOf(oldColumn.name),
@@ -1165,6 +1314,17 @@ export class CockroachQueryRunner
                 clonedTable
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
+                        const foreignKeyName =
+                            this.connection.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        // Skip renaming if foreign key has user defined constraint name
+                        if (foreignKey.name !== foreignKeyName) return
+
                         // build new constraint name
                         foreignKey.columnNames.splice(
                             foreignKey.columnNames.indexOf(oldColumn.name),
@@ -1289,14 +1449,17 @@ export class CockroachQueryRunner
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1320,14 +1483,17 @@ export class CockroachQueryRunner
                         (column) => column.name === newColumn.name,
                     )
                     column!.isPrimary = true
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1359,11 +1525,14 @@ export class CockroachQueryRunner
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName =
-                            this.connection.namingStrategy.primaryKeyName(
-                                clonedTable,
-                                primaryColumns.map((column) => column.name),
-                            )
+                        const pkName = primaryColumns[0]
+                            .primaryKeyConstraintName
+                            ? primaryColumns[0].primaryKeyConstraintName
+                            : this.connection.namingStrategy.primaryKeyName(
+                                  clonedTable,
+                                  primaryColumns.map((column) => column.name),
+                              )
+
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
                             .join(", ")
@@ -1580,12 +1749,15 @@ export class CockroachQueryRunner
         const downQueries: Query[] = []
 
         // drop primary key constraint
-        // todo: altering pk is not supported yet https://github.com/cockroachdb/cockroach/issues/19141
+        // todo: https://go.crdb.dev/issue-v/48026/v21.1
         if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                clonedTable.primaryColumns.map((column) => column.name),
-            )
+            const pkName = column.primaryKeyConstraintName
+                ? column.primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      clonedTable.primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
                 .join(", ")
@@ -1610,13 +1782,20 @@ export class CockroachQueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    clonedTable.primaryColumns.map((column) => column.name),
-                )
+                const pkName = clonedTable.primaryColumns[0]
+                    .primaryKeyConstraintName
+                    ? clonedTable.primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          clonedTable.primaryColumns.map(
+                              (column) => column.name,
+                          ),
+                      )
+
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
                     .join(", ")
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1714,6 +1893,30 @@ export class CockroachQueryRunner
             )
         }
 
+        if (column.generatedType && column.asExpression) {
+            const currentSchema = await this.getCurrentSchema()
+            let { schema } = this.driver.parseTableName(table)
+            if (!schema) {
+                schema = currentSchema
+            }
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: schema,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.removeColumn(column)
@@ -1738,13 +1941,14 @@ export class CockroachQueryRunner
     async createPrimaryKey(
         tableOrName: Table | string,
         columnNames: string[],
+        constraintName?: string,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
         const clonedTable = table.clone()
 
-        const up = this.createPrimaryKeySql(table, columnNames)
+        const up = this.createPrimaryKeySql(table, columnNames, constraintName)
 
         // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
         clonedTable.columns.forEach((column) => {
@@ -1775,13 +1979,17 @@ export class CockroachQueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -1803,10 +2011,13 @@ export class CockroachQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = this.connection.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
-        )
+        const pkName = primaryColumns[0].primaryKeyConstraintName
+            ? primaryColumns[0].primaryKeyConstraintName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  columnNames,
+              )
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -1832,7 +2043,10 @@ export class CockroachQueryRunner
     /**
      * Drops a primary key.
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
@@ -1840,6 +2054,7 @@ export class CockroachQueryRunner
         const down = this.createPrimaryKeySql(
             table,
             table.primaryColumns.map((column) => column.name),
+            constraintName,
         )
         await this.executeQueries(up, down)
         table.primaryColumns.forEach((column) => {
@@ -2133,12 +2348,7 @@ export class CockroachQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         // CockroachDB stores unique indices and UNIQUE constraints
         if (index.isUnique) {
@@ -2189,6 +2399,9 @@ export class CockroachQueryRunner
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -2369,12 +2582,14 @@ export class CockroachQueryRunner
             })
             .join(" OR ")
         const columnsSql =
-            `
-            SELECT
-                *,
-                pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description
-            FROM "information_schema"."columns"
-            WHERE "is_hidden" = 'NO' AND ` + columnsCondiiton
+            `SELECT "columns".*, "attr"."attgenerated" as "generated_type", ` +
+            `pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description ` +
+            `FROM "information_schema"."columns" ` +
+            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relname" = "table_name" ` +
+            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."oid" = "cls"."relnamespace" AND "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_attribute" AS "attr" ON "attr"."attrelid" = "cls"."oid" AND "attr"."attname" = "column_name" AND "attr"."attnum" = "ordinal_position" ` +
+            `WHERE "is_hidden" = 'NO' AND ` +
+            columnsCondiiton
 
         const constraintsCondition = dbTables
             .map(({ table_name, table_schema }) => {
@@ -2600,10 +2815,51 @@ export class CockroachQueryRunner
                             }
                             tableColumn.isNullable =
                                 dbColumn["is_nullable"] === "YES"
-                            tableColumn.isPrimary = !!columnConstraints.find(
+
+                            const primaryConstraint = columnConstraints.find(
                                 (constraint) =>
                                     constraint["constraint_type"] === "PRIMARY",
                             )
+                            if (primaryConstraint) {
+                                tableColumn.isPrimary = true
+                                // find another columns involved in primary key constraint
+                                const anotherPrimaryConstraints =
+                                    dbConstraints.filter(
+                                        (constraint) =>
+                                            constraint["table_name"] ===
+                                                dbColumn["table_name"] &&
+                                            constraint["table_schema"] ===
+                                                dbColumn["table_schema"] &&
+                                            constraint["column_name"] !==
+                                                dbColumn["column_name"] &&
+                                            constraint["constraint_type"] ===
+                                                "PRIMARY",
+                                    )
+
+                                // collect all column names
+                                const columnNames =
+                                    anotherPrimaryConstraints.map(
+                                        (constraint) =>
+                                            constraint["column_name"],
+                                    )
+                                columnNames.push(dbColumn["column_name"])
+
+                                // build default primary key constraint name
+                                const pkName =
+                                    this.connection.namingStrategy.primaryKeyName(
+                                        table,
+                                        columnNames,
+                                    )
+
+                                // if primary key has user-defined constraint name, write it in table column
+                                if (
+                                    primaryConstraint["constraint_name"] !==
+                                    pkName
+                                ) {
+                                    tableColumn.primaryKeyConstraintName =
+                                        primaryConstraint["constraint_name"]
+                                }
+                            }
 
                             const uniqueConstraints = columnConstraints.filter(
                                 (constraint) =>
@@ -2659,6 +2915,34 @@ export class CockroachQueryRunner
                                             /^(-?[\d\.]+)$/,
                                             "($1)",
                                         )
+                                }
+                            }
+
+                            if (
+                                dbColumn["is_generated"] === "YES" &&
+                                dbColumn["generation_expression"]
+                            ) {
+                                tableColumn.generatedType =
+                                    dbColumn["generated_type"] === "s"
+                                        ? "STORED"
+                                        : "VIRTUAL"
+                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                                const asExpressionQuery =
+                                    await this.selectTypeormMetadataSql({
+                                        schema: dbTable["table_schema"],
+                                        table: dbTable["table_name"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+                                if (results[0] && results[0].value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
                                 }
                             }
 
@@ -2953,11 +3237,13 @@ export class CockroachQueryRunner
             (column) => column.isPrimary,
         )
         if (primaryColumns.length > 0) {
-            const primaryKeyName =
-                this.connection.namingStrategy.primaryKeyName(
-                    table,
-                    primaryColumns.map((column) => column.name),
-                )
+            const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -3001,9 +3287,7 @@ export class CockroachQueryRunner
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
-
         let { schema, tableName: name } = this.driver.parseTableName(view)
-
         if (!schema) {
             schema = currentSchema
         }
@@ -3083,11 +3367,14 @@ export class CockroachQueryRunner
     /**
      * Builds create primary key sql.
      */
-    protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+    protected createPrimaryKeySql(
+        table: Table,
+        columnNames: string[],
+        constraintName?: string,
+    ): Query {
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -3102,11 +3389,14 @@ export class CockroachQueryRunner
      * Builds drop primary key sql.
      */
     protected dropPrimaryKeySql(table: Table): Query {
+        if (!table.primaryColumns.length)
+            throw new TypeORMError(`Table ${table} has no primary keys.`)
+
         const columnNames = table.primaryColumns.map((column) => column.name)
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+        const constraintName = table.primaryColumns[0].primaryKeyConstraintName
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
@@ -3294,10 +3584,19 @@ export class CockroachQueryRunner
                 c += " UUID DEFAULT gen_random_uuid()"
             }
         }
+
         if (!column.isGenerated)
             c += " " + this.connection.driver.createFullType(column)
-        if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
-        if (column.collation) c += ' COLLATE "' + column.collation + '"'
+
+        if (column.asExpression) {
+            c += ` AS (${column.asExpression}) ${
+                column.generatedType ? column.generatedType : "VIRTUAL"
+            }`
+        } else {
+            if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
+            if (column.collation) c += ' COLLATE "' + column.collation + '"'
+        }
+
         if (!column.isNullable) c += " NOT NULL"
         if (
             !column.isGenerated &&

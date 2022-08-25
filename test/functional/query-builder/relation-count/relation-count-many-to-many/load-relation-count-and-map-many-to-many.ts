@@ -60,6 +60,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                         "post.categoryCount",
                         "post.categories",
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts![0].categoryCount).to.be.equal(3)
@@ -385,6 +386,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                         "category.postCount",
                         "category.posts",
                     )
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories![0].postCount).to.be.equal(3)
@@ -516,6 +518,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                                 isRemoved: true,
                             }),
                     )
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories![0].postCount).to.be.equal(3)

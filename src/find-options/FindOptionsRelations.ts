@@ -25,7 +25,9 @@ export type FindOptionsRelationsProperty<Property> = Property extends Promise<
  * Relations find options.
  */
 export type FindOptionsRelations<Entity> = {
-    [P in keyof Entity]?: FindOptionsRelationsProperty<NonNullable<Entity[P]>>
+    [P in keyof Entity]?: P extends "toString"
+        ? unknown
+        : FindOptionsRelationsProperty<NonNullable<Entity[P]>>
 }
 
 /**

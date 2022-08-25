@@ -6,7 +6,7 @@ import {
 } from "../../../../src"
 
 @Entity()
-@TableInheritance({ column: { type: "varchar", name: "type" } })
+@TableInheritance({ column: { type: String, name: "type" } })
 export class Contact {
     @PrimaryGeneratedColumn()
     id: number

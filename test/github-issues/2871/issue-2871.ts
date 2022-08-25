@@ -1,19 +1,16 @@
 import "reflect-metadata"
 import { expect } from "chai"
-
 import {
     closeTestingConnections,
     reloadTestingDatabases,
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { createConnection, Repository } from "../../../src"
-
+import { DataSource, Repository } from "../../../src"
 import { Bar } from "./entity/Bar"
 import { DocumentEnum } from "./documentEnum"
 
 describe("github issues > #2871 Empty enum array is returned as array with single empty string", () => {
-    let connection: DataSource
+    let dataSource: DataSource
     let repository: Repository<Bar>
 
     before(async () => {
@@ -25,17 +22,18 @@ describe("github issues > #2871 Empty enum array is returned as array with singl
 
         if (!options) return
 
-        connection = await createConnection(options)
+        dataSource = new DataSource(options)
+        await dataSource.initialize()
     })
     beforeEach(async () => {
-        if (!connection) return
-        await reloadTestingDatabases([connection])
-        repository = connection.getRepository(Bar)
+        if (!dataSource) return
+        await reloadTestingDatabases([dataSource])
+        repository = dataSource.getRepository(Bar)
     })
-    after(() => closeTestingConnections([connection]))
+    after(() => closeTestingConnections([dataSource]))
 
     it("should extract array with values from enum array values from 'postgres'", async () => {
-        if (!connection) return
+        if (!dataSource) return
         const documents: DocumentEnum[] = [
             DocumentEnum.DOCUMENT_A,
             DocumentEnum.DOCUMENT_B,
@@ -51,7 +49,7 @@ describe("github issues > #2871 Empty enum array is returned as array with singl
     })
 
     it("should extract array with one value from enum array with one value from 'postgres'", async () => {
-        if (!connection) return
+        if (!dataSource) return
         const documents: DocumentEnum[] = [DocumentEnum.DOCUMENT_D]
 
         const barSaved = await repository.save({ documents })
@@ -64,7 +62,7 @@ describe("github issues > #2871 Empty enum array is returned as array with singl
 
     // This `it` test that issue #2871 is fixed
     it("should extract empty array from empty enum array from 'postgres'", async () => {
-        if (!connection) return
+        if (!dataSource) return
         const documents: DocumentEnum[] = []
 
         const barSaved = await repository.save({ documents })

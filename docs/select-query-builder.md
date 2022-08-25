@@ -178,13 +178,13 @@ There are 5 different `QueryBuilder` types available:
 -   `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD].
     Example:
 
-        ```typescript
-        await dataSource
-            .createQueryBuilder()
-            .relation(User,"photos")
-            .of(id)
-            .loadMany();
-        ```
+    ```typescript
+    await dataSource
+        .createQueryBuilder()
+        .relation(User,"photos")
+        .of(id)
+        .loadMany();
+    ```
 
 You can switch between different types of query builder within any of them,
 once you do, you will get a new instance of query builder (unlike all other methods).
@@ -1155,3 +1155,37 @@ const users = await dataSource
 ```
 
 You will get all the rows, including the ones which are deleted.
+
+## Common table expressions
+
+`QueryBuilder` instances
+support [common table expressions](https://en.wikipedia.org/wiki/Hierarchical_and_recursive_queries_in_SQL#Common_table_expression)
+, if minimal supported version of your database supports them. Common table expressions aren't supported for Oracle yet.
+
+```typescript
+const users = await connection.getRepository(User)
+    .createQueryBuilder('user')
+    .select("user.id", 'id')
+    .addCommonTableExpression(`
+      SELECT "userId" FROM "post"
+    `, 'post_users_ids')
+    .where(`user.id IN (SELECT "userId" FROM 'post_users_ids')`)
+    .getMany();
+```
+
+Result values of `InsertQueryBuilder` or `UpdateQueryBuilder` can be used in Postgres:
+
+```typescript
+const insertQueryBuilder = connection.getRepository(User)
+    .createQueryBuilder()
+    .insert({
+        name: 'John Smith'
+    })
+    .returning(['id']);
+
+const users = await connection.getRepository(User)
+    .createQueryBuilder('user')
+    .addCommonTableExpression(insertQueryBuilder, 'insert_results')
+    .where(`user.id IN (SELECT "id" FROM 'insert_results')`)
+    .getMany();
+```

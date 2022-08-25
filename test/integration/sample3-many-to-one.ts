@@ -1,7 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../src/data-source/DataSource"
-import { createConnection } from "../../src/index"
 import { Repository } from "../../src/repository/Repository"
 import { PostDetails } from "../../sample/sample3-many-to-one/entity/PostDetails"
 import { Post } from "../../sample/sample3-many-to-one/entity/Post"
@@ -18,7 +17,7 @@ describe("many-to-one", function () {
     // -------------------------------------------------------------------------
 
     // connect to db
-    let connection: DataSource
+    let dataSource: DataSource
     before(async function () {
         const options = setupSingleTestingConnection("mysql", {
             entities: [
@@ -33,15 +32,16 @@ describe("many-to-one", function () {
         })
 
         if (!options) return
-        connection = await createConnection(options)
+        dataSource = new DataSource(options)
+        await dataSource.initialize()
     })
 
-    after(() => connection.close())
+    after(() => dataSource.destroy())
 
     // clean up database before each test
     function reloadDatabase() {
-        if (!connection) return
-        return connection.synchronize(true)
+        if (!dataSource) return
+        return dataSource.synchronize(true)
     }
 
     let postRepository: Repository<Post>,
@@ -50,12 +50,12 @@ describe("many-to-one", function () {
         postImageRepository: Repository<PostImage>,
         postMetadataRepository: Repository<PostMetadata>
     before(function () {
-        if (!connection) return
-        postRepository = connection.getRepository(Post)
-        postDetailsRepository = connection.getRepository(PostDetails)
-        postCategoryRepository = connection.getRepository(PostCategory)
-        postImageRepository = connection.getRepository(PostImage)
-        postMetadataRepository = connection.getRepository(PostMetadata)
+        if (!dataSource) return
+        postRepository = dataSource.getRepository(Post)
+        postDetailsRepository = dataSource.getRepository(PostDetails)
+        postCategoryRepository = dataSource.getRepository(PostCategory)
+        postImageRepository = dataSource.getRepository(PostImage)
+        postMetadataRepository = dataSource.getRepository(PostMetadata)
     })
 
     // -------------------------------------------------------------------------
@@ -63,7 +63,7 @@ describe("many-to-one", function () {
     // -------------------------------------------------------------------------
 
     describe("insert post and details (has inverse relation + full cascade options)", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, details: PostDetails, savedPost: Post
 
         before(reloadDatabase)
@@ -97,7 +97,7 @@ describe("many-to-one", function () {
         })
 
         it("should have inserted post in the database", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedPost = new Post()
             expectedPost.id = savedPost.id
             expectedPost.text = savedPost.text
@@ -111,7 +111,7 @@ describe("many-to-one", function () {
         })
 
         it("should have inserted post details in the database", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedDetails = new PostDetails()
             expectedDetails.id = savedPost.details!.id
             expectedDetails.authorName = savedPost.details!.authorName
@@ -126,7 +126,7 @@ describe("many-to-one", function () {
         })
 
         it("should load post and its details if left join used", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedPost = new Post()
             expectedPost.id = savedPost.id
             expectedPost.text = savedPost.text
@@ -147,7 +147,7 @@ describe("many-to-one", function () {
         })
 
         it("should load details and its post if left join used (from reverse side)", function () {
-            if (!connection) return
+            if (!dataSource) return
 
             const expectedDetails = new PostDetails()
             expectedDetails.id = savedPost.details!.id
@@ -173,7 +173,7 @@ describe("many-to-one", function () {
         })
 
         it("should load saved post without details if left joins are not specified", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedPost = new Post()
             expectedPost.id = savedPost.id
             expectedPost.text = savedPost.text
@@ -187,7 +187,7 @@ describe("many-to-one", function () {
         })
 
         it("should load saved post without details if left joins are not specified", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedDetails = new PostDetails()
             expectedDetails.id = savedPost.details!.id
             expectedDetails.authorName = savedPost.details!.authorName
@@ -203,7 +203,7 @@ describe("many-to-one", function () {
     })
 
     describe("insert post and category (one-side relation)", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, category: PostCategory, savedPost: Post
 
         before(reloadDatabase)
@@ -236,7 +236,7 @@ describe("many-to-one", function () {
         })
 
         it("should have inserted post in the database", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedPost = new Post()
             expectedPost.id = savedPost.id
             expectedPost.text = savedPost.text
@@ -249,7 +249,7 @@ describe("many-to-one", function () {
         })
 
         it("should have inserted category in the database", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedPost = new PostCategory()
             expectedPost.id = savedPost.category.id
             expectedPost.name = "technology"
@@ -261,7 +261,7 @@ describe("many-to-one", function () {
         })
 
         it("should load post and its category if left join used", function () {
-            if (!connection) return
+            if (!dataSource) return
             const expectedPost = new Post()
             expectedPost.id = savedPost.id
             expectedPost.title = savedPost.title
@@ -291,7 +291,7 @@ describe("many-to-one", function () {
     })
 
     describe("cascade updates should not be executed when cascadeUpdate option is not set", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, details: PostDetails
 
         before(reloadDatabase)
@@ -334,7 +334,7 @@ describe("many-to-one", function () {
     })
 
     describe("cascade remove should not be executed when cascadeRemove option is not set", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, details: PostDetails
 
         before(reloadDatabase)
@@ -374,7 +374,7 @@ describe("many-to-one", function () {
     })
 
     describe("cascade updates should be executed when cascadeUpdate option is set", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, newImage: PostImage
 
         before(reloadDatabase)
@@ -421,7 +421,7 @@ describe("many-to-one", function () {
     })
 
     describe("cascade remove should be executed when cascadeRemove option is set", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, newMetadata: PostMetadata
 
         before(reloadDatabase)
@@ -468,7 +468,7 @@ describe("many-to-one", function () {
     })
 
     describe("insert post details from reverse side", function () {
-        if (!connection) return
+        if (!dataSource) return
         let newPost: Post, details: PostDetails, savedDetails: PostDetails
 
         before(reloadDatabase)

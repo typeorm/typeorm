@@ -1,14 +1,9 @@
-import {
-    Column,
-    Entity,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-} from "../../../../../src"
+import { Column, Entity, ManyToOne, PrimaryColumn } from "../../../../../src"
 import { Author } from "./Author"
 
 @Entity()
 export class Photo {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column()

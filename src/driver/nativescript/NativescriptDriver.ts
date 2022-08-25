@@ -120,7 +120,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
                     // we need to enable foreign keys in sqlite to make sure all foreign key related features
                     // working properly. this also makes onDelete work with sqlite.
                     db.execSQL(
-                        `PRAGMA foreign_keys = ON;`,
+                        `PRAGMA foreign_keys = ON`,
                         [],
                         (err: Error, result: any): any => {
                             if (err) return fail(err)

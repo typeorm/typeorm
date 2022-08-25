@@ -194,7 +194,7 @@ export class MigrationExecutor {
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations()
 
-        // variable to store all migrations we did successefuly
+        // variable to store all migrations we did successfully
         const successMigrations: Migration[] = []
 
         // find all migrations that needs to be executed

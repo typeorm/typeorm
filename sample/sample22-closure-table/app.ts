@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Category } from "./entity/Category"
 
 const options: DataSourceOptions = {
@@ -14,9 +14,10 @@ const options: DataSourceOptions = {
     entities: [Category],
 }
 
-createConnection(options).then(
-    (connection) => {
-        let categoryRepository = connection.getTreeRepository(Category)
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    (dataSource) => {
+        let categoryRepository = dataSource.getTreeRepository(Category)
 
         let childChildCategory1 = new Category()
         childChildCategory1.name = "Child #1 of Child #1 of Category #1"

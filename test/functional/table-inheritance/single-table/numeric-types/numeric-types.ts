@@ -48,6 +48,7 @@ describe("table-inheritance > single-table > numeric types", () => {
 
                 let persons = await connection.manager
                     .createQueryBuilder(Person, "person")
+                    .addOrderBy("person.id")
                     .getMany()
 
                 expect(persons[0].id).to.be.equal(1)

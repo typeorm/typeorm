@@ -4,7 +4,7 @@ import {
     JoinTable,
     ManyToMany,
     ManyToOne,
-    PrimaryGeneratedColumn,
+    PrimaryColumn,
 } from "../../../../../src"
 import { Tag } from "./Tag"
 import { Author } from "./Author"
@@ -12,7 +12,7 @@ import { Counters } from "./Counters"
 
 @Entity()
 export class Post {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column()
@@ -30,4 +30,12 @@ export class Post {
 
     @Column(() => Counters)
     counters: Counters
+
+    toString() {
+        return this.title
+    }
+
+    doSomething() {
+        return 123
+    }
 }

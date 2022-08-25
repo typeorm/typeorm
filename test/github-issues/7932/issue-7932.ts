@@ -31,7 +31,7 @@ describe("github issues > #7932  non-ascii characters assigned to var/char colum
                 entity.fixedLengthContent = "\u2022"
 
                 await repo.save(entity)
-                const savedEntity = await repo.findOne({
+                const [savedEntity] = await repo.find({
                     order: { created: "DESC" },
                 })
 

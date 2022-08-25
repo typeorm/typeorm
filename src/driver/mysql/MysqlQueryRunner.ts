@@ -432,6 +432,33 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 downQueries.push(this.dropForeignKeySql(table, foreignKey)),
             )
 
+        // if table has column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentDatabase = await this.getCurrentDatabase()
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         return this.executeQueries(upQueries, downQueries)
     }
 
@@ -468,6 +495,33 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         upQueries.push(this.dropTableSql(table))
         downQueries.push(this.createTableSql(table, createForeignKeys))
+
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const currentDatabase = await this.getCurrentDatabase()
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
@@ -537,6 +591,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // rename index constraints
         newTable.indices.forEach((index) => {
+            const oldIndexName = this.connection.namingStrategy.indexName(
+                oldTable,
+                index.columnNames,
+            )
+
+            // Skip renaming if Index has user defined constraint name
+            if (index.name !== oldIndexName) return
+
             // build new constraint name
             const columnNames = index.columnNames
                 .map((column) => `\`${column}\``)
@@ -580,6 +642,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // rename foreign key constraint
         newTable.foreignKeys.forEach((foreignKey) => {
+            const oldForeignKeyName =
+                this.connection.namingStrategy.foreignKeyName(
+                    oldTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
+
+            // Skip renaming if foreign key has user defined constraint name
+            if (foreignKey.name !== oldForeignKeyName) return
+
             // build new constraint name
             const columnNames = foreignKey.columnNames
                 .map((column) => `\`${column}\``)
@@ -756,6 +829,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
         }
 
+        if (column.generatedType && column.asExpression) {
+            const currentDatabase = await this.getCurrentDatabase()
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         // create column index
         const columnIndex = clonedTable.indices.find(
             (index) =>
@@ -872,7 +966,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
-            oldColumn.generatedType !== newColumn.generatedType
+            (oldColumn.generatedType &&
+                newColumn.generatedType &&
+                oldColumn.generatedType !== newColumn.generatedType) ||
+            (!oldColumn.generatedType &&
+                newColumn.generatedType === "VIRTUAL") ||
+            (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
@@ -907,6 +1006,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                    const oldUniqueName =
+                        this.connection.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                        )
+
+                    // Skip renaming if Index has user defined constraint name
+                    if (index.name !== oldUniqueName) return
+
                     // build new constraint name
                     index.columnNames.splice(
                         index.columnNames.indexOf(oldColumn.name),
@@ -960,6 +1068,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 clonedTable
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
+                        const foreignKeyName =
+                            this.connection.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        // Skip renaming if foreign key has user defined constraint name
+                        if (foreignKey.name !== foreignKeyName) return
+
                         // build new constraint name
                         foreignKey.columnNames.splice(
                             foreignKey.columnNames.indexOf(oldColumn.name),
@@ -1042,6 +1161,86 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
                     ),
                 )
+
+                if (oldColumn.generatedType && !newColumn.generatedType) {
+                    // if column changed from generated to non-generated, delete record from typeorm metadata
+
+                    const currentDatabase = await this.getCurrentDatabase()
+                    const deleteQuery = this.deleteTypeormMetadataSql({
+                        schema: currentDatabase,
+                        table: table.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                    })
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        schema: currentDatabase,
+                        table: table.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                        value: oldColumn.asExpression,
+                    })
+
+                    upQueries.push(deleteQuery)
+                    downQueries.push(insertQuery)
+                } else if (
+                    !oldColumn.generatedType &&
+                    newColumn.generatedType
+                ) {
+                    // if column changed from non-generated to generated, insert record into typeorm metadata
+
+                    const currentDatabase = await this.getCurrentDatabase()
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        schema: currentDatabase,
+                        table: table.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: newColumn.name,
+                        value: newColumn.asExpression,
+                    })
+                    const deleteQuery = this.deleteTypeormMetadataSql({
+                        schema: currentDatabase,
+                        table: table.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: newColumn.name,
+                    })
+
+                    upQueries.push(insertQuery)
+                    downQueries.push(deleteQuery)
+                } else if (oldColumn.asExpression !== newColumn.asExpression) {
+                    // if only expression changed, just update it in typeorm_metadata table
+                    const currentDatabase = await this.getCurrentDatabase()
+                    const updateQuery = this.connection
+                        .createQueryBuilder()
+                        .update(this.getTypeormMetadataTableName())
+                        .set({ value: newColumn.asExpression })
+                        .where("`type` = :type", {
+                            type: MetadataTableType.GENERATED_COLUMN,
+                        })
+                        .andWhere("`name` = :name", { name: oldColumn.name })
+                        .andWhere("`schema` = :schema", {
+                            schema: currentDatabase,
+                        })
+                        .andWhere("`table` = :table", { table: table.name })
+                        .getQueryAndParameters()
+
+                    const revertUpdateQuery = this.connection
+                        .createQueryBuilder()
+                        .update(this.getTypeormMetadataTableName())
+                        .set({ value: oldColumn.asExpression })
+                        .where("`type` = :type", {
+                            type: MetadataTableType.GENERATED_COLUMN,
+                        })
+                        .andWhere("`name` = :name", { name: newColumn.name })
+                        .andWhere("`schema` = :schema", {
+                            schema: currentDatabase,
+                        })
+                        .andWhere("`table` = :table", { table: table.name })
+                        .getQueryAndParameters()
+
+                    upQueries.push(new Query(updateQuery[0], updateQuery[1]))
+                    downQueries.push(
+                        new Query(revertUpdateQuery[0], revertUpdateQuery[1]),
+                    )
+                }
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -1482,6 +1681,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             ),
         )
 
+        if (column.generatedType && column.asExpression) {
+            const currentDatabase = await this.getCurrentDatabase()
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                schema: currentDatabase,
+                table: table.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
 
         clonedTable.removeColumn(column)
@@ -1880,12 +2099,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -1923,6 +2137,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -2109,13 +2326,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         database = currentDatabase
                     }
 
-                    return `
-                        SELECT \`TABLE_SCHEMA\`,
-                               \`TABLE_NAME\`
-                        FROM \`INFORMATION_SCHEMA\`.\`TABLES\`
-                        WHERE \`TABLE_SCHEMA\` = '${database}'
-                          AND \`TABLE_NAME\` = '${name}'
-                    `
+                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
                 })
                 .join(" UNION ")
 
@@ -2285,261 +2496,311 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )
 
                 // create columns from the loaded columns
-                table.columns = dbColumns
-                    .filter(
-                        (dbColumn) =>
-                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbColumn["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"],
-                    )
-                    .map((dbColumn) => {
-                        const columnUniqueIndices = dbIndices.filter(
-                            (dbIndex) => {
-                                return (
-                                    dbIndex["TABLE_NAME"] ===
-                                        dbTable["TABLE_NAME"] &&
-                                    dbIndex["TABLE_SCHEMA"] ===
-                                        dbTable["TABLE_SCHEMA"] &&
-                                    dbIndex["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"] &&
-                                    parseInt(dbIndex["NON_UNIQUE"], 10) === 0
-                                )
-                            },
+                table.columns = await Promise.all(
+                    dbColumns
+                        .filter(
+                            (dbColumn) =>
+                                dbColumn["TABLE_NAME"] ===
+                                    dbTable["TABLE_NAME"] &&
+                                dbColumn["TABLE_SCHEMA"] ===
+                                    dbTable["TABLE_SCHEMA"],
                         )
-
-                        const tableMetadata =
-                            this.connection.entityMetadatas.find(
-                                (metadata) =>
-                                    this.getTablePath(table) ===
-                                    this.getTablePath(metadata),
+                        .map(async (dbColumn) => {
+                            const columnUniqueIndices = dbIndices.filter(
+                                (dbIndex) => {
+                                    return (
+                                        dbIndex["TABLE_NAME"] ===
+                                            dbTable["TABLE_NAME"] &&
+                                        dbIndex["TABLE_SCHEMA"] ===
+                                            dbTable["TABLE_SCHEMA"] &&
+                                        dbIndex["COLUMN_NAME"] ===
+                                            dbColumn["COLUMN_NAME"] &&
+                                        parseInt(dbIndex["NON_UNIQUE"], 10) ===
+                                            0
+                                    )
+                                },
                             )
-                        const hasIgnoredIndex =
-                            columnUniqueIndices.length > 0 &&
-                            tableMetadata &&
-                            tableMetadata.indices.some((index) => {
-                                return columnUniqueIndices.some(
-                                    (uniqueIndex) => {
-                                        return (
-                                            index.name ===
+
+                            const tableMetadata =
+                                this.connection.entityMetadatas.find(
+                                    (metadata) =>
+                                        this.getTablePath(table) ===
+                                        this.getTablePath(metadata),
+                                )
+                            const hasIgnoredIndex =
+                                columnUniqueIndices.length > 0 &&
+                                tableMetadata &&
+                                tableMetadata.indices.some((index) => {
+                                    return columnUniqueIndices.some(
+                                        (uniqueIndex) => {
+                                            return (
+                                                index.name ===
+                                                    uniqueIndex["INDEX_NAME"] &&
+                                                index.synchronize === false
+                                            )
+                                        },
+                                    )
+                                })
+
+                            const isConstraintComposite =
+                                columnUniqueIndices.every((uniqueIndex) => {
+                                    return dbIndices.some(
+                                        (dbIndex) =>
+                                            dbIndex["INDEX_NAME"] ===
                                                 uniqueIndex["INDEX_NAME"] &&
-                                            index.synchronize === false
+                                            dbIndex["COLUMN_NAME"] !==
+                                                dbColumn["COLUMN_NAME"],
+                                    )
+                                })
+
+                            const tableColumn = new TableColumn()
+                            tableColumn.name = dbColumn["COLUMN_NAME"]
+                            tableColumn.type =
+                                dbColumn["DATA_TYPE"].toLowerCase()
+
+                            // since mysql 8.0, "geometrycollection" returned as "geomcollection"
+                            // typeorm still use "geometrycollection"
+                            if (tableColumn.type === "geomcollection") {
+                                tableColumn.type = "geometrycollection"
+                            }
+
+                            tableColumn.zerofill =
+                                dbColumn["COLUMN_TYPE"].indexOf("zerofill") !==
+                                -1
+                            tableColumn.unsigned = tableColumn.zerofill
+                                ? true
+                                : dbColumn["COLUMN_TYPE"].indexOf(
+                                      "unsigned",
+                                  ) !== -1
+                            if (
+                                this.driver.withWidthColumnTypes.indexOf(
+                                    tableColumn.type as ColumnType,
+                                ) !== -1
+                            ) {
+                                const width = dbColumn["COLUMN_TYPE"].substring(
+                                    dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
+                                    dbColumn["COLUMN_TYPE"].indexOf(")"),
+                                )
+                                tableColumn.width =
+                                    width &&
+                                    !this.isDefaultColumnWidth(
+                                        table,
+                                        tableColumn,
+                                        parseInt(width),
+                                    )
+                                        ? parseInt(width)
+                                        : undefined
+                            }
+
+                            if (
+                                dbColumn["COLUMN_DEFAULT"] === null ||
+                                dbColumn["COLUMN_DEFAULT"] === undefined ||
+                                (isMariaDb &&
+                                    dbColumn["COLUMN_DEFAULT"] === "NULL")
+                            ) {
+                                tableColumn.default = undefined
+                            } else if (
+                                /^CURRENT_TIMESTAMP(\([0-9]*\))?$/i.test(
+                                    dbColumn["COLUMN_DEFAULT"],
+                                )
+                            ) {
+                                // New versions of MariaDB return expressions in lowercase.  We need to set it in
+                                // uppercase so the comparison in MysqlDriver#compareDefaultValues does not fail.
+                                tableColumn.default =
+                                    dbColumn["COLUMN_DEFAULT"].toUpperCase()
+                            } else if (
+                                isMariaDb &&
+                                VersionUtils.isGreaterOrEqual(
+                                    dbVersion,
+                                    "10.2.7",
+                                )
+                            ) {
+                                // MariaDB started adding quotes to literals in COLUMN_DEFAULT since version 10.2.7
+                                // See https://mariadb.com/kb/en/library/information-schema-columns-table/
+                                tableColumn.default = dbColumn["COLUMN_DEFAULT"]
+                            } else {
+                                tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`
+                            }
+
+                            if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
+                                // New versions of MariaDB return expressions in lowercase.  We need to set it in
+                                // uppercase so the comparison in MysqlDriver#compareExtraValues does not fail.
+                                tableColumn.onUpdate = dbColumn["EXTRA"]
+                                    .substring(
+                                        dbColumn["EXTRA"].indexOf("on update") +
+                                            10,
+                                    )
+                                    .toUpperCase()
+                            }
+
+                            if (dbColumn["GENERATION_EXPRESSION"]) {
+                                tableColumn.generatedType =
+                                    dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1
+                                        ? "VIRTUAL"
+                                        : "STORED"
+
+                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                                const asExpressionQuery =
+                                    await this.selectTypeormMetadataSql({
+                                        schema: dbTable["TABLE_SCHEMA"],
+                                        table: dbTable["TABLE_NAME"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+                                if (results[0] && results[0].value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
+                                }
+                            }
+
+                            tableColumn.isUnique =
+                                columnUniqueIndices.length > 0 &&
+                                !hasIgnoredIndex &&
+                                !isConstraintComposite
+
+                            if (isMariaDb && tableColumn.generatedType) {
+                                // do nothing - MariaDB does not support NULL/NOT NULL expressions for generated columns
+                            } else {
+                                tableColumn.isNullable =
+                                    dbColumn["IS_NULLABLE"] === "YES"
+                            }
+
+                            tableColumn.isPrimary = dbPrimaryKeys.some(
+                                (dbPrimaryKey) => {
+                                    return (
+                                        dbPrimaryKey["TABLE_NAME"] ===
+                                            dbColumn["TABLE_NAME"] &&
+                                        dbPrimaryKey["TABLE_SCHEMA"] ===
+                                            dbColumn["TABLE_SCHEMA"] &&
+                                        dbPrimaryKey["COLUMN_NAME"] ===
+                                            dbColumn["COLUMN_NAME"]
+                                    )
+                                },
+                            )
+                            tableColumn.isGenerated =
+                                dbColumn["EXTRA"].indexOf("auto_increment") !==
+                                -1
+                            if (tableColumn.isGenerated)
+                                tableColumn.generationStrategy = "increment"
+
+                            tableColumn.comment =
+                                typeof dbColumn["COLUMN_COMMENT"] ===
+                                    "string" &&
+                                dbColumn["COLUMN_COMMENT"].length === 0
+                                    ? undefined
+                                    : dbColumn["COLUMN_COMMENT"]
+                            if (dbColumn["CHARACTER_SET_NAME"])
+                                tableColumn.charset =
+                                    dbColumn["CHARACTER_SET_NAME"] ===
+                                    defaultCharset
+                                        ? undefined
+                                        : dbColumn["CHARACTER_SET_NAME"]
+                            if (dbColumn["COLLATION_NAME"])
+                                tableColumn.collation =
+                                    dbColumn["COLLATION_NAME"] ===
+                                    defaultCollation
+                                        ? undefined
+                                        : dbColumn["COLLATION_NAME"]
+
+                            // check only columns that have length property
+                            if (
+                                this.driver.withLengthColumnTypes.indexOf(
+                                    tableColumn.type as ColumnType,
+                                ) !== -1 &&
+                                dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                            ) {
+                                const length =
+                                    dbColumn[
+                                        "CHARACTER_MAXIMUM_LENGTH"
+                                    ].toString()
+                                tableColumn.length =
+                                    !this.isDefaultColumnLength(
+                                        table,
+                                        tableColumn,
+                                        length,
+                                    )
+                                        ? length
+                                        : ""
+                            }
+
+                            if (
+                                tableColumn.type === "decimal" ||
+                                tableColumn.type === "double" ||
+                                tableColumn.type === "float"
+                            ) {
+                                if (
+                                    dbColumn["NUMERIC_PRECISION"] !== null &&
+                                    !this.isDefaultColumnPrecision(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["NUMERIC_PRECISION"],
+                                    )
+                                )
+                                    tableColumn.precision = parseInt(
+                                        dbColumn["NUMERIC_PRECISION"],
+                                    )
+                                if (
+                                    dbColumn["NUMERIC_SCALE"] !== null &&
+                                    !this.isDefaultColumnScale(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["NUMERIC_SCALE"],
+                                    )
+                                )
+                                    tableColumn.scale = parseInt(
+                                        dbColumn["NUMERIC_SCALE"],
+                                    )
+                            }
+
+                            if (
+                                tableColumn.type === "enum" ||
+                                tableColumn.type === "simple-enum" ||
+                                tableColumn.type === "set"
+                            ) {
+                                const colType = dbColumn["COLUMN_TYPE"]
+                                const items = colType
+                                    .substring(
+                                        colType.indexOf("(") + 1,
+                                        colType.lastIndexOf(")"),
+                                    )
+                                    .split(",")
+                                tableColumn.enum = (items as string[]).map(
+                                    (item) => {
+                                        return item.substring(
+                                            1,
+                                            item.length - 1,
                                         )
                                     },
                                 )
-                            })
+                                tableColumn.length = ""
+                            }
 
-                        const isConstraintComposite = columnUniqueIndices.every(
-                            (uniqueIndex) => {
-                                return dbIndices.some(
-                                    (dbIndex) =>
-                                        dbIndex["INDEX_NAME"] ===
-                                            uniqueIndex["INDEX_NAME"] &&
-                                        dbIndex["COLUMN_NAME"] !==
-                                            dbColumn["COLUMN_NAME"],
-                                )
-                            },
-                        )
-
-                        const tableColumn = new TableColumn()
-                        tableColumn.name = dbColumn["COLUMN_NAME"]
-                        tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
-
-                        tableColumn.zerofill =
-                            dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
-                        tableColumn.unsigned = tableColumn.zerofill
-                            ? true
-                            : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
-                        if (
-                            this.driver.withWidthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1
-                        ) {
-                            const width = dbColumn["COLUMN_TYPE"].substring(
-                                dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
-                                dbColumn["COLUMN_TYPE"].indexOf(")"),
-                            )
-                            tableColumn.width =
-                                width &&
-                                !this.isDefaultColumnWidth(
-                                    table,
-                                    tableColumn,
-                                    parseInt(width),
-                                )
-                                    ? parseInt(width)
-                                    : undefined
-                        }
-
-                        if (
-                            dbColumn["COLUMN_DEFAULT"] === null ||
-                            dbColumn["COLUMN_DEFAULT"] === undefined ||
-                            (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")
-                        ) {
-                            tableColumn.default = undefined
-                        } else if (
-                            /^CURRENT_TIMESTAMP(\([0-9]*\))?$/i.test(
-                                dbColumn["COLUMN_DEFAULT"],
-                            )
-                        ) {
-                            // New versions of MariaDB return expressions in lowercase.  We need to set it in
-                            // uppercase so the comparison in MysqlDriver#compareDefaultValues does not fail.
-                            tableColumn.default =
-                                dbColumn["COLUMN_DEFAULT"].toUpperCase()
-                        } else if (
-                            isMariaDb &&
-                            VersionUtils.isGreaterOrEqual(dbVersion, "10.2.7")
-                        ) {
-                            // MariaDB started adding quotes to literals in COLUMN_DEFAULT since version 10.2.7
-                            // See https://mariadb.com/kb/en/library/information-schema-columns-table/
-                            tableColumn.default = dbColumn["COLUMN_DEFAULT"]
-                        } else {
-                            tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`
-                        }
-
-                        if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
-                            // New versions of MariaDB return expressions in lowercase.  We need to set it in
-                            // uppercase so the comparison in MysqlDriver#compareExtraValues does not fail.
-                            tableColumn.onUpdate = dbColumn["EXTRA"]
-                                .substring(
-                                    dbColumn["EXTRA"].indexOf("on update") + 10,
-                                )
-                                .toUpperCase()
-                        }
-
-                        if (dbColumn["GENERATION_EXPRESSION"]) {
-                            tableColumn.asExpression =
-                                dbColumn["GENERATION_EXPRESSION"]
-                            tableColumn.generatedType =
-                                dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1
-                                    ? "VIRTUAL"
-                                    : "STORED"
-                        }
-
-                        tableColumn.isUnique =
-                            columnUniqueIndices.length > 0 &&
-                            !hasIgnoredIndex &&
-                            !isConstraintComposite
-                        tableColumn.isNullable =
-                            dbColumn["IS_NULLABLE"] === "YES"
-                        tableColumn.isPrimary = dbPrimaryKeys.some(
-                            (dbPrimaryKey) => {
-                                return (
-                                    dbPrimaryKey["TABLE_NAME"] ===
-                                        dbColumn["TABLE_NAME"] &&
-                                    dbPrimaryKey["TABLE_SCHEMA"] ===
-                                        dbColumn["TABLE_SCHEMA"] &&
-                                    dbPrimaryKey["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"]
-                                )
-                            },
-                        )
-                        tableColumn.isGenerated =
-                            dbColumn["EXTRA"].indexOf("auto_increment") !== -1
-                        if (tableColumn.isGenerated)
-                            tableColumn.generationStrategy = "increment"
-
-                        tableColumn.comment =
-                            typeof dbColumn["COLUMN_COMMENT"] === "string" &&
-                            dbColumn["COLUMN_COMMENT"].length === 0
-                                ? undefined
-                                : dbColumn["COLUMN_COMMENT"]
-                        if (dbColumn["CHARACTER_SET_NAME"])
-                            tableColumn.charset =
-                                dbColumn["CHARACTER_SET_NAME"] ===
-                                defaultCharset
-                                    ? undefined
-                                    : dbColumn["CHARACTER_SET_NAME"]
-                        if (dbColumn["COLLATION_NAME"])
-                            tableColumn.collation =
-                                dbColumn["COLLATION_NAME"] === defaultCollation
-                                    ? undefined
-                                    : dbColumn["COLLATION_NAME"]
-
-                        // check only columns that have length property
-                        if (
-                            this.driver.withLengthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1 &&
-                            dbColumn["CHARACTER_MAXIMUM_LENGTH"]
-                        ) {
-                            const length =
-                                dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString()
-                            tableColumn.length = !this.isDefaultColumnLength(
-                                table,
-                                tableColumn,
-                                length,
-                            )
-                                ? length
-                                : ""
-                        }
-
-                        if (
-                            tableColumn.type === "decimal" ||
-                            tableColumn.type === "double" ||
-                            tableColumn.type === "float"
-                        ) {
                             if (
-                                dbColumn["NUMERIC_PRECISION"] !== null &&
+                                (tableColumn.type === "datetime" ||
+                                    tableColumn.type === "time" ||
+                                    tableColumn.type === "timestamp") &&
+                                dbColumn["DATETIME_PRECISION"] !== null &&
+                                dbColumn["DATETIME_PRECISION"] !== undefined &&
                                 !this.isDefaultColumnPrecision(
                                     table,
                                     tableColumn,
-                                    dbColumn["NUMERIC_PRECISION"],
+                                    parseInt(dbColumn["DATETIME_PRECISION"]),
                                 )
-                            )
+                            ) {
                                 tableColumn.precision = parseInt(
-                                    dbColumn["NUMERIC_PRECISION"],
+                                    dbColumn["DATETIME_PRECISION"],
                                 )
-                            if (
-                                dbColumn["NUMERIC_SCALE"] !== null &&
-                                !this.isDefaultColumnScale(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                            )
-                                tableColumn.scale = parseInt(
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                        }
+                            }
 
-                        if (
-                            tableColumn.type === "enum" ||
-                            tableColumn.type === "simple-enum" ||
-                            tableColumn.type === "set"
-                        ) {
-                            const colType = dbColumn["COLUMN_TYPE"]
-                            const items = colType
-                                .substring(
-                                    colType.indexOf("(") + 1,
-                                    colType.lastIndexOf(")"),
-                                )
-                                .split(",")
-                            tableColumn.enum = (items as string[]).map(
-                                (item) => {
-                                    return item.substring(1, item.length - 1)
-                                },
-                            )
-                            tableColumn.length = ""
-                        }
-
-                        if (
-                            (tableColumn.type === "datetime" ||
-                                tableColumn.type === "time" ||
-                                tableColumn.type === "timestamp") &&
-                            dbColumn["DATETIME_PRECISION"] !== null &&
-                            dbColumn["DATETIME_PRECISION"] !== undefined &&
-                            !this.isDefaultColumnPrecision(
-                                table,
-                                tableColumn,
-                                parseInt(dbColumn["DATETIME_PRECISION"]),
-                            )
-                        ) {
-                            tableColumn.precision = parseInt(
-                                dbColumn["DATETIME_PRECISION"],
-                            )
-                        }
-
-                        return tableColumn
-                    })
+                            return tableColumn
+                        }),
+                )
 
                 // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
                 const tableForeignKeyConstraints = OrmUtils.uniq(
@@ -2969,6 +3230,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 column,
             )}`
         }
+
+        if (column.charset) c += ` CHARACTER SET "${column.charset}"`
+        if (column.collation) c += ` COLLATE "${column.collation}"`
+
         if (column.asExpression)
             c += ` AS (${column.asExpression}) ${
                 column.generatedType ? column.generatedType : "VIRTUAL"
@@ -2984,8 +3249,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             c += ` (${column.enum
                 .map((value) => "'" + value.replace(/'/g, "''") + "'")
                 .join(", ")})`
-        if (column.charset) c += ` CHARACTER SET "${column.charset}"`
-        if (column.collation) c += ` COLLATE "${column.collation}"`
 
         const isMariaDb = this.driver.options.type === "mariadb"
         if (

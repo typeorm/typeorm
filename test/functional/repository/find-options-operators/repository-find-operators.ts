@@ -217,6 +217,8 @@ describe("repository > find options > operators", () => {
                     .findBy({
                         likes: MoreThanOrEqual(12),
                     })
+
+                loadedPosts.sort((a, b) => a.id - b.id)
                 loadedPosts.should.be.eql([
                     { id: 1, likes: 12, title: "About #1" },
                     { id: 3, likes: 13, title: "About #3" },
@@ -759,6 +761,7 @@ describe("repository > find options > operators", () => {
                         { value1: 2, value2: 3 },
                     ),
                 })
+                result1.sort((a, b) => a.id - b.id)
                 result1.should.be.eql([
                     { id: 2, likes: 2, title: "About #2" },
                     { id: 3, likes: 3, title: "About #3" },
@@ -773,6 +776,7 @@ describe("repository > find options > operators", () => {
                         { maxValue: 6 },
                     ),
                 })
+                result2.sort((a, b) => a.id - b.id)
                 result2.should.be.eql([
                     { id: 1, likes: 1, title: "About #1" },
                     { id: 4, likes: 4, title: "About #4" },
@@ -792,6 +796,7 @@ describe("repository > find options > operators", () => {
                         e: 1,
                     }),
                 })
+                result3.sort((a, b) => a.id - b.id)
                 result3.should.be.eql([
                     { id: 1, likes: 1, title: "About #1" },
                     { id: 5, likes: 5, title: "About #5" },
@@ -801,6 +806,7 @@ describe("repository > find options > operators", () => {
                 const result4 = await connection.getRepository(Post).findBy({
                     likes: Raw((columnAlias) => `${columnAlias} IN (2, 6)`, {}),
                 })
+                result4.sort((a, b) => a.id - b.id)
                 result4.should.be.eql([
                     { id: 2, likes: 2, title: "About #2" },
                     { id: 6, likes: 6, title: "About #6" },
@@ -813,6 +819,7 @@ describe("repository > find options > operators", () => {
                         { value: 3 },
                     ),
                 })
+                result5.sort((a, b) => a.id - b.id)
                 result5.should.be.eql([
                     { id: 2, likes: 2, title: "About #2" },
                     { id: 3, likes: 3, title: "About #3" },
@@ -826,6 +833,7 @@ describe("repository > find options > operators", () => {
                         { values: [2, 3, 6] },
                     ),
                 })
+                result6.sort((a, b) => a.id - b.id)
                 result6.should.be.eql([
                     { id: 2, likes: 2, title: "About #2" },
                     { id: 3, likes: 3, title: "About #3" },
@@ -878,6 +886,7 @@ describe("repository > find options > operators", () => {
                             likes: 4,
                         },
                     ])
+                loadedPosts.sort((a, b) => a.id - b.id)
                 loadedPosts.should.be.eql([
                     { id: 2, likes: 3, title: "About #2" },
                     { id: 3, likes: 4, title: "About #3" },

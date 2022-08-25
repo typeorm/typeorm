@@ -32,10 +32,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
     async handler(args: yargs.Arguments) {
         try {
             const timestamp = CommandUtils.getTimestamp(args.timestamp)
-            const fullPath = (args.path as string).startsWith("/")
+            const inputPath = (args.path as string).startsWith("/")
                 ? (args.path as string)
                 : path.resolve(process.cwd(), args.path as string)
-            const filename = path.basename(fullPath)
+            const filename = path.basename(inputPath)
+            const fullPath =
+                path.dirname(inputPath) + "/" + timestamp + "-" + filename
 
             const fileContent = args.outputJs
                 ? MigrationCreateCommand.getJavascriptTemplate(

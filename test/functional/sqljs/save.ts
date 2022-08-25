@@ -2,7 +2,6 @@ import "reflect-metadata"
 import * as fs from "fs"
 import * as path from "path"
 import { expect } from "chai"
-import { getSqljsManager } from "../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -28,7 +27,7 @@ describe("sqljs driver > save", () => {
 
     it("should save to file", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            connections.map(async (dataSource) => {
                 if (fs.existsSync(pathToSqlite)) {
                     fs.unlinkSync(pathToSqlite)
                 }
@@ -36,22 +35,20 @@ describe("sqljs driver > save", () => {
                 let post = new Post()
                 post.title = "The second title"
 
-                const repository = connection.getRepository(Post)
+                const repository = dataSource.getRepository(Post)
                 await repository.save(post)
-                const manager = getSqljsManager("sqljs")
 
-                await manager.saveDatabase(pathToSqlite)
+                await dataSource.sqljsManager.saveDatabase(pathToSqlite)
                 expect(fs.existsSync(pathToSqlite)).to.be.true
             }),
         ))
 
     it("should load a file that was saved", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const manager = getSqljsManager("sqljs")
-                await manager.loadDatabase(pathToSqlite)
+            connections.map(async (dataSource) => {
+                await dataSource.sqljsManager.loadDatabase(pathToSqlite)
 
-                const repository = connection.getRepository(Post)
+                const repository = dataSource.getRepository(Post)
                 const post = await repository.findOneBy({
                     title: "The second title",
                 })

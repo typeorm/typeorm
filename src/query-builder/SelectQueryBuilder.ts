@@ -80,6 +80,7 @@ export class SelectQueryBuilder<Entity>
      */
     getQuery(): string {
         let sql = this.createComment()
+        sql += this.createCteExpression()
         sql += this.createSelectExpression()
         sql += this.createJoinExpression()
         sql += this.createWhereExpression()
@@ -1486,7 +1487,8 @@ export class SelectQueryBuilder<Entity>
             | "dirty_read"
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
-            | "for_no_key_update",
+            | "for_no_key_update"
+            | "for_key_share",
         lockVersion?: undefined,
         lockTables?: string[],
     ): this
@@ -1502,7 +1504,8 @@ export class SelectQueryBuilder<Entity>
             | "dirty_read"
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
-            | "for_no_key_update",
+            | "for_no_key_update"
+            | "for_key_share",
         lockVersion?: number | Date,
         lockTables?: string[],
     ): this {
@@ -2424,7 +2427,8 @@ export class SelectQueryBuilder<Entity>
         } else if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
-            this.connection.driver.options.type === "sap"
+            this.connection.driver.options.type === "sap" ||
+            this.connection.driver.options.type === "spanner"
         ) {
             if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
             if (limit) return " LIMIT " + limit
@@ -2563,6 +2567,14 @@ export class SelectQueryBuilder<Entity>
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
+
+            case "for_key_share":
+                if (driver.options.type === "postgres") {
+                    return " FOR KEY SHARE" + lockTablesClause
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError()
+                }
+
             default:
                 return ""
         }
@@ -2794,6 +2806,27 @@ export class SelectQueryBuilder<Entity>
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
+        if (this.connection.driver.options.type === "spanner") {
+            // spanner also has gotta be different from everyone else.
+            // they do not support concatenation of different column types without casting them to string
+
+            if (primaryColumns.length === 1) {
+                return `COUNT(DISTINCT(${distinctAlias}.${this.escape(
+                    primaryColumns[0].databaseName,
+                )}))`
+            }
+
+            const columnsExpression = primaryColumns
+                .map(
+                    (primaryColumn) =>
+                        `CAST(${distinctAlias}.${this.escape(
+                            primaryColumn.databaseName,
+                        )} AS STRING)`,
+                )
+                .join(", '|;|', ")
+            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
+        }
+
         // If all else fails, fall back to a `COUNT` and `DISTINCT` across all the primary columns concatenated.
         // Per the SQL spec, this is the canonical string concatenation mechanism which is most
         // likely to work across servers implementing the SQL standard.
@@ -2899,7 +2932,6 @@ export class SelectQueryBuilder<Entity>
                 }
             }
             if (this.selects.length) {
-                console.log("adding following selects: ", this.selects)
                 this.addSelect(this.selects)
             }
 
@@ -3061,7 +3093,8 @@ export class SelectQueryBuilder<Entity>
                         "pessimistic_partial_write" ||
                     this.findOptions.lock.mode ===
                         "pessimistic_write_or_fail" ||
-                    this.findOptions.lock.mode === "for_no_key_update"
+                    this.findOptions.lock.mode === "for_no_key_update" ||
+                    this.findOptions.lock.mode === "for_key_share"
                 ) {
                     const tableNames = this.findOptions.lock.tables
                         ? this.findOptions.lock.tables.map((table) => {
@@ -3140,7 +3173,8 @@ export class SelectQueryBuilder<Entity>
                 this.expressionMap.lockMode === "pessimistic_write" ||
                 this.expressionMap.lockMode === "pessimistic_partial_write" ||
                 this.expressionMap.lockMode === "pessimistic_write_or_fail" ||
-                this.expressionMap.lockMode === "for_no_key_update") &&
+                this.expressionMap.lockMode === "for_no_key_update" ||
+                this.expressionMap.lockMode === "for_key_share") &&
             !queryRunner.isTransactionActive
         )
             throw new PessimisticLockTransactionRequiredError()
@@ -3206,7 +3240,9 @@ export class SelectQueryBuilder<Entity>
                         primaryColumn.databaseName,
                     )
 
-                    return `${distinctAlias}.${columnAlias} as "${alias}"`
+                    return `${distinctAlias}.${columnAlias} AS ${this.escape(
+                        alias,
+                    )}`
                 },
             )
 
@@ -3582,7 +3618,7 @@ export class SelectQueryBuilder<Entity>
         embedPrefix?: string,
     ) {
         for (let key in select) {
-            if (select[key] === undefined) continue
+            if (select[key] === undefined || select[key] === false) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
             const column =
@@ -3685,7 +3721,6 @@ export class SelectQueryBuilder<Entity>
                             selection &&
                             typeof selection[relationName] === "object"
                         ) {
-                            console.log("sub selection", relationName)
                             this.buildSelect(
                                 selection[
                                     relationName

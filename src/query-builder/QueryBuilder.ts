@@ -1,6 +1,7 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { DataSource } from "../data-source/DataSource"
+import { QueryBuilderCteOptions } from "./QueryBuilderCte"
 import { QueryExpressionMap } from "./QueryExpressionMap"
 import { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { UpdateQueryBuilder } from "./UpdateQueryBuilder"
@@ -23,6 +24,7 @@ import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundErro
 import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { escapeRegExp } from "../util/escapeRegExp"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -387,7 +389,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets parameter name and its value.
      *
-     * The key for this parametere may contain numbers, letters, underscores, or periods.
+     * The key for this parameter may contain numbers, letters, underscores, or periods.
      */
     setParameter(key: string, value: any): this {
         if (typeof value === "function") {
@@ -596,6 +598,22 @@ export abstract class QueryBuilder<Entity> {
         return this
     }
 
+    /**
+     * Adds CTE to query
+     */
+    addCommonTableExpression(
+        queryBuilder: QueryBuilder<any> | string,
+        alias: string,
+        options?: QueryBuilderCteOptions,
+    ): this {
+        this.expressionMap.commonTableExpressions.push({
+            queryBuilder,
+            alias,
+            options: options || {},
+        })
+        return this
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -684,12 +702,8 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Replaces all entity's propertyName to name in the given statement.
      */
-    protected replacePropertyNames(statement: string) {
-        // Escape special characters in regular expressions
-        // Per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-        const escapeRegExp = (s: String) =>
-            s.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
+    protected replacePropertyNames(statement: string) {
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
             const replaceAliasNamePrefix = this.expressionMap
@@ -709,7 +723,7 @@ export abstract class QueryBuilder<Entity> {
             // * Relation Property Path to first join column key
             // * Relation Property Path + Column Path
             // * Column Database Name
-            // * Column Propety Name
+            // * Column Property Name
             // * Column Property Path
 
             for (const relation of alias.metadata.relations) {
@@ -742,27 +756,27 @@ export abstract class QueryBuilder<Entity> {
                 replacements[column.propertyPath] = column.databaseName
             }
 
-            const replacementKeys = Object.keys(replacements)
-
-            if (replacementKeys.length) {
-                statement = statement.replace(
-                    new RegExp(
-                        // Avoid a lookbehind here since it's not well supported
-                        `([ =\(]|^.{0})` +
-                            `${escapeRegExp(
-                                replaceAliasNamePrefix,
-                            )}(${replacementKeys
-                                .map(escapeRegExp)
-                                .join("|")})` +
-                            `(?=[ =\)\,]|.{0}$)`,
-                        "gm",
-                    ),
-                    (_, pre, p) =>
-                        `${pre}${replacementAliasNamePrefix}${this.escape(
+            statement = statement.replace(
+                new RegExp(
+                    // Avoid a lookbehind here since it's not well supported
+                    `([ =\(]|^.{0})` + // any of ' =(' or start of line
+                        // followed by our prefix, e.g. 'tablename.' or ''
+                        `${escapeRegExp(
+                            replaceAliasNamePrefix,
+                        )}([^ =\(\)\,]+)` + // a possible property name: sequence of anything but ' =(),'
+                        // terminated by ' =),' or end of line
+                        `(?=[ =\)\,]|.{0}$)`,
+                    "gm",
+                ),
+                (match, pre, p) => {
+                    if (replacements[p]) {
+                        return `${pre}${replacementAliasNamePrefix}${this.escape(
                             replacements[p],
-                        )}`,
-                )
-            }
+                        )}`
+                    }
+                    return match
+                },
+            )
         }
 
         return statement
@@ -1046,6 +1060,80 @@ export abstract class QueryBuilder<Entity> {
         throw new TypeError(
             `Unsupported FindOperator ${FindOperator.constructor.name}`,
         )
+    }
+
+    protected createCteExpression(): string {
+        if (!this.hasCommonTableExpressions()) {
+            return ""
+        }
+        const databaseRequireRecusiveHint =
+            this.connection.driver.cteCapabilities.requiresRecursiveHint
+
+        const cteStrings = this.expressionMap.commonTableExpressions.map(
+            (cte) => {
+                const cteBodyExpression =
+                    typeof cte.queryBuilder === "string"
+                        ? cte.queryBuilder
+                        : cte.queryBuilder.getQuery()
+                if (typeof cte.queryBuilder !== "string") {
+                    if (cte.queryBuilder.hasCommonTableExpressions()) {
+                        throw new TypeORMError(
+                            `Nested CTEs aren't supported (CTE: ${cte.alias})`,
+                        )
+                    }
+                    if (
+                        !this.connection.driver.cteCapabilities.writable &&
+                        !InstanceChecker.isSelectQueryBuilder(cte.queryBuilder)
+                    ) {
+                        throw new TypeORMError(
+                            `Only select queries are supported in CTEs in ${this.connection.options.type} (CTE: ${cte.alias})`,
+                        )
+                    }
+                    this.setParameters(cte.queryBuilder.getParameters())
+                }
+                let cteHeader = this.escape(cte.alias)
+                if (cte.options.columnNames) {
+                    const escapedColumnNames = cte.options.columnNames.map(
+                        (column) => this.escape(column),
+                    )
+                    if (
+                        InstanceChecker.isSelectQueryBuilder(cte.queryBuilder)
+                    ) {
+                        if (
+                            cte.queryBuilder.expressionMap.selects.length &&
+                            cte.options.columnNames.length !==
+                                cte.queryBuilder.expressionMap.selects.length
+                        ) {
+                            throw new TypeORMError(
+                                `cte.options.columnNames length (${cte.options.columnNames.length}) doesn't match subquery select list length ${cte.queryBuilder.expressionMap.selects.length} (CTE: ${cte.alias})`,
+                            )
+                        }
+                    }
+                    cteHeader += `(${escapedColumnNames.join(", ")})`
+                }
+                const recursiveClause =
+                    cte.options.recursive && databaseRequireRecusiveHint
+                        ? "RECURSIVE"
+                        : ""
+                const materializeClause =
+                    cte.options.materialized &&
+                    this.connection.driver.cteCapabilities.materializedHint
+                        ? "MATERIALIZED"
+                        : ""
+
+                return [
+                    recursiveClause,
+                    cteHeader,
+                    materializeClause,
+                    "AS",
+                    `(${cteBodyExpression})`,
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+            },
+        )
+
+        return "WITH " + cteStrings.join(", ") + " "
     }
 
     /**
@@ -1458,5 +1546,9 @@ export abstract class QueryBuilder<Entity> {
      */
     protected obtainQueryRunner() {
         return this.queryRunner || this.connection.createQueryRunner()
+    }
+
+    protected hasCommonTableExpressions(): boolean {
+        return this.expressionMap.commonTableExpressions.length > 0
     }
 }

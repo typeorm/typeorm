@@ -54,7 +54,7 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
             record,
             userId: user.id,
             recordId: record.id,
-            meta: { name: "meta name", description: "meta description" },
+            meta: "meta",
         } as RecordContext)
         await context.save()
 

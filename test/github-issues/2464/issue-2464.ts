@@ -42,8 +42,10 @@ describe("github issues > #2464 - ManyToMany onDelete option not working", () =>
     it("should delete when onDelete is not set", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(Foo)
+                // Spanner support only NO ACTION clause
+                if (connection.driver.options.type === "spanner") return
 
+                const repo = connection.getRepository(Foo)
                 await repo.save({
                     id: 1,
                     otherBars: [{ description: "test1" }],

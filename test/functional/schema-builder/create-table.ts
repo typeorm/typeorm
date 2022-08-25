@@ -40,7 +40,8 @@ describe("schema builder > create table", () => {
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     postTable!.indices.length.should.be.equal(2)
                 } else {
@@ -50,7 +51,9 @@ describe("schema builder > create table", () => {
 
                 idColumn!.isPrimary.should.be.true
                 versionColumn!.isUnique.should.be.true
-                nameColumn!.default!.should.be.exist
+                if (connection.driver.options.type !== "spanner") {
+                    nameColumn!.default!.should.be.exist
+                }
 
                 teacherTable = await queryRunner.getTable("teacher")
                 teacherTable!.should.exist

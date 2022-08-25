@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSourceOptions, createConnection } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src/index"
 import { Category } from "./entity/Category"
 
 const options: DataSourceOptions = {
@@ -13,9 +13,10 @@ const options: DataSourceOptions = {
     entities: [__dirname + "/entity/*"],
 }
 
-createConnection(options).then(
-    (connection) => {
-        let categoryRepository = connection.getRepository(Category)
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    (dataSource) => {
+        let categoryRepository = dataSource.getRepository(Category)
 
         let category1 = new Category()
         category1.name = "category #1"
