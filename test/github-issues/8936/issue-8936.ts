@@ -1,5 +1,6 @@
 import "../../utils/test-setup"
 import {
+    DataSource,
     QueryFailedError,
     QueryRunner,
     Repository,
@@ -10,11 +11,10 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Connection } from "../../../src/connection/Connection"
 import { User } from "./entity/User"
 
 describe("github issues > #8936 DropIndex with a TableIndex without name is not working", () => {
-    let connections: Connection[]
+    let connections: DataSource[]
 
     const tableIndex: TableIndex = new TableIndex({
         columnNames: ["firstName", "lastName"],
@@ -50,6 +50,8 @@ describe("github issues > #8936 DropIndex with a TableIndex without name is not 
                 await queryRunner
                     .dropIndex(tableName, dropTableIndex)
                     .should.not.be.rejectedWith(QueryFailedError)
+
+                await queryRunner.release()
             }),
         )
     })

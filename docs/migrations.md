@@ -70,7 +70,7 @@ Before creating a new migration you need to setup your data source options prope
 }
 ```
 
-Here we setup three options:
+Here we setup two options:
 
 -   `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
 -   `"migrations": [/*...*/]` - list of migrations need to be loaded by TypeORM

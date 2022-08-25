@@ -240,7 +240,7 @@
 
 - `options.readOnlyIntent` - 布尔值，确定连接是否将从SQL Server可用性组请求只读访问权限。 有关更多信息，请参阅此处。 （默认：`false`）。
 
-- `options.encrypt` - 确定连接是否将被加密的布尔值。 如果您使用的是Windows Azure，请设置为true。 （默认：`false`）。
+- `options.encrypt` - 确定连接是否将被加密的布尔值。 如果您使用的是Windows Azure，请设置为true。 （默认：`true`）。
 
 - `options.cryptoCredentialsDetails` - 使用加密时，可以提供一个对象，该对象在调用[tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)时将用于第一个参数（默认值：`{}`）。
 
