@@ -37,28 +37,6 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: [
-                "mysql",
-                "postgres",
-                "cockroachdb",
-                "sap",
-                "mariadb",
-                "sqlite",
-                "cordova",
-                "react-native",
-                "nativescript",
-                "sqljs",
-                "oracle",
-                "mssql",
-                // irrelevant
-                // "mongodb",
-                "aurora-mysql",
-                "aurora-postgres",
-                "expo",
-                "better-sqlite3",
-                "capacitor",
-                "spanner",
-            ],
             schemaCreate: false,
             dropSchema: false,
             migrations: [__dirname + "/migrations/**/*{.ts,.js}"],
@@ -82,6 +60,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
     describe("fake run tests", () => {
         it("should fail for duplicate column", async () => {
             for (const dataSource of dataSources) {
+                if (dataSource.options.type === "mongodb") return
                 await expect(
                     dataSource.runMigrations({ transaction: "all" }),
                 ).to.be.rejectedWith(Error)
@@ -90,6 +69,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
 
         it("should not fail for duplicate column when run with the fake option", async () => {
             for (const dataSource of dataSources) {
+                if (dataSource.options.type === "mongodb") return
                 await expect(
                     dataSource.runMigrations({
                         transaction: "all",
@@ -103,6 +83,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
     describe("fake rollback tests", () => {
         before(async () => {
             for (const dataSource of dataSources) {
+                if (dataSource.options.type === "mongodb") return
                 await dataSource.runMigrations({
                     transaction: "all",
                     fake: true,
@@ -112,6 +93,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
 
         it("should fail for non-existent column", async () => {
             for (const dataSource of dataSources) {
+                if (dataSource.options.type === "mongodb") return
                 await expect(
                     dataSource.undoLastMigration({ transaction: "all" }),
                 ).to.be.rejectedWith(Error)
@@ -120,6 +102,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
 
         it("should not fail for non-existent column when run with the fake option", async () => {
             for (const dataSource of dataSources) {
+                if (dataSource.options.type === "mongodb") return
                 await expect(
                     dataSource.undoLastMigration({
                         transaction: "all",
