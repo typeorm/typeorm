@@ -6,7 +6,7 @@ services:
     image: "mysql:5.7.37"
     container_name: "typeorm-mysql"
     ports:
-      - "3306:3306"
+      - "3301:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "admin"
       MYSQL_USER: "test"
@@ -33,7 +33,7 @@ services:
     image: "mdillon/postgis:9.6"
     container_name: "typeorm-postgres"
     ports:
-      - "5432:5432"
+      - "5401:5432"
     environment:
       POSTGRES_USER: "test"
       POSTGRES_PASSWORD: "test"

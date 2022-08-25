@@ -473,7 +473,7 @@ export class MigrationExecutor {
             const migrationsRaw: ObjectLiteral[] = await this.connection.manager
                 .createQueryBuilder(queryRunner)
                 .select()
-                .orderBy(this.connection.driver.escape("id"), "DESC")
+                .orderBy("id", "DESC")
                 .from(this.migrationsTable, this.migrationsTableName)
                 .getRawMany()
             return migrationsRaw.map((migrationRaw) => {

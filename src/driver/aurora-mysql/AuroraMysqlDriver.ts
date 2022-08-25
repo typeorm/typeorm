@@ -311,6 +311,8 @@ export class AuroraMysqlDriver implements Driver {
      */
     maxAliasLength = 63
 
+    public readonly escapeSymbol: string = "`"
+
     cteCapabilities: CteCapabilities = {
         enabled: false,
     }
@@ -457,7 +459,7 @@ export class AuroraMysqlDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return "`" + columnName + "`"
+        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
     }
 
     /**

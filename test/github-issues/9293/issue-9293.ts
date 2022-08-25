@@ -48,7 +48,7 @@ describe("github issues > #9293 No quotes while using orderBy, groupBy by custom
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres" /*, 'mariadb', 'mysql'*/],
+                enabledDrivers: ["postgres", "mysql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -83,6 +83,34 @@ describe("github issues > #9293 No quotes while using orderBy, groupBy by custom
             )
 
             const { entities, raw } = await baseQuery.getRawAndEntities()
+
+            expect(entities).to.be.an("array")
+            expect(raw).to.be.an("array")
+        }
+    })
+
+    it("shouldn't add extra quotes to orderBy on migration running", async () => {
+        for (const connection of connections) {
+            const result = await connection.runMigrations({
+                transaction: "none",
+            })
+            expect(result).to.be.an("array")
+        }
+    })
+
+    it("should orderBy 1 and groupBy 1 without SELECT DISTINCT", async () => {
+        for (const connection of connections) {
+            await prepareData(connection)
+
+            const baseQuery = getBaseQuery(
+                connection.getRepository(Offer),
+                rateSumAlias,
+            )
+
+            const { entities, raw } = await baseQuery
+                .addOrderBy("1", "ASC")
+                .addGroupBy("1")
+                .getRawAndEntities()
 
             expect(entities).to.be.an("array")
             expect(raw).to.be.an("array")
