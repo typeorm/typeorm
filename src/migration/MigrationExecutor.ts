@@ -23,7 +23,7 @@ export class MigrationExecutor {
      *   each: each migration is run in a separate transaction
      */
     transaction: "all" | "none" | "each" = "all"
-    
+
     /**
      * Option to fake-run or fake-revert a migration, adding to the
      * executed migrations table, but not actually running it. This feature is
