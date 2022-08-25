@@ -1332,9 +1332,11 @@ export abstract class AbstractSqliteQueryRunner
                               dbTable["database"],
                           )}.${dbTable["name"]}`
                         : dbTable["name"]
-                const table = new Table({ name: tablePath })
 
                 const sql = dbTable["sql"]
+
+                const withoutRowid = sql.includes("WITHOUT ROWID")
+                const table = new Table({ name: tablePath, withoutRowid })
 
                 // load columns and indices
                 const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] =
@@ -1828,26 +1830,7 @@ export abstract class AbstractSqliteQueryRunner
 
         sql += `)`
 
-        let tableMetadata = this.connection.entityMetadatas.find(
-            (metadata) =>
-                this.getTablePath(table) === this.getTablePath(metadata),
-        )
-        if (!tableMetadata && table.name.startsWith("temporary_")) {
-            // For sqlite, some schema migration operations require building an entirely new table and copying the data back. These new tables
-            // have an added prefix of `temporary_`... these completely new tables don't have an entry in the entityMetadatas, so we will accidentally
-            // miss the withoutRowid option if we don't check for it here.
-            const realTable = new Table({
-                ...table,
-                name: table.name.replace("temporary_", ""),
-            })
-            tableMetadata = this.connection.entityMetadatas.find(
-                (metadata) =>
-                    this.getTablePath(realTable) ===
-                    this.getTablePath(metadata),
-            )
-        }
-
-        if (tableMetadata && tableMetadata.withoutRowid) {
+        if (table.withoutRowid) {
             sql += " WITHOUT ROWID"
         }
 
