@@ -9,7 +9,7 @@ import { Car } from "./entity/Car"
 import { Record } from "./entity/Record"
 import { DataSource } from "../../../src"
 
-describe("github issues > #8747 QueryBuilder update handles Date objects wrong on a ManyToOne relation ship.", () => {
+describe("github issues > #8747 QueryBuilder update handles Date objects wrong on a ManyToOne relationship.", () => {
     let dataSources: DataSource[]
     before(
         async () =>
