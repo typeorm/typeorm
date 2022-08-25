@@ -9,7 +9,7 @@ import { User } from "./User"
 
 @Entity()
 export class Setting extends BaseEntity {
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     assetId?: number
 
     @ManyToOne("User", "settings", {
@@ -19,7 +19,7 @@ export class Setting extends BaseEntity {
     })
     asset?: User
 
-    @PrimaryColumn("varchar")
+    @PrimaryColumn()
     name: string
 
     @Column({ nullable: true })

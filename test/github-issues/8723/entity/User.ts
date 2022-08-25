@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class User {
-    @PrimaryColumn({ type: "int", nullable: false })
+    @PrimaryColumn({ nullable: false })
     id: number
 
     @Column()

@@ -12,6 +12,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
+            enabledDrivers: ["mysql", "mariadb"],
             entities: [Post],
             schemaCreate: true,
             dropSchema: true,

@@ -11,6 +11,7 @@ import { Post } from "./entity/Post"
 import { QueryBuilder } from "../../../../src/query-builder/QueryBuilder"
 import { User } from "./model/User"
 import questionSchema from "./model-schema/QuestionSchema"
+import userSchema from "./model-schema/UserSchema"
 import { Question } from "./model/Question"
 import { Blog } from "./entity/Blog"
 import { Category } from "./entity/Category"
@@ -24,17 +25,7 @@ import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
 import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
 
 describe("repository > basic methods", () => {
-    let userSchema: any
-    try {
-        const resourceDir =
-            __dirname +
-            "/../../../../../../test/functional/repository/basic-methods/"
-        userSchema = require(resourceDir + "schema/user.json")
-    } catch (err) {
-        const resourceDir = __dirname + "/"
-        userSchema = require(resourceDir + "schema/user.json")
-    }
-    const UserEntity = new EntitySchema<any>(userSchema)
+    const UserEntity = new EntitySchema<any>(userSchema as any)
     const QuestionEntity = new EntitySchema<any>(questionSchema as any)
 
     let connections: DataSource[]

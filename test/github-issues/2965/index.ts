@@ -52,7 +52,7 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
                 loadCalledCounter.should.be.equal(0)
                 personANotes[0].label.should.be.equal("note1")
 
-                const res2 = await repoPerson.find()
+                const res2 = await repoPerson.find({ order: { id: "asc" } })
                 const personBNotes = await res2[1].notes
                 loadCalledCounter.should.be.equal(1)
                 personBNotes[0].label.should.be.equal("note2")

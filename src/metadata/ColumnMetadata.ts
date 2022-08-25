@@ -176,12 +176,12 @@ export class ColumnMetadata {
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
@@ -278,6 +278,16 @@ export class ColumnMetadata {
      * and this property will contain reference to this column.
      */
     referencedColumn: ColumnMetadata | undefined
+
+    /**
+     * If this column is primary key then this specifies the name for it.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * If this column is foreign key then this specifies the name for it.
+     */
+    foreignKeyConstraintName?: string
 
     /**
      * Specifies a value transformer that is to be used to (un)marshal
@@ -418,6 +428,14 @@ export class ColumnMetadata {
         }
         if (options.args.options.enumName) {
             this.enumName = options.args.options.enumName
+        }
+        if (options.args.options.primaryKeyConstraintName) {
+            this.primaryKeyConstraintName =
+                options.args.options.primaryKeyConstraintName
+        }
+        if (options.args.options.foreignKeyConstraintName) {
+            this.foreignKeyConstraintName =
+                options.args.options.foreignKeyConstraintName
         }
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression

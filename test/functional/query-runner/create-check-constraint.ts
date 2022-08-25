@@ -26,6 +26,18 @@ describe("query runner > create check constraint", () => {
                 // Mysql does not support check constraints.
                 if (DriverUtils.isMySQLFamily(connection.driver)) return
 
+                let numericType = "int"
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    numericType = "integer"
+                } else if (connection.driver.options.type === "spanner") {
+                    numericType = "int64"
+                }
+
+                let stringType = "varchar"
+                if (connection.driver.options.type === "spanner") {
+                    stringType = "string"
+                }
+
                 const queryRunner = connection.createQueryRunner()
                 await queryRunner.createTable(
                     new Table({
@@ -33,20 +45,20 @@ describe("query runner > create check constraint", () => {
                         columns: [
                             {
                                 name: "id",
-                                type: "int",
+                                type: numericType,
                                 isPrimary: true,
                             },
                             {
                                 name: "name",
-                                type: "varchar",
+                                type: stringType,
                             },
                             {
                                 name: "description",
-                                type: "varchar",
+                                type: stringType,
                             },
                             {
                                 name: "version",
-                                type: "int",
+                                type: numericType,
                             },
                         ],
                     }),
@@ -76,11 +88,9 @@ describe("query runner > create check constraint", () => {
                         "version",
                     )} > 0`,
                 })
-                await queryRunner.createCheckConstraints("question", [
-                    check1,
-                    check2,
-                    check3,
-                ])
+                await queryRunner.createCheckConstraint("question", check1)
+                await queryRunner.createCheckConstraint("question", check2)
+                await queryRunner.createCheckConstraint("question", check3)
 
                 let table = await queryRunner.getTable("question")
                 table!.checks.length.should.be.equal(3)

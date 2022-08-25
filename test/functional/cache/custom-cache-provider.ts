@@ -29,6 +29,10 @@ describe("custom cache provider", () => {
     it("should be used instead of built-ins", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "spanner") {
+                    return
+                }
+
                 const queryResultCache: any = connection.queryResultCache
                 expect(queryResultCache).to.have.property(
                     "queryResultCacheTable",
@@ -43,6 +47,9 @@ describe("custom cache provider", () => {
     it("should cache results properly", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "spanner") {
+                    return
+                }
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
@@ -108,6 +115,10 @@ describe("custom cache provider", () => {
     it("should cache results with pagination enabled properly", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "spanner") {
+                    return
+                }
+
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
@@ -185,6 +196,10 @@ describe("custom cache provider", () => {
     it("should cache results with custom id and duration supplied", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "spanner") {
+                    return
+                }
+
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"
@@ -265,6 +280,10 @@ describe("custom cache provider", () => {
     it("should cache results with custom id and duration supplied", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "spanner") {
+                    return
+                }
+
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.firstName = "Timber"

@@ -24,6 +24,9 @@ describe("github issues > #85 - Column option insert: false, update: false", () 
     it("should ignore value of non-inserted column", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Skip because test relies on DEFAULT values and Spanner does not support it
+                if (connection.driver.options.type === "spanner") return
+
                 const doc1 = new Document()
                 doc1.id = 1
                 doc1.version = 42
@@ -37,6 +40,9 @@ describe("github issues > #85 - Column option insert: false, update: false", () 
     it("should be able to create an entity with column entirely missing", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Skip because test relies on DEFAULT values and Spanner does not support it
+                if (connection.driver.options.type === "spanner") return
+
                 // We delete the non-inserted column entirely, so that any use of it will throw an error.
                 let queryRunner = connection.createQueryRunner()
                 await queryRunner.dropColumn("document", "permission")

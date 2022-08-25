@@ -35,18 +35,28 @@ describe("query builder > cte > simple", () => {
                     const cteQuery = connection
                         .createQueryBuilder()
                         .select()
-                        .addSelect(`foo.bar`)
+                        .addSelect(`foo.bar`, "bar")
                         .from(Foo, "foo")
                         .where(`foo.bar = :value`, { value: "2" })
 
+                    // Spanner does not support column names in CTE
+                    const cteOptions =
+                        connection.driver.options.type === "spanner"
+                            ? undefined
+                            : {
+                                  columnNames: ["raz"],
+                              }
+                    const cteSelection =
+                        connection.driver.options.type === "spanner"
+                            ? "qaz.bar"
+                            : "qaz.raz"
+
                     const qb = await connection
                         .createQueryBuilder()
-                        .addCommonTableExpression(cteQuery, "qaz", {
-                            columnNames: ["raz"],
-                        })
+                        .addCommonTableExpression(cteQuery, "qaz", cteOptions)
                         .from("qaz", "qaz")
                         .select([])
-                        .addSelect("qaz.raz", "raz")
+                        .addSelect(cteSelection, "raz")
 
                     expect(await qb.getRawMany()).to.deep.equal([{ raz: "2" }])
                 }),
@@ -65,16 +75,26 @@ describe("query builder > cte > simple", () => {
                     const cteQuery = connection
                         .createQueryBuilder()
                         .select()
-                        .addSelect("bar")
+                        .addSelect("bar", "bar")
                         .from(Foo, "foo")
                         .where(`foo.bar = '2'`)
 
+                    // Spanner does not support column names in CTE
+                    const cteOptions =
+                        connection.driver.options.type === "spanner"
+                            ? undefined
+                            : {
+                                  columnNames: ["raz"],
+                              }
+                    const cteSelection =
+                        connection.driver.options.type === "spanner"
+                            ? "qaz.bar"
+                            : "qaz.raz"
+
                     const results = await connection
                         .createQueryBuilder(Foo, "foo")
-                        .addCommonTableExpression(cteQuery, "qaz", {
-                            columnNames: ["raz"],
-                        })
-                        .innerJoin("qaz", "qaz", "qaz.raz = foo.bar")
+                        .addCommonTableExpression(cteQuery, "qaz", cteOptions)
+                        .innerJoin("qaz", "qaz", `${cteSelection} = foo.bar`)
                         .getMany()
 
                     expect(results).to.have.length(1)
@@ -121,21 +141,41 @@ describe("query builder > cte > simple", () => {
             connections
                 .filter(filterByCteCapabilities("enabled"))
                 .map(async (connection) => {
-                    const results = await connection
-                        .createQueryBuilder()
-                        .select()
-                        .addCommonTableExpression(
-                            `
-                SELECT 1
-                UNION
-                SELECT 2
-            `,
-                            "cte",
-                            { columnNames: ["foo"] },
-                        )
-                        .from("cte", "cte")
-                        .addSelect("foo", "row")
-                        .getRawMany<{ row: any }>()
+                    // Spanner does not support column names in CTE
+
+                    let results: { row: any }[] = []
+                    if (connection.driver.options.type === "spanner") {
+                        results = await connection
+                            .createQueryBuilder()
+                            .select()
+                            .addCommonTableExpression(
+                                `
+                                SELECT 1 AS foo
+                                UNION ALL
+                                SELECT 2 AS foo
+                                `,
+                                "cte",
+                            )
+                            .from("cte", "cte")
+                            .addSelect("foo", "row")
+                            .getRawMany<{ row: any }>()
+                    } else {
+                        results = await connection
+                            .createQueryBuilder()
+                            .select()
+                            .addCommonTableExpression(
+                                `
+                                SELECT 1
+                                UNION
+                                SELECT 2
+                                `,
+                                "cte",
+                                { columnNames: ["foo"] },
+                            )
+                            .from("cte", "cte")
+                            .addSelect("foo", "row")
+                            .getRawMany<{ row: any }>()
+                    }
 
                     const [rowWithOne, rowWithTwo] = results
 

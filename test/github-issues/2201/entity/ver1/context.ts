@@ -22,6 +22,6 @@ export class RecordContext extends BaseEntity {
     @JoinColumn({ name: "user_id" })
     public readonly user: User
 
-    @Column("simple-json")
-    public readonly meta: any
+    @Column()
+    public readonly meta: string
 }

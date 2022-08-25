@@ -62,6 +62,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                         "post.categoryCount",
                         "post.categories",
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts![0].categoryCount).to.be.equal(3)
@@ -417,6 +418,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                         "category.postCount",
                         "category.posts",
                     )
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories![0].postCount).to.be.equal(3)
@@ -564,6 +566,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                                 isRemoved: true,
                             }),
                     )
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories![0].postCount).to.be.equal(3)

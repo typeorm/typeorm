@@ -189,6 +189,7 @@ export class QueryExpressionMap {
         | "pessimistic_partial_write"
         | "pessimistic_write_or_fail"
         | "for_no_key_update"
+        | "for_key_share"
 
     /**
      * Current version of the entity, used for locking.
@@ -212,7 +213,7 @@ export class QueryExpressionMap {
     parameters: ObjectLiteral = {}
 
     /**
-     * Indicates if alias, table names and column names will be ecaped by driver, or not.
+     * Indicates if alias, table names and column names will be escaped by driver, or not.
      *
      * todo: rename to isQuotingDisabled, also think if it should be named "escaping"
      */

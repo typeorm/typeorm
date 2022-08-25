@@ -75,7 +75,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     /**
      * Creates a new query builder for the given entity that can be used to build a SQL query.
      */
-    protected createQueryBuilderFor<T>(
+    protected createQueryBuilderFor<T extends ObjectLiteral>(
         entity: ObjectType<T>,
         alias: string,
     ): SelectQueryBuilder<T> {
@@ -85,14 +85,16 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     /**
      * Gets the original ORM repository for the given entity class.
      */
-    protected getRepositoryFor<T>(entity: ObjectType<T>): Repository<T> {
+    protected getRepositoryFor<T extends ObjectLiteral>(
+        entity: ObjectType<T>,
+    ): Repository<T> {
         return this.manager.getRepository(entity)
     }
 
     /**
      * Gets the original ORM tree repository for the given entity class.
      */
-    protected getTreeRepositoryFor<T>(
+    protected getTreeRepositoryFor<T extends ObjectLiteral>(
         entity: ObjectType<T>,
     ): TreeRepository<T> {
         return this.manager.getTreeRepository(entity)

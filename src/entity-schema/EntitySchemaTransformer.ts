@@ -16,6 +16,7 @@ import { ExclusionMetadataArgs } from "../metadata-args/ExclusionMetadataArgs"
 import { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
 import { EntitySchemaOptions } from "./EntitySchemaOptions"
 import { EntitySchemaEmbeddedError } from "./EntitySchemaEmbeddedError"
+import { RelationIdMetadataArgs } from "../metadata-args/RelationIdMetadataArgs"
 
 /**
  * Transforms entity schema into metadata args storage.
@@ -99,6 +100,7 @@ export class EntitySchemaTransformer {
                     charset: regularColumn.charset,
                     collation: regularColumn.collation,
                     enum: regularColumn.enum,
+                    enumName: regularColumn.enumName,
                     asExpression: regularColumn.asExpression,
                     generatedType: regularColumn.generatedType,
                     hstoreType: regularColumn.hstoreType,
@@ -181,6 +183,8 @@ export class EntitySchemaTransformer {
                                 name: joinColumnOption.name,
                                 referencedColumnName:
                                     joinColumnOption.referencedColumnName,
+                                foreignKeyConstraintName:
+                                    joinColumnOption.foreignKeyConstraintName,
                             }
                             metadataArgsStorage.joinColumns.push(joinColumn)
                         }
@@ -231,6 +235,21 @@ export class EntitySchemaTransformer {
             })
         }
 
+        // add relation id metadata args from the schema
+        if (options.relationIds) {
+            Object.keys(options.relationIds).forEach((relationIdName) => {
+                const relationIdOptions = options.relationIds![relationIdName]!
+                const relationId: RelationIdMetadataArgs = {
+                    propertyName: relationIdName,
+                    relation: relationIdOptions.relationName,
+                    target: options.target || options.name,
+                    alias: relationIdOptions.alias,
+                    queryBuilderFactory: relationIdOptions.queryBuilderFactory,
+                }
+                metadataArgsStorage.relationIds.push(relationId)
+            })
+        }
+
         // add index metadata args from the schema
         if (options.indices) {
             options.indices.forEach((index) => {
@@ -240,6 +259,7 @@ export class EntitySchemaTransformer {
                     unique: index.unique === true ? true : false,
                     spatial: index.spatial === true ? true : false,
                     fulltext: index.fulltext === true ? true : false,
+                    nullFiltered: index.nullFiltered === true ? true : false,
                     parser: index.parser,
                     synchronize: index.synchronize === false ? false : true,
                     where: index.where,

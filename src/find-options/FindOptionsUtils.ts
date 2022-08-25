@@ -181,7 +181,8 @@ export class FindOptionsUtils {
                 options.lock.mode === "dirty_read" ||
                 options.lock.mode === "pessimistic_partial_write" ||
                 options.lock.mode === "pessimistic_write_or_fail" ||
-                options.lock.mode === "for_no_key_update"
+                options.lock.mode === "for_no_key_update" ||
+                options.lock.mode === "for_key_share"
             ) {
                 const tableNames = options.lock.tables ? options.lock.tables.map((table) => {
                     const tableAlias = qb.expressionMap.aliases.find((alias) => {

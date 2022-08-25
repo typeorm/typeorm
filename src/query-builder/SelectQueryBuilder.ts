@@ -1487,7 +1487,8 @@ export class SelectQueryBuilder<Entity>
             | "dirty_read"
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
-            | "for_no_key_update",
+            | "for_no_key_update"
+            | "for_key_share",
         lockVersion?: undefined,
         lockTables?: string[],
     ): this
@@ -1503,7 +1504,8 @@ export class SelectQueryBuilder<Entity>
             | "dirty_read"
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
-            | "for_no_key_update",
+            | "for_no_key_update"
+            | "for_key_share",
         lockVersion?: number | Date,
         lockTables?: string[],
     ): this {
@@ -2425,7 +2427,8 @@ export class SelectQueryBuilder<Entity>
         } else if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
-            this.connection.driver.options.type === "sap"
+            this.connection.driver.options.type === "sap" ||
+            this.connection.driver.options.type === "spanner"
         ) {
             if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
             if (limit) return " LIMIT " + limit
@@ -2564,6 +2567,14 @@ export class SelectQueryBuilder<Entity>
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
+
+            case "for_key_share":
+                if (driver.options.type === "postgres") {
+                    return " FOR KEY SHARE" + lockTablesClause
+                } else {
+                    throw new LockNotSupportedOnGivenDriverError()
+                }
+
             default:
                 return ""
         }
@@ -2792,6 +2803,27 @@ export class SelectQueryBuilder<Entity>
                 return `COUNT(DISTINCT(${columnsExpression}))`
             }
 
+            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
+        }
+
+        if (this.connection.driver.options.type === "spanner") {
+            // spanner also has gotta be different from everyone else.
+            // they do not support concatenation of different column types without casting them to string
+
+            if (primaryColumns.length === 1) {
+                return `COUNT(DISTINCT(${distinctAlias}.${this.escape(
+                    primaryColumns[0].databaseName,
+                )}))`
+            }
+
+            const columnsExpression = primaryColumns
+                .map(
+                    (primaryColumn) =>
+                        `CAST(${distinctAlias}.${this.escape(
+                            primaryColumn.databaseName,
+                        )} AS STRING)`,
+                )
+                .join(", '|;|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
@@ -3061,7 +3093,8 @@ export class SelectQueryBuilder<Entity>
                         "pessimistic_partial_write" ||
                     this.findOptions.lock.mode ===
                         "pessimistic_write_or_fail" ||
-                    this.findOptions.lock.mode === "for_no_key_update"
+                    this.findOptions.lock.mode === "for_no_key_update" ||
+                    this.findOptions.lock.mode === "for_key_share"
                 ) {
                     const tableNames = this.findOptions.lock.tables
                         ? this.findOptions.lock.tables.map((table) => {
@@ -3140,7 +3173,8 @@ export class SelectQueryBuilder<Entity>
                 this.expressionMap.lockMode === "pessimistic_write" ||
                 this.expressionMap.lockMode === "pessimistic_partial_write" ||
                 this.expressionMap.lockMode === "pessimistic_write_or_fail" ||
-                this.expressionMap.lockMode === "for_no_key_update") &&
+                this.expressionMap.lockMode === "for_no_key_update" ||
+                this.expressionMap.lockMode === "for_key_share") &&
             !queryRunner.isTransactionActive
         )
             throw new PessimisticLockTransactionRequiredError()
@@ -3206,7 +3240,9 @@ export class SelectQueryBuilder<Entity>
                         primaryColumn.databaseName,
                     )
 
-                    return `${distinctAlias}.${columnAlias} as "${alias}"`
+                    return `${distinctAlias}.${columnAlias} AS ${this.escape(
+                        alias,
+                    )}`
                 },
             )
 

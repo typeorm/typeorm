@@ -23,5 +23,5 @@ export class Counters {
     @Column(() => Subcounters, { prefix: "sub" })
     subcounters: Subcounters
 
-    categoryIds: number[]
+    categoryIds: any[]
 }

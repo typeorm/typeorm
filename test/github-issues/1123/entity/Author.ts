@@ -21,7 +21,7 @@ export const AuthorSchema: EntitySchemaOptions<Author> = {
         },
 
         name: {
-            type: "varchar",
+            type: String,
         },
     },
 

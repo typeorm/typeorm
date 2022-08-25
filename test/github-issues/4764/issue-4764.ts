@@ -44,7 +44,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).not.to.equal(true)
 
                 await connection.query(selectQuery)
@@ -64,7 +64,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).to.equal(true)
 
                 await connection.query(selectQuery)
@@ -85,7 +85,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(2)
 
                 await connection.query(selectQuery)
@@ -107,7 +107,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(3)
 
                 await connection.query(selectQuery)
@@ -133,7 +133,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("cart.ID=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(3)
 
                 await connection.query(selectQuery)
@@ -153,7 +153,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).to.equal(true)
 
                 await connection.query(selectQuery)
@@ -173,7 +173,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).to.equal(true)
 
                 await connection.query(selectQuery)
@@ -194,7 +194,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(2)
 
                 await connection.query(selectQuery)

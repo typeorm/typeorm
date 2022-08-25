@@ -60,6 +60,7 @@ describe("query builder > relation-id > many-to-one > basic-functionality", () =
                         "post.categoryName",
                         "post.categoryByName",
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts![0].categoryId).to.not.be.undefined

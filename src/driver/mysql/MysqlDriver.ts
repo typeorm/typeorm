@@ -1000,7 +1000,7 @@ export class MysqlDriver implements Driver {
                 tableColumn.onUpdate !==
                     this.normalizeDatetimeFunction(columnMetadata.onUpdate) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
-                tableColumn.isNullable !== columnMetadata.isNullable ||
+                !this.compareNullableValues(columnMetadata, tableColumn) ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
@@ -1008,28 +1008,91 @@ export class MysqlDriver implements Driver {
 
             // DEBUG SECTION
             // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName);
-            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            //     console.log("length:", tableColumn.length, columnMetadata.length);
-            //     console.log("width:", tableColumn.width, columnMetadata.width);
-            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("zerofill:", tableColumn.zerofill, columnMetadata.zerofill);
-            //     console.log("unsigned:", tableColumn.unsigned, columnMetadata.unsigned);
-            //     console.log("asExpression:", tableColumn.asExpression, columnMetadata.asExpression);
-            //     console.log("generatedType:", tableColumn.generatedType, columnMetadata.generatedType);
-            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
-            //     console.log("default:", tableColumn.default, this.normalizeDefault(columnMetadata));
-            //     console.log("enum:", tableColumn.enum, columnMetadata.enum);
-            //     console.log("default changed:", !this.compareDefaultValues(this.normalizeDefault(columnMetadata), tableColumn.default));
-            //     console.log("onUpdate:", tableColumn.onUpdate, this.normalizeOnUpdate(columnMetadata.onUpdate));
-            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            //     console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
-            //     console.log("==========================================");
+            //     console.log("table:", columnMetadata.entityMetadata.tableName)
+            //     console.log(
+            //         "name:",
+            //         tableColumn.name,
+            //         columnMetadata.databaseName,
+            //     )
+            //     console.log(
+            //         "type:",
+            //         tableColumn.type,
+            //         this.normalizeType(columnMetadata),
+            //     )
+            //     console.log(
+            //         "length:",
+            //         tableColumn.length,
+            //         columnMetadata.length,
+            //     )
+            //     console.log("width:", tableColumn.width, columnMetadata.width)
+            //     console.log(
+            //         "precision:",
+            //         tableColumn.precision,
+            //         columnMetadata.precision,
+            //     )
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
+            //     console.log(
+            //         "zerofill:",
+            //         tableColumn.zerofill,
+            //         columnMetadata.zerofill,
+            //     )
+            //     console.log(
+            //         "unsigned:",
+            //         tableColumn.unsigned,
+            //         columnMetadata.unsigned,
+            //     )
+            //     console.log(
+            //         "asExpression:",
+            //         tableColumn.asExpression,
+            //         columnMetadata.asExpression,
+            //     )
+            //     console.log(
+            //         "generatedType:",
+            //         tableColumn.generatedType,
+            //         columnMetadata.generatedType,
+            //     )
+            //     console.log(
+            //         "comment:",
+            //         tableColumn.comment,
+            //         this.escapeComment(columnMetadata.comment),
+            //     )
+            //     console.log(
+            //         "default:",
+            //         tableColumn.default,
+            //         this.normalizeDefault(columnMetadata),
+            //     )
+            //     console.log("enum:", tableColumn.enum, columnMetadata.enum)
+            //     console.log(
+            //         "default changed:",
+            //         !this.compareDefaultValues(
+            //             this.normalizeDefault(columnMetadata),
+            //             tableColumn.default,
+            //         ),
+            //     )
+            //     console.log(
+            //         "isPrimary:",
+            //         tableColumn.isPrimary,
+            //         columnMetadata.isPrimary,
+            //     )
+            //     console.log(
+            //         "isNullable changed:",
+            //         !this.compareNullableValues(columnMetadata, tableColumn),
+            //     )
+            //     console.log(
+            //         "isUnique:",
+            //         tableColumn.isUnique,
+            //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log(
+            //         "isGenerated:",
+            //         tableColumn.isGenerated,
+            //         columnMetadata.isGenerated,
+            //     )
+            //     console.log(
+            //         columnMetadata.generationStrategy !== "uuid" &&
+            //             tableColumn.isGenerated !== columnMetadata.isGenerated,
+            //     )
+            //     console.log("==========================================")
             // }
 
             return isColumnChanged
@@ -1215,6 +1278,19 @@ export class MysqlDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue
+    }
+
+    compareNullableValues(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        // MariaDB does not support NULL/NOT NULL expressions for generated columns
+        const isMariaDb = this.options.type === "mariadb"
+        if (isMariaDb && columnMetadata.generatedType) {
+            return true
+        }
+
+        return columnMetadata.isNullable === tableColumn.isNullable
     }
 
     /**

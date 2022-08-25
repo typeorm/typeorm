@@ -28,6 +28,9 @@ describe("transaction > nested transaction", () => {
                     shouldExist: boolean
                 }[] = []
 
+                // Spanner does not support nested transactions
+                if (connection.driver.options.type === "spanner") return
+
                 await connection.manager.transaction(async (em0) => {
                     const post = new Post()
                     post.title = "Post #1"

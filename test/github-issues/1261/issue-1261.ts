@@ -19,6 +19,9 @@ describe("github issues > #1261 onDelete property on foreign key is not modified
     it("should modify onDelete property on foreign key on sync", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Spanner support only NO ACTION clause
+                if (connection.driver.options.type === "spanner") return
+
                 await connection.synchronize()
 
                 const queryRunner = connection.createQueryRunner()

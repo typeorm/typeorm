@@ -54,6 +54,9 @@ describe("persistence > entity updation", () => {
     it("should update default values after saving", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Spanner does not support DEFAULT values
+                if (connection.driver.options.type === "spanner") return
+
                 const post = new PostDefaultValues()
                 post.title = "Post #1"
                 await connection.manager.save(post)
@@ -69,6 +72,9 @@ describe("persistence > entity updation", () => {
     it("should update special columns after saving", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Spanner does not support DEFAULT values
+                if (connection.driver.options.type === "spanner") return
+
                 const post = new PostSpecialColumns()
                 post.title = "Post #1"
                 await connection.manager.save(post)
@@ -95,6 +101,9 @@ describe("persistence > entity updation", () => {
     it("should update even with embeddeds", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Spanner does not support DEFAULT values
+                if (connection.driver.options.type === "spanner") return
+
                 const post = new PostComplex()
                 post.firstId = 1
                 post.embed = new PostEmbedded()

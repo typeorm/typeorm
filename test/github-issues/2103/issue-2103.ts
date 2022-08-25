@@ -41,6 +41,7 @@ describe("github issues > #2103 query builder regression", () => {
                     .createQueryBuilder("s")
                     .whereInIds(ids)
                     .andWhere("s.x = 1")
+                    .addOrderBy("s.id")
                     .getMany()
 
                 entities
@@ -78,6 +79,7 @@ describe("github issues > #2103 query builder regression", () => {
                         }),
                     )
                     .andWhere("s.x = 1")
+                    .addOrderBy("s.id")
                     .getMany()
 
                 entities

@@ -15,7 +15,7 @@ TypeORM was tested on Node.js version 14 and above.
 
 You can use [sql.js](https://sql.js.org) in the browser.
 
-**Webpack configuration**
+#### Webpack configuration
 
 In the `browser` folder the package also includes a version compiled as a ES2015 module. If you want to use a different loader this is the point to start. Prior to TypeORM 0.1.7, the package is setup in a way that loaders like webpack will automatically use the `browser` folder. With 0.1.7 this was dropped to support Webpack usage in Node.js projects. This means, that the `NormalModuleReplacementPlugin` has to be used to insure that the correct version is loaded for browser projects. The configuration in your webpack config file, for this plugin looks like this:
 
@@ -33,7 +33,7 @@ plugins: [
 
 and make sure [sql-wasm.wasm file](https://github.com/sql-js/sql.js/blob/master/README.md#downloadingusing) exists in your public path.
 
-**Example of configuration**
+#### Example of configuration
 
 ```typescript
 new DataSource({
@@ -43,7 +43,7 @@ new DataSource({
 })
 ```
 
-**Don't forget to include reflect-metadata**
+#### Don't forget to include reflect-metadata
 
 In your main html page, you need to include reflect-metadata:
 

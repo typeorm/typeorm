@@ -35,7 +35,8 @@ describe("schema builder > change unique constraint", () => {
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     uniqueIndexMetadata = new IndexMetadata({
                         entityMetadata: teacherMetadata,
@@ -68,7 +69,8 @@ describe("schema builder > change unique constraint", () => {
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     table!.indices.length.should.be.equal(1)
                     table!.indices[0].isUnique!.should.be.true
@@ -101,7 +103,8 @@ describe("schema builder > change unique constraint", () => {
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     const uniqueIndexMetadata = postMetadata.indices.find(
                         (i) => i.columns.length === 2 && i.isUnique === true,
@@ -122,7 +125,8 @@ describe("schema builder > change unique constraint", () => {
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     const tableIndex = table!.indices.find(
                         (index) =>
@@ -169,7 +173,8 @@ describe("schema builder > change unique constraint", () => {
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     const index = postMetadata!.indices.find(
                         (i) => i.columns.length === 2 && i.isUnique === true,
@@ -196,7 +201,8 @@ describe("schema builder > change unique constraint", () => {
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     table!.indices.length.should.be.equal(1)
                 } else {

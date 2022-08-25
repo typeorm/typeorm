@@ -445,7 +445,9 @@ describe("embedded > embedded-many-to-many-case4", () => {
 
                     await connection.getRepository(User).remove(loadedUser!)
 
-                    loadedUsers = (await connection.getRepository(User).find())!
+                    loadedUsers = (await connection
+                        .getRepository(User)
+                        .find({ order: { name: "ASC" } }))!
                     expect(loadedUsers.length).to.be.equal(2)
                     expect(loadedUsers[0].name).to.be.equal("Bob")
                     expect(loadedUsers[1].name).to.be.equal("Clara")

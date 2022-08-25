@@ -5,6 +5,7 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 import { Table } from "../schema-builder/table/Table"
 import { QueryResultCache } from "./QueryResultCache"
 import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
+import { v4 as uuidv4 } from "uuid"
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -80,7 +81,10 @@ export class DbQueryResultCache implements QueryResultCache {
                         type: driver.normalizeType({
                             type: driver.mappedDataTypes.cacheId,
                         }),
-                        generationStrategy: "increment",
+                        generationStrategy:
+                            driver.options.type === "spanner"
+                                ? "uuid"
+                                : "increment",
                         isGenerated: true,
                     },
                     {
@@ -256,6 +260,14 @@ export class DbQueryResultCache implements QueryResultCache {
 
             await qb.execute()
         } else {
+            // Spanner does not support auto-generated columns
+            if (
+                this.connection.driver.options.type === "spanner" &&
+                !insertedValues.id
+            ) {
+                insertedValues.id = uuidv4()
+            }
+
             // otherwise insert
             await queryRunner.manager
                 .createQueryBuilder()
@@ -286,12 +298,10 @@ export class DbQueryResultCache implements QueryResultCache {
         identifiers: string[],
         queryRunner?: QueryRunner,
     ): Promise<void> {
+        let _queryRunner: QueryRunner = queryRunner || this.getQueryRunner()
         await Promise.all(
             identifiers.map((identifier) => {
-                const qb =
-                    this.getQueryRunner(
-                        queryRunner,
-                    ).manager.createQueryBuilder()
+                const qb = _queryRunner.manager.createQueryBuilder()
                 return qb
                     .delete()
                     .from(this.queryResultCacheTable)
@@ -301,6 +311,10 @@ export class DbQueryResultCache implements QueryResultCache {
                     .execute()
             }),
         )
+
+        if (!queryRunner) {
+            await _queryRunner.release()
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -310,9 +324,7 @@ export class DbQueryResultCache implements QueryResultCache {
     /**
      * Gets a query runner to work with.
      */
-    protected getQueryRunner(
-        queryRunner: QueryRunner | undefined,
-    ): QueryRunner {
+    protected getQueryRunner(queryRunner?: QueryRunner): QueryRunner {
         if (queryRunner) return queryRunner
 
         return this.connection.createQueryRunner()

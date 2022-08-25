@@ -1,5 +1,4 @@
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Entity, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class Book {

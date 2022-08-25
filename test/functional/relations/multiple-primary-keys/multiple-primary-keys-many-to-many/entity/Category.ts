@@ -9,12 +9,12 @@ import { Unique } from "../../../../../../src"
 @Entity()
 @Unique(["code", "version", "description"])
 export class Category {
-    @PrimaryColumn("varchar", {
+    @PrimaryColumn(String, {
         length: 31,
     })
     name: string
 
-    @PrimaryColumn("varchar", {
+    @PrimaryColumn(String, {
         length: 31,
     })
     type: string

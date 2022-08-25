@@ -44,7 +44,11 @@ describe("github issues > #8221", () => {
     it("afterLoad entity modifier must not make relation key matching fail", async () => {
         for (const connection of connections) {
             const userRepo = connection.getRepository(User)
-            const subscriber = connection.subscribers[0] as SettingSubscriber
+            const subscriber = connection.subscribers.find(
+                (s) => s instanceof SettingSubscriber,
+            ) as SettingSubscriber
+            if (!subscriber) throw new Error(`Subscriber not found`)
+
             subscriber.reset()
 
             await insertSimpleTestData(connection)

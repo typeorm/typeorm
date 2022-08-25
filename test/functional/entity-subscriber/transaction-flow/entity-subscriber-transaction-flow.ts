@@ -58,7 +58,11 @@ describe("entity subscriber > transaction flow", () => {
 
     it("transactionStart", async () => {
         for (let connection of connections) {
-            if (connection.driver.options.type === "mssql") return
+            if (
+                connection.driver.options.type === "mssql" ||
+                connection.driver.options.type === "spanner"
+            )
+                return
 
             beforeTransactionStart.resetHistory()
             afterTransactionStart.resetHistory()
@@ -140,7 +144,11 @@ describe("entity subscriber > transaction flow", () => {
 
     it("transactionCommit", async () => {
         for (let connection of connections) {
-            if (connection.driver.options.type === "mssql") return
+            if (
+                connection.driver.options.type === "mssql" ||
+                connection.driver.options.type === "spanner"
+            )
+                return
 
             beforeTransactionCommit.resetHistory()
             afterTransactionCommit.resetHistory()
@@ -204,7 +212,11 @@ describe("entity subscriber > transaction flow", () => {
 
     it("transactionRollback", async () => {
         for (let connection of connections) {
-            if (connection.driver.options.type === "mssql") return
+            if (
+                connection.driver.options.type === "mssql" ||
+                connection.driver.options.type === "spanner"
+            )
+                return
 
             beforeTransactionRollback.resetHistory()
             afterTransactionRollback.resetHistory()

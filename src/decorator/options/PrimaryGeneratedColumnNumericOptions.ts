@@ -29,4 +29,9 @@ export interface PrimaryGeneratedColumnNumericOptions {
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
      */
     unsigned?: boolean
+
+    /**
+     * Name of the primary key constraint.
+     */
+    primaryKeyConstraintName?: string
 }

@@ -65,7 +65,12 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                 const loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryIds", "post.categories")
+                    .addOrderBy("post.id")
                     .getMany()
+
+                // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
+                loadedPosts[0].categoryIds.sort((a, b) => a.id - b.id)
+                loadedPosts[1].categoryIds.sort((a, b) => a.id - b.id)
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[0].categoryIds[0]).to.be.eql({
@@ -138,7 +143,12 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                         "category.imageIds",
                         "category.images",
                     )
+                    .addOrderBy("category.id")
                     .getMany()
+
+                // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
+                loadedCategories[0].imageIds.sort()
+                loadedCategories[1].imageIds.sort()
 
                 expect(loadedCategories[0].imageIds).to.not.be.eql([])
                 expect(loadedCategories[0].imageIds[0]).to.be.equal(1)
@@ -218,6 +228,7 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                                 { id: 1, code: 1 },
                             ),
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -236,7 +247,12 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                         (qb) =>
                             qb.andWhere("category.code = :code", { code: 1 }),
                     )
+                    .addOrderBy("post.id")
                     .getMany()
+
+                // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
+                loadedPosts[0].categoryIds.sort((a, b) => a.id - b.id)
+                loadedPosts[1].categoryIds.sort((a, b) => a.id - b.id)
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[0].categoryIds[0]).to.be.eql({
@@ -264,7 +280,12 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                                 isRemoved: true,
                             }),
                     )
+                    .addOrderBy("post.id")
                     .getMany()
+
+                // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
+                loadedPosts[0].categoryIds.sort((a, b) => a.id - b.id)
+                loadedPosts[1].categoryIds.sort((a, b) => a.id - b.id)
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[0].categoryIds[0]).to.be.eql({
@@ -363,7 +384,7 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                         "category.imageIds",
                         "category.images",
                     )
-                    .orderBy("category.id")
+                    .orderBy("post.id, category.id")
                     .getMany()
 
                 expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -377,8 +398,8 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                 expect(
                     loadedPosts[0].categories[0].imageIds.length,
                 ).to.be.equal(2)
-                expect(loadedPosts[0].categories[0].imageIds[0]).to.be.equal(1)
-                expect(loadedPosts[0].categories[0].imageIds[1]).to.be.equal(2)
+                expect(loadedPosts[0].categories[0].imageIds).to.contain(1)
+                expect(loadedPosts[0].categories[0].imageIds).to.contain(2)
                 expect(loadedPosts[1].categoryIds).to.not.be.eql([])
                 expect(loadedPosts[1].categoryIds.length).to.be.equal(2)
                 expect(loadedPosts[1].categoryIds[0]).to.be.eql({
@@ -395,8 +416,8 @@ describe("query builder > relation-id > one-to-many > multiple-pk", () => {
                 expect(
                     loadedPosts[1].categories[0].imageIds.length,
                 ).to.be.equal(2)
-                expect(loadedPosts[1].categories[0].imageIds[0]).to.be.equal(3)
-                expect(loadedPosts[1].categories[0].imageIds[1]).to.be.equal(4)
+                expect(loadedPosts[1].categories[0].imageIds).to.contain(3)
+                expect(loadedPosts[1].categories[0].imageIds).to.contain(4)
                 expect(loadedPosts[1].categories[1].imageIds).to.not.be.eql([])
                 expect(
                     loadedPosts[1].categories[1].imageIds.length,

@@ -21,7 +21,7 @@ export const PostSchema: EntitySchemaOptions<Post> = {
         },
 
         title: {
-            type: "varchar",
+            type: String,
         },
     },
 

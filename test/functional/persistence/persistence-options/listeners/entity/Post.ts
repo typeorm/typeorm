@@ -1,12 +1,14 @@
-import { BeforeInsert } from "../../../../../../src/decorator/listeners/BeforeInsert"
-import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../../src/decorator/columns/Column"
-import { AfterRemove } from "../../../../../../src/decorator/listeners/AfterRemove"
+import {
+    AfterRemove,
+    BeforeInsert,
+    Column,
+    Entity,
+    PrimaryColumn,
+} from "../../../../../../src"
 
 @Entity()
 export class Post {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column()

@@ -35,8 +35,13 @@ export class PlatformTools {
 
         try {
             // switch case to explicit require statements for webpack compatibility.
-
             switch (name) {
+                /**
+                 * spanner
+                 */
+                case "spanner":
+                    return require("@google-cloud/spanner")
+
                 /**
                  * mongodb
                  */

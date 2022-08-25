@@ -1,10 +1,10 @@
 import {
     EntitySubscriberInterface,
     EventSubscriber,
+    RecoverEvent,
+    SoftRemoveEvent,
     UpdateEvent,
 } from "../../../../src"
-import { RecoverEvent } from "../../../../src/subscriber/event/RecoverEvent"
-import { SoftRemoveEvent } from "../../../../src/subscriber/event/SoftRemoveEvent"
 import { Post } from "../entity/Post"
 
 @EventSubscriber()

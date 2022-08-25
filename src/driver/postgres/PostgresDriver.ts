@@ -375,13 +375,16 @@ export class PostgresDriver implements Driver {
 
         const results = (await this.executeQuery(
             connection,
-            "SHOW server_version;",
+            "SELECT version();",
         )) as {
             rows: {
-                server_version: string
+                version: string
             }[]
         }
-        const versionString = results.rows[0].server_version
+        const versionString = results.rows[0].version.replace(
+            /^PostgreSQL ([\d\.]+) .*$/,
+            "$1",
+        )
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
             versionString,
             "12.0",
@@ -1241,24 +1244,101 @@ export class PostgresDriver implements Driver {
 
             // DEBUG SECTION
             // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName);
-            //     console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            //     console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            //     console.log("length:", tableColumn.length, columnMetadata.length);
-            //     console.log("isArray:", tableColumn.isArray, columnMetadata.isArray);
-            //     console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            //     console.log("comment:", tableColumn.comment, this.escapeComment(columnMetadata.comment));
-            //     console.log("enumName:", tableColumn.enumName, columnMetadata.enumName);
-            //     console.log("enum:", tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + "")));
-            //     console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            //     console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            //     console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            //     console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            //     console.log("isGenerated 2:", !tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default);
-            //     console.log("spatialFeatureType:", (tableColumn.spatialFeatureType || "").toLowerCase(), (columnMetadata.spatialFeatureType || "").toLowerCase());
-            //     console.log("srid", tableColumn.srid, columnMetadata.srid);
-            //     console.log("==========================================");
+            //     console.log("table:", columnMetadata.entityMetadata.tableName)
+            //     console.log(
+            //         "name:",
+            //         tableColumn.name,
+            //         columnMetadata.databaseName,
+            //     )
+            //     console.log(
+            //         "type:",
+            //         tableColumn.type,
+            //         this.normalizeType(columnMetadata),
+            //     )
+            //     console.log(
+            //         "length:",
+            //         tableColumn.length,
+            //         columnMetadata.length,
+            //     )
+            //     console.log(
+            //         "isArray:",
+            //         tableColumn.isArray,
+            //         columnMetadata.isArray,
+            //     )
+            //     console.log(
+            //         "precision:",
+            //         tableColumn.precision,
+            //         columnMetadata.precision,
+            //     )
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
+            //     console.log(
+            //         "comment:",
+            //         tableColumn.comment,
+            //         this.escapeComment(columnMetadata.comment),
+            //     )
+            //     console.log(
+            //         "enumName:",
+            //         tableColumn.enumName,
+            //         columnMetadata.enumName,
+            //     )
+            //     console.log(
+            //         "enum:",
+            //         tableColumn.enum &&
+            //             columnMetadata.enum &&
+            //             !OrmUtils.isArraysEqual(
+            //                 tableColumn.enum,
+            //                 columnMetadata.enum.map((val) => val + ""),
+            //             ),
+            //     )
+            //     console.log(
+            //         "isPrimary:",
+            //         tableColumn.isPrimary,
+            //         columnMetadata.isPrimary,
+            //     )
+            //     console.log(
+            //         "isNullable:",
+            //         tableColumn.isNullable,
+            //         columnMetadata.isNullable,
+            //     )
+            //     console.log(
+            //         "isUnique:",
+            //         tableColumn.isUnique,
+            //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log(
+            //         "isGenerated:",
+            //         tableColumn.isGenerated,
+            //         columnMetadata.isGenerated,
+            //     )
+            //     console.log(
+            //         "generatedType:",
+            //         tableColumn.generatedType,
+            //         columnMetadata.generatedType,
+            //     )
+            //     console.log(
+            //         "asExpression:",
+            //         (tableColumn.asExpression || "").trim(),
+            //         (columnMetadata.asExpression || "").trim(),
+            //     )
+            //     console.log(
+            //         "collation:",
+            //         tableColumn.collation,
+            //         columnMetadata.collation,
+            //     )
+            //     console.log(
+            //         "isGenerated 2:",
+            //         !tableColumn.isGenerated &&
+            //             this.lowerDefaultValueIfNecessary(
+            //                 this.normalizeDefault(columnMetadata),
+            //             ) !== tableColumn.default,
+            //     )
+            //     console.log(
+            //         "spatialFeatureType:",
+            //         (tableColumn.spatialFeatureType || "").toLowerCase(),
+            //         (columnMetadata.spatialFeatureType || "").toLowerCase(),
+            //     )
+            //     console.log("srid", tableColumn.srid, columnMetadata.srid)
+            //     console.log("==========================================")
             // }
 
             return isColumnChanged

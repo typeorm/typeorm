@@ -626,6 +626,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
+                    !(this.connection.driver.options.type === "spanner") &&
                     !(this.connection.driver.options.type === "oracle") &&
                     !DriverUtils.isSQLiteFamily(this.connection.driver) &&
                     !DriverUtils.isMySQLFamily(this.connection.driver) &&
@@ -778,7 +779,8 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                             DriverUtils.isSQLiteFamily(
                                 this.connection.driver,
                             ) ||
-                            this.connection.driver.options.type === "sap"
+                            this.connection.driver.options.type === "sap" ||
+                            this.connection.driver.options.type === "spanner"
                         ) {
                             // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                             if (
@@ -796,6 +798,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         } else {
                             expression += "DEFAULT"
                         }
+                    } else if (
+                        value === null &&
+                        this.connection.driver.options.type === "spanner"
+                    ) {
+                        expression += "NULL"
 
                         // support for SQL expressions in queries
                     } else if (typeof value === "function") {
@@ -929,16 +936,22 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
                         if (
+                            (this.connection.driver.options.type === "oracle" &&
+                                valueSets.length > 1) ||
                             DriverUtils.isSQLiteFamily(
                                 this.connection.driver,
                             ) ||
-                            this.connection.driver.options.type === "sap"
+                            this.connection.driver.options.type === "sap" ||
+                            this.connection.driver.options.type === "spanner"
                         ) {
                             expression += "NULL"
                         } else {
                             expression += "DEFAULT"
                         }
-
+                    } else if (
+                        value === null &&
+                        this.connection.driver.options.type === "spanner"
+                    ) {
                         // just any other regular value
                     } else {
                         expression += this.createParameter(value)

@@ -19,6 +19,7 @@ describe("query runner > stream", () => {
                 "postgres",
                 "mssql",
                 "oracle",
+                "spanner",
             ],
         })
     })
@@ -38,11 +39,13 @@ describe("query runner > stream", () => {
                 const query = connection
                     .createQueryBuilder(Book, "book")
                     .select()
+                    .orderBy("book.ean")
                     .getQuery()
 
                 const readStream = await queryRunner.stream(query)
 
-                await new Promise((ok) => readStream.once("readable", ok))
+                if (!(connection.driver.options.type === "spanner"))
+                    await new Promise((ok) => readStream.once("readable", ok))
 
                 const data: any[] = []
 

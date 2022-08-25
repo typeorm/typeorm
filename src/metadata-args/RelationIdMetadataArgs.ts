@@ -7,7 +7,7 @@ export interface RelationIdMetadataArgs {
     /**
      * Class to which this decorator is applied.
      */
-    readonly target: Function
+    readonly target: Function | string
 
     /**
      * Class's property name to which this decorator is applied.
