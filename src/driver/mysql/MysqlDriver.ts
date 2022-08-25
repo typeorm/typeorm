@@ -310,8 +310,6 @@ export class MysqlDriver implements Driver {
      */
     maxAliasLength = 63
 
-    public readonly escapeSymbol: string = "`"
-
     cteCapabilities: CteCapabilities = {
         enabled: false,
         requiresRecursiveHint: true,
@@ -519,7 +517,7 @@ export class MysqlDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return "`" + columnName + "`"
     }
 
     /**

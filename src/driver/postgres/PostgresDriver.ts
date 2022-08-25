@@ -280,8 +280,6 @@ export class PostgresDriver implements Driver {
         materializedHint: true,
     }
 
-    public readonly escapeSymbol: string = '"'
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -855,7 +853,7 @@ export class PostgresDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return '"' + columnName + '"'
     }
 
     /**

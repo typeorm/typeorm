@@ -229,8 +229,6 @@ export abstract class AbstractSqliteDriver implements Driver {
         requiresRecursiveHint: true,
     }
 
-    public readonly escapeSymbol: string = '"'
-
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -500,7 +498,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return '"' + columnName + '"'
     }
 
     /**

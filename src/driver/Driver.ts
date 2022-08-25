@@ -102,8 +102,6 @@ export interface Driver {
 
     cteCapabilities: CteCapabilities
 
-    escapeSymbol: string
-
     /**
      * Performs connection to the database.
      * Depend on driver type it may create a connection pool.

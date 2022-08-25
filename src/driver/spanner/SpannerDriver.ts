@@ -172,8 +172,6 @@ export class SpannerDriver implements Driver {
         enabled: true,
     }
 
-    public readonly escapeSymbol: string = "`"
-
     /**
      * Supported returning types
      */
@@ -313,7 +311,7 @@ export class SpannerDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return `\`${columnName}\``
     }
 
     /**

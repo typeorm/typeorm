@@ -209,8 +209,6 @@ export class SapDriver implements Driver {
         enabled: true,
     }
 
-    public readonly escapeSymbol: string = '"'
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -392,7 +390,7 @@ export class SapDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return `"${columnName}"`
     }
 
     /**

@@ -231,8 +231,6 @@ export class CockroachDriver implements Driver {
      */
     maxAliasLength?: number
 
-    public readonly escapeSymbol: string = '"'
-
     cteCapabilities: CteCapabilities = {
         enabled: true,
         writable: true,
@@ -491,7 +489,7 @@ export class CockroachDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return '"' + columnName + '"'
     }
 
     /**

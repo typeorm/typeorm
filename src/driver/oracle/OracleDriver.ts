@@ -221,8 +221,6 @@ export class OracleDriver implements Driver {
      */
     maxAliasLength = 29
 
-    public readonly escapeSymbol: string = '"'
-
     cteCapabilities: CteCapabilities = {
         enabled: false, // TODO: enable
     }
@@ -393,7 +391,7 @@ export class OracleDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return `"${columnName}"`
     }
 
     /**

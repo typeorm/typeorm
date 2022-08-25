@@ -235,8 +235,6 @@ export class SqlServerDriver implements Driver {
      */
     maxAliasLength = 128
 
-    public readonly escapeSymbol: string = '"'
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -403,7 +401,7 @@ export class SqlServerDriver implements Driver {
      * Escapes a column name.
      */
     escape(columnName: string): string {
-        return `${this.escapeSymbol}${columnName}${this.escapeSymbol}`
+        return `"${columnName}"`
     }
 
     /**

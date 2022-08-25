@@ -573,14 +573,6 @@ export abstract class QueryBuilder<Entity> {
         return this.connection.driver.escape(name)
     }
 
-    escapeIfNeeded(name: string): string {
-        if (String(Number(name)) === name) return name // in case if ORDER BY 1/ GROUP BY 1
-        if (this.connection.driver.escapeSymbol === "") return name
-        if (name.startsWith(this.connection.driver.escapeSymbol)) return name
-
-        return this.escape(name)
-    }
-
     /**
      * Sets or overrides query builder's QueryRunner.
      */
