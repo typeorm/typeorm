@@ -551,12 +551,6 @@ To add more group-by criteria use `addGroupBy`:
 createQueryBuilder("user").groupBy("user.name").addGroupBy("user.id")
 ```
 
-You can also use an array:
-
-```typescript
-createQueryBuilder("user").groupBy(["user.name", "user.id"])
-```
-
 If you use `.groupBy` more than once you'll override all previous `GROUP BY` expressions.
 
 ## Adding `LIMIT` expression

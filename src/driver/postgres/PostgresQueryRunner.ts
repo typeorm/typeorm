@@ -1,10 +1,11 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -16,16 +17,15 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { OrmUtils } from "../../util/OrmUtils"
-import { Query } from "../Query"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { PostgresDriver } from "./PostgresDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { VersionUtils } from "../../util/VersionUtils"
-import { TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { PostgresDriver } from "./PostgresDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -93,12 +93,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -114,12 +114,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -3596,8 +3596,13 @@ export class PostgresQueryRunner
                                         dbColumn["column_default"],
                                     )
                                 ) {
-                                    tableColumn.isGenerated = true
-                                    tableColumn.generationStrategy = "uuid"
+                                    if (tableColumn.type === "uuid") {
+                                        tableColumn.isGenerated = true
+                                        tableColumn.generationStrategy = "uuid"
+                                    } else {
+                                        tableColumn.default =
+                                            dbColumn["column_default"]
+                                    }
                                 } else if (
                                     dbColumn["column_default"] === "now()" ||
                                     dbColumn["column_default"].indexOf(

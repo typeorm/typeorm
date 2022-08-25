@@ -1277,20 +1277,11 @@ export class SelectQueryBuilder<Entity>
      * If you had previously GROUP BY expression defined,
      * calling this function will override previously set GROUP BY conditions.
      */
-    groupBy(groupBy: string[]): this
-
-    /**
-     * Sets GROUP BY condition in the query builder.
-     * If you had previously GROUP BY expression defined,
-     * calling this function will override previously set GROUP BY conditions.
-     */
-    groupBy(groupBy?: string | string[]): this {
-        if (!groupBy) {
-            this.expressionMap.groupBys = []
-        } else if (Array.isArray(groupBy)) {
-            this.expressionMap.groupBys = [...groupBy]
-        } else {
+    groupBy(groupBy?: string): this {
+        if (groupBy) {
             this.expressionMap.groupBys = [groupBy]
+        } else {
+            this.expressionMap.groupBys = []
         }
         return this
     }
