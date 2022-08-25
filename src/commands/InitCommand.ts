@@ -232,7 +232,13 @@ sid: "xe.oracle.docker",`
                 break
             case "mongodb":
                 dbSettings = `type: "mongodb",
-database: "test",`
+    database: "test",`
+                break
+            case "spanner":
+                dbSettings = `type: "spanner",
+    projectId: "test",
+    instanceId: "test",
+    databaseId: "test",`
                 break
         }
         return `import "reflect-metadata"
@@ -603,6 +609,17 @@ services:
       - "27017:27017"
 
 `
+            case "spanner":
+                return `version: '3'
+services:
+
+  spanner:
+    image: gcr.io/cloud-spanner-emulator/emulator:1.4.1
+    ports:
+      - "9010:9010"
+      - "9020:9020"
+
+`
         }
         return ""
     }
@@ -665,19 +682,22 @@ Steps to run this project:
                 packageJson.dependencies["pg"] = "^8.4.0"
                 break
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^4.0.3"
+                packageJson.dependencies["sqlite3"] = "^5.0.2"
                 break
             case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] = "^7.0.0"
                 break
             case "oracle":
-                packageJson.dependencies["oracledb"] = "^1.13.1"
+                packageJson.dependencies["oracledb"] = "^5.1.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^4.0.4"
+                packageJson.dependencies["mssql"] = "^7.3.0"
                 break
             case "mongodb":
                 packageJson.dependencies["mongodb"] = "^3.0.8"
+                break
+            case "spanner":
+                packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"
                 break
         }
 

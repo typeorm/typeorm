@@ -4154,6 +4154,27 @@ export class SelectQueryBuilder<Entity>
                                     " " +
                                     parseInt(where[key].value),
                             )
+                        } else {
+                            if (
+                                relation.isManyToOne ||
+                                (relation.isOneToOne &&
+                                    relation.isOneToOneOwner)
+                            ) {
+                                const aliasPath = `${alias}.${propertyPath}`
+
+                                andConditions.push(
+                                    this.createWhereConditionExpression(
+                                        this.getWherePredicateCondition(
+                                            aliasPath,
+                                            where[key],
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                throw new Error(
+                                    `This relation isn't supported by given find operator`,
+                                )
+                            }
                         }
                     } else {
                         // const joinAlias = alias + "_" + relation.propertyName;

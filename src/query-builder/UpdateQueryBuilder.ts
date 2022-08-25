@@ -22,7 +22,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class UpdateQueryBuilder<Entity>
+export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     extends QueryBuilder<Entity>
     implements WhereExpressionBuilder
 {
@@ -518,6 +518,7 @@ export class UpdateQueryBuilder<Entity>
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
+                            !(value instanceof Date) &&
                             value !== null &&
                             !Buffer.isBuffer(value)
                         ) {
