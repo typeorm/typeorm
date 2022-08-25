@@ -34,7 +34,7 @@ await queryRunner.release()
 
 After connection is released it is not possible to use the query runner methods.
 
-`QueryRunner` has bunch of methods you can use, it also has it's own `EntityManager` instance,
+`QueryRunner` has bunch of methods you can use, it also has its own `EntityManager` instance,
 which you can use through `manager` property in order to run `EntityManager` methods on a particular database connection
 used by `QueryRunner` instance:
 
@@ -44,7 +44,7 @@ const queryRunner = connection.createQueryRunner()
 // take a connection from the connection pool
 await queryRunner.connect()
 
-// use this particular connection to execut queries
+// use this particular connection to execute queries
 const users = await queryRunner.manager.find(User)
 
 // don't forget to release connection after you are done using it

@@ -118,7 +118,7 @@ export class CascadesSubjectBuilder {
 
     /**
      * Finds subject where entity like given subject's entity.
-     * Comparision made by entity id.
+     * Comparison made by entity id.
      */
     protected findByPersistEntityLike(
         entityTarget: Function | string,

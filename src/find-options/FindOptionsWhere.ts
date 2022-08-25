@@ -3,7 +3,7 @@ import { ObjectID } from "../driver/mongodb/typings"
 import { EqualOperator } from "./EqualOperator"
 
 /**
- * A single property handler for FindOptionsWere.
+ * A single property handler for FindOptionsWhere.
  */
 export type FindOptionsWhereProperty<Property> = Property extends Promise<
     infer I
@@ -32,5 +32,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
  * Used for find operations.
  */
 export type FindOptionsWhere<Entity> = {
-    [P in keyof Entity]?: FindOptionsWhereProperty<NonNullable<Entity[P]>>
+    [P in keyof Entity]?: P extends "toString"
+        ? unknown
+        : FindOptionsWhereProperty<NonNullable<Entity[P]>>
 }

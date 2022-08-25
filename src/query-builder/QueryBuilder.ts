@@ -24,6 +24,7 @@ import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundErro
 import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { escapeRegExp } from "../util/escapeRegExp"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -388,7 +389,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets parameter name and its value.
      *
-     * The key for this parametere may contain numbers, letters, underscores, or periods.
+     * The key for this parameter may contain numbers, letters, underscores, or periods.
      */
     setParameter(key: string, value: any): this {
         if (typeof value === "function") {
@@ -701,12 +702,8 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Replaces all entity's propertyName to name in the given statement.
      */
-    protected replacePropertyNames(statement: string) {
-        // Escape special characters in regular expressions
-        // Per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-        const escapeRegExp = (s: String) =>
-            s.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
+    protected replacePropertyNames(statement: string) {
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
             const replaceAliasNamePrefix = this.expressionMap
@@ -726,7 +723,7 @@ export abstract class QueryBuilder<Entity> {
             // * Relation Property Path to first join column key
             // * Relation Property Path + Column Path
             // * Column Database Name
-            // * Column Propety Name
+            // * Column Property Name
             // * Column Property Path
 
             for (const relation of alias.metadata.relations) {
@@ -759,27 +756,27 @@ export abstract class QueryBuilder<Entity> {
                 replacements[column.propertyPath] = column.databaseName
             }
 
-            const replacementKeys = Object.keys(replacements)
-
-            if (replacementKeys.length) {
-                statement = statement.replace(
-                    new RegExp(
-                        // Avoid a lookbehind here since it's not well supported
-                        `([ =\(]|^.{0})` +
-                            `${escapeRegExp(
-                                replaceAliasNamePrefix,
-                            )}(${replacementKeys
-                                .map(escapeRegExp)
-                                .join("|")})` +
-                            `(?=[ =\)\,]|.{0}$)`,
-                        "gm",
-                    ),
-                    (_, pre, p) =>
-                        `${pre}${replacementAliasNamePrefix}${this.escape(
+            statement = statement.replace(
+                new RegExp(
+                    // Avoid a lookbehind here since it's not well supported
+                    `([ =\(]|^.{0})` + // any of ' =(' or start of line
+                        // followed by our prefix, e.g. 'tablename.' or ''
+                        `${escapeRegExp(
+                            replaceAliasNamePrefix,
+                        )}([^ =\(\)\,]+)` + // a possible property name: sequence of anything but ' =(),'
+                        // terminated by ' =),' or end of line
+                        `(?=[ =\)\,]|.{0}$)`,
+                    "gm",
+                ),
+                (match, pre, p) => {
+                    if (replacements[p]) {
+                        return `${pre}${replacementAliasNamePrefix}${this.escape(
                             replacements[p],
-                        )}`,
-                )
-            }
+                        )}`
+                    }
+                    return match
+                },
+            )
         }
 
         return statement
