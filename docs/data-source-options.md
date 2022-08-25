@@ -345,7 +345,7 @@ Different RDBMS-es have their own specific options.
     SQL Server Availability Group. For more information, see here. (default: `false`).
 
 -   `options.encrypt` - A boolean determining whether or not the connection will be encrypted. Set to true if you're
-    on Windows Azure. (default: `false`).
+    on Windows Azure. (default: `true`).
 
 -   `options.cryptoCredentialsDetails` - When encryption is used, an object may be supplied that will be used for the
     first argument when calling [tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)
@@ -372,6 +372,8 @@ Different RDBMS-es have their own specific options.
     -   `7_4`
 
     (default: `7_4`)
+
+-   `options.appName` - Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server. (default: `node-mssql`)
 
 -   `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
     details (default: `false`).

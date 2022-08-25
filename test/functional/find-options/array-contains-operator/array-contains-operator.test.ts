@@ -15,7 +15,7 @@ describe("find options > find operators > ArrayContains", () => {
             (connections = await createTestingConnections({
                 __dirname,
                 enabledDrivers: ["postgres"],
-                logging: true,
+                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

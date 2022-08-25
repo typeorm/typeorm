@@ -1089,12 +1089,7 @@ export abstract class AbstractSqliteQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(index)
@@ -1132,6 +1127,9 @@ export abstract class AbstractSqliteQueryRunner
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(index)
         const down = this.createIndexSql(table, index)
@@ -1499,7 +1497,7 @@ export abstract class AbstractSqliteQueryRunner
                     }),
                 )
 
-                // find unique constraints from CREATE TABLE sql
+                // find foreign key constraints from CREATE TABLE sql
                 let fkResult
                 const fkMappings: {
                     name: string
@@ -1507,7 +1505,7 @@ export abstract class AbstractSqliteQueryRunner
                     referencedTableName: string
                 }[] = []
                 const fkRegex =
-                    /CONSTRAINT "([^"]*)" FOREIGN KEY \((.*?)\) REFERENCES "([^"]*)" /g
+                    /CONSTRAINT "([^"]*)" FOREIGN KEY ?\((.*?)\) REFERENCES "([^"]*)"/g
                 while ((fkResult = fkRegex.exec(sql)) !== null) {
                     fkMappings.push({
                         name: fkResult[1],
@@ -1563,7 +1561,7 @@ export abstract class AbstractSqliteQueryRunner
                 // find unique constraints from CREATE TABLE sql
                 let uniqueRegexResult
                 const uniqueMappings: { name: string; columns: string[] }[] = []
-                const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE \((.*?)\)/g
+                const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE ?\((.*?)\)/g
                 while ((uniqueRegexResult = uniqueRegex.exec(sql)) !== null) {
                     uniqueMappings.push({
                         name: uniqueRegexResult[1],
@@ -1627,7 +1625,8 @@ export abstract class AbstractSqliteQueryRunner
 
                 // build checks
                 let result
-                const regexp = /CONSTRAINT "([^"]*)" CHECK (\(.*?\))([,]|[)]$)/g
+                const regexp =
+                    /CONSTRAINT "([^"]*)" CHECK ?(\(.*?\))([,]|[)]$)/g
                 while ((result = regexp.exec(sql)) !== null) {
                     table.checks.push(
                         new TableCheck({
@@ -1690,7 +1689,11 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Builds create table sql.
      */
-    protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
+    protected createTableSql(
+        table: Table,
+        createForeignKeys?: boolean,
+        temporaryTable?: boolean,
+    ): Query {
         const primaryColumns = table.columns.filter(
             (column) => column.isPrimary,
         )
@@ -1711,6 +1714,14 @@ export abstract class AbstractSqliteQueryRunner
         let sql = `CREATE TABLE ${this.escapePath(
             table.name,
         )} (${columnDefinitions}`
+
+        let [databaseNew, tableName] = this.splitTablePath(table.name)
+        const newTableName = temporaryTable
+            ? `${databaseNew ? `${databaseNew}.` : ""}${tableName.replace(
+                  /^temporary_/,
+                  "",
+              )}`
+            : table.name
 
         // need for `addColumn()` method, because it recreates table.
         table.columns
@@ -1739,7 +1750,7 @@ export abstract class AbstractSqliteQueryRunner
                     const uniqueName = unique.name
                         ? unique.name
                         : this.connection.namingStrategy.uniqueConstraintName(
-                              table,
+                              newTableName,
                               unique.columnNames,
                           )
                     const columnNames = unique.columnNames
@@ -1758,7 +1769,7 @@ export abstract class AbstractSqliteQueryRunner
                     const checkName = check.name
                         ? check.name
                         : this.connection.namingStrategy.checkConstraintName(
-                              table,
+                              newTableName,
                               check.expression!,
                           )
                     return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
@@ -1788,7 +1799,7 @@ export abstract class AbstractSqliteQueryRunner
                         .join(", ")
                     if (!fk.name)
                         fk.name = this.connection.namingStrategy.foreignKeyName(
-                            table,
+                            newTableName,
                             fk.columnNames,
                             this.getTablePath(fk),
                             fk.referencedColumnNames,
@@ -1983,7 +1994,7 @@ export abstract class AbstractSqliteQueryRunner
         }temporary_${tableNameNew}`
 
         // create new table
-        upQueries.push(this.createTableSql(newTable, true))
+        upQueries.push(this.createTableSql(newTable, true, true))
         downQueries.push(this.dropTableSql(newTable))
 
         // migrate all data from the old table into new table

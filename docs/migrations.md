@@ -70,7 +70,7 @@ Before creating a new migration you need to setup your data source options prope
 }
 ```
 
-Here we setup three options:
+Here we setup two options:
 
 -   `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
 -   `"migrations": [/*...*/]` - list of migrations need to be loaded by TypeORM
@@ -221,12 +221,12 @@ module.exports = class PostRefactoringTIMESTAMP {
 See, you don't need to write the queries on your own.
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
 
-## Connection option
+## DataSoure option
 
-If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
+If you need to run/revert/generate/show your migrations use the `-d` (alias for `--dataSource`) and pass the path to the file where your DataSource instance is defined as an argument
 
 ```
-typeorm -c <your-config-name> migration:{run|revert}
+typeorm -d <your-data-source-path> migration:{run|revert}
 ```
 
 ## Timestamp option
