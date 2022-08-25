@@ -42,7 +42,17 @@ describe("github issues > #9293 No quotes while using orderBy, groupBy by custom
         await connection.manager.save(offer)
     }
 
-    const rateSumAlias = "rateSum"
+    const alias = "rateSum"
+
+    const getEscapedAliasByDbType = (
+        connection: DataSource,
+        alias: string,
+    ): string => {
+        const quoteSymbol =
+            connection.driver.constructor.name === "PostgresDriver" ? '"' : "`"
+
+        return `${quoteSymbol}${alias}${quoteSymbol}`
+    }
 
     before(
         async () =>
@@ -54,13 +64,13 @@ describe("github issues > #9293 No quotes while using orderBy, groupBy by custom
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should quote value from addSelect in orderBy and groupBy with SELECT DISTINCT", async () => {
+    it("should quoted alias in the query with SELECT DISTINCT", async () => {
         for (const connection of connections) {
             await prepareData(connection)
 
             const baseQuery = getBaseQuery(
                 connection.getRepository(Offer),
-                rateSumAlias,
+                getEscapedAliasByDbType(connection, alias),
             )
 
             const { entities, raw } = await baseQuery
@@ -73,44 +83,16 @@ describe("github issues > #9293 No quotes while using orderBy, groupBy by custom
         }
     })
 
-    it("should quote value from addSelect in orderBy and groupBy without SELECT DISTINCT", async () => {
+    it("should quoted alias in the query without SELECT DISTINCT", async () => {
         for (const connection of connections) {
             await prepareData(connection)
 
             const baseQuery = getBaseQuery(
                 connection.getRepository(Offer),
-                rateSumAlias,
+                getEscapedAliasByDbType(connection, alias),
             )
 
             const { entities, raw } = await baseQuery.getRawAndEntities()
-
-            expect(entities).to.be.an("array")
-            expect(raw).to.be.an("array")
-        }
-    })
-
-    it("shouldn't add extra quotes to orderBy on migration running", async () => {
-        for (const connection of connections) {
-            const result = await connection.runMigrations({
-                transaction: "none",
-            })
-            expect(result).to.be.an("array")
-        }
-    })
-
-    it("should orderBy 1 and groupBy 1 without SELECT DISTINCT", async () => {
-        for (const connection of connections) {
-            await prepareData(connection)
-
-            const baseQuery = getBaseQuery(
-                connection.getRepository(Offer),
-                rateSumAlias,
-            )
-
-            const { entities, raw } = await baseQuery
-                .addOrderBy("1", "ASC")
-                .addGroupBy("1")
-                .getRawAndEntities()
 
             expect(entities).to.be.an("array")
             expect(raw).to.be.an("array")

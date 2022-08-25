@@ -2073,7 +2073,8 @@ export class SelectQueryBuilder<Entity>
                 (select) =>
                     select.selection +
                     (select.aliasName
-                        ? " AS " + this.escape(select.aliasName)
+                        ? " AS " +
+                          this.escapeAlisNameForSelect(select.aliasName)
                         : ""),
             )
             .join(", ")
@@ -2086,6 +2087,11 @@ export class SelectQueryBuilder<Entity>
             this.createTableLockExpression() +
             useIndex
         )
+    }
+
+    protected escapeAlisNameForSelect(aliasName: string): string {
+        if (['"', "`"].includes(aliasName[0])) return aliasName // alias was already quoted
+        return this.escape(aliasName)
     }
 
     /**
