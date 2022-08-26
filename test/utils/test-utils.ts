@@ -14,6 +14,7 @@ import {
 } from "../../src"
 import { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
+import { RdbmsSchemaBuilderHook } from "../../src/schema-builder/custom-hooks/RdbmsSchemaBuilderHook"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
 import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
 
@@ -159,6 +160,8 @@ export interface TestingOptions {
         | Logger
 
     relationLoadStrategy?: "join" | "query"
+
+    schemaBuilderHooks?: RdbmsSchemaBuilderHook[]
 }
 
 /**
@@ -295,6 +298,9 @@ export function setupTestingConnections(
                 newOptions.metadataTableName = options.metadataTableName
             if (options && options.relationLoadStrategy)
                 newOptions.relationLoadStrategy = options.relationLoadStrategy
+
+            if (options && options.schemaBuilderHooks)
+                newOptions.schemaBuilderHooks = options.schemaBuilderHooks
 
             newOptions.baseDirectory = path.dirname(getOrmFilepath())
 

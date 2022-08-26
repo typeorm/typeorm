@@ -78,6 +78,18 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.startTransaction()
         }
 
+        const hooks = this.connection.options.schemaBuilderHooks ?? []
+
+        console.log({ hooks })
+
+        for (const hook of hooks) {
+            await hook.init?.(
+                this.queryRunner,
+                this,
+                this.connection.entityMetadatas,
+            )
+        }
+
         try {
             await this.createMetadataTableIfNecessary(this.queryRunner)
             // Flush the queryrunner table & view cache
@@ -140,6 +152,16 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             await this.queryRunner.getTables(tablePaths)
             await this.queryRunner.getViews([])
+
+            const hooks = this.connection.options.schemaBuilderHooks ?? []
+
+            for (const hook of hooks) {
+                await hook.init?.(
+                    this.queryRunner,
+                    this,
+                    this.connection.entityMetadatas,
+                )
+            }
 
             this.queryRunner.enableSqlMemory()
             await this.executeSchemaSyncOperationsInProperOrder()
@@ -206,6 +228,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
+        const hooks = this.connection.options.schemaBuilderHooks ?? []
+
+        for (const hook of hooks) {
+            await hook.beforeAll?.(
+                this.queryRunner,
+                this,
+                this.entityToSyncMetadatas,
+            )
+        }
         await this.dropOldViews()
         await this.dropOldForeignKeys()
         await this.dropOldIndices()
@@ -225,6 +256,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createCompositeUniqueConstraints()
         await this.createForeignKeys()
         await this.createViews()
+
+        for (const hook of hooks) {
+            await hook.afterAll?.(
+                this.queryRunner,
+                this,
+                this.entityToSyncMetadatas,
+            )
+        }
     }
 
     private getTablePath(

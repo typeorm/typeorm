@@ -6,6 +6,7 @@ import { Logger } from "../logger/Logger"
 import { DataSource } from "../data-source/DataSource"
 import { QueryResultCache } from "../cache/QueryResultCache"
 import { MixedList } from "../common/MixedList"
+import { RdbmsSchemaBuilderHook } from "../schema-builder/custom-hooks/RdbmsSchemaBuilderHook"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -43,6 +44,12 @@ export interface BaseDataSourceOptions {
      * Accepts both migration classes and glob patterns representing migration files.
      */
     readonly migrations?: MixedList<Function | string>
+
+    /**
+     * Custom hooks for schema builder
+     */
+
+    readonly schemaBuilderHooks?: RdbmsSchemaBuilderHook[]
 
     /**
      * Migrations table name, in case of different name from "migrations".
