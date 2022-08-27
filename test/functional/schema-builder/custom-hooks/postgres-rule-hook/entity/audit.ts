@@ -6,5 +6,5 @@ export class Audit {
     id: string
 
     @Column("jsonb")
-    data: unknown
+    data: any
 }

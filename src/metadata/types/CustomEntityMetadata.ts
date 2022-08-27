@@ -5,7 +5,7 @@
  * ```ts
  * declare module 'typeorm' {
  *     interface CustomEntityMetadata {
- *         myTriggerSystem: any;
+ *         myTriggerSystem: EntityTriggers[];
  *     }
  * }
  * ```

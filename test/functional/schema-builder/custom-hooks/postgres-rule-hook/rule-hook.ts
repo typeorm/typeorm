@@ -8,8 +8,10 @@ import {
 } from "../../../../utils/test-utils"
 import { Audit } from "./entity/audit"
 import { Post } from "./entity/post"
+import { expect } from "chai"
 
-interface PgHook {
+// This is interface for pg_hooks
+interface PgRule {
     schemaname: string
     tablename: string
     rulename: string
@@ -17,13 +19,11 @@ interface PgHook {
 }
 
 class AuditHook implements RdbmsSchemaBuilderHook {
-    pgRules: PgHook[] = []
+    rulePrefix = "audit_"
 
-    private getRuleName(entityMetadata: EntityMetadata): string {
-        return `AUDIT_${entityMetadata.tableName}`
-    }
+    pgRules: PgRule[] = []
 
-    async init(
+    public async init(
         queryRunner: QueryRunner,
         schemaBuilder: RdbmsSchemaBuilder,
     ): Promise<void> {
@@ -31,18 +31,19 @@ class AuditHook implements RdbmsSchemaBuilderHook {
             `
             SELECT *
             FROM "pg_catalog"."pg_rules"
+            WHERE "rulename"::text LIKE $1
         `.trim(),
+            [`%${this.rulePrefix}%`],
         )
-        console.log("init", await queryRunner.query(`SELECT 1`), this.pgRules)
     }
 
-    async beforeAll(
+    public async beforeAll(
         queryRunner: QueryRunner,
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadatas: EntityMetadata[],
     ): Promise<void> {
         for (const rule of this.pgRules) {
-            if (rule.rulename.startsWith("audit_")) {
+            if (rule.rulename.startsWith(this.rulePrefix)) {
                 await queryRunner.query(
                     `DROP RULE IF EXISTS "${rule.rulename}" ON "${rule.tablename}"`,
                 )
@@ -50,7 +51,7 @@ class AuditHook implements RdbmsSchemaBuilderHook {
         }
     }
 
-    async afterAll(
+    public async afterAll(
         queryRunner: QueryRunner,
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadatas: EntityMetadata[],
@@ -59,6 +60,10 @@ class AuditHook implements RdbmsSchemaBuilderHook {
             if (entityMetadata.tableName !== "audit")
                 await queryRunner.query(this.getRuleDefinition(entityMetadata))
         }
+    }
+
+    private getRuleName(entityMetadata: EntityMetadata): string {
+        return `${this.rulePrefix}${entityMetadata.tableName}`
     }
 
     private getRuleDefinition(entityMetadata: EntityMetadata): string {
@@ -86,14 +91,37 @@ describe("schema builder > custom hooks > Postgres rule hook", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should just work", async () =>
+    it("should work in simple scenario", async () =>
         Promise.all(
             connections.map(async (connection) => {
-                await connection.synchronize()
-                await connection.getRepository(Post).save({ data: "hello" })
-                console.log(await connection.query(`SELECT * FROM "audit"`))
+                await connection.synchronize(true)
+                const randomString = Math.random().toString()
+                await connection
+                    .getRepository(Post)
+                    .save({ data: randomString })
+                const auditResults = await connection
+                    .getRepository(Audit)
+                    .find()
+                expect(auditResults.length).to.be.equal(1)
+                expect(auditResults[0].data.data).to.be.equal(randomString)
+            }),
+        ))
 
-                console.log(connection.options.schemaBuilderHooks)
+    it("should work with double synchronization", async () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await connection.synchronize(true)
+                const randomString = Math.random().toString()
+                await connection
+                    .getRepository(Post)
+                    .save({ data: randomString })
+                await connection.synchronize()
+                const auditResults = await connection
+                    .getRepository(Audit)
+                    .find()
+                console.log(auditResults)
+                expect(auditResults.length).to.be.equal(2)
+                expect(auditResults[0].data.data).to.be.equal(randomString)
             }),
         ))
 })

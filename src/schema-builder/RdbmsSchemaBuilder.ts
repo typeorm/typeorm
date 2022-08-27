@@ -80,8 +80,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         const hooks = this.connection.options.schemaBuilderHooks ?? []
 
-        console.log({ hooks })
-
         for (const hook of hooks) {
             await hook.init?.(
                 this.queryRunner,
