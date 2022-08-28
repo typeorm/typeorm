@@ -34,7 +34,8 @@ export class CommandUtils {
         }
 
         const dataSourceExports = []
-        for (const fileExport: any in dataSourceFileExports) {
+        for (const fileExportKey in dataSourceFileExports) {
+            const fileExport = dataSourceFileExports[fileExportKey];
             // It is necessary to await here in case of the exported async value (Promise<DataSource>).
             // e.g. the DataSource is instantiated with an async factory in the source file
             const awaitedFileExport =
