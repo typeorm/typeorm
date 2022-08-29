@@ -28,7 +28,7 @@ export class DateUtils {
     static mixedDateToDateString(value: string | Date): string {
         if (value instanceof Date)
             return (
-                this.formatZerolessValue(value.getFullYear()) +
+                this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
                 this.formatZerolessValue(value.getMonth() + 1) +
                 "-" +
@@ -151,7 +151,7 @@ export class DateUtils {
         }
         if (value instanceof Date) {
             let finalValue =
-                this.formatZerolessValue(value.getFullYear()) +
+                this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
                 this.formatZerolessValue(value.getMonth() + 1) +
                 "-" +
@@ -183,7 +183,7 @@ export class DateUtils {
         }
         if (value instanceof Date) {
             return (
-                this.formatZerolessValue(value.getUTCFullYear()) +
+                this.formatZerolessValue(value.getUTCFullYear(), 4) +
                 "-" +
                 this.formatZerolessValue(value.getUTCMonth() + 1) +
                 "-" +
@@ -258,12 +258,12 @@ export class DateUtils {
     // -------------------------------------------------------------------------
 
     /**
-     * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
+     * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".
      */
-    private static formatZerolessValue(value: number): string {
-        if (value < 10) return "0" + value
+    private static formatZerolessValue(value: number, totalLength = 2): string {
+        const pad = "0".repeat(totalLength)
 
-        return String(value)
+        return String(`${pad}${value}`).slice(-totalLength)
     }
 
     /**

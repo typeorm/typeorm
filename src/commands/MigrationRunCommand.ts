@@ -26,6 +26,14 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 describe:
                     "Indicates if transaction should be used or not for migration run. Enabled by default.",
             })
+            .option("fake", {
+                alias: "f",
+                type: "boolean",
+                default: false,
+                describe:
+                    "Fakes running the migrations if table schema has already been changed manually or externally " +
+                    "(e.g. through another project)",
+            })
     }
 
     async handler(args: yargs.Arguments) {
@@ -47,6 +55,7 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 transaction:
                     dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
+                fake: !!args.f,
             }
 
             switch (args.t) {

@@ -222,6 +222,90 @@ describe("repository > find options > locking", () => {
             }),
         ))
 
+    it("should attach SKIP LOCKED for pessimistic_read", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    !(
+                        connection.driver.options.type === "postgres" ||
+                        (connection.driver.options.type === "mysql" &&
+                            DriverUtils.isReleaseVersionOrGreater(
+                                connection.driver,
+                                "8.0.0",
+                            ))
+                    )
+                )
+                    return
+
+                const executedSql: string[] = []
+
+                await connection.manager.transaction((entityManager) => {
+                    const originalQuery = entityManager.queryRunner!.query.bind(
+                        entityManager.queryRunner,
+                    )
+                    entityManager.queryRunner!.query = (...args: any[]) => {
+                        executedSql.push(args[0])
+                        return originalQuery(...args)
+                    }
+
+                    return entityManager
+                        .getRepository(PostWithVersion)
+                        .findOne({
+                            where: { id: 1 },
+                            lock: {
+                                mode: "pessimistic_read",
+                                onLocked: "skip_locked",
+                            },
+                        })
+                })
+
+                expect(executedSql.join(" ").includes("FOR SHARE SKIP LOCKED"))
+                    .to.be.true
+            }),
+        ))
+
+    it("should attach NOWAIT for pessimistic_write", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    !(
+                        connection.driver.options.type === "postgres" ||
+                        (DriverUtils.isMySQLFamily(connection.driver) &&
+                            DriverUtils.isReleaseVersionOrGreater(
+                                connection.driver,
+                                "8.0.0",
+                            ))
+                    )
+                )
+                    return
+
+                const executedSql: string[] = []
+
+                await connection.manager.transaction((entityManager) => {
+                    const originalQuery = entityManager.queryRunner!.query.bind(
+                        entityManager.queryRunner,
+                    )
+                    entityManager.queryRunner!.query = (...args: any[]) => {
+                        executedSql.push(args[0])
+                        return originalQuery(...args)
+                    }
+
+                    return entityManager
+                        .getRepository(PostWithVersion)
+                        .findOne({
+                            where: { id: 1 },
+                            lock: {
+                                mode: "pessimistic_write",
+                                onLocked: "nowait",
+                            },
+                        })
+                })
+
+                expect(executedSql.join(" ").includes("FOR UPDATE NOWAIT")).to
+                    .be.true
+            }),
+        ))
+
     it("should attach pessimistic write lock statement on query if locking enabled", () =>
         Promise.all(
             connections.map(async (connection) => {
