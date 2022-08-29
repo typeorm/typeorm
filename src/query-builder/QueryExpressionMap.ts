@@ -114,7 +114,7 @@ export class QueryExpressionMap {
         columns?: string[]
         overwrite?: string[]
         skipUpdateIfNoValuesChanged?: boolean
-        conditions?: string[]
+        indexPredicate?: string
     }
 
     /**

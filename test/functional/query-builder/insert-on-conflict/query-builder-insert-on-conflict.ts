@@ -259,9 +259,12 @@ describe("query builder > insertion > on conflict", () => {
                     .insert()
                     .into(Post)
                     .values(post1)
-                    .orUpdate(["title"], ["date"], undefined, [
+                    .orUpdate(
+                        ["title"],
+                        ["date"],
+                        undefined,
                         "date > 2020-01-01",
-                    ])
+                    )
                     .setParameter("title", post1.title)
                     .disableEscaping()
                     .getSql()

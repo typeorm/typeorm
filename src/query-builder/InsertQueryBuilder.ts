@@ -356,7 +356,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         overwrite: string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
-        conflictConditions?: string[],
+        indexPredicate?: string,
     ): this
 
     /**
@@ -372,7 +372,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             | string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
-        conflictConditions?: string[],
+        indexPredicate?: string,
     ): this {
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
@@ -381,7 +381,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                 overwrite: statementOrOverwrite?.overwrite,
                 skipUpdateIfNoValuesChanged:
                     orUpdateOptions?.skipUpdateIfNoValuesChanged,
-                conditions: conflictConditions,
             }
             return this
         }
@@ -391,7 +390,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
-            conditions: conflictConditions,
+            indexPredicate: indexPredicate,
         }
         return this
     }
@@ -486,7 +485,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     columns,
                     conflict,
                     skipUpdateIfNoValuesChanged,
-                    conditions,
+                    indexPredicate,
                 } = this.expressionMap.onUpdate
 
                 let conflictTarget = "ON CONFLICT"
@@ -496,11 +495,11 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                         .map((column) => this.escape(column))
                         .join(", ")} )`
                     if (
-                        Array.isArray(conditions) &&
+                        indexPredicate &&
                         DriverUtils.isPostgresFamily(this.connection.driver)
                     ) {
-                        conflictTarget += ` WHERE ( ${conditions.join(
-                            " AND ",
+                        conflictTarget += ` WHERE ( ${this.escape(
+                            indexPredicate,
                         )} )`
                     }
                 } else if (conflict) {
