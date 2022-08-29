@@ -1,18 +1,16 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Setting} from "./Setting";
-import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Setting } from "./Setting"
+import { OneToMany } from "../../../../../../src/decorator/relations/OneToMany"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @OneToMany(() => Setting, setting => setting.user, {
+    @OneToMany(() => Setting, (setting) => setting.user, {
         cascade: true,
-        eager: true
+        eager: true,
     })
-    settings: Setting[];
-
+    settings: Setting[]
 }

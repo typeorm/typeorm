@@ -108,9 +108,9 @@ export interface EntitySchemaRelationOptions {
     deferrable?: DeferrableType
 
     /**
-     * When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them. 
-	 * delete will remove these rows from database. nullify will remove the relation key. 
-	 * skip will keep the relation intact. Removal of related item is only possible through its own repo.
+     * When a parent is saved (with cascading but) without a child row that still exists in database, this will control what shall happen to them.
+     * delete will remove these rows from database. nullify will remove the relation key.
+     * skip will keep the relation intact. Removal of related item is only possible through its own repo.
      */
-    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable";
+    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
 }
