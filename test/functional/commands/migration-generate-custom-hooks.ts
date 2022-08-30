@@ -98,6 +98,8 @@ describe("commands - migration generate > custom hooks", () => {
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
                     connection: connectionOption.name,
+                    path: 'foo',
+                    dataSource: 'bar'
                 }),
             )
 
