@@ -235,6 +235,28 @@ export abstract class BaseQueryRunner {
         return this.mode
     }
 
+    /**
+     * Executes sql used special for schema build.
+     */
+    async executeSchemaBuildQueries(
+        upQueries: Query | Query[],
+        downQueries: Query | Query[],
+    ): Promise<void> {
+        if (InstanceChecker.isQuery(upQueries)) upQueries = [upQueries]
+        if (InstanceChecker.isQuery(downQueries)) downQueries = [downQueries]
+
+        this.sqlInMemory.upQueries.push(...upQueries)
+        this.sqlInMemory.downQueries.push(...downQueries)
+
+        // if sql-in-memory mode is enabled then simply store sql in memory and return
+        if (this.sqlMemoryMode === true)
+            return Promise.resolve() as Promise<any>
+
+        for (const { query, parameters } of upQueries) {
+            await this.query(query, parameters)
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -628,28 +650,6 @@ export abstract class BaseQueryRunner {
             )
 
         return false
-    }
-
-    /**
-     * Executes sql used special for schema build.
-     */
-    protected async executeQueries(
-        upQueries: Query | Query[],
-        downQueries: Query | Query[],
-    ): Promise<void> {
-        if (InstanceChecker.isQuery(upQueries)) upQueries = [upQueries]
-        if (InstanceChecker.isQuery(downQueries)) downQueries = [downQueries]
-
-        this.sqlInMemory.upQueries.push(...upQueries)
-        this.sqlInMemory.downQueries.push(...downQueries)
-
-        // if sql-in-memory mode is enabled then simply store sql in memory and return
-        if (this.sqlMemoryMode === true)
-            return Promise.resolve() as Promise<any>
-
-        for (const { query, parameters } of upQueries) {
-            await this.query(query, parameters)
-        }
     }
 
     /**

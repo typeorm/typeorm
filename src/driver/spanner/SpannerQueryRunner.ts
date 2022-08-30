@@ -431,7 +431,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = `CREATE DATABASE "${database}"`
         const down = `DROP DATABASE "${database}"`
-        await this.executeQueries(new Query(up), new Query(down))
+        await this.executeSchemaBuildQueries(new Query(up), new Query(down))
     }
 
     /**
@@ -443,7 +443,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             ? `DROP DATABASE IF EXISTS "${database}"`
             : `DROP DATABASE "${database}"`
         const down = `CREATE DATABASE "${database}"`
-        await this.executeQueries(new Query(up), new Query(down))
+        await this.executeSchemaBuildQueries(new Query(up), new Query(down))
     }
 
     /**
@@ -530,7 +530,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(deleteQuery)
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -594,7 +594,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(insertQuery)
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -607,7 +607,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
         downQueries.push(await this.deleteViewDefinitionSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -623,7 +623,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(this.dropViewSql(view))
         downQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -715,7 +715,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(deleteQuery)
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
 
         clonedTable.addColumn(column)
         this.replaceCachedTable(table, clonedTable)
@@ -909,7 +909,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
     }
 
@@ -1012,7 +1012,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(insertQuery)
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
 
         clonedTable.removeColumn(column)
         this.replaceCachedTable(table, clonedTable)
@@ -1139,7 +1139,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.addCheckConstraint(checkConstraint)
     }
 
@@ -1178,7 +1178,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.dropCheckConstraintSql(table, checkConstraint)
         const down = this.createCheckConstraintSql(table, checkConstraint)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
     }
 
@@ -1266,7 +1266,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.addForeignKey(foreignKey)
     }
 
@@ -1304,7 +1304,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.removeForeignKey(foreignKey)
     }
 
@@ -1337,7 +1337,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.addIndex(index)
     }
 
@@ -1378,7 +1378,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.removeIndex(index)
     }
 
@@ -2167,7 +2167,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Executes sql used special for schema build.
      */
-    protected async executeQueries(
+    protected async executeSchemaBuildQueries(
         upQueries: Query | Query[],
         downQueries: Query | Query[],
     ): Promise<void> {

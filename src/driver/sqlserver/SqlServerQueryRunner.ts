@@ -479,7 +479,7 @@ export class SqlServerQueryRunner
             ? `IF DB_ID('${database}') IS NULL CREATE DATABASE "${database}"`
             : `CREATE DATABASE "${database}"`
         const down = `DROP DATABASE "${database}"`
-        await this.executeQueries(new Query(up), new Query(down))
+        await this.executeSchemaBuildQueries(new Query(up), new Query(down))
     }
 
     /**
@@ -490,7 +490,7 @@ export class SqlServerQueryRunner
             ? `IF DB_ID('${database}') IS NOT NULL DROP DATABASE "${database}"`
             : `DROP DATABASE "${database}"`
         const down = `CREATE DATABASE "${database}"`
-        await this.executeQueries(new Query(up), new Query(down))
+        await this.executeSchemaBuildQueries(new Query(up), new Query(down))
     }
 
     /**
@@ -527,7 +527,7 @@ export class SqlServerQueryRunner
             downQueries.push(new Query(`USE "${dbName}"`))
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -561,7 +561,7 @@ export class SqlServerQueryRunner
             downQueries.push(new Query(`USE "${dbName}"`))
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -637,7 +637,7 @@ export class SqlServerQueryRunner
             downQueries.push(deleteQuery)
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -715,7 +715,7 @@ export class SqlServerQueryRunner
             downQueries.push(insertQuery)
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -728,7 +728,7 @@ export class SqlServerQueryRunner
         upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
         downQueries.push(await this.deleteViewDefinitionSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -744,7 +744,7 @@ export class SqlServerQueryRunner
         upQueries.push(this.dropViewSql(view))
         downQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.createViewSql(view))
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
     }
 
     /**
@@ -968,7 +968,7 @@ export class SqlServerQueryRunner
             downQueries.push(new Query(`USE "${dbName}"`))
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
 
         // rename old table and replace it in cached tabled;
         oldTable.name = newTable.name
@@ -1149,7 +1149,7 @@ export class SqlServerQueryRunner
             downQueries.push(deleteQuery)
         }
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
 
         clonedTable.addColumn(column)
         this.replaceCachedTable(table, clonedTable)
@@ -1814,7 +1814,7 @@ export class SqlServerQueryRunner
                 }
             }
 
-            await this.executeQueries(upQueries, downQueries)
+            await this.executeSchemaBuildQueries(upQueries, downQueries)
             this.replaceCachedTable(table, clonedTable)
         }
     }
@@ -2037,7 +2037,7 @@ export class SqlServerQueryRunner
             ),
         )
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
 
         clonedTable.removeColumn(column)
         this.replaceCachedTable(table, clonedTable)
@@ -2077,7 +2077,7 @@ export class SqlServerQueryRunner
         })
         const down = this.dropPrimaryKeySql(clonedTable)
 
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         this.replaceCachedTable(table, clonedTable)
     }
 
@@ -2157,7 +2157,7 @@ export class SqlServerQueryRunner
             ),
         )
 
-        await this.executeQueries(upQueries, downQueries)
+        await this.executeSchemaBuildQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
     }
 
@@ -2177,7 +2177,7 @@ export class SqlServerQueryRunner
             table.primaryColumns.map((column) => column.name),
             constraintName,
         )
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.primaryColumns.forEach((column) => {
             column.isPrimary = false
         })
@@ -2204,7 +2204,7 @@ export class SqlServerQueryRunner
 
         const up = this.createUniqueConstraintSql(table, uniqueConstraint)
         const down = this.dropUniqueConstraintSql(table, uniqueConstraint)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.addUniqueConstraint(uniqueConstraint)
     }
 
@@ -2241,7 +2241,7 @@ export class SqlServerQueryRunner
 
         const up = this.dropUniqueConstraintSql(table, uniqueConstraint)
         const down = this.createUniqueConstraintSql(table, uniqueConstraint)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.removeUniqueConstraint(uniqueConstraint)
     }
 
@@ -2279,7 +2279,7 @@ export class SqlServerQueryRunner
 
         const up = this.createCheckConstraintSql(table, checkConstraint)
         const down = this.dropCheckConstraintSql(table, checkConstraint)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.addCheckConstraint(checkConstraint)
     }
 
@@ -2316,7 +2316,7 @@ export class SqlServerQueryRunner
 
         const up = this.dropCheckConstraintSql(table, checkConstraint)
         const down = this.createCheckConstraintSql(table, checkConstraint)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.removeCheckConstraint(checkConstraint)
     }
 
@@ -2418,7 +2418,7 @@ export class SqlServerQueryRunner
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.addForeignKey(foreignKey)
     }
 
@@ -2455,7 +2455,7 @@ export class SqlServerQueryRunner
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.removeForeignKey(foreignKey)
     }
 
@@ -2488,7 +2488,7 @@ export class SqlServerQueryRunner
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.addIndex(index)
     }
 
@@ -2528,7 +2528,7 @@ export class SqlServerQueryRunner
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
-        await this.executeQueries(up, down)
+        await this.executeSchemaBuildQueries(up, down)
         table.removeIndex(index)
     }
 
