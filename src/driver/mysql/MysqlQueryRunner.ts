@@ -363,7 +363,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             ? `CREATE DATABASE IF NOT EXISTS \`${database}\``
             : `CREATE DATABASE \`${database}\``
         const down = `DROP DATABASE \`${database}\``
-        await this.executeSchemaBuildQueries(new Query(up), new Query(down))
+        await this.executeSchemaBuilderQueries(new Query(up), new Query(down))
     }
 
     /**
@@ -374,7 +374,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             ? `DROP DATABASE IF EXISTS \`${database}\``
             : `DROP DATABASE \`${database}\``
         const down = `CREATE DATABASE \`${database}\``
-        await this.executeSchemaBuildQueries(new Query(up), new Query(down))
+        await this.executeSchemaBuilderQueries(new Query(up), new Query(down))
     }
 
     /**
@@ -459,7 +459,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(deleteQuery)
         }
 
-        return this.executeSchemaBuildQueries(upQueries, downQueries)
+        return this.executeSchemaBuilderQueries(upQueries, downQueries)
     }
 
     /**
@@ -523,7 +523,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(insertQuery)
         }
 
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
     }
 
     /**
@@ -536,7 +536,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
         downQueries.push(await this.deleteViewDefinitionSql(view))
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
     }
 
     /**
@@ -552,7 +552,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(this.dropViewSql(view))
         downQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.createViewSql(view))
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
     }
 
     /**
@@ -698,7 +698,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             foreignKey.name = newForeignKeyName
         })
 
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
 
         // rename old table and replace it in cached tabled;
         oldTable.name = newTable.name
@@ -890,7 +890,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
         }
 
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
 
         clonedTable.addColumn(column)
         this.replaceCachedTable(table, clonedTable)
@@ -1464,7 +1464,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
         }
 
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
     }
 
@@ -1701,7 +1701,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(insertQuery)
         }
 
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
 
         clonedTable.removeColumn(column)
         this.replaceCachedTable(table, clonedTable)
@@ -1734,7 +1734,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const up = this.createPrimaryKeySql(table, columnNames)
         const down = this.dropPrimaryKeySql(table)
 
-        await this.executeSchemaBuildQueries(up, down)
+        await this.executeSchemaBuilderQueries(up, down)
         clonedTable.columns.forEach((column) => {
             if (columnNames.find((columnName) => columnName === column.name))
                 column.isPrimary = true
@@ -1861,7 +1861,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             changedGeneratedColumn!.generationStrategy = "increment"
         }
 
-        await this.executeSchemaBuildQueries(upQueries, downQueries)
+        await this.executeSchemaBuilderQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
     }
 
@@ -1877,7 +1877,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             table,
             table.primaryColumns.map((column) => column.name),
         )
-        await this.executeSchemaBuildQueries(up, down)
+        await this.executeSchemaBuilderQueries(up, down)
         table.primaryColumns.forEach((column) => {
             column.isPrimary = false
         })
@@ -2033,7 +2033,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.createForeignKeySql(table, foreignKey)
         const down = this.dropForeignKeySql(table, foreignKey)
-        await this.executeSchemaBuildQueries(up, down)
+        await this.executeSchemaBuilderQueries(up, down)
         table.addForeignKey(foreignKey)
     }
 
@@ -2070,7 +2070,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
-        await this.executeSchemaBuildQueries(up, down)
+        await this.executeSchemaBuilderQueries(up, down)
         table.removeForeignKey(foreignKey)
     }
 
@@ -2103,7 +2103,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
-        await this.executeSchemaBuildQueries(up, down)
+        await this.executeSchemaBuilderQueries(up, down)
         table.addIndex(index, true)
     }
 
@@ -2143,7 +2143,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
-        await this.executeSchemaBuildQueries(up, down)
+        await this.executeSchemaBuilderQueries(up, down)
         table.removeIndex(index, true)
     }
 

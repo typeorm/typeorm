@@ -1,11 +1,12 @@
-import { DataSource, EntityMetadata, QueryRunner } from "../../../../../src"
-import { RdbmsSchemaBuilderHook } from "../../../../../src/schema-builder/custom-hooks/RdbmsSchemaBuilderHook"
+import { DataSource, EntityMetadata, QueryRunner, RdbmsSchemaBuilderHook } from "../../../../../src"
+import { SqlInMemory } from "../../../../../src/driver/SqlInMemory";
 import { RdbmsSchemaBuilder } from "../../../../../src/schema-builder/RdbmsSchemaBuilder"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import { Query } from "../../../../../src/driver/Query";
 import { Audit } from "./entity/audit"
 import { Post } from "./entity/post"
 import { expect } from "chai"
@@ -41,25 +42,29 @@ class AuditHook implements RdbmsSchemaBuilderHook {
         queryRunner: QueryRunner,
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadatas: EntityMetadata[],
-    ): Promise<void> {
+    ): Promise<SqlInMemory> {
+        const sqlInMemory = new SqlInMemory();
         for (const rule of this.pgRules) {
             if (rule.rulename.startsWith(this.rulePrefix)) {
-                await queryRunner.query(
-                    `DROP RULE IF EXISTS "${rule.rulename}" ON "${rule.tablename}"`,
+                sqlInMemory.downQueries.push(
+                    new Query(`DROP RULE IF EXISTS "${rule.rulename}" ON "${rule.tablename}"`),
                 )
             }
         }
+        return sqlInMemory;
     }
 
     public async afterAll(
         queryRunner: QueryRunner,
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadatas: EntityMetadata[],
-    ): Promise<void> {
+    ): Promise<SqlInMemory> {
+        const sqlInMemory = new SqlInMemory();
         for (const entityMetadata of entityMetadatas) {
             if (entityMetadata.tableName !== "audit")
-                await queryRunner.query(this.getRuleDefinition(entityMetadata))
+                sqlInMemory.upQueries.push(new Query(this.getRuleDefinition(entityMetadata)))
         }
+        return sqlInMemory;
     }
 
     private getRuleName(entityMetadata: EntityMetadata): string {

@@ -1,3 +1,4 @@
+import { BaseQueryRunner } from "../query-runner/BaseQueryRunner";
 import { Table } from "./table/Table"
 import { TableColumn } from "./table/TableColumn"
 import { TableForeignKey } from "./table/TableForeignKey"
@@ -37,7 +38,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Used to execute schema creation queries in a single connection.
      */
-    protected queryRunner: QueryRunner
+    protected queryRunner: BaseQueryRunner & QueryRunner
 
     private currentDatabase?: string
 
@@ -57,7 +58,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async build(): Promise<void> {
-        this.queryRunner = this.connection.createQueryRunner()
+        this.queryRunner = this.connection.createQueryRunner() as BaseQueryRunner & QueryRunner;
 
         // this.connection.driver.database || this.currentDatabase;
         this.currentDatabase = this.connection.driver.database
@@ -135,7 +136,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Returns sql queries to be executed by schema builder.
      */
     async log(): Promise<SqlInMemory> {
-        this.queryRunner = this.connection.createQueryRunner()
+        this.queryRunner = this.connection.createQueryRunner() as BaseQueryRunner & QueryRunner;
         try {
             // Flush the queryrunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map((metadata) =>
@@ -144,15 +145,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.getTables(tablePaths)
             await this.queryRunner.getViews([])
 
-            const hooks = this.connection.options.schemaBuilderHooks ?? []
-
-            for (const hook of hooks) {
-                await hook.init?.(
-                    this.queryRunner,
-                    this,
-                    this.connection.entityMetadatas,
-                )
-            }
+            await this.runHooksInit();
 
             this.queryRunner.enableSqlMemory()
             await this.executeSchemaSyncOperationsInProperOrder()
@@ -219,15 +212,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Order of operations matter here.
      */
     protected async executeSchemaSyncOperationsInProperOrder(): Promise<void> {
-        const hooks = this.connection.options.schemaBuilderHooks ?? []
-
-        for (const hook of hooks) {
-            await hook.beforeAll?.(
-                this.queryRunner,
-                this,
-                this.entityToSyncMetadatas,
-            )
-        }
+        await this.runHooksBeforeAll();
         await this.dropOldViews()
         await this.dropOldForeignKeys()
         await this.dropOldIndices()
@@ -247,14 +232,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createCompositeUniqueConstraints()
         await this.createForeignKeys()
         await this.createViews()
-
-        for (const hook of hooks) {
-            await hook.afterAll?.(
-                this.queryRunner,
-                this,
-                this.entityToSyncMetadatas,
-            )
-        }
+        await this.runHooksAfterAll();
     }
 
     private getTablePath(
@@ -1315,6 +1293,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 sqlInMemory.push(await result)
             }
         }
+        for (const sql of sqlInMemory) {
+            await this.queryRunner.executeSchemaBuilderQueries(sql.upQueries, sql.downQueries)
+        }
     }
 
     private async runHooksAfterAll(): Promise<void> {
@@ -1330,6 +1311,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 sqlInMemory.push(await result)
             }
         }
-        this.queryRunner.executeMemoryDownSql(sqlInMemory);
+        for (const sql of sqlInMemory) {
+            await this.queryRunner.executeSchemaBuilderQueries(sql.upQueries, sql.downQueries)
+        }
     }
 }

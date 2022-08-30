@@ -238,7 +238,7 @@ export abstract class BaseQueryRunner {
     /**
      * Executes sql used special for schema build.
      */
-    async executeSchemaBuildQueries(
+    async executeSchemaBuilderQueries(
         upQueries: Query | Query[],
         downQueries: Query | Query[],
     ): Promise<void> {

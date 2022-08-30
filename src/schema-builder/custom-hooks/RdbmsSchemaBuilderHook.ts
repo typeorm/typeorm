@@ -1,4 +1,3 @@
-import { DataSource } from "../../data-source";
 import { SqlInMemory } from "../../driver/SqlInMemory";
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { QueryRunner } from "../../query-runner/QueryRunner"

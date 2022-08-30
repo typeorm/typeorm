@@ -4,6 +4,7 @@ import {
     DatabaseType,
     DataSourceOptions, EntityMetadata, QueryRunner, RdbmsSchemaBuilderHook,
 } from "../../../src"
+import { SqlInMemory } from "../../../src/driver/SqlInMemory";
 import { RdbmsSchemaBuilder } from "../../../src/schema-builder/RdbmsSchemaBuilder";
 import {
     closeTestingConnections,
@@ -15,17 +16,26 @@ import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-generate"
+import {Query} from "../../../src/driver/Query";
 
 class TestHook implements RdbmsSchemaBuilderHook {
     wm = new WeakMap<RdbmsSchemaBuilder, string[]>();
     async init(queryRunner: QueryRunner, schemaBuilder: RdbmsSchemaBuilder, entityMetadata: EntityMetadata[]): Promise<void> {
         this.wm.set(schemaBuilder, entityMetadata.map(x => x.tableName))
     }
-    async beforeAll(queryRunner: QueryRunner, schemaBuilder: RdbmsSchemaBuilder, entityMetadata: EntityMetadata[]): Promise<void> {
-        await queryRunner.query(`SELECT 1`);
+    async beforeAll(queryRunner: QueryRunner, schemaBuilder: RdbmsSchemaBuilder, entityMetadata: EntityMetadata[]): Promise<SqlInMemory> {
+        const sqlInMemory = new SqlInMemory();
+        sqlInMemory.upQueries.push(new Query(`SELECT 1`));
+        sqlInMemory.downQueries.push(new Query(`SELECT -1`));
+
+        return sqlInMemory;
     }
-    async afterAll(queryRunner: QueryRunner, schemaBuilder: RdbmsSchemaBuilder, entityMetadata: EntityMetadata[]): Promise<void> {
-        await queryRunner.query(`SELECT 2`);
+    async afterAll(queryRunner: QueryRunner, schemaBuilder: RdbmsSchemaBuilder, entityMetadata: EntityMetadata[]): Promise<SqlInMemory> {
+        const sqlInMemory = new SqlInMemory();
+        sqlInMemory.upQueries.push(new Query(`SELECT 2`));
+        sqlInMemory.downQueries.push(new Query(`SELECT -2`));
+
+        return sqlInMemory;
     }
 }
 
@@ -82,12 +92,8 @@ describe("commands - migration generate > custom hooks", () => {
             baseConnectionOptions = await connectionOptionsReader.get(
                 connectionOption.name as string,
             )
-            getConnectionOptionsStub = sinon
-                .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+
+            console.log(baseConnectionOptions);
 
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
