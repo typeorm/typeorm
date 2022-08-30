@@ -339,7 +339,7 @@ export interface QueryRunner {
     /**
      * Drops a primary key.
      */
-    dropPrimaryKey(
+    dropPrimaryKey( 
         table: Table | string,
         constraintName?: string,
     ): Promise<void>

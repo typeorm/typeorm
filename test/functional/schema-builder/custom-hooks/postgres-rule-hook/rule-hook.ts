@@ -10,7 +10,7 @@ import { Audit } from "./entity/audit"
 import { Post } from "./entity/post"
 import { expect } from "chai"
 
-// This is interface for pg_hooks
+// This is interface for pg_rules builtin view
 interface PgRule {
     schemaname: string
     tablename: string
@@ -79,49 +79,49 @@ class AuditHook implements RdbmsSchemaBuilderHook {
 describe("schema builder > custom hooks > Postgres rule hook", () => {
     let connections: DataSource[]
 
-    before(async () => {
-        connections = await createTestingConnections({
-            enabledDrivers: ["postgres"],
-            entities: [Post, Audit],
-            schemaCreate: true,
-            dropSchema: true,
-            schemaBuilderHooks: [new AuditHook()],
+    describe('synchronization', () => {
+        before(async () => {
+            connections = await createTestingConnections({
+                enabledDrivers: ["postgres"],
+                entities: [Post, Audit],
+                schemaCreate: true,
+                dropSchema: true,
+                schemaBuilderHooks: [new AuditHook()],
+            })
         })
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
+
+        it("should work in simple scenario", async () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await connection.synchronize(true)
+                    const randomString = Math.random().toString()
+                    await connection
+                        .getRepository(Post)
+                        .save({ data: randomString })
+                    const auditResults = await connection
+                        .getRepository(Audit)
+                        .find()
+                    expect(auditResults.length).to.be.equal(1)
+                    expect(auditResults[0].data.data).to.be.equal(randomString)
+                }),
+            ))
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
 
-    it("should work in simple scenario", async () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                await connection.synchronize(true)
-                const randomString = Math.random().toString()
-                await connection
-                    .getRepository(Post)
-                    .save({ data: randomString })
-                const auditResults = await connection
-                    .getRepository(Audit)
-                    .find()
-                expect(auditResults.length).to.be.equal(1)
-                expect(auditResults[0].data.data).to.be.equal(randomString)
-            }),
-        ))
+    describe('migration', () => {
+        before(async () => {
+            connections = await createTestingConnections({
+                enabledDrivers: ["postgres"],
+                entities: [Post, Audit],
+                schemaCreate: true,
+                dropSchema: true,
+                schemaBuilderHooks: [new AuditHook()],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
 
-    it("should work with double synchronization", async () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                await connection.synchronize(true)
-                const randomString = Math.random().toString()
-                await connection
-                    .getRepository(Post)
-                    .save({ data: randomString })
-                await connection.synchronize()
-                const auditResults = await connection
-                    .getRepository(Audit)
-                    .find()
-                console.log(auditResults)
-                expect(auditResults.length).to.be.equal(2)
-                expect(auditResults[0].data.data).to.be.equal(randomString)
-            }),
-        ))
+
+    })
 })

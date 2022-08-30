@@ -78,15 +78,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.startTransaction()
         }
 
-        const hooks = this.connection.options.schemaBuilderHooks ?? []
 
-        for (const hook of hooks) {
-            await hook.init?.(
-                this.queryRunner,
-                this,
-                this.connection.entityMetadatas,
-            )
-        }
+        await this.runHooksInit()
 
         try {
             await this.createMetadataTableIfNecessary(this.queryRunner)
@@ -1296,5 +1289,47 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             }),
             true,
         )
+    }
+
+    private async runHooksInit(): Promise<void> {
+        const hooks = this.connection.options.schemaBuilderHooks ?? []
+        for (const hook of hooks) {
+            await hook.init?.(
+                this.queryRunner,
+                this,
+                this.connection.entityMetadatas,
+            )
+        }
+    }
+
+    private async runHooksBeforeAll(): Promise<void> {
+        const hooks = this.connection.options.schemaBuilderHooks ?? []
+        const sqlInMemory: SqlInMemory[] = [];
+        for (const hook of hooks) {
+            const result = await (hook.beforeAll?.(
+                this.queryRunner,
+                this,
+                this.connection.entityMetadatas,
+            ))
+            if (result) {
+                sqlInMemory.push(await result)
+            }
+        }
+    }
+
+    private async runHooksAfterAll(): Promise<void> {
+        const hooks = this.connection.options.schemaBuilderHooks ?? []
+        const sqlInMemory: SqlInMemory[] = [];
+        for (const hook of hooks) {
+            const result = await (hook.afterAll?.(
+                this.queryRunner,
+                this,
+                this.connection.entityMetadatas,
+            ))
+            if (result) {
+                sqlInMemory.push(await result)
+            }
+        }
+        this.queryRunner.executeMemoryDownSql(sqlInMemory);
     }
 }

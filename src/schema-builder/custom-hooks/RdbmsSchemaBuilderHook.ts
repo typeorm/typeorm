@@ -1,3 +1,5 @@
+import { DataSource } from "../../data-source";
+import { SqlInMemory } from "../../driver/SqlInMemory";
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { RdbmsSchemaBuilder } from "../RdbmsSchemaBuilder"
@@ -9,6 +11,7 @@ export interface RdbmsSchemaBuilderHook {
     /**
      * This method will be called after migrations table is created, but before any other action.
      * This is your last moment to actually query database
+     * If you expect live-update synchronization, you should associate data with schemaBuilder using `WeakMap`
      */
     init?(
         queryRunner: QueryRunner,
@@ -24,7 +27,7 @@ export interface RdbmsSchemaBuilderHook {
         queryRunner: QueryRunner,
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadata: EntityMetadata[],
-    ): Promise<void>
+    ): Promise<SqlInMemory>
 
     /**
      * It's important to remember that provided `QueryRunner` is in special in-memory mode. It means that
@@ -35,5 +38,5 @@ export interface RdbmsSchemaBuilderHook {
         queryRunner: QueryRunner,
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadata: EntityMetadata[],
-    ): Promise<void>
+    ): Promise<SqlInMemory>
 }
