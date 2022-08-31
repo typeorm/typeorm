@@ -518,6 +518,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
+                            !(value instanceof Date) &&
                             value !== null &&
                             !Buffer.isBuffer(value)
                         ) {

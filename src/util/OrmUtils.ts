@@ -157,6 +157,7 @@ export class OrmUtils {
     ): any {
         if (this.isPlainObject(target) && this.isPlainObject(source)) {
             for (const key of Object.keys(source)) {
+                if (key === "__proto__") continue
                 this.mergeObjectKey(target, key, source[key], memo)
             }
         }

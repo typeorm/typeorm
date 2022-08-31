@@ -67,7 +67,10 @@ export class SubjectTopoligicalSorter {
         // add those sorted targets and remove them from original array of targets
         sortedNonNullableEntityTargets.forEach((sortedEntityTarget) => {
             const entityTargetSubjects = this.subjects.filter(
-                (subject) => subject.metadata.targetName === sortedEntityTarget,
+                (subject) =>
+                    subject.metadata.targetName === sortedEntityTarget ||
+                    subject.metadata.parentEntityMetadata?.targetName ===
+                        sortedEntityTarget,
             )
             sortedSubjects.push(...entityTargetSubjects)
             this.removeAlreadySorted(entityTargetSubjects)

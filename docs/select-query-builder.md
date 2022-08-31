@@ -901,6 +901,22 @@ Using `take` and `skip` will prevent those issues.
 ## Set locking
 
 QueryBuilder supports both optimistic and pessimistic locking.
+
+#### Lock modes
+Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
+
+```text
+|                 | pessimistic_read                  | pessimistic_write       | dirty_read    | pessimistic_partial_write (Deprecated, use onLocked instead)   | pessimistic_write_or_fail (Deprecated, use onLocked instead)   | for_no_key_update   | for_key_share |
+| --------------- | --------------------------------- | ----------------------- | ------------- | -------------------------------------------------------------- | -------------------------------------------------------------- | ------------------- | ------------- |
+| MySQL           | FOR SHARE (8+)/LOCK IN SHARE MODE | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED                                         | FOR UPDATE NOWAIT                                              |                     |               |
+| Postgres        | FOR SHARE                         | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED                                         | FOR UPDATE NOWAIT                                              | FOR NO KEY UPDATE   | FOR KEY SHARE |
+| Oracle          | FOR UPDATE                        | FOR UPDATE              | (nothing)     |                                                                |                                                                |                     |               |
+| SQL Server      | WITH (HOLDLOCK, ROWLOCK)          | WITH (UPDLOCK, ROWLOCK) | WITH (NOLOCK) |                                                                |                                                                |                     |               |
+| AuroraDataApi   | LOCK IN SHARE MODE                | FOR UPDATE              | (nothing)     |                                                                |                                                                |                     |               |
+| CockroachDB     |                                   | FOR UPDATE              | (nothing)     |                                                                | FOR UPDATE NOWAIT                                              | FOR NO KEY UPDATE   |               |
+
+```
+
 To use pessimistic read locking use the following method:
 
 ```typescript
@@ -942,6 +958,39 @@ const users = await dataSource
 ```
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
+
+### setOnLock
+Allows you to control what happens when a row is locked. By default, the database will wait for the lock.
+You can control that behavior by using `setOnLocked`
+
+
+To not wait:
+
+```typescript
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .setLock("pessimistic_write")
+    .setOnLocked("nowait")
+    .getMany()
+```
+
+To skip the row:
+
+```typescript
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .setLock("pessimistic_write")
+    .setOnLocked("skip_locked")
+    .getMany()
+```
+
+Database support for `setOnLocked` based on [lock mode](#lock-modes):
+- Postgres: `pessimistic_read`, `pessimistic_write`, `for_no_key_update`, `for_key_share`
+- MySQL 8+: `pessimistic_read`, `pessimistic_write`
+- MySQL < 8, Maria DB: `pessimistic_write`
+- Cockroach: `pessimistic_write` (`nowait` only)
 
 ## Use custom index
 
