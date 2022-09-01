@@ -3,7 +3,7 @@ import {
     Entity,
     BaseEntity,
     PrimaryGeneratedColumn,
-    CalculatedColumn,
+    VirtualColumn,
 } from "../../../../src"
 import Activity from "./Activity"
 import Employee from "./Employee"
@@ -13,7 +13,7 @@ export default class TimeSheet extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number
 
-    @CalculatedColumn({
+    @VirtualColumn({
         query: (alias) =>
             `SELECT SUM("hours") FROM "activities" WHERE "timesheetId" = ${alias}.id`,
     })

@@ -124,7 +124,7 @@ export class EntityMetadataValidator {
 
         if (!(driver.options.type === "mongodb")) {
             entityMetadata.columns
-                .filter((column) => !column.isCalculated)
+                .filter((column) => !column.isVirtualDecorator)
                 .forEach((column) => {
                     const normalizedColumn = driver.normalizeType(
                         column,

@@ -2,7 +2,7 @@ import {
     Entity,
     OneToMany,
     PrimaryColumn,
-    CalculatedColumn,
+    VirtualColumn,
     BaseEntity,
 } from "../../../../src"
 import Employee from "./Employee"
@@ -12,7 +12,7 @@ export default class Company extends BaseEntity {
     @PrimaryColumn("varchar", { length: 50 })
     name: string
 
-    @CalculatedColumn({
+    @VirtualColumn({
         query: (alias) =>
             `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name`,
     })

@@ -2,28 +2,28 @@ import { ColumnType } from "../../driver/types/ColumnTypes"
 import { ColumnTypeUndefinedError } from "../../error"
 import { getMetadataArgsStorage } from "../../globals"
 import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { CalculatedColumnOptions } from "../options/CalculatedColumnOptions"
+import { VirtualColumnOptions } from "../options/VirtualColumnOptions"
 /**
- * CalculatedColumn decorator is used to mark a specific class property as a Calculated column.
+ * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
  */
-export function CalculatedColumn(
-    options: CalculatedColumnOptions,
+export function VirtualColumn(
+    options: VirtualColumnOptions,
 ): PropertyDecorator
 
 /**
- * CalculatedColumn decorator is used to mark a specific class property as a Calculated column.
+ * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
  */
-export function CalculatedColumn(
+export function VirtualColumn(
     typeOrOptions: ColumnType,
-    options: CalculatedColumnOptions,
+    options: VirtualColumnOptions,
 ): PropertyDecorator
 
 /**
- * CalculatedColumn decorator is used to mark a specific class property as a Calculated column.
+ * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
  */
-export function CalculatedColumn(
-    typeOrOptions?: ColumnType | CalculatedColumnOptions,
-    options?: CalculatedColumnOptions,
+export function VirtualColumn(
+    typeOrOptions?: ColumnType | VirtualColumnOptions,
+    options?: VirtualColumnOptions,
 ): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         // normalize parameters
@@ -31,7 +31,7 @@ export function CalculatedColumn(
         if (typeof typeOrOptions === "string") {
             type = <ColumnType>typeOrOptions
         } else {
-            options = <CalculatedColumnOptions>typeOrOptions
+            options = <VirtualColumnOptions>typeOrOptions
             type = options.type
         }
 

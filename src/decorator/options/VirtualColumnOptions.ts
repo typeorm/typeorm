@@ -4,7 +4,7 @@ import { ValueTransformer } from "./ValueTransformer"
 /**
  * Describes all calculated column's options.
  */
-export interface CalculatedColumnOptions {
+export interface VirtualColumnOptions {
     /**
      * Column type. Must be one of the value from the ColumnTypes class.
      */
@@ -19,7 +19,7 @@ export interface CalculatedColumnOptions {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://github.com/typeorm/typeorm/issues/9323 for more details.
+     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query: (alias: string) => string
 

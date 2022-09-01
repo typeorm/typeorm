@@ -2896,20 +2896,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const tableMetaData = this.connection.entityMetadatas.find(
             (e) => e.tableName === table.name,
         )
-        const nonCalculatedColumns = table.columns.filter(
+        const nonVirtualColumns = table.columns.filter(
             (column) =>
                 !tableMetaData?.columns.find(
-                    (c) => c.databaseName === column.name && c.isCalculated,
+                    (c) => c.databaseName === column.name && c.isVirtualDecorator,
                 ),
         )
-        const columnDefinitions = nonCalculatedColumns
+        const columnDefinitions = nonVirtualColumns
             .map((column) => this.buildCreateColumnSql(column, true))
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
         // we create unique indexes instead of unique constraints, because MySql does not have unique constraints.
         // if we mark column as Unique, it means that we create UNIQUE INDEX.
-        nonCalculatedColumns
+        nonVirtualColumns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueIndexExist = table.indices.some((index) => {

@@ -3461,20 +3461,20 @@ export class SqlServerQueryRunner
         const tableMetaData = this.connection.entityMetadatas.find(
             (e) => e.tableName === table.name,
         )
-        const nonCalculatedColumns = table.columns.filter(
+        const nonVirtualColumns = table.columns.filter(
             (column) =>
                 !tableMetaData?.columns.find(
-                    (c) => c.databaseName === column.name && c.isCalculated,
+                    (c) => c.databaseName === column.name && c.isVirtualDecorator,
                 ),
         )
-        const columnDefinitions = nonCalculatedColumns
+        const columnDefinitions = nonVirtualColumns
             .map((column) =>
                 this.buildCreateColumnSql(table, column, false, true),
             )
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
-        nonCalculatedColumns
+        nonVirtualColumns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueExist = table.uniques.some(

@@ -16,7 +16,7 @@ import Company from "./entity/Company"
 import Employee from "./entity/Employee"
 import TimeSheet from "./entity/TimeSheet"
 
-describe("github issues > #9323 Add new CalculatedColumn decorator feature", () => {
+describe("github issues > #9323 Add new VirtualColumn decorator feature", () => {
     let connections: DataSource[]
     before(
         async () =>
@@ -276,7 +276,7 @@ describe("github issues > #9323 Add new CalculatedColumn decorator feature", () 
                     .leftJoinAndSelect("employee.timesheets", "timesheet")
                     .leftJoinAndSelect("timesheet.activities", "activity")
                     .where("company.name = :name", { name: companyName })
-                    // we won't be supporting where & order bys with CalculatedColumns (you will have to make your subquery a function that gets added to the query builder)
+                    // we won't be supporting where & order bys with VirtualColumns (you will have to make your subquery a function that gets added to the query builder)
                     //.andWhere("company.totalEmployeesCount > 2")
                     //.orderBy({
                     //    "employees.timesheets.id": "DESC",
