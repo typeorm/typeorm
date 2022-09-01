@@ -403,8 +403,6 @@ export class Employee extends BaseEntity {
 }
 ```
 
-Value will be generated only once, before inserting the entity into the database.
-
 ## Relation decorators
 
 #### `@OneToOne`
