@@ -6,9 +6,7 @@ import { VirtualColumnOptions } from "../options/VirtualColumnOptions"
 /**
  * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
  */
-export function VirtualColumn(
-    options: VirtualColumnOptions,
-): PropertyDecorator
+export function VirtualColumn(options: VirtualColumnOptions): PropertyDecorator
 
 /**
  * VirtualColumn decorator is used to mark a specific class property as a Virtual column.

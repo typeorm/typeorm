@@ -2417,7 +2417,8 @@ export class AuroraMysqlQueryRunner
         const nonVirtualColumns = table.columns.filter(
             (column) =>
                 !tableMetaData?.columns.find(
-                    (c) => c.databaseName === column.name && c.isVirtualDecorator,
+                    (c) =>
+                        c.databaseName === column.name && c.isVirtualDecorator,
                 ),
         )
         const columnDefinitions = nonVirtualColumns

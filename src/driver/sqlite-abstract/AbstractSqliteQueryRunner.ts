@@ -1702,7 +1702,8 @@ export abstract class AbstractSqliteQueryRunner
         const nonVirtualColumns = table.columns.filter(
             (column) =>
                 !tableMetaData?.columns.find(
-                    (c) => c.databaseName === column.name && c.isVirtualDecorator,
+                    (c) =>
+                        c.databaseName === column.name && c.isVirtualDecorator,
                 ),
         )
 
