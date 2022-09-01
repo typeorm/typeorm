@@ -7,6 +7,7 @@
 export type ColumnMode =
     | "regular"
     | "virtual"
+    | "calculated"
     | "createDate"
     | "updateDate"
     | "deleteDate"

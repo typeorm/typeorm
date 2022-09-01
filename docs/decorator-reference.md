@@ -14,6 +14,7 @@
         -   [`@DeleteDateColumn`](#deletedatecolumn)
         -   [`@VersionColumn`](#versioncolumn)
         -   [`@Generated`](#generated)
+        -   [`@CalculatedColumn`](#calculatedcolumn)
     -   [Relation decorators](#relation-decorators)
         -   [`@OneToOne`](#onetoone)
         -   [`@ManyToOne`](#manytoone)
@@ -369,6 +370,36 @@ export class User {
     @Column()
     @Generated("uuid")
     uuid: string
+}
+```
+
+Value will be generated only once, before inserting the entity into the database.
+
+#### `@CalculatedColumn`
+
+Special column that is never save to the database and thus acts as a readonly property.
+Each time you call `find` or `findOne` from entity manager, the value is recalculated based on the query function that was provided in the CalculatedColumn Decorator. The alias argument passed to the query references the exact entity alias of the generated query behind the scenes.
+
+```typescript
+@Entity({ name: "companies", alias: "COMP" })
+export class Company extends BaseEntity {
+  @PrimaryColumn("varchar", { length: 50 })
+  name: string;
+
+  @CalculatedColumn({ query: (alias) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name` })
+  totalEmployeesCount: number;
+
+  @OneToMany((type) => Employee, (employee) => employee.company)
+  employees: Employee[];
+}
+
+@Entity({ name: "employees" })
+export class Employee extends BaseEntity {
+  @PrimaryColumn("varchar", { length: 50 })
+  name: string;
+
+  @ManyToOne((type) => Company, (company) => company.employees)
+  company: Company;
 }
 ```
 

@@ -795,6 +795,9 @@ export class PostgresDriver implements Driver {
                         ? parseInt(value)
                         : value
             }
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)

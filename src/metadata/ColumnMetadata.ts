@@ -10,6 +10,7 @@ import { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { CalculatedColumnOptions } from "../decorator/options/CalculatedColumnOptions"
 
 /**
  * This metadata contains all information about entity's column.
@@ -239,6 +240,18 @@ export class ColumnMetadata {
     isVirtual: boolean = false
 
     /**
+     * Indicates if column is calculated. Calculated columns are not mapped to the entity.
+     */
+    isCalculated: boolean = false
+
+    /**
+     * Query to be used to populate the column data. This query is used when generating the relational db script.
+     * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     * @See https://github.com/typeorm/typeorm/issues/9323 for more details.
+     */
+    query?: (alias: string) => string
+
+    /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
      */
     isDiscriminator: boolean = false
@@ -448,6 +461,7 @@ export class ColumnMetadata {
         if (options.args.options.array)
             this.isArray = options.args.options.array
         if (options.args.mode) {
+            this.isCalculated = options.args.mode === "calculated"
             this.isVirtual = options.args.mode === "virtual"
             this.isTreeLevel = options.args.mode === "treeLevel"
             this.isCreateDate = options.args.mode === "createDate"
@@ -456,12 +470,18 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version"
             this.isObjectId = options.args.mode === "objectId"
         }
+        if (this.isCalculated) {
+            this.isInsert = false
+            this.isUpdate = false
+        }
         if (options.args.options.transformer)
             this.transformer = options.args.options.transformer
         if (options.args.options.spatialFeatureType)
             this.spatialFeatureType = options.args.options.spatialFeatureType
         if (options.args.options.srid !== undefined)
             this.srid = options.args.options.srid
+        if ((options.args.options as CalculatedColumnOptions).query)
+            this.query = (options.args.options as CalculatedColumnOptions).query
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {

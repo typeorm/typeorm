@@ -3458,14 +3458,23 @@ export class SqlServerQueryRunner
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
+        const tableMetaData = this.connection.entityMetadatas.find(
+            (e) => e.tableName === table.name,
+        )
+        const nonCalculatedColumns = table.columns.filter(
+            (column) =>
+                !tableMetaData?.columns.find(
+                    (c) => c.databaseName === column.name && c.isCalculated,
+                ),
+        )
+        const columnDefinitions = nonCalculatedColumns
             .map((column) =>
                 this.buildCreateColumnSql(table, column, false, true),
             )
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
-        table.columns
+        nonCalculatedColumns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueExist = table.uniques.some(

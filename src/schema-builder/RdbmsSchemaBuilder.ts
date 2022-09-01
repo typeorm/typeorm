@@ -312,18 +312,20 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (metadata.columns.length !== table.columns.length) continue
 
-            const renamedMetadataColumns = metadata.columns.filter((column) => {
-                return !table.columns.find((tableColumn) => {
-                    return (
-                        tableColumn.name === column.databaseName &&
-                        tableColumn.type ===
-                            this.connection.driver.normalizeType(column) &&
-                        tableColumn.isNullable === column.isNullable &&
-                        tableColumn.isUnique ===
-                            this.connection.driver.normalizeIsUnique(column)
-                    )
+            const renamedMetadataColumns = metadata.columns
+                .filter((c) => !c.isCalculated)
+                .filter((column) => {
+                    return !table.columns.find((tableColumn) => {
+                        return (
+                            tableColumn.name === column.databaseName &&
+                            tableColumn.type ===
+                                this.connection.driver.normalizeType(column) &&
+                            tableColumn.isNullable === column.isNullable &&
+                            tableColumn.isUnique ===
+                                this.connection.driver.normalizeIsUnique(column)
+                        )
+                    })
                 })
-            })
 
             if (
                 renamedMetadataColumns.length === 0 ||
@@ -334,6 +336,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const renamedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find((column) => {
                     return (
+                        !column.isCalculated &&
                         column.databaseName === tableColumn.name &&
                         this.connection.driver.normalizeType(column) ===
                             tableColumn.type &&
@@ -687,6 +690,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const droppedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find(
                     (columnMetadata) =>
+                        columnMetadata.isCalculated ||
                         columnMetadata.databaseName === tableColumn.name,
                 )
             })
@@ -717,9 +721,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // find which columns are new
             const newColumnMetadatas = metadata.columns.filter(
                 (columnMetadata) => {
-                    return !table.columns.find(
-                        (tableColumn) =>
-                            tableColumn.name === columnMetadata.databaseName,
+                    return (
+                        !columnMetadata.isCalculated &&
+                        !table.columns.find(
+                            (tableColumn) =>
+                                tableColumn.name ===
+                                columnMetadata.databaseName,
+                        )
                     )
                 },
             )

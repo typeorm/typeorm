@@ -26,14 +26,9 @@ export class DateUtils {
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
     static mixedDateToDateString(value: string | Date): string {
-        if (value instanceof Date)
-            return (
-                this.formatZerolessValue(value.getFullYear(), 4) +
-                "-" +
-                this.formatZerolessValue(value.getMonth() + 1) +
-                "-" +
-                this.formatZerolessValue(value.getDate())
-            )
+        if (value instanceof Date) {
+            return value.toISOString().split("T")[0]
+        }
 
         return value
     }

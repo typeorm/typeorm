@@ -3842,12 +3842,21 @@ export class PostgresQueryRunner
      * Builds create table sql.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
+        const tableMetaData = this.connection.entityMetadatas.find(
+            (e) => e.tableName === table.name,
+        )
+        const nonCalculatedColumns = table.columns.filter(
+            (column) =>
+                !tableMetaData?.columns.find(
+                    (c) => c.databaseName === column.name && c.isCalculated,
+                ),
+        )
+        const columnDefinitions = nonCalculatedColumns
             .map((column) => this.buildCreateColumnSql(table, column))
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
-        table.columns
+        nonCalculatedColumns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueExist = table.uniques.some(
@@ -3975,7 +3984,7 @@ export class PostgresQueryRunner
 
         sql += `)`
 
-        table.columns
+        nonCalculatedColumns
             .filter((it) => it.comment)
             .forEach(
                 (it) =>
