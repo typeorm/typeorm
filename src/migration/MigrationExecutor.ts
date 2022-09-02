@@ -24,6 +24,15 @@ export class MigrationExecutor {
      */
     transaction: "all" | "none" | "each" = "all"
 
+    /**
+     * Option to fake-run or fake-revert a migration, adding to the
+     * executed migrations table, but not actually running it. This feature is
+     * useful for when migrations are added after the fact or for
+     * interoperability between applications which are desired to each keep
+     * a consistent migration history.
+     */
+    fake: boolean
+
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
@@ -258,6 +267,14 @@ export class MigrationExecutor {
         // run all pending migrations in a sequence
         try {
             for (const migration of pendingMigrations) {
+                if (this.fake) {
+                    // directly insert migration record into the database if it is fake
+                    await this.insertExecutedMigration(queryRunner, migration)
+
+                    // nothing else needs to be done, continue to next migration
+                    continue
+                }
+
                 if (
                     this.transaction === "each" &&
                     !queryRunner.isTransactionActive
@@ -292,7 +309,9 @@ export class MigrationExecutor {
                         // informative log about migration success
                         successMigrations.push(migration)
                         this.connection.logger.logSchemaBuild(
-                            `Migration ${migration.name} has been executed successfully.`,
+                            `Migration ${migration.name} has been ${
+                                this.fake ? "(fake)" : ""
+                            } executed successfully.`,
                         )
                     })
             }
@@ -385,13 +404,17 @@ export class MigrationExecutor {
         }
 
         try {
-            await queryRunner.beforeMigration()
-            await migrationToRevert.instance!.down(queryRunner)
-            await queryRunner.afterMigration()
+            if (!this.fake) {
+                await queryRunner.beforeMigration()
+                await migrationToRevert.instance!.down(queryRunner)
+                await queryRunner.afterMigration()
+            }
 
             await this.deleteExecutedMigration(queryRunner, migrationToRevert)
             this.connection.logger.logSchemaBuild(
-                `Migration ${migrationToRevert.name} has been reverted successfully.`,
+                `Migration ${migrationToRevert.name} has been ${
+                    this.fake ? "(fake)" : ""
+                } reverted successfully.`,
             )
 
             // commit transaction if we started it

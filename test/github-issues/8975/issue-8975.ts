@@ -3,7 +3,7 @@ import { exec } from "child_process"
 import { dirname } from "path"
 import rimraf from "rimraf"
 
-describe.only("cli init command", () => {
+describe("cli init command", () => {
     const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
     const databaseOptions = [
         "mysql",
@@ -12,7 +12,7 @@ describe.only("cli init command", () => {
         "cockroachdb",
         "sqlite",
         "better-sqlite3",
-        "oracle",
+        // "oracle", // as always oracle have issues: dependency installation doesn't work on mac m1 due to missing oracle binaries for m1
         "mssql",
         "mongodb",
     ]

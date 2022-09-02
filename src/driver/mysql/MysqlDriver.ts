@@ -66,6 +66,11 @@ export class MysqlDriver implements Driver {
     options: MysqlConnectionOptions
 
     /**
+     * Version of MySQL. Requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
+
+    /**
      * Master database used to perform all write queries.
      */
     database?: string
@@ -402,6 +407,7 @@ export class MysqlDriver implements Driver {
             version: string
         }[] = await queryRunner.query(`SELECT VERSION() AS \`version\``)
         const dbVersion = result[0].version
+        this.version = dbVersion
         await queryRunner.release()
 
         if (this.options.type === "mariadb") {

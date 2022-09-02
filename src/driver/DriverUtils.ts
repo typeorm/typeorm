@@ -1,5 +1,6 @@
 import { Driver } from "./Driver"
 import { hash, shorten } from "../util/StringUtils"
+import { VersionUtils } from "../util/VersionUtils"
 
 /**
  * Common driver utility functions.
@@ -30,6 +31,13 @@ export class DriverUtils {
      */
     static isMySQLFamily(driver: Driver): boolean {
         return ["mysql", "mariadb"].includes(driver.options.type)
+    }
+
+    static isReleaseVersionOrGreater(driver: Driver, version: string): boolean {
+        return (
+            driver.version != null &&
+            VersionUtils.isGreaterOrEqual(driver.version, version)
+        )
     }
 
     static isPostgresFamily(driver: Driver): boolean {

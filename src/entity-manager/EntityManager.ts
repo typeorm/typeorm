@@ -478,6 +478,7 @@ export class EntityManager {
         const target =
             arguments.length > 1 &&
             (typeof targetOrEntity === "function" ||
+                InstanceChecker.isEntitySchema(targetOrEntity) ||
                 typeof targetOrEntity === "string")
                 ? (targetOrEntity as Function | string)
                 : undefined

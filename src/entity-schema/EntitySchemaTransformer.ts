@@ -81,6 +81,8 @@ export class EntitySchemaTransformer {
                 options: {
                     type: regularColumn.type,
                     name: regularColumn.objectId ? "_id" : regularColumn.name,
+                    primaryKeyConstraintName:
+                        regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
                     width: regularColumn.width,
                     nullable: regularColumn.nullable,
