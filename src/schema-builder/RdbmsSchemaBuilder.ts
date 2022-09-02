@@ -1182,7 +1182,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     /**
      * Creates typeorm service table for storing user defined Views and generate columns.
      */
-    public async createTypeormMetadataTable(queryRunner: QueryRunner) {
+    protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema
         const database = this.currentDatabase
         const typeormMetadataTable = this.connection.driver.buildTableName(
