@@ -1,4 +1,4 @@
-import { SqlInMemory } from "../../driver/SqlInMemory";
+import { SqlInMemory } from "../../driver/SqlInMemory"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { RdbmsSchemaBuilder } from "../RdbmsSchemaBuilder"

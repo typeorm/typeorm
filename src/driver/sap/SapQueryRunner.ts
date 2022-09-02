@@ -428,7 +428,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!ifNotExist || (ifNotExist && !exist)) {
             const up = `CREATE SCHEMA "${schema}"`
             const down = `DROP SCHEMA "${schema}" CASCADE`
-            await this.executeSchemaBuilderQueries(new Query(up), new Query(down))
+            await this.executeSchemaBuilderQueries(
+                new Query(up),
+                new Query(down),
+            )
         }
     }
 
@@ -454,7 +457,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!ifExist || (ifExist && exist)) {
             const up = `DROP SCHEMA "${schema}" ${isCascade ? "CASCADE" : ""}`
             const down = `CREATE SCHEMA "${schema}"`
-            await this.executeSchemaBuilderQueries(new Query(up), new Query(down))
+            await this.executeSchemaBuilderQueries(
+                new Query(up),
+                new Query(down),
+            )
         }
     }
 

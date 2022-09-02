@@ -1,12 +1,17 @@
-import { DataSource, EntityMetadata, QueryRunner, RdbmsSchemaBuilderHook } from "../../../../../src"
-import { SqlInMemory } from "../../../../../src/driver/SqlInMemory";
+import {
+    DataSource,
+    EntityMetadata,
+    QueryRunner,
+    RdbmsSchemaBuilderHook,
+} from "../../../../../src"
+import { SqlInMemory } from "../../../../../src/driver/SqlInMemory"
 import { RdbmsSchemaBuilder } from "../../../../../src/schema-builder/RdbmsSchemaBuilder"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { Query } from "../../../../../src/driver/Query";
+import { Query } from "../../../../../src/driver/Query"
 import { Audit } from "./entity/audit"
 import { Post } from "./entity/post"
 import { expect } from "chai"
@@ -43,15 +48,17 @@ class AuditHook implements RdbmsSchemaBuilderHook {
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadatas: EntityMetadata[],
     ): Promise<SqlInMemory> {
-        const sqlInMemory = new SqlInMemory();
+        const sqlInMemory = new SqlInMemory()
         for (const rule of this.pgRules) {
             if (rule.rulename.startsWith(this.rulePrefix)) {
                 sqlInMemory.downQueries.push(
-                    new Query(`DROP RULE IF EXISTS "${rule.rulename}" ON "${rule.tablename}"`),
+                    new Query(
+                        `DROP RULE IF EXISTS "${rule.rulename}" ON "${rule.tablename}"`,
+                    ),
                 )
             }
         }
-        return sqlInMemory;
+        return sqlInMemory
     }
 
     public async afterAll(
@@ -59,12 +66,14 @@ class AuditHook implements RdbmsSchemaBuilderHook {
         schemaBuilder: RdbmsSchemaBuilder,
         entityMetadatas: EntityMetadata[],
     ): Promise<SqlInMemory> {
-        const sqlInMemory = new SqlInMemory();
+        const sqlInMemory = new SqlInMemory()
         for (const entityMetadata of entityMetadatas) {
             if (entityMetadata.tableName !== "audit")
-                sqlInMemory.upQueries.push(new Query(this.getRuleDefinition(entityMetadata)))
+                sqlInMemory.upQueries.push(
+                    new Query(this.getRuleDefinition(entityMetadata)),
+                )
         }
-        return sqlInMemory;
+        return sqlInMemory
     }
 
     private getRuleName(entityMetadata: EntityMetadata): string {
@@ -84,7 +93,7 @@ class AuditHook implements RdbmsSchemaBuilderHook {
 describe("schema builder > custom hooks > Postgres rule hook", () => {
     let connections: DataSource[]
 
-    describe('synchronization', () => {
+    describe("synchronization", () => {
         before(async () => {
             connections = await createTestingConnections({
                 enabledDrivers: ["postgres"],
@@ -114,7 +123,7 @@ describe("schema builder > custom hooks > Postgres rule hook", () => {
             ))
     })
 
-    describe('migration', () => {
+    describe("migration", () => {
         before(async () => {
             connections = await createTestingConnections({
                 enabledDrivers: ["postgres"],
@@ -126,7 +135,5 @@ describe("schema builder > custom hooks > Postgres rule hook", () => {
         })
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
-
-
     })
 })
