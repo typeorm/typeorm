@@ -408,7 +408,7 @@ Updates a single document within the collection based on the filter.
 
 ## Using transactions
 
-Transactions are only supported on replicasets in MongoDB. Enabling transactions for mongodb can be done through connection parameters:
+Transactions are only supported on replicasets in MongoDB. Enabling transactions for MongoDB can be done through connection parameters:
 
 ```typescript
 import { DataSource } from "typeorm"
