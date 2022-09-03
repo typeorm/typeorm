@@ -601,8 +601,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        if (syncWithMetadata)
-            upQueries.push(this.insertViewDefinitionSql(view))
+        if (syncWithMetadata) upQueries.push(this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
         if (syncWithMetadata)
             downQueries.push(this.deleteViewDefinitionSql(view))
