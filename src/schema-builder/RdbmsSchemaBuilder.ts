@@ -565,7 +565,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // create a new view and sync it in the database
             const view = View.create(metadata, this.connection.driver)
-            await this.queryRunner.createView(view)
+            await this.queryRunner.createView(view, true)
             this.queryRunner.loadedViews.push(view)
         }
     }

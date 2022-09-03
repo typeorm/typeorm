@@ -7,7 +7,7 @@ import {
 import { DataSource, Table } from "../../../src"
 import { View } from "../../../src/schema-builder/view/View"
 
-describe("github issues > #9173 missing typeorm_metadata", () => {
+describe.only("github issues > #9173 missing typeorm_metadata", () => {
     let connections: DataSource[]
     before(
         async () =>
@@ -15,13 +15,18 @@ describe("github issues > #9173 missing typeorm_metadata", () => {
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
-                enabledDrivers: ["postgres", "better-sqlite3", "sqlite"],
+                enabledDrivers: [
+                    "sqlite",
+                    "mysql",
+                    "postgres",
+                    "better-sqlite3",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should add an entry to typeorm_metadata table", async () => {
+    it("should create a view without view entity", async () => {
         for (const connection of connections) {
             await connection.runMigrations({
                 transaction: "all",
