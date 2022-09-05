@@ -133,24 +133,25 @@ export class DynamoEntityManager extends EntityManager {
     /**
      * Finds first entity that matches given conditions and/or find options.
      */
-    async findOne<Entity> (entityClassOrName: EntityTarget<Entity>,
-        optionsOrConditions?: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindOneOptions<Entity> | DeepPartial<Entity>,
-        maybeOptions?: FindOneOptions<Entity>): Promise<Entity | undefined> {
+    async findOne<Entity>(
+        entityClass: EntityTarget<Entity>,
+        options: FindOneOptions<Entity>,
+    ): Promise<Entity | null> {
         const dbClient = getDocumentClient();
-        const metadata = this.connection.getMetadata(entityClassOrName);
-        const id = typeof optionsOrConditions === "string" ? optionsOrConditions : undefined;
-        const findOneOptionsOrConditions = (id ? maybeOptions : optionsOrConditions) as any;
-        let options;
+        const metadata = this.connection.getMetadata(entityClass);
+        const id = typeof options === "string" ? options : undefined;
+        const findOneOptionsOrConditions = options as any;
+        let findOptions;
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
-            options = new FindOptions();
-            options.where = findOneOptionsOrConditions.where;
-            options.limit = 1;
+            findOptions = new FindOptions();
+            findOptions.where = findOneOptionsOrConditions.where;
+            findOptions.limit = 1;
         } else {
-            options = new FindOptions();
-            options.where = { id };
-            options.limit = 1;
+            findOptions = new FindOptions();
+            findOptions.where = { id };
+            findOptions.limit = 1;
         }
-        const params = paramHelper.find(metadata.tablePath, options, metadata.indices);
+        const params = paramHelper.find(metadata.tablePath, findOptions, metadata.indices);
         const results = await dbClient.query(params);
         const items: any = results.Items || [];
         return items.length > 0 ? items[0] : undefined;

@@ -15,4 +15,10 @@ export interface DynamoConnectionOptions extends BaseConnectionOptions {
      */
     readonly database?: string;
 
+    /**
+     * The driver object
+     * This defaults to require("mongodb")
+     */
+    readonly driver?: any
+
 }

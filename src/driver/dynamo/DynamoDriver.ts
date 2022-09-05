@@ -1,15 +1,14 @@
 import {
-    ColumnType, Connection,
-    Driver,
+    ColumnType,
+    DataSource, DataSourceOptions,
+    Driver, DriverPackageNotInstalledError,
     EntityMetadata,
     ObjectLiteral,
-    QueryRunner,
     ReplicationMode,
     Table,
     TableColumn,
     TableForeignKey
 } from "../..";
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions";
 import { DataTypeDefaults } from "../types/DataTypeDefaults";
 import { MappedColumnTypes } from "../types/MappedColumnTypes";
 import { ColumnMetadata } from "../../metadata/ColumnMetadata";
@@ -18,16 +17,27 @@ import { View } from "../../schema-builder/view/View";
 import { DynamoSchemaBuilder } from "../../schema-builder/DynamoSchemaBuilder";
 import { DynamoQueryRunner } from "./DynamoQueryRunner";
 import { ObjectUtils } from "../../util/ObjectUtils";
+import { CteCapabilities } from "../types/CteCapabilities";
+import { UpsertType } from "../types/UpsertType";
+import {DriverUtils} from "../DriverUtils";
+import {DynamoConnectionOptions} from "./DynamoConnectionOptions";
+import {PlatformTools} from "../../platform/PlatformTools";
 
 /**
  * Organizes communication with MongoDB.
  */
 export class DynamoDriver implements Driver {
+
     /**
-     * Connection used by driver.
+     * Underlying dynamodb library.
      */
-    connection: Connection;
-    options: BaseConnectionOptions;
+    dynamodb: any
+
+    /**
+     * Connection options.
+     */
+    options: DynamoConnectionOptions
+
     database?: string | undefined;
     schema?: string | undefined;
     isReplicated: boolean;
@@ -90,8 +100,47 @@ export class DynamoDriver implements Driver {
      */
     queryRunner?: DynamoQueryRunner;
 
-    constructor (connection: Connection) {
-        this.connection = connection;
+    // constructor(connection: Connection) {
+    //     this.connection = connection;
+    // }
+
+    constructor(protected connection: DataSource) {
+        this.options = connection.options as DynamoConnectionOptions
+
+        // validate options to make sure everything is correct and driver will be able to establish connection
+        this.validateOptions(connection.options)
+
+        // load mongodb package
+        this.loadDependencies()
+
+        this.database = DriverUtils.buildMongoDBDriverOptions(
+            this.options,
+        ).database
+    }
+
+    supportedUpsertType?: UpsertType | undefined;
+    cteCapabilities: CteCapabilities;
+
+    /**
+     * Validate driver options to make sure everything is correct and driver will be able to establish connection.
+     */
+    protected validateOptions(options: DataSourceOptions) {
+        // todo: fix
+        // if (!options.url) {
+        //     if (!options.database)
+        //         throw new DriverOptionNotSetError("database");
+        // }
+    }
+
+    /**
+     * Loads all driver dependencies.
+     */
+    protected loadDependencies(): any {
+        try {
+            this.dynamodb = this.options.driver || PlatformTools.load("aws-sdk")
+        } catch (e) {
+            throw new DriverPackageNotInstalledError("MongoDB", "mongodb")
+        }
     }
 
     connect (): Promise<void> {
@@ -118,7 +167,7 @@ export class DynamoDriver implements Driver {
         return new DynamoSchemaBuilder(this.connection);
     }
 
-    createQueryRunner (mode: ReplicationMode): QueryRunner {
+    createQueryRunner (mode: ReplicationMode) {
         return this.queryRunner!;
     }
 

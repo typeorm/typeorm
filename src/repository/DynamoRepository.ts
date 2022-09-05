@@ -5,8 +5,6 @@ import { ObjectID } from "../driver/mongodb/typings";
 import { ObjectLiteral } from "../common/ObjectLiteral";
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
 import { DeepPartial } from "../common/DeepPartial";
-import { EntityMetadata } from "../metadata/EntityMetadata";
-import { FindConditions } from "../find-options/FindConditions";
 import { FindOneOptions } from "../find-options/FindOneOptions";
 import { Repository } from "./Repository";
 import { DynamoReadStream } from "../driver/dynamo/DynamoReadStream";
@@ -17,6 +15,7 @@ import { AddOptions } from "../driver/dynamo/models/AddOptions";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import { UpdateResult } from "../query-builder/result/UpdateResult";
 import { UpdateOptions } from "../driver/dynamo/models/UpdateOptions";
+import {FindOptionsWhere} from "../find-options/FindOptionsWhere";
 
 export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<Entity> {
     /**
@@ -27,7 +26,9 @@ export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<E
     /**
      * Entity metadata of the entity current repository manages.
      */
-    readonly metadata: EntityMetadata;
+    get metadata() {
+        return this.manager.connection.getMetadata(this.target)
+    }
 
     /**
      * Query runner provider used for this repository.
@@ -54,10 +55,11 @@ export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<E
     }
 
     /**
-     * Finds first entity that matches given conditions.
+     * Finds first entity by a given find options.
+     * If entity was not found in the database - returns null.
      */
-    findOne (optionsOrConditions?: string|number|Date|ObjectID|FindOneOptions<Entity>|FindConditions<Entity>, maybeOptions?: FindOneOptions<Entity>) {
-        return this.manager.findOne(this.metadata.target as any, optionsOrConditions as any, maybeOptions);
+    async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
+        return this.manager.findOne(this.metadata.target, options)
     }
 
     add (options: AddOptions) {
@@ -87,7 +89,17 @@ export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<E
         return this.manager.putOne(this.metadata.tableName, content);
     }
 
-    delete (criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>): Promise<DeleteResult> {
+    delete (
+        criteria:
+            | string
+            | string[]
+            | number
+            | number[]
+            | Date
+            | Date[]
+            | ObjectID
+            | ObjectID[]
+            | FindOptionsWhere<Entity>): Promise<DeleteResult> {
         return this.manager.delete(this.metadata.tableName, criteria);
     }
 
@@ -122,7 +134,18 @@ export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<E
     /**
      * @deprecated use put(...) or updateExpression(...) for dynamodb.
      */
-    update (criteria: string | string[] | number | number[] | Date | Date[] | ObjectID | ObjectID[] | FindConditions<Entity>, partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
+    update (
+        criteria:
+            | string
+            | string[]
+            | number
+            | number[]
+            | Date
+            | Date[]
+            | ObjectID
+            | ObjectID[]
+            | FindOptionsWhere<Entity>,
+        partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
         throw new Error("use repository.updateMany(...) for dynamodb.");
     }
 
