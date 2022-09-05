@@ -66,7 +66,8 @@ commands:
               rm node_modules/oracledb/instantclient.zip
 
               DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
-              cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/
+              (cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/ ||
+                cp /usr/lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/)
             fi
           environment:
             BLOB_URL: https://download.oracle.com/otn_software/linux/instantclient/19800/instantclient-basiclite-linux.x64-19.8.0.0.0dbru.zip
@@ -108,7 +109,7 @@ jobs:
         default: ""
       node-version:
         type: string
-        default: "10"
+        default: "12"
     working_directory: ~/typeorm
     docker:
       - image: circleci/node:<< parameters.node-version >>
@@ -163,8 +164,10 @@ jobs:
       # Download and cache dependencies
       - run:
           name: "Run Tests with Coverage"
+
           command: |
             docker run \
+              --env npm_config_yes='true' \
               --env LD_LIBRARY_PATH='/typeorm/node_modules/oracledb/instantclient_19_8/:$LD_LIBRARY_PATH' \
               --volumes-from typeorm-code \
               --network typeorm_default \
@@ -198,8 +201,8 @@ workflows:
             parameters:
               node-version:
                 - "12"
-                - "13"
                 - "14"
+                - "16"
       - test:
           name: test (cockroachdb) - Node v12
           requires:

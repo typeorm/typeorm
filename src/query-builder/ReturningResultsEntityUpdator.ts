@@ -112,7 +112,7 @@ export class ReturningResultsEntityUpdator {
                                 .from(metadata.target, metadata.targetName)
                                 .where(entityId)
                                 .withDeleted()
-                                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
+                                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                                 .getOne()) as any
 
                         if (loadedReturningColumns) {
@@ -243,7 +243,7 @@ export class ReturningResultsEntityUpdator {
                 )
                 .from(metadata.target, metadata.targetName)
                 .where(entityIds)
-                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties maight be overridden by merge process
+                .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
 
             entities.forEach((entity, entityIndex) => {

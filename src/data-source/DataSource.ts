@@ -40,6 +40,7 @@ import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import {DynamoRepository} from "../repository/DynamoRepository";
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -366,6 +367,7 @@ export class DataSource {
      */
     async runMigrations(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<Migration[]> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -373,6 +375,7 @@ export class DataSource {
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
             (options && options.transaction) || "all"
+        migrationExecutor.fake = (options && options.fake) || false
 
         const successMigrations =
             await migrationExecutor.executePendingMigrations()
@@ -385,6 +388,7 @@ export class DataSource {
      */
     async undoLastMigration(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<void> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -392,6 +396,7 @@ export class DataSource {
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
             (options && options.transaction) || "all"
+        migrationExecutor.fake = (options && options.fake) || false
 
         await migrationExecutor.undoLastMigration()
     }
@@ -428,7 +433,9 @@ export class DataSource {
     /**
      * Gets repository for the given entity.
      */
-    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): Repository<Entity> {
         return this.manager.getRepository(target)
     }
 
@@ -436,7 +443,7 @@ export class DataSource {
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
      */
-    getTreeRepository<Entity>(
+    getTreeRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): TreeRepository<Entity> {
         return this.manager.getTreeRepository(target)
@@ -446,7 +453,7 @@ export class DataSource {
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
      */
-    getMongoRepository<Entity>(
+    getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): MongoRepository<Entity> {
         if (!(this.driver.options.type === "mongodb"))
@@ -461,7 +468,7 @@ export class DataSource {
      * Gets dynamodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
      */
-    getDynamoRepository<Entity>(
+    getDynamoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
     ): DynamoRepository<Entity> {
         if (!(this.driver.options.type === "dynamodb"))

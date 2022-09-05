@@ -143,12 +143,13 @@ export class DocumentToEntityTransformer {
                         entity[embedded.propertyName][column.propertyName] =
                             value
                     })
+
+                    addEmbeddedValuesRecursively(
+                        entity[embedded.propertyName],
+                        document[embedded.prefix],
+                        embedded.embeddeds,
+                    )
                 }
-                addEmbeddedValuesRecursively(
-                    entity[embedded.propertyName],
-                    document[embedded.prefix],
-                    embedded.embeddeds,
-                )
             })
         }
 

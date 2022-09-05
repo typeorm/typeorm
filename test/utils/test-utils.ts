@@ -61,7 +61,7 @@ export interface TestingOptions {
     /**
      * Migrations needs to be included in connection for the given test suite.
      */
-    migrations?: string[]
+    migrations?: (string | Function)[]
 
     /**
      * Subscribers needs to be included in the connection for the given test suite.

@@ -13,6 +13,20 @@ services:
       MYSQL_PASSWORD: "test"
       MYSQL_DATABASE: "test"
 
+  # mysql v8
+#  mysql8:
+#    image: "mysql:8"
+#    container_name: "typeorm-mysql8"
+#    ports:
+#      - "3308:3306"
+#    environment:
+#      MYSQL_ROOT_PASSWORD: "admin"
+#      MYSQL_USER: "test"
+#      MYSQL_PASSWORD: "test"
+#      MYSQL_DATABASE: "test"
+#    volumes:
+#      - mysql8_volume:/var/lib/mysql
+
   # mariadb
   mariadb:
     image: "mariadb:10.5.13"
@@ -127,8 +141,10 @@ services:
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
+
 #volumes:
 #  volume-hana-xe:
+#  mysql8_volume:
 
 networks:
   typeorm:

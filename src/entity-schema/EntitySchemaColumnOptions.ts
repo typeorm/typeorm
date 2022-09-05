@@ -171,6 +171,11 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     enum?: any[] | Object
 
     /**
+     * Exact name of enum
+     */
+    enumName?: string
+
+    /**
      * Generated column expression.
      */
     asExpression?: string
@@ -198,4 +203,9 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer | ValueTransformer[]
+
+    /**
+     * Name of the primary key constraint.
+     */
+    primaryKeyConstraintName?: string
 }

@@ -15,11 +15,13 @@ export class OrmUtils {
     }
 
     static splitClassesAndStrings<T>(
-        clsesAndStrings: (string | T)[],
+        classesAndStrings: (string | T)[],
     ): [T[], string[]] {
         return [
-            clsesAndStrings.filter((cls): cls is T => typeof cls !== "string"),
-            clsesAndStrings.filter(
+            classesAndStrings.filter(
+                (cls): cls is T => typeof cls !== "string",
+            ),
+            classesAndStrings.filter(
                 (str): str is string => typeof str === "string",
             ),
         ]
@@ -155,6 +157,7 @@ export class OrmUtils {
     ): any {
         if (this.isPlainObject(target) && this.isPlainObject(source)) {
             for (const key of Object.keys(source)) {
+                if (key === "__proto__") continue
                 this.mergeObjectKey(target, key, source[key], memo)
             }
         }
@@ -358,7 +361,7 @@ export class OrmUtils {
         // Especially useful on the step where we compare prototypes
         if (x === y) return true
 
-        // Unequal, but either is null or undefined (use case: jsonb comparasion)
+        // Unequal, but either is null or undefined (use case: jsonb comparison)
         // PR #3776, todo: add tests
         if (x === null || y === null || x === undefined || y === undefined)
             return false
