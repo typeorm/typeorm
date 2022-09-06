@@ -16,7 +16,7 @@ import {ReplicationMode} from "../types/ReplicationMode";
 import {DynamoEntityManager} from "../../entity-manager/DynamoEntityManager";
 import {batchHelper} from "./helpers/BatchHelper";
 import asyncPool from "tiny-async-pool";
-import { getDocumentClient } from "./DynamoClient";
+import { DynamoClient } from "./DynamoClient";
 import { DataSource } from "../../data-source/DataSource"
 
 class DeleteManyOptions {
@@ -36,7 +36,7 @@ const batchDelete = async (tableName: string, batch: any[]) => {
             }
         };
     });
-    return getDocumentClient().batchWrite({
+    return new DynamoClient().batchWrite({
         RequestItems
     });
 };
@@ -50,7 +50,7 @@ const batchWrite = async (tableName: string, batch: any[]) => {
             }
         };
     });
-    return getDocumentClient().batchWrite({
+    return new DynamoClient().batchWrite({
         RequestItems
     });
 };
@@ -177,7 +177,7 @@ export class DynamoQueryRunner implements QueryRunner {
             TableName: tableName,
             Key: key
         };
-        await getDocumentClient().delete(params);
+        await new DynamoClient().delete(params);
     }
 
     /**
@@ -201,7 +201,7 @@ export class DynamoQueryRunner implements QueryRunner {
             TableName: tableName,
             Item: doc
         };
-        await getDocumentClient().put(params);
+        await new DynamoClient().put(params);
         return doc;
     }
 
@@ -622,7 +622,7 @@ export class DynamoQueryRunner implements QueryRunner {
      * Drops collection.
      */
     clearTable (tableName: string): Promise<void> {
-        return getDocumentClient().deleteTable({
+        return new DynamoClient().deleteTable({
             TableName: tableName
         });
     }

@@ -98,8 +98,7 @@ describe("param-helper", () => {
     it("update with ADD", async (): Promise<any> => {
         /** given: **/
         const options = new UpdateOptions();
-        options.type = "ADD";
-        options.values = {
+        options.addValues = {
             total: 1,
             count: 1
         };
@@ -133,8 +132,7 @@ describe("param-helper", () => {
     it("update with SET", async (): Promise<any> => {
         /** given: **/
         const options = new UpdateOptions();
-        options.type = "SET";
-        options.values = {
+        options.setValues = {
             status: "failed",
             error: "some error occurred",
             invoiceIdAndStatus: "123-failed"
@@ -152,7 +150,7 @@ describe("param-helper", () => {
             Key: {
                 invoiceId: 123
             },
-            UpdateExpression: "SET #status :status, #error :error, #invoiceIdAndStatus :invoiceIdAndStatus",
+            UpdateExpression: "SET #status = :status, #error = :error, #invoiceIdAndStatus = :invoiceIdAndStatus",
             ExpressionAttributeNames: {
                 "#status": "status",
                 "#error": "error",
