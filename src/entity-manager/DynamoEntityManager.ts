@@ -15,10 +15,10 @@ import { FindOneOptions } from "../find-options/FindOneOptions";
 import { DeepPartial } from "../common/DeepPartial";
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
-import {DynamoQueryRunner} from "../driver/dynamo/DynamoQueryRunner";
-import {DynamoDriver} from "../driver/dynamo/DynamoDriver";
-import {UpdateExpressionOptions} from "../driver/dynamo/models/UpdateOptions";
-import {paramHelper} from "../driver/dynamo/helpers/ParamHelper";
+import { DynamoQueryRunner } from "../driver/dynamo/DynamoQueryRunner";
+import { DynamoDriver } from "../driver/dynamo/DynamoDriver";
+import { UpdateExpressionOptions } from "../driver/dynamo/models/UpdateExpressionOptions";
+import { paramHelper}  from "../driver/dynamo/helpers/ParamHelper";
 import {
     indexedColumns,
     populateGeneratedColumns
