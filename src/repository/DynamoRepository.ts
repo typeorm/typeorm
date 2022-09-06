@@ -75,8 +75,7 @@ export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<E
 
     add (options: AddOptions) {
         return this.manager.update(this.metadata.target as any, {
-            type: "ADD",
-            values: options.values,
+            addValues: options.values,
             where: options.where
         });
     }
@@ -171,7 +170,7 @@ export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<E
             | ObjectID[]
             | FindOptionsWhere<Entity>,
         partialEntity: QueryDeepPartialEntity<Entity>): Promise<UpdateResult> {
-        throw new Error("use repository.updateMany(...) for dynamodb.");
+        throw new Error("use repository.updateExpression(...) for dynamodb.");
     }
 
     updateExpression (options: UpdateOptions): Promise<UpdateResult> {
