@@ -2,12 +2,12 @@ import {
     ColumnType,
     DataSource, DataSourceOptions,
     Driver, DriverPackageNotInstalledError,
-    EntityMetadata,
+    EntityMetadata, InstanceChecker,
     ObjectLiteral,
     ReplicationMode,
     Table,
     TableColumn,
-    TableForeignKey
+    TableForeignKey, TypeORMError
 } from "../..";
 import { DataTypeDefaults } from "../types/DataTypeDefaults";
 import { MappedColumnTypes } from "../types/MappedColumnTypes";
@@ -22,6 +22,7 @@ import { UpsertType } from "../types/UpsertType";
 import {DriverUtils} from "../DriverUtils";
 import {DynamoConnectionOptions} from "./DynamoConnectionOptions";
 import {PlatformTools} from "../../platform/PlatformTools";
+import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
 
 /**
  * Organizes communication with MongoDB.
@@ -171,12 +172,22 @@ export class DynamoDriver implements Driver {
         return this.queryRunner!;
     }
 
-    escapeQueryWithParameters (sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
-        throw new Error("Method not implemented.");
+    /**
+     * Replaces parameters in the given sql with special escaping character
+     * and an array of parameter names to be passed to a query.
+     */
+    escapeQueryWithParameters(
+        sql: string,
+        parameters: ObjectLiteral,
+        nativeParameters: ObjectLiteral,
+    ): [string, any[]] {
+        throw new TypeORMError(
+            `This operation is not supported by DynamoDB driver.`,
+        )
     }
 
     escape (name: string): string {
-        throw new Error("Method not implemented.");
+        return name
     }
 
     buildTableName (tableName: string, schema?: string, database?: string): string {
@@ -190,16 +201,57 @@ export class DynamoDriver implements Driver {
         return parts.join(".");
     }
 
-    parseTableName (target: string | EntityMetadata | Table | View | TableForeignKey): { tableName: string; schema?: string | undefined; database?: string | undefined; } {
-        throw new Error("Method not implemented.");
+    /**
+     * Parse a target table name or other types and return a normalized table definition.
+     */
+    parseTableName(
+        target: EntityMetadata | Table | View | TableForeignKey | string,
+    ): { tableName: string; schema?: string; database?: string } {
+        if (InstanceChecker.isEntityMetadata(target)) {
+            return {
+                tableName: target.tableName,
+            }
+        }
+
+        if (InstanceChecker.isTable(target) || InstanceChecker.isView(target)) {
+            return {
+                tableName: target.name,
+            }
+        }
+
+        if (InstanceChecker.isTableForeignKey(target)) {
+            return {
+                tableName: target.referencedTableName,
+            }
+        }
+
+        return {
+            tableName: target,
+        }
     }
 
-    preparePersistentValue (value: any, column: ColumnMetadata) {
-        throw new Error("Method not implemented.");
+    /**
+     * Prepares given value to a value to be persisted, based on its column type and metadata.
+     */
+    preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = ApplyValueTransformers.transformTo(
+                columnMetadata.transformer,
+                value,
+            )
+        return value
     }
 
-    prepareHydratedValue (value: any, column: ColumnMetadata) {
-        throw new Error("Method not implemented.");
+    /**
+     * Prepares given value to a value to be persisted, based on its column type or metadata.
+     */
+    prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (columnMetadata.transformer)
+            value = ApplyValueTransformers.transformFrom(
+                columnMetadata.transformer,
+                value,
+            )
+        return value
     }
 
     normalizeDynamodbType (column: { type?: string | BooleanConstructor | DateConstructor | NumberConstructor | StringConstructor | undefined; length?: string | number | undefined; precision?: number | null | undefined; scale?: number | undefined; isArray?: boolean | undefined; }): string {
@@ -255,51 +307,93 @@ export class DynamoDriver implements Driver {
         }
     }
 
-    normalizeDefault (columnMetadata: ColumnMetadata): string | undefined {
-        throw new Error("Method not implemented.");
+    /**
+     * Normalizes "default" value of the column.
+     */
+    normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
+        throw new TypeORMError(
+            `MongoDB is schema-less, not supported by this driver.`,
+        )
     }
 
-    normalizeIsUnique (column: ColumnMetadata): boolean {
-        throw new Error("Method not implemented.");
+    /**
+     * Normalizes "isUnique" value of the column.
+     */
+    normalizeIsUnique(column: ColumnMetadata): boolean {
+        throw new TypeORMError(
+            `MongoDB is schema-less, not supported by this driver.`,
+        )
     }
 
-    getColumnLength (column: ColumnMetadata): string {
-        throw new Error("Method not implemented.");
+    /**
+     * Calculates column length taking into account the default length values.
+     */
+    getColumnLength(column: ColumnMetadata): string {
+        throw new TypeORMError(
+            `MongoDB is schema-less, not supported by this driver.`,
+        )
     }
 
-    createFullType (column: TableColumn): string {
-        throw new Error("Method not implemented.");
+    /**
+     * Normalizes "default" value of the column.
+     */
+    createFullType(column: TableColumn): string {
+        throw new TypeORMError(
+            `MongoDB is schema-less, not supported by this driver.`,
+        )
     }
 
-    obtainMasterConnection (): Promise<any> {
-        throw new Error("Method not implemented.");
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainMasterConnection(): Promise<any> {
+        return Promise.resolve()
     }
 
-    obtainSlaveConnection (): Promise<any> {
-        throw new Error("Method not implemented.");
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    obtainSlaveConnection(): Promise<any> {
+        return Promise.resolve()
     }
 
-    createGeneratedMap (metadata: EntityMetadata, insertResult: any, entityIndex?: number, entityNum?: number): ObjectLiteral | undefined {
-        throw new Error("Method not implemented.");
+    /**
+     * Creates generated map of values generated or returned by database after INSERT query.
+     */
+    createGeneratedMap(metadata: EntityMetadata, insertedId: any) {
+        return metadata.objectIdColumn!.createValueMap(insertedId)
     }
 
-    findChangedColumns (tableColumns: TableColumn[], columnMetadatas: ColumnMetadata[]): ColumnMetadata[] {
-        throw new Error("Method not implemented.");
+    /**
+     * Differentiate columns of this table and columns from the given column metadatas columns
+     * and returns only changed.
+     */
+    findChangedColumns(
+        tableColumns: TableColumn[],
+        columnMetadatas: ColumnMetadata[],
+    ): ColumnMetadata[] {
+        throw new TypeORMError(
+            `DynamoDB is schema-less, not supported by this driver.`,
+        )
     }
 
     isReturningSqlSupported (): boolean {
-        throw new Error("Method not implemented.");
+        return false;
     }
 
     isUUIDGenerationSupported (): boolean {
-        throw new Error("Method not implemented.");
+        return false;
     }
 
     isFullTextColumnTypeSupported (): boolean {
-        throw new Error("Method not implemented.");
+        return false;
     }
 
     createParameter (parameterName: string, index: number): string {
-        throw new Error("Method not implemented.");
+        return ""
     }
 }

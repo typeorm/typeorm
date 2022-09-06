@@ -1,6 +1,7 @@
 import { EntityMetadata, ObjectLiteral } from "../../..";
 import { ColumnMetadata } from "../../../metadata/ColumnMetadata";
 import { DynamoDriver } from "../DynamoDriver";
+import {v4} from "uuid";
 
 export const buildPartitionKey = (columns: ColumnMetadata[]) => {
     return columns.map((column) => {
@@ -35,6 +36,14 @@ export const indexedColumns = (metadata: EntityMetadata, doc: any) => {
         sortKeyColumns(index.where || "", doc);
     }
 };
+
+export const populateGeneratedColumns = (metadata:EntityMetadata, doc: any) => {
+    const generatedColumns = metadata.generatedColumns || []
+    for (let i = 0; i < generatedColumns.length; i += 1) {
+        const generatedColumn = generatedColumns[i];
+        doc[generatedColumn.propertyName] = doc[generatedColumn.propertyName]  || v4()
+    }
+}
 
 const primaryKeyAttributes = (metadata: EntityMetadata, driver: DynamoDriver, attributeMap: Map<string, any>) => {
     for (let i = 0; i < metadata.primaryColumns.length; i += 1) {

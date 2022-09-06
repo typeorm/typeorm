@@ -4,7 +4,6 @@
  *
  * This implementation is used for DynamoDB driver which has some specifics in its EntityManager.
  */
-import { Connection } from "../connection/Connection";
 import { EntityManager } from "./EntityManager";
 import { EntityTarget } from "../common/EntityTarget";
 import {
@@ -21,12 +20,17 @@ import {DynamoDriver} from "../driver/dynamo/DynamoDriver";
 import {UpdateOptions} from "../driver/dynamo/models/UpdateOptions";
 import {paramHelper} from "../driver/dynamo/helpers/ParamHelper";
 import {getDocumentClient} from "../driver/dynamo/DynamoClient";
-import {indexedColumns} from "../driver/dynamo/helpers/GlobalSecondaryIndexHelper";
+import {
+    indexedColumns,
+    populateGeneratedColumns
+} from "../driver/dynamo/helpers/GlobalSecondaryIndexHelper";
 import {FindOptions} from "../driver/dynamo/models/FindOptions";
+import {FindOptionsWhere} from "../find-options/FindOptionsWhere";
 import {commonUtils} from "../driver/dynamo/utils/CommonUtils";
 import {ScanOptions} from "../driver/dynamo/models/ScanOptions";
 import {batchHelper} from "../driver/dynamo/helpers/BatchHelper";
 import {BatchWriteItem} from "../driver/dynamo/models/BatchWriteItem";
+import {DataSource} from "../data-source";
 
 // todo: we should look at the @PrimaryKey on the entity
 const DEFAULT_KEY_MAPPER = (item: any) => {
@@ -44,7 +48,7 @@ export class DynamoEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor (connection: Connection) {
+    constructor (connection: DataSource) {
         super(connection);
     }
 
@@ -158,17 +162,35 @@ export class DynamoEntityManager extends EntityManager {
     }
 
     /**
+     * Finds first entity that matches given conditions and/or find options.
+     */
+    async findOneBy<Entity>(
+        entityClass: EntityTarget<Entity>,
+        options: FindOptionsWhere<Entity>,
+    ): Promise<Entity | null> {
+        const dbClient = getDocumentClient();
+        const metadata = this.connection.getMetadata(entityClass);
+        const findOptions = new FindOptions();
+        findOptions.where = options;
+        findOptions.limit = 1;
+        const params = paramHelper.find(metadata.tablePath, findOptions, metadata.indices);
+        const results = await dbClient.query(params);
+        const items: any = results.Items || [];
+        return items.length > 0 ? items[0] : undefined;
+    }
+
+    /**
      * Put a given entity into the database.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      * You can execute bulk inserts using this method.
      */
-    async put<Entity> (target: EntityTarget<Entity>, entity: DeepPartial<Entity> | DeepPartial<Entity>[]): Promise<void> {
+    async put<Entity> (target: EntityTarget<Entity>, entity: DeepPartial<Entity> | DeepPartial<Entity>[]): Promise<any | any[]> {
         if (Array.isArray(entity)) {
-            await this.putMany(target, entity);
+            return this.putMany(target, entity);
         } else {
-            await this.putOne(target, entity);
+            return this.putOne(target, entity);
         }
     }
 
@@ -242,6 +264,7 @@ export class DynamoEntityManager extends EntityManager {
     putOne<Entity> (entityClassOrName: EntityTarget<Entity>, doc: ObjectLiteral): Promise<ObjectLiteral> {
         const metadata = this.connection.getMetadata(entityClassOrName);
         indexedColumns(metadata, doc);
+        populateGeneratedColumns(metadata,  doc);
         return this.dynamodbQueryRunner.putOne(metadata.tablePath, doc);
     }
 

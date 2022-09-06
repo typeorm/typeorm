@@ -5,7 +5,6 @@ import {Table} from "../../schema-builder/table/Table";
 import {TableForeignKey} from "../../schema-builder/table/TableForeignKey";
 import {TableIndex} from "../../schema-builder/table/TableIndex";
 import {View} from "../../schema-builder/view/View";
-import {Connection} from "../../connection/Connection";
 import {PlatformTools, ReadStream} from "../../platform/PlatformTools";
 import {SqlInMemory} from "../SqlInMemory";
 import {TableUnique} from "../../schema-builder/table/TableUnique";
@@ -18,6 +17,7 @@ import {DynamoEntityManager} from "../../entity-manager/DynamoEntityManager";
 import {batchHelper} from "./helpers/BatchHelper";
 import asyncPool from "tiny-async-pool";
 import { getDocumentClient } from "./DynamoClient";
+import { DataSource } from "../../data-source/DataSource"
 
 class DeleteManyOptions {
     maxConcurrency: number;
@@ -63,7 +63,7 @@ export class DynamoQueryRunner implements QueryRunner {
     /**
      * Connection used by this query runner.
      */
-    connection: Connection;
+    connection: DataSource;
 
     /**
      * Entity manager working only with current query runner.
@@ -114,12 +114,16 @@ export class DynamoQueryRunner implements QueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor (connection: Connection, databaseConnection: any) {
+    constructor (connection: DataSource, databaseConnection: any) {
         this.connection = connection;
         this.databaseConnection = databaseConnection;
+        this.broadcaster = new Broadcaster(this)
     }
 
-    broadcaster: Broadcaster;
+    /**
+     * Broadcaster used on this query runner to broadcast entity events.
+     */
+    broadcaster: Broadcaster
 
     async clearDatabase (database?: string): Promise<void> {
         const AWS = PlatformTools.load("aws-sdk");
