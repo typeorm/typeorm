@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { FindOptions } from "../../../../../src/driver/dynamo/models/FindOptions";
-import { UpdateOptions } from "../../../../../src/driver/dynamo/models/UpdateOptions";
+import { UpdateExpressionOptions } from "../../../../../src/driver/dynamo/models/UpdateOptions";
 import { paramHelper } from "../../../../../src/driver/dynamo/helpers/ParamHelper";
 
 const MACHINE_ID = "9117e83c-6e58-424b-9650-6027c8b67386";
@@ -97,7 +97,7 @@ describe("param-helper", () => {
     });
     it("update with ADD", async (): Promise<any> => {
         /** given: **/
-        const options = new UpdateOptions();
+        const options = new UpdateExpressionOptions();
         options.addValues = {
             total: 1,
             count: 1
@@ -131,7 +131,7 @@ describe("param-helper", () => {
 
     it("update with SET", async (): Promise<any> => {
         /** given: **/
-        const options = new UpdateOptions();
+        const options = new UpdateExpressionOptions();
         options.setValues = {
             status: "failed",
             error: "some error occurred",

@@ -17,7 +17,7 @@ import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import {DynamoQueryRunner} from "../driver/dynamo/DynamoQueryRunner";
 import {DynamoDriver} from "../driver/dynamo/DynamoDriver";
-import {UpdateOptions} from "../driver/dynamo/models/UpdateOptions";
+import {UpdateExpressionOptions} from "../driver/dynamo/models/UpdateOptions";
 import {paramHelper} from "../driver/dynamo/helpers/ParamHelper";
 import {
     indexedColumns,
@@ -72,7 +72,7 @@ export class DynamoEntityManager extends EntityManager {
         };
     }
 
-    async update<Entity> (entityClassOrName: EntityTarget<Entity>, options: UpdateOptions) {
+    async update<Entity> (entityClassOrName: EntityTarget<Entity>, options: UpdateExpressionOptions) {
         const metadata = this.connection.getMetadata(entityClassOrName)
         const changedValues = mixin(options.setValues || {}, options.where)
         indexedColumns(metadata, changedValues)

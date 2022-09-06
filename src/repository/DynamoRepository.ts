@@ -14,7 +14,7 @@ import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity";
 import { AddOptions } from "../driver/dynamo/models/AddOptions";
 import { DeleteResult } from "../query-builder/result/DeleteResult";
 import { UpdateResult } from "../query-builder/result/UpdateResult";
-import { UpdateOptions } from "../driver/dynamo/models/UpdateOptions";
+import { UpdateExpressionOptions } from "../driver/dynamo/models/UpdateExpressionOptions";
 import {FindOptionsWhere} from "../find-options/FindOptionsWhere";
 import {SaveOptions} from "./SaveOptions";
 
@@ -173,7 +173,7 @@ export class DynamoRepository<Entity extends ObjectLiteral> extends Repository<E
         throw new Error("use repository.updateExpression(...) for dynamodb.");
     }
 
-    updateExpression (options: UpdateOptions): Promise<UpdateResult> {
+    updateExpression (options: UpdateExpressionOptions): Promise<UpdateResult> {
         return this.manager.update(this.metadata.target as any, options);
     }
 

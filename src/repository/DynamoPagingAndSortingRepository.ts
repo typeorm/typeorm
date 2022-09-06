@@ -16,7 +16,7 @@ const decode = (data: string) => {
     return JSON.parse(Buffer.from(data, "base64").toString("ascii"));
 };
 
-export class PagingAndSortingRepository <T> extends DynamoRepository<T> {
+export class DynamoPagingAndSortingRepository <T> extends DynamoRepository<T> {
     /**
      * Queries by page size and exclusiveStartKey
      */

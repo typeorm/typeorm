@@ -1,7 +1,8 @@
 import { EntityMetadata, ObjectLiteral } from "../../..";
 import { ColumnMetadata } from "../../../metadata/ColumnMetadata";
 import { DynamoDriver } from "../DynamoDriver";
-import {v4} from "uuid";
+import { v4 } from "uuid";
+import { PlatformTools } from "../../../platform/PlatformTools";
 
 export const buildPartitionKey = (columns: ColumnMetadata[]) => {
     return columns.map((column) => {
@@ -41,7 +42,11 @@ export const populateGeneratedColumns = (metadata:EntityMetadata, doc: any) => {
     const generatedColumns = metadata.generatedColumns || []
     for (let i = 0; i < generatedColumns.length; i += 1) {
         const generatedColumn = generatedColumns[i];
-        doc[generatedColumn.propertyName] = doc[generatedColumn.propertyName]  || v4()
+        const value = generatedColumn.generationStrategy === 'uuid' ? v4() : 1
+        if (generatedColumn.generationStrategy !== 'uuid') {
+            console.warn(`generationStrategy is not supported by dynamodb: ${generatedColumn.generationStrategy}`)
+        }
+        doc[generatedColumn.propertyName] = doc[generatedColumn.propertyName]  || value
     }
 }
 
@@ -121,3 +126,109 @@ export const buildGlobalSecondaryIndexes = (metadata: EntityMetadata) => {
     }
     return globalSecondaryIndexes.length > 0 ? globalSecondaryIndexes : undefined;
 };
+
+const wait = (seconds: number) => {
+    return new Promise((resolve: any) => {
+        setTimeout(function () {
+            resolve()
+        }, seconds)
+    })
+}
+
+export const waitUntilActive = async (db: any, tableName: string) => {
+    let retries = 10
+    while (retries > 0) {
+        try {
+            const result = await db.describeTable({
+                TableName: tableName
+            }).promise()
+            const status = result.Table.TableStatus
+            if (status === 'ACTIVE') {
+                break
+            }
+            await wait(10)
+        } catch (error) {
+            const _error: any = error
+            PlatformTools.logError(`failed to describe table: ${tableName}`, _error)
+        }
+        retries -= 1
+    }
+}
+
+export const updateGlobalSecondaryIndexes = async (db: any, tableName: string, attributeDefinitions: any[], globalSecondaryIndexes: any[]) => {
+    try {
+        const existing = await db.describeTable({
+            TableName: tableName
+        }).promise()
+        const existingGlobalSecondaryIndexes = existing.Table.GlobalSecondaryIndexes || []
+        const map = new Map()
+        existingGlobalSecondaryIndexes.forEach((existingGlobalSecondaryIndex: any) => {
+            map.set(existingGlobalSecondaryIndex.IndexName, existingGlobalSecondaryIndex)
+        })
+        for (let i = 0; i < globalSecondaryIndexes.length; i += 1) {
+            const globalSecondaryIndex = globalSecondaryIndexes[i]
+            const existing = map.get(globalSecondaryIndex.IndexName)
+            if (existing) {
+                // has anything changed?
+                const keySchemaChanged = JSON.stringify(existing.KeySchema) !== JSON.stringify(globalSecondaryIndex.KeySchema)
+                const projectionChanged = JSON.stringify(existing.Projection) !== JSON.stringify(globalSecondaryIndex.Projection)
+                if (keySchemaChanged || projectionChanged) {
+                    await deleteGlobalSecondaryIndex(db, tableName, globalSecondaryIndex.IndexName)
+                    await addGlobalSecondaryIndex(db, tableName, attributeDefinitions, globalSecondaryIndex)
+                }
+            } else {
+                await addGlobalSecondaryIndex(db, tableName, attributeDefinitions, globalSecondaryIndex)
+            }
+            map.delete(globalSecondaryIndex.IndexName)
+        }
+        const deletedIndexes = Array.from(map.values())
+        for (let i = 0; i < deletedIndexes.length; i += 1) {
+            const deletedIndex = deletedIndexes[i]
+            await deleteGlobalSecondaryIndex(db, tableName, deletedIndex.IndexName)
+        }
+    } catch (error) {
+        const _error: any = error
+        PlatformTools.logError('failed to update table indexes.', _error)
+    }
+}
+
+export const deleteGlobalSecondaryIndex = async (db: any, tableName: string, indexName: string) => {
+    try {
+        PlatformTools.logInfo('deleting index:', indexName)
+        await db.updateTable({
+            TableName: tableName,
+            GlobalSecondaryIndexUpdates: [
+                {
+                    Delete: { IndexName: indexName }
+                }
+            ]
+        }).promise()
+        await waitUntilActive(db, tableName)
+    } catch (error) {
+        const _error: any = error
+        PlatformTools.logError(`failed to update table: ${tableName}`, _error)
+    }
+}
+
+export const addGlobalSecondaryIndex = async (db: any, tableName: string, attributeDefinitions: any[], globalSecondaryIndex: any) => {
+    try {
+        PlatformTools.logInfo('creating index:', globalSecondaryIndex.IndexName)
+        await db.updateTable({
+            TableName: tableName,
+            AttributeDefinitions: attributeDefinitions,
+            GlobalSecondaryIndexUpdates: [
+                {
+                    Create: {
+                        KeySchema: globalSecondaryIndex.KeySchema,
+                        Projection: globalSecondaryIndex.Projection,
+                        IndexName: globalSecondaryIndex.IndexName
+                    }
+                }
+            ]
+        }).promise()
+        await waitUntilActive(db, tableName)
+    } catch (error) {
+        const _error: any = error
+        PlatformTools.logError(`failed to create index: ${globalSecondaryIndex.IndexName}`, _error)
+    }
+}

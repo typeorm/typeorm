@@ -1,4 +1,4 @@
-import { UpdateOptions } from "../models/UpdateOptions";
+import { UpdateExpressionOptions } from "../models/UpdateExpressionOptions";
 import { FindOptions } from "../models/FindOptions";
 import { buildPartitionKey } from "./GlobalSecondaryIndexHelper";
 import { IndexMetadata } from "../../../metadata/IndexMetadata";
@@ -46,13 +46,13 @@ export const paramHelper = {
         }
         return params;
     },
-    update (tableName: string, options: UpdateOptions) {
+    update (tableName: string, options: UpdateExpressionOptions) {
         return {
             TableName: tableName,
             Key: options.where,
-            UpdateExpression: UpdateOptions.toUpdateExpression(options),
-            ExpressionAttributeNames: UpdateOptions.toAttributeNames(options),
-            ExpressionAttributeValues: UpdateOptions.toExpressionAttributeValues(options)
+            UpdateExpression: UpdateExpressionOptions.toUpdateExpression(options),
+            ExpressionAttributeNames: UpdateExpressionOptions.toAttributeNames(options),
+            ExpressionAttributeValues: UpdateExpressionOptions.toExpressionAttributeValues(options)
         };
     }
 };

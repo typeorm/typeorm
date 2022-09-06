@@ -1,7 +1,7 @@
 import { attributeHelper } from '../helpers/AttributeHelper'
 import mixin from  '../helpers/mixin'
 
-export enum UpdateType {
+export enum UpdateExpressionType {
     // eslint-disable-next-line no-unused-vars
     ADD = 'ADD',
     // eslint-disable-next-line no-unused-vars
@@ -12,42 +12,42 @@ export enum UpdateType {
     SET ='SET'
 }
 
-export class UpdateOptions {
+export class UpdateExpressionOptions {
     addValues?: any
     setValues?: any
     where: any
 
-    static toAttributeNames (updateOptions: UpdateOptions) {
-        const values = mixin(updateOptions.addValues || {}, updateOptions.setValues || {})
+    static toAttributeNames (options: UpdateExpressionOptions) {
+        const values = mixin(options.addValues || {}, options.setValues || {})
         return attributeHelper.toAttributeNames(values)
     }
 
-    static toExpressionAttributeValues (updateOptions: UpdateOptions) {
-        const updateOptionValues = mixin(updateOptions.addValues || {}, updateOptions.setValues || {})
-        const keys = Object.keys(updateOptionValues)
+    static toExpressionAttributeValues (options: UpdateExpressionOptions) {
+        const optionValues = mixin(options.addValues || {}, options.setValues || {})
+        const keys = Object.keys(optionValues)
         const values: any = {}
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i]
             const attributeName = key.replace('#', '_')
-            values[`:${attributeName}`] = updateOptionValues[key]
+            values[`:${attributeName}`] = optionValues[key]
         }
         return values
     }
 
-    static toUpdateExpression (options: UpdateOptions) {
-        const setExpression = this._toUpdateExpression(options.setValues, UpdateType.SET)
-        const addExpression = this._toUpdateExpression(options.addValues, UpdateType.ADD)
+    static toUpdateExpression (options: UpdateExpressionOptions) {
+        const setExpression = this._toUpdateExpression(options.setValues, UpdateExpressionType.SET)
+        const addExpression = this._toUpdateExpression(options.addValues, UpdateExpressionType.ADD)
         return `${setExpression} ${addExpression}`.trim()
     }
 
-    static _toUpdateExpression (values: any, type: UpdateType) {
+    static _toUpdateExpression (values: any, type: UpdateExpressionType) {
         if (values) {
             const commonSeparatedValues = Object.keys(values).map(key => {
                 const attributeName = key.replace('#', '_')
                 switch (type) {
-                    case UpdateType.ADD:
+                    case UpdateExpressionType.ADD:
                         return `#${attributeName} :${attributeName}`
-                    case UpdateType.SET:
+                    case UpdateExpressionType.SET:
                         return `#${attributeName} = :${attributeName}`
                     default:
                         throw new Error(`update type is not supported yet: ${type}`)
