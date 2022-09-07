@@ -1,4 +1,4 @@
-import { Pageable } from "./pageable"
+import { Pageable } from "./Pageable"
 
 export class Page<T> {
     content: T[]
