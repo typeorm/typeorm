@@ -36,9 +36,11 @@ const batchDelete = async (tableName: string, batch: any[]) => {
             },
         }
     })
-    return getDocumentClient().batchWrite({
-        RequestItems,
-    }).promise()
+    return getDocumentClient()
+        .batchWrite({
+            RequestItems,
+        })
+        .promise()
 }
 
 const batchWrite = async (tableName: string, batch: any[]) => {
@@ -50,9 +52,11 @@ const batchWrite = async (tableName: string, batch: any[]) => {
             },
         }
     })
-    return getDocumentClient().batchWrite({
-        RequestItems,
-    }).promise()
+    return getDocumentClient()
+        .batchWrite({
+            RequestItems,
+        })
+        .promise()
 }
 
 export class DynamoQueryRunner implements QueryRunner {
@@ -819,9 +823,11 @@ export class DynamoQueryRunner implements QueryRunner {
      * Drops collection.
      */
     clearTable(tableName: string): Promise<void> {
-        return getDocumentClient().deleteTable({
-            TableName: tableName,
-        }).promise()
+        return getDocumentClient()
+            .deleteTable({
+                TableName: tableName,
+            })
+            .promise()
     }
 
     /**

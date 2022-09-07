@@ -358,9 +358,11 @@ export class DynamoEntityManager extends EntityManager {
             requestItems[metadata.tablePath] = {
                 Keys: batch,
             }
-            const response = await dbClient.batchGet({
-                RequestItems: requestItems,
-            }).promise()
+            const response = await dbClient
+                .batchGet({
+                    RequestItems: requestItems,
+                })
+                .promise()
             if (response.Responses !== undefined) {
                 items = items.concat(response.Responses[metadata.tablePath])
             }
@@ -389,9 +391,11 @@ export class DynamoEntityManager extends EntityManager {
                 }
                 return request
             })
-            await dbClient.batchWrite({
-                RequestItems: requestItems,
-            }).promise()
+            await dbClient
+                .batchWrite({
+                    RequestItems: requestItems,
+                })
+                .promise()
         }
     }
 }
