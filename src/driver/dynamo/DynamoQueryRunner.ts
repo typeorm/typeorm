@@ -16,7 +16,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { DynamoEntityManager } from "../../entity-manager/DynamoEntityManager"
 import { batchHelper } from "./helpers/BatchHelper"
 import asyncPool from "tiny-async-pool"
-import { DynamoClient } from "./DynamoClient"
+import { getDocumentClient } from "./DynamoClient"
 import { DataSource } from "../../data-source/DataSource"
 
 class DeleteManyOptions {
@@ -36,9 +36,9 @@ const batchDelete = async (tableName: string, batch: any[]) => {
             },
         }
     })
-    return new DynamoClient().batchWrite({
+    return getDocumentClient().batchWrite({
         RequestItems,
-    })
+    }).promise()
 }
 
 const batchWrite = async (tableName: string, batch: any[]) => {
@@ -50,9 +50,9 @@ const batchWrite = async (tableName: string, batch: any[]) => {
             },
         }
     })
-    return new DynamoClient().batchWrite({
+    return getDocumentClient().batchWrite({
         RequestItems,
-    })
+    }).promise()
 }
 
 export class DynamoQueryRunner implements QueryRunner {
@@ -190,7 +190,7 @@ export class DynamoQueryRunner implements QueryRunner {
             TableName: tableName,
             Key: key,
         }
-        await new DynamoClient().delete(params)
+        await getDocumentClient().delete(params).promise()
     }
 
     /**
@@ -225,30 +225,9 @@ export class DynamoQueryRunner implements QueryRunner {
             TableName: tableName,
             Item: doc,
         }
-        await new DynamoClient().put(params)
+        await getDocumentClient().put(params).promise()
         return doc
     }
-
-    // /**
-    //  * Returns if the collection is a capped collection.
-    //  */
-    // async isCapped (collectionName: string): Promise<any> {
-    //     return await this.getCollection(collectionName).isCapped()
-    // }
-    //
-    // /**
-    //  * Update multiple documents on DynamoDB.
-    //  */
-    // async updateMany (collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: { upsert?: boolean, w?: any, wtimeout?: number, j?: boolean }): Promise<UpdateWriteOpResult> {
-    //     return await this.getCollection(collectionName).updateMany(query, update, options)
-    // }
-    //
-    // /**
-    //  * Update a single document on DynamoDB.
-    //  */
-    // async updateOne (collectionName: string, query: ObjectLiteral, update: ObjectLiteral, options?: ReplaceOneOptions): Promise<UpdateWriteOpResult> {
-    //     return await this.getCollection(collectionName).updateOne(query, update, options)
-    // }
 
     /**
      * For DynamoDB database we don't create connection, because its single connection already created by a driver.
@@ -840,9 +819,9 @@ export class DynamoQueryRunner implements QueryRunner {
      * Drops collection.
      */
     clearTable(tableName: string): Promise<void> {
-        return new DynamoClient().deleteTable({
+        return getDocumentClient().deleteTable({
             TableName: tableName,
-        })
+        }).promise()
     }
 
     /**

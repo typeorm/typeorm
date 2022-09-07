@@ -29,7 +29,7 @@ import { batchHelper } from "../driver/dynamo/helpers/BatchHelper"
 import { BatchWriteItem } from "../driver/dynamo/models/BatchWriteItem"
 import { DataSource } from "../data-source"
 import mixin from "../driver/dynamo/helpers/mixin"
-import { DynamoClient } from "../driver/dynamo/DynamoClient"
+import { getDocumentClient } from "../driver/dynamo/DynamoClient"
 
 // todo: we should look at the @PrimaryKey on the entity
 const DEFAULT_KEY_MAPPER = (item: any) => {
@@ -80,7 +80,7 @@ export class DynamoEntityManager extends EntityManager {
         mixin(options.setValues, changedValues)
         delete options.setValues.id
         const params = paramHelper.update(metadata.tablePath, options)
-        return new DynamoClient().update(params)
+        return getDocumentClient().update(params).promise()
     }
 
     /**
@@ -91,7 +91,7 @@ export class DynamoEntityManager extends EntityManager {
         options?: FindOptions | any,
     ): Promise<Entity[]> {
         if (options) {
-            const dbClient = new DynamoClient()
+            const dbClient = getDocumentClient()
             const metadata = this.connection.getMetadata(entityClassOrName)
             const params = paramHelper.find(
                 metadata.tablePath,
@@ -99,8 +99,8 @@ export class DynamoEntityManager extends EntityManager {
                 metadata.indices,
             )
             const results = commonUtils.isEmpty(options.where)
-                ? await dbClient.scan(params)
-                : await dbClient.query(params)
+                ? await dbClient.scan(params).promise()
+                : await dbClient.query(params).promise()
             const items: any = results.Items || []
             items.lastEvaluatedKey = results.LastEvaluatedKey
             return items
@@ -116,7 +116,7 @@ export class DynamoEntityManager extends EntityManager {
         options: FindOptions,
     ): Promise<Entity[]> {
         delete options.limit
-        const dbClient = new DynamoClient()
+        const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
         const params = paramHelper.find(
             metadata.tablePath,
@@ -124,11 +124,11 @@ export class DynamoEntityManager extends EntityManager {
             metadata.indices,
         )
         let items: any[] = []
-        let results = await dbClient.query(params)
+        let results = await dbClient.query(params).promise()
         items = items.concat(results.Items || [])
         while (results.LastEvaluatedKey) {
             params.ExclusiveStartKey = results.LastEvaluatedKey
-            results = await dbClient.query(params)
+            results = await dbClient.query(params).promise()
             items = items.concat(results.Items || [])
         }
         return items
@@ -138,7 +138,7 @@ export class DynamoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         options: ScanOptions,
     ) {
-        const dbClient = new DynamoClient()
+        const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
         const params: any = {
             TableName: metadata.tablePath,
@@ -152,7 +152,7 @@ export class DynamoEntityManager extends EntityManager {
         if (options.exclusiveStartKey) {
             params.ExclusiveStartKey = options.exclusiveStartKey
         }
-        const results: any = await dbClient.scan(params)
+        const results: any = await dbClient.scan(params).promise()
         const items = results.Items || []
         items.LastEvaluatedKey = results.LastEvaluatedKey
         return items
@@ -165,7 +165,7 @@ export class DynamoEntityManager extends EntityManager {
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        const dbClient = new DynamoClient()
+        const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClass)
         const id = typeof options === "string" ? options : undefined
         const findOneOptionsOrConditions = options as any
@@ -184,7 +184,7 @@ export class DynamoEntityManager extends EntityManager {
             findOptions,
             metadata.indices,
         )
-        const results = await dbClient.query(params)
+        const results = await dbClient.query(params).promise()
         const items: any = results.Items || []
         return items.length > 0 ? items[0] : undefined
     }
@@ -196,7 +196,7 @@ export class DynamoEntityManager extends EntityManager {
         entityClass: EntityTarget<Entity>,
         options: FindOptionsWhere<Entity>,
     ): Promise<Entity | null> {
-        const dbClient = new DynamoClient()
+        const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClass)
         const findOptions = new FindOptions()
         findOptions.where = options
@@ -206,7 +206,7 @@ export class DynamoEntityManager extends EntityManager {
             findOptions,
             metadata.indices,
         )
-        const results = await dbClient.query(params)
+        const results = await dbClient.query(params).promise()
         const items: any = results.Items || []
         return items.length > 0 ? items[0] : undefined
     }
@@ -348,7 +348,7 @@ export class DynamoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         keys: ObjectLiteral[],
     ) {
-        const dbClient = new DynamoClient()
+        const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
         const batches = batchHelper.batch(keys, 100)
         let items: any[] = []
@@ -360,7 +360,7 @@ export class DynamoEntityManager extends EntityManager {
             }
             const response = await dbClient.batchGet({
                 RequestItems: requestItems,
-            })
+            }).promise()
             if (response.Responses !== undefined) {
                 items = items.concat(response.Responses[metadata.tablePath])
             }
@@ -376,7 +376,7 @@ export class DynamoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         writes: BatchWriteItem[],
     ) {
-        const dbClient = new DynamoClient()
+        const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
         const batches = batchHelper.batch(writes, 25)
         for (let i = 0; i < batches.length; i++) {
@@ -391,7 +391,7 @@ export class DynamoEntityManager extends EntityManager {
             })
             await dbClient.batchWrite({
                 RequestItems: requestItems,
-            })
+            }).promise()
         }
     }
 }
