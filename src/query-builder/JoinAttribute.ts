@@ -49,7 +49,7 @@ export class JoinAttribute {
     /**
      * Useful when the joined expression is a custom query to support mapping
      */
-    mapAsEntity?: Function|string
+    mapAsEntity?: Function | string
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -205,10 +205,10 @@ export class JoinAttribute {
             return this.connection.getMetadata(this.entityOrProperty)
 
         // Overriden mapping entity provided for leftJoinAndMapOne with custom query builder
-        if (this.mapAsEntity && this.connection.hasMetadata(this.mapAsEntity)){                        
+        if (this.mapAsEntity && this.connection.hasMetadata(this.mapAsEntity)) {
             return this.connection.getMetadata(this.mapAsEntity)
         }
-        
+
         return undefined
 
         /*if (typeof this.entityOrProperty === "string") { // entityOrProperty is a custom table

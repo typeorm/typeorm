@@ -543,7 +543,6 @@ describe("query builder > joins", () => {
         it("should load and map selected data when query builder used as join argument", () =>
             Promise.all(
                 connections.map(async (connection) => {
-
                     const tag = new Tag()
                     tag.name = "audi"
                     await connection.manager.save(tag)
@@ -557,17 +556,17 @@ describe("query builder > joins", () => {
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndMapOne(
                             "post.tag",
-                            qb => qb.from(Tag, "tag"),
+                            (qb) => qb.from(Tag, "tag"),
                             "tag",
                             "tag.id = post.tagId",
                             undefined,
-                            Tag                          
+                            Tag,
                         )
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
                     expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)                    
+                    expect(loadedPost!.tag.id).to.be.equal(1)
                 }),
             ))
 
@@ -995,7 +994,6 @@ describe("query builder > joins", () => {
         it("should load and map selected data when query builder used as join argument", () =>
             Promise.all(
                 connections.map(async (connection) => {
-
                     const tag = new Tag()
                     tag.name = "audi"
                     await connection.manager.save(tag)
@@ -1009,19 +1007,19 @@ describe("query builder > joins", () => {
                         .createQueryBuilder(Post, "post")
                         .innerJoinAndMapOne(
                             "post.tag",
-                            qb => qb.from(Tag, "tag"),
+                            (qb) => qb.from(Tag, "tag"),
                             "tag",
                             "tag.id = post.tagId",
                             undefined,
-                            Tag                          
+                            Tag,
                         )
                         .where("post.id = :id", { id: post.id })
                         .getOne()
 
                     expect(loadedPost!.tag).to.not.be.undefined
-                    expect(loadedPost!.tag.id).to.be.equal(1)                    
+                    expect(loadedPost!.tag.id).to.be.equal(1)
                 }),
-            ))            
+            ))
 
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
