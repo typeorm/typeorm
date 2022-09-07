@@ -1,4 +1,4 @@
 export class BatchWriteItem {
-    type: "PutRequest" | "DeleteRequest";
-    item: any;
+    type: "PutRequest" | "DeleteRequest"
+    item: any
 }

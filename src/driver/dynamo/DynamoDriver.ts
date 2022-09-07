@@ -1,34 +1,37 @@
 import {
     ColumnType,
-    DataSource, DataSourceOptions,
-    Driver, DriverPackageNotInstalledError,
-    EntityMetadata, InstanceChecker,
+    DataSource,
+    DataSourceOptions,
+    Driver,
+    DriverPackageNotInstalledError,
+    EntityMetadata,
+    InstanceChecker,
     ObjectLiteral,
     ReplicationMode,
     Table,
     TableColumn,
-    TableForeignKey, TypeORMError
-} from "../..";
-import { DataTypeDefaults } from "../types/DataTypeDefaults";
-import { MappedColumnTypes } from "../types/MappedColumnTypes";
-import { ColumnMetadata } from "../../metadata/ColumnMetadata";
-import { SchemaBuilder } from "../../schema-builder/SchemaBuilder";
-import { View } from "../../schema-builder/view/View";
-import { DynamoSchemaBuilder } from "../../schema-builder/DynamoSchemaBuilder";
-import { DynamoQueryRunner } from "./DynamoQueryRunner";
-import { ObjectUtils } from "../../util/ObjectUtils";
-import { CteCapabilities } from "../types/CteCapabilities";
-import { UpsertType } from "../types/UpsertType";
-import {DriverUtils} from "../DriverUtils";
-import {DynamoConnectionOptions} from "./DynamoConnectionOptions";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {ApplyValueTransformers} from "../../util/ApplyValueTransformers";
+    TableForeignKey,
+    TypeORMError,
+} from "../.."
+import { DataTypeDefaults } from "../types/DataTypeDefaults"
+import { MappedColumnTypes } from "../types/MappedColumnTypes"
+import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { SchemaBuilder } from "../../schema-builder/SchemaBuilder"
+import { View } from "../../schema-builder/view/View"
+import { DynamoSchemaBuilder } from "../../schema-builder/DynamoSchemaBuilder"
+import { DynamoQueryRunner } from "./DynamoQueryRunner"
+import { ObjectUtils } from "../../util/ObjectUtils"
+import { CteCapabilities } from "../types/CteCapabilities"
+import { UpsertType } from "../types/UpsertType"
+import { DriverUtils } from "../DriverUtils"
+import { DynamoConnectionOptions } from "./DynamoConnectionOptions"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 
 /**
  * Organizes communication with MongoDB.
  */
 export class DynamoDriver implements Driver {
-
     /**
      * Underlying dynamodb library.
      */
@@ -39,29 +42,23 @@ export class DynamoDriver implements Driver {
      */
     options: DynamoConnectionOptions
 
-    database?: string | undefined;
-    schema?: string | undefined;
-    isReplicated: boolean;
-    treeSupport: boolean;
-    transactionSupport: "simple" | "nested" | "none";
-    supportedDataTypes: ColumnType[] = [
-        "string",
-        "number",
-        "binary"
-    ];
+    database?: string | undefined
+    schema?: string | undefined
+    isReplicated: boolean
+    treeSupport: boolean
+    transactionSupport: "simple" | "nested" | "none"
+    supportedDataTypes: ColumnType[] = ["string", "number", "binary"]
 
-    dataTypeDefaults: DataTypeDefaults = {};
-    spatialTypes: ColumnType[] = [];
+    dataTypeDefaults: DataTypeDefaults = {}
+    spatialTypes: ColumnType[] = []
 
     /**
      * Gets list of column data types that support length by a driver.
      */
-    withLengthColumnTypes: ColumnType[] = [
-        "string"
-    ];
+    withLengthColumnTypes: ColumnType[] = ["string"]
 
-    withPrecisionColumnTypes: ColumnType[] = [];
-    withScaleColumnTypes: ColumnType[] = [];
+    withPrecisionColumnTypes: ColumnType[] = []
+    withScaleColumnTypes: ColumnType[] = []
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -90,16 +87,16 @@ export class DynamoDriver implements Driver {
         metadataSchema: "varchar",
         metadataTable: "varchar",
         metadataName: "varchar",
-        metadataValue: "varchar"
-    };
+        metadataValue: "varchar",
+    }
 
-    maxAliasLength?: number | undefined;
+    maxAliasLength?: number | undefined
 
     /**
      * DynamoDB does not require to dynamically create query runner each time,
      * because it does not have a regular connection pool as RDBMS systems have.
      */
-    queryRunner?: DynamoQueryRunner;
+    queryRunner?: DynamoQueryRunner
 
     // constructor(connection: Connection) {
     //     this.connection = connection;
@@ -119,8 +116,8 @@ export class DynamoDriver implements Driver {
         ).database
     }
 
-    supportedUpsertType?: UpsertType | undefined;
-    cteCapabilities: CteCapabilities;
+    supportedUpsertType?: UpsertType | undefined
+    cteCapabilities: CteCapabilities
 
     /**
      * Validate driver options to make sure everything is correct and driver will be able to establish connection.
@@ -144,32 +141,37 @@ export class DynamoDriver implements Driver {
         }
     }
 
-    connect (): Promise<void> {
+    connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                this.queryRunner = new DynamoQueryRunner(this.connection, undefined);
-                ObjectUtils.assign(this.queryRunner, { manager: this.connection.manager });
-                resolve();
+                this.queryRunner = new DynamoQueryRunner(
+                    this.connection,
+                    undefined,
+                )
+                ObjectUtils.assign(this.queryRunner, {
+                    manager: this.connection.manager,
+                })
+                resolve()
             } catch (error) {
-                reject(error);
+                reject(error)
             }
-        });
+        })
     }
 
-    afterConnect (): Promise<void> {
-        return Promise.resolve();
+    afterConnect(): Promise<void> {
+        return Promise.resolve()
     }
 
-    disconnect (): Promise<void> {
-        return Promise.resolve();
+    disconnect(): Promise<void> {
+        return Promise.resolve()
     }
 
-    createSchemaBuilder (): SchemaBuilder {
-        return new DynamoSchemaBuilder(this.connection);
+    createSchemaBuilder(): SchemaBuilder {
+        return new DynamoSchemaBuilder(this.connection)
     }
 
-    createQueryRunner (mode: ReplicationMode) {
-        return this.queryRunner!;
+    createQueryRunner(mode: ReplicationMode) {
+        return this.queryRunner!
     }
 
     /**
@@ -186,19 +188,23 @@ export class DynamoDriver implements Driver {
         )
     }
 
-    escape (name: string): string {
+    escape(name: string): string {
         return name
     }
 
-    buildTableName (tableName: string, schema?: string, database?: string): string {
-        const parts = [tableName];
+    buildTableName(
+        tableName: string,
+        schema?: string,
+        database?: string,
+    ): string {
+        const parts = [tableName]
         if (schema) {
-            parts.unshift(schema);
+            parts.unshift(schema)
         }
         if (database) {
-            parts.unshift(database);
+            parts.unshift(database)
         }
-        return parts.join(".");
+        return parts.join(".")
     }
 
     /**
@@ -254,56 +260,93 @@ export class DynamoDriver implements Driver {
         return value
     }
 
-    normalizeDynamodbType (column: { type?: string | BooleanConstructor | DateConstructor | NumberConstructor | StringConstructor | undefined; length?: string | number | undefined; precision?: number | null | undefined; scale?: number | undefined; isArray?: boolean | undefined; }): string {
-        const type = this.normalizeType(column);
+    normalizeDynamodbType(column: {
+        type?:
+            | string
+            | BooleanConstructor
+            | DateConstructor
+            | NumberConstructor
+            | StringConstructor
+            | undefined
+        length?: string | number | undefined
+        precision?: number | null | undefined
+        scale?: number | undefined
+        isArray?: boolean | undefined
+    }): string {
+        const type = this.normalizeType(column)
         if (type === "string") {
-            return "S";
+            return "S"
         } else if (type === "number") {
-            return "N";
+            return "N"
         } else if (type === "binary") {
-            return "B";
+            return "B"
         } else {
-            throw new Error(`Type not supported by DynamoDB driver: ${type}`);
+            throw new Error(`Type not supported by DynamoDB driver: ${type}`)
         }
     }
 
-    normalizeType (column: { type?: string | BooleanConstructor | DateConstructor | NumberConstructor | StringConstructor | undefined; length?: string | number | undefined; precision?: number | null | undefined; scale?: number | undefined; isArray?: boolean | undefined; }): string {
-        if (column.type === Number || column.type === "int" || column.type === "int4") {
-            return "number";
-        } else if (column.type === String || column.type === "varchar" || column.type === "varchar2") {
-            return "string";
-        } else if (column.type === Date || column.type === "timestamp" || column.type === "date" || column.type === "datetime") {
-            return "string";
+    normalizeType(column: {
+        type?:
+            | string
+            | BooleanConstructor
+            | DateConstructor
+            | NumberConstructor
+            | StringConstructor
+            | undefined
+        length?: string | number | undefined
+        precision?: number | null | undefined
+        scale?: number | undefined
+        isArray?: boolean | undefined
+    }): string {
+        if (
+            column.type === Number ||
+            column.type === "int" ||
+            column.type === "int4"
+        ) {
+            return "number"
+        } else if (
+            column.type === String ||
+            column.type === "varchar" ||
+            column.type === "varchar2"
+        ) {
+            return "string"
+        } else if (
+            column.type === Date ||
+            column.type === "timestamp" ||
+            column.type === "date" ||
+            column.type === "datetime"
+        ) {
+            return "string"
         } else if (column.type === "timestamptz") {
-            return "string";
+            return "string"
         } else if (column.type === "time") {
-            return "string";
+            return "string"
         } else if (column.type === "timetz") {
-            return "string";
+            return "string"
         } else if (column.type === Boolean || column.type === "bool") {
-            return "string";
+            return "string"
         } else if (column.type === "simple-array") {
-            return "string";
+            return "string"
         } else if (column.type === "simple-json") {
-            return "string";
+            return "string"
         } else if (column.type === "simple-enum") {
-            return "string";
+            return "string"
         } else if (column.type === "int2") {
-            return "number";
+            return "number"
         } else if (column.type === "int8") {
-            return "string";
+            return "string"
         } else if (column.type === "decimal") {
-            return "string";
+            return "string"
         } else if (column.type === "float8" || column.type === "float") {
-            return "string";
+            return "string"
         } else if (column.type === "float4") {
-            return "string";
+            return "string"
         } else if (column.type === "char") {
-            return "string";
+            return "string"
         } else if (column.type === "varbit") {
-            return "string";
+            return "string"
         } else {
-            return column.type as string || "";
+            return (column.type as string) || ""
         }
     }
 
@@ -381,19 +424,19 @@ export class DynamoDriver implements Driver {
         )
     }
 
-    isReturningSqlSupported (): boolean {
-        return false;
+    isReturningSqlSupported(): boolean {
+        return false
     }
 
-    isUUIDGenerationSupported (): boolean {
-        return false;
+    isUUIDGenerationSupported(): boolean {
+        return false
     }
 
-    isFullTextColumnTypeSupported (): boolean {
-        return false;
+    isFullTextColumnTypeSupported(): boolean {
+        return false
     }
 
-    createParameter (parameterName: string, index: number): string {
+    createParameter(parameterName: string, index: number): string {
         return ""
     }
 }

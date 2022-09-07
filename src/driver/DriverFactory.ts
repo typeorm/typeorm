@@ -19,7 +19,7 @@ import { SapDriver } from "./sap/SapDriver"
 import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
 import { SpannerDriver } from "./spanner/SpannerDriver"
-import {DynamoDriver} from "./dynamo/DynamoDriver";
+import { DynamoDriver } from "./dynamo/DynamoDriver"
 
 /**
  * Helps to create drivers.
@@ -60,7 +60,7 @@ export class DriverFactory {
             case "mongodb":
                 return new MongoDriver(connection)
             case "dynamodb":
-                return new DynamoDriver(connection);
+                return new DynamoDriver(connection)
             case "expo":
                 return new ExpoDriver(connection)
             case "aurora-mysql":

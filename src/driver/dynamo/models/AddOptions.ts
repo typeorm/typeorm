@@ -1,6 +1,6 @@
 export class AddOptions {
-    values: any;
-    where: any;
+    values: any
+    where: any
 }
 
 /*

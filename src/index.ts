@@ -187,7 +187,11 @@ export { BatchWriteItem } from "./driver/dynamo/models/BatchWriteItem"
 export { AddOptions } from "./driver/dynamo/models/AddOptions"
 export { FindOptions, BeginsWith } from "./driver/dynamo/models/FindOptions"
 export { ScanOptions } from "./driver/dynamo/models/ScanOptions"
-export { UpdateExpressionOptions, UpdateExpressionType } from "./driver/dynamo/models/UpdateExpressionOptions"
+export {
+    UpdateExpressionOptions,
+    UpdateExpressionType,
+} from "./driver/dynamo/models/UpdateExpressionOptions"
 export { Page } from "./driver/dynamo/models/Page"
 export { Sort } from "./driver/dynamo/models/Sort"
 export { Order } from "./driver/dynamo/models/Order"
+export { paramHelper } from "./driver/dynamo/helpers/ParamHelper"

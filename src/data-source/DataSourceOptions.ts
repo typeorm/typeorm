@@ -16,7 +16,7 @@ import { AuroraPostgresConnectionOptions } from "../driver/aurora-postgres/Auror
 import { BetterSqlite3ConnectionOptions } from "../driver/better-sqlite3/BetterSqlite3ConnectionOptions"
 import { CapacitorConnectionOptions } from "../driver/capacitor/CapacitorConnectionOptions"
 import { SpannerConnectionOptions } from "../driver/spanner/SpannerConnectionOptions"
-import {DynamoConnectionOptions} from "../driver/dynamo/DynamoConnectionOptions";
+import { DynamoConnectionOptions } from "../driver/dynamo/DynamoConnectionOptions"
 
 /**
  * DataSourceOptions is an interface with settings and options for specific DataSource.

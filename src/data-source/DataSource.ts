@@ -39,7 +39,7 @@ import { TypeORMError } from "../error"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import {DynamoRepository} from "../repository/DynamoRepository";
+import { DynamoRepository } from "../repository/DynamoRepository"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**

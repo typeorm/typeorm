@@ -1,5 +1,5 @@
-import { getMetadataArgsStorage } from "../..";
-import { IndexMetadataArgs } from "../../metadata-args/IndexMetadataArgs";
+import { getMetadataArgsStorage } from "../.."
+import { IndexMetadataArgs } from "../../metadata-args/IndexMetadataArgs"
 
 export interface GlobalSecondaryIndexOptions {
     name: string
@@ -12,17 +12,28 @@ export interface GlobalSecondaryIndexOptions {
  * Can be used on entity.
  * Can create indices with composite columns when used on entity.
  */
-export function GlobalSecondaryIndex (options: GlobalSecondaryIndexOptions): ClassDecorator {
-    options = options || {};
-    options.sortKey = options.sortKey || [];
-    const name = options.name;
-    const partitionColumns = Array.isArray(options.partitionKey) ? options.partitionKey : [options.partitionKey];
-    return function (clsOrObject: Function|Object, propertyName?: string | symbol) {
+export function GlobalSecondaryIndex(
+    options: GlobalSecondaryIndexOptions,
+): ClassDecorator {
+    options = options || {}
+    options.sortKey = options.sortKey || []
+    const name = options.name
+    const partitionColumns = Array.isArray(options.partitionKey)
+        ? options.partitionKey
+        : [options.partitionKey]
+    return function (
+        clsOrObject: Function | Object,
+        propertyName?: string | symbol,
+    ) {
         getMetadataArgsStorage().indices.push({
-            target: propertyName ? clsOrObject.constructor : clsOrObject as Function,
+            target: propertyName
+                ? clsOrObject.constructor
+                : (clsOrObject as Function),
             name: name,
             columns: propertyName ? [propertyName] : partitionColumns,
-            where: Array.isArray(options.sortKey) ? options.sortKey.join("#") : options.sortKey
-        } as IndexMetadataArgs);
-    };
+            where: Array.isArray(options.sortKey)
+                ? options.sortKey.join("#")
+                : options.sortKey,
+        } as IndexMetadataArgs)
+    }
 }

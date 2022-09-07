@@ -1,4 +1,4 @@
 export class ScanOptions {
-    limit?: number;
-    exclusiveStartKey?: string;
+    limit?: number
+    exclusiveStartKey?: string
 }

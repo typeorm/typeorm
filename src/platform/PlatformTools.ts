@@ -46,7 +46,7 @@ export class PlatformTools {
                  * aws-sdk
                  */
                 case "aws-sdk":
-                    return require("aws-sdk");
+                    return require("aws-sdk")
 
                 /**
                  * mongodb

@@ -1,59 +1,67 @@
-import { attributeHelper } from "../helpers/AttributeHelper";
-import { commonUtils } from "../utils/CommonUtils";
-import { poundToUnderscore } from "../helpers/TextHelper";
+import { attributeHelper } from "../helpers/AttributeHelper"
+import { commonUtils } from "../utils/CommonUtils"
+import { poundToUnderscore } from "../helpers/TextHelper"
 
 export class BeginsWith {
-    attribute: string;
-    value: string;
+    attribute: string
+    value: string
 }
 
 export class FindOptions {
-    index?: string;
-    where?: any;
-    beginsWith?: BeginsWith;
-    limit?: number;
-    sort?: string;
-    exclusiveStartKey?: string;
+    index?: string
+    where?: any
+    beginsWith?: BeginsWith
+    limit?: number
+    sort?: string
+    exclusiveStartKey?: string
 
-    static toAttributeNames (findOptions: FindOptions) {
-        return attributeHelper.toAttributeNames(findOptions.where, findOptions.beginsWith);
+    static toAttributeNames(findOptions: FindOptions) {
+        return attributeHelper.toAttributeNames(
+            findOptions.where,
+            findOptions.beginsWith,
+        )
     }
 
-    static toKeyConditionExpression (findOptions: FindOptions) {
+    static toKeyConditionExpression(findOptions: FindOptions) {
         if (commonUtils.isNotEmpty(findOptions.where)) {
-            const keys = Object.keys(findOptions.where);
-            const values = [];
+            const keys = Object.keys(findOptions.where)
+            const values = []
             for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
-                const attribute = poundToUnderscore(key);
-                values.push(`#${attribute} = :${attribute}`);
+                const key = keys[i]
+                const attribute = poundToUnderscore(key)
+                values.push(`#${attribute} = :${attribute}`)
             }
-            return FindOptions.appendBeginsWith(values.join(" and "), findOptions.beginsWith);
+            return FindOptions.appendBeginsWith(
+                values.join(" and "),
+                findOptions.beginsWith,
+            )
         }
-        return undefined;
+        return undefined
     }
 
-    static appendBeginsWith (expression: string, beginsWith?: BeginsWith) {
+    static appendBeginsWith(expression: string, beginsWith?: BeginsWith) {
         if (beginsWith) {
-            const attribute = poundToUnderscore(beginsWith.attribute);
-            return `${expression} and begins_with(#${attribute}, :${attribute})`;
+            const attribute = poundToUnderscore(beginsWith.attribute)
+            return `${expression} and begins_with(#${attribute}, :${attribute})`
         }
-        return expression;
+        return expression
     }
 
-    static toExpressionAttributeValues (findOptions: FindOptions) {
+    static toExpressionAttributeValues(findOptions: FindOptions) {
         if (commonUtils.isNotEmpty(findOptions.where)) {
-            const keys = Object.keys(findOptions.where);
-            const values: any = {};
+            const keys = Object.keys(findOptions.where)
+            const values: any = {}
             for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
-                values[`:${poundToUnderscore(key)}`] = findOptions.where[key];
+                const key = keys[i]
+                values[`:${poundToUnderscore(key)}`] = findOptions.where[key]
             }
             if (findOptions.beginsWith) {
-                values[`:${poundToUnderscore(findOptions.beginsWith.attribute)}`] = findOptions.beginsWith.value;
+                values[
+                    `:${poundToUnderscore(findOptions.beginsWith.attribute)}`
+                ] = findOptions.beginsWith.value
             }
-            return values;
+            return values
         }
-        return undefined;
+        return undefined
     }
 }

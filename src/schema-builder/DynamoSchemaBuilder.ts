@@ -1,12 +1,13 @@
-import { Connection } from "..";
-import { SchemaBuilder } from "./SchemaBuilder";
-import { SqlInMemory } from "../driver/SqlInMemory";
-import { DynamoDriver } from "../driver/dynamo/DynamoDriver";
-import { PlatformTools } from "../platform/PlatformTools";
+import { Connection } from ".."
+import { SchemaBuilder } from "./SchemaBuilder"
+import { SqlInMemory } from "../driver/SqlInMemory"
+import { DynamoDriver } from "../driver/dynamo/DynamoDriver"
+import { PlatformTools } from "../platform/PlatformTools"
 import {
     buildAttributeDefinitions,
-    buildGlobalSecondaryIndexes, updateGlobalSecondaryIndexes
-} from "../driver/dynamo/helpers/GlobalSecondaryIndexHelper";
+    buildGlobalSecondaryIndexes,
+    updateGlobalSecondaryIndexes,
+} from "../driver/dynamo/helpers/GlobalSecondaryIndexHelper"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -27,8 +28,7 @@ export class DynamoSchemaBuilder implements SchemaBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor (protected connection: Connection) {
-    }
+    constructor(protected connection: Connection) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -37,39 +37,62 @@ export class DynamoSchemaBuilder implements SchemaBuilder {
     /**
      * Creates complete schemas for the given entity metadatas.
      */
-    async build (): Promise<void> {
-        const AWS = PlatformTools.load("aws-sdk");
-        const db = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
-        const driver: DynamoDriver = this.connection.driver as DynamoDriver;
-        const metadatas = this.connection.entityMetadatas;
+    async build(): Promise<void> {
+        const AWS = PlatformTools.load("aws-sdk")
+        const db = new AWS.DynamoDB({ apiVersion: "2012-08-10" })
+        const driver: DynamoDriver = this.connection.driver as DynamoDriver
+        const metadatas = this.connection.entityMetadatas
         for (let i = 0; i < metadatas.length; i += 1) {
-            const metadata = metadatas[i];
-            const keySchema: any[] = [];
+            const metadata = metadatas[i]
+            const keySchema: any[] = []
             for (let i = 0; i < metadata.primaryColumns.length; i += 1) {
-                const primaryColumn = metadata.primaryColumns[i];
+                const primaryColumn = metadata.primaryColumns[i]
                 keySchema.push({
                     AttributeName: primaryColumn.propertyName,
-                    KeyType: "HASH"
-                });
+                    KeyType: "HASH",
+                })
             }
-            const globalSecondaryIndexes = buildGlobalSecondaryIndexes(metadata) || []
-            const attributeDefinitions = buildAttributeDefinitions(metadata, driver)
+            const globalSecondaryIndexes =
+                buildGlobalSecondaryIndexes(metadata) || []
+            const attributeDefinitions = buildAttributeDefinitions(
+                metadata,
+                driver,
+            )
             const schema = {
                 AttributeDefinitions: attributeDefinitions,
                 BillingMode: "PAY_PER_REQUEST",
-                TableName: driver.buildTableName(metadata.tableName, metadata.schema, metadata.database),
+                TableName: driver.buildTableName(
+                    metadata.tableName,
+                    metadata.schema,
+                    metadata.database,
+                ),
                 KeySchema: keySchema,
-                GlobalSecondaryIndexes: globalSecondaryIndexes.length > 0 ? globalSecondaryIndexes : undefined
-            };
+                GlobalSecondaryIndexes:
+                    globalSecondaryIndexes.length > 0
+                        ? globalSecondaryIndexes
+                        : undefined,
+            }
             try {
-                await db.createTable(schema).promise();
+                await db.createTable(schema).promise()
             } catch (error) {
-                const _error: any = error;
-                if (_error && _error.code && _error.code === "ResourceInUseException") {
-                    PlatformTools.logInfo("table already exists: ", metadata.tableName);
-                    await updateGlobalSecondaryIndexes(db, schema.TableName, attributeDefinitions, globalSecondaryIndexes)
+                const _error: any = error
+                if (
+                    _error &&
+                    _error.code &&
+                    _error.code === "ResourceInUseException"
+                ) {
+                    PlatformTools.logInfo(
+                        "table already exists: ",
+                        metadata.tableName,
+                    )
+                    await updateGlobalSecondaryIndexes(
+                        db,
+                        schema.TableName,
+                        attributeDefinitions,
+                        globalSecondaryIndexes,
+                    )
                 } else {
-                    PlatformTools.logError("error creating table: ", error);
+                    PlatformTools.logError("error creating table: ", error)
                 }
             }
         }
@@ -78,7 +101,7 @@ export class DynamoSchemaBuilder implements SchemaBuilder {
     /**
      * Returns query to be executed by schema builder.
      */
-    log (): Promise<SqlInMemory> {
-        return Promise.resolve(new SqlInMemory());
+    log(): Promise<SqlInMemory> {
+        return Promise.resolve(new SqlInMemory())
     }
 }

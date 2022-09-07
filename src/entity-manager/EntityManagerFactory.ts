@@ -3,7 +3,7 @@ import { EntityManager } from "./EntityManager"
 import { MongoEntityManager } from "./MongoEntityManager"
 import { SqljsEntityManager } from "./SqljsEntityManager"
 import { QueryRunner } from "../query-runner/QueryRunner"
-import { DynamoEntityManager } from "./DynamoEntityManager";
+import { DynamoEntityManager } from "./DynamoEntityManager"
 
 /**
  * Helps to create entity managers.
@@ -18,7 +18,7 @@ export class EntityManagerFactory {
         if (connection.driver.options.type === "sqljs")
             return new SqljsEntityManager(connection, queryRunner)
         if (connection.driver.options.type === "dynamodb")
-            return new DynamoEntityManager(connection);
+            return new DynamoEntityManager(connection)
         return new EntityManager(connection, queryRunner)
     }
 }
