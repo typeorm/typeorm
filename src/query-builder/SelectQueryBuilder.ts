@@ -707,7 +707,8 @@ export class SelectQueryBuilder<Entity>
         ) => SelectQueryBuilder<any>,
         alias: string,
         condition?: string,
-        parameters?: ObjectLiteral,
+        parameters?: ObjectLiteral,        
+        mapAsEntity?: Function | string
     ): this
 
     /**
@@ -771,7 +772,8 @@ export class SelectQueryBuilder<Entity>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         alias: string,
         condition?: string,
-        parameters?: ObjectLiteral,
+        parameters?: ObjectLiteral,    
+        mapAsEntity?: Function | string
     ): this {
         this.addSelect(alias)
         this.join(
@@ -782,6 +784,7 @@ export class SelectQueryBuilder<Entity>
             parameters,
             mapToProperty,
             false,
+            mapAsEntity
         )
         return this
     }
@@ -896,6 +899,7 @@ export class SelectQueryBuilder<Entity>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
+        mapAsEntity?: Function | string
     ): this
 
     /**
@@ -960,6 +964,7 @@ export class SelectQueryBuilder<Entity>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
+        mapAsEntity?: Function | string
     ): this {
         this.addSelect(alias)
         this.join(
@@ -970,6 +975,7 @@ export class SelectQueryBuilder<Entity>
             parameters,
             mapToProperty,
             false,
+            mapAsEntity
         )
         return this
     }
@@ -1919,21 +1925,23 @@ export class SelectQueryBuilder<Entity>
         parameters?: ObjectLiteral,
         mapToProperty?: string,
         isMappingMany?: boolean,
+        mapAsEntity?: Function | string
     ): void {
         this.setParameters(parameters || {})
 
         const joinAttribute = new JoinAttribute(
             this.connection,
-            this.expressionMap,
+            this.expressionMap                        
         )
         joinAttribute.direction = direction
+        joinAttribute.mapAsEntity = mapAsEntity
         joinAttribute.mapToProperty = mapToProperty
-        joinAttribute.isMappingMany = isMappingMany
+        joinAttribute.isMappingMany = isMappingMany        
         joinAttribute.entityOrProperty = entityOrProperty // relationName
         joinAttribute.condition = condition ? condition : undefined // joinInverseSideCondition
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
-
+        
         if (joinAttribute.metadata) {
             if (
                 joinAttribute.metadata.deleteDateColumn &&
