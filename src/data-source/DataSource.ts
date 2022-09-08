@@ -521,7 +521,7 @@ export class DataSource {
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         alias: string,
         queryRunner?: QueryRunner,
@@ -535,7 +535,7 @@ export class DataSource {
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityOrRunner?: EntityTarget<Entity> | QueryRunner,
         alias?: string,
         queryRunner?: QueryRunner,

@@ -216,7 +216,7 @@ export class BaseEntity {
         this: { new (): T } & typeof BaseEntity,
         entityLike: DeepPartial<T>,
     ): Promise<T | undefined> {
-        const thisRepository = this.getRepository() as Repository<T>
+        const thisRepository = this.getRepository<T>()
         return thisRepository.preload(entityLike)
     }
 

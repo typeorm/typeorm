@@ -44,7 +44,7 @@ import { escapeRegExp } from "../util/escapeRegExp"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export abstract class QueryBuilder<Entity> {
+export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     readonly "@instanceof" = Symbol.for("QueryBuilder")
 
     // -------------------------------------------------------------------------
@@ -216,7 +216,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<Entity>(
+    update<Entity extends ObjectLiteral>(
         entity: EntityTarget<Entity>,
         updateSet?: QueryDeepPartialEntity<Entity>,
     ): UpdateQueryBuilder<Entity>
@@ -308,7 +308,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets entity's relation with which this query builder gonna work.
      */
-    relation<T>(
+    relation<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         propertyPath: string,
     ): RelationQueryBuilder<T>
