@@ -7,7 +7,7 @@ import {
     buildAttributeDefinitions,
     buildGlobalSecondaryIndexes,
     updateGlobalSecondaryIndexes,
-} from "../driver/dynamo/helpers/GlobalSecondaryIndexHelper"
+} from "../driver/dynamo/helpers/DynamoGlobalSecondaryIndexHelper"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.

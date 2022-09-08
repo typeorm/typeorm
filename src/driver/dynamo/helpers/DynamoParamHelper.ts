@@ -1,10 +1,13 @@
-import { UpdateExpressionOptions } from "../models/UpdateExpressionOptions"
-import { FindOptions } from "../models/FindOptions"
-import { buildPartitionKey } from "./GlobalSecondaryIndexHelper"
+import { DynamoUpdateExpressionOptions } from "../models/DynamoUpdateExpressionOptions"
+import { DynamoFindOptions } from "../models/DynamoFindOptions"
+import { buildPartitionKey } from "./DynamoGlobalSecondaryIndexHelper"
 import { IndexMetadata } from "../../../metadata/IndexMetadata"
-import { commonUtils } from "../utils/CommonUtils"
+import { isNotEmpty } from "./DynamoObjectHelper"
 
-const indexedWhere = (options: FindOptions, indices?: IndexMetadata[]) => {
+const indexedWhere = (
+    options: DynamoFindOptions,
+    indices?: IndexMetadata[],
+) => {
     indices = indices || []
     const index = indices.find((index) => {
         return index.name === options.index
@@ -21,19 +24,24 @@ const indexedWhere = (options: FindOptions, indices?: IndexMetadata[]) => {
         }
         where[partitionKey] = values.join("#")
     }
-    return commonUtils.isNotEmpty(where) ? where : options.where
+    return isNotEmpty(where) ? where : options.where
 }
 
-export const paramHelper = {
-    find(tableName: string, options: FindOptions, indices?: IndexMetadata[]) {
+export const dynamoParamHelper = {
+    find(
+        tableName: string,
+        options: DynamoFindOptions,
+        indices?: IndexMetadata[],
+    ) {
         options.where = indexedWhere(options, indices)
         const params: any = {
             TableName: tableName,
             KeyConditionExpression:
-                FindOptions.toKeyConditionExpression(options),
-            ExpressionAttributeNames: FindOptions.toAttributeNames(options),
+                DynamoFindOptions.toKeyConditionExpression(options),
+            ExpressionAttributeNames:
+                DynamoFindOptions.toAttributeNames(options),
             ExpressionAttributeValues:
-                FindOptions.toExpressionAttributeValues(options),
+                DynamoFindOptions.toExpressionAttributeValues(options),
             ScanIndexForward: options.sort !== "DESC",
         }
         if (options.index) {
@@ -47,16 +55,18 @@ export const paramHelper = {
         }
         return params
     },
-    update(tableName: string, options: UpdateExpressionOptions) {
+    update(tableName: string, options: DynamoUpdateExpressionOptions) {
         return {
             TableName: tableName,
             Key: options.where,
             UpdateExpression:
-                UpdateExpressionOptions.toUpdateExpression(options),
+                DynamoUpdateExpressionOptions.toUpdateExpression(options),
             ExpressionAttributeNames:
-                UpdateExpressionOptions.toAttributeNames(options),
+                DynamoUpdateExpressionOptions.toAttributeNames(options),
             ExpressionAttributeValues:
-                UpdateExpressionOptions.toExpressionAttributeValues(options),
+                DynamoUpdateExpressionOptions.toExpressionAttributeValues(
+                    options,
+                ),
         }
     },
 }

@@ -1,12 +1,15 @@
 import { Stream } from "stream"
-import { ScanOptions } from "./models/ScanOptions"
+import { DynamoScanOptions } from "./models/DynamoScanOptions"
 import { DynamoRepository } from "../../repository/DynamoRepository"
 
 export class DynamoReadStream<Entity> extends Stream.Readable {
     repository: DynamoRepository<Entity>
-    options: ScanOptions
+    options: DynamoScanOptions
 
-    constructor(repository: DynamoRepository<Entity>, options: ScanOptions) {
+    constructor(
+        repository: DynamoRepository<Entity>,
+        options: DynamoScanOptions,
+    ) {
         super()
         this.repository = repository
         this.options = options

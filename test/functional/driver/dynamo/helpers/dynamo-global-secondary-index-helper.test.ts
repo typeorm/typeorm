@@ -2,10 +2,10 @@ import { DummyEntity } from "../entities/DummyEntity"
 import {
     buildGlobalSecondaryIndexes,
     indexedColumns,
-} from "../../../../../src/driver/dynamo/helpers/GlobalSecondaryIndexHelper"
+} from "../../../../../src/driver/dynamo/helpers/DynamoGlobalSecondaryIndexHelper"
 import { expect } from "chai"
 
-describe("global-secondary-index-helper", () => {
+describe("dynamo-global-secondary-index-helper", () => {
     it("indexedColumns compound partitionKey", async (): Promise<any> => {
         /** given: **/
         const dummy: any = new DummyEntity()

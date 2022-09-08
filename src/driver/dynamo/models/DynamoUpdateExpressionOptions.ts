@@ -1,5 +1,5 @@
-import { attributeHelper } from "../helpers/AttributeHelper"
-import mixin from "../helpers/mixin"
+import { dynamoAttributeHelper } from "../helpers/DynamoAttributeHelper"
+import { mixin } from "../helpers/DynamoObjectHelper"
 
 export enum UpdateExpressionType {
     // eslint-disable-next-line no-unused-vars
@@ -12,17 +12,17 @@ export enum UpdateExpressionType {
     SET = "SET",
 }
 
-export class UpdateExpressionOptions {
+export class DynamoUpdateExpressionOptions {
     addValues?: any
     setValues?: any
     where: any
 
-    static toAttributeNames(options: UpdateExpressionOptions) {
+    static toAttributeNames(options: DynamoUpdateExpressionOptions) {
         const values = mixin(options.addValues || {}, options.setValues || {})
-        return attributeHelper.toAttributeNames(values)
+        return dynamoAttributeHelper.toAttributeNames(values)
     }
 
-    static toExpressionAttributeValues(options: UpdateExpressionOptions) {
+    static toExpressionAttributeValues(options: DynamoUpdateExpressionOptions) {
         const optionValues = mixin(
             options.addValues || {},
             options.setValues || {},
@@ -37,7 +37,7 @@ export class UpdateExpressionOptions {
         return values
     }
 
-    static toUpdateExpression(options: UpdateExpressionOptions) {
+    static toUpdateExpression(options: DynamoUpdateExpressionOptions) {
         const setExpression = this._toUpdateExpression(
             options.setValues,
             UpdateExpressionType.SET,

@@ -1,4 +1,4 @@
-export const batchHelper = {
+export const dynamoBatchHelper = {
     batch(items: any[], batchSize?: number) {
         let position = 0
         batchSize = batchSize || 25

@@ -14,10 +14,10 @@ import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TypeORMError } from "../../error"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { DynamoEntityManager } from "../../entity-manager/DynamoEntityManager"
-import { batchHelper } from "./helpers/BatchHelper"
+import { dynamoBatchHelper } from "./helpers/DynamoBatchHelper"
 import asyncPool from "tiny-async-pool"
 import { getDocumentClient } from "./DynamoClient"
-import { DataSource } from "../../data-source/DataSource"
+import { DataSource } from "../../data-source"
 
 class DeleteManyOptions {
     maxConcurrency: number
@@ -175,7 +175,7 @@ export class DynamoQueryRunner implements QueryRunner {
     ): Promise<void> {
         if (keys.length > 0) {
             const batchOptions = options || { maxConcurrency: 8 }
-            const batches = batchHelper.batch(keys)
+            const batches = dynamoBatchHelper.batch(keys)
             await asyncPool(
                 batchOptions.maxConcurrency,
                 batches,
@@ -207,7 +207,7 @@ export class DynamoQueryRunner implements QueryRunner {
     ): Promise<void> {
         if (docs.length > 0) {
             const batchOptions = options || { maxConcurrency: 8 }
-            const batches = batchHelper.batch(docs)
+            const batches = dynamoBatchHelper.batch(docs)
             await asyncPool(
                 batchOptions.maxConcurrency,
                 batches,

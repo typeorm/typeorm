@@ -1,13 +1,13 @@
-import { attributeHelper } from "../helpers/AttributeHelper"
-import { commonUtils } from "../utils/CommonUtils"
-import { poundToUnderscore } from "../helpers/TextHelper"
+import { dynamoAttributeHelper } from "../helpers/DynamoAttributeHelper"
+import { poundToUnderscore } from "../helpers/DynamoTextHelper"
+import { isNotEmpty } from "../helpers/DynamoObjectHelper"
 
 export class BeginsWith {
     attribute: string
     value: string
 }
 
-export class FindOptions {
+export class DynamoFindOptions {
     index?: string
     where?: any
     beginsWith?: BeginsWith
@@ -15,15 +15,15 @@ export class FindOptions {
     sort?: string
     exclusiveStartKey?: string
 
-    static toAttributeNames(findOptions: FindOptions) {
-        return attributeHelper.toAttributeNames(
+    static toAttributeNames(findOptions: DynamoFindOptions) {
+        return dynamoAttributeHelper.toAttributeNames(
             findOptions.where,
             findOptions.beginsWith,
         )
     }
 
-    static toKeyConditionExpression(findOptions: FindOptions) {
-        if (commonUtils.isNotEmpty(findOptions.where)) {
+    static toKeyConditionExpression(findOptions: DynamoFindOptions) {
+        if (isNotEmpty(findOptions.where)) {
             const keys = Object.keys(findOptions.where)
             const values = []
             for (let i = 0; i < keys.length; i++) {
@@ -31,7 +31,7 @@ export class FindOptions {
                 const attribute = poundToUnderscore(key)
                 values.push(`#${attribute} = :${attribute}`)
             }
-            return FindOptions.appendBeginsWith(
+            return DynamoFindOptions.appendBeginsWith(
                 values.join(" and "),
                 findOptions.beginsWith,
             )
@@ -47,8 +47,8 @@ export class FindOptions {
         return expression
     }
 
-    static toExpressionAttributeValues(findOptions: FindOptions) {
-        if (commonUtils.isNotEmpty(findOptions.where)) {
+    static toExpressionAttributeValues(findOptions: DynamoFindOptions) {
+        if (isNotEmpty(findOptions.where)) {
             const keys = Object.keys(findOptions.where)
             const values: any = {}
             for (let i = 0; i < keys.length; i++) {

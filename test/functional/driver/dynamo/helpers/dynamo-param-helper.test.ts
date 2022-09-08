@@ -1,7 +1,7 @@
 import { expect } from "chai"
-import { FindOptions } from "../../../../../src/driver/dynamo/models/FindOptions"
-import { UpdateExpressionOptions } from "../../../../../src/driver/dynamo/models/UpdateExpressionOptions"
-import { paramHelper } from "../../../../../src/driver/dynamo/helpers/ParamHelper"
+import { DynamoFindOptions } from "../../../../../src"
+import { DynamoUpdateExpressionOptions } from "../../../../../src"
+import { dynamoParamHelper } from "../../../../../src"
 
 const MACHINE_ID = "9117e83c-6e58-424b-9650-6027c8b67386"
 const MONTH_ID = `${MACHINE_ID}-2020-12`
@@ -11,14 +11,14 @@ const DAY = "2020-11-27"
 describe("param-helper", () => {
     it("find", async (): Promise<any> => {
         /** given: **/
-        const options = new FindOptions()
+        const options = new DynamoFindOptions()
         options.index = "machineIdIndex"
         options.where = {
             machineId: MACHINE_ID,
         }
 
         /** when: **/
-        const params = paramHelper.find("local-toucan-scores", options)
+        const params = dynamoParamHelper.find("local-toucan-scores", options)
 
         /** then: **/
         expect(params).to.eql({
@@ -37,7 +37,7 @@ describe("param-helper", () => {
 
     it("find beginsWith", async (): Promise<any> => {
         /** given: **/
-        const options = new FindOptions()
+        const options = new DynamoFindOptions()
         options.index = "searchByNameIndex"
         options.where = {
             searchInitial: "m",
@@ -48,7 +48,7 @@ describe("param-helper", () => {
         }
 
         /** when: **/
-        const params = paramHelper.find("local-toucan-scores", options)
+        const params = dynamoParamHelper.find("local-toucan-scores", options)
 
         /** then: **/
         expect(params).to.eql({
@@ -70,7 +70,7 @@ describe("param-helper", () => {
 
     it("find with multiple where filters", async (): Promise<any> => {
         /** given: **/
-        const options = new FindOptions()
+        const options = new DynamoFindOptions()
         options.index = "monthIdIndex"
         options.where = {
             monthId: MONTH_ID,
@@ -78,7 +78,7 @@ describe("param-helper", () => {
         }
 
         /** when: **/
-        const params = paramHelper.find("local-toucan-scores", options)
+        const params = dynamoParamHelper.find("local-toucan-scores", options)
 
         /** then: **/
         expect(params).to.eql({
@@ -99,7 +99,7 @@ describe("param-helper", () => {
     })
     it("update with ADD", async (): Promise<any> => {
         /** given: **/
-        const options = new UpdateExpressionOptions()
+        const options = new DynamoUpdateExpressionOptions()
         options.addValues = {
             total: 1,
             count: 1,
@@ -110,7 +110,10 @@ describe("param-helper", () => {
         }
 
         /** when: **/
-        const params = paramHelper.update("local-toucan-score-totals", options)
+        const params = dynamoParamHelper.update(
+            "local-toucan-score-totals",
+            options,
+        )
 
         /** then: **/
         expect(params).to.eql({
@@ -133,7 +136,7 @@ describe("param-helper", () => {
 
     it("update with SET", async (): Promise<any> => {
         /** given: **/
-        const options = new UpdateExpressionOptions()
+        const options = new DynamoUpdateExpressionOptions()
         options.setValues = {
             status: "failed",
             error: "some error occurred",
@@ -144,7 +147,10 @@ describe("param-helper", () => {
         }
 
         /** when: **/
-        const params = paramHelper.update("local-toucan-score-totals", options)
+        const params = dynamoParamHelper.update(
+            "local-toucan-score-totals",
+            options,
+        )
 
         /** then: **/
         expect(params).to.eql({

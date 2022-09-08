@@ -1,4 +1,4 @@
-export class ScanOptions {
+export class DynamoScanOptions {
     limit?: number
     exclusiveStartKey?: string
 }

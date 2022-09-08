@@ -1,5 +1,5 @@
 import { Column, Entity, PrimaryColumn } from "../../../../../src"
-import { GlobalSecondaryIndex } from "../../../../../src/decorator/entity/GlobalSecondaryIndex"
+import { GlobalSecondaryIndex } from "../../../../../src"
 
 @GlobalSecondaryIndex({
     name: "adjustmentGroupIdStatusIndex",

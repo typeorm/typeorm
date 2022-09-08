@@ -1,14 +1,14 @@
-import { commonUtils } from "../utils/CommonUtils"
-import { BeginsWith } from "../models/FindOptions"
-import { poundToUnderscore } from "./TextHelper"
+import { BeginsWith } from "../models/DynamoFindOptions"
+import { poundToUnderscore } from "./DynamoTextHelper"
+import { isNotEmpty } from "./DynamoObjectHelper"
 
-export const attributeHelper = {
+export const dynamoAttributeHelper = {
     toAttributeNames(
         object: any,
         beginsWith?: BeginsWith,
         attributeNames?: any,
     ) {
-        if (commonUtils.isNotEmpty(object)) {
+        if (isNotEmpty(object)) {
             attributeNames = attributeNames || {}
             const keys = Object.keys(object)
             for (let i = 0; i < keys.length; i++) {
@@ -23,5 +23,3 @@ export const attributeHelper = {
         return attributeNames
     },
 }
-
-export default attributeHelper

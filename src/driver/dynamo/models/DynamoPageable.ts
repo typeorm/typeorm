@@ -1,10 +1,10 @@
-import { Order } from "./Order"
-import { Sort } from "./Sort"
+import { DynamoOrder } from "./DynamoOrder"
+import { DynamoSort } from "./DynamoSort"
 
-export class Pageable {
+export class DynamoPageable {
     pageNumber: number
     pageSize: number
-    sort: Sort
+    sort: DynamoSort
     exclusiveStartKey?: string
     static DEFAULT_PAGE_NUMBER: number = 0
     static DEFAULT_PAGE_SIZE: number = 15
@@ -13,19 +13,19 @@ export class Pageable {
     constructor(
         pageNumber: number,
         pageSize?: number,
-        sort?: Sort,
+        sort?: DynamoSort,
         exclusiveStartKey?: string,
     ) {
         this.pageNumber = pageNumber
-        this.pageSize = pageSize || Pageable.DEFAULT_PAGE_SIZE
-        this.sort = sort || Sort.UNSORTED
+        this.pageSize = pageSize || DynamoPageable.DEFAULT_PAGE_SIZE
+        this.sort = sort || DynamoSort.UNSORTED
         this.exclusiveStartKey = exclusiveStartKey
     }
 
     toQueryString(prefix?: string) {
         prefix = prefix || "?"
         let sort = this.sort.orders
-            .map((order: Order) => {
+            .map((order: DynamoOrder) => {
                 return `sort=${order.property},${order.direction}`
             })
             .join("&")
@@ -39,8 +39,9 @@ export class Pageable {
         if (pageable) {
             return {
                 ...params,
-                pageNumber: pageable.pageNumber || Pageable.DEFAULT_PAGE_NUMBER,
-                pageSize: pageable.pageSize || Pageable.DEFAULT_PAGE_SIZE,
+                pageNumber:
+                    pageable.pageNumber || DynamoPageable.DEFAULT_PAGE_NUMBER,
+                pageSize: pageable.pageSize || DynamoPageable.DEFAULT_PAGE_SIZE,
             }
         }
         return params
@@ -48,28 +49,30 @@ export class Pageable {
 
     static parse(req: any) {
         const pageNumber = parseInt(
-            req.query.page || Pageable.DEFAULT_PAGE_NUMBER,
+            req.query.page || DynamoPageable.DEFAULT_PAGE_NUMBER,
         )
-        const pageSize = parseInt(req.query.size || Pageable.DEFAULT_PAGE_SIZE)
-        const sort = Sort.parse(req)
+        const pageSize = parseInt(
+            req.query.size || DynamoPageable.DEFAULT_PAGE_SIZE,
+        )
+        const sort = DynamoSort.parse(req)
         const exclusiveStartKey = req.query.exclusiveStartKey
-        return Pageable.of(pageNumber, pageSize, sort, exclusiveStartKey)
+        return DynamoPageable.of(pageNumber, pageSize, sort, exclusiveStartKey)
     }
 
     static getDefault() {
-        return new Pageable(this.DEFAULT_PAGE_NUMBER)
+        return new DynamoPageable(this.DEFAULT_PAGE_NUMBER)
     }
 
-    static one(sort?: Sort) {
-        return new Pageable(this.DEFAULT_PAGE_NUMBER, this.ONE, sort)
+    static one(sort?: DynamoSort) {
+        return new DynamoPageable(this.DEFAULT_PAGE_NUMBER, this.ONE, sort)
     }
 
     static of(
         pageNumber: number,
         pageSize?: number,
-        sort?: Sort,
+        sort?: DynamoSort,
         exclusiveStartKey?: string,
     ) {
-        return new Pageable(pageNumber, pageSize, sort, exclusiveStartKey)
+        return new DynamoPageable(pageNumber, pageSize, sort, exclusiveStartKey)
     }
 }

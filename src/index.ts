@@ -178,20 +178,25 @@ export { EntitySchemaOptions } from "./entity-schema/EntitySchemaOptions"
 export { InstanceChecker } from "./util/InstanceChecker"
 export { TreeRepositoryUtils } from "./util/TreeRepositoryUtils"
 /* DynamoDB */
+export { DynamoEntityManager } from "./entity-manager/DynamoEntityManager"
 export { DynamoRepository } from "./repository/DynamoRepository"
 export { DynamoPagingAndSortingRepository } from "./repository/DynamoPagingAndSortingRepository"
+export { DynamoSchemaBuilder } from "./schema-builder/DynamoSchemaBuilder"
 export { GlobalSecondaryIndex } from "./decorator/entity/GlobalSecondaryIndex"
-export { DynamoPage } from "./driver/dynamo/models/DynamoPage"
+export { DynamoPageExpensive } from "./driver/dynamo/models/DynamoPageExpensive"
 export { getDocumentClient } from "./driver/dynamo/DynamoClient"
-export { BatchWriteItem } from "./driver/dynamo/models/BatchWriteItem"
-export { AddOptions } from "./driver/dynamo/models/AddOptions"
-export { FindOptions, BeginsWith } from "./driver/dynamo/models/FindOptions"
-export { ScanOptions } from "./driver/dynamo/models/ScanOptions"
+export { DynamoBatchWriteItem } from "./driver/dynamo/models/DynamoBatchWriteItem"
+export { DynamoAddOptions } from "./driver/dynamo/models/DynamoAddOptions"
 export {
-    UpdateExpressionOptions,
+    DynamoFindOptions,
+    BeginsWith,
+} from "./driver/dynamo/models/DynamoFindOptions"
+export { DynamoScanOptions } from "./driver/dynamo/models/DynamoScanOptions"
+export {
+    DynamoUpdateExpressionOptions,
     UpdateExpressionType,
-} from "./driver/dynamo/models/UpdateExpressionOptions"
-export { Page } from "./driver/dynamo/models/Page"
-export { Sort } from "./driver/dynamo/models/Sort"
-export { Order } from "./driver/dynamo/models/Order"
-export { paramHelper } from "./driver/dynamo/helpers/ParamHelper"
+} from "./driver/dynamo/models/DynamoUpdateExpressionOptions"
+export { DynamoPage } from "./driver/dynamo/models/DynamoPage"
+export { DynamoSort } from "./driver/dynamo/models/DynamoSort"
+export { DynamoOrder } from "./driver/dynamo/models/DynamoOrder"
+export { dynamoParamHelper } from "./driver/dynamo/helpers/DynamoParamHelper"

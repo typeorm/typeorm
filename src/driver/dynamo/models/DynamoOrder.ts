@@ -1,25 +1,25 @@
-export class Order {
+export class DynamoOrder {
     static ASC = "ASC"
     static DESC = "DESC"
-    static DEFAULT_DIRECTION = Order.ASC
+    static DEFAULT_DIRECTION = DynamoOrder.ASC
 
     direction: string
     property: string
 
     constructor(property: string, direction?: string) {
         this.property = property
-        this.direction = direction || Order.DEFAULT_DIRECTION
+        this.direction = direction || DynamoOrder.DEFAULT_DIRECTION
     }
 
     static by(property: string, direction?: string) {
-        return new Order(property, direction)
+        return new DynamoOrder(property, direction)
     }
 
     static asc(property: string) {
-        return new Order(property, Order.ASC)
+        return new DynamoOrder(property, DynamoOrder.ASC)
     }
 
     static desc(property: string) {
-        return new Order(property, Order.DESC)
+        return new DynamoOrder(property, DynamoOrder.DESC)
     }
 }

@@ -15,20 +15,19 @@ import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import { DynamoQueryRunner } from "../driver/dynamo/DynamoQueryRunner"
 import { DynamoDriver } from "../driver/dynamo/DynamoDriver"
-import { UpdateExpressionOptions } from "../driver/dynamo/models/UpdateExpressionOptions"
-import { paramHelper } from "../driver/dynamo/helpers/ParamHelper"
+import { DynamoUpdateExpressionOptions } from "../driver/dynamo/models/DynamoUpdateExpressionOptions"
+import { dynamoParamHelper } from "../driver/dynamo/helpers/DynamoParamHelper"
 import {
     indexedColumns,
     populateGeneratedColumns,
-} from "../driver/dynamo/helpers/GlobalSecondaryIndexHelper"
-import { FindOptions } from "../driver/dynamo/models/FindOptions"
+} from "../driver/dynamo/helpers/DynamoGlobalSecondaryIndexHelper"
+import { DynamoFindOptions } from "../driver/dynamo/models/DynamoFindOptions"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { commonUtils } from "../driver/dynamo/utils/CommonUtils"
-import { ScanOptions } from "../driver/dynamo/models/ScanOptions"
-import { batchHelper } from "../driver/dynamo/helpers/BatchHelper"
-import { BatchWriteItem } from "../driver/dynamo/models/BatchWriteItem"
+import { DynamoScanOptions } from "../driver/dynamo/models/DynamoScanOptions"
+import { dynamoBatchHelper } from "../driver/dynamo/helpers/DynamoBatchHelper"
+import { DynamoBatchWriteItem } from "../driver/dynamo/models/DynamoBatchWriteItem"
 import { DataSource } from "../data-source"
-import mixin from "../driver/dynamo/helpers/mixin"
+import { mixin, isEmpty } from "../driver/dynamo/helpers/DynamoObjectHelper"
 import { getDocumentClient } from "../driver/dynamo/DynamoClient"
 
 // todo: we should look at the @PrimaryKey on the entity
@@ -72,14 +71,14 @@ export class DynamoEntityManager extends EntityManager {
 
     async update<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-        options: UpdateExpressionOptions,
+        options: DynamoUpdateExpressionOptions,
     ) {
         const metadata = this.connection.getMetadata(entityClassOrName)
         const changedValues = mixin(options.setValues || {}, options.where)
         indexedColumns(metadata, changedValues)
         mixin(options.setValues, changedValues)
         delete options.setValues.id
-        const params = paramHelper.update(metadata.tablePath, options)
+        const params = dynamoParamHelper.update(metadata.tablePath, options)
         return getDocumentClient().update(params).promise()
     }
 
@@ -88,17 +87,17 @@ export class DynamoEntityManager extends EntityManager {
      */
     async find<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-        options?: FindOptions | any,
+        options?: DynamoFindOptions | any,
     ): Promise<Entity[]> {
         if (options) {
             const dbClient = getDocumentClient()
             const metadata = this.connection.getMetadata(entityClassOrName)
-            const params = paramHelper.find(
+            const params = dynamoParamHelper.find(
                 metadata.tablePath,
                 options,
                 metadata.indices,
             )
-            const results = commonUtils.isEmpty(options.where)
+            const results = isEmpty(options.where)
                 ? await dbClient.scan(params).promise()
                 : await dbClient.query(params).promise()
             const items: any = results.Items || []
@@ -113,12 +112,12 @@ export class DynamoEntityManager extends EntityManager {
      */
     async findAll<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-        options: FindOptions,
+        options: DynamoFindOptions,
     ): Promise<Entity[]> {
         delete options.limit
         const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
-        const params = paramHelper.find(
+        const params = dynamoParamHelper.find(
             metadata.tablePath,
             options,
             metadata.indices,
@@ -136,7 +135,7 @@ export class DynamoEntityManager extends EntityManager {
 
     async scan<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-        options: ScanOptions,
+        options: DynamoScanOptions,
     ) {
         const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
@@ -171,15 +170,15 @@ export class DynamoEntityManager extends EntityManager {
         const findOneOptionsOrConditions = options as any
         let findOptions
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
-            findOptions = new FindOptions()
+            findOptions = new DynamoFindOptions()
             findOptions.where = findOneOptionsOrConditions.where
             findOptions.limit = 1
         } else {
-            findOptions = new FindOptions()
+            findOptions = new DynamoFindOptions()
             findOptions.where = { id }
             findOptions.limit = 1
         }
-        const params = paramHelper.find(
+        const params = dynamoParamHelper.find(
             metadata.tablePath,
             findOptions,
             metadata.indices,
@@ -198,10 +197,10 @@ export class DynamoEntityManager extends EntityManager {
     ): Promise<Entity | null> {
         const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClass)
-        const findOptions = new FindOptions()
+        const findOptions = new DynamoFindOptions()
         findOptions.where = options
         findOptions.limit = 1
-        const params = paramHelper.find(
+        const params = dynamoParamHelper.find(
             metadata.tablePath,
             findOptions,
             metadata.indices,
@@ -254,7 +253,7 @@ export class DynamoEntityManager extends EntityManager {
 
     async deleteAll<Entity>(
         target: EntityTarget<Entity>,
-        options: FindOptions,
+        options: DynamoFindOptions,
         keyMapper?: any,
     ) {
         let items = await this.scan(target, { limit: 500 })
@@ -270,7 +269,7 @@ export class DynamoEntityManager extends EntityManager {
 
     deleteAllBy<Entity>(
         target: EntityTarget<Entity>,
-        options: FindOptions,
+        options: DynamoFindOptions,
         keyMapper?: any,
     ) {
         options.limit = options.limit || 500
@@ -279,7 +278,7 @@ export class DynamoEntityManager extends EntityManager {
 
     async deleteQueryBatch<Entity>(
         target: EntityTarget<Entity>,
-        options: FindOptions,
+        options: DynamoFindOptions,
         keyMapper?: any,
     ) {
         const items: any[] = await this.find(target, options)
@@ -350,7 +349,7 @@ export class DynamoEntityManager extends EntityManager {
     ) {
         const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
-        const batches = batchHelper.batch(keys, 100)
+        const batches = dynamoBatchHelper.batch(keys, 100)
         let items: any[] = []
         for (let i = 0; i < batches.length; i++) {
             const batch = batches[i]
@@ -376,15 +375,15 @@ export class DynamoEntityManager extends EntityManager {
     // TODO: ... how do we update the indexColumn values here ... ?
     async batchWrite<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-        writes: BatchWriteItem[],
+        writes: DynamoBatchWriteItem[],
     ) {
         const dbClient = getDocumentClient()
         const metadata = this.connection.getMetadata(entityClassOrName)
-        const batches = batchHelper.batch(writes, 25)
+        const batches = dynamoBatchHelper.batch(writes, 25)
         for (let i = 0; i < batches.length; i++) {
             const batch = batches[i]
             const requestItems: any = {}
-            requestItems[metadata.tablePath] = batch.map((write) => {
+            requestItems[metadata.tablePath] = batch.map((write: any) => {
                 const request: any = {}
                 request[write.type] = {
                     Item: write.item,

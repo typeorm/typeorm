@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { batchHelper } from "../../../../../src/driver/dynamo/helpers/BatchHelper"
+import { dynamoBatchHelper } from "../../../../../src/driver/dynamo/helpers/DynamoBatchHelper"
 
 const buildItems = (count: number) => {
     const items: any[] = []
@@ -15,7 +15,7 @@ describe("batch-helper", () => {
         const items: any[] = []
 
         /** when: **/
-        const batches = batchHelper.batch(items)
+        const batches = dynamoBatchHelper.batch(items)
 
         /** then: **/
         expect(batches.length).to.eql(0)
@@ -25,7 +25,7 @@ describe("batch-helper", () => {
         const items: any[] = buildItems(5)
 
         /** when: **/
-        const batches = batchHelper.batch(items)
+        const batches = dynamoBatchHelper.batch(items)
 
         /** then: **/
         expect(batches.length).to.eql(1)
@@ -35,7 +35,7 @@ describe("batch-helper", () => {
         const items: any[] = buildItems(25)
 
         /** when: **/
-        const batches = batchHelper.batch(items)
+        const batches = dynamoBatchHelper.batch(items)
 
         /** then: **/
         expect(batches.length).to.eql(1)
@@ -45,7 +45,7 @@ describe("batch-helper", () => {
         const items: any[] = buildItems(30)
 
         /** when: **/
-        const batches = batchHelper.batch(items)
+        const batches = dynamoBatchHelper.batch(items)
 
         /** then: **/
         expect(batches.length).to.eql(2)
@@ -55,7 +55,7 @@ describe("batch-helper", () => {
         const items: any[] = buildItems(30)
 
         /** when: **/
-        const batches = batchHelper.batch(items, 5)
+        const batches = dynamoBatchHelper.batch(items, 5)
 
         /** then: **/
         expect(batches.length).to.eql(6)

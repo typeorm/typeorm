@@ -1,6 +1,6 @@
-import { FindOptions } from "../driver/dynamo/models/FindOptions"
-import { ScanOptions } from "../driver/dynamo/models/ScanOptions"
-import { BatchWriteItem } from "../driver/dynamo/models/BatchWriteItem"
+import { DynamoFindOptions } from "../driver/dynamo/models/DynamoFindOptions"
+import { DynamoScanOptions } from "../driver/dynamo/models/DynamoScanOptions"
+import { DynamoBatchWriteItem } from "../driver/dynamo/models/DynamoBatchWriteItem"
 import { ObjectID } from "../driver/mongodb/typings"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
@@ -11,10 +11,10 @@ import { DynamoReadStream } from "../driver/dynamo/DynamoReadStream"
 import { DynamoEntityManager } from "../entity-manager/DynamoEntityManager"
 import { DynamoQueryRunner } from "../driver/dynamo/DynamoQueryRunner"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { AddOptions } from "../driver/dynamo/models/AddOptions"
+import { DynamoAddOptions } from "../driver/dynamo/models/DynamoAddOptions"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { UpdateExpressionOptions } from "../driver/dynamo/models/UpdateExpressionOptions"
+import { DynamoUpdateExpressionOptions } from "../driver/dynamo/models/DynamoUpdateExpressionOptions"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { SaveOptions } from "./SaveOptions"
 
@@ -56,11 +56,11 @@ export class DynamoRepository<
         return this.findOne(key)
     }
 
-    async find(options: FindOptions | any): Promise<Entity[]> {
+    async find(options: DynamoFindOptions | any): Promise<Entity[]> {
         return this.manager.find(this.metadata.tableName, options)
     }
 
-    async findAll(options: FindOptions): Promise<Entity[]> {
+    async findAll(options: DynamoFindOptions): Promise<Entity[]> {
         return this.manager.findAll(this.metadata.tableName, options)
     }
 
@@ -80,14 +80,14 @@ export class DynamoRepository<
         return this.manager.findOneBy(this.metadata.target, where)
     }
 
-    add(options: AddOptions) {
+    add(options: DynamoAddOptions) {
         return this.manager.update(this.metadata.target as any, {
             addValues: options.values,
             where: options.where,
         })
     }
 
-    scan(options: ScanOptions) {
+    scan(options: DynamoScanOptions) {
         return this.manager.scan(this.metadata.tableName, options)
     }
 
@@ -147,7 +147,7 @@ export class DynamoRepository<
         return this.manager.deleteAll(this.metadata.tableName, keyMapper)
     }
 
-    deleteAllBy(options: FindOptions, keyMapper?: any) {
+    deleteAllBy(options: DynamoFindOptions, keyMapper?: any) {
         return this.manager.deleteAllBy(
             this.metadata.tableName,
             options,
@@ -155,7 +155,7 @@ export class DynamoRepository<
         )
     }
 
-    async deleteQueryBatch(options: FindOptions, keyMapper?: any) {
+    async deleteQueryBatch(options: DynamoFindOptions, keyMapper?: any) {
         return this.manager.deleteQueryBatch(
             this.metadata.tableName,
             options,
@@ -167,7 +167,7 @@ export class DynamoRepository<
         return this.manager.batchRead(this.metadata.tableName, keys)
     }
 
-    batchWrite(writes: BatchWriteItem[]) {
+    batchWrite(writes: DynamoBatchWriteItem[]) {
         return this.manager.batchWrite(this.metadata.tableName, writes)
     }
 
@@ -190,7 +190,9 @@ export class DynamoRepository<
         throw new Error("use repository.updateExpression(...) for dynamodb.")
     }
 
-    updateExpression(options: UpdateExpressionOptions): Promise<UpdateResult> {
+    updateExpression(
+        options: DynamoUpdateExpressionOptions,
+    ): Promise<UpdateResult> {
         return this.manager.update(this.metadata.target as any, options)
     }
 

@@ -1,6 +1,6 @@
-import { Pageable } from "./Pageable"
+import { DynamoPageable } from "./DynamoPageable"
 
-export class Page<T> {
+export class DynamoPageExpensive<T> {
     content: T[]
     totalElements: number
     totalPages: number
@@ -10,7 +10,7 @@ export class Page<T> {
     number: number
     first: boolean
     numberOfElements: number
-    constructor(content: T[], pageable: Pageable, total: number) {
+    constructor(content: T[], pageable: DynamoPageable, total: number) {
         const totalPages = Math.ceil(total / pageable.pageSize)
         this.content = content
         this.totalElements = total
