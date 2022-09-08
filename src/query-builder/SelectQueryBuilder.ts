@@ -71,6 +71,10 @@ export class SelectQueryBuilder<Entity>
     }[] = []
     protected relationMetadatas: RelationMetadata[] = []
 
+    get loadEagerRelations(): boolean | undefined {
+        return this.findOptions.loadEagerRelations
+    }
+
     // -------------------------------------------------------------------------
     // Public Implemented Methods
     // -------------------------------------------------------------------------
@@ -2943,12 +2947,28 @@ export class SelectQueryBuilder<Entity>
             }
 
             this.selects = []
-            if (this.findOptions.relations) {
-                const relations = Array.isArray(this.findOptions.relations)
+            if (
+                this.findOptions.relations ||
+                this.findOptions.loadEagerRelations !== false
+            ) {
+                let relations = Array.isArray(this.findOptions.relations)
                     ? OrmUtils.propertyPathsToTruthyObject(
                           this.findOptions.relations,
                       )
                     : this.findOptions.relations
+
+                if (
+                    this.findOptions.loadEagerRelations !== false &&
+                    this.expressionMap.mainAlias!.metadata.eagerRelations
+                        .length > 0
+                ) {
+                    relations =
+                        FindOptionsUtils.mergeFindOptionsRelationsWithEagerRelations(
+                            relations ?? {},
+                            this.expressionMap.mainAlias!.metadata
+                                .eagerRelations,
+                        )
+                }
 
                 this.buildRelations(
                     relations,
@@ -2973,6 +2993,7 @@ export class SelectQueryBuilder<Entity>
                     )
                 }
             }
+
             if (this.selects.length) {
                 this.addSelect(this.selects)
             }
@@ -3173,7 +3194,10 @@ export class SelectQueryBuilder<Entity>
                 this.loadAllRelationIds(this.findOptions.loadRelationIds as any)
             }
 
-            if (this.findOptions.loadEagerRelations !== false) {
+            if (
+                this.findOptions.loadEagerRelations !== false &&
+                this.findOptions.relationLoadStrategy === "join"
+            ) {
                 FindOptionsUtils.joinEagerRelations(
                     this,
                     this.expressionMap.mainAlias!.name,
@@ -3440,6 +3464,8 @@ export class SelectQueryBuilder<Entity>
                             withDeleted: this.findOptions.withDeleted,
                             relationLoadStrategy:
                                 this.findOptions.relationLoadStrategy,
+                            loadEagerRelations:
+                                this.findOptions.loadEagerRelations,
                         })
                     if (entities.length > 0) {
                         const relatedEntityGroups: any[] =

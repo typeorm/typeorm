@@ -5,6 +5,8 @@ import { FindRelationsNotFoundError } from "../error/FindRelationsNotFoundError"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { DriverUtils } from "../driver/DriverUtils"
 import { FindTreeOptions } from "./FindTreeOptions"
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { FindOptionsRelations } from "./FindOptionsRelations"
 
 /**
  * Utilities to work with FindOptions.
@@ -341,6 +343,63 @@ export class FindOptionsUtils {
                 )
             }
         })
+    }
+
+    public static mergeFindOptionsRelationsWithEagerRelations<Entity>(
+        findOptionsRelations: FindOptionsRelations<Entity>,
+        relations: RelationMetadata[],
+    ): FindOptionsRelations<Entity> {
+        return relations.reduce((acc, relation) => {
+            if (relation.inverseEntityMetadata.eagerRelations.length) {
+                if (
+                    findOptionsRelations.hasOwnProperty(
+                        relation.propertyPath,
+                    ) &&
+                    typeof findOptionsRelations[
+                        <keyof Entity>relation.propertyPath
+                    ] === "object"
+                ) {
+                    return {
+                        ...acc,
+                        [relation.propertyPath]:
+                            this.mergeFindOptionsRelationsWithEagerRelations(
+                                <FindOptionsRelations<Entity>>(
+                                    findOptionsRelations[
+                                        <keyof Entity>relation.propertyPath
+                                    ]
+                                ),
+                                relation.inverseEntityMetadata.eagerRelations,
+                            ),
+                    }
+                } else {
+                    return {
+                        ...acc,
+                        [relation.propertyPath]:
+                            this.mergeFindOptionsRelationsWithEagerRelations(
+                                {},
+                                relation.inverseEntityMetadata.eagerRelations,
+                            ),
+                    }
+                }
+            } else {
+                if (
+                    findOptionsRelations.hasOwnProperty(relation.propertyPath)
+                ) {
+                    return {
+                        ...acc,
+                        [relation.propertyPath]:
+                            findOptionsRelations[
+                                <keyof Entity>relation.propertyPath
+                            ],
+                    }
+                } else {
+                    return {
+                        ...acc,
+                        [relation.propertyPath]: true,
+                    }
+                }
+            }
+        }, {})
     }
 
     public static joinEagerRelations(
