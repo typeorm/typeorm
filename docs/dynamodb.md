@@ -8,10 +8,9 @@
 -   [Using the `GlobalSecondaryIndex` annotation](#using-the-globalsecondaryindex-annotation)
 
 ## DynamoDB support
-
-TypeORM has basic DynamoDB support.
+TypeORM DynamoDB support is in BETA!
 Most of TypeORM functionality is RDBMS-specific,
-this page contains all DynamoDB-specific functionality documentation.
+This page contains all DynamoDB-specific functionality documentation.
 
 ## Defining entities and columns
 
