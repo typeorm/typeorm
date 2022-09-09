@@ -677,7 +677,7 @@ export class EntityManager {
         entityOrEntities:
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
-        conflictPathsOrOptions: string[] | UpsertOptions<Entity>,
+        conflictPathsOrOptions: (Extract<keyof Entity, string>)[] | UpsertOptions<Entity>,
     ): Promise<InsertResult> {
         const metadata = this.connection.getMetadata(target)
 
