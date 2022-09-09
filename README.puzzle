@@ -8,3 +8,7 @@ get the behavior of getting the last item if undefined/null sneak in.
 Because of this:https://github.com/typeorm/typeorm/issues/5676
 
 Connection.ts findMetadata has been patched
+
+Sept 8, 2022
+
+Add IF EXISTS to drop index and drop constraint in the migration queries
