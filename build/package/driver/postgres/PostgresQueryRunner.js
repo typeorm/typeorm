@@ -783,14 +783,14 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                             if (primaryColumns.length > 0) {
                                 pkName_1 = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(function (column) { return column.name; }));
                                 columnNames_1 = primaryColumns.map(function (column) { return "\"" + column.name + "\""; }).join(", ");
-                                upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + pkName_1 + "\""));
+                                upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + pkName_1 + "\""));
                                 downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + pkName_1 + "\" PRIMARY KEY (" + columnNames_1 + ")"));
                             }
                             primaryColumns.push(column);
                             pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(function (column) { return column.name; }));
                             columnNames = primaryColumns.map(function (column) { return "\"" + column.name + "\""; }).join(", ");
                             upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + pkName + "\" PRIMARY KEY (" + columnNames + ")"));
-                            downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + pkName + "\""));
+                            downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + pkName + "\""));
                         }
                         columnIndex = clonedTable.indices.find(function (index) { return index.columnNames.length === 1 && index.columnNames[0] === column.name; });
                         if (columnIndex) {
@@ -805,7 +805,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                             });
                             clonedTable.uniques.push(uniqueConstraint);
                             upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + uniqueConstraint.name + "\" UNIQUE (\"" + column.name + "\")"));
-                            downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + uniqueConstraint.name + "\""));
+                            downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + uniqueConstraint.name + "\""));
                         }
                         // create column's comment
                         if (column.comment) {
@@ -1073,7 +1073,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                             if (primaryColumns.length > 0) {
                                 pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(function (column) { return column.name; }));
                                 columnNames = primaryColumns.map(function (column) { return "\"" + column.name + "\""; }).join(", ");
-                                upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + pkName + "\""));
+                                upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + pkName + "\""));
                                 downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + pkName + "\" PRIMARY KEY (" + columnNames + ")"));
                             }
                             if (newColumn.isPrimary === true) {
@@ -1083,7 +1083,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                                 pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(function (column) { return column.name; }));
                                 columnNames = primaryColumns.map(function (column) { return "\"" + column.name + "\""; }).join(", ");
                                 upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + pkName + "\" PRIMARY KEY (" + columnNames + ")"));
-                                downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + pkName + "\""));
+                                downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + pkName + "\""));
                             }
                             else {
                                 primaryColumn = primaryColumns.find(function (c) { return c.name === newColumn.name; });
@@ -1095,7 +1095,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                                     pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(function (column) { return column.name; }));
                                     columnNames = primaryColumns.map(function (column) { return "\"" + column.name + "\""; }).join(", ");
                                     upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + pkName + "\" PRIMARY KEY (" + columnNames + ")"));
-                                    downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + pkName + "\""));
+                                    downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + pkName + "\""));
                                 }
                             }
                         }
@@ -1107,14 +1107,14 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                                 });
                                 clonedTable.uniques.push(uniqueConstraint);
                                 upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + uniqueConstraint.name + "\" UNIQUE (\"" + newColumn.name + "\")"));
-                                downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + uniqueConstraint.name + "\""));
+                                downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + uniqueConstraint.name + "\""));
                             }
                             else {
                                 uniqueConstraint = clonedTable.uniques.find(function (unique) {
                                     return unique.columnNames.length === 1 && !!unique.columnNames.find(function (columnName) { return columnName === newColumn.name; });
                                 });
                                 clonedTable.uniques.splice(clonedTable.uniques.indexOf(uniqueConstraint), 1);
-                                upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + uniqueConstraint.name + "\""));
+                                upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + uniqueConstraint.name + "\""));
                                 downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + uniqueConstraint.name + "\" UNIQUE (\"" + newColumn.name + "\")"));
                             }
                         }
@@ -1229,7 +1229,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                         if (column.isPrimary) {
                             pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(function (column) { return column.name; }));
                             columnNames = clonedTable.primaryColumns.map(function (primaryColumn) { return "\"" + primaryColumn.name + "\""; }).join(", ");
-                            upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(clonedTable) + " DROP CONSTRAINT \"" + pkName + "\""));
+                            upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(clonedTable) + " DROP CONSTRAINT IF EXISTS \"" + pkName + "\""));
                             downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(clonedTable) + " ADD CONSTRAINT \"" + pkName + "\" PRIMARY KEY (" + columnNames + ")"));
                             tableColumn = clonedTable.findColumnByName(column.name);
                             tableColumn.isPrimary = false;
@@ -1238,7 +1238,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                                 pkName_2 = this.connection.namingStrategy.primaryKeyName(clonedTable.name, clonedTable.primaryColumns.map(function (column) { return column.name; }));
                                 columnNames_2 = clonedTable.primaryColumns.map(function (primaryColumn) { return "\"" + primaryColumn.name + "\""; }).join(", ");
                                 upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(clonedTable) + " ADD CONSTRAINT \"" + pkName_2 + "\" PRIMARY KEY (" + columnNames_2 + ")"));
-                                downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(clonedTable) + " DROP CONSTRAINT \"" + pkName_2 + "\""));
+                                downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(clonedTable) + " DROP CONSTRAINT IF EXISTS \"" + pkName_2 + "\""));
                             }
                         }
                         columnIndex = clonedTable.indices.find(function (index) { return index.columnNames.length === 1 && index.columnNames[0] === column.name; });
@@ -1383,7 +1383,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                         if (primaryColumns.length > 0) {
                             pkName_3 = this.connection.namingStrategy.primaryKeyName(clonedTable.name, primaryColumns.map(function (column) { return column.name; }));
                             columnNamesString_1 = primaryColumns.map(function (column) { return "\"" + column.name + "\""; }).join(", ");
-                            upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + pkName_3 + "\""));
+                            upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + pkName_3 + "\""));
                             downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + pkName_3 + "\" PRIMARY KEY (" + columnNamesString_1 + ")"));
                         }
                         // update columns in table.
@@ -1393,7 +1393,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                         pkName = this.connection.namingStrategy.primaryKeyName(clonedTable.name, columnNames);
                         columnNamesString = columnNames.map(function (columnName) { return "\"" + columnName + "\""; }).join(", ");
                         upQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " ADD CONSTRAINT \"" + pkName + "\" PRIMARY KEY (" + columnNamesString + ")"));
-                        downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + pkName + "\""));
+                        downQueries.push(new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + pkName + "\""));
                         return [4 /*yield*/, this.executeQueries(upQueries, downQueries)];
                     case 4:
                         _b.sent();
@@ -2738,7 +2738,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
     PostgresQueryRunner.prototype.dropIndexSql = function (table, indexOrName) {
         var indexName = indexOrName instanceof TableIndex_1.TableIndex ? indexOrName.name : indexOrName;
         var schema = this.extractSchema(table);
-        return schema ? new Query_1.Query("DROP INDEX \"" + schema + "\".\"" + indexName + "\"") : new Query_1.Query("DROP INDEX \"" + indexName + "\"");
+        return schema ? new Query_1.Query("DROP INDEX IF EXISTS \"" + schema + "\".\"" + indexName + "\"") : new Query_1.Query("DROP INDEX IF EXISTS \"" + indexName + "\"");
     };
     /**
      * Builds create primary key sql.
@@ -2754,7 +2754,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
     PostgresQueryRunner.prototype.dropPrimaryKeySql = function (table) {
         var columnNames = table.primaryColumns.map(function (column) { return column.name; });
         var primaryKeyName = this.connection.namingStrategy.primaryKeyName(table.name, columnNames);
-        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + primaryKeyName + "\"");
+        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + primaryKeyName + "\"");
     };
     /**
      * Builds create unique constraint sql.
@@ -2768,7 +2768,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
      */
     PostgresQueryRunner.prototype.dropUniqueConstraintSql = function (table, uniqueOrName) {
         var uniqueName = uniqueOrName instanceof TableUnique_1.TableUnique ? uniqueOrName.name : uniqueOrName;
-        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + uniqueName + "\"");
+        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + uniqueName + "\"");
     };
     /**
      * Builds create check constraint sql.
@@ -2781,7 +2781,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
      */
     PostgresQueryRunner.prototype.dropCheckConstraintSql = function (table, checkOrName) {
         var checkName = checkOrName instanceof TableCheck_1.TableCheck ? checkOrName.name : checkOrName;
-        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + checkName + "\"");
+        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + checkName + "\"");
     };
     /**
      * Builds create exclusion constraint sql.
@@ -2794,7 +2794,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
      */
     PostgresQueryRunner.prototype.dropExclusionConstraintSql = function (table, exclusionOrName) {
         var exclusionName = exclusionOrName instanceof TableExclusion_1.TableExclusion ? exclusionOrName.name : exclusionOrName;
-        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT \"" + exclusionName + "\"");
+        return new Query_1.Query("ALTER TABLE " + this.escapePath(table) + " DROP CONSTRAINT IF EXISTS \"" + exclusionName + "\"");
     };
     /**
      * Builds create foreign key sql.
