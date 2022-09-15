@@ -47,7 +47,7 @@ export class JoinAttribute {
     isMappingMany?: boolean
 
     /**
-     * Useful when the joined expression is a custom query to support mapping
+     * Useful when the joined expression is a custom query to support mapping.
      */
     mapAsEntity?: Function | string
 
