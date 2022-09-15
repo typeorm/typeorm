@@ -555,7 +555,7 @@ services:
 services:
 
   postgres:
-    image: "postgres:14.5."
+    image: "postgres:14.5"
     ports:
       - "5432:5432"
     environment:
