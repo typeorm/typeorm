@@ -14,9 +14,10 @@ var MigrationExecutor = /** @class */ (function () {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function MigrationExecutor(connection, queryRunner) {
+    function MigrationExecutor(connection, queryRunner, puzzleLogger) {
         this.connection = connection;
         this.queryRunner = queryRunner;
+        this.puzzleLogger = puzzleLogger;
         // -------------------------------------------------------------------------
         // Public Properties
         // -------------------------------------------------------------------------
@@ -38,25 +39,34 @@ var MigrationExecutor = /** @class */ (function () {
      * Tries to execute a single migration given.
      */
     MigrationExecutor.prototype.executeMigration = function (migration) {
+        var _a, _b;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
-            return tslib_1.__generator(this, function (_a) {
-                return [2 /*return*/, this.withQueryRunner(function (queryRunner) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                        return tslib_1.__generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, this.createMigrationsTableIfNotExist(queryRunner)];
-                                case 1:
-                                    _a.sent();
-                                    return [4 /*yield*/, migration.instance.up(queryRunner)];
-                                case 2:
-                                    _a.sent();
-                                    return [4 /*yield*/, this.insertExecutedMigration(queryRunner, migration)];
-                                case 3:
-                                    _a.sent();
-                                    return [2 /*return*/, migration];
-                            }
-                        });
-                    }); })];
+            return tslib_1.__generator(this, function (_c) {
+                (_a = this.puzzleLogger) === null || _a === void 0 ? void 0 : _a.info("Running migration", { name: migration.name });
+                try {
+                    return [2 /*return*/, this.withQueryRunner(function (queryRunner) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                            return tslib_1.__generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, this.createMigrationsTableIfNotExist(queryRunner)];
+                                    case 1:
+                                        _a.sent();
+                                        return [4 /*yield*/, migration.instance.up(queryRunner)];
+                                    case 2:
+                                        _a.sent();
+                                        return [4 /*yield*/, this.insertExecutedMigration(queryRunner, migration)];
+                                    case 3:
+                                        _a.sent();
+                                        return [2 /*return*/, migration];
+                                }
+                            });
+                        }); })];
+                }
+                catch (e) {
+                    (_b = this.puzzleLogger) === null || _b === void 0 ? void 0 : _b.error("Failed migration", { name: migration.name });
+                    throw e;
+                }
+                return [2 /*return*/];
             });
         });
     };
@@ -201,22 +211,23 @@ var MigrationExecutor = /** @class */ (function () {
      * thus not saved in the database.
      */
     MigrationExecutor.prototype.executePendingMigrations = function () {
+        var _a, _b;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var queryRunner, executedMigrations, lastTimeExecutedMigration, allMigrations, successMigrations, pendingMigrations, transactionStartedByUs, _loop_2, this_2, pendingMigrations_1, pendingMigrations_1_1, migration, e_2_1, err_1, rollbackError_1;
-            var e_2, _a;
+            var e_2, _c;
             var _this = this;
-            return tslib_1.__generator(this, function (_b) {
-                switch (_b.label) {
+            return tslib_1.__generator(this, function (_d) {
+                switch (_d.label) {
                     case 0:
                         queryRunner = this.queryRunner || this.connection.createQueryRunner();
                         // create migrations table if its not created yet
                         return [4 /*yield*/, this.createMigrationsTableIfNotExist(queryRunner)];
                     case 1:
                         // create migrations table if its not created yet
-                        _b.sent();
+                        _d.sent();
                         return [4 /*yield*/, this.loadExecutedMigrations(queryRunner)];
                     case 2:
-                        executedMigrations = _b.sent();
+                        executedMigrations = _d.sent();
                         lastTimeExecutedMigration = this.getLatestTimestampMigration(executedMigrations);
                         allMigrations = this.getMigrations();
                         successMigrations = [];
@@ -236,8 +247,8 @@ var MigrationExecutor = /** @class */ (function () {
                         if (!!this.queryRunner) return [3 /*break*/, 4];
                         return [4 /*yield*/, queryRunner.release()];
                     case 3:
-                        _b.sent();
-                        _b.label = 4;
+                        _d.sent();
+                        _d.label = 4;
                     case 4: return [2 /*return*/, []];
                     case 5:
                         // log information about migration execution
@@ -250,72 +261,84 @@ var MigrationExecutor = /** @class */ (function () {
                         if (!(this.transaction === "all" && !queryRunner.isTransactionActive)) return [3 /*break*/, 7];
                         return [4 /*yield*/, queryRunner.startTransaction()];
                     case 6:
-                        _b.sent();
+                        _d.sent();
                         transactionStartedByUs = true;
-                        _b.label = 7;
+                        _d.label = 7;
                     case 7:
-                        _b.trys.push([7, 18, 23, 26]);
+                        _d.trys.push([7, 18, 23, 26]);
                         _loop_2 = function (migration) {
-                            return tslib_1.__generator(this, function (_c) {
-                                switch (_c.label) {
+                            var e_3;
+                            return tslib_1.__generator(this, function (_e) {
+                                switch (_e.label) {
                                     case 0:
                                         if (!(this_2.transaction === "each" && !queryRunner.isTransactionActive)) return [3 /*break*/, 2];
                                         return [4 /*yield*/, queryRunner.startTransaction()];
                                     case 1:
-                                        _c.sent();
+                                        _e.sent();
                                         transactionStartedByUs = true;
-                                        _c.label = 2;
-                                    case 2: return [4 /*yield*/, migration.instance.up(queryRunner)
-                                            .then(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                                            return tslib_1.__generator(this, function (_a) {
-                                                switch (_a.label) {
-                                                    case 0: // now when migration is executed we need to insert record about it into the database
-                                                    return [4 /*yield*/, this.insertExecutedMigration(queryRunner, migration)];
-                                                    case 1:
-                                                        _a.sent();
-                                                        if (!(this.transaction === "each" && transactionStartedByUs)) return [3 /*break*/, 3];
-                                                        return [4 /*yield*/, queryRunner.commitTransaction()];
-                                                    case 2:
-                                                        _a.sent();
-                                                        _a.label = 3;
-                                                    case 3: return [2 /*return*/];
-                                                }
-                                            });
-                                        }); })
-                                            .then(function () {
-                                            successMigrations.push(migration);
-                                            _this.connection.logger.logSchemaBuild("Migration " + migration.name + " has been executed successfully.");
-                                        })];
+                                        _e.label = 2;
+                                    case 2:
+                                        (_a = this_2.puzzleLogger) === null || _a === void 0 ? void 0 : _a.info("Running migration", { name: migration.name });
+                                        _e.label = 3;
                                     case 3:
-                                        _c.sent();
-                                        return [2 /*return*/];
+                                        _e.trys.push([3, 5, , 6]);
+                                        return [4 /*yield*/, migration.instance.up(queryRunner)
+                                                .then(function () { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+                                                return tslib_1.__generator(this, function (_a) {
+                                                    switch (_a.label) {
+                                                        case 0: // now when migration is executed we need to insert record about it into the database
+                                                        return [4 /*yield*/, this.insertExecutedMigration(queryRunner, migration)];
+                                                        case 1:
+                                                            _a.sent();
+                                                            if (!(this.transaction === "each" && transactionStartedByUs)) return [3 /*break*/, 3];
+                                                            return [4 /*yield*/, queryRunner.commitTransaction()];
+                                                        case 2:
+                                                            _a.sent();
+                                                            _a.label = 3;
+                                                        case 3: return [2 /*return*/];
+                                                    }
+                                                });
+                                            }); })
+                                                .then(function () {
+                                                successMigrations.push(migration);
+                                                _this.connection.logger.logSchemaBuild("Migration " + migration.name + " has been executed successfully.");
+                                            })];
+                                    case 4:
+                                        _e.sent();
+                                        return [3 /*break*/, 6];
+                                    case 5:
+                                        e_3 = _e.sent();
+                                        this_2.connection.logger.logSchemaBuild("Migration " + migration.name + " has failed.");
+                                        (_b = this_2.puzzleLogger) === null || _b === void 0 ? void 0 : _b.error("Failed migration", { name: migration.name });
+                                        throw e_3;
+                                    case 6: return [2 /*return*/];
                                 }
                             });
                         };
                         this_2 = this;
-                        _b.label = 8;
+                        _d.label = 8;
                     case 8:
-                        _b.trys.push([8, 13, 14, 15]);
+                        _d.trys.push([8, 13, 14, 15]);
                         pendingMigrations_1 = tslib_1.__values(pendingMigrations), pendingMigrations_1_1 = pendingMigrations_1.next();
-                        _b.label = 9;
+                        _d.label = 9;
                     case 9:
                         if (!!pendingMigrations_1_1.done) return [3 /*break*/, 12];
                         migration = pendingMigrations_1_1.value;
                         return [5 /*yield**/, _loop_2(migration)];
                     case 10:
-                        _b.sent();
-                        _b.label = 11;
+                        _d.sent();
+                        _d.label = 11;
                     case 11:
                         pendingMigrations_1_1 = pendingMigrations_1.next();
                         return [3 /*break*/, 9];
                     case 12: return [3 /*break*/, 15];
                     case 13:
-                        e_2_1 = _b.sent();
+                        e_2_1 = _d.sent();
                         e_2 = { error: e_2_1 };
                         return [3 /*break*/, 15];
                     case 14:
                         try {
-                            if (pendingMigrations_1_1 && !pendingMigrations_1_1.done && (_a = pendingMigrations_1.return)) _a.call(pendingMigrations_1);
+                            if (pendingMigrations_1_1 && !pendingMigrations_1_1.done && (_c = pendingMigrations_1.return)) _c.call(pendingMigrations_1);
                         }
                         finally { if (e_2) throw e_2.error; }
                         return [7 /*endfinally*/];
@@ -323,29 +346,29 @@ var MigrationExecutor = /** @class */ (function () {
                         if (!(this.transaction === "all" && transactionStartedByUs)) return [3 /*break*/, 17];
                         return [4 /*yield*/, queryRunner.commitTransaction()];
                     case 16:
-                        _b.sent();
-                        _b.label = 17;
+                        _d.sent();
+                        _d.label = 17;
                     case 17: return [3 /*break*/, 26];
                     case 18:
-                        err_1 = _b.sent();
+                        err_1 = _d.sent();
                         if (!transactionStartedByUs) return [3 /*break*/, 22];
-                        _b.label = 19;
+                        _d.label = 19;
                     case 19:
-                        _b.trys.push([19, 21, , 22]);
+                        _d.trys.push([19, 21, , 22]);
                         return [4 /*yield*/, queryRunner.rollbackTransaction()];
                     case 20:
-                        _b.sent();
+                        _d.sent();
                         return [3 /*break*/, 22];
                     case 21:
-                        rollbackError_1 = _b.sent();
+                        rollbackError_1 = _d.sent();
                         return [3 /*break*/, 22];
                     case 22: throw err_1;
                     case 23:
                         if (!!this.queryRunner) return [3 /*break*/, 25];
                         return [4 /*yield*/, queryRunner.release()];
                     case 24:
-                        _b.sent();
-                        _b.label = 25;
+                        _d.sent();
+                        _d.label = 25;
                     case 25: return [7 /*endfinally*/];
                     case 26: return [2 /*return*/, successMigrations];
                 }

@@ -1,12 +1,14 @@
 import { Connection } from "../connection/Connection";
 import { Migration } from "./Migration";
 import { QueryRunner } from "../query-runner/QueryRunner";
+import { Logger } from "log4js";
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
  */
 export declare class MigrationExecutor {
     protected connection: Connection;
     protected queryRunner?: QueryRunner | undefined;
+    protected puzzleLogger?: Logger | undefined;
     /**
      * Indicates how migrations should be run in transactions.
      *   all: all migrations are run in a single transaction
@@ -16,7 +18,7 @@ export declare class MigrationExecutor {
     transaction: "all" | "none" | "each";
     private readonly migrationsTable;
     private readonly migrationsTableName;
-    constructor(connection: Connection, queryRunner?: QueryRunner | undefined);
+    constructor(connection: Connection, queryRunner?: QueryRunner | undefined, puzzleLogger?: Logger | undefined);
     /**
      * Tries to execute a single migration given.
      */
