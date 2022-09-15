@@ -3,7 +3,7 @@ import sinon from "sinon"
 import { PersonRepository } from "./person-repository"
 import { Person } from "../entities/Person"
 import { expect } from "chai"
-import { DynamoAddOptions } from "../../../../../build/package"
+import { DynamoAddOptions } from "../../../../../src"
 
 describe("DynamoRepository", () => {
     afterEach(() => {
