@@ -60,7 +60,7 @@ var MigrationExecutor = /** @class */ (function () {
                         }); })];
                 }
                 catch (e) {
-                    (_b = this.puzzleLogger) === null || _b === void 0 ? void 0 : _b.error("info", "Failed migration", { name: migration.name });
+                    (_b = this.puzzleLogger) === null || _b === void 0 ? void 0 : _b.error("Failed migration", { name: migration.name });
                     throw e;
                 }
                 return [2 /*return*/];
@@ -275,7 +275,7 @@ var MigrationExecutor = /** @class */ (function () {
                                         transactionStartedByUs = true;
                                         _e.label = 2;
                                     case 2:
-                                        (_a = this_2.puzzleLogger) === null || _a === void 0 ? void 0 : _a.info("info", "Running migration", { name: migration.name });
+                                        (_a = this_2.puzzleLogger) === null || _a === void 0 ? void 0 : _a.info("Running migration", { name: migration.name });
                                         _e.label = 3;
                                     case 3:
                                         _e.trys.push([3, 5, , 6]);
@@ -306,7 +306,7 @@ var MigrationExecutor = /** @class */ (function () {
                                     case 5:
                                         e_3 = _e.sent();
                                         this_2.connection.logger.logSchemaBuild("Migration " + migration.name + " has failed.");
-                                        (_b = this_2.puzzleLogger) === null || _b === void 0 ? void 0 : _b.error("info", "Failed migration", { name: migration.name });
+                                        (_b = this_2.puzzleLogger) === null || _b === void 0 ? void 0 : _b.error("Failed migration", { name: migration.name });
                                         throw e_3;
                                     case 6: return [2 /*return*/];
                                 }

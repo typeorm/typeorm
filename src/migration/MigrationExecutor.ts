@@ -66,7 +66,7 @@ export class MigrationExecutor {
             });
         }
         catch (e) {
-            this.puzzleLogger?.error("info", `Failed migration`, {name: migration.name});
+            this.puzzleLogger?.error(`Failed migration`, {name: migration.name});
             throw e;
         }
     }
@@ -231,7 +231,7 @@ export class MigrationExecutor {
                     transactionStartedByUs = true;
                 }
 
-                 this.puzzleLogger?.info("info", `Running migration`, {name: migration.name});
+                 this.puzzleLogger?.info(`Running migration`, {name: migration.name});
                 try {
                     await migration.instance!.up(queryRunner)
                         .then(async () => { // now when migration is executed we need to insert record about it into the database
@@ -246,7 +246,7 @@ export class MigrationExecutor {
                         });
                     } catch(e) {
                         this.connection.logger.logSchemaBuild(`Migration ${migration.name} has failed.`);
-                        this.puzzleLogger?.error("info", `Failed migration`, {name: migration.name});
+                        this.puzzleLogger?.error(`Failed migration`, {name: migration.name});
                         throw e;
                     }
             }
