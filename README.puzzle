@@ -12,3 +12,8 @@ Connection.ts findMetadata has been patched
 Sept 8, 2022
 
 Add IF EXISTS to drop index and drop constraint in the migration queries
+
+Sept 15, 2022
+
+Removed IF EXISTS for constraints as that is valid
+dropIndex got mogrified to deal with already removed indexii
