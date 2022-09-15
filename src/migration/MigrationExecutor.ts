@@ -55,7 +55,7 @@ export class MigrationExecutor {
      * Tries to execute a single migration given.
      */
     public async executeMigration(migration: Migration): Promise<Migration> {
-        this.puzzleLogger?.info(`Running migration: ${migration.name}`);
+        this.puzzleLogger?.info(`Running migration`, {name: migration.name});
         try {
             return this.withQueryRunner(async (queryRunner) => {
                 await this.createMigrationsTableIfNotExist(queryRunner);
@@ -66,7 +66,7 @@ export class MigrationExecutor {
             });
         }
         catch (e) {
-            this.puzzleLogger?.error("info", `Failed migration: ${migration.name}`);
+            this.puzzleLogger?.error("info", `Failed migration`, {name: migration.name});
             throw e;
         }
     }
@@ -231,17 +231,24 @@ export class MigrationExecutor {
                     transactionStartedByUs = true;
                 }
 
-                await migration.instance!.up(queryRunner)
-                    .then(async () => { // now when migration is executed we need to insert record about it into the database
-                        await this.insertExecutedMigration(queryRunner, migration);
-                        // commit transaction if we started it
-                        if (this.transaction === "each" && transactionStartedByUs)
-                            await queryRunner.commitTransaction();
-                    })
-                    .then(() => { // informative log about migration success
-                        successMigrations.push(migration);
-                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
-                    });
+                 this.puzzleLogger?.info("info", `Running migration`, {name: migration.name});
+                try {
+                    await migration.instance!.up(queryRunner)
+                        .then(async () => { // now when migration is executed we need to insert record about it into the database
+                            await this.insertExecutedMigration(queryRunner, migration);
+                            // commit transaction if we started it
+                            if (this.transaction === "each" && transactionStartedByUs)
+                                await queryRunner.commitTransaction();
+                        })
+                        .then(() => { // informative log about migration success
+                            successMigrations.push(migration);
+                            this.connection.logger.logSchemaBuild(`Migration ${migration.name} has been executed successfully.`);
+                        });
+                    } catch(e) {
+                        this.connection.logger.logSchemaBuild(`Migration ${migration.name} has failed.`);
+                        this.puzzleLogger?.error("info", `Failed migration`, {name: migration.name});
+                        throw e;
+                    }
             }
 
             // commit transaction if we started it
