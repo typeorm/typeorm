@@ -2013,7 +2013,7 @@ var PostgresQueryRunner = /** @class */ (function (_super) {
                         table = _a;
                         name = indexOrName instanceof TableIndex_1.TableIndex ? indexOrName.name : indexOrName;
                         if (!name) {
-                            throw new Error("Supplied TableIndex index was not found in table " + table.name + "/" + indexOrName);
+                            throw new Error("Supplied TableIndex index was not found in table " + table.name + "/" + name);
                         }
                         up = this.dropIndexSql(table, name);
                         down = indexOrName instanceof TableIndex_1.TableIndex ? this.createIndexSql(table, indexOrName) : [];

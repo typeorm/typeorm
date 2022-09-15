@@ -11,9 +11,10 @@ var MigrationExecutor = /** @class */ (function () {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function MigrationExecutor(connection, queryRunner) {
+    function MigrationExecutor(connection, queryRunner, puzzleLogger) {
         this.connection = connection;
         this.queryRunner = queryRunner;
+        this.puzzleLogger = puzzleLogger;
         // -------------------------------------------------------------------------
         // Public Properties
         // -------------------------------------------------------------------------
@@ -35,25 +36,34 @@ var MigrationExecutor = /** @class */ (function () {
      * Tries to execute a single migration given.
      */
     MigrationExecutor.prototype.executeMigration = function (migration) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, this.withQueryRunner(function (queryRunner) { return __awaiter(_this, void 0, void 0, function () {
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, this.createMigrationsTableIfNotExist(queryRunner)];
-                                case 1:
-                                    _a.sent();
-                                    return [4 /*yield*/, migration.instance.up(queryRunner)];
-                                case 2:
-                                    _a.sent();
-                                    return [4 /*yield*/, this.insertExecutedMigration(queryRunner, migration)];
-                                case 3:
-                                    _a.sent();
-                                    return [2 /*return*/, migration];
-                            }
-                        });
-                    }); })];
+            return __generator(this, function (_c) {
+                (_a = this.puzzleLogger) === null || _a === void 0 ? void 0 : _a.info("Running migration: " + migration.name);
+                try {
+                    return [2 /*return*/, this.withQueryRunner(function (queryRunner) { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, this.createMigrationsTableIfNotExist(queryRunner)];
+                                    case 1:
+                                        _a.sent();
+                                        return [4 /*yield*/, migration.instance.up(queryRunner)];
+                                    case 2:
+                                        _a.sent();
+                                        return [4 /*yield*/, this.insertExecutedMigration(queryRunner, migration)];
+                                    case 3:
+                                        _a.sent();
+                                        return [2 /*return*/, migration];
+                                }
+                            });
+                        }); })];
+                }
+                catch (e) {
+                    (_b = this.puzzleLogger) === null || _b === void 0 ? void 0 : _b.error("info", "Failed migration: " + migration.name);
+                    throw e;
+                }
+                return [2 /*return*/];
             });
         });
     };

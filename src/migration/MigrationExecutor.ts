@@ -9,7 +9,7 @@ import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectio
 import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
 import {MongoDriver} from "../driver/mongodb/MongoDriver";
 import {MongoQueryRunner} from "../driver/mongodb/MongoQueryRunner";
-
+import { Logger } from "log4js";
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
  */
@@ -39,7 +39,8 @@ export class MigrationExecutor {
     // -------------------------------------------------------------------------
 
     constructor(protected connection: Connection,
-                protected queryRunner?: QueryRunner) {
+                protected queryRunner?: QueryRunner,
+                protected puzzleLogger?: Logger) {
 
         const options = <SqlServerConnectionOptions|PostgresConnectionOptions>this.connection.driver.options;
         this.migrationsTableName = connection.options.migrationsTableName || "migrations";
@@ -54,13 +55,20 @@ export class MigrationExecutor {
      * Tries to execute a single migration given.
      */
     public async executeMigration(migration: Migration): Promise<Migration> {
-        return this.withQueryRunner(async (queryRunner) => {
-            await this.createMigrationsTableIfNotExist(queryRunner);
-            await (migration.instance as any).up(queryRunner);
-            await this.insertExecutedMigration(queryRunner, migration);
+        this.puzzleLogger?.info(`Running migration: ${migration.name}`);
+        try {
+            return this.withQueryRunner(async (queryRunner) => {
+                await this.createMigrationsTableIfNotExist(queryRunner);
+                await (migration.instance as any).up(queryRunner);
+                await this.insertExecutedMigration(queryRunner, migration);
 
-            return migration;
-        });
+                return migration;
+            });
+        }
+        catch (e) {
+            this.puzzleLogger?.error("info", `Failed migration: ${migration.name}`);
+            throw e;
+        }
     }
 
     /**
