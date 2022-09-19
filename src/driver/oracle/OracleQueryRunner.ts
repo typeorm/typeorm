@@ -2692,22 +2692,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const tableMetaData = this.connection.entityMetadatas.find(
-            (e) => e.tableName === table.name,
-        )
-        const nonVirtualColumns = table.columns.filter(
-            (column) =>
-                !tableMetaData?.columns.find(
-                    (c) =>
-                        c.databaseName === column.name && c.isVirtualDecorator,
-                ),
-        )
-        const columnDefinitions = nonVirtualColumns
+        const columnDefinitions = table.columns
             .map((column) => this.buildCreateColumnSql(column))
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
-        nonVirtualColumns
+        table.columns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueExist = table.uniques.some(

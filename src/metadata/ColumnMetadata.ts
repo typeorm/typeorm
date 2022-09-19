@@ -240,9 +240,11 @@ export class ColumnMetadata {
     isVirtual: boolean = false
 
     /**
-     * Indicates if column is calculated. Virtual columns are not mapped to the entity.
+     * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
+     * This property is used in tandem the virtual column decorator.
+     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
-    isVirtualDecorator: boolean = false
+    isVirtualProperty: boolean = false
 
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
@@ -461,7 +463,7 @@ export class ColumnMetadata {
         if (options.args.options.array)
             this.isArray = options.args.options.array
         if (options.args.mode) {
-            this.isVirtualDecorator = options.args.mode === "calculated"
+            this.isVirtualProperty = options.args.mode === "virtual-property"
             this.isVirtual = options.args.mode === "virtual"
             this.isTreeLevel = options.args.mode === "treeLevel"
             this.isCreateDate = options.args.mode === "createDate"
@@ -470,7 +472,7 @@ export class ColumnMetadata {
             this.isVersion = options.args.mode === "version"
             this.isObjectId = options.args.mode === "objectId"
         }
-        if (this.isVirtualDecorator) {
+        if (this.isVirtualProperty) {
             this.isInsert = false
             this.isUpdate = false
         }

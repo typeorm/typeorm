@@ -313,7 +313,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (metadata.columns.length !== table.columns.length) continue
 
             const renamedMetadataColumns = metadata.columns
-                .filter((c) => !c.isVirtualDecorator)
+                .filter((c) => !c.isVirtualProperty)
                 .filter((column) => {
                     return !table.columns.find((tableColumn) => {
                         return (
@@ -336,7 +336,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const renamedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find((column) => {
                     return (
-                        !column.isVirtualDecorator &&
+                        !column.isVirtualProperty &&
                         column.databaseName === tableColumn.name &&
                         this.connection.driver.normalizeType(column) ===
                             tableColumn.type &&
@@ -690,7 +690,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const droppedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find(
                     (columnMetadata) =>
-                        columnMetadata.isVirtualDecorator ||
+                        columnMetadata.isVirtualProperty ||
                         columnMetadata.databaseName === tableColumn.name,
                 )
             })
@@ -722,7 +722,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const newColumnMetadatas = metadata.columns.filter(
                 (columnMetadata) => {
                     return (
-                        !columnMetadata.isVirtualDecorator &&
+                        !columnMetadata.isVirtualProperty &&
                         !table.columns.find(
                             (tableColumn) =>
                                 tableColumn.name ===

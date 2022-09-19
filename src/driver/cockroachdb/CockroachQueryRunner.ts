@@ -3127,22 +3127,12 @@ export class CockroachQueryRunner
      * Builds create table sql.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const tableMetaData = this.connection.entityMetadatas.find(
-            (e) => e.tableName === table.name,
-        )
-        const nonVirtualColumns = table.columns.filter(
-            (column) =>
-                !tableMetaData?.columns.find(
-                    (c) =>
-                        c.databaseName === column.name && c.isVirtualDecorator,
-                ),
-        )
-        const columnDefinitions = nonVirtualColumns
+        const columnDefinitions = table.columns
             .map((column) => this.buildCreateColumnSql(table, column))
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
-        nonVirtualColumns
+        table.columns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueExist = table.uniques.some(
@@ -3262,7 +3252,7 @@ export class CockroachQueryRunner
 
         sql += `)`
 
-        nonVirtualColumns
+        table.columns
             .filter((it) => it.comment)
             .forEach(
                 (it) =>

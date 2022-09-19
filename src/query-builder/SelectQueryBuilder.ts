@@ -2655,7 +2655,7 @@ export class SelectQueryBuilder<Entity>
             let selectionPath =
                 escapedAliasName + "." + this.escape(column.databaseName)
 
-            if (column.isVirtualDecorator && column.query) {
+            if (column.isVirtualProperty && column.query) {
                 selectionPath = `(${column.query(escapedAliasName)})`
             }
 
@@ -3903,7 +3903,7 @@ export class SelectQueryBuilder<Entity>
                         : undefined
 
                 let aliasPath = `${alias}.${propertyPath}`
-                if (column.isVirtualDecorator && column.query) {
+                if (column.isVirtualProperty && column.query) {
                     const selection = this.expressionMap.selects.find(
                         (s) => s.selection === aliasPath,
                     )
@@ -4008,7 +4008,7 @@ export class SelectQueryBuilder<Entity>
 
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
-                    if (column.isVirtualDecorator && column.query) {
+                    if (column.isVirtualProperty && column.query) {
                         aliasPath = `(${column.query(alias)})`
                     }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;

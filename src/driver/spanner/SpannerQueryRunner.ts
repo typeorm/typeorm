@@ -1863,24 +1863,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create table sql.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const tableMetaData = this.connection.entityMetadatas.find(
-            (e) => e.tableName === table.name,
-        )
-        const nonVirtualColumns = table.columns.filter(
-            (column) =>
-                !tableMetaData?.columns.find(
-                    (c) =>
-                        c.databaseName === column.name && c.isVirtualDecorator,
-                ),
-        )
-        const columnDefinitions = nonVirtualColumns
+        const columnDefinitions = table.columns
             .map((column) => this.buildCreateColumnSql(column))
             .join(", ")
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
         // we create unique indexes instead of unique constraints, because Spanner does not have unique constraints.
         // if we mark column as Unique, it means that we create UNIQUE INDEX.
-        nonVirtualColumns
+        table.columns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueIndexExist = table.indices.some((index) => {

@@ -67,7 +67,7 @@ export function VirtualColumn(
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
-            mode: "calculated",
+            mode: "virtual-property",
             options: options || {},
         } as ColumnMetadataArgs)
     }

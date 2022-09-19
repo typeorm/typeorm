@@ -395,7 +395,7 @@ export class Table {
             withoutRowid: entityMetadata.withoutRowid,
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
-                .filter((column) => column)
+                .filter((column) => column && !column.isVirtualProperty)
                 .map((column) =>
                     TableUtils.createTableColumnOptions(column, driver),
                 ),

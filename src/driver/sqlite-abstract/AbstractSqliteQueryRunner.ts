@@ -1696,17 +1696,6 @@ export abstract class AbstractSqliteQueryRunner
         createForeignKeys?: boolean,
         temporaryTable?: boolean,
     ): Query {
-        const tableMetaData = this.connection.entityMetadatas.find(
-            (e) => e.tableName === table.name,
-        )
-        const nonVirtualColumns = table.columns.filter(
-            (column) =>
-                !tableMetaData?.columns.find(
-                    (c) =>
-                        c.databaseName === column.name && c.isVirtualDecorator,
-                ),
-        )
-
         const primaryColumns = table.columns.filter(
             (column) => column.isPrimary,
         )
@@ -1737,7 +1726,7 @@ export abstract class AbstractSqliteQueryRunner
             : table.name
 
         // need for `addColumn()` method, because it recreates table.
-        nonVirtualColumns
+        table.columns
             .filter((column) => column.isUnique)
             .forEach((column) => {
                 const isUniqueExist = table.uniques.some(

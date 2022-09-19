@@ -27,7 +27,13 @@ export class DateUtils {
      */
     static mixedDateToDateString(value: string | Date): string {
         if (value instanceof Date) {
-            return value.toISOString().split("T")[0]
+            return (
+                this.formatZerolessValue(value.getFullYear(), 4) +
+                "-" +
+                this.formatZerolessValue(value.getMonth() + 1) +
+                "-" +
+                this.formatZerolessValue(value.getDate())
+            )
         }
 
         return value
