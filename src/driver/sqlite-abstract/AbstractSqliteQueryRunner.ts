@@ -1817,6 +1817,8 @@ export abstract class AbstractSqliteQueryRunner
                     let constraint = `CONSTRAINT "${fk.name}" FOREIGN KEY (${columnNames}) REFERENCES "${referencedTable}" (${referencedColumnNames})`
                     if (fk.onDelete) constraint += ` ON DELETE ${fk.onDelete}`
                     if (fk.onUpdate) constraint += ` ON UPDATE ${fk.onUpdate}`
+                    if (fk.deferrable)
+                        constraint += ` DEFERRABLE ${fk.deferrable}`
 
                     return constraint
                 })

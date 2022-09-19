@@ -1462,6 +1462,7 @@ export class PostgresDriver implements Driver {
                 ssl: credentials.ssl,
                 connectionTimeoutMillis: options.connectTimeoutMS,
                 application_name: options.applicationName,
+                max: options.poolSize,
             },
             options.extra || {},
         )

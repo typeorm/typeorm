@@ -50,4 +50,6 @@ export interface SqljsConnectionOptions extends BaseDataSourceOptions {
      * indexedDB instead of using the synchron local storage methods in a browser environment.
      */
     readonly useLocalForage?: boolean
+
+    readonly poolSize?: never
 }

@@ -47,7 +47,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class SelectQueryBuilder<Entity>
+export class SelectQueryBuilder<Entity extends ObjectLiteral>
     extends QueryBuilder<Entity>
     implements WhereExpressionBuilder
 {
@@ -254,7 +254,7 @@ export class SelectQueryBuilder<Entity>
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(
+    from<T extends ObjectLiteral>(
         entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -264,7 +264,7 @@ export class SelectQueryBuilder<Entity>
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(
+    from<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -274,7 +274,7 @@ export class SelectQueryBuilder<Entity>
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(
+    from<T extends ObjectLiteral>(
         entityTarget:
             | EntityTarget<T>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
@@ -289,7 +289,7 @@ export class SelectQueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(
+    addFrom<T extends ObjectLiteral>(
         entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -298,7 +298,7 @@ export class SelectQueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(
+    addFrom<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -307,7 +307,7 @@ export class SelectQueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(
+    addFrom<T extends ObjectLiteral>(
         entityTarget:
             | EntityTarget<T>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
@@ -3683,7 +3683,7 @@ export class SelectQueryBuilder<Entity>
                     select[key] as FindOptionsSelect<any>,
                     metadata,
                     alias,
-                    key,
+                    propertyPath,
                 )
 
                 // } else if (relation) {
