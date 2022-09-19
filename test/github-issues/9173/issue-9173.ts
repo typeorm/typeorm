@@ -6,6 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { DataSource, Table } from "../../../src"
 import { View } from "../../../src/schema-builder/view/View"
+import { expect } from "chai"
 
 describe("github issues > #9173 missing typeorm_metadata", () => {
     let connections: DataSource[]
@@ -57,6 +58,9 @@ describe("github issues > #9173 missing typeorm_metadata", () => {
                     expression: "SELECT * FROM test_table",
                 }),
             )
+
+            const view = await connection.query("SELECT * FROM test_view")
+            expect(view).to.be.exist
         }
     })
 })
