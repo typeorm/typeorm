@@ -342,4 +342,9 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
      * Enables or disables the ability to retry writes upon encountering transient network errors.
      */
     readonly retryWrites?: boolean
+
+    /**
+     * Schema builder hooks aren't supported for Mongo
+     */
+    readonly schemaBuilderHooks?: never
 }

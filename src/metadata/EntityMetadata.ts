@@ -16,6 +16,7 @@ import { IndexMetadata } from "./IndexMetadata"
 import { RelationCountMetadata } from "./RelationCountMetadata"
 import { RelationIdMetadata } from "./RelationIdMetadata"
 import { RelationMetadata } from "./RelationMetadata"
+import { CustomEntityMetadata } from "./types/CustomEntityMetadata"
 import { TableType } from "./types/TableTypes"
 import { TreeType } from "./types/TreeTypes"
 import { UniqueMetadata } from "./UniqueMetadata"
@@ -516,6 +517,11 @@ export class EntityMetadata {
      */
     propertiesMap: ObjectLiteral
 
+    /**
+     * This field can be used by end-users to store arbitrary metadata associated with entity
+     */
+    customProperties: Partial<CustomEntityMetadata>
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -527,6 +533,7 @@ export class EntityMetadata {
         tableTree?: TreeMetadataArgs
         parentClosureEntityMetadata?: EntityMetadata
         args: TableMetadataArgs
+        customProperties?: CustomEntityMetadata
     }) {
         this.connection = options.connection
         this.inheritanceTree = options.inheritanceTree || []
@@ -542,6 +549,7 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid = this.tableMetadataArgs.withoutRowid
         this.dependsOn = this.tableMetadataArgs.dependsOn
+        this.customProperties = options.customProperties || {}
     }
 
     // -------------------------------------------------------------------------
