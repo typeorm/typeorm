@@ -468,7 +468,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     })
                     .map(async (tableIndex) => {
                         this.connection.logger.logSchemaBuild(
-                            `dropping an index: "${tableIndex.name}" from table ${view.name}`,
+                            `dropping an index: "${tableIndex.name}" from view ${view.name}`,
                         )
                         await postgresQueryRunner.dropViewIndex(view, tableIndex)
                     })
