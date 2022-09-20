@@ -223,12 +223,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.addNewColumns()
         await this.updatePrimaryKeys()
         await this.updateExistColumns()
+        await this.createViews()
         await this.createNewIndices()
         await this.createNewChecks()
         await this.createNewExclusions()
         await this.createCompositeUniqueConstraints()
         await this.createForeignKeys()
-        await this.createViews()
     }
 
     private getTablePath(
