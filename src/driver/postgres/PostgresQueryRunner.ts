@@ -654,15 +654,6 @@ export class PostgresQueryRunner
         upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
         downQueries.push(await this.deleteViewDefinitionSql(view))
-        if (view.materialized) {
-            view.indices.forEach((index) => {
-                // new index may be passed without name. In this case we generate index name manually.
-                if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(view, index.columnNames, index.where);
-                upQueries.push(this.createIndexSql(view, index));
-                downQueries.push(this.dropIndexSql(view, index));
-            });
-        }
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -3184,8 +3175,8 @@ export class PostgresQueryRunner
             const tableIndexConstraints = OrmUtils.uniq(
                 dbIndices.filter((dbIndex) => {
                     return (
-                        dbIndex["table_name"] === dbViews["table_name"] &&
-                        dbIndex["table_schema"] === dbViews["table_schema"]
+                        dbIndex["table_name"] === dbView["name"] &&
+                        dbIndex["table_schema"] === dbView["schema"]
                     )
                 }),
                 (dbIndex) => dbIndex["constraint_name"],
