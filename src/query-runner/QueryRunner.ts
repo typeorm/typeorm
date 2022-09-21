@@ -252,7 +252,11 @@ export interface QueryRunner {
     /**
      * Creates a new view.
      */
-    createView(view: View, oldView?: View): Promise<void>
+    createView(
+        view: View,
+        syncWithMetadata?: boolean,
+        oldView?: View,
+    ): Promise<void>
 
     /**
      * Drops a view.

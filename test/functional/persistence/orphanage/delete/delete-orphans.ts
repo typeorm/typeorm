@@ -1,15 +1,15 @@
 import "reflect-metadata"
-import { DataSource, Repository } from "../../../../src/index"
+import { DataSource, Repository } from "../../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { expect } from "chai"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
-describe("persistence > delete orphans", () => {
+describe("persistence > orphanage > delete", () => {
     // -------------------------------------------------------------------------
     // Configuration
     // -------------------------------------------------------------------------

@@ -2690,11 +2690,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
               )
             : []
         const allColumns = [...columns, ...nonSelectedPrimaryColumns]
-
         const finalSelects: SelectQuery[] = []
+
+        const escapedAliasName = this.escape(aliasName)
         allColumns.forEach((column) => {
             let selectionPath =
-                this.escape(aliasName) + "." + this.escape(column.databaseName)
+                escapedAliasName + "." + this.escape(column.databaseName)
+
+            if (column.isVirtualProperty && column.query) {
+                selectionPath = `(${column.query(escapedAliasName)})`
+            }
+
             if (
                 this.connection.driver.spatialTypes.indexOf(column.type) !== -1
             ) {
@@ -3683,7 +3689,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     select[key] as FindOptionsSelect<any>,
                     metadata,
                     alias,
-                    key,
+                    propertyPath,
                 )
 
                 // } else if (relation) {
@@ -3942,7 +3948,25 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         ? "NULLS LAST"
                         : undefined
 
-                this.addOrderBy(`${alias}.${propertyPath}`, direction, nulls)
+                let aliasPath = `${alias}.${propertyPath}`
+                if (column.isVirtualProperty && column.query) {
+                    const selection = this.expressionMap.selects.find(
+                        (s) => s.selection === aliasPath,
+                    )
+                    if (selection) {
+                        // this is not building correctly now???
+                        aliasPath = DriverUtils.buildAlias(
+                            this.connection.driver,
+                            alias,
+                            column.databaseName,
+                        )
+                        selection.aliasName = aliasPath
+                    } else {
+                        aliasPath = `(${column.query(alias)})`
+                    }
+                }
+
+                this.addOrderBy(aliasPath, direction, nulls)
                 // this.orderBys.push({ alias: alias + "." + propertyPath, direction, nulls });
             } else if (embed) {
                 this.buildOrder(
@@ -4029,7 +4053,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
 
                 if (column) {
-                    const aliasPath = `${alias}.${propertyPath}`
+                    let aliasPath = `${alias}.${propertyPath}`
+                    if (column.isVirtualProperty && column.query) {
+                        aliasPath = `(${column.query(alias)})`
+                    }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
                     // todo: we need to handle other operators as well?

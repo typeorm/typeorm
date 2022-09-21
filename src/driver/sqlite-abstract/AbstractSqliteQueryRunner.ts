@@ -398,13 +398,17 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(this.insertViewDefinitionSql(view))
+        if (syncWithMetadata) upQueries.push(this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 

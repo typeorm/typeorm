@@ -801,6 +801,9 @@ export class PostgresDriver implements Driver {
                         ? parseInt(value)
                         : value
             }
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -1462,6 +1465,7 @@ export class PostgresDriver implements Driver {
                 ssl: credentials.ssl,
                 connectionTimeoutMillis: options.connectTimeoutMS,
                 application_name: options.applicationName,
+                max: options.poolSize,
             },
             options.extra || {},
         )

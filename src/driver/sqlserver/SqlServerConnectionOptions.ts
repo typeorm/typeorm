@@ -294,4 +294,6 @@ export interface SqlServerConnectionOptions
          */
         readonly slaves: SqlServerConnectionCredentialsOptions[]
     }
+
+    readonly poolSize?: never
 }

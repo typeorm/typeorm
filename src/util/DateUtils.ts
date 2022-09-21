@@ -26,7 +26,7 @@ export class DateUtils {
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
     static mixedDateToDateString(value: string | Date): string {
-        if (value instanceof Date)
+        if (value instanceof Date) {
             return (
                 this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
@@ -34,6 +34,7 @@ export class DateUtils {
                 "-" +
                 this.formatZerolessValue(value.getDate())
             )
+        }
 
         return value
     }

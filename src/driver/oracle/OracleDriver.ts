@@ -545,6 +545,9 @@ export class OracleDriver implements Driver {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -992,6 +995,9 @@ export class OracleDriver implements Driver {
                 user: credentials.username,
                 password: credentials.password,
                 connectString: credentials.connectString,
+            },
+            {
+                poolMax: options.poolSize,
             },
             options.extra || {},
         )
