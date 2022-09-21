@@ -677,7 +677,7 @@ export class EntityManager {
         entityOrEntities:
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
-        conflictPathsOrOptions: (Extract<keyof Entity, string>)[] | UpsertOptions<Entity>,
+        conflictPathsOrOptions: string[] | UpsertOptions<Entity>,
     ): Promise<InsertResult> {
         const metadata = this.connection.getMetadata(target)
 
@@ -700,7 +700,9 @@ export class EntityManager {
         }
 
         const conflictColumns = metadata.mapPropertyPathsToColumns(
-            options.conflictPaths,
+            Array.isArray(options.conflictPaths)
+                ? options.conflictPaths
+                : Object.keys(options.conflictPaths),
         )
 
         const overwriteColumns = metadata.columns.filter(
