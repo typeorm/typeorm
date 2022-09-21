@@ -3209,7 +3209,7 @@ export class PostgresQueryRunner
                     )
                 })
                 return new TableIndex(<TableIndexOptions>{
-                    //table: table,
+                    view: view,
                     name: constraint["constraint_name"],
                     columnNames: indices.map((i) => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
