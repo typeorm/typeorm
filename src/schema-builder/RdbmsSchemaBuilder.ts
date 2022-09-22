@@ -142,8 +142,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const tablePaths = this.entityToSyncMetadatas.map((metadata) =>
                 this.getTablePath(metadata),
             )
+            const viewPaths = this.viewEntityToSyncMetadatas.map((metadata) =>
+                this.getTablePath(metadata)
+            )
             await this.queryRunner.getTables(tablePaths)
-            await this.queryRunner.getViews([])
+            await this.queryRunner.getViews(viewPaths)
 
             this.queryRunner.enableSqlMemory()
             await this.executeSchemaSyncOperationsInProperOrder()
