@@ -2926,7 +2926,7 @@ export class PostgresQueryRunner
         // new index may be passed without name. In this case we generate index name manually.
         if (!index.name) index.name = this.generateIndexName(view, index)
 
-        const up = this.createIndexSql(view, index)
+        const up = this.createViewIndexSql(view, index)
         const down = this.dropIndexSql(view, index)
         await this.executeQueries(up, down)
         view.addIndex(index)
@@ -3003,7 +3003,7 @@ export class PostgresQueryRunner
         if (!index.name) index.name = this.generateIndexName(view, index)
 
         const up = this.dropIndexSql(view, index)
-        const down = this.createIndexSql(view, index)
+        const down = this.createViewIndexSql(view, index)
         await this.executeQueries(up, down)
         view.removeIndex(index)
     }
@@ -4262,7 +4262,7 @@ export class PostgresQueryRunner
     /**
      * Builds create index sql.
      */
-    protected createIndexSql(table: Table | View, index: TableIndex): Query {
+    protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -4272,6 +4272,21 @@ export class PostgresQueryRunner
             }" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+        )
+    }
+
+    /**
+     * Builds create view index sql.
+     */
+    protected createViewIndexSql(view: View, index: TableIndex): Query {
+        const columns = index.columnNames
+            .map((columnName) => `"${columnName}"`)
+            .join(", ")
+        return new Query(
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(view)} 
+            ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
