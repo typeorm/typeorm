@@ -4285,8 +4285,9 @@ export class PostgresQueryRunner
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
                 index.name
-            }" ON ${this.escapePath(view)} 
-            ${index.where ? "WHERE " + index.where : ""}`,
+            }" ON ${this.escapePath(view)} (${columns}) ${
+                index.where ? "WHERE " + index.where : ""
+            }`,
         )
     }
 
