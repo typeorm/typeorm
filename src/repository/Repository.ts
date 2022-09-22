@@ -627,9 +627,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Extends repository with provided functions.
      */
     extend<CustomRepository>(
-        custom: CustomRepository &
-            ThisType<Repository<Entity> & CustomRepository>,
-    ): Repository<Entity> & CustomRepository {
+        custom: CustomRepository & ThisType<this & CustomRepository>,
+    ): this & CustomRepository {
         // return {
         //     ...this,
         //     ...custom
