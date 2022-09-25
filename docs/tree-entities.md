@@ -164,6 +164,7 @@ To bind tree entities to each other, it is required to set the parent in the chi
 for example:
 
 ```typescript
+// CREATE
 const a1 = new Category()
 a1.name = "a1"
 await dataSource.manager.save(a1)
@@ -187,9 +188,16 @@ const a112 = new Category()
 a112.name = "a112"
 a112.parent = a11
 await dataSource.manager.save(a112)
+
+// UPDATE
+const updateA1 = await dataSource.manager.findOneBy({ id })
+updateA1.name = "updateA1"
+updateA1.parent = a1
+updateA1.children = [a11, a12]
+await dataSource.manager.save(updateA1)
 ```
 
-To load such a tree use `TreeRepository`:
+To load such a tree use `TreeRepository` example `TreeRepository<Entity>`:
 
 ```typescript
 const trees = await dataSource.manager.getTreeRepository(Category).findTrees()
