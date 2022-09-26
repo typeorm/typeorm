@@ -271,16 +271,18 @@ describe("find options > where", () => {
                 const posts = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
-                        where: [{
-                            author: {
-                                id: 1,
-                            }
-                        },
-                        {
-                            tags: {
-                                name: "category #1",
+                        where: [
+                            {
+                                author: {
+                                    id: 1,
+                                },
                             },
-                        }],
+                            {
+                                tags: {
+                                    name: "category #1",
+                                },
+                            },
+                        ],
                     })
                     .getMany()
                 posts.should.be.eql([
