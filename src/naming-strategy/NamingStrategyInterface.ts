@@ -1,5 +1,5 @@
 import { Table } from "../schema-builder/table/Table"
-import { View } from "../schema-builder/view/View";
+import { View } from "../schema-builder/view/View"
 
 /**
  * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be

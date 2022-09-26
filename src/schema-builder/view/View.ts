@@ -1,4 +1,10 @@
-import { DataSource, Driver, EntityMetadata, SelectQueryBuilder, TableIndex } from "../.."
+import {
+    DataSource,
+    Driver,
+    EntityMetadata,
+    SelectQueryBuilder,
+    TableIndex,
+} from "../.."
 import { ViewOptions } from "../options/ViewOptions"
 
 /**

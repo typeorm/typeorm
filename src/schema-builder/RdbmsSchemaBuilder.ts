@@ -86,7 +86,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 this.getTablePath(metadata),
             )
             const viewPaths = this.viewEntityToSyncMetadatas.map((metadata) =>
-                this.getTablePath(metadata)
+                this.getTablePath(metadata),
             )
 
             await this.queryRunner.getTables(tablePaths)
@@ -143,7 +143,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 this.getTablePath(metadata),
             )
             const viewPaths = this.viewEntityToSyncMetadatas.map((metadata) =>
-                this.getTablePath(metadata)
+                this.getTablePath(metadata),
             )
             await this.queryRunner.getTables(tablePaths)
             await this.queryRunner.getViews(viewPaths)
@@ -428,40 +428,46 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await Promise.all(dropQueries)
         }
         if (this.connection.options.type === "postgres") {
-            const postgresQueryRunner: PostgresQueryRunner = <PostgresQueryRunner> this.queryRunner;
+            const postgresQueryRunner: PostgresQueryRunner = <
+                PostgresQueryRunner
+            >this.queryRunner
             for (const metadata of this.viewEntityToSyncMetadatas) {
                 const view = this.queryRunner.loadedViews.find(
                     (view) =>
                         this.getTablePath(view) === this.getTablePath(metadata),
                 )
                 if (!view) continue
-    
+
                 const dropQueries = view.indices
                     .filter((tableIndex) => {
                         const indexMetadata = metadata.indices.find(
                             (index) => index.name === tableIndex.name,
                         )
                         if (indexMetadata) {
-                            if (indexMetadata.synchronize === false) return false
-    
+                            if (indexMetadata.synchronize === false)
+                                return false
+
                             if (indexMetadata.isUnique !== tableIndex.isUnique)
                                 return true
-    
-                            if (indexMetadata.isSpatial !== tableIndex.isSpatial)
-                                return true
-    
+
                             if (
-                                this.connection.driver.isFullTextColumnTypeSupported() &&
-                                indexMetadata.isFulltext !== tableIndex.isFulltext
+                                indexMetadata.isSpatial !== tableIndex.isSpatial
                             )
                                 return true
-    
+
+                            if (
+                                this.connection.driver.isFullTextColumnTypeSupported() &&
+                                indexMetadata.isFulltext !==
+                                    tableIndex.isFulltext
+                            )
+                                return true
+
                             if (
                                 indexMetadata.columns.length !==
                                 tableIndex.columnNames.length
                             )
                                 return true
-    
+
                             return !indexMetadata.columns.every(
                                 (column) =>
                                     tableIndex.columnNames.indexOf(
@@ -469,20 +475,22 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                     ) !== -1,
                             )
                         }
-    
+
                         return true
                     })
                     .map(async (tableIndex) => {
                         this.connection.logger.logSchemaBuild(
                             `dropping an index: "${tableIndex.name}" from view ${view.name}`,
                         )
-                        await postgresQueryRunner.dropViewIndex(view, tableIndex)
+                        await postgresQueryRunner.dropViewIndex(
+                            view,
+                            tableIndex,
+                        )
                     })
-    
+
                 await Promise.all(dropQueries)
             }
         }
-        
     }
 
     protected async dropOldChecks(): Promise<void> {
@@ -970,7 +978,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             await this.queryRunner.createIndices(table, newIndices)
         }
         if (this.connection.options.type === "postgres") {
-            const postgresQueryRunner: PostgresQueryRunner = <PostgresQueryRunner> this.queryRunner;
+            const postgresQueryRunner: PostgresQueryRunner = <
+                PostgresQueryRunner
+            >this.queryRunner
             for (const metadata of this.viewEntityToSyncMetadatas) {
                 // check if view does not exist yet
                 const view = this.queryRunner.loadedViews.find((view) => {
@@ -983,12 +993,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                             ? metadata.expression.trim()
                             : metadata.expression!(this.connection).getQuery()
                     return (
-                        this.getTablePath(view) === this.getTablePath(metadata) &&
+                        this.getTablePath(view) ===
+                            this.getTablePath(metadata) &&
                         viewExpression === metadataExpression
                     )
                 })
                 if (!view || !view.materialized) continue
-    
+
                 const newIndices = metadata.indices
                     .filter(
                         (indexMetadata) =>
@@ -998,9 +1009,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                             ) && indexMetadata.synchronize === true,
                     )
                     .map((indexMetadata) => TableIndex.create(indexMetadata))
-    
+
                 if (newIndices.length === 0) continue
-    
+
                 this.connection.logger.logSchemaBuild(
                     `adding new indices ${newIndices
                         .map((index) => `"${index.name}"`)

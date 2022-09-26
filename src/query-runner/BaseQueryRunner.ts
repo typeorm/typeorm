@@ -655,7 +655,10 @@ export abstract class BaseQueryRunner {
     /**
      * Generated an index name for a table and index
      */
-    protected generateIndexName(table: Table | View, index: TableIndex): string {
+    protected generateIndexName(
+        table: Table | View,
+        index: TableIndex,
+    ): string {
         // new index may be passed without name. In this case we generate index name manually.
         return this.connection.namingStrategy.indexName(
             table,

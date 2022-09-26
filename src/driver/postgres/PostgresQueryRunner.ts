@@ -2916,7 +2916,7 @@ export class PostgresQueryRunner
      * Create a new view index.
      */
     async createViewIndex(
-        viewOrName: View | string, 
+        viewOrName: View | string,
         index: TableIndex,
     ): Promise<void> {
         const view = InstanceChecker.isView(viewOrName)
@@ -2986,12 +2986,12 @@ export class PostgresQueryRunner
      * Drops an index from a view.
      */
     async dropViewIndex(
-        viewOrName: View | string, 
-        indexOrName: TableIndex | string
+        viewOrName: View | string,
+        indexOrName: TableIndex | string,
     ): Promise<void> {
         const view = InstanceChecker.isView(viewOrName)
             ? viewOrName
-            : await this.getCachedView(viewOrName);
+            : await this.getCachedView(viewOrName)
         const index = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName
             : view.indices.find((i) => i.name === indexOrName)
@@ -3135,23 +3135,24 @@ export class PostgresQueryRunner
                           return `("t"."schema" = '${schema}' AND "t"."name" = '${tableName}')`
                       })
                       .join(" OR ")
-        
-        const constraintsCondition = 
+
+        const constraintsCondition =
             viewNames.length === 0
                 ? "1=1"
                 : viewNames
-                    .map((tableName) => this.driver.parseTableName(tableName))
-                    .map(({ schema, tableName }) => {
-                        if (!schema) {
-                            schema =
-                                this.driver.options.schema || currentSchema
-                        }
+                      .map((tableName) => this.driver.parseTableName(tableName))
+                      .map(({ schema, tableName }) => {
+                          if (!schema) {
+                              schema =
+                                  this.driver.options.schema || currentSchema
+                          }
 
-                        return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${tableName}')`;
-                    })
-                    .join(" OR ")
+                          return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${tableName}')`
+                      })
+                      .join(" OR ")
 
-        const indicesSql = `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+        const indicesSql =
+            `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name" ` +
             `FROM "pg_class" "t" ` +
@@ -3161,7 +3162,7 @@ export class PostgresQueryRunner
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
-            `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`; 
+            `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
         const query =
             `SELECT "t".* FROM ${this.escapePath(
@@ -3174,7 +3175,7 @@ export class PostgresQueryRunner
             }') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
 
         const dbViews = await this.query(query)
-        const dbIndices: ObjectLiteral[] = await this.query(indicesSql);
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         return dbViews.map((dbView: any) => {
             // find index constraints of table, group them by constraint name and build TableIndex.
             const tableIndexConstraints = OrmUtils.uniq(
@@ -3201,8 +3202,7 @@ export class PostgresQueryRunner
             view.indices = tableIndexConstraints.map((constraint) => {
                 const indices = dbIndices.filter((index) => {
                     return (
-                        index["table_schema"] ===
-                            constraint["table_schema"] &&
+                        index["table_schema"] === constraint["table_schema"] &&
                         index["table_name"] === constraint["table_name"] &&
                         index["constraint_name"] ===
                             constraint["constraint_name"]
