@@ -52,9 +52,10 @@ describe("github issues > #8459 Can not create indexes of materialized views", (
     it("should create a view unique index", () => Promise.all(dataSources.map(async dataSource => {
         const postgresQueryRunner: PostgresQueryRunner = <PostgresQueryRunner> dataSource.createQueryRunner();
         let views = await postgresQueryRunner.getViews([])
+        postgresQueryRunner.dropViewIndex(views[0], tableIndex)
         postgresQueryRunner.createViewIndex(views[0], uniqueTableIndex)
         views = await postgresQueryRunner.getViews([])
-        assert.deepEqual(views[0].indices[1], uniqueTableIndex)
+        assert.deepEqual(views[0].indices[0], uniqueTableIndex)
     })));
 
 });
