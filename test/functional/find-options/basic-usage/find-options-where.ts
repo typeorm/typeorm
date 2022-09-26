@@ -263,6 +263,55 @@ describe("find options > where", () => {
             }),
         ))
 
+    it("where or + optional relations", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection.manager)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: [{
+                            author: {
+                                id: 1,
+                            }
+                        },
+                        {
+                            tags: {
+                                name: "category #1",
+                            },
+                        }],
+                    })
+                    .getMany()
+                posts.should.be.eql([
+                    {
+                        id: 1,
+                        title: "Post #1",
+                        text: "About post #1",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 2,
+                        title: "Post #2",
+                        text: "About post #2",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 3,
+                        title: "Post #3",
+                        text: "About post #3",
+                        counters: { likes: 2 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
+                ])
+            }),
+        ))
+
     it("where column in embed", () =>
         Promise.all(
             connections.map(async (connection) => {
