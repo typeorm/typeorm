@@ -28,6 +28,7 @@ describe("github issues > #8459 Can not create indexes of materialized views", (
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: ["postgres"]
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
