@@ -722,6 +722,7 @@ export class EntityManager {
                 {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
+                    indexPredicate: options.indexPredicate,
                 },
             )
             .execute()

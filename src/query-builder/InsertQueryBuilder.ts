@@ -356,7 +356,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
         overwrite: string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
-        indexPredicate?: string,
     ): this
 
     /**
@@ -372,7 +371,6 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             | string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
-        indexPredicate?: string,
     ): this {
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
@@ -390,7 +388,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
-            indexPredicate: indexPredicate,
+            indexPredicate: orUpdateOptions?.indexPredicate,
         }
         return this
     }
@@ -494,6 +492,14 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
                     conflictTarget += ` ( ${conflict
                         .map((column) => this.escape(column))
                         .join(", ")} )`
+                    if (
+                        indexPredicate &&
+                        !DriverUtils.isPostgresFamily(this.connection.driver)
+                    ) {
+                        throw new TypeORMError(
+                            `indexPredicate option is not supported by the current database driver`,
+                        )
+                    }
                     if (
                         indexPredicate &&
                         DriverUtils.isPostgresFamily(this.connection.driver)

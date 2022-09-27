@@ -1,11 +1,10 @@
 /**
  * Special options passed to Repository#upsert
  */
+
+import { InsertOrUpdateOptions } from "../query-builder/InsertOrUpdateOptions"
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface UpsertOptions<Entity> {
+export interface UpsertOptions<Entity> extends InsertOrUpdateOptions {
     conflictPaths: string[]
-    /**
-     * If true, postgres will skip the update if no values would be changed (reduces writes)
-     */
-    skipUpdateIfNoValuesChanged?: boolean
 }

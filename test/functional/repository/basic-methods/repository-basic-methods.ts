@@ -848,6 +848,28 @@ describe("repository > basic methods", () => {
                         .should.be.rejectedWith(TypeORMError)
                 }),
             ))
+        it("should throw if using indexPredicate with an unsupported driver", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (
+                        connection.driver.supportedUpsertType !==
+                        "on-conflict-do-update"
+                    )
+                        return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId = "external-2"
+                    await postRepository
+                        .upsert(
+                            { externalId, title: "Post title initial" },
+                            {
+                                conflictPaths: ["externalId"],
+                                indexPredicate: "dateAdded > 2020-01-01",
+                            },
+                        )
+                        .should.be.rejectedWith(TypeORMError)
+                }),
+            ))
     })
 
     describe("preload also should also implement merge functionality", function () {
