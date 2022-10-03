@@ -2731,9 +2731,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                               unique.columnNames,
                           )
                     const columnNames = unique.columnNames
-                        .map((columnName) => `"${columnName}"`)
+                        .map((columnName) => `${columnName}`)
                         .join(", ")
-                    return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`
+                    return `CONSTRAINT ${uniqueName} UNIQUE (${columnNames})`
                 })
                 .join(", ")
 
@@ -2749,7 +2749,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                               table,
                               check.expression!,
                           )
-                    return `CONSTRAINT "${checkName}" CHECK (${check.expression})`
+                    return `CONSTRAINT ${checkName} CHECK (${check.expression})`
                 })
                 .join(", ")
 
@@ -2760,7 +2760,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const foreignKeysSql = table.foreignKeys
                 .map((fk) => {
                     const columnNames = fk.columnNames
-                        .map((columnName) => `"${columnName}"`)
+                        .map((columnName) => `${columnName}`)
                         .join(", ")
                     if (!fk.name)
                         fk.name = this.connection.namingStrategy.foreignKeyName(
@@ -2770,7 +2770,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             fk.referencedColumnNames,
                         )
                     const referencedColumnNames = fk.referencedColumnNames
-                        .map((columnName) => `"${columnName}"`)
+                        .map((columnName) => `${columnName}`)
                         .join(", ")
                     let constraint = `CONSTRAINT "${
                         fk.name
@@ -2802,7 +2802,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
-            sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`
+            sql += `, CONSTRAINT ${primaryKeyName} PRIMARY KEY (${columnNames})`
         }
 
         sql += `)`
@@ -2880,12 +2880,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => `${columnName}`)
             .join(", ")
         return new Query(
-            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX ${
                 index.name
-            }" ON ${this.escapePath(table)} (${columns})`,
+            } ON ${this.escapePath(table)} (${columns})`,
         )
     }
 
@@ -2896,7 +2896,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         let indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
-        return new Query(`DROP INDEX "${indexName}"`)
+        return new Query(`DROP INDEX ${indexName}`)
     }
 
     /**
@@ -2912,13 +2912,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : this.connection.namingStrategy.primaryKeyName(table, columnNames)
 
         const columnNamesString = columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => `${columnName}`)
             .join(", ")
 
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} ADD CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNamesString})`,
+            )} ADD CONSTRAINT ${primaryKeyName} PRIMARY KEY (${columnNamesString})`,
         )
     }
 
@@ -2938,7 +2938,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${primaryKeyName}"`,
+            )} DROP CONSTRAINT ${primaryKeyName}`,
         )
     }
 
@@ -2950,12 +2950,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         uniqueConstraint: TableUnique,
     ): Query {
         const columnNames = uniqueConstraint.columnNames
-            .map((column) => `"` + column + `"`)
+            .map((column) =>  column  )
             .join(", ")
         return new Query(
-            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
+            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT ${
                 uniqueConstraint.name
-            }" UNIQUE (${columnNames})`,
+            } UNIQUE (${columnNames})`,
         )
     }
 
@@ -2972,7 +2972,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${uniqueName}"`,
+            )} DROP CONSTRAINT ${uniqueName}`,
         )
     }
 
@@ -2984,9 +2984,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         checkConstraint: TableCheck,
     ): Query {
         return new Query(
-            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
+            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT ${
                 checkConstraint.name
-            }" CHECK (${checkConstraint.expression})`,
+            } CHECK (${checkConstraint.expression})`,
         )
     }
 
@@ -3003,7 +3003,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${checkName}"`,
+            )} DROP CONSTRAINT ${checkName}`,
         )
     }
 
@@ -3049,7 +3049,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
-            )} DROP CONSTRAINT "${foreignKeyName}"`,
+            )} DROP CONSTRAINT ${foreignKeyName}`,
         )
     }
 
@@ -3058,7 +3058,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected buildCreateColumnSql(column: TableColumn) {
         let c =
-            `"${column.name}" ` + this.connection.driver.createFullType(column)
+            `${column.name} ` + this.connection.driver.createFullType(column)
         if (column.charset) c += " CHARACTER SET " + column.charset
         if (column.collation) c += " COLLATE " + column.collation
 
@@ -3087,7 +3087,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const { schema, tableName } = this.driver.parseTableName(target)
 
         if (schema && schema !== this.driver.schema) {
-            return `"${schema}"."${tableName}"`
+            return `${schema}.${tableName}`
         }
 
         return `"${tableName}"`
