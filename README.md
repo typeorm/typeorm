@@ -1,4 +1,3 @@
-<div align="center">
   <a href="http://typeorm.io/">
     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
   </a>
@@ -1289,7 +1288,7 @@ There are a few repositories which you can clone and start with:
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
--   [TypeORM + GraphQL framework](http://vesper-framework.com)
+-   [TypeORM + GraphQL framework](https://github.com/vesper-framework/vesper)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 -   Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
