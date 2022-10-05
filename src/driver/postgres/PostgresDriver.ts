@@ -1449,6 +1449,7 @@ export class PostgresDriver implements Driver {
         options: PostgresConnectionOptions,
         credentials: PostgresConnectionCredentialsOptions,
     ): Promise<any> {
+        const { logger } = this.connection
         credentials = Object.assign({}, credentials)
 
         // build connection options for the driver
@@ -1470,9 +1471,16 @@ export class PostgresDriver implements Driver {
             options.extra || {},
         )
 
+        if (options.parseInt8 !== undefined) {
+            if (this.postgres.defaults && Object.getOwnPropertyDescriptor(this.postgres.defaults, 'parseInt8')?.set) {
+                this.postgres.defaults.parseInt8 = options.parseInt8
+            } else {
+                logger.log("warn", "Attempted to set parseInt8 option, but the postgres driver does not support setting defaults.parseInt8. This option will be ignored.");
+            }
+        }
+
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
-        const { logger } = this.connection
 
         const poolErrorHandler =
             options.poolErrorHandler ||
