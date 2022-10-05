@@ -35,14 +35,16 @@ describe('github issues > #9341 "bigNumberStrings:false" is not working for post
             })
 
             // count also returns bigint (as string by default)
-            const [{ count }]  = await connection.query(`select count(*) from (VALUES (1), (2), (3)) as tmp`);
+            const [{ count }] = await connection.query(
+                `select count(*) from (VALUES (1), (2), (3)) as tmp`,
+            )
 
             // big int should be number
             expect(typeof result?.big_int).to.eq("number")
             expect(result?.big_int).to.eq(Number.MAX_SAFE_INTEGER)
             // big decimal should remain string, only int8 is parsed
             expect(typeof result?.big_decimal).to.eq("string")
-            expect(result?.big_decimal).to.eq('1.23456789')
+            expect(result?.big_decimal).to.eq("1.23456789")
             // count should be number (it is int8)
             expect(typeof count).to.eq("number")
             expect(count).to.eq(3)

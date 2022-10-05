@@ -1472,10 +1472,19 @@ export class PostgresDriver implements Driver {
         )
 
         if (options.parseInt8 !== undefined) {
-            if (this.postgres.defaults && Object.getOwnPropertyDescriptor(this.postgres.defaults, 'parseInt8')?.set) {
+            if (
+                this.postgres.defaults &&
+                Object.getOwnPropertyDescriptor(
+                    this.postgres.defaults,
+                    "parseInt8",
+                )?.set
+            ) {
                 this.postgres.defaults.parseInt8 = options.parseInt8
             } else {
-                logger.log("warn", "Attempted to set parseInt8 option, but the postgres driver does not support setting defaults.parseInt8. This option will be ignored.");
+                logger.log(
+                    "warn",
+                    "Attempted to set parseInt8 option, but the postgres driver does not support setting defaults.parseInt8. This option will be ignored.",
+                )
             }
         }
 
