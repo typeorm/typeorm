@@ -1,0 +1,100 @@
+name: 🌈 Feature request
+description: Suggest an amazing new idea for this project
+title: "[FEATURE]:"
+labels:
+  - new feature
+  - requires triage
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Have a question?  This is the TypeORM issue tracker - and not the right
+        place for general support or questions. Instead, check the [“Support"
+        Documentation](https://github.com/typeorm/typeorm/blob/master/docs/support.md)
+        on the best places to ask questions!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Feature Description
+      description: >-
+        A clear and concise description of what the problem is, and why it needs
+        to be implemented as a new feature for TypeORM.
+      placeholder: For example, "I'm always frustrated when ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: The Solution
+      description: A clear and concise description of what you want to happen.
+      placeholder: >-
+        How can the requested feature be used to approach the problem it's
+        supposed to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: alt
+    attributes:
+      label: Considered Alternatives
+      description: >-
+        A clear and concise description of any alternative solutions or features
+        you've considered.
+      placeholder: If any workaround exists to the best of your knowledge, include it here.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the feature request here
+  - type: textarea
+    id: drivers
+    attributes:
+      label: Relevant Database Driver(s)
+      description: Put "yes" instead of "no" to your issue's relevant databases
+      value: |
+        | DB Type           | Reproducible  |
+        |-------------------| ---           |
+        | `aurora-mysql`    | no            |
+        | `aurora-postgres` | no            |
+        | `better-sqlite3`  | no            |
+        | `cockroachdb`     | no            |
+        | `cordova`         | no            |
+        | `expo`            | no            |
+        | `mongodb`         | no            |
+        | `mysql`           | no            |
+        | `nativescript`    | no            |
+        | `oracle`          | no            |
+        | `postgres`        | no            |
+        | `react-native`    | no            |
+        | `sap`             | no            |
+        | `spanner`         | no            |
+        | `sqlite`          | no            |
+        | `sqlite-abstract` | no            |
+        | `sqljs`           | no            |
+        | `sqlserver`       | no            |
+    validations:
+      required: true
+  - type: dropdown
+    id: pr
+    attributes:
+      label: Are you willing to resolve this issue by submitting a Pull Request?
+      options:
+        - Yes, I have the time, and I know how to start.
+        - >-
+          Yes, I have the time, but I don't know how to start. I would need
+          guidance.
+        - >-
+          No, I don’t have the time, but I can support (using donations)
+          development.
+        - >-
+          No, I don’t have the time and I’m okay to wait for the community /
+          maintainers to resolve this issue.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |-
+        Remember that first-time contributors are welcome! 🙌
+
+        👋 Have a great day and thank you for the feature request!
