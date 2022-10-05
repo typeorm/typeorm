@@ -1,53 +1,61 @@
-import { Connection } from "../../../src";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {expect} from "chai";
-import { MockSubscriber } from "./subscribers/MockSubscriber";
-import "reflect-metadata";
-import { User } from "./entity/User";
-import { Setting } from "./entity/Setting";
+import { Connection } from "../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
+import { expect } from "chai"
+import { MockSubscriber } from "./subscribers/MockSubscriber"
+import "reflect-metadata"
+import { User } from "./entity/User"
+import { Setting } from "./entity/Setting"
 
 describe("custom > bugfix-missing-entity-data-in-before-remove", () => {
-	let connections: Connection[];
+    let connections: Connection[]
 
-	before(async () => connections = await createTestingConnections({
-		entities: [User,Setting],
-		subscribers: [MockSubscriber],
-		schemaCreate: true,
-		dropSchema: true
-	}));
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [User, Setting],
+                subscribers: [MockSubscriber],
+                schemaCreate: true,
+                dropSchema: true,
+            })),
+    )
 
-	after(() => closeTestingConnections(connections));
+    after(() => closeTestingConnections(connections))
 
-	function insertTestData(connection: Connection) {
-		const userRepo = connection.getRepository(User);
-		// const settingRepo = connection.getRepository(Setting);
+    function insertTestData(connection: Connection) {
+        const userRepo = connection.getRepository(User)
+        // const settingRepo = connection.getRepository(Setting);
 
-		const user = new User(1, "FooGuy");
-		const settingA = new Setting(1, "A", "foo");
-		const settingB = new Setting(1, "B", "");
-		user.settings = [settingA,settingB];
+        const user = new User(1, "FooGuy")
+        const settingA = new Setting(1, "A", "foo")
+        const settingB = new Setting(1, "B", "")
+        user.settings = [settingA, settingB]
 
-		return userRepo.save(user);
-	}
+        return userRepo.save(user)
+    }
 
-	it("entity data (partial) should be available when related items are being deleted", () => Promise.all(connections.map(async connection => {
+    it("entity data (partial) should be available when related items are being deleted", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await insertTestData(connection)
+                const userRepo = connection.getRepository(User)
+                const subscriber = connection.subscribers[0] as MockSubscriber
+                subscriber.clear()
 
-		await insertTestData(connection);
-		const userRepo = connection.getRepository(User);
-		const subscriber = connection.subscribers[0] as MockSubscriber;
-		subscriber.clear();
+                // resave with empty settings list, relation is configurated to delete them in this case
+                await userRepo.save([
+                    {
+                        id: 1,
+                        settings: [],
+                    },
+                ])
 
-		// resave with empty settings list, relation is configurated to delete them in this case
-		await userRepo.save([{
-			id:1,
-			settings:[]
-		}]);
-
-		expect(subscriber.calledData).to.be.eql([
-			{ assetId: 1, name: "A" },
-			{ assetId: 1, name: "B" }
-		]);
-
-	})));
-
-});
+                expect(subscriber.calledData).to.be.eql([
+                    { assetId: 1, name: "A" },
+                    { assetId: 1, name: "B" },
+                ])
+            }),
+        ))
+})
