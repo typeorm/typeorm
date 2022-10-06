@@ -31,7 +31,7 @@ export class DynamoUpdateExpressionOptions {
         const values: any = {}
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i]
-            const attributeName = key.replace("#", "_")
+            const attributeName = key.replace(/#/g, '_');
             values[`:${attributeName}`] = optionValues[key]
         }
         return values
@@ -53,7 +53,7 @@ export class DynamoUpdateExpressionOptions {
         if (values) {
             const commonSeparatedValues = Object.keys(values)
                 .map((key) => {
-                    const attributeName = key.replace("#", "_")
+                    const attributeName = key.replace(/#/g, '_');
                     switch (type) {
                         case UpdateExpressionType.ADD:
                             return `#${attributeName} :${attributeName}`
