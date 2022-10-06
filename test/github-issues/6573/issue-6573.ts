@@ -1,4 +1,3 @@
-import { Connection } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,9 +7,10 @@ import { MockSubscriber } from "./subscribers/MockSubscriber"
 import "reflect-metadata"
 import { User } from "./entity/User"
 import { Setting } from "./entity/Setting"
+import { DataSource } from "../../../src/data-source/DataSource"
 
-describe("custom > bugfix-missing-entity-data-in-before-remove", () => {
-    let connections: Connection[]
+describe("github issues > #6573 bugfix-missing-entity-data-in-before-remove", () => {
+    let connections: DataSource[]
 
     before(
         async () =>
@@ -24,7 +24,7 @@ describe("custom > bugfix-missing-entity-data-in-before-remove", () => {
 
     after(() => closeTestingConnections(connections))
 
-    function insertTestData(connection: Connection) {
+    function insertTestData(connection: DataSource) {
         const userRepo = connection.getRepository(User)
         // const settingRepo = connection.getRepository(Setting);
 
