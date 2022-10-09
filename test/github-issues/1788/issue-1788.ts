@@ -41,7 +41,7 @@ describe("github issues > #1788 One to One does not load relationships.", () => 
                 await providerRepository.save(provider)
 
                 const dbProvider = await providerRepository.find({
-                    relations: ["personalization"],
+                    relations: { personalization: true },
                 })
 
                 expect(dbProvider[0].personalization).to.not.eql(undefined)
