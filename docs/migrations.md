@@ -1,11 +1,15 @@
 # Migrations
 
--   [How migrations work](#how-migrations-work)
--   [Creating a new migration](#creating-a-new-migration)
--   [Running and reverting migrations](#running-and-reverting-migrations)
--   [Generating migrations](#generating-migrations)
--   [Connection option](#connection-option)
--   [Using migration API to write migrations](#using-migration-api-to-write-migrations)
+- [Migrations](#migrations)
+  - [How migrations work](#how-migrations-work)
+  - [Creating a new migration](#creating-a-new-migration)
+  - [Running and reverting migrations](#running-and-reverting-migrations)
+    - [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
+    - [Transaction modes](#transaction-modes)
+  - [Generating migrations](#generating-migrations)
+  - [DataSoure option](#datasoure-option)
+  - [Timestamp option](#timestamp-option)
+  - [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations work
 
@@ -182,6 +186,34 @@ This is also possible with rollbacks.
 
 ```
 typeorm migration:revert --fake
+```
+
+### Transaction modes
+
+By default, TypeORM will run all your migrations within a single wrapping transaction.
+This corresponds to the `--transaction all` flag.
+If you require more fine grained transaction control, you can use the `--transaction each` flag to wrap every migration individually, or the `--transaction none` flag to opt out of wrapping the migrations in transactions altogether.
+
+In addition to these flags, you can also override the transaction behavior on a per-migration basis by setting the `transaction` property on the `MigrationInterface` to `true` or `false`. This only works in the `each` or `none` transaction mode.
+
+```typescript
+import { MigrationInterface, QueryRunner } from "typeorm"
+
+export class AddIndexTIMESTAMP implements MigrationInterface {
+    transaction = false
+
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `CREATE INDEX CONCURRENTLY post_names_idx ON post(name)`
+        )
+    }
+
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `DROP INDEX CONCURRENTLY post_names_idx`,
+        )
+    }
+}
 ```
 
 ## Generating migrations

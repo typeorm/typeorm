@@ -5,7 +5,7 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
-import { TypeORMError } from "../error"
+import { ForbiddenTransactionModeOverrideError, TypeORMError } from "../error"
 import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
@@ -257,6 +257,55 @@ export class MigrationExecutor {
             `${pendingMigrations.length} migrations are new migrations must be executed.`,
         )
 
+        if (this.transaction === "all") {
+            // If we desire to run all migrations in a single transaction
+            // but there is a migration that explicitly overrides the transaction mode
+            // then we have to fail since we cannot properly resolve that intent
+            // In theory we could support overrides that are set to `true`,
+            // however to keep the interface more rigid, we fail those too
+            const migrationsOverridingTransactionMode =
+                pendingMigrations.filter(
+                    (migration) =>
+                        !(migration.instance?.transaction === undefined),
+                )
+
+            if (migrationsOverridingTransactionMode.length > 0) {
+                const error = new ForbiddenTransactionModeOverrideError(
+                    migrationsOverridingTransactionMode,
+                )
+                this.connection.logger.logMigration(
+                    `Migrations failed, error: ${error.message}`,
+                )
+                throw error
+            }
+        }
+
+        // Set the per-migration defaults for the transaction mode
+        // so that we have one centralized place that controls this behavior
+
+        // When transaction mode is `each` the default is to run in a transaction
+        // When transaction mode is `none` the default is to not run in a transaction
+        // When transaction mode is `all` the default is to not run in a transaction
+        // since all the migrations are already running in one single transaction
+
+        const txModeDefault = {
+            each: true,
+            none: false,
+            all: false,
+        }[this.transaction]
+
+        for (const migration of pendingMigrations) {
+            if (migration.instance) {
+                const instanceTx = migration.instance.transaction
+
+                if (instanceTx === undefined) {
+                    migration.transaction = txModeDefault
+                } else {
+                    migration.transaction = instanceTx
+                }
+            }
+        }
+
         // start transaction if its not started yet
         let transactionStartedByUs = false
         if (this.transaction === "all" && !queryRunner.isTransactionActive) {
@@ -275,10 +324,7 @@ export class MigrationExecutor {
                     continue
                 }
 
-                if (
-                    this.transaction === "each" &&
-                    !queryRunner.isTransactionActive
-                ) {
+                if (migration.transaction && !queryRunner.isTransactionActive) {
                     await queryRunner.startTransaction()
                     transactionStartedByUs = true
                 }
@@ -299,10 +345,7 @@ export class MigrationExecutor {
                             migration,
                         )
                         // commit transaction if we started it
-                        if (
-                            this.transaction === "each" &&
-                            transactionStartedByUs
-                        )
+                        if (migration.transaction && transactionStartedByUs)
                             await queryRunner.commitTransaction()
                     })
                     .then(() => {
