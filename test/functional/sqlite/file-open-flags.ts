@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-const sqlite3 = require ("sqlite3");
+const sqlite3 = require("sqlite3")
 
 describe("sqlite driver > file open flags", () => {
     let connections: DataSource[]
@@ -17,7 +17,11 @@ describe("sqlite driver > file open flags", () => {
                 entities: [],
                 enabledDrivers: ["sqlite"],
                 driverSpecific: {
-                    flags: sqlite3.OPEN_URI | sqlite3.OPEN_SHAREDCACHE | sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
+                    flags:
+                        sqlite3.OPEN_URI |
+                        sqlite3.OPEN_SHAREDCACHE |
+                        sqlite3.OPEN_READWRITE |
+                        sqlite3.OPEN_CREATE,
                 },
             })),
     )
