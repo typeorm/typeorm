@@ -278,7 +278,7 @@ describe("custom cache provider", () => {
             }),
         ))
 
-    it.only("should cache results with pagination enabled properly and custom id and loaded relations", () =>
+    it("should cache results with pagination enabled properly and custom id and loaded relations", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
