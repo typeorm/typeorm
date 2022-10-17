@@ -44,13 +44,13 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean
-    
+
     /**
      * Specifies the open file flags. By default its undefined.
      * @see https://www.sqlite.org/c3ref/c_open_autoproxy.html
      * @see https://github.com/TryGhost/node-sqlite3/blob/master/test/open_close.test.js
      */
-    readonly flags?: number;
+    readonly flags?: number
 
     readonly poolSize?: never
 }

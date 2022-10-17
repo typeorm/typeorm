@@ -130,8 +130,11 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with the database.
      */
-  protected async createDatabaseConnection() {
-        if (this.options.flags === undefined || !(this.options.flags & this.sqlite.OPEN_URI)) {
+    protected async createDatabaseConnection() {
+        if (
+            this.options.flags === undefined ||
+            !(this.options.flags & this.sqlite.OPEN_URI)
+        ) {
             await this.createDatabaseDirectory(this.options.database)
         }
 
