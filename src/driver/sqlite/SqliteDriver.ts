@@ -134,13 +134,24 @@ export class SqliteDriver extends AbstractSqliteDriver {
         await this.createDatabaseDirectory(this.options.database)
 
         const databaseConnection: any = await new Promise((ok, fail) => {
-            const connection = new this.sqlite.Database(
-                this.options.database,
-                (err: any) => {
-                    if (err) return fail(err)
-                    ok(connection)
-                },
-            )
+            if (this.options.flags === undefined) {
+                const connection = new this.sqlite.Database(
+                    this.options.database,
+                    (err: any) => {
+                        if (err) return fail(err)
+                        ok(connection)
+                    },
+                )
+            } else {
+                const connection = new this.sqlite.Database(
+                    this.options.database,
+                    this.options.flags,
+                    (err: any) => {
+                        if (err) return fail(err)
+                        ok(connection)
+                    },
+                )
+            }
         })
 
         // Internal function to run a command on the connection and fail if an error occured.
