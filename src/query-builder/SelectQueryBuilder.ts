@@ -3309,9 +3309,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
                 .cache(
-                    this.expressionMap.cache
-                        ? this.expressionMap.cache
-                        : this.expressionMap.cacheId,
+                    this.expressionMap.cache && this.expressionMap.cacheId
+                        ? `${this.expressionMap.cacheId}-pagination`
+                        : this.expressionMap.cache,
                     this.expressionMap.cacheDuration,
                 )
                 .setParameters(this.getParameters())
