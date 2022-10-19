@@ -167,7 +167,9 @@ export class MigrationExecutor {
             )
 
             if (executedMigration) {
-                this.connection.logger.logSchemaBuild(`[X] ${migration.name}`)
+                this.connection.logger.logSchemaBuild(
+                    `[X] ${executedMigration.id} ${migration.name}`,
+                )
             } else {
                 hasUnappliedMigrations = true
                 this.connection.logger.logSchemaBuild(`[ ] ${migration.name}`)
