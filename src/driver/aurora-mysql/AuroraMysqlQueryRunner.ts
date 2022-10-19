@@ -29,8 +29,7 @@ import { InstanceChecker } from "../../util/InstanceChecker"
  */
 export class AuroraMysqlQueryRunner
     extends BaseQueryRunner
-    implements QueryRunner
-{
+    implements QueryRunner {
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -942,7 +941,7 @@ export class AuroraMysqlQueryRunner
                 )
                 clonedTable.columns[
                     clonedTable.columns.indexOf(oldTableColumn!)
-                ].name = newColumn.name
+                    ].name = newColumn.name
                 oldColumn.name = newColumn.name
             }
 
@@ -1526,10 +1525,10 @@ export class AuroraMysqlQueryRunner
         const newOrExistGeneratedColumn = generatedColumn
             ? generatedColumn
             : columns.find(
-                  (column) =>
-                      column.isGenerated &&
-                      column.generationStrategy === "increment",
-              )
+                (column) =>
+                    column.isGenerated &&
+                    column.generationStrategy === "increment",
+            )
         if (newOrExistGeneratedColumn) {
             const nonGeneratedColumn = newOrExistGeneratedColumn.clone()
             nonGeneratedColumn.isGenerated = false
@@ -1915,7 +1914,8 @@ export class AuroraMysqlQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+            }
             throw error
         }
     }
@@ -2090,18 +2090,18 @@ export class AuroraMysqlQueryRunner
                         (dbColumn) =>
                             dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
                             dbColumn["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"],
+                            dbTable["TABLE_SCHEMA"],
                     )
                     .map((dbColumn) => {
                         const columnUniqueIndices = dbIndices.filter(
                             (dbIndex) => {
                                 return (
                                     dbIndex["TABLE_NAME"] ===
-                                        dbTable["TABLE_NAME"] &&
+                                    dbTable["TABLE_NAME"] &&
                                     dbIndex["TABLE_SCHEMA"] ===
-                                        dbTable["TABLE_SCHEMA"] &&
+                                    dbTable["TABLE_SCHEMA"] &&
                                     dbIndex["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"] &&
+                                    dbColumn["COLUMN_NAME"] &&
                                     parseInt(dbIndex["NON_UNIQUE"], 10) === 0
                                 )
                             },
@@ -2121,7 +2121,7 @@ export class AuroraMysqlQueryRunner
                                     (uniqueIndex) => {
                                         return (
                                             index.name ===
-                                                uniqueIndex["INDEX_NAME"] &&
+                                            uniqueIndex["INDEX_NAME"] &&
                                             index.synchronize === false
                                         )
                                     },
@@ -2133,9 +2133,9 @@ export class AuroraMysqlQueryRunner
                                 return dbIndices.some(
                                     (dbIndex) =>
                                         dbIndex["INDEX_NAME"] ===
-                                            uniqueIndex["INDEX_NAME"] &&
+                                        uniqueIndex["INDEX_NAME"] &&
                                         dbIndex["COLUMN_NAME"] !==
-                                            dbColumn["COLUMN_NAME"],
+                                        dbColumn["COLUMN_NAME"],
                                 )
                             },
                         )
@@ -2143,6 +2143,12 @@ export class AuroraMysqlQueryRunner
                         const tableColumn = new TableColumn()
                         tableColumn.name = dbColumn["COLUMN_NAME"]
                         tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
+
+                        // Unsigned columns are handled differently when it comes to width.
+                        // Hence, we need to set the unsigned attribute before we check the width.
+                        tableColumn.unsigned = tableColumn.zerofill
+                            ? true
+                            : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
 
                         if (
                             this.driver.withWidthColumnTypes.indexOf(
@@ -2202,19 +2208,16 @@ export class AuroraMysqlQueryRunner
                             (dbPrimaryKey) => {
                                 return (
                                     dbPrimaryKey["TABLE_NAME"] ===
-                                        dbColumn["TABLE_NAME"] &&
+                                    dbColumn["TABLE_NAME"] &&
                                     dbPrimaryKey["TABLE_SCHEMA"] ===
-                                        dbColumn["TABLE_SCHEMA"] &&
+                                    dbColumn["TABLE_SCHEMA"] &&
                                     dbPrimaryKey["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"]
+                                    dbColumn["COLUMN_NAME"]
                                 )
                             },
                         )
                         tableColumn.zerofill =
                             dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
-                        tableColumn.unsigned = tableColumn.zerofill
-                            ? true
-                            : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
                         tableColumn.isGenerated =
                             dbColumn["EXTRA"].indexOf("auto_increment") !== -1
                         if (tableColumn.isGenerated)
@@ -2329,9 +2332,9 @@ export class AuroraMysqlQueryRunner
                     dbForeignKeys.filter((dbForeignKey) => {
                         return (
                             dbForeignKey["TABLE_NAME"] ===
-                                dbTable["TABLE_NAME"] &&
+                            dbTable["TABLE_NAME"] &&
                             dbForeignKey["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"]
+                            dbTable["TABLE_SCHEMA"]
                         )
                     }),
                     (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
@@ -2389,7 +2392,7 @@ export class AuroraMysqlQueryRunner
                     const indices = dbIndices.filter((index) => {
                         return (
                             index["TABLE_SCHEMA"] ===
-                                constraint["TABLE_SCHEMA"] &&
+                            constraint["TABLE_SCHEMA"] &&
                             index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
                             index["INDEX_NAME"] === constraint["INDEX_NAME"]
                         )
@@ -2796,8 +2799,24 @@ export class AuroraMysqlQueryRunner
             this.connection.driver.dataTypeDefaults[column.type].width
 
         if (defaultWidthForType) {
-            return defaultWidthForType === width
+            // In MariaDB & MySQL 5.7, the default widths of certain numeric types are 1 less than
+            // the usual defaults when the column is unsigned.
+            // This also applies to Aurora MySQL.
+            const typesWithReducedUnsignedDefault = [
+                "int",
+                "tinyint",
+                "smallint",
+                "mediumint",
+            ]
+            const needsAdjustment =
+                typesWithReducedUnsignedDefault.indexOf(column.type) !== -1
+            if (column.unsigned && needsAdjustment) {
+                return defaultWidthForType - 1 === width
+            } else {
+                return defaultWidthForType === width
+            }
         }
+
         return false
     }
 }
