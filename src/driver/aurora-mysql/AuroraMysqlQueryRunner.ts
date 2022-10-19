@@ -29,7 +29,8 @@ import { InstanceChecker } from "../../util/InstanceChecker"
  */
 export class AuroraMysqlQueryRunner
     extends BaseQueryRunner
-    implements QueryRunner {
+    implements QueryRunner
+{
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -941,7 +942,7 @@ export class AuroraMysqlQueryRunner
                 )
                 clonedTable.columns[
                     clonedTable.columns.indexOf(oldTableColumn!)
-                    ].name = newColumn.name
+                ].name = newColumn.name
                 oldColumn.name = newColumn.name
             }
 
@@ -1525,10 +1526,10 @@ export class AuroraMysqlQueryRunner
         const newOrExistGeneratedColumn = generatedColumn
             ? generatedColumn
             : columns.find(
-                (column) =>
-                    column.isGenerated &&
-                    column.generationStrategy === "increment",
-            )
+                  (column) =>
+                      column.isGenerated &&
+                      column.generationStrategy === "increment",
+              )
         if (newOrExistGeneratedColumn) {
             const nonGeneratedColumn = newOrExistGeneratedColumn.clone()
             nonGeneratedColumn.isGenerated = false
@@ -1914,8 +1915,7 @@ export class AuroraMysqlQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {
-            }
+            } catch (rollbackError) {}
             throw error
         }
     }
@@ -2090,18 +2090,18 @@ export class AuroraMysqlQueryRunner
                         (dbColumn) =>
                             dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
                             dbColumn["TABLE_SCHEMA"] ===
-                            dbTable["TABLE_SCHEMA"],
+                                dbTable["TABLE_SCHEMA"],
                     )
                     .map((dbColumn) => {
                         const columnUniqueIndices = dbIndices.filter(
                             (dbIndex) => {
                                 return (
                                     dbIndex["TABLE_NAME"] ===
-                                    dbTable["TABLE_NAME"] &&
+                                        dbTable["TABLE_NAME"] &&
                                     dbIndex["TABLE_SCHEMA"] ===
-                                    dbTable["TABLE_SCHEMA"] &&
+                                        dbTable["TABLE_SCHEMA"] &&
                                     dbIndex["COLUMN_NAME"] ===
-                                    dbColumn["COLUMN_NAME"] &&
+                                        dbColumn["COLUMN_NAME"] &&
                                     parseInt(dbIndex["NON_UNIQUE"], 10) === 0
                                 )
                             },
@@ -2121,7 +2121,7 @@ export class AuroraMysqlQueryRunner
                                     (uniqueIndex) => {
                                         return (
                                             index.name ===
-                                            uniqueIndex["INDEX_NAME"] &&
+                                                uniqueIndex["INDEX_NAME"] &&
                                             index.synchronize === false
                                         )
                                     },
@@ -2133,9 +2133,9 @@ export class AuroraMysqlQueryRunner
                                 return dbIndices.some(
                                     (dbIndex) =>
                                         dbIndex["INDEX_NAME"] ===
-                                        uniqueIndex["INDEX_NAME"] &&
+                                            uniqueIndex["INDEX_NAME"] &&
                                         dbIndex["COLUMN_NAME"] !==
-                                        dbColumn["COLUMN_NAME"],
+                                            dbColumn["COLUMN_NAME"],
                                 )
                             },
                         )
@@ -2208,11 +2208,11 @@ export class AuroraMysqlQueryRunner
                             (dbPrimaryKey) => {
                                 return (
                                     dbPrimaryKey["TABLE_NAME"] ===
-                                    dbColumn["TABLE_NAME"] &&
+                                        dbColumn["TABLE_NAME"] &&
                                     dbPrimaryKey["TABLE_SCHEMA"] ===
-                                    dbColumn["TABLE_SCHEMA"] &&
+                                        dbColumn["TABLE_SCHEMA"] &&
                                     dbPrimaryKey["COLUMN_NAME"] ===
-                                    dbColumn["COLUMN_NAME"]
+                                        dbColumn["COLUMN_NAME"]
                                 )
                             },
                         )
@@ -2332,9 +2332,9 @@ export class AuroraMysqlQueryRunner
                     dbForeignKeys.filter((dbForeignKey) => {
                         return (
                             dbForeignKey["TABLE_NAME"] ===
-                            dbTable["TABLE_NAME"] &&
+                                dbTable["TABLE_NAME"] &&
                             dbForeignKey["TABLE_SCHEMA"] ===
-                            dbTable["TABLE_SCHEMA"]
+                                dbTable["TABLE_SCHEMA"]
                         )
                     }),
                     (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
@@ -2392,7 +2392,7 @@ export class AuroraMysqlQueryRunner
                     const indices = dbIndices.filter((index) => {
                         return (
                             index["TABLE_SCHEMA"] ===
-                            constraint["TABLE_SCHEMA"] &&
+                                constraint["TABLE_SCHEMA"] &&
                             index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
                             index["INDEX_NAME"] === constraint["INDEX_NAME"]
                         )
