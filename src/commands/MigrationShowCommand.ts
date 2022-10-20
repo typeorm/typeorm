@@ -18,6 +18,7 @@ export class MigrationShowCommand implements yargs.CommandModule {
             describe:
                 "Path to the file where your DataSource instance is defined.",
             demandOption: true,
+            default: process.env.TYPEORM_DATASOURCE,
         })
     }
 
