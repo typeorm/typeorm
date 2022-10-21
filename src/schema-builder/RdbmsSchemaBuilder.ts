@@ -226,12 +226,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.addNewColumns()
         await this.updatePrimaryKeys()
         await this.updateExistColumns()
-        await this.createViews()
         await this.createNewIndices()
         await this.createNewChecks()
         await this.createNewExclusions()
         await this.createCompositeUniqueConstraints()
         await this.createForeignKeys()
+        await this.createViews()
+        await this.createNewViewIndices()
     }
 
     private getTablePath(
@@ -977,48 +978,56 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             await this.queryRunner.createIndices(table, newIndices)
         }
-        if (this.connection.options.type === "postgres") {
-            const postgresQueryRunner: PostgresQueryRunner = <
-                PostgresQueryRunner
-            >this.queryRunner
-            for (const metadata of this.viewEntityToSyncMetadatas) {
-                // check if view does not exist yet
-                const view = this.queryRunner.loadedViews.find((view) => {
-                    const viewExpression =
-                        typeof view.expression === "string"
-                            ? view.expression.trim()
-                            : view.expression(this.connection).getQuery()
-                    const metadataExpression =
-                        typeof metadata.expression === "string"
-                            ? metadata.expression.trim()
-                            : metadata.expression!(this.connection).getQuery()
-                    return (
-                        this.getTablePath(view) ===
-                            this.getTablePath(metadata) &&
-                        viewExpression === metadataExpression
-                    )
-                })
-                if (!view || !view.materialized) continue
+    }
 
-                const newIndices = metadata.indices
-                    .filter(
-                        (indexMetadata) =>
-                            !view.indices.find(
-                                (tableIndex) =>
-                                    tableIndex.name === indexMetadata.name,
-                            ) && indexMetadata.synchronize === true,
-                    )
-                    .map((indexMetadata) => TableIndex.create(indexMetadata))
-
-                if (newIndices.length === 0) continue
-
-                this.connection.logger.logSchemaBuild(
-                    `adding new indices ${newIndices
-                        .map((index) => `"${index.name}"`)
-                        .join(", ")} in view "${view.name}"`,
+    /**
+     * Creates indices for materialized views. 
+     */
+    protected async createNewViewIndices(): Promise<void> {
+        // Only PostgreSQL supports indices for materialized views.
+        if (this.connection.options.type !== "postgres" || !(DriverUtils.isPostgresFamily(this.connection.driver))) {
+            return
+        }
+        const postgresQueryRunner: PostgresQueryRunner = <
+            PostgresQueryRunner
+        >this.queryRunner
+        for (const metadata of this.viewEntityToSyncMetadatas) {
+            // check if view does not exist yet
+            const view = this.queryRunner.loadedViews.find((view) => {
+                const viewExpression =
+                    typeof view.expression === "string"
+                        ? view.expression.trim()
+                        : view.expression(this.connection).getQuery()
+                const metadataExpression =
+                    typeof metadata.expression === "string"
+                        ? metadata.expression.trim()
+                        : metadata.expression!(this.connection).getQuery()
+                return (
+                    this.getTablePath(view) ===
+                        this.getTablePath(metadata) &&
+                    viewExpression === metadataExpression
                 )
-                await postgresQueryRunner.createViewIndices(view, newIndices)
-            }
+            })
+            if (!view || !view.materialized) continue
+
+            const newIndices = metadata.indices
+                .filter(
+                    (indexMetadata) =>
+                        !view.indices.find(
+                            (tableIndex) =>
+                                tableIndex.name === indexMetadata.name,
+                        ) && indexMetadata.synchronize === true,
+                )
+                .map((indexMetadata) => TableIndex.create(indexMetadata))
+
+            if (newIndices.length === 0) continue
+
+            this.connection.logger.logSchemaBuild(
+                `adding new indices ${newIndices
+                    .map((index) => `"${index.name}"`)
+                    .join(", ")} in view "${view.name}"`,
+            )
+            await postgresQueryRunner.createViewIndices(view, newIndices)
         }
     }
 
