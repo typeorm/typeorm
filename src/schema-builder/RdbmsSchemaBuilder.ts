@@ -981,16 +981,19 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Creates indices for materialized views. 
+     * Creates indices for materialized views.
      */
     protected async createNewViewIndices(): Promise<void> {
         // Only PostgreSQL supports indices for materialized views.
-        if (this.connection.options.type !== "postgres" || !(DriverUtils.isPostgresFamily(this.connection.driver))) {
+        if (
+            this.connection.options.type !== "postgres" ||
+            !DriverUtils.isPostgresFamily(this.connection.driver)
+        ) {
             return
         }
-        const postgresQueryRunner: PostgresQueryRunner = <
-            PostgresQueryRunner
-        >this.queryRunner
+        const postgresQueryRunner: PostgresQueryRunner = <PostgresQueryRunner>(
+            this.queryRunner
+        )
         for (const metadata of this.viewEntityToSyncMetadatas) {
             // check if view does not exist yet
             const view = this.queryRunner.loadedViews.find((view) => {
@@ -1003,8 +1006,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         ? metadata.expression.trim()
                         : metadata.expression!(this.connection).getQuery()
                 return (
-                    this.getTablePath(view) ===
-                        this.getTablePath(metadata) &&
+                    this.getTablePath(view) === this.getTablePath(metadata) &&
                     viewExpression === metadataExpression
                 )
             })
