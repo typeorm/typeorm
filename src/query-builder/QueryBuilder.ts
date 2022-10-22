@@ -1055,6 +1055,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     condition.condition,
                     true,
                 )}`
+            case "and":
+                return condition.parameters.join(" AND ")
         }
 
         throw new TypeError(
@@ -1447,6 +1449,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         operator: "notEqual",
                         parameters: [aliasPath, ...parameters],
                     }
+                }
+            } else if (parameterValue.type === "and") {
+                const values: FindOperator<any>[] = parameterValue.value
+
+                return {
+                    operator: parameterValue.type,
+                    parameters: values.map((operator) =>
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                operator,
+                            ),
+                        ),
+                    ),
                 }
             } else {
                 return {
