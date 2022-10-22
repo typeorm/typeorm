@@ -10,6 +10,7 @@ import {
     CannotExecuteNotConnectedError,
     EntityMetadataNotFoundError,
     QueryRunnerProviderAlreadyReleasedError,
+    TypeORMError,
 } from "../error"
 import { TreeRepository } from "../repository/TreeRepository"
 import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
@@ -35,11 +36,11 @@ import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
-import { TypeORMError } from "../error"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { ConditionLoader } from "../query-builder/condition-loader/ConditionLoader"
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -125,6 +126,8 @@ export class DataSource {
 
     readonly relationIdLoader: RelationIdLoader
 
+    readonly conditionLoader: ConditionLoader
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -147,6 +150,8 @@ export class DataSource {
         this.relationLoader = new RelationLoader(this)
         this.relationIdLoader = new RelationIdLoader(this)
         this.isInitialized = false
+
+        this.conditionLoader = new ConditionLoader(options.conditions || {})
     }
 
     // -------------------------------------------------------------------------

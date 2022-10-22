@@ -16,6 +16,7 @@ import { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
 import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import { ConditionLoaderOptions } from "../../src/query-builder/condition-loader/ConditionLoaderOptions"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -99,6 +100,11 @@ export interface TestingOptions {
      * Accepts single string name.
      */
     metadataTableName?: string
+
+    /**
+     * Specifies how some conditions should be loaded.
+     */
+    conditions?: ConditionLoaderOptions
 
     /**
      * Schema name used for postgres driver.
@@ -295,6 +301,8 @@ export function setupTestingConnections(
                 newOptions.metadataTableName = options.metadataTableName
             if (options && options.relationLoadStrategy)
                 newOptions.relationLoadStrategy = options.relationLoadStrategy
+            if (options && options.conditions)
+                newOptions.conditions = options.conditions
 
             newOptions.baseDirectory = path.dirname(getOrmFilepath())
 

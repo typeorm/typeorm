@@ -25,6 +25,7 @@ import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
+import { ConditionLoader } from "./condition-loader/ConditionLoader"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -75,6 +76,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected parentQueryBuilder: QueryBuilder<any>
 
+    protected conditionLoader: ConditionLoader
+
     /**
      * Memo to help keep place of current parameter index for `createParameter`
      */
@@ -110,6 +113,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             this.queryRunner = queryRunner
             this.expressionMap = new QueryExpressionMap(this.connection)
         }
+
+        this.conditionLoader = this.connection.conditionLoader
     }
 
     // -------------------------------------------------------------------------
@@ -1454,13 +1459,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     parameters: [aliasPath, ...parameters],
                 }
             }
-            // } else if (parameterValue === null) {
-            //     return {
-            //         operator: "isNull",
-            //         parameters: [
-            //             aliasPath,
-            //         ]
-            //     };
+        } else if (parameterValue === null || parameterValue === undefined) {
+            return {
+                operator: "isNull",
+                parameters: [aliasPath],
+            }
         } else {
             return {
                 operator: "equal",

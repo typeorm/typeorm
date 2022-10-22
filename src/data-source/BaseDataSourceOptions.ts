@@ -6,6 +6,7 @@ import { Logger } from "../logger/Logger"
 import { DataSource } from "../data-source/DataSource"
 import { QueryResultCache } from "../cache/QueryResultCache"
 import { MixedList } from "../common/MixedList"
+import { ConditionLoaderOptions } from "../query-builder/condition-loader/ConditionLoaderOptions"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -156,6 +157,11 @@ export interface BaseDataSourceOptions {
      * @internal
      */
     baseDirectory?: string
+
+    /**
+     * Specifies how some conditions should be loaded.
+     */
+    readonly conditions?: ConditionLoaderOptions
 
     /**
      * Allows to setup cache options.

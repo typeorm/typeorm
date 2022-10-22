@@ -26,7 +26,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
           | EqualOperator<Property>
           | FindOperator<any>
           | boolean
-    : Property | FindOperator<Property>
+    : Property | null | FindOperator<Property>
 
 /** :
  * Used for find operations.
