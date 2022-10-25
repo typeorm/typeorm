@@ -57,6 +57,7 @@ import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptio
 import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
+import { isValidObjectId } from "../util/MongoUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -135,11 +136,13 @@ export class MongoEntityManager extends EntityManager {
         ids: any[],
         optionsOrConditions?: any,
     ): Promise<Entity[]> {
+        console.log(`[DEPRECATED] use "findBy" method instead`)
         const metadata = this.connection.getMetadata(entityClassOrName)
         const query =
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             ) || {}
+
         const objectIdInstance = PlatformTools.load("mongodb").ObjectID
         query["_id"] = {
             $in: ids.map((id) => {
@@ -161,31 +164,38 @@ export class MongoEntityManager extends EntityManager {
             }),
         }
 
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
-        const deleteDateColumn =
-            this.connection.getMetadata(entityClassOrName).deleteDateColumn
-        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.select)
-                cursor.project(
-                    this.convertFindOptionsSelectToProjectCriteria(
-                        optionsOrConditions.select,
-                    ),
-                )
-            if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
-            if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
-            if (optionsOrConditions.order)
-                cursor.sort(
-                    this.convertFindOptionsOrderToOrderCriteria(
-                        optionsOrConditions.order,
-                    ),
-                )
-            if (deleteDateColumn && !optionsOrConditions.withDeleted) {
-                this.filterSoftDeleted(cursor, deleteDateColumn, query)
-            }
-        } else if (deleteDateColumn) {
-            this.filterSoftDeleted(cursor, deleteDateColumn, query)
-        }
-        return await cursor.toArray()
+        const results = await this.executeFind(entityClassOrName, {
+            ...optionsOrConditions,
+            where: query,
+        })
+
+        return results
+
+        // const cursor = await this.createEntityCursor(entityClassOrName, query)
+        // const deleteDateColumn =
+        //     this.connection.getMetadata(entityClassOrName).deleteDateColumn
+        // if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+        //     if (optionsOrConditions.select)
+        //         cursor.project(
+        //             this.convertFindOptionsSelectToProjectCriteria(
+        //                 optionsOrConditions.select,
+        //             ),
+        //         )
+        //     if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
+        //     if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
+        //     if (optionsOrConditions.order)
+        //         cursor.sort(
+        //             this.convertFindOptionsOrderToOrderCriteria(
+        //                 optionsOrConditions.order,
+        //             ),
+        //         )
+        //     if (deleteDateColumn && !optionsOrConditions.withDeleted) {
+        //         this.filterSoftDeleted(cursor, deleteDateColumn, query)
+        //     }
+        // } else if (deleteDateColumn) {
+        //     this.filterSoftDeleted(cursor, deleteDateColumn, query)
+        // }
+        // return await cursor.toArray()
     }
 
     /**
@@ -195,7 +205,12 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         options: MongoFindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        return this.executeFindOne(entityClassOrName, options)
+        // return this.executeFindOne(entityClassOrName, options)
+        const results = await this.executeFind(entityClassOrName, {
+            ...options,
+            take: 1,
+        })
+        return results.length > 0 ? results[0] : null
     }
 
     /**
@@ -205,7 +220,13 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         where: any,
     ): Promise<Entity | null> {
-        return this.executeFindOne(entityClassOrName, where)
+        // return this.executeFindOne(entityClassOrName, where)
+
+        const results = await this.executeFind(entityClassOrName, {
+            where,
+            take: 1,
+        })
+        return results.length > 0 ? results[0] : null
     }
 
     /**
@@ -229,7 +250,26 @@ export class MongoEntityManager extends EntityManager {
             | ObjectID
             | ObjectID[],
     ): Promise<Entity | null> {
-        return this.executeFindOne(entityClassOrName, id)
+        // return this.executeFindOne(entityClassOrName, id)
+        console.log(`[DEPRECATED] use "findOneBy" method instead`)
+
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID
+
+        let _id
+        if (id instanceof objectIdInstance) _id = id
+        if (typeof id === "string" && isValidObjectId(id))
+            _id = new objectIdInstance(id)
+
+        if (typeof _id == "undefined") {
+            console.log(`_id is invalid.`)
+            return null
+        }
+
+        const results = await this.executeFind(entityClassOrName, {
+            where: { _id },
+            take: 1,
+        })
+        return results.length > 0 ? results[0] : null
     }
 
     /**
@@ -1030,13 +1070,17 @@ export class MongoEntityManager extends EntityManager {
         selects: FindOptionsSelect<any> | FindOptionsSelectByString<any>,
     ) {
         if (Array.isArray(selects)) {
-            return selects.reduce((projectCriteria, key) => {
-                projectCriteria[key] = 1
-                return projectCriteria
-            }, {} as any)
+            const options: { [key: string | number | symbol]: number } = {}
+            selects.map((select) => (options[select] = 1))
+            return options
+
+            // return selects.reduce((projectCriteria, key) => {
+            //     projectCriteria[key] = 1
+            //     return projectCriteria
+            // }, {} as any)
         } else {
             // todo: implement
-            return {}
+            return selects
         }
     }
 
@@ -1240,36 +1284,195 @@ export class MongoEntityManager extends EntityManager {
             | Partial<Entity>
             | any[],
     ): Promise<Entity[]> {
-        const query =
-            this.convertFindManyOptionsOrConditionsToMongodbQuery(
-                optionsOrConditions,
-            )
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
+        const metadata = this.connection.getMetadata(entityClassOrName)
+
         const deleteDateColumn =
             this.connection.getMetadata(entityClassOrName).deleteDateColumn
 
+        const pipeline: ObjectLiteral[] = []
+        let populate: string[] = []
+        let results: any
+
+        const { referenceColumns } = this.parseColumns(metadata)
+        const refColumnNames = referenceColumns.map((col) => col.propertyName)
+        const refTables = referenceColumns.map((col) => {
+            return {
+                [`${col.propertyName}`]: {
+                    name: col.databaseName,
+                    isArray: col.isArray,
+                },
+            }
+        })
+
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.select)
-                cursor.project(
-                    this.convertFindOptionsSelectToProjectCriteria(
+            let firstPipeline
+            if (optionsOrConditions.where) {
+                firstPipeline = { $match: optionsOrConditions.where as any }
+                pipeline.push(firstPipeline)
+            }
+
+            // relations / populate
+            if (optionsOrConditions.relations) {
+                let lookups = []
+                for (const field in optionsOrConditions.relations) {
+                    populate.push(field)
+
+                    const fieldIndex = refColumnNames.findIndex(
+                        (name) => name == field,
+                    )
+                    if (fieldIndex > -1) {
+                        const refTable = refTables[fieldIndex][field].name
+                        const populateLookup = {
+                            $lookup: {
+                                from: refTable,
+                                localField: field,
+                                foreignField: "_id",
+                                as: field,
+                            },
+                        }
+                        lookups.push(populateLookup)
+                    } else {
+                        console.log(`Populated field "${field}" is not valid.`)
+                    }
+                }
+                lookups = lookups.filter(
+                    (lookup) => lookup != undefined && lookup != null,
+                )
+                pipeline.push(...lookups)
+                // TODO: populate and select specific fields to display only
+            }
+
+            if (optionsOrConditions.select) {
+                const selectWithProjectPipeline = {
+                    $project: this.convertFindOptionsSelectToProjectCriteria(
                         optionsOrConditions.select,
                     ),
-                )
-            if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
-            if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
-            if (optionsOrConditions.order)
-                cursor.sort(
-                    this.convertFindOptionsOrderToOrderCriteria(
-                        optionsOrConditions.order,
-                    ),
-                )
-            if (deleteDateColumn && !optionsOrConditions.withDeleted) {
-                this.filterSoftDeleted(cursor, deleteDateColumn, query)
+                }
+                pipeline.push(selectWithProjectPipeline)
+                // console.log(selectWithProjectPipeline)
             }
-        } else if (deleteDateColumn) {
-            this.filterSoftDeleted(cursor, deleteDateColumn, query)
+
+            if (optionsOrConditions.skip)
+                pipeline.push({ $skip: optionsOrConditions.skip })
+
+            if (optionsOrConditions.take)
+                pipeline.push({ $limit: optionsOrConditions.take })
+
+            if (optionsOrConditions.order)
+                pipeline.push({ $sort: optionsOrConditions.order })
+
+            if (deleteDateColumn && !optionsOrConditions.withDeleted) {
+                if (firstPipeline) {
+                    if (firstPipeline.$match) {
+                        const $or = firstPipeline.$match.$or || []
+                        firstPipeline.$match.$or = [
+                            { [deleteDateColumn.propertyName]: { $eq: null } },
+                            ...(Array.isArray($or) ? $or : []),
+                        ]
+                    } else {
+                        pipeline.unshift({
+                            $match: {
+                                $or: [
+                                    {
+                                        [deleteDateColumn.propertyName]: {
+                                            $eq: null,
+                                        },
+                                    },
+                                ],
+                            },
+                        })
+                    }
+                }
+            }
         }
-        return cursor.toArray()
+
+        results = await this.mongoQueryRunner
+            .aggregate(metadata.tableName, pipeline)
+            .toArray()
+
+        // "aggregate" always returns array
+        // if the relation column is not an array, should return an object
+        results = results.map((result: any) => {
+            populate.map((field, index) => {
+                if (refTables[index][field].isArray == false)
+                    result[field] = result[field][0]
+            })
+            return result
+        })
+
+        return results
+
+        // const query =
+        //     this.convertFindManyOptionsOrConditionsToMongodbQuery(
+        //         optionsOrConditions,
+        //     )
+        // const cursor = await this.createEntityCursor(entityClassOrName, query)
+        // const deleteDateColumn =
+        //     this.connection.getMetadata(entityClassOrName).deleteDateColumn
+
+        // if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+        //     if (optionsOrConditions.select)
+        //         cursor.project(
+        //             this.convertFindOptionsSelectToProjectCriteria(
+        //                 optionsOrConditions.select,
+        //             ),
+        //         )
+        //     if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
+        //     if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
+        //     if (optionsOrConditions.order)
+        //         cursor.sort(
+        //             this.convertFindOptionsOrderToOrderCriteria(
+        //                 optionsOrConditions.order,
+        //             ),
+        //         )
+        //     if (deleteDateColumn && !optionsOrConditions.withDeleted) {
+        //         this.filterSoftDeleted(cursor, deleteDateColumn, query)
+        //     }
+        // } else if (deleteDateColumn) {
+        //     this.filterSoftDeleted(cursor, deleteDateColumn, query)
+        // }
+        // return cursor.toArray()
+    }
+
+    /**
+     * Read entity's metadata to parse columns that references to other table (collection)
+     */
+    parseColumns(metadata: EntityMetadata) {
+        const _columns = metadata.columns.map(
+            ({
+                isObjectId,
+                isArray,
+                isVirtual,
+                type,
+                databaseName,
+                databasePath,
+                propertyName,
+                propertyAliasName,
+                propertyPath,
+            }) => {
+                return {
+                    type,
+                    isObjectId,
+                    isArray,
+                    isVirtual,
+                    databaseName,
+                    databasePath,
+                    propertyName,
+                    propertyPath,
+                    propertyAliasName,
+                }
+            },
+        )
+
+        const normalColumns = _columns.filter(
+            (col) => col.type || col.databaseName == "_id",
+        )
+        const referenceColumns = _columns.filter(
+            (col) => col.isObjectId && col.databaseName != "_id",
+        )
+        const columns = [...normalColumns, ...referenceColumns]
+
+        return { columns, normalColumns, referenceColumns }
     }
 
     /**
@@ -1283,33 +1486,34 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             )
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
-        const deleteDateColumn =
-            this.connection.getMetadata(entityClassOrName).deleteDateColumn
+        // const cursor = await this.createEntityCursor(entityClassOrName, query)
+        // const deleteDateColumn =
+        //     this.connection.getMetadata(entityClassOrName).deleteDateColumn
 
-        if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            if (optionsOrConditions.select)
-                cursor.project(
-                    this.convertFindOptionsSelectToProjectCriteria(
-                        optionsOrConditions.select,
-                    ),
-                )
-            if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
-            if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
-            if (optionsOrConditions.order)
-                cursor.sort(
-                    this.convertFindOptionsOrderToOrderCriteria(
-                        optionsOrConditions.order,
-                    ),
-                )
-            if (deleteDateColumn && !optionsOrConditions.withDeleted) {
-                this.filterSoftDeleted(cursor, deleteDateColumn, query)
-            }
-        } else if (deleteDateColumn) {
-            this.filterSoftDeleted(cursor, deleteDateColumn, query)
-        }
+        // if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
+        //     if (optionsOrConditions.select)
+        //         cursor.project(
+        //             this.convertFindOptionsSelectToProjectCriteria(
+        //                 optionsOrConditions.select,
+        //             ),
+        //         )
+        //     if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
+        //     if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
+        //     if (optionsOrConditions.order)
+        //         cursor.sort(
+        //             this.convertFindOptionsOrderToOrderCriteria(
+        //                 optionsOrConditions.order,
+        //             ),
+        //         )
+        //     if (deleteDateColumn && !optionsOrConditions.withDeleted) {
+        //         this.filterSoftDeleted(cursor, deleteDateColumn, query)
+        //     }
+        // } else if (deleteDateColumn) {
+        //     this.filterSoftDeleted(cursor, deleteDateColumn, query)
+        // }
+
         const [results, count] = await Promise.all<any>([
-            cursor.toArray(),
+            this.find(entityClassOrName, query),
             this.count(entityClassOrName, query),
         ])
         return [results, parseInt(count)]
