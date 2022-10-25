@@ -158,6 +158,91 @@ Following document will be saved in the database:
 }
 ```
 
+## Using "relations" to populate referenced columns
+
+`ManyToOne/OneToMany/ManyToMany/OneToOne` are only supported in relational databases. Mongodb is relational-less, using "relations" is some kind of "anti-pattern", but it could be useful in some case. If you really want to use this feature, please check the example below:
+
+Define your entity as following:
+
+```typescript
+@Entity()
+export class User {
+    @ObjectIdColumn()
+    _id: ObjectID
+
+    @Column()
+    name: string
+}
+
+@Entity()
+export class Post {
+    @ObjectIdColumn()
+    _id: ObjectID
+
+    @Column()
+    title: string
+
+    /**
+     ** @ObjectIdColumn({ name: "user" })
+     ** This means it's an referenced ObjectId of a {User} in "user" collection.
+     */
+    @ObjectIdColumn({ name: "user" })
+    author: ObjectID | User
+}
+```
+
+Create a user & a post:
+
+```typescript
+import { getMongoManager } from "typeorm"
+
+const manager = getMongoManager()
+
+const user = new User()
+user.name = "Justin"
+await manager.save(user)
+
+const post = new Post()
+post.author = user._id
+post.title = "About the sky"
+await manager.save(post)
+```
+
+Then you can populate "author" field with "relations" (like ORM):
+
+```typescript
+const posts = await myDataSource.getMongoRepository(Post).find({
+    relations: {
+        author: true,
+    },
+})
+```
+
+If you want to use `ManyToOne/OneToMany/ManyToMany`, take this example below for defining an entity:
+
+```typescript
+@Entity()
+export class User {
+    @ObjectIdColumn()
+    _id: ObjectID
+
+    @Column()
+    name: string
+
+    @ObjectIdColumn({ name: "post" })
+    posts: ObjectID[] | Post[]
+}
+
+// create new {User} with something like this:
+const user = new User()
+user.name = "Selena"
+user.posts = [
+    new ObjectID("89903245..."),
+    new ObjectID("11111111..."),
+    new ObjectID("22222222..."),
+]
+```
+
 ## Using `MongoEntityManager` and `MongoRepository`
 
 You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query` and `transaction`).
