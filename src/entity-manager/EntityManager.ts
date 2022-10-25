@@ -37,8 +37,8 @@ import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { PlatformTools } from "../platform/PlatformTools"
-import { isValidObjectId } from "../util/MongoUtils"
+// import { PlatformTools } from "../platform/PlatformTools"
+// import { isValidObjectId } from "../util/MongoUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -1142,26 +1142,26 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         id: number | string | Date | ObjectID,
     ): Promise<Entity | null> {
-        const MongoObjectId = PlatformTools.load("mongodb").ObjectId
-        let _id
-        if (id instanceof MongoObjectId) _id = id
-        if (typeof id == "string" && isValidObjectId(id))
-            _id = new MongoObjectId(id)
-        if (typeof _id == "undefined")
-            throw new TypeORMError(
-                `"id" is not valid, it should be an instance of MongoDB "ObjectId"`,
-            )
-        return await this.findOneBy(entityClass, { _id })
+        // const MongoObjectId = PlatformTools.load("mongodb").ObjectId
+        // let _id
+        // if (id instanceof MongoObjectId) _id = id
+        // if (typeof id == "string" && isValidObjectId(id))
+        //     _id = new MongoObjectId(id)
+        // if (typeof _id == "undefined")
+        //     throw new TypeORMError(
+        //         `"id" is not valid, it should be an instance of MongoDB "ObjectId"`,
+        //     )
+        // return await this.findOneBy(entityClass, { _id })
 
-        // const metadata = this.connection.getMetadata(entityClass)
+        const metadata = this.connection.getMetadata(entityClass)
 
-        // // create query builder and apply find options
-        // return this.createQueryBuilder<Entity>(entityClass, metadata.name)
-        //     .setFindOptions({
-        //         take: 1,
-        //     })
-        //     .whereInIds(metadata.ensureEntityIdMap(id))
-        //     .getOne()
+        // create query builder and apply find options
+        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
+            .setFindOptions({
+                take: 1,
+            })
+            .whereInIds(metadata.ensureEntityIdMap(id))
+            .getOne()
     }
 
     /**
