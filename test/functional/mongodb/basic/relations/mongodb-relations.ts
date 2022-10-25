@@ -116,7 +116,7 @@ describe("mongodb > relations", () => {
                 expect(foundPost).not.to.be.undefined
                 expect(foundPost?.author).to.be.undefined
                 expect(foundPost?.title).not.to.be.undefined
-                
+
                 console.log(foundPost)
             }),
         ))
