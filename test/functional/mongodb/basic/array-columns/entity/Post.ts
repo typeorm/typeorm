@@ -12,7 +12,7 @@ export class Post {
     @Column()
     title: string
 
-    @Column((type) => Counters)
+    @Column((type) => Counters, { array: true })
     counters: Counters[]
 
     @Column()

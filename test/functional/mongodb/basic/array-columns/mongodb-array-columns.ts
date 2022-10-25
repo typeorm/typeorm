@@ -92,6 +92,7 @@ describe("mongodb > array columns", () => {
                 const loadedUpdatedPost = await postRepository.findOneBy({
                     title: "Post",
                 })
+                console.dir(loadedUpdatedPost)
 
                 expect(loadedUpdatedPost).to.be.not.empty
                 expect(loadedUpdatedPost!.names).to.be.not.empty

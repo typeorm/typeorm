@@ -17,6 +17,8 @@ describe("mongodb > relations", () => {
             (connections = await createTestingConnections({
                 entities: [Post, User],
                 enabledDrivers: ["mongodb"],
+                schemaCreate: true,
+                dropSchema: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -35,6 +37,8 @@ describe("mongodb > relations", () => {
                 const foundPosts = await postMongoRepository.find({
                     relations: { author: true },
                 })
+
+                // console.dir(foundPosts, { depth: null })
 
                 expect(foundPosts.length).to.be.greaterThan(0)
                 expect((foundPosts[0].author as User).name).not.undefined
@@ -118,6 +122,49 @@ describe("mongodb > relations", () => {
                 expect(foundPost?.title).not.to.be.undefined
 
                 console.log(foundPost)
+            }),
+        ))
+
+    it("should persist _id when querying the same {Post}", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getMongoRepository(Post)
+
+                // create some posts
+                const post1 = new Post()
+                post1.title = "First Post"
+                await postRepository.save(post1)
+
+                const post2 = new Post()
+                post2.title = "Second Post"
+                await postRepository.save(post2)
+                console.log("post2._id", post2._id)
+
+                // const loadedPost1 = await postRepository.findOneBy({
+                //     _id: post1._id,
+                // })
+
+                // expect(loadedPost1!._id.toString()).to.be.eql(
+                //     post1._id.toString(),
+                // )
+                // expect(loadedPost1!.title).to.be.equal("First Post")
+
+                const loadPosts = await postRepository.find()
+                console.log("loadPosts", loadPosts)
+
+                const loadedPost2 = await postRepository.findOneBy({
+                    // title: "Second Post",
+                    _id: post2._id,
+                })
+
+                console.log(
+                    `loadedPost2?.id [${loadedPost2?._id.toString()}] vs post2.id [${post2._id.toString()}]`,
+                )
+
+                expect(loadedPost2!._id.toString()).to.be.equal(
+                    post2._id.toString(),
+                )
+                expect(loadedPost2!.title).to.be.equal("Second Post")
             }),
         ))
 })

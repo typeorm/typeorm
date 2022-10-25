@@ -1,6 +1,7 @@
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { EmbeddedMetadata } from "../../metadata/EmbeddedMetadata"
+import { EntityTarget } from "../../common/EntityTarget"
 
 /**
  * Transforms raw document into entity object.
@@ -10,14 +11,18 @@ export class DocumentToEntityTransformer {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
+    entity: EntityTarget<ObjectLiteral>
 
     constructor(
         // private selectionMap: AliasMap,
         // private joinMappings: JoinMapping[],
         // private relationCountMetas: RelationCountAttribute[],
-        private enableRelationIdValues: boolean = false,
-    ) {}
-
+        // private enableRelationIdValues: boolean = false,
+        entityClassOrName: EntityTarget<ObjectLiteral>,
+    ) {
+        // console.dir(entityClassOrName)
+        this.entity = entityClassOrName
+    }
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -30,9 +35,14 @@ export class DocumentToEntityTransformer {
         const entity: any = metadata.create(undefined, {
             fromDeserializer: true,
         })
+        // const Entity = this.entity;
+        // const entity = new Entity({a:1})
         let hasData = false
 
         // handle _id property the special way
+        // if (metadata.objectIdColumn?.propertyName)
+        //     console.dir(metadata.objectIdColumn?.propertyName)
+
         if (
             metadata.objectIdColumn &&
             document[metadata.objectIdColumn.databaseNameWithoutPrefixes]
@@ -40,30 +50,36 @@ export class DocumentToEntityTransformer {
             // todo: we can't use driver in this class
             // do we really need prepare hydrated value here? If no then no problem. If yes then think maybe prepareHydratedValue process should be extracted out of driver class?
             // entity[metadata.objectIdColumn.propertyName] = this.driver.prepareHydratedValue(document[metadata.objectIdColumn.name"], metadata.objectIdColumn);
+
             entity[metadata.objectIdColumn.propertyName] =
                 document[metadata.objectIdColumn.databaseNameWithoutPrefixes]
             hasData = true
         }
 
+        // console.dir(metadata.ownColumns, { depth: null })
+
         // add special columns that contains relation ids
-        if (this.enableRelationIdValues) {
-            metadata.columns
-                .filter((column) => !!column.relationMetadata)
-                .forEach((column) => {
-                    const valueInObject =
-                        document[column.databaseNameWithoutPrefixes]
-                    if (
-                        valueInObject !== undefined &&
-                        valueInObject !== null &&
-                        column.propertyName
-                    ) {
-                        // todo: we can't use driver in this class
-                        // const value = this.driver.prepareHydratedValue(valueInObject, column);
-                        entity[column.propertyName] = valueInObject
-                        hasData = true
-                    }
-                })
-        }
+        // if (this.enableRelationIdValues) {
+        //     metadata.columns
+        //         .filter((column) => !!column.relationMetadata)
+        //         .forEach((column) => {
+        //             const valueInObject =
+        //                 document[column.databaseNameWithoutPrefixes]
+        //             if (
+        //                 valueInObject !== undefined &&
+        //                 valueInObject !== null &&
+        //                 column.propertyName
+        //             ) {
+        //                 // todo: we can't use driver in this class
+        //                 // const value = this.driver.prepareHydratedValue(valueInObject, column);
+        //                 entity[column.propertyName] = valueInObject
+        //                 hasData = true
+        //             }
+        //         })
+        // }
+
+        // console.log("metadata.embeddeds >>>")
+        // console.dir(metadata.embeddeds, { depth: null })
 
         /*this.joinMappings
             .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.relationOwnerSelection && joinMapping.alias.target)
@@ -80,7 +96,8 @@ export class DocumentToEntityTransformer {
 
         // get value from columns selections and put them into object
         metadata.ownColumns.forEach((column) => {
-            const valueInObject = document[column.databaseNameWithoutPrefixes]
+            // const valueInObject = document[column.databaseNameWithoutPrefixes]
+            const valueInObject = document[column.propertyName]
             if (
                 valueInObject !== undefined &&
                 column.propertyName &&
@@ -89,6 +106,9 @@ export class DocumentToEntityTransformer {
                 // const value = this.driver.prepareHydratedValue(valueInObject, column);
 
                 entity[column.propertyName] = valueInObject
+
+                // if(column.databaseName != column.propertyName)
+
                 hasData = true
             }
         })
@@ -156,6 +176,7 @@ export class DocumentToEntityTransformer {
         addEmbeddedValuesRecursively(entity, document, metadata.embeddeds)
 
         // if relation is loaded then go into it recursively and transform its values too
+        // console.dir(metadata.relations, { depth: null })
         /*metadata.relations.forEach(relation => {
             const relationAlias = this.selectionMap.findSelectionByParent(alias.name, relation.propertyName);
             if (relationAlias) {

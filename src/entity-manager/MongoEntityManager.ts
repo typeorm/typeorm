@@ -136,7 +136,7 @@ export class MongoEntityManager extends EntityManager {
         ids: any[],
         optionsOrConditions?: any,
     ): Promise<Entity[]> {
-        console.log(`[DEPRECATED] use "findBy" method instead`)
+        console.log(`[DEPRECATED] "findByIds" > use "findBy" method instead`)
         const metadata = this.connection.getMetadata(entityClassOrName)
         const query =
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
@@ -223,7 +223,7 @@ export class MongoEntityManager extends EntityManager {
         // return this.executeFindOne(entityClassOrName, where)
 
         const results = await this.executeFind(entityClassOrName, {
-            where,
+            where: typeof where.where != "undefined" ? where.where : where,
             take: 1,
         })
         return results.length > 0 ? results[0] : null
@@ -448,7 +448,11 @@ export class MongoEntityManager extends EntityManager {
     ): Cursor<Entity> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         const cursor = this.createCursor(entityClassOrName, query)
-        this.applyEntityTransformationToCursor(metadata, cursor)
+        this.applyEntityTransformationToCursor(
+            metadata,
+            cursor,
+            entityClassOrName,
+        )
         return cursor
     }
 
@@ -483,7 +487,12 @@ export class MongoEntityManager extends EntityManager {
             pipeline,
             options,
         )
-        this.applyEntityTransformationToCursor(metadata, cursor)
+
+        this.applyEntityTransformationToCursor(
+            metadata,
+            cursor,
+            entityClassOrName,
+        )
         return cursor
     }
 
@@ -1126,6 +1135,7 @@ export class MongoEntityManager extends EntityManager {
     protected applyEntityTransformationToCursor<Entity extends ObjectLiteral>(
         metadata: EntityMetadata,
         cursor: Cursor<Entity> | AggregationCursor<Entity>,
+        entityClassOrName: EntityTarget<Entity>,
     ) {
         // mongdb-3.7 exports Cursor, mongodb-4.2 exports FindCursor, provide support for both.
         const ParentCursor =
@@ -1142,7 +1152,9 @@ export class MongoEntityManager extends EntityManager {
                             return
                         }
 
-                        const transformer = new DocumentToEntityTransformer()
+                        const transformer = new DocumentToEntityTransformer(
+                            entityClassOrName,
+                        )
                         const entities = transformer.transformAll(
                             results,
                             metadata,
@@ -1158,7 +1170,9 @@ export class MongoEntityManager extends EntityManager {
                 return ParentCursor.prototype.toArray
                     .call(this)
                     .then((results: Entity[]) => {
-                        const transformer = new DocumentToEntityTransformer()
+                        const transformer = new DocumentToEntityTransformer(
+                            entityClassOrName,
+                        )
                         const entities = transformer.transformAll(
                             results,
                             metadata,
@@ -1181,7 +1195,9 @@ export class MongoEntityManager extends EntityManager {
                             return
                         }
 
-                        const transformer = new DocumentToEntityTransformer()
+                        const transformer = new DocumentToEntityTransformer(
+                            entityClassOrName,
+                        )
                         const entity = transformer.transform(result, metadata)
 
                         // broadcast "load" events
@@ -1197,7 +1213,9 @@ export class MongoEntityManager extends EntityManager {
                     .then((result: Entity) => {
                         if (!result) return result
 
-                        const transformer = new DocumentToEntityTransformer()
+                        const transformer = new DocumentToEntityTransformer(
+                            entityClassOrName,
+                        )
                         const entity = transformer.transform(result, metadata)
 
                         // broadcast "load" events
@@ -1289,11 +1307,28 @@ export class MongoEntityManager extends EntityManager {
         const deleteDateColumn =
             this.connection.getMetadata(entityClassOrName).deleteDateColumn
 
+        const query =
+            this.convertFindManyOptionsOrConditionsToMongodbQuery(
+                optionsOrConditions,
+            )
+
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectID
+
+        if (query?.id) {
+            query["_id"] =
+                query?.id instanceof objectIdInstance
+                    ? query?.id
+                    : new objectIdInstance(query?.id)
+            delete query?.id
+        }
+
         const pipeline: ObjectLiteral[] = []
         let populate: string[] = []
         let results: any
+        let firstPipeline: any
 
         const { referenceColumns } = this.parseColumns(metadata)
+        // console.log("referenceColumns", referenceColumns)
         const refColumnNames = referenceColumns.map((col) => col.propertyName)
         const refTables = referenceColumns.map((col) => {
             return {
@@ -1305,9 +1340,8 @@ export class MongoEntityManager extends EntityManager {
         })
 
         if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-            let firstPipeline
-            if (optionsOrConditions.where) {
-                firstPipeline = { $match: optionsOrConditions.where as any }
+            if (query) {
+                firstPipeline = { $match: query as any }
                 pipeline.push(firstPipeline)
             }
 
@@ -1358,8 +1392,13 @@ export class MongoEntityManager extends EntityManager {
             if (optionsOrConditions.take)
                 pipeline.push({ $limit: optionsOrConditions.take })
 
-            if (optionsOrConditions.order)
-                pipeline.push({ $sort: optionsOrConditions.order })
+            if (optionsOrConditions.order) {
+                pipeline.push({
+                    $sort: this.convertFindOptionsOrderToOrderCriteria(
+                        optionsOrConditions.order,
+                    ),
+                })
+            }
 
             if (deleteDateColumn && !optionsOrConditions.withDeleted) {
                 if (firstPipeline) {
@@ -1382,16 +1421,36 @@ export class MongoEntityManager extends EntityManager {
                             },
                         })
                     }
+                } else {
+                    pipeline.push({
+                        $match: {
+                            $or: [
+                                {
+                                    [deleteDateColumn.propertyName]: {
+                                        $eq: null,
+                                    },
+                                },
+                            ],
+                        },
+                    })
                 }
             }
+            // console.log(`pipeline >>>`)
+            // console.dir(pipeline, { depth: null })
         }
 
-        results = await this.mongoQueryRunner
-            .aggregate(metadata.tableName, pipeline)
-            .toArray()
+        results = await this.aggregateEntity(
+            entityClassOrName,
+            pipeline,
+        ).toArray()
+
+        // results = await this.mongoQueryRunner
+        //     .aggregate(metadata.tableName, pipeline)
+        //     .toArray()
 
         // "aggregate" always returns array
         // if the relation column is not an array, should return an object
+
         results = results.map((result: any) => {
             populate.map((field, index) => {
                 if (refTables[index][field].isArray == false)
@@ -1399,6 +1458,9 @@ export class MongoEntityManager extends EntityManager {
             })
             return result
         })
+        // console.dir(results, { depth: null })
+
+        // transform document to entity
 
         return results
 
@@ -1482,40 +1544,11 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         optionsOrConditions?: MongoFindManyOptions<Entity> | Partial<Entity>,
     ): Promise<[Entity[], number]> {
-        const query =
-            this.convertFindManyOptionsOrConditionsToMongodbQuery(
-                optionsOrConditions,
-            )
-        // const cursor = await this.createEntityCursor(entityClassOrName, query)
-        // const deleteDateColumn =
-        //     this.connection.getMetadata(entityClassOrName).deleteDateColumn
-
-        // if (FindOptionsUtils.isFindManyOptions(optionsOrConditions)) {
-        //     if (optionsOrConditions.select)
-        //         cursor.project(
-        //             this.convertFindOptionsSelectToProjectCriteria(
-        //                 optionsOrConditions.select,
-        //             ),
-        //         )
-        //     if (optionsOrConditions.skip) cursor.skip(optionsOrConditions.skip)
-        //     if (optionsOrConditions.take) cursor.limit(optionsOrConditions.take)
-        //     if (optionsOrConditions.order)
-        //         cursor.sort(
-        //             this.convertFindOptionsOrderToOrderCriteria(
-        //                 optionsOrConditions.order,
-        //             ),
-        //         )
-        //     if (deleteDateColumn && !optionsOrConditions.withDeleted) {
-        //         this.filterSoftDeleted(cursor, deleteDateColumn, query)
-        //     }
-        // } else if (deleteDateColumn) {
-        //     this.filterSoftDeleted(cursor, deleteDateColumn, query)
-        // }
-
         const [results, count] = await Promise.all<any>([
-            this.find(entityClassOrName, query),
-            this.count(entityClassOrName, query),
+            this.find(entityClassOrName, optionsOrConditions),
+            this.count(entityClassOrName),
         ])
+
         return [results, parseInt(count)]
     }
 }

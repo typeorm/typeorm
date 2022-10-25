@@ -211,7 +211,9 @@ describe("mongodb > MongoRepository", () => {
                         connection.getMongoRepository(PostWithDeleted)
                     await seedPosts(postRepository)
 
-                    const loadedPosts = await postRepository.find()
+                    const loadedPosts = await postRepository.find({
+                        withDeleted: false,
+                    })
                     const filteredPost = loadedPosts.find(
                         (post) => post.title === "deleted",
                     )
@@ -249,6 +251,8 @@ describe("mongodb > MongoRepository", () => {
                         const postRepository =
                             connection.getMongoRepository(PostWithDeleted)
                         await seedPosts(postRepository)
+                        // console.log(`posts >>>`)
+                        // console.dir(posts)
 
                         const loadedPost = await postRepository.findOneBy({
                             where: { title: "notDeleted" },
@@ -259,6 +263,11 @@ describe("mongodb > MongoRepository", () => {
                                 withDeleted: true,
                             })
 
+                        // console.log(`loadedPost >>>`)
+                        // console.dir(loadedPost, { depth: null })
+                        // console.log(`loadedPostWithDeleted >>>`)
+                        // console.dir(loadedPostWithDeleted, { depth: null })
+
                         expect(loadedPost?.title).to.eql("notDeleted")
                         expect(loadedPostWithDeleted?.title).to.eql("deleted")
                     }),
@@ -268,18 +277,20 @@ describe("mongodb > MongoRepository", () => {
 })
 
 async function seedPosts(postRepository: MongoRepository<PostWithDeleted>) {
-    await postRepository.save({
+    const post0 = await postRepository.save({
         title: "withoutDeleted",
         text: "withoutDeleted",
     })
-    await postRepository.save({
+    const post1 = await postRepository.save({
         title: "notDeleted",
         text: "notDeleted",
         deletedAt: null,
     })
-    await postRepository.save({
+    const post2 = await postRepository.save({
         title: "deleted",
         text: "deleted",
         deletedAt: new Date(),
     })
+
+    return [post0, post1, post2]
 }

@@ -150,12 +150,13 @@ describe("mongodb > basic repository actions", () => {
     it("should return persisted objects using find* methods", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postRepository = connection.getMongoRepository(Post)
+                const postRepository = connection.getRepository(Post)
 
                 const post1 = new Post()
                 post1.title = "First Post"
                 post1.text = "Everything about first post"
                 await postRepository.save(post1)
+                console.log("post1.id", post1.id)
 
                 const post2 = new Post()
                 post2.title = "Second Post"
@@ -174,9 +175,12 @@ describe("mongodb > basic repository actions", () => {
 
                 // assert.findOne method
                 const loadedPost1 = await postRepository.findOneBy({
-                    _id: post1.id,
+                    id: post1.id,
                 })
-                expect(loadedPost1!.id).to.be.eql(post1.id)
+
+                expect(loadedPost1!.id.toString()).to.be.equal(
+                    post1.id.toString(),
+                )
                 expect(loadedPost1!.title).to.be.equal("First Post")
                 expect(loadedPost1!.text).to.be.equal(
                     "Everything about first post",
@@ -186,7 +190,10 @@ describe("mongodb > basic repository actions", () => {
                 const loadedPost2 = await postRepository.findOneBy({
                     title: "Second Post",
                 })
-                expect(loadedPost2!.id).to.be.eql(post2.id)
+
+                expect(loadedPost2!.id.toString()).to.be.equal(
+                    post2.id.toString(),
+                )
                 expect(loadedPost2!.title).to.be.equal("Second Post")
                 expect(loadedPost2!.text).to.be.equal(
                     "Everything about second post",
@@ -197,12 +204,16 @@ describe("mongodb > basic repository actions", () => {
                     post1.id,
                     post2.id,
                 ])
-                expect(loadedPost3[0]!.id).to.be.eql(post1.id)
+                expect(loadedPost3[0]!.id.toString()).to.be.eql(
+                    post1.id.toString(),
+                )
                 expect(loadedPost3[0]!.title).to.be.equal("First Post")
                 expect(loadedPost3[0]!.text).to.be.equal(
                     "Everything about first post",
                 )
-                expect(loadedPost3[1].id).to.be.eql(post2.id)
+                expect(loadedPost3[1].id.toString()).to.be.eql(
+                    post2.id.toString(),
+                )
                 expect(loadedPost3[1].title).to.be.equal("Second Post")
                 expect(loadedPost3[1].text).to.be.equal(
                     "Everything about second post",

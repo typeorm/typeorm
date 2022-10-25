@@ -229,7 +229,8 @@ export class User {
     @Column()
     name: string
 
-    @ObjectIdColumn({ name: "post" })
+    // Make sure you have {array: true}
+    @ObjectIdColumn({ name: "post", array: true })
     posts: ObjectID[] | Post[]
 }
 
