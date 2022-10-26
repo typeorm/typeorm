@@ -1435,9 +1435,22 @@ export class MongoEntityManager extends EntityManager {
                     })
                 }
             }
-            // console.log(`pipeline >>>`)
-            // console.dir(pipeline, { depth: null })
+        } else if (deleteDateColumn) {
+            pipeline.push({
+                $match: {
+                    $or: [
+                        {
+                            [deleteDateColumn.propertyName]: {
+                                $eq: null,
+                            },
+                        },
+                    ],
+                },
+            })
         }
+
+        // console.log(`pipeline >>>`)
+        // console.dir(pipeline, { depth: null })
 
         results = await this.aggregateEntity(
             entityClassOrName,
