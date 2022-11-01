@@ -6,13 +6,13 @@ export class PgEntity {
     id: number
 
     @Column("time")
-    fieldTime: Date
+    fieldTime: string
 
     @Column("time with time zone")
-    fieldTimeWithTZ: Date
+    fieldTimeWithTZ: string
 
     @Column("time without time zone")
-    fieldTimeWithoutTZ: Date
+    fieldTimeWithoutTZ: string
 
     @Column("timestamp")
     fieldTimestamp: Date

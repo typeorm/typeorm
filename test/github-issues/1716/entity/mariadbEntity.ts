@@ -6,7 +6,7 @@ export class MariadbEntity {
     id: number
 
     @Column("time")
-    fieldTime: Date
+    fieldTime: string
 
     @Column("timestamp")
     fieldTimestamp: Date

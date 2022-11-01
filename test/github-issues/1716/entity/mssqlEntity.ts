@@ -6,7 +6,7 @@ export class MssqlEntity {
     id: number
 
     @Column("time")
-    fieldTime: Date
+    fieldTime: string
 
     @Column("datetime")
     fieldDatetime: Date

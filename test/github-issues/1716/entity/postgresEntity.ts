@@ -6,13 +6,13 @@ export class PostgresEntity {
     id: number
 
     @Column("time")
-    fieldTime: Date
+    fieldTime: string
 
     @Column("time with time zone")
-    fieldTimeWithTimeZone: Date
+    fieldTimeWithTimeZone: string
 
     @Column("time without time zone")
-    fieldTimeWithoutTimeZone: Date
+    fieldTimeWithoutTimeZone: string
 
     @Column("timestamp")
     fieldTimestamp: Date

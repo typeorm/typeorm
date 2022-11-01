@@ -65,9 +65,9 @@ describe("github issues > #1716 send timestamp to database without converting it
                 fieldTime: "14:00:00+05",
                 fieldTimeWithTZ: "14:00:00+05",
                 fieldTimeWithoutTZ: "14:00:00+05",
-                fieldTimestamp: "2018-03-07 14:00:00+05",
-                fieldTimestampWithoutTZ: "2018-03-07 14:00:00+05",
-                fieldTimestampWithTZ: "2018-03-07 14:00:00+05",
+                fieldTimestamp: new Date("2018-03-07 14:00:00+05"),
+                fieldTimestampWithoutTZ: new Date("2018-03-07 14:00:00+05"),
+                fieldTimestampWithTZ: new Date("2018-03-07 14:00:00+05"),
             })
 
             const result1 = await manager.findOneBy(PgEntity, {
@@ -94,9 +94,9 @@ describe("github issues > #1716 send timestamp to database without converting it
                 fieldTime: "17:00:00",
                 fieldTimeWithTZ: "17:00:00",
                 fieldTimeWithoutTZ: "17:00:00",
-                fieldTimestamp: "2018-03-07 17:00:00",
-                fieldTimestampWithoutTZ: "2018-03-07 17:00:00",
-                fieldTimestampWithTZ: "2018-03-07 17:00:00",
+                fieldTimestamp: new Date("2018-03-07 17:00:00"),
+                fieldTimestampWithoutTZ: new Date("2018-03-07 17:00:00"),
+                fieldTimestampWithTZ: new Date("2018-03-07 17:00:00"),
             })
 
             const result2 = await manager.findOneBy(PgEntity, {
@@ -145,8 +145,8 @@ describe("github issues > #1716 send timestamp to database without converting it
             await manager.save(MysqlEntity, {
                 id: 1,
                 fieldTime: "14:00:00",
-                fieldTimestamp: "2018-03-07 14:00:00+05",
-                fieldDatetime: "2018-03-07 14:00:00+05",
+                fieldTimestamp: new Date("2018-03-07 14:00:00+05"),
+                fieldDatetime: new Date("2018-03-07 14:00:00+05"),
             })
 
             const result1 = await manager.findOneBy(MysqlEntity, {
@@ -167,8 +167,8 @@ describe("github issues > #1716 send timestamp to database without converting it
             await manager.save(MysqlEntity, {
                 id: 2,
                 fieldTime: "17:00:00",
-                fieldTimestamp: "2018-03-07 17:00:00",
-                fieldDatetime: "2018-03-07 17:00:00",
+                fieldTimestamp: new Date("2018-03-07 17:00:00"),
+                fieldDatetime: new Date("2018-03-07 17:00:00"),
             })
 
             const result2 = await manager.findOneBy(MysqlEntity, {
@@ -213,8 +213,8 @@ describe("github issues > #1716 send timestamp to database without converting it
             await manager.save(MariadbEntity, {
                 id: 1,
                 fieldTime: "14:00:00",
-                fieldTimestamp: "2018-03-07 14:00:00+05",
-                fieldDatetime: "2018-03-07 14:00:00+05",
+                fieldTimestamp: new Date("2018-03-07 14:00:00+05"),
+                fieldDatetime: new Date("2018-03-07 14:00:00+05"),
             })
 
             const result1 = await manager.findOneBy(MariadbEntity, {
@@ -235,8 +235,8 @@ describe("github issues > #1716 send timestamp to database without converting it
             await manager.save(MariadbEntity, {
                 id: 2,
                 fieldTime: "17:00:00",
-                fieldTimestamp: "2018-03-07 17:00:00",
-                fieldDatetime: "2018-03-07 17:00:00",
+                fieldTimestamp: new Date("2018-03-07 17:00:00"),
+                fieldDatetime: new Date("2018-03-07 17:00:00"),
             })
 
             const result2 = await manager.findOneBy(MariadbEntity, {
@@ -281,9 +281,9 @@ describe("github issues > #1716 send timestamp to database without converting it
             await manager.save(MssqlEntity, {
                 id: 1,
                 fieldTime: "14:00:00",
-                fieldDatetime: "2018-03-07 14:00:00+05",
-                fieldDatetime2: "2018-03-07 14:00:00+05",
-                fieldDatetimeoffset: "2018-03-07 14:00:00+05",
+                fieldDatetime: new Date("2018-03-07 14:00:00+05"),
+                fieldDatetime2: new Date("2018-03-07 14:00:00+05"),
+                fieldDatetimeoffset: new Date("2018-03-07 14:00:00+05"),
             })
 
             const result1 = await manager.findOneBy(MssqlEntity, {
@@ -306,9 +306,9 @@ describe("github issues > #1716 send timestamp to database without converting it
             await manager.save(MssqlEntity, {
                 id: 2,
                 fieldTime: "17:00:00",
-                fieldDatetime: "2018-03-07 17:00:00",
-                fieldDatetime2: "2018-03-07 17:00:00",
-                fieldDatetimeoffset: "2018-03-07 17:00:00",
+                fieldDatetime: new Date("2018-03-07 17:00:00"),
+                fieldDatetime2: new Date("2018-03-07 17:00:00"),
+                fieldDatetimeoffset: new Date("2018-03-07 17:00:00"),
             })
 
             const result2 = await manager.findOneBy(MssqlEntity, {

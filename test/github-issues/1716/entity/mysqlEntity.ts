@@ -6,7 +6,7 @@ export class MysqlEntity {
     id: number
 
     @Column("time")
-    fieldTime: Date
+    fieldTime: string
 
     @Column("timestamp")
     fieldTimestamp: Date
