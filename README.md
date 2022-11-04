@@ -1298,6 +1298,8 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
 -   Create, drop & seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
 -   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
+-   Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
+-   Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
 
 ## Contributing
 
