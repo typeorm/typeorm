@@ -1289,7 +1289,7 @@ There are a few repositories which you can clone and start with:
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
--   [TypeORM + GraphQL framework](http://vesper-framework.com)
+-   [TypeORM + GraphQL framework](https://github.com/vesper-framework/vesper)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 -   Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
@@ -1298,6 +1298,8 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
 -   Create, drop & seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
 -   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
+-   Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
+-   Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
 
 ## Contributing
 
