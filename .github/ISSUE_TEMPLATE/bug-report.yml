@@ -68,34 +68,47 @@ body:
       description: >-
         Add any other context about the bug report here. Add any other context
         about the bug report here.
-  - type: textarea
+  - type: checkboxes
     id: drivers
     attributes:
       label: Relevant Database Driver(s)
-      description: Put "yes" instead of "no" to your issue's relevant databases
-      value: |
-        | DB Type           | Reproducible  |
-        |-------------------| ---           |
-        | `aurora-mysql`    | no            |
-        | `aurora-postgres` | no            |
-        | `better-sqlite3`  | no            |
-        | `cockroachdb`     | no            |
-        | `cordova`         | no            |
-        | `expo`            | no            |
-        | `mongodb`         | no            |
-        | `mysql`           | no            |
-        | `nativescript`    | no            |
-        | `oracle`          | no            |
-        | `postgres`        | no            |
-        | `react-native`    | no            |
-        | `sap`             | no            |
-        | `spanner`         | no            |
-        | `sqlite`          | no            |
-        | `sqlite-abstract` | no            |
-        | `sqljs`           | no            |
-        | `sqlserver`       | no            |
-    validations:
-      required: true
+      options:
+        - label: aurora-mysql
+          required: false
+        - label: aurora-postgres
+          required: false
+        - label: better-sqlite3
+          required: false
+        - label: cockroachdb
+          required: false
+        - label: cordova
+          required: false
+        - label: expo
+          required: false
+        - label: mongodb
+          required: false
+        - label: mysql
+          required: false
+        - label: nativescript
+          required: false
+        - label: oracle
+          required: false
+        - label: postgres
+          required: false
+        - label: react-native
+          required: false
+        - label: sap
+          required: false
+        - label: spanner
+          required: false
+        - label: sqlite
+          required: false
+        - label: sqlite-abstract
+          required: false
+        - label: sqljs
+          required: false
+        - label: sqlserver
+          required: false
   - type: dropdown
     id: pr
     attributes:
