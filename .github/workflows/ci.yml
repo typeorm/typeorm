@@ -25,6 +25,6 @@ jobs:
         run: npm run package
       - name: Publish
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: cd ./build/package && npm publish --access restricted
+        run: npm publish --access restricted ./build/package
         env:
-          NPM_TOKEN: ${{ secrets.TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
