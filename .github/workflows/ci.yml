@@ -1,0 +1,30 @@
+name: Deploy Player
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build:
+    name: Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.16.0"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@streamyard"
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build Package
+        run: npm run package
+      - name: Publish
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: npm publish --access restricted
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
