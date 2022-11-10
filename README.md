@@ -1000,7 +1000,7 @@ Let's change our photo's `@OneToOne` decorator a bit:
 
 ```typescript
 export class Photo {
-    /// ... other columns
+    // ... other columns
 
     @OneToOne(() => PhotoMetadata, (metadata) => metadata.photo, {
         cascade: true,
@@ -1155,7 +1155,7 @@ Now let's add the inverse side of our relation to the `Photo` class:
 
 ```typescript
 export class Photo {
-    /// ... other columns
+    // ... other columns
 
     @ManyToMany(() => Album, (album) => album.photos)
     albums: Album[]
