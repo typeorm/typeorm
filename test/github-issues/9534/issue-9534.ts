@@ -204,22 +204,26 @@ describe("github issues > #9534 materialized-path", () => {
                         id: a1.id,
                         name: "a1",
                         uid: "a1",
+                        parentUid: null,
                         childCategories: [
                             {
                                 id: a11.id,
                                 name: "a11",
                                 uid: "a11",
+                                parentUid: "a1",
                                 childCategories: [
                                     {
                                         id: a111.id,
                                         name: "a111",
                                         uid: "a111",
+                                        parentUid: "a11",
                                         childCategories: [],
                                     },
                                     {
                                         id: a112.id,
                                         name: "a112",
                                         uid: "a112",
+                                        parentUid: "a11",
                                         childCategories: [],
                                     },
                                 ],
@@ -228,6 +232,7 @@ describe("github issues > #9534 materialized-path", () => {
                                 id: a12.id,
                                 name: "a12",
                                 uid: "a12",
+                                parentUid: "a1",
                                 childCategories: [],
                             },
                         ],
