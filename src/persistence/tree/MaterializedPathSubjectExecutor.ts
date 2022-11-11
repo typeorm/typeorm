@@ -2,6 +2,9 @@ import { Subject } from "../Subject"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { ColumnMetadata } from '../../metadata/ColumnMetadata'
+import { EntityMetadata } from '../../metadata/EntityMetadata'
+import { Brackets } from '../../query-builder/Brackets'
 
 /**
  * Executes subject operations for materialized-path tree entities.
@@ -81,8 +84,8 @@ export class MaterializedPathSubjectExecutor {
         const oldParent = subject.metadata.treeParentRelation!.getEntityValue(
             entity!,
         )
-        const oldParentId = subject.metadata.getEntityIdMap(oldParent)
-        const newParentId = subject.metadata.getEntityIdMap(newParent)
+        const oldParentId = this.getEntityParentReferencedColumnMap(subject, oldParent);
+        const newParentId = this.getEntityParentReferencedColumnMap(subject, newParent);
 
         // Exit if the new and old parents are the same
         if (OrmUtils.compareIds(oldParentId, newParentId)) {
@@ -121,10 +124,24 @@ export class MaterializedPathSubjectExecutor {
             .execute()
     }
 
+    private getEntityParentReferencedColumnMap(subject: Subject, entity: ObjectLiteral | undefined): ObjectLiteral|undefined {
+        if(!entity)
+            return undefined
+        return EntityMetadata.getValueMap(
+            entity,
+            subject.metadata.treeParentRelation!.joinColumns
+                .map(column => column.referencedColumn)
+                .filter((v) => v != null) as ColumnMetadata[],
+            { skipNulls: true }
+        )
+    }
+
     private getEntityPath(
         subject: Subject,
         id: ObjectLiteral,
     ): Promise<string> {
+        const metadata = subject.metadata
+        const normalized = (Array.isArray(id) ? id : [id]).map(id => metadata.ensureEntityIdMap(id));
         return this.queryRunner.manager
             .createQueryBuilder()
             .select(
@@ -134,7 +151,13 @@ export class MaterializedPathSubjectExecutor {
                 "path",
             )
             .from(subject.metadata.target, subject.metadata.targetName)
-            .whereInIds(id)
+            .where(new Brackets((qb) => {
+                for (const data of normalized) {
+                    qb.orWhere(new Brackets(
+                        (qb) => qb.where(data)
+                    ));
+                }
+            }))
             .getRawOne()
             .then((result) => (result ? result["path"] : ""))
     }
