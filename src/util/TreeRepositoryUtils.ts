@@ -19,14 +19,15 @@ export class TreeRepositoryUtils {
     ): { id: any; parentId: any }[] {
         return rawResults.map((rawResult) => {
             const joinColumn = metadata.treeParentRelation!.joinColumns[0]
-            const referencedColumn = joinColumn.referencedColumn ?? metadata.primaryColumns[0]
+            const referencedColumn =
+                joinColumn.referencedColumn ?? metadata.primaryColumns[0]
             // fixes issue #2518, default to databaseName property when givenDatabaseName is not set
             const joinColumnName =
                 joinColumn.givenDatabaseName || joinColumn.databaseName
             const referencedColumnName =
-                referencedColumn.givenDatabaseName || referencedColumn.databaseName
-            const id =
-                rawResult[alias + "_" + referencedColumnName]
+                referencedColumn.givenDatabaseName ||
+                referencedColumn.databaseName
+            const id = rawResult[alias + "_" + referencedColumnName]
             const parentId = rawResult[alias + "_" + joinColumnName]
             return {
                 id: manager.connection.driver.prepareHydratedValue(
@@ -54,7 +55,8 @@ export class TreeRepositoryUtils {
             return
         }
         const joinColumn = metadata.treeParentRelation!.joinColumns[0]
-        const referencedColumn = joinColumn.referencedColumn ?? metadata.primaryColumns[0]
+        const referencedColumn =
+            joinColumn.referencedColumn ?? metadata.primaryColumns[0]
         const parentEntityId = referencedColumn.getEntityValue(entity)
         const childRelationMaps = relationMaps.filter(
             (relationMap) => relationMap.parentId === parentEntityId,
@@ -87,7 +89,8 @@ export class TreeRepositoryUtils {
     ): void {
         const parentProperty = metadata.treeParentRelation!.propertyName
         const joinColumn = metadata.treeParentRelation!.joinColumns[0]
-        const referencedColumn = joinColumn.referencedColumn ?? metadata.primaryColumns[0]
+        const referencedColumn =
+            joinColumn.referencedColumn ?? metadata.primaryColumns[0]
         const entityId = referencedColumn.getEntityValue(entity)
         const parentRelationMap = relationMaps.find(
             (relationMap) => relationMap.id === entityId,
