@@ -13,7 +13,7 @@ describe("github issues > #9534 materialized-path", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Category],
-                logging: true,
+                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -141,7 +141,7 @@ describe("github issues > #9534 materialized-path", () => {
                 })
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(4)
+                a1Children.length.should.be.equal(3)
                 a1Children.should.deep.include({
                     id: 1,
                     name: "a1",
