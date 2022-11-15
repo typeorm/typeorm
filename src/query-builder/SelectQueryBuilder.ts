@@ -3282,9 +3282,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         ),
                     )
-                    if (!orderBys[columnAlias])
-                        // make sure we aren't overriding user-defined order in inverse direction
-                        orderBys[columnAlias] = "ASC"
 
                     const alias = DriverUtils.buildAlias(
                         this.connection.driver,

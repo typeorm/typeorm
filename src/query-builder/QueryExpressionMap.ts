@@ -359,19 +359,39 @@ export class QueryExpressionMap {
      * otherwise it uses default entity order by if it was set.
      */
     get allOrderBys() {
+        const primaryColumns = this.mainAlias!.hasMetadata
+            ? this.mainAlias!.metadata.primaryColumns
+            : []
+        const primaryColumnNames = primaryColumns.map(
+            (column) => column.databaseName,
+        )
         if (
             !Object.keys(this.orderBys).length &&
             this.mainAlias!.hasMetadata &&
             this.options.indexOf("disable-global-order") === -1
         ) {
-            const entityOrderBy = this.mainAlias!.metadata.orderBy || {}
+            // Deep clone default entity order to avoid modifying it
+            const entityOrderBy = JSON.parse(
+                JSON.stringify(this.mainAlias!.metadata.orderBy || {}),
+            )
+            primaryColumnNames.forEach((primaryColumnName) => {
+                if (!entityOrderBy[primaryColumnName]) {
+                    entityOrderBy[primaryColumnName] = "ASC"
+                }
+            })
             return Object.keys(entityOrderBy).reduce((orderBy, key) => {
                 orderBy[this.mainAlias!.name + "." + key] = entityOrderBy[key]
                 return orderBy
             }, {} as OrderByCondition)
         }
-
-        return this.orderBys
+        // Deep clone order that user specifies to avoid modifying it
+        const orderBys = JSON.parse(JSON.stringify(this.orderBys))
+        primaryColumnNames.forEach((primaryColumnName) => {
+            if (!orderBys[this.mainAlias!.name + "." + primaryColumnName]) {
+                orderBys[this.mainAlias!.name + "." + primaryColumnName] = "ASC"
+            }
+        })
+        return orderBys
     }
 
     // -------------------------------------------------------------------------
