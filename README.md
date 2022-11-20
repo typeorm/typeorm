@@ -781,7 +781,7 @@ export class PhotoMetadata {
     @Column()
     comment: string
 
-    @OneToOne(() => Photo)
+    @OneToOne((type) => Photo)
     @JoinColumn()
     photo: Photo
 }
@@ -878,7 +878,7 @@ import { Photo } from "./Photo"
 export class PhotoMetadata {
     /* ... other columns */
 
-    @OneToOne(() => Photo, (photo) => photo.metadata)
+    @OneToOne((type) => Photo, (photo) => photo.metadata)
     @JoinColumn()
     photo: Photo
 }
@@ -892,7 +892,7 @@ import { PhotoMetadata } from "./PhotoMetadata"
 export class Photo {
     /* ... other columns */
 
-    @OneToOne(() => PhotoMetadata, (photoMetadata) => photoMetadata.photo)
+    @OneToOne((type) => PhotoMetadata, (photoMetadata) => photoMetadata.photo)
     metadata: PhotoMetadata
 }
 ```
@@ -926,7 +926,7 @@ import { Photo } from "./Photo"
 export class PhotoMetadata {
     /* ... other columns */
 
-    @OneToOne(() => Photo, (photo) => photo.metadata)
+    @OneToOne((type) => Photo, (photo) => photo.metadata)
     @JoinColumn()
     photo: Relation<Photo>
 }
@@ -946,7 +946,7 @@ import { PhotoMetadata } from "./PhotoMetadata"
 export class Photo {
     /* ... other columns */
 
-    @OneToOne(() => PhotoMetadata, (photoMetadata) => photoMetadata.photo)
+    @OneToOne((type) => PhotoMetadata, (photoMetadata) => photoMetadata.photo)
     metadata: Relation<PhotoMetadata>
 }
 ```
@@ -1002,7 +1002,7 @@ Let's change our photo's `@OneToOne` decorator a bit:
 export class Photo {
     /// ... other columns
 
-    @OneToOne(() => PhotoMetadata, (metadata) => metadata.photo, {
+    @OneToOne((type) => PhotoMetadata, (metadata) => metadata.photo, {
         cascade: true,
     })
     metadata: PhotoMetadata
@@ -1067,7 +1067,7 @@ export class Author {
     @Column()
     name: string
 
-    @OneToMany(() => Photo, (photo) => photo.author) // note: we will create author property in the Photo class below
+    @OneToMany((type) => Photo, (photo) => photo.author) // note: we will create author property in the Photo class below
     photos: Photo[]
 }
 ```
@@ -1086,7 +1086,7 @@ import { Author } from "./Author"
 export class Photo {
     /* ... other columns */
 
-    @ManyToOne(() => Author, (author) => author.photos)
+    @ManyToOne((type) => Author, (author) => author.photos)
     author: Author
 }
 ```
@@ -1143,7 +1143,7 @@ export class Album {
     @Column()
     name: string
 
-    @ManyToMany(() => Photo, (photo) => photo.albums)
+    @ManyToMany((type) => Photo, (photo) => photo.albums)
     @JoinTable()
     photos: Photo[]
 }
@@ -1157,7 +1157,7 @@ Now let's add the inverse side of our relation to the `Photo` class:
 export class Photo {
     /// ... other columns
 
-    @ManyToMany(() => Album, (album) => album.photos)
+    @ManyToMany((type) => Album, (album) => album.photos)
     albums: Album[]
 }
 ```
