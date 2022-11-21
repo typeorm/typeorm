@@ -4,12 +4,12 @@ export type WithType<T> = T & { type: "Post" }
 
 @Entity()
 export class Post {
-    @PrimaryColumn()
+    @PrimaryColumn({ type: Number })
     id: number & { type: "Post" }
 
-    @Column()
+    @Column({ type: String })
     title: string & { type: "Post" }
 
-    @Column()
+    @Column({ type: Boolean })
     isEdited: boolean & { type: "Post" }
 }
