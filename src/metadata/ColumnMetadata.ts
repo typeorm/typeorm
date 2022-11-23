@@ -804,7 +804,23 @@ export class ColumnMetadata {
                     value =
                         this.referencedColumn.getEntityValue(relatedEntityValue)
                 } else if (this.isEntityLike(rawValue)) {
-                    value = this.referencedColumn.getEntityValue(rawValue)
+                    // If `rawValue` is actually not an entity, we should assign it to `value`.
+                    // FIXME
+                    // There is no differentiation between a literal object representing an entity
+                    // and a literal object which is the column value verbatim.
+                    // This means that we will know that `rawValue` is definitely not an entity if
+                    // `referencedColumn.getEntityValue` returns undefined. And that's when we should assign
+                    // `rawValue` to `value.
+                    // However, if `referencedColumn.getEntityValue` returns some defined value we cannot be certain
+                    // that `rawValue` actually was an entity, because it might have been the case where `rawValue`
+                    // object literal contained a property with exactly the same name as `referencedColumn.propertyName`.
+                    // In such cases we will incorrectly assign some arbitrary object property to `value` variable,
+                    // where the correct behaviour would be to assign whole `rawValue`.
+                    // To resolve this bug, we need to be able to differentiate an object literal representing an entity
+                    // from an object literal representing arbitrary data.
+                    value =
+                        this.referencedColumn.getEntityValue(rawValue) ??
+                        rawValue
                 } else {
                     value = rawValue
                 }
