@@ -810,7 +810,6 @@ export class ColumnMetadata {
                     relatedEntity &&
                     ObjectUtils.isObject(relatedEntity) &&
                     !InstanceChecker.isFindOperator(relatedEntity) &&
-                    !(typeof relatedEntity === "function") &&
                     !Buffer.isBuffer(relatedEntity)
                 ) {
                     value = this.referencedColumn.getEntityValue(relatedEntity)
@@ -820,7 +819,6 @@ export class ColumnMetadata {
                     !InstanceChecker.isFindOperator(
                         entity[this.propertyName],
                     ) &&
-                    !(typeof entity[this.propertyName] === "function") &&
                     !Buffer.isBuffer(entity[this.propertyName]) &&
                     !(entity[this.propertyName] instanceof Date)
                 ) {
