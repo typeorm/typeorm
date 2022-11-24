@@ -734,6 +734,7 @@ export class ColumnMetadata {
 
         // extract column value from embeddeds of entity if column is in embedded
         let value: any = undefined
+
         if (this.embeddedMetadata) {
             // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
             // we need to get value of "id" column from the post real entity object
@@ -764,26 +765,16 @@ export class ColumnMetadata {
             )
             if (embeddedObject) {
                 if (this.relationMetadata && this.referencedColumn) {
-                    const relatedEntity =
+                    const relatedEntityValue =
                         this.relationMetadata.getEntityValue(embeddedObject)
-                    if (
-                        relatedEntity &&
-                        ObjectUtils.isObject(relatedEntity) &&
-                        !InstanceChecker.isFindOperator(relatedEntity) &&
-                        !Buffer.isBuffer(relatedEntity)
-                    ) {
+
+                    if (this.isEntityLike(relatedEntityValue)) {
                         value =
-                            this.referencedColumn.getEntityValue(relatedEntity)
+                            this.referencedColumn.getEntityValue(
+                                relatedEntityValue,
+                            )
                     } else if (
-                        embeddedObject[this.propertyName] &&
-                        ObjectUtils.isObject(
-                            embeddedObject[this.propertyName],
-                        ) &&
-                        !InstanceChecker.isFindOperator(
-                            embeddedObject[this.propertyName],
-                        ) &&
-                        !Buffer.isBuffer(embeddedObject[this.propertyName]) &&
-                        !(embeddedObject[this.propertyName] instanceof Date)
+                        this.isEntityLike(embeddedObject[this.propertyName])
                     ) {
                         value = this.referencedColumn.getEntityValue(
                             embeddedObject[this.propertyName],
@@ -803,37 +794,24 @@ export class ColumnMetadata {
             }
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
+            const rawValue = entity[this.propertyName]
+
             if (this.relationMetadata && this.referencedColumn) {
-                const relatedEntity =
+                const relatedEntityValue =
                     this.relationMetadata.getEntityValue(entity)
-                if (
-                    relatedEntity &&
-                    ObjectUtils.isObject(relatedEntity) &&
-                    !InstanceChecker.isFindOperator(relatedEntity) &&
-                    !Buffer.isBuffer(relatedEntity)
-                ) {
-                    value = this.referencedColumn.getEntityValue(relatedEntity)
-                } else if (
-                    entity[this.propertyName] &&
-                    ObjectUtils.isObject(entity[this.propertyName]) &&
-                    !InstanceChecker.isFindOperator(
-                        entity[this.propertyName],
-                    ) &&
-                    !Buffer.isBuffer(entity[this.propertyName]) &&
-                    !(entity[this.propertyName] instanceof Date)
-                ) {
-                    value = this.referencedColumn.getEntityValue(
-                        entity[this.propertyName],
-                    )
+
+                if (this.isEntityLike(relatedEntityValue)) {
+                    value =
+                        this.referencedColumn.getEntityValue(relatedEntityValue)
+                } else if (this.isEntityLike(rawValue)) {
+                    value = this.referencedColumn.getEntityValue(rawValue)
                 } else {
-                    value = entity[this.propertyName]
+                    value = rawValue
                 }
             } else if (this.referencedColumn) {
-                value = this.referencedColumn.getEntityValue(
-                    entity[this.propertyName],
-                )
+                value = this.referencedColumn.getEntityValue(rawValue)
             } else {
-                value = entity[this.propertyName]
+                value = rawValue
             }
         }
 
@@ -985,6 +963,23 @@ export class ColumnMetadata {
             this.propertyName,
             this.givenDatabaseName,
             propertyNames,
+        )
+    }
+
+    /**
+     * Apply some heuristics to be more certain that `value` is an object representing
+     * another entity.
+     *
+     * This is not 100% correct -- `value` might be an object literal
+     * representing a column value that is **not** an entity.
+     */
+    private isEntityLike(value: unknown): boolean {
+        return (
+            ObjectUtils.isObject(value) &&
+            value &&
+            !InstanceChecker.isFindOperator(value) &&
+            !Buffer.isBuffer(value) &&
+            !(value instanceof Date)
         )
     }
 }
