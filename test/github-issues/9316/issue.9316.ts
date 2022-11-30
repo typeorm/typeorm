@@ -1,4 +1,4 @@
-import { DataSource } from "../../../src"
+import { DataSource, InvalidConditionError } from "../../../src"
 import {
     createTestingConnections,
     reloadTestingDatabases,
@@ -31,7 +31,7 @@ describe("github issues > #9316 specify how should interpret null and undefined 
         Promise.all(dataSources.map((dataSource) => dataSource.destroy())),
     )
 
-    it('it should interpret "null" values in condition as "IS NULL" and "undefined" values ', async () => {
+    it('should interpret "null" values in condition as "IS NULL" and "undefined" values ', async () => {
         await createConnectionWith({
             nullValues: "is-null",
             undefinedValues: "exclude",
@@ -90,7 +90,7 @@ describe("github issues > #9316 specify how should interpret null and undefined 
         )
     })
 
-    it('it should interpret "null" values in condition as "IS NULL" and "undefined" values as "IS NULL"', async () => {
+    it('should interpret "null" values in condition as "IS NULL" and "undefined" values as "IS NULL"', async () => {
         await createConnectionWith({
             nullValues: "is-null",
             undefinedValues: "is-null",
@@ -143,7 +143,7 @@ describe("github issues > #9316 specify how should interpret null and undefined 
         )
     })
 
-    it('it should exclude "null" and "undefined" values in condition', async () => {
+    it('should exclude "null" and "undefined" values in condition', async () => {
         await createConnectionWith({
             nullValues: "exclude",
             undefinedValues: "exclude",
@@ -180,6 +180,48 @@ describe("github issues > #9316 specify how should interpret null and undefined 
 
                 // "age" should be excluded from the query, so both users should be returned
                 expect(usersWithUndefinedAge).to.have.length(2)
+            }),
+        )
+    })
+
+    it('should throw a error when "undefined" values in condition', async () => {
+        await createConnectionWith({
+            undefinedValues: "throw",
+        })
+
+        await Promise.all(
+            dataSources.map(async (connection) => {
+                const john = new User()
+                john.name = "John"
+                john.age = 25
+
+                const jane = new User()
+                jane.name = "Jane"
+                jane.age = null
+
+                await connection.manager.save(john)
+                await connection.manager.save(jane)
+
+                const withNullAge = await connection.manager.find(User, {
+                    where: { age: null },
+                })
+
+                expect(withNullAge).to.have.length(1)
+                expect(withNullAge[0].name).to.be.equal("Jane")
+
+                let error: InvalidConditionError | undefined
+
+                try {
+                    await connection.manager.find(User, {
+                        where: {
+                            age: undefined,
+                        },
+                    })
+                } catch (e) {
+                    error = e
+                }
+
+                expect(error).to.be.instanceOf(InvalidConditionError)
             }),
         )
     })

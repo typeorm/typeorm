@@ -3,6 +3,8 @@ import {
     ConditionLoaderOptions,
     InterpretConditionAs,
 } from "./ConditionLoaderOptions"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import { InvalidConditionError } from "../../error/InvalidConditionError"
 
 export class ConditionLoader {
     public readonly undefinedValues: InterpretConditionAs
@@ -14,19 +16,25 @@ export class ConditionLoader {
         this.nullValues = options.nullValues || "is-null"
     }
 
-    public shouldExcludeCondition(where: FindOptionsWhere<any>, key: string) {
+    public shouldExcludeCondition(
+        where: FindOptionsWhere<any>,
+        key: string,
+        metadata: EntityMetadata,
+    ): boolean {
         const value = where[key]
-        return (
-            (value === undefined && this.shouldExcludeUndefined()) ||
-            (value === null && this.shouldExcludeNull())
-        )
-    }
 
-    private shouldExcludeUndefined(): boolean {
-        return this.undefinedValues === "exclude"
-    }
+        if (value === null) {
+            if (this.nullValues === "throw")
+                throw new InvalidConditionError(key, metadata)
 
-    private shouldExcludeNull(): boolean {
-        return this.nullValues === "exclude"
+            return this.nullValues === "exclude"
+        } else if (value === undefined) {
+            if (this.undefinedValues === "throw")
+                throw new InvalidConditionError(key, metadata)
+
+            return this.undefinedValues === "exclude"
+        }
+
+        return false
     }
 }

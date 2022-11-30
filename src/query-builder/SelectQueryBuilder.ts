@@ -4037,7 +4037,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             let andConditions: string[] = []
 
             for (let key in where) {
-                if (this.conditionLoader.shouldExcludeCondition(where, key)) {
+                if (this.conditionLoader.shouldExcludeCondition(where, key, metadata)) {
                     continue
                 }
 
