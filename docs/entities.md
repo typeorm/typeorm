@@ -694,7 +694,7 @@ export class Category {
 
 A closure table stores relations between parent and child in a separate table in a special way.
 Its efficient in both reads and writes.
-To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data).
+To learn more about closure table take a look at [this awesome presentation by Bill Karwin](https://www.academia.edu/37743811/Models_for_Hierarchical_Data_with_SQL_and_PHP).
 Example:
 
 ```typescript
