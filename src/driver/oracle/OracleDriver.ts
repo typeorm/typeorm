@@ -225,7 +225,7 @@ export class OracleDriver implements Driver {
         enabled: false, // TODO: enable
     }
 
-    dummyTableName = "DUAL";
+    dummyTableName = "DUAL"
 
     // -------------------------------------------------------------------------
     // Constructor

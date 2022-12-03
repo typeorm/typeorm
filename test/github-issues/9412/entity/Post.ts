@@ -7,9 +7,9 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({unique: true})
+    @Column({ unique: true })
     title: string
 
-    @Column({unique: true})
+    @Column({ unique: true })
     author: string
 }

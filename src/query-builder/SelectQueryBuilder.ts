@@ -250,7 +250,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     fromDummy(): SelectQueryBuilder<any> {
-        return this.from(this.connection.driver.dummyTableName ?? "(SELECT 1 AS dummy_column)", "dummy_table");
+        return this.from(
+            this.connection.driver.dummyTableName ??
+                "(SELECT 1 AS dummy_column)",
+            "dummy_table",
+        )
     }
 
     /**
