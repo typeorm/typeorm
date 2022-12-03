@@ -143,8 +143,8 @@ await repository.insert([
 -   `update` - Partially updates entity by a given update options or entity id.
 
 ```typescript
-await repository.update({ firstName: "Timber" }, { firstName: "Rizzrak" })
-// executes UPDATE user SET firstName = Rizzrak WHERE firstName = Timber
+await repository.update({ age: 18 }, { category: "ADULT" })
+// executes UPDATE user SET category = ADULT WHERE age = 18
 
 await repository.update(1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1

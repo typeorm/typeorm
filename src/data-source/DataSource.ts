@@ -234,9 +234,6 @@ export class DataSource {
         // connect to the cache-specific database if cache is enabled
         if (this.queryResultCache) await this.queryResultCache.connect()
 
-        // set connected status for the current connection
-        ObjectUtils.assign(this, { isInitialized: true })
-
         try {
             // build all metadatas registered in the current connection
             await this.buildMetadatas()
@@ -260,6 +257,9 @@ export class DataSource {
             await this.close()
             throw error
         }
+
+        // set connected status for the current connection
+        ObjectUtils.assign(this, { isInitialized: true })
 
         return this
     }

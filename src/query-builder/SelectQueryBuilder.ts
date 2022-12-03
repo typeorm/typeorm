@@ -4267,16 +4267,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (!existJoin) {
                             this.joins.push({
-                                type: "inner",
+                                type: "left",
                                 select: false,
                                 selection: undefined,
                                 alias: joinAlias,
                                 parentAlias: alias,
                                 relationMetadata: relation,
                             })
-                        } else {
-                            if (existJoin.type === "left")
-                                existJoin.type = "inner"
                         }
 
                         const condition = this.buildWhere(

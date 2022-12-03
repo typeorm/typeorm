@@ -700,7 +700,9 @@ export class EntityManager {
         }
 
         const conflictColumns = metadata.mapPropertyPathsToColumns(
-            options.conflictPaths,
+            Array.isArray(options.conflictPaths)
+                ? options.conflictPaths
+                : Object.keys(options.conflictPaths),
         )
 
         const overwriteColumns = metadata.columns.filter(

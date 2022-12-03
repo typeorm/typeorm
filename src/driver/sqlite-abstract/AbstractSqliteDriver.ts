@@ -480,6 +480,16 @@ export abstract class AbstractSqliteDriver implements Driver {
                     return String(value)
                 }
 
+                // Sqlite does not have a boolean data type so we have to transform
+                // it to 1 or 0
+                if (typeof value === "boolean") {
+                    escapedParameters.push(+value)
+                    return this.createParameter(
+                        key,
+                        escapedParameters.length - 1,
+                    )
+                }
+
                 if (value instanceof Date) {
                     escapedParameters.push(
                         DateUtils.mixedDateToUtcDatetimeString(value),

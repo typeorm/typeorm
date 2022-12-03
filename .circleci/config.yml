@@ -12,14 +12,14 @@ commands:
     steps:
       - when:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
                 command: cp ormconfig.circleci-common.json ./ormconfig.json
       - unless:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
@@ -40,9 +40,10 @@ commands:
       - restore_cache:
           name: Restore node_modules cache
           key: node_modules-<< parameters.cache-key >>-{{ checksum "package-lock.json" }}
-      - run:
-          name: Verify `package.json` and `package-lock.json` are in sync
-          command: npx lock-verify
+      #      removed this item because lock-verify is deprecated
+      #      - run:
+      #          name: Verify `package.json` and `package-lock.json` are in sync
+      #          command: npx lock-verify
       - run:
           # This uses `npm install` instead of `npm ci`
           # because of https://github.com/npm/cli/issues/558

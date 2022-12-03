@@ -76,11 +76,6 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
                     const result = new QueryResult()
 
-                    // return id of inserted row, if query was insert statement.
-                    if (query.substr(0, 11) === "INSERT INTO") {
-                        result.raw = raw.insertId
-                    }
-
                     if (raw?.hasOwnProperty("rowsAffected")) {
                         result.affected = raw.rowsAffected
                     }
@@ -93,6 +88,11 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
                         result.raw = records
                         result.records = records
+                    }
+
+                    // return id of inserted row, if query was insert statement.
+                    if (query.substr(0, 11) === "INSERT INTO") {
+                        result.raw = raw.insertId
                     }
 
                     if (useStructuredResult) {
