@@ -19,6 +19,12 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
     ? Property | FindOperator<Property>
     : Property extends ObjectID
     ? Property | FindOperator<Property>
+    : Property extends string
+    ? Property | FindOperator<Property>
+    : Property extends number
+    ? Property | FindOperator<Property>
+    : Property extends boolean
+    ? Property | FindOperator<Property>
     : Property extends object
     ?
           | FindOptionsWhere<Property>
@@ -28,7 +34,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
           | boolean
     : Property | FindOperator<Property>
 
-/** :
+/**
  * Used for find operations.
  */
 export type FindOptionsWhere<Entity> = {

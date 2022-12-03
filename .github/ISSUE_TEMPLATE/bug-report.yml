@@ -1,0 +1,134 @@
+name: 🐛 Bug Report
+description: Report a reproducible bug or regression.
+title: "[BUG]: "
+labels:
+  - requires triage
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |2-
+          Have a question?  This is the TypeORM issue tracker – and not the right place for general support or questions. Instead, check the ["Support" Documentation](  https://github.com/typeorm/typeorm/blob/master/docs/support.md
+        ) on the best places to ask questions!
+  - type: input
+    id: description
+    attributes:
+      label: Issue description
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: "  A clear and concise description of what you expected to happen."
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: >-
+        A clear and concise description of what actually happened. Please wrap
+        any error messages or output in code tags, instead of images.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: >-
+        Your bug will be investigated much faster if we can run your code and it
+        doesn't have dependencies other than TypeORM. Issues without
+        reproduction steps or code examples may be closed as not actionable.
+      placeholder: >-
+        Please try to provide a Minimal, Complete, and Verifiable example.
+        http://stackoverflow.com/help/mcve
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: My Environment
+      description: >-
+        Please add any other relevant dependencies to this table at the end. For
+        example: Electron, React Native, or NestJS.
+      value: |
+        | Dependency          | Version  |
+        | ---                 | ---      |
+        | Operating System    |          |
+        | Node.js version     | x.y.zzz  |
+        | Typescript version  | x.y.zzz  |
+        | TypeORM version     | x.y.zzz  |
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: >-
+        Add any other context about the bug report here. Add any other context
+        about the bug report here.
+  - type: checkboxes
+    id: drivers
+    attributes:
+      label: Relevant Database Driver(s)
+      options:
+        - label: aurora-mysql
+          required: false
+        - label: aurora-postgres
+          required: false
+        - label: better-sqlite3
+          required: false
+        - label: cockroachdb
+          required: false
+        - label: cordova
+          required: false
+        - label: expo
+          required: false
+        - label: mongodb
+          required: false
+        - label: mysql
+          required: false
+        - label: nativescript
+          required: false
+        - label: oracle
+          required: false
+        - label: postgres
+          required: false
+        - label: react-native
+          required: false
+        - label: sap
+          required: false
+        - label: spanner
+          required: false
+        - label: sqlite
+          required: false
+        - label: sqlite-abstract
+          required: false
+        - label: sqljs
+          required: false
+        - label: sqlserver
+          required: false
+  - type: dropdown
+    id: pr
+    attributes:
+      label: Are you willing to resolve this issue by submitting a Pull Request?
+      options:
+        - Yes, I have the time, and I know how to start.
+        - >-
+          Yes, I have the time, but I don't know how to start. I would need
+          guidance.
+        - >-
+          No, I don’t have the time, but I can support (using donations)
+          development.
+        - >-
+          No, I don’t have the time and I’m okay to wait for the community /
+          maintainers to resolve this issue.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |2-
+          Remember that first-time contributors are welcome! 🙌
+
+          👋 Have a great day and thank you for the bug report!

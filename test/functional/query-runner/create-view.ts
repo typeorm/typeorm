@@ -29,7 +29,7 @@ describe("query runner > create view", () => {
                     name: "new_post_view",
                     expression: `SELECT * from "post"`,
                 })
-                await queryRunner.createView(view)
+                await queryRunner.createView(view, true)
 
                 let postView = await queryRunner.getView("new_post_view")
                 expect(postView).to.be.exist
@@ -52,7 +52,7 @@ describe("query runner > create view", () => {
                     expression: `SELECT * from "post"`,
                     materialized: true,
                 })
-                await queryRunner.createView(view)
+                await queryRunner.createView(view, true)
 
                 let postMatView = await queryRunner.getView(
                     "new_post_materialized_view",

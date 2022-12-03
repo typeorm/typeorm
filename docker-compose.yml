@@ -1,6 +1,5 @@
 version: "3"
 services:
-
   # mysql
   mysql:
     image: "mysql:5.7.37"
@@ -13,23 +12,9 @@ services:
       MYSQL_PASSWORD: "test"
       MYSQL_DATABASE: "test"
 
-  # mysql v8
-#  mysql8:
-#    image: "mysql:8"
-#    container_name: "typeorm-mysql8"
-#    ports:
-#      - "3308:3306"
-#    environment:
-#      MYSQL_ROOT_PASSWORD: "admin"
-#      MYSQL_USER: "test"
-#      MYSQL_PASSWORD: "test"
-#      MYSQL_DATABASE: "test"
-#    volumes:
-#      - mysql8_volume:/var/lib/mysql
-
   # mariadb
   mariadb:
-    image: "mariadb:10.5.13"
+    image: "mariadb:10.8.4"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -44,7 +29,7 @@ services:
     # mdillon/postgis is postgres + PostGIS (only). if you need additional
     # extensions, it's probably time to create a purpose-built image with all
     # necessary extensions. sorry, and thanks for adding support for them!
-    image: "mdillon/postgis:9.6"
+    image: "postgis/postgis:14-3.3"
     container_name: "typeorm-postgres"
     ports:
       - "5432:5432"
@@ -78,9 +63,9 @@ services:
 
   # cockroachdb
   cockroachdb:
-    image: "cockroachdb/cockroach:latest-v21.1"
+    image: "cockroachdb/cockroach:v22.1.6"
     container_name: "typeorm-cockroachdb"
-    command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25 --logtostderr=NONE --log-dir=""
+    command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25
     ports:
       - "26257:26257"
 
@@ -131,7 +116,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:5.0.6"
+    image: "mongo:5.0.12"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

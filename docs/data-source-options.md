@@ -62,6 +62,8 @@ Different RDBMS-es have their own specific options.
 -   `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
     then logger will log this query.
 
+-   `poolSize` - Configure maximum number of active connections is the pool.
+
 -   `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
 
 -   `entityPrefix` - Prefixes with the given string all tables (or collections) on this data source.
@@ -189,6 +191,11 @@ Different RDBMS-es have their own specific options.
 -   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
 -   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
+
+-   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript integers.  
+    By default int8 (bigint) values are returned as strings to avoid overflows.  
+    JavaScript doesn't have support for 64-bit integers, the maximum safe integer in js is: Number.MAX_SAFE_INTEGER (`+2^53`). Be careful when enabling `parseInt8`.  
+    Note: This option is ignored if the undelying driver does not support it.
 
 ## `sqlite` data source options
 

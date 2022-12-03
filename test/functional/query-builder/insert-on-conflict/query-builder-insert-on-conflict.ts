@@ -6,6 +6,7 @@ import {
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { expect } from "chai"
 
 describe("query builder > insertion > on conflict", () => {
     let connections: DataSource[]
@@ -244,4 +245,91 @@ describe("query builder > insertion > on conflict", () => {
                     })
             }),
         ))
+    it("should perform insertion on partial index using orUpdate", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type !== "postgres") return
+                const post1 = new Post()
+                post1.id = "post#1"
+                post1.title = "About post"
+                post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                const sql = connection.manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post1)
+                    .orUpdate(["title"], ["date"], {
+                        indexPredicate: "date > 2020-01-01",
+                    })
+                    .setParameter("title", post1.title)
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    `INSERT INTO post(id, title, date) ` +
+                        `VALUES ($1, $2, $3) ON CONFLICT ( date ) ` +
+                        `WHERE ( date > 2020-01-01 ) DO UPDATE SET title = EXCLUDED.title`,
+                )
+            }),
+        ))
+    it("should perform insertion using partial index and skipping update on no change", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type !== "postgres") return
+                const post1 = new Post()
+                post1.id = "post#1"
+                post1.title = "About post"
+                post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                const sql = connection.manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post1)
+                    .orUpdate(["title"], ["date"], {
+                        skipUpdateIfNoValuesChanged: true,
+                        indexPredicate: "date > 2020-01-01",
+                    })
+                    .setParameter("title", post1.title)
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    `INSERT INTO post(id, title, date) ` +
+                        `VALUES ($1, $2, $3) ON CONFLICT ( date ) ` +
+                        `WHERE ( date > 2020-01-01 ) DO UPDATE SET title = EXCLUDED.title  ` +
+                        `WHERE (post.title IS DISTINCT FROM EXCLUDED.title)`,
+                )
+            }),
+        ))
+    it("should throw error if using indexPredicate amd an unsupported driver", () => {
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.supportedUpsertType !==
+                    "on-duplicate-key-update"
+                )
+                    return
+                const post1 = new Post()
+                post1.id = "post#1"
+                post1.title = "About post"
+                post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                const sql = connection.manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post1)
+                    .orUpdate(["title"], ["date"], {
+                        indexPredicate: "date > 2020-01-01",
+                    })
+                    .setParameter("title", post1.title)
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.throw(Error)
+            }),
+        )
+    })
 })

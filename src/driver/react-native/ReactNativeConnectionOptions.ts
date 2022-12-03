@@ -24,4 +24,6 @@ export interface ReactNativeConnectionOptions extends BaseDataSourceOptions {
      * Storage Location
      */
     readonly location: string
+
+    readonly poolSize?: never
 }
