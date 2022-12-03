@@ -1,3 +1,22 @@
+## [0.3.10](https://github.com/typeorm/typeorm/compare/0.3.9...0.3.10) (2022-09-19)
+
+### Bug Fixes
+
+* "Cannot commit, no transaction is active" error in sql.js ([#9234](https://github.com/typeorm/typeorm/issues/9234)) ([749809a](https://github.com/typeorm/typeorm/commit/749809a42ada15674c995753f683287efe6b3722)), closes [#9100](https://github.com/typeorm/typeorm/issues/9100)
+* add missing support for primaryKeyConstraintName property in EntitySchema ([cc63961](https://github.com/typeorm/typeorm/commit/cc639610dc3fb3fabb982bb25cd7f7cf9dd4e68a))
+* malformed query when selecting deeply nested embedded entities ([#9273](https://github.com/typeorm/typeorm/issues/9273)) ([83f7b88](https://github.com/typeorm/typeorm/commit/83f7b88387f47fdf59c63b906cd7e60c33789673))
+* prototype pollution issue ([e3aac27](https://github.com/typeorm/typeorm/commit/e3aac270319006069b37f574c6e41a1fcfe7c5b1))
+* typescript 4.8 type issues [#9331](https://github.com/typeorm/typeorm/issues/9331) ([#9357](https://github.com/typeorm/typeorm/issues/9357)) ([a1960e1](https://github.com/typeorm/typeorm/commit/a1960e1125c36cd7c9bd2e550a001631090314aa))
+* Update RelationIdLoader to use DriverUtils.getAlias ([#9380](https://github.com/typeorm/typeorm/issues/9380)) ([a917d65](https://github.com/typeorm/typeorm/commit/a917d657fbb2492cf78eee3a49b09bbb13898aa0)), closes [#9379](https://github.com/typeorm/typeorm/issues/9379)
+
+### Features
+
+* orphanedRowAction=disabled (rebase of PR 8285) ([#8678](https://github.com/typeorm/typeorm/issues/8678)) ([de15df1](https://github.com/typeorm/typeorm/commit/de15df14ede16f11da176a499282a79a2aa9e324))
+* sqlite - deferrable options for foreign keys ([#9360](https://github.com/typeorm/typeorm/issues/9360)) ([773a4fe](https://github.com/typeorm/typeorm/commit/773a4fe439e0a3c4ee90e5c9545b2d4784008eb0))
+* unify Pool max connection size in supported Drivers ([#9305](https://github.com/typeorm/typeorm/issues/9305)) ([48976c2](https://github.com/typeorm/typeorm/commit/48976c2967ce821252c636f54f027a89b71db142)), closes [#3388](https://github.com/typeorm/typeorm/issues/3388)
+* update db image versions in docker compose ([#9367](https://github.com/typeorm/typeorm/issues/9367)) ([f24b262](https://github.com/typeorm/typeorm/commit/f24b26202b86dc70a97e3fc11136051f26f68046)), closes [#9326](https://github.com/typeorm/typeorm/issues/9326)
+
+
 ## [0.3.9](https://github.com/typeorm/typeorm/compare/0.3.7...0.3.9) (2022-08-28)
 
 * fixed regression introduced in 0.3.8 - broken CLI because of #8917 ([#9332](https://github.com/typeorm/typeorm/issues/9332)), closes [#9330](https://github.com/typeorm/typeorm/issues/9330)

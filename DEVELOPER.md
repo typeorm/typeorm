@@ -57,8 +57,8 @@ Install all TypeORM dependencies by running this command:
 npm install
 ```
 
-During installation you may have some problems with some dependencies.
-For example to proper install oracle driver you need to follow all instructions from
+During installation, you may have some problems with some dependencies.
+For example to properly install oracle driver you need to follow all instructions from
  [node-oracle documentation](https://github.com/oracle/node-oracledb).
 
 ## ORM config

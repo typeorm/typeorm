@@ -404,13 +404,18 @@ export class AuroraMysqlQueryRunner
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -2139,6 +2144,12 @@ export class AuroraMysqlQueryRunner
                         tableColumn.name = dbColumn["COLUMN_NAME"]
                         tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
 
+                        // Unsigned columns are handled differently when it comes to width.
+                        // Hence, we need to set the unsigned attribute before we check the width.
+                        tableColumn.unsigned = tableColumn.zerofill
+                            ? true
+                            : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
+
                         if (
                             this.driver.withWidthColumnTypes.indexOf(
                                 tableColumn.type as ColumnType,
@@ -2207,9 +2218,6 @@ export class AuroraMysqlQueryRunner
                         )
                         tableColumn.zerofill =
                             dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
-                        tableColumn.unsigned = tableColumn.zerofill
-                            ? true
-                            : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
                         tableColumn.isGenerated =
                             dbColumn["EXTRA"].indexOf("auto_increment") !== -1
                         if (tableColumn.isGenerated)
@@ -2791,8 +2799,24 @@ export class AuroraMysqlQueryRunner
             this.connection.driver.dataTypeDefaults[column.type].width
 
         if (defaultWidthForType) {
-            return defaultWidthForType === width
+            // In MariaDB & MySQL 5.7, the default widths of certain numeric types are 1 less than
+            // the usual defaults when the column is unsigned.
+            // This also applies to Aurora MySQL.
+            const typesWithReducedUnsignedDefault = [
+                "int",
+                "tinyint",
+                "smallint",
+                "mediumint",
+            ]
+            const needsAdjustment =
+                typesWithReducedUnsignedDefault.indexOf(column.type) !== -1
+            if (column.unsigned && needsAdjustment) {
+                return defaultWidthForType - 1 === width
+            } else {
+                return defaultWidthForType === width
+            }
         }
+
         return false
     }
 }

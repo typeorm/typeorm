@@ -634,6 +634,9 @@ export class MysqlDriver implements Driver {
             return "" + value
         } else if (columnMetadata.type === "set") {
             return DateUtils.simpleArrayToString(value)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         return value
@@ -683,6 +686,9 @@ export class MysqlDriver implements Driver {
             value = parseInt(value)
         } else if (columnMetadata.type === "set") {
             value = DateUtils.stringToSimpleArray(value)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -1222,6 +1228,7 @@ export class MysqlDriver implements Driver {
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
+            { connectionLimit: options.poolSize },
             options.extra || {},
         )
     }
