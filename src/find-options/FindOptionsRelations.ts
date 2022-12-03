@@ -9,6 +9,12 @@ export type FindOptionsRelationsProperty<Property> = Property extends Promise<
     ? FindOptionsRelationsProperty<NonNullable<I>> | boolean
     : Property extends Array<infer I>
     ? FindOptionsRelationsProperty<NonNullable<I>> | boolean
+    : Property extends string
+    ? never
+    : Property extends number
+    ? never
+    : Property extends boolean
+    ? never
     : Property extends Function
     ? never
     : Property extends Buffer
@@ -25,7 +31,9 @@ export type FindOptionsRelationsProperty<Property> = Property extends Promise<
  * Relations find options.
  */
 export type FindOptionsRelations<Entity> = {
-    [P in keyof Entity]?: FindOptionsRelationsProperty<NonNullable<Entity[P]>>
+    [P in keyof Entity]?: P extends "toString"
+        ? unknown
+        : FindOptionsRelationsProperty<NonNullable<Entity[P]>>
 }
 
 /**

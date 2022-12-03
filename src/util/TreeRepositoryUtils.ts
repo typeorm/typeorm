@@ -19,16 +19,20 @@ export class TreeRepositoryUtils {
     ): { id: any; parentId: any }[] {
         return rawResults.map((rawResult) => {
             const joinColumn = metadata.treeParentRelation!.joinColumns[0]
+            const referencedColumn =
+                joinColumn.referencedColumn ?? metadata.primaryColumns[0]
             // fixes issue #2518, default to databaseName property when givenDatabaseName is not set
             const joinColumnName =
                 joinColumn.givenDatabaseName || joinColumn.databaseName
-            const id =
-                rawResult[alias + "_" + metadata.primaryColumns[0].databaseName]
+            const referencedColumnName =
+                referencedColumn.givenDatabaseName ||
+                referencedColumn.databaseName
+            const id = rawResult[alias + "_" + referencedColumnName]
             const parentId = rawResult[alias + "_" + joinColumnName]
             return {
                 id: manager.connection.driver.prepareHydratedValue(
                     id,
-                    metadata.primaryColumns[0],
+                    referencedColumn,
                 ),
                 parentId: manager.connection.driver.prepareHydratedValue(
                     parentId,
@@ -50,7 +54,10 @@ export class TreeRepositoryUtils {
             entity[childProperty] = []
             return
         }
-        const parentEntityId = metadata.primaryColumns[0].getEntityValue(entity)
+        const joinColumn = metadata.treeParentRelation!.joinColumns[0]
+        const referencedColumn =
+            joinColumn.referencedColumn ?? metadata.primaryColumns[0]
+        const parentEntityId = referencedColumn.getEntityValue(entity)
         const childRelationMaps = relationMaps.filter(
             (relationMap) => relationMap.parentId === parentEntityId,
         )
@@ -58,7 +65,7 @@ export class TreeRepositoryUtils {
             childRelationMaps.map((relationMap) => relationMap.id),
         )
         entity[childProperty] = entities.filter((entity) =>
-            childIds.has(metadata.primaryColumns[0].getEntityValue(entity)),
+            childIds.has(referencedColumn.getEntityValue(entity)),
         )
         entity[childProperty].forEach((childEntity: any) => {
             TreeRepositoryUtils.buildChildrenEntityTree(
@@ -81,7 +88,10 @@ export class TreeRepositoryUtils {
         relationMaps: { id: any; parentId: any }[],
     ): void {
         const parentProperty = metadata.treeParentRelation!.propertyName
-        const entityId = metadata.primaryColumns[0].getEntityValue(entity)
+        const joinColumn = metadata.treeParentRelation!.joinColumns[0]
+        const referencedColumn =
+            joinColumn.referencedColumn ?? metadata.primaryColumns[0]
+        const entityId = referencedColumn.getEntityValue(entity)
         const parentRelationMap = relationMaps.find(
             (relationMap) => relationMap.id === entityId,
         )
@@ -89,7 +99,7 @@ export class TreeRepositoryUtils {
             if (!parentRelationMap) return false
 
             return (
-                metadata.primaryColumns[0].getEntityValue(entity) ===
+                referencedColumn.getEntityValue(entity) ===
                 parentRelationMap.parentId
             )
         })

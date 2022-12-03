@@ -44,7 +44,7 @@ export class User {
 }
 ```
 
-Here we added `@OneToOne` to the `profile` and specify the target relation type to be `Profile`.
+Here we added `@OneToOne` to the `user` and specify the target relation type to be `Profile`.
 We also added `@JoinColumn` which is required and must be set only on one side of the relation.
 The side you set `@JoinColumn` on, that side's table will contain a "relation id" and foreign keys to target entity table.
 

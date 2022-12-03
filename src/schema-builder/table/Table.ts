@@ -74,6 +74,11 @@ export class Table {
     justCreated: boolean = false
 
     /**
+     * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
+     */
+    withoutRowid?: boolean = false
+
+    /**
      * Table engine.
      */
     engine?: string
@@ -85,9 +90,7 @@ export class Table {
     constructor(options?: TableOptions) {
         if (options) {
             this.database = options.database
-
             this.schema = options.schema
-
             this.name = options.name
 
             if (options.columns)
@@ -131,6 +134,8 @@ export class Table {
             if (options.justCreated !== undefined)
                 this.justCreated = options.justCreated
 
+            if (options.withoutRowid) this.withoutRowid = options.withoutRowid
+
             this.engine = options.engine
         }
     }
@@ -164,6 +169,7 @@ export class Table {
             checks: this.checks.map((constraint) => constraint.clone()),
             exclusions: this.exclusions.map((constraint) => constraint.clone()),
             justCreated: this.justCreated,
+            withoutRowid: this.withoutRowid,
             engine: this.engine,
         })
     }
@@ -386,9 +392,10 @@ export class Table {
                 schema,
                 database,
             ),
+            withoutRowid: entityMetadata.withoutRowid,
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
-                .filter((column) => column)
+                .filter((column) => column && !column.isVirtualProperty)
                 .map((column) =>
                     TableUtils.createTableColumnOptions(column, driver),
                 ),

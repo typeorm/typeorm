@@ -62,6 +62,8 @@ Different RDBMS-es have their own specific options.
 -   `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
     then logger will log this query.
 
+-   `poolSize` - Configure maximum number of active connections is the pool.
+
 -   `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
 
 -   `entityPrefix` - Prefixes with the given string all tables (or collections) on this data source.
@@ -202,6 +204,8 @@ Different RDBMS-es have their own specific options.
 
 -   `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
 
+-   `nativeBinding` - Relative or absolute path to the native addon (better_sqlite3.node).
+
 ## `capacitor` data source options
 
 -   `database` - Database name (capacitor-sqlite will add the suffix `SQLite.db`)
@@ -304,7 +308,7 @@ Different RDBMS-es have their own specific options.
 
 -   `options.packetSize` - The size of TDS packets (subject to negotiation with the server). Should be a power of 2. (default: `4096`).
 
--   `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `true`).
+-   `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `false`).
 
 -   `options.abortTransactionOnError` - A boolean determining whether to rollback a transaction automatically if any
     error is encountered during the given transaction's execution. This sets the value for `SET XACT_ABORT` during the
@@ -343,7 +347,7 @@ Different RDBMS-es have their own specific options.
     SQL Server Availability Group. For more information, see here. (default: `false`).
 
 -   `options.encrypt` - A boolean determining whether or not the connection will be encrypted. Set to true if you're
-    on Windows Azure. (default: `false`).
+    on Windows Azure. (default: `true`).
 
 -   `options.cryptoCredentialsDetails` - When encryption is used, an object may be supplied that will be used for the
     first argument when calling [tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)
@@ -370,6 +374,8 @@ Different RDBMS-es have their own specific options.
     -   `7_4`
 
     (default: `7_4`)
+
+-   `options.appName` - Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server. (default: `node-mssql`)
 
 -   `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
     details (default: `false`).
@@ -511,7 +517,7 @@ Different RDBMS-es have their own specific options.
 
 -   `location`: The file location to load and save the database to.
 
--   `useLocalForage`: Enables the usage of the localforage library (https://github.com/localForage/localForage) to save & load the database asynchronously from the indexedDB instead of using the synchron local storage methods in a browser environment. The localforage node module needs to be added to your project and the localforage.js should be imported in your page.
+-   `useLocalForage`: Enables the usage of the localforage library (https://github.com/localForage/localForage) to save & load the database asynchronously from the indexedDB instead of using the synchrony local storage methods in a browser environment. The localforage node module needs to be added to your project and the localforage.js should be imported in your page.
 
 ## `expo` data source options
 

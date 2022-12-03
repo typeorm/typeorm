@@ -1,7 +1,7 @@
 # Tree Entities
 
 TypeORM supports the Adjacency list and Closure table patterns for storing tree structures.
-To learn more about hierarchy table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data).
+To learn more about the hierarchy table take a look at [this awesome presentation by Bill Karwin](https://www.slideshare.net/billkarwin/models-for-hierarchical-data).
 
 -   [Adjacency list](#adjacency-list)
 -   [Nested set](#nested-set)
@@ -13,7 +13,7 @@ To learn more about hierarchy table take a look at [this awesome presentation by
 
 Adjacency list is a simple model with self-referencing.
 The benefit of this approach is simplicity,
-drawback is that you can't load big trees in all at once because of join limitations.
+a drawback is that you can't load big trees all at once because of join limitations.
 To learn more about the benefits and use of Adjacency Lists look at [this article by Matthew Schinckel](http://schinckel.net/2014/09/13/long-live-adjacency-lists/).
 Example:
 
@@ -48,8 +48,8 @@ export class Category {
 ## Nested set
 
 Nested set is another pattern of storing tree structures in the database.
-Its very efficient for reads, but bad for writes.
-You cannot have multiple roots in nested set.
+It is very efficient for reads, but bad for writes.
+You cannot have multiple roots in the nested set.
 Example:
 
 ```typescript
@@ -83,7 +83,7 @@ export class Category {
 ## Materialized Path (aka Path Enumeration)
 
 Materialized Path (also called Path Enumeration) is another pattern of storing tree structures in the database.
-Its simple and effective.
+It is simple and effective.
 Example:
 
 ```typescript
@@ -117,7 +117,7 @@ export class Category {
 ## Closure table
 
 Closure table stores relations between parent and child in a separate table in a special way.
-It's efficient in both reads and writes.
+It's efficient in both reading and writing.
 Example:
 
 ```typescript
@@ -148,7 +148,7 @@ export class Category {
 }
 ```
 
-You can specify closure table name and / or closure table columns names by setting optional parameter `options` into `@Tree("closure-table", options)`. `ancestorColumnName` and `descandantColumnName` are callback functions, which receive primary column's metadata and return column's name.
+You can specify the closure table name and/or closure table column names by setting optional parameter `options` into `@Tree("closure-table", options)`. `ancestorColumnName` and `descandantColumnName` are callback functions, which receive the primary column's metadata and return the column's name.
 
 ```ts
 @Tree("closure-table", {
@@ -164,7 +164,7 @@ To bind tree entities to each other, it is required to set the parent in the chi
 for example:
 
 ```typescript
-const a1 = new Category("a1")
+const a1 = new Category()
 a1.name = "a1"
 await dataSource.manager.save(a1)
 
@@ -195,7 +195,7 @@ To load such a tree use `TreeRepository`:
 const trees = await dataSource.manager.getTreeRepository(Category).findTrees()
 ```
 
-`trees` will be following:
+`trees` will be the following:
 
 ```json
 [
@@ -231,25 +231,25 @@ There are other special methods to work with tree entities through `TreeReposito
 -   `findTrees` - Returns all trees in the database with all their children, children of children, etc.
 
 ```typescript
-const treeCategories = await repository.findTrees()
+const treeCategories = await dataSource.manager.getTreeRepository(Category).findTrees()
 // returns root categories with sub categories inside
 
-const treeCategoriesWithLimitedDepth = await repository.findTrees({ depth: 2 })
+const treeCategoriesWithLimitedDepth = await dataSource.manager.getTreeRepository(Category).findTrees({ depth: 2 })
 // returns root categories with sub categories inside, up to depth 2
 ```
 
 -   `findRoots` - Roots are entities that have no ancestors. Finds them all.
-    Does not load children leafs.
+    Does not load children's leaves.
 
 ```typescript
-const rootCategories = await repository.findRoots()
+const rootCategories = await dataSource.manager.getTreeRepository(Category).findRoots()
 // returns root categories without sub categories inside
 ```
 
 -   `findDescendants` - Gets all children (descendants) of the given entity. Returns them all in a flat array.
 
 ```typescript
-const children = await repository.findDescendants(parentCategory)
+const children = await dataSource.manager.getTreeRepository(Category).findDescendants(parentCategory)
 // returns all direct subcategories (without its nested categories) of a parentCategory
 ```
 
@@ -278,27 +278,27 @@ const children = await repository
     .getMany()
 ```
 
--   `countDescendants` - Gets number of descendants of the entity.
+-   `countDescendants` - Gets the number of descendants of the entity.
 
 ```typescript
-const childrenCount = await repository.countDescendants(parentCategory)
+const childrenCount = await dataSource.manager.getTreeRepository(Category).countDescendants(parentCategory)
 ```
 
--   `findAncestors` - Gets all parent (ancestors) of the given entity. Returns them all in a flat array.
+-   `findAncestors` - Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
 
 ```typescript
 const parents = await repository.findAncestors(childCategory)
 // returns all direct childCategory's parent categories (without "parent of parents")
 ```
 
--   `findAncestorsTree` - Gets all parent (ancestors) of the given entity. Returns them in a tree - nested into each other.
+-   `findAncestorsTree` - Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
 
 ```typescript
-const parentsTree = await repository.findAncestorsTree(childCategory)
+const parentsTree = await dataSource.manager.getTreeRepository(Category).findAncestorsTree(childCategory)
 // returns all direct childCategory's parent categories (with "parent of parents")
 ```
 
--   `createAncestorsQueryBuilder` - Creates a query builder used to get ancestors of the entities in a tree.
+-   `createAncestorsQueryBuilder` - Creates a query builder used to get the ancestors of the entities in a tree.
 
 ```typescript
 const parents = await repository
@@ -310,7 +310,7 @@ const parents = await repository
 -   `countAncestors` - Gets the number of ancestors of the entity.
 
 ```typescript
-const parentsCount = await repository.countAncestors(childCategory)
+const parentsCount = await dataSource.manager.getTreeRepository(Category).countAncestors(childCategory)
 ```
 
 For the following methods, options can be passed:
@@ -329,12 +329,12 @@ The following options are available:
 Examples:
 
 ```typescript
-const treeCategoriesWithRelations = await repository.findTrees({
+const treeCategoriesWithRelations = await dataSource.manager.getTreeRepository(Category).findTrees({
     relations: ["sites"],
 })
 // automatically joins the sites relation
 
-const parentsWithRelations = await repository.findAncestors(childCategory, {
+const parentsWithRelations = await dataSource.manager.getTreeRepository(Category).findAncestors(childCategory, {
     relations: ["members"],
 })
 // returns all direct childCategory's parent categories (without "parent of parents") and joins the 'members' relation

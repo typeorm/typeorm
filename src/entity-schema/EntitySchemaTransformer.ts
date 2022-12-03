@@ -16,6 +16,7 @@ import { ExclusionMetadataArgs } from "../metadata-args/ExclusionMetadataArgs"
 import { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
 import { EntitySchemaOptions } from "./EntitySchemaOptions"
 import { EntitySchemaEmbeddedError } from "./EntitySchemaEmbeddedError"
+import { RelationIdMetadataArgs } from "../metadata-args/RelationIdMetadataArgs"
 
 /**
  * Transforms entity schema into metadata args storage.
@@ -80,6 +81,8 @@ export class EntitySchemaTransformer {
                 options: {
                     type: regularColumn.type,
                     name: regularColumn.objectId ? "_id" : regularColumn.name,
+                    primaryKeyConstraintName:
+                        regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
                     width: regularColumn.width,
                     nullable: regularColumn.nullable,
@@ -99,6 +102,7 @@ export class EntitySchemaTransformer {
                     charset: regularColumn.charset,
                     collation: regularColumn.collation,
                     enum: regularColumn.enum,
+                    enumName: regularColumn.enumName,
                     asExpression: regularColumn.asExpression,
                     generatedType: regularColumn.generatedType,
                     hstoreType: regularColumn.hstoreType,
@@ -230,6 +234,21 @@ export class EntitySchemaTransformer {
                         metadataArgsStorage.joinTables.push(joinTable)
                     }
                 }
+            })
+        }
+
+        // add relation id metadata args from the schema
+        if (options.relationIds) {
+            Object.keys(options.relationIds).forEach((relationIdName) => {
+                const relationIdOptions = options.relationIds![relationIdName]!
+                const relationId: RelationIdMetadataArgs = {
+                    propertyName: relationIdName,
+                    relation: relationIdOptions.relationName,
+                    target: options.target || options.name,
+                    alias: relationIdOptions.alias,
+                    queryBuilderFactory: relationIdOptions.queryBuilderFactory,
+                }
+                metadataArgsStorage.relationIds.push(relationId)
             })
         }
 

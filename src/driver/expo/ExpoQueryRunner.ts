@@ -70,9 +70,6 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             throw err
         }
 
-        if (this.transactionDepth > 0) {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
         this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -95,14 +92,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
-        if (this.transactionDepth > 1) {
-            await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
-        } else {
-            this.transaction = undefined
-            this.isTransactionActive = false
-        }
+        this.transaction = undefined
+        this.isTransactionActive = false
+
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -124,14 +116,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
-        if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
-        } else {
-            this.transaction = undefined
-            this.isTransactionActive = false
-        }
+        this.transaction = undefined
+        this.isTransactionActive = false
+
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
@@ -210,11 +197,6 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
                             const result = new QueryResult()
 
-                            // return id of inserted row, if query was insert statement.
-                            if (query.substr(0, 11) === "INSERT INTO") {
-                                result.raw = raw.insertId
-                            }
-
                             if (raw?.hasOwnProperty("rowsAffected")) {
                                 result.affected = raw.rowsAffected
                             }
@@ -227,6 +209,11 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
                                 result.raw = resultSet
                                 result.records = resultSet
+                            }
+
+                            // return id of inserted row, if query was insert statement.
+                            if (query.startsWith("INSERT INTO")) {
+                                result.raw = raw.insertId
                             }
 
                             if (useStructuredResult) {

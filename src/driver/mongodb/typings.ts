@@ -6005,7 +6005,7 @@ export interface AggregationCursor<T> extends Readable {
 
     /**
      * Iterates over all the documents for this cursor. As with {cursor.toArray}, not all of the elements will
-     * be iterated if this cursor had been previouly accessed. In that case, {cursor.rewind} can be used to reset
+     * be iterated if this cursor had been previously accessed. In that case, {cursor.rewind} can be used to reset
      * the cursor. However, unlike {cursor.toArray}, the cursor will only hold a maximum of batch size elements
      * at any given time if batch size is specified. Otherwise, the caller is responsible for making sure
      * that the entire result can fit the memory.
@@ -6133,7 +6133,7 @@ export interface AggregationCursor<T> extends Readable {
     /**
      * Returns an array of documents. The caller is responsible for making sure that there
      * is enough memory to store the results. Note that the array only contain partial
-     * results when this cursor had been previouly accessed. In that case,
+     * results when this cursor had been previously accessed. In that case,
      * cursor.rewind() can be used to reset the cursor.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#toArray
      */
@@ -6142,7 +6142,7 @@ export interface AggregationCursor<T> extends Readable {
     /**
      * Returns an array of documents. The caller is responsible for making sure that there
      * is enough memory to store the results. Note that the array only contain partial
-     * results when this cursor had been previouly accessed. In that case,
+     * results when this cursor had been previously accessed. In that case,
      * cursor.rewind() can be used to reset the cursor.
      * @param callback The result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#toArray
@@ -6253,14 +6253,14 @@ export interface CommandCursor extends Readable {
 
     /**
      * Returns an array of documents. The caller is responsible for making sure that there is enough memory
-     * to store the results. Note that the array only contain partial results when this cursor had been previouly accessed.
+     * to store the results. Note that the array only contain partial results when this cursor had been previously accessed.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#toArray
      */
     toArray(): Promise<any[]>
 
     /**
      * Returns an array of documents. The caller is responsible for making sure that there is enough memory
-     * to store the results. Note that the array only contain partial results when this cursor had been previouly accessed.
+     * to store the results. Note that the array only contain partial results when this cursor had been previously accessed.
      * @param callback The result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#toArray
      */

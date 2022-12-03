@@ -12,7 +12,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class DeleteQueryBuilder<Entity>
+export class DeleteQueryBuilder<Entity extends ObjectLiteral>
     extends QueryBuilder<Entity>
     implements WhereExpressionBuilder
 {
@@ -116,7 +116,7 @@ export class DeleteQueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(
+    from<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         aliasName?: string,
     ): DeleteQueryBuilder<T> {

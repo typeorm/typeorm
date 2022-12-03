@@ -15,7 +15,7 @@ describe("jsonb type", () => {
             (connections = await createTestingConnections({
                 entities: [Record],
                 enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-                logging: true,
+                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

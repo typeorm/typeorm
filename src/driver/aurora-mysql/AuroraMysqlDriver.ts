@@ -67,7 +67,7 @@ export class AuroraMysqlDriver implements Driver {
     database?: string
 
     /**
-     * Schema name used to performn all write queries.
+     * Schema name used to perform all write queries.
      */
     schema?: string
 
@@ -633,6 +633,9 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             // convert to number if that exists in possible enum options
             value = parseInt(value)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)

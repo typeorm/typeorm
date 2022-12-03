@@ -30,7 +30,7 @@ export interface PostgresConnectionOptions
     readonly nativeDriver?: any
 
     /**
-     * A boolean determining whether to pass time values in UTC or local time. (default: true).
+     * A boolean determining whether to pass time values in UTC or local time. (default: false).
      */
     readonly useUTC?: boolean
 

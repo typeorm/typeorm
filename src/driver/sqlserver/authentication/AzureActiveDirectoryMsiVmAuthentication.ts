@@ -3,13 +3,13 @@ export interface AzureActiveDirectoryMsiVmAuthentication {
     options: {
         /**
          * If you user want to connect to an Azure app service using a specific client account
-         * they need to provide `clientId` asscoiate to their created idnetity.
+         * they need to provide `clientId` associate to their created identity.
          *
          * This is optional for retrieve token from azure web app service
          */
         clientId?: string
         /**
-         * A user need to provide `msiEndpoint` for retriving the accesstoken.
+         * A user need to provide `msiEndpoint` for retrieving the accesstoken.
          */
         msiEndpoint?: string
     }

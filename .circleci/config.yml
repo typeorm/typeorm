@@ -12,14 +12,14 @@ commands:
     steps:
       - when:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
                 command: cp ormconfig.circleci-common.json ./ormconfig.json
       - unless:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
@@ -40,9 +40,10 @@ commands:
       - restore_cache:
           name: Restore node_modules cache
           key: node_modules-<< parameters.cache-key >>-{{ checksum "package-lock.json" }}
-      - run:
-          name: Verify `package.json` and `package-lock.json` are in sync
-          command: npx lock-verify
+      #      removed this item because lock-verify is deprecated
+      #      - run:
+      #          name: Verify `package.json` and `package-lock.json` are in sync
+      #          command: npx lock-verify
       - run:
           # This uses `npm install` instead of `npm ci`
           # because of https://github.com/npm/cli/issues/558
@@ -66,7 +67,8 @@ commands:
               rm node_modules/oracledb/instantclient.zip
 
               DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
-              cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/
+              (cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/ ||
+                cp /usr/lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/)
             fi
           environment:
             BLOB_URL: https://download.oracle.com/otn_software/linux/instantclient/19800/instantclient-basiclite-linux.x64-19.8.0.0.0dbru.zip
@@ -108,7 +110,7 @@ jobs:
         default: ""
       node-version:
         type: string
-        default: "10"
+        default: "12"
     working_directory: ~/typeorm
     docker:
       - image: circleci/node:<< parameters.node-version >>
@@ -163,8 +165,10 @@ jobs:
       # Download and cache dependencies
       - run:
           name: "Run Tests with Coverage"
+
           command: |
             docker run \
+              --env npm_config_yes='true' \
               --env LD_LIBRARY_PATH='/typeorm/node_modules/oracledb/instantclient_19_8/:$LD_LIBRARY_PATH' \
               --volumes-from typeorm-code \
               --network typeorm_default \
@@ -198,8 +202,8 @@ workflows:
             parameters:
               node-version:
                 - "12"
-                - "13"
                 - "14"
+                - "16"
       - test:
           name: test (cockroachdb) - Node v12
           requires:

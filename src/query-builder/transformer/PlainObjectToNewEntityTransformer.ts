@@ -11,7 +11,7 @@ export class PlainObjectToNewEntityTransformer {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    transform<T>(
+    transform<T extends ObjectLiteral>(
         newEntity: T,
         object: ObjectLiteral,
         metadata: EntityMetadata,

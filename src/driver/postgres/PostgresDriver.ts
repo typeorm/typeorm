@@ -72,6 +72,11 @@ export class PostgresDriver implements Driver {
     options: PostgresConnectionOptions
 
     /**
+     * Version of Postgres. Requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
+
+    /**
      * Database name used to perform all write queries.
      */
     database?: string
@@ -375,13 +380,17 @@ export class PostgresDriver implements Driver {
 
         const results = (await this.executeQuery(
             connection,
-            "SHOW server_version;",
+            "SELECT version();",
         )) as {
             rows: {
-                server_version: string
+                version: string
             }[]
         }
-        const versionString = results.rows[0].server_version
+        const versionString = results.rows[0].version.replace(
+            /^PostgreSQL ([\d\.]+) .*$/,
+            "$1",
+        )
+        this.version = versionString
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
             versionString,
             "12.0",
@@ -792,6 +801,9 @@ export class PostgresDriver implements Driver {
                         ? parseInt(value)
                         : value
             }
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -1453,6 +1465,7 @@ export class PostgresDriver implements Driver {
                 ssl: credentials.ssl,
                 connectionTimeoutMillis: options.connectTimeoutMS,
                 application_name: options.applicationName,
+                max: options.poolSize,
             },
             options.extra || {},
         )

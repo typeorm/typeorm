@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.3.5",
+  "version": "0.3.10",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -14,9 +14,11 @@
   },
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "node": {
         "import": "./index.mjs",
-        "require": "./index.js"
+        "require": "./index.js",
+        "types": "./index.d.ts"
       },
       "browser": {
         "require": "./index.js",
@@ -24,7 +26,10 @@
         "default": "./index.js"
       }
     },
-    "./browser": "./browser/index.js",
+    "./browser": {
+      "types": "./index.d.ts",
+      "default": "./browser/index.js"
+    },
     "./*.js": "./*.js",
     "./*": {
       "require": "./*.js",
@@ -101,7 +106,7 @@
     "@types/uuid": "^8.3.4",
     "@types/xml2js": "^0.4.8",
     "@types/yargs": "^17.0.2",
-    "better-sqlite3": "^7.1.2",
+    "better-sqlite3": "^8.0.0",
     "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
     "class-transformer": "^0.4.0",
@@ -133,17 +138,17 @@
     "sinon-chai": "^3.5.0",
     "source-map-support": "^0.5.19",
     "sql.js": "^1.4.0",
-    "sqlite3": "^5.0.2",
+    "sqlite3": "^5.0.11",
     "ts-node": "^10.7.0",
     "typeorm-aurora-data-api-driver": "^2.0.0",
-    "typescript": "^4.6.2"
+    "typescript": "^4.8.2"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0",
-    "@sap/hana-client": "^2.11.14",
-    "better-sqlite3": "^7.1.2",
+    "@sap/hana-client": "^2.12.25",
+    "better-sqlite3": "^7.1.2 || ^8.0.0",
     "hdb-pool": "^0.1.6",
-    "ioredis": "^4.28.3",
+    "ioredis": "^5.0.4",
     "mongodb": "^3.6.0",
     "mssql": "^7.3.0",
     "mysql2": "^2.2.5",
@@ -153,7 +158,7 @@
     "pg-query-stream": "^4.0.0",
     "redis": "^3.1.1 || ^4.0.0",
     "sql.js": "^1.4.0",
-    "sqlite3": "^5.0.2",
+    "sqlite3": "^5.0.3",
     "ts-node": "^10.7.0",
     "typeorm-aurora-data-api-driver": "^2.0.0"
   },

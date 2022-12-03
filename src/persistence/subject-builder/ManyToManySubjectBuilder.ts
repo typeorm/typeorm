@@ -119,7 +119,7 @@ export class ManyToManySubjectBuilder {
 
             // todo: check how it will work for entities which are saved by cascades, but aren't saved in the database yet
 
-            // extract only relation id from the related entities, since we only need it for comparision
+            // extract only relation id from the related entities, since we only need it for comparison
             // by example: extract from category only relation id (category id, or let's say category title, depend on join column options)
             let relatedEntityRelationIdMap =
                 relation.inverseEntityMetadata!.getEntityIdMap(relatedEntity)

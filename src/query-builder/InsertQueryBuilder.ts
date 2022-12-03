@@ -21,7 +21,9 @@ import { InstanceChecker } from "../util/InstanceChecker"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
+export class InsertQueryBuilder<
+    Entity extends ObjectLiteral,
+> extends QueryBuilder<Entity> {
     readonly "@instanceof" = Symbol.for("InsertQueryBuilder")
 
     // -------------------------------------------------------------------------
@@ -227,7 +229,7 @@ export class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Specifies INTO which entity's table insertion will be executed.
      */
-    into<T>(
+    into<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         columns?: string[],
     ): InsertQueryBuilder<T> {

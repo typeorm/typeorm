@@ -24,6 +24,15 @@ export class MigrationExecutor {
      */
     transaction: "all" | "none" | "each" = "all"
 
+    /**
+     * Option to fake-run or fake-revert a migration, adding to the
+     * executed migrations table, but not actually running it. This feature is
+     * useful for when migrations are added after the fact or for
+     * interoperability between applications which are desired to each keep
+     * a consistent migration history.
+     */
+    fake: boolean
+
     // -------------------------------------------------------------------------
     // Private Properties
     // -------------------------------------------------------------------------
@@ -64,6 +73,13 @@ export class MigrationExecutor {
     public async executeMigration(migration: Migration): Promise<Migration> {
         return this.withQueryRunner(async (queryRunner) => {
             await this.createMigrationsTableIfNotExist(queryRunner)
+
+            // create typeorm_metadata table if it's not created yet
+            const schemaBuilder = this.connection.driver.createSchemaBuilder()
+            if (InstanceChecker.isRdbmsSchemaBuilder(schemaBuilder)) {
+                await schemaBuilder.createMetadataTableIfNecessary(queryRunner)
+            }
+
             await queryRunner.beforeMigration()
             await (migration.instance as any).up(queryRunner)
             await queryRunner.afterMigration()
@@ -135,6 +151,7 @@ export class MigrationExecutor {
             this.queryRunner || this.connection.createQueryRunner()
         // create migrations table if its not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
+
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(
             queryRunner,
@@ -150,7 +167,9 @@ export class MigrationExecutor {
             )
 
             if (executedMigration) {
-                this.connection.logger.logSchemaBuild(`[X] ${migration.name}`)
+                this.connection.logger.logSchemaBuild(
+                    `[X] ${executedMigration.id} ${migration.name}`,
+                )
             } else {
                 hasUnappliedMigrations = true
                 this.connection.logger.logSchemaBuild(`[ ] ${migration.name}`)
@@ -172,12 +191,11 @@ export class MigrationExecutor {
     async executePendingMigrations(): Promise<Migration[]> {
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
-        // create migrations table if its not created yet
+        // create migrations table if it's not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
 
-        // create the typeorm_metadata table if necessary
+        // create the typeorm_metadata table if it's not created yet
         const schemaBuilder = this.connection.driver.createSchemaBuilder()
-
         if (InstanceChecker.isRdbmsSchemaBuilder(schemaBuilder)) {
             await schemaBuilder.createMetadataTableIfNecessary(queryRunner)
         }
@@ -194,7 +212,7 @@ export class MigrationExecutor {
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations()
 
-        // variable to store all migrations we did successefuly
+        // variable to store all migrations we did successfully
         const successMigrations: Migration[] = []
 
         // find all migrations that needs to be executed
@@ -251,6 +269,14 @@ export class MigrationExecutor {
         // run all pending migrations in a sequence
         try {
             for (const migration of pendingMigrations) {
+                if (this.fake) {
+                    // directly insert migration record into the database if it is fake
+                    await this.insertExecutedMigration(queryRunner, migration)
+
+                    // nothing else needs to be done, continue to next migration
+                    continue
+                }
+
                 if (
                     this.transaction === "each" &&
                     !queryRunner.isTransactionActive
@@ -285,7 +311,9 @@ export class MigrationExecutor {
                         // informative log about migration success
                         successMigrations.push(migration)
                         this.connection.logger.logSchemaBuild(
-                            `Migration ${migration.name} has been executed successfully.`,
+                            `Migration ${migration.name} has been ${
+                                this.fake ? "(fake)" : ""
+                            } executed successfully.`,
                         )
                     })
             }
@@ -317,8 +345,14 @@ export class MigrationExecutor {
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
 
-        // create migrations table if its not created yet
+        // create migrations table if it's not created yet
         await this.createMigrationsTableIfNotExist(queryRunner)
+
+        // create typeorm_metadata table if it's not created yet
+        const schemaBuilder = this.connection.driver.createSchemaBuilder()
+        if (InstanceChecker.isRdbmsSchemaBuilder(schemaBuilder)) {
+            await schemaBuilder.createMetadataTableIfNecessary(queryRunner)
+        }
 
         // get all migrations that are executed and saved in the database
         const executedMigrations = await this.loadExecutedMigrations(
@@ -372,13 +406,17 @@ export class MigrationExecutor {
         }
 
         try {
-            await queryRunner.beforeMigration()
-            await migrationToRevert.instance!.down(queryRunner)
-            await queryRunner.afterMigration()
+            if (!this.fake) {
+                await queryRunner.beforeMigration()
+                await migrationToRevert.instance!.down(queryRunner)
+                await queryRunner.afterMigration()
+            }
 
             await this.deleteExecutedMigration(queryRunner, migrationToRevert)
             this.connection.logger.logSchemaBuild(
-                `Migration ${migrationToRevert.name} has been reverted successfully.`,
+                `Migration ${migrationToRevert.name} has been ${
+                    this.fake ? "(fake)" : ""
+                } reverted successfully.`,
             )
 
             // commit transaction if we started it

@@ -872,7 +872,7 @@ export class EntityMetadata {
     ) {
         const paths: string[] = []
         Object.keys(entity).forEach((key) => {
-            // check for function is needed in the cases when createPropertyPath used on values containg a function as a value
+            // check for function is needed in the cases when createPropertyPath used on values contain a function as a value
             // example: .update().set({ name: () => `SUBSTR('', 1, 2)` })
             const parentPath = prefix ? prefix + "." + key : key
             if (metadata.hasEmbeddedWithPropertyPath(parentPath)) {

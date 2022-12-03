@@ -62,4 +62,11 @@ export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
      * Provide a function that gets called with every SQL string executed by the database connection.
      */
     readonly verbose?: Function
+
+    /**
+     * Relative or absolute path to the native addon (better_sqlite3.node).
+     */
+    readonly nativeBinding?: string
+
+    readonly poolSize?: never
 }

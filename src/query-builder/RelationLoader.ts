@@ -448,6 +448,7 @@ export class RelationLoader {
                 }
             },
             configurable: true,
+            enumerable: false,
         })
     }
 }

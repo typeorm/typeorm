@@ -11,6 +11,7 @@ import { TableType } from "../metadata/types/TableTypes"
 import { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
 import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
+import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -68,6 +69,13 @@ export class EntitySchemaOptions<T> {
      */
     relations?: {
         [P in keyof T]?: EntitySchemaRelationOptions
+    }
+
+    /**
+     * Entity relation id options.
+     */
+    relationIds?: {
+        [P in keyof T]?: EntitySchemaRelationIdOptions
     }
 
     /**
