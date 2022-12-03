@@ -2538,20 +2538,12 @@ export class PostgresQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-    
-      // primary key constraint name find fix
-        let pkName = this.connection.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
-        )
-        if (primaryColumns.length > 0) {
-            pkName =
-                primaryColumns[0].primaryKeyConstraintName ||
-                this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    columnNames,
-                )
-        }
+        const pkName = primaryColumns[0]?.primaryKeyConstraintName
+            ? primaryColumns[0].primaryKeyConstraintName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  columnNames,
+              )
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
