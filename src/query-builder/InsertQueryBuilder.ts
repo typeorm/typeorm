@@ -390,6 +390,7 @@ export class InsertQueryBuilder<
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
+            indexPredicate: orUpdateOptions?.indexPredicate,
         }
         return this
     }
@@ -484,6 +485,7 @@ export class InsertQueryBuilder<
                     columns,
                     conflict,
                     skipUpdateIfNoValuesChanged,
+                    indexPredicate,
                 } = this.expressionMap.onUpdate
 
                 let conflictTarget = "ON CONFLICT"
@@ -492,6 +494,22 @@ export class InsertQueryBuilder<
                     conflictTarget += ` ( ${conflict
                         .map((column) => this.escape(column))
                         .join(", ")} )`
+                    if (
+                        indexPredicate &&
+                        !DriverUtils.isPostgresFamily(this.connection.driver)
+                    ) {
+                        throw new TypeORMError(
+                            `indexPredicate option is not supported by the current database driver`,
+                        )
+                    }
+                    if (
+                        indexPredicate &&
+                        DriverUtils.isPostgresFamily(this.connection.driver)
+                    ) {
+                        conflictTarget += ` WHERE ( ${this.escape(
+                            indexPredicate,
+                        )} )`
+                    }
                 } else if (conflict) {
                     conflictTarget += ` ON CONSTRAINT ${this.escape(conflict)}`
                 }
