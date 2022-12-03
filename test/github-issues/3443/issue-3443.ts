@@ -7,7 +7,7 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
-describe.only("github issues > #3443 @JoinTable on entities without synchronization", () => {
+describe("github issues > #3443 @JoinTable on entities without synchronization", () => {
     let dataSources: DataSource[]
     before(
         async () =>
