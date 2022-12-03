@@ -266,9 +266,9 @@ export class ActionLog {
 
 ## Avoid circular import errors
 
-Here is an example if you want to define your entities, and you don't want those to cause errors in the browser.
+Here is an example if you want to define your entities, and you don't want those to cause errors in some environments.
 In this situation we have Action.ts and Person.ts importing each other for a many-to-many relationship.
-We use import type so that we can use the type information without any javascript code being generated.
+We use import type so that we can use the type information without any JavaScript code being generated.
 
 ```typescript
 import { Entity, PrimaryColumn, Column, ManytoMany } from "typeorm"
@@ -285,7 +285,7 @@ export class ActionLog {
     @Column()
     action: string
 
-    @ManytoMany( "Person", "id")
+    @ManyToMany("Person", "id")
     person: Person
 }
 ```
@@ -299,7 +299,7 @@ export class Person {
     @PrimaryColumn()
     id: number
 
-    @ManytoMany( "ActionLog", "id")
+    @ManyToMany("ActionLog", "id")
     log: ActionLog
 }
 ```
