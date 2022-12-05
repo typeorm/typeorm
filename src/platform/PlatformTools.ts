@@ -241,6 +241,14 @@ export class PlatformTools {
         console.log(chalk.underline(message))
     }
 
+    static info(info: any) {
+        return chalk.gray(info)
+    }
+
+    static error(error: any) {
+        return chalk.red(error)
+    }
+
     static warn(message: string) {
         return chalk.yellow(message)
     }
