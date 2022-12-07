@@ -2848,7 +2848,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
             : MetadataTableType.VIEW
-        const { schema, tableName } = this.driver.parseTableName(view);
+        const { schema, tableName } = this.driver.parseTableName(view)
         return this.insertTypeormMetadataSql({
             type: type,
             name: tableName,
