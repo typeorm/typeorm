@@ -49,7 +49,10 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 dropSchema: false,
                 logging: ["query", "error", "schema"],
             })
-            await dataSource.initialize()
+
+            if (!dataSource.isInitialized) {
+                await dataSource.initialize()
+            }
 
             const options = {
                 transaction:
