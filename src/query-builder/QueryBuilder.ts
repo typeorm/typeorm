@@ -1117,17 +1117,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     cte.options.recursive && databaseRequireRecusiveHint
                         ? "RECURSIVE"
                         : ""
-                const materializeClause =
-                    cte.options.materialized &&
-                    this.connection.driver.cteCapabilities.materializedHint
+                let materializeClause = ""
+                if (
+                    this.connection.driver.cteCapabilities.materializedHint &&
+                    cte.options.materialized !== undefined
+                ) {
+                    materializeClause = cte.options.materialized
                         ? "MATERIALIZED"
-                        : ""
+                        : "NOT MATERIALIZED"
+                }
 
                 return [
                     recursiveClause,
                     cteHeader,
-                    materializeClause,
                     "AS",
+                    materializeClause,
                     `(${cteBodyExpression})`,
                 ]
                     .filter(Boolean)
