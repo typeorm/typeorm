@@ -166,6 +166,7 @@ export class OneToOneInverseSideSubjectBuilder {
                     metadata: relation.inverseEntityMetadata,
                     canBeUpdated: true,
                     identifier: relationIdMap,
+                    entity: relatedEntity,
                 })
                 this.subjects.push(relatedEntitySubject)
             }
