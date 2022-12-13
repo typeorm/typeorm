@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { SqlJsConfig } from 'sql.js'
 
 /**
  * Sql.js-specific connection options.
@@ -23,7 +24,7 @@ export interface SqljsConnectionOptions extends BaseDataSourceOptions {
     /**
      * Config that's used to initialize sql.js.
      */
-    readonly sqlJsConfig?: any
+    readonly sqlJsConfig?: SqlJsConfig
 
     /**
      * Enables the autoSave mechanism which either saves to location

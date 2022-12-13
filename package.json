@@ -103,6 +103,7 @@
     "@types/sha.js": "^2.4.0",
     "@types/sinon": "^9.0.10",
     "@types/source-map-support": "^0.5.3",
+    "@types/sql.js": "^1.4.4",
     "@types/uuid": "^8.3.4",
     "@types/xml2js": "^0.4.8",
     "@types/yargs": "^17.0.2",
