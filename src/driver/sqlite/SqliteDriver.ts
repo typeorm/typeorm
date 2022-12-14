@@ -178,6 +178,14 @@ export class SqliteDriver extends AbstractSqliteDriver {
             await run(`PRAGMA journal_mode = WAL`)
         }
 
+        if (
+            this.options.busyTimeout &&
+            typeof this.options.busyTimeout === "number" &&
+            this.options.busyTimeout > 0
+        ) {
+            await run(`PRAGMA busy_timeout = ${this.options.busyTimeout}`)
+        }
+
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
         await run(`PRAGMA foreign_keys = ON`)
