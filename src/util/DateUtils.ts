@@ -1,5 +1,5 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { parseISO } from "date-fns"
+import parseISO from "./parseISO"
 
 /**
  * Provides utilities to transform hydrated and persisted data.
