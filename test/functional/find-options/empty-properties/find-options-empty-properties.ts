@@ -29,7 +29,7 @@ describe("find options > where", () => {
         await connection.manager.save(post2)
     }
 
-    it("should skip undefined properties", () =>
+    it.skip("should skip undefined properties", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await prepareData(connection)
