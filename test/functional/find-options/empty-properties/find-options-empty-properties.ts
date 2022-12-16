@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
+import { expect } from "chai"
 
 describe("find options > where", () => {
     let connections: DataSource[]
@@ -29,70 +30,48 @@ describe("find options > where", () => {
         await connection.manager.save(post2)
     }
 
-    it.skip("should skip undefined properties", () =>
+    it("should fail undefined properties", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await prepareData(connection)
 
-                const posts = await connection
-                    .createQueryBuilder(Post, "post")
-                    .setFindOptions({
-                        where: {
-                            title: "Post #1",
-                            text: undefined,
-                        },
-                        order: {
-                            id: "asc",
-                        },
-                    })
-                    .getMany()
-
-                posts.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1" },
-                ])
+                await expect(
+                    connection
+                        .createQueryBuilder(Post, "post")
+                        .setFindOptions({
+                            where: {
+                                title: "Post #1",
+                                text: undefined,
+                            },
+                            order: {
+                                id: "asc",
+                            },
+                        })
+                        .getMany(),
+                ).to.rejectedWith(`Value of text cannot be null or undefined`)
             }),
         ))
 
-    it("should skip null properties", () =>
+    it("should fail null properties", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await prepareData(connection)
 
-                const posts1 = await connection
-                    .createQueryBuilder(Post, "post")
-                    .setFindOptions({
-                        // @ts-expect-error
-                        where: {
-                            title: "Post #1",
-                            text: null,
-                        },
-                        order: {
-                            id: "asc",
-                        },
-                    })
-                    .getMany()
-
-                posts1.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1" },
-                ])
-
-                const posts2 = await connection
-                    .createQueryBuilder(Post, "post")
-                    .setFindOptions({
-                        // @ts-expect-error
-                        where: {
-                            text: null,
-                        },
-                        order: {
-                            id: "asc",
-                        },
-                    })
-                    .getMany()
-
-                posts2.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1" },
-                    { id: 2, title: "Post #2", text: "About post #2" },
-                ])
+                await expect(
+                    await connection
+                        .createQueryBuilder(Post, "post")
+                        .setFindOptions({
+                            // @ts-expect-error
+                            where: {
+                                title: "Post #1",
+                                text: null,
+                            },
+                            order: {
+                                id: "asc",
+                            },
+                        })
+                        .getMany(),
+                ).to.rejectedWith(`Value of text cannot be null or undefined`)
             }),
         ))
 })
