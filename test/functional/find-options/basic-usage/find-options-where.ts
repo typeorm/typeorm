@@ -11,7 +11,7 @@ import { Counters } from "./entity/Counters"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 import { prepareData } from "./find-options-test-utils"
-import {expect} from "chai";
+import { expect } from "chai"
 
 describe("find options > where", () => {
     let connections: DataSource[]
@@ -598,20 +598,21 @@ describe("find options > where", () => {
                 post4.counters.likes = 1
                 await connection.manager.save(post4)
 
-                await expect(connection
-                    .createQueryBuilder(Post, "post")
-                    .setFindOptions({
-                        where: {
-                            author: {
-                                id: undefined,
-                                firstName: undefined,
+                await expect(
+                    connection
+                        .createQueryBuilder(Post, "post")
+                        .setFindOptions({
+                            where: {
+                                author: {
+                                    id: undefined,
+                                    firstName: undefined,
+                                },
                             },
-                        },
-                        order: {
-                            id: "asc",
-                        },
-                    })
-                    .getMany()
+                            order: {
+                                id: "asc",
+                            },
+                        })
+                        .getMany(),
                 ).to.rejectedWith(`Value of id cannot be null or undefined`)
             }),
         ))
