@@ -3,7 +3,6 @@ import { ReactNativeConnectionOptions } from "./ReactNativeConnectionOptions"
 import { ReactNativeQueryRunner } from "./ReactNativeQueryRunner"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { ReplicationMode } from "../types/ReplicationMode"
 
@@ -18,13 +17,6 @@ export class ReactNativeDriver extends AbstractSqliteDriver {
         super(connection)
 
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
-
-        if (!this.options.location)
-            throw new DriverOptionNotSetError("location")
 
         // load sqlite package
         this.loadDependencies()
