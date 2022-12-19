@@ -17,7 +17,7 @@
         "noImplicitReturns": true,
         "stripInternal": true,
         "pretty": true,
-        "strictNullChecks": true,
+        "strict": true,
         "noUnusedLocals": true,
         "downlevelIteration": true
     },
