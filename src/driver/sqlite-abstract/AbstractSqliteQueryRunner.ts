@@ -1311,7 +1311,7 @@ export abstract class AbstractSqliteQueryRunner
             const queryPromises = (type: "table" | "index") => {
                 const promises = [
                     ...tableNamesWithDot.map((tableName) =>
-                        this.loadTableRecords(tableName, "table"),
+                        this.loadTableRecords(tableName, type),
                     ),
                 ]
 
