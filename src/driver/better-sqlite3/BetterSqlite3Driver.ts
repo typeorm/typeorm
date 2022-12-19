@@ -1,7 +1,6 @@
 import mkdirp from "mkdirp"
 import path from "path"
 import { DriverPackageNotInstalledError } from "../../error"
-import { DriverOptionNotSetError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source"
 import { ColumnType } from "../types/ColumnTypes"
@@ -40,10 +39,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         this.connection = connection
         this.options = connection.options as BetterSqlite3ConnectionOptions
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
 
         // load sqlite package
         this.loadDependencies()

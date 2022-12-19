@@ -2,7 +2,6 @@ import mkdirp from "mkdirp"
 import path from "path"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SqliteQueryRunner } from "./SqliteQueryRunner"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source/DataSource"
 import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
@@ -40,10 +39,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
         this.connection = connection
         this.options = connection.options as SqliteConnectionOptions
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
 
         // load sqlite package
         this.loadDependencies()
