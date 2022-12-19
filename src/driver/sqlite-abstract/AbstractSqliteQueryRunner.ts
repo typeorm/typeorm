@@ -1318,7 +1318,9 @@ export abstract class AbstractSqliteQueryRunner
                 if (tableNamesWithoutDot.length) {
                     promises.push(
                         this.query(
-                            `SELECT * FROM "sqlite_master" WHERE "type" = '${type}' AND "name" IN (${tableNamesWithoutDot})`,
+                            `SELECT * FROM "sqlite_master" WHERE "type" = '${type}' AND "${
+                                type === "table" ? "name" : "tbl_name"
+                            }" IN (${tableNamesWithoutDot})`,
                         ),
                     )
                 }
