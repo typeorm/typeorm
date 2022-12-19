@@ -1,6 +1,6 @@
 import "../../../utils/test-setup"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/index.js"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
