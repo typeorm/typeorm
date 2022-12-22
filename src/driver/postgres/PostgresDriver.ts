@@ -485,7 +485,7 @@ export class PostgresDriver implements Driver {
             } catch (_) {
                 logger.log(
                     "warn",
-                    "At least one of the entities has a cube column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
+                    "At least one of the entities has a ltree column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
         if (hasExclusionConstraints)
