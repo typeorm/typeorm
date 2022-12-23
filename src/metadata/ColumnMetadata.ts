@@ -691,6 +691,7 @@ export class ColumnMetadata {
                     entity,
                     this.relationMetadata.propertyName,
                 )?.get &&
+                this.propertyName === this.relationMetadata.propertyName &&
                 entity[this.relationMetadata.propertyName] &&
                 ObjectUtils.isObject(entity[this.relationMetadata.propertyName])
             ) {
