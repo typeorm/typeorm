@@ -9,9 +9,9 @@
 
 ## How to create self referencing relation
 
-Self-referencing relations are relations which have a relation to themself.
+Self-referencing relations are relations which have a relation to themselves.
 This is useful when you are storing entities in a tree-like structures.
-Also "adjacency list" pattern is implemented using self-referenced relations.
+Also, "adjacency list" pattern is implemented using self-referenced relations.
 For example, you want to create categories tree in your application.
 Categories can nest categories, nested categories can nest other categories, etc.
 Self-referencing relations come handy here.
@@ -205,7 +205,7 @@ export class Question {
 }
 ```
 
-However in TypeORM entities it may cause problems.
+However, in TypeORM entities it may cause problems.
 To understand the problem, let's first try to load a Question entity WITHOUT the initializer set.
 When you load a question it will return an object like this:
 

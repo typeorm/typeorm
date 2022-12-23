@@ -79,7 +79,7 @@ by setting `maxQueryExecutionTime` in data source options:
 }
 ```
 
-This code will log all queries which run more then `1 second`.
+This code will log all queries which run for more than `1 second`.
 
 ## Changing default logger
 
@@ -134,7 +134,7 @@ const dataSource = new DataSource({
 ```
 
 Logger methods can accept `QueryRunner` when it's available. It's helpful if you want to log additional data.
-Also, via query runner, you can get access to additional data passed during persist/remove. For example:
+Also, via query runner, you can get access to additional data passed during to persist/remove. For example:
 
 ```typescript
 // user sends request during entity save

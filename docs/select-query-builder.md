@@ -761,7 +761,7 @@ const user = await createQueryBuilder("user")
 
 ## Joining and mapping functionality
 
-Add `profilePhoto` to `User` entity and you can map any data into that property using `QueryBuilder`:
+Add `profilePhoto` to `User` entity, and you can map any data into that property using `QueryBuilder`:
 
 ```typescript
 export class User {
@@ -816,7 +816,7 @@ There are two types of results you can get using select query builder: **entitie
 Most of the time, you need to select real entities from your database, for example, users.
 For this purpose, you use `getOne` and `getMany`.
 However, sometimes you need to select specific data, like the _sum of all user photos_.
-Such data is not a entity, it's called raw data.
+Such data is not an entity, it's called raw data.
 To get raw data, you use `getRawOne` and `getRawMany`.
 Examples:
 
@@ -844,7 +844,7 @@ const photosSums = await dataSource
 ## Streaming result data
 
 You can use `stream` which returns you a stream.
-Streaming returns you raw data and you must handle entity transformation manually:
+Streaming returns you raw data, and you must handle entity transformation manually:
 
 ```typescript
 const stream = await dataSource
