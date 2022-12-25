@@ -32,7 +32,12 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([{ id: 1 }, { id: 2 }, { id: 3 }])
+                posts1.should.be.eql([
+                    { id: 1 },
+                    { id: 2 },
+                    { id: 3 },
+                    { id: 4 },
+                ])
 
                 const posts2 = await connection
                     .createQueryBuilder(Post, "post")
@@ -45,7 +50,12 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([{ id: 1 }, { id: 2 }, { id: 3 }])
+                posts2.should.be.eql([
+                    { id: 1 },
+                    { id: 2 },
+                    { id: 3 },
+                    { id: 4 },
+                ])
             }),
         ))
 
@@ -67,6 +77,7 @@ describe("find options > select", () => {
                     { title: "Post #1" },
                     { title: "Post #2" },
                     { title: "Post #3" },
+                    { title: "Post #4" },
                 ])
 
                 const posts2 = await connection
@@ -84,6 +95,7 @@ describe("find options > select", () => {
                     { title: "Post #1" },
                     { title: "Post #2" },
                     { title: "Post #3" },
+                    { title: "Post #4" },
                 ])
             }),
         ))
@@ -106,6 +118,7 @@ describe("find options > select", () => {
                     { title: "Post #1", text: "About post #1" },
                     { title: "Post #2", text: "About post #2" },
                     { title: "Post #3", text: "About post #3" },
+                    { title: "Post #4", text: "About post #4" },
                 ])
 
                 const posts2 = await connection
@@ -124,6 +137,7 @@ describe("find options > select", () => {
                     { title: "Post #1", text: "About post #1" },
                     { title: "Post #2", text: "About post #2" },
                     { title: "Post #3", text: "About post #3" },
+                    { title: "Post #4", text: "About post #4" },
                 ])
             }),
         ))
@@ -149,6 +163,7 @@ describe("find options > select", () => {
                 posts.should.be.eql([
                     { counters: { likes: 1 } },
                     { counters: { likes: 2 } },
+                    { counters: { likes: 1 } },
                     { counters: { likes: 1 } },
                 ])
             }),

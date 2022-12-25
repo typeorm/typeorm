@@ -1055,6 +1055,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     condition.condition,
                     true,
                 )}`
+            case "and":
+                return condition.parameters.join(" AND ")
         }
 
         throw new TypeError(
@@ -1174,6 +1176,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 qb.orWhere(new Brackets((qb) => qb.where(data)))
             }
         })
+    }
+
+    protected getExistsCondition(subQuery: any): [string, any[]] {
+        const query = subQuery
+            .clone()
+            .orderBy()
+            .groupBy()
+            .offset(undefined)
+            .limit(undefined)
+            .skip(undefined)
+            .take(undefined)
+            .select("1")
+            .setOption("disable-global-order")
+
+        return [`EXISTS (${query.getQuery()})`, query.getParameters()]
     }
 
     private findColumnsForPropertyPath(
@@ -1447,6 +1464,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         operator: "notEqual",
                         parameters: [aliasPath, ...parameters],
                     }
+                }
+            } else if (parameterValue.type === "and") {
+                const values: FindOperator<any>[] = parameterValue.value
+
+                return {
+                    operator: parameterValue.type,
+                    parameters: values.map((operator) =>
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                operator,
+                            ),
+                        ),
+                    ),
                 }
             } else {
                 return {

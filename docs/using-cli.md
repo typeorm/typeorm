@@ -267,8 +267,6 @@ typeorm migration:show
 
 [ ] = Migration is pending/unapplied
 
-This command also returns an error code if there are unapplied migrations.
-
 ## Sync database schema
 
 To synchronize a database schema use:

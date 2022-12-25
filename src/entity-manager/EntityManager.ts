@@ -700,7 +700,9 @@ export class EntityManager {
         }
 
         const conflictColumns = metadata.mapPropertyPathsToColumns(
-            options.conflictPaths,
+            Array.isArray(options.conflictPaths)
+                ? options.conflictPaths
+                : Object.keys(options.conflictPaths),
         )
 
         const overwriteColumns = metadata.columns.filter(
@@ -724,6 +726,7 @@ export class EntityManager {
                 {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
+                    indexPredicate: options.indexPredicate,
                 },
             )
             .execute()
@@ -944,6 +947,23 @@ export class EntityManager {
                 .where(criteria)
                 .execute()
         }
+    }
+
+    /**
+     * Checks whether any entity exists with the given condition
+     */
+    exists<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        options?: FindManyOptions<Entity>,
+    ): Promise<boolean> {
+        const metadata = this.connection.getMetadata(entityClass)
+        return this.createQueryBuilder(
+            entityClass,
+            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
+                metadata.name,
+        )
+            .setFindOptions(options || {})
+            .getExists()
     }
 
     /**

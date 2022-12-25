@@ -108,6 +108,11 @@ export interface Driver {
     cteCapabilities: CteCapabilities
 
     /**
+     * Dummy table name
+     */
+    dummyTableName?: string
+
+    /**
      * Performs connection to the database.
      * Depend on driver type it may create a connection pool.
      */

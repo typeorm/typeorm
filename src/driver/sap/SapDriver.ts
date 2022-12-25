@@ -209,6 +209,8 @@ export class SapDriver implements Driver {
         enabled: true,
     }
 
+    dummyTableName = `SYS.DUMMY`
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------

@@ -74,6 +74,18 @@ describe("find options > relations", () => {
                             lastName: "Copter",
                         },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                        author: {
+                            id: 1,
+                            age: 25,
+                            firstName: "Timber",
+                            lastName: "Saw",
+                        },
+                    },
                 ])
 
                 const posts2 = await connection
@@ -120,6 +132,18 @@ describe("find options > relations", () => {
                             age: 52,
                             firstName: "Gyro",
                             lastName: "Copter",
+                        },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                        author: {
+                            id: 1,
+                            age: 25,
+                            firstName: "Timber",
+                            lastName: "Saw",
                         },
                     },
                 ])
@@ -218,10 +242,33 @@ describe("find options > relations", () => {
                             ],
                         },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                        author: {
+                            id: 1,
+                            age: 25,
+                            photos: [
+                                {
+                                    id: 2,
+                                    filename: "chain.jpg",
+                                    description: "Me and chain",
+                                },
+                                {
+                                    id: 1,
+                                    filename: "saw.jpg",
+                                    description: "Me and saw",
+                                },
+                            ],
+                        },
+                    },
                 ])
                 expect(posts[0].id).to.be.eql(3)
-                expect(posts[1].id).to.be.oneOf([1, 2])
-                expect(posts[2].id).to.be.oneOf([1, 2])
+                expect(posts[1].id).to.be.oneOf([1, 2, 4])
+                expect(posts[2].id).to.be.oneOf([1, 2, 4])
+                expect(posts[3].id).to.be.oneOf([1, 2, 4])
                 expect(posts[1].id).to.not.be.eql(posts[2].id)
             }),
         ))
@@ -328,6 +375,31 @@ describe("find options > relations", () => {
                             photos: [],
                         },
                         tags: [{ id: 1 }],
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                        author: {
+                            id: 1,
+                            firstName: "Timber",
+                            lastName: "Saw",
+                            age: 25,
+                            photos: [
+                                {
+                                    id: 1,
+                                    filename: "saw.jpg",
+                                    description: "Me and saw",
+                                },
+                                {
+                                    id: 2,
+                                    filename: "chain.jpg",
+                                    description: "Me and chain",
+                                },
+                            ],
+                        },
+                        tags: [],
                     },
                 ])
             }),
@@ -438,6 +510,34 @@ describe("find options > relations", () => {
                                     lastName: "Copter",
                                     age: 52,
                                     photos: [],
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: {
+                            likes: 1,
+                            likedUsers: [
+                                {
+                                    id: 1,
+                                    age: 25,
+                                    firstName: "Timber",
+                                    lastName: "Saw",
+                                    photos: [
+                                        {
+                                            id: 1,
+                                            filename: "saw.jpg",
+                                            description: "Me and saw",
+                                        },
+                                        {
+                                            id: 2,
+                                            filename: "chain.jpg",
+                                            description: "Me and chain",
+                                        },
+                                    ],
                                 },
                             ],
                         },
