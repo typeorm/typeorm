@@ -137,7 +137,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 Once you have a migration to run on production, you can run them using a CLI command:
 
 ```
-typeorm migration:run
+typeorm migration:run -- -d path-to-datasource-config
 ```
 
 **`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
@@ -145,13 +145,13 @@ typeorm migration:run
 Example with `ts-node`:
 
 ```
-npx typeorm-ts-node-commonjs migration:run
+npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
 ```
 
 Example with `ts-node` in ESM projects:
 
 ```
-npx typeorm-ts-node-esm migration:run
+npx typeorm-ts-node-esm migration:run -- -d path-to-datasource-config
 ```
 
 ```
@@ -165,7 +165,7 @@ That's all! Now you have your database schema up-to-date.
 If for some reason you want to revert the changes, you can run:
 
 ```
-typeorm migration:revert
+typeorm migration:revert -- -d path-to-datasource-config
 ```
 
 This command will execute `down` in the latest executed migration.
