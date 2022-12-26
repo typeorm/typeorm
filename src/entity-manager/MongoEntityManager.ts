@@ -67,7 +67,10 @@ import {
 import { DataSource } from "../data-source/DataSource"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
 import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import { FindOptionsSelect } from "../find-options/FindOptionsSelect"
+import {
+    FindOptionsSelect,
+    FindOptionsSelectByString,
+} from "../find-options/FindOptionsSelect"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 
@@ -971,7 +974,7 @@ export class MongoEntityManager extends EntityManager {
      * Converts FindOptions into mongodb select by criteria.
      */
     protected convertFindOptionsSelectToProjectCriteria(
-        selects: FindOptionsSelect<any>,
+        selects: FindOptionsSelect<any> | FindOptionsSelectByString<any>,
     ) {
         if (Array.isArray(selects)) {
             return selects.reduce((projectCriteria, key) => {

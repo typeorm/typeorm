@@ -1,7 +1,13 @@
 import { JoinOptions } from "./JoinOptions"
 import { FindOptionsWhere } from "./FindOptionsWhere"
-import { FindOptionsSelect } from "./FindOptionsSelect"
-import { FindOptionsRelations } from "./FindOptionsRelations"
+import {
+    FindOptionsSelect,
+    FindOptionsSelectByString,
+} from "./FindOptionsSelect"
+import {
+    FindOptionsRelationByString,
+    FindOptionsRelations,
+} from "./FindOptionsRelations"
 import { FindOptionsOrder } from "./FindOptionsOrder"
 
 /**
@@ -18,7 +24,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Specifies what columns should be retrieved.
      */
-    select?: FindOptionsSelect<Entity>
+    select?: FindOptionsSelect<Entity> | FindOptionsSelectByString<Entity>
 
     /**
      * Simple condition that should be applied to match entities.
@@ -28,7 +34,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
      */
-    relations?: FindOptionsRelations<Entity>
+    relations?: FindOptionsRelations<Entity> | FindOptionsRelationByString
 
     /**
      * Specifies how relations must be loaded - using "joins" or separate queries.
