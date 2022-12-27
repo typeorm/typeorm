@@ -1327,7 +1327,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Enables time travelling for the current query (only supported by cockroach currently)
      */
     timeTravelQuery(timestampFn?: string | false): this {
-        if (this.connection.driver.options.type !== "cockroachdb") {
+        if (
+            timestampFn &&
+            this.connection.driver.options.type !== "cockroachdb"
+        ) {
             throw new TypeORMError(
                 `SelectQueryBuilder.timeTravelQuery is only supported by cockroachdb.`,
             )
