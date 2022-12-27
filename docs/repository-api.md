@@ -178,7 +178,7 @@ await repository.upsert(
     {
         conflictPaths: ["externalId"],
         skipUpdateIfNoValuesChanged: true, // supported by postgres, skips update if it would not change row values
-        upsertType: "upsert", //  "on-conflict-do-update" | "on-duplicate-key-update" | "upsert" - optionally provide an UpsertType - 'upsert' is currently only sypported by CockroachDB
+        upsertType: "upsert", //  "on-conflict-do-update" | "on-duplicate-key-update" | "upsert" - optionally provide an UpsertType - 'upsert' is currently only supported by CockroachDB
     },
 )
 /** executes
@@ -212,7 +212,7 @@ await repository.upsert(
  *  ON CONFLICT (externalId) WHERE ( dateAdded > 2021-01-01 ) DO UPDATE
  *  SET firstName = EXCLUDED.firstName,
  *  SET dateAdded = EXCLUDED.dateAdded,
- *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName OR user.dateAdded IS DISTINCT FROM EXCLUDED.dateAdded 
+ *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName OR user.dateAdded IS DISTINCT FROM EXCLUDED.dateAdded
  **/
 ```
 
