@@ -1,11 +1,15 @@
 # Migrations
 
--   [How migrations work](#how-migrations-work)
--   [Creating a new migration](#creating-a-new-migration)
--   [Running and reverting migrations](#running-and-reverting-migrations)
--   [Generating migrations](#generating-migrations)
--   [Connection option](#connection-option)
--   [Using migration API to write migrations](#using-migration-api-to-write-migrations)
+- [Migrations](#migrations)
+  - [How migrations work](#how-migrations-work)
+  - [Creating a new migration](#creating-a-new-migration)
+  - [Running and reverting migrations](#running-and-reverting-migrations)
+    - [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
+    - [Transaction modes](#transaction-modes)
+  - [Generating migrations](#generating-migrations)
+  - [DataSoure option](#datasoure-option)
+  - [Timestamp option](#timestamp-option)
+  - [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations work
 
@@ -70,7 +74,7 @@ Before creating a new migration you need to setup your data source options prope
 }
 ```
 
-Here we setup three options:
+Here we setup two options:
 
 -   `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
 -   `"migrations": [/*...*/]` - list of migrations need to be loaded by TypeORM
@@ -167,6 +171,51 @@ typeorm migration:revert
 This command will execute `down` in the latest executed migration.
 If you need to revert multiple migrations you must call this command multiple times.
 
+### Faking Migrations and Rollbacks
+
+You can also fake run a migration using the `--fake` flag (`-f` for short). This will add the migration
+to the migrations table without running it. This is useful for migrations created after manual changes
+have already been made to the database or when migrations have been run externally
+(e.g. by another tool or application), and you still would like to keep a consistent migration history.
+
+```
+typeorm migration:run --fake
+```
+
+This is also possible with rollbacks.
+
+```
+typeorm migration:revert --fake
+```
+
+### Transaction modes
+
+By default, TypeORM will run all your migrations within a single wrapping transaction.
+This corresponds to the `--transaction all` flag.
+If you require more fine grained transaction control, you can use the `--transaction each` flag to wrap every migration individually, or the `--transaction none` flag to opt out of wrapping the migrations in transactions altogether.
+
+In addition to these flags, you can also override the transaction behavior on a per-migration basis by setting the `transaction` property on the `MigrationInterface` to `true` or `false`. This only works in the `each` or `none` transaction mode.
+
+```typescript
+import { MigrationInterface, QueryRunner } from "typeorm"
+
+export class AddIndexTIMESTAMP implements MigrationInterface {
+    transaction = false
+
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `CREATE INDEX CONCURRENTLY post_names_idx ON post(name)`
+        )
+    }
+
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `DROP INDEX CONCURRENTLY post_names_idx`,
+        )
+    }
+}
+```
+
 ## Generating migrations
 
 TypeORM is able to automatically generate migration files with schema changes you made.
@@ -221,12 +270,12 @@ module.exports = class PostRefactoringTIMESTAMP {
 See, you don't need to write the queries on your own.
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
 
-## Connection option
+## DataSource option
 
-If you need to run/revert your migrations for another connection rather than the default, use the `-c` (alias for `--connection`) and pass the config name as an argument
+If you need to run/revert/generate/show your migrations use the `-d` (alias for `--dataSource`) and pass the path to the file where your DataSource instance is defined as an argument
 
 ```
-typeorm -c <your-config-name> migration:{run|revert}
+typeorm -d <your-data-source-path> migration:{run|revert}
 ```
 
 ## Timestamp option

@@ -9,6 +9,12 @@ export type FindOptionsSelectProperty<Property> = Property extends Promise<
     ? FindOptionsSelectProperty<I> | boolean
     : Property extends Array<infer I>
     ? FindOptionsSelectProperty<I> | boolean
+    : Property extends string
+    ? boolean
+    : Property extends number
+    ? boolean
+    : Property extends boolean
+    ? boolean
     : Property extends Function
     ? never
     : Property extends Buffer

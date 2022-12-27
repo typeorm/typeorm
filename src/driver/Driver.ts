@@ -27,6 +27,11 @@ export interface Driver {
     options: BaseDataSourceOptions
 
     /**
+     * Database version/release. Often requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
+
+    /**
      * Database name used to perform all write queries.
      *
      * todo: probably move into query runner.
@@ -101,6 +106,11 @@ export interface Driver {
     maxAliasLength?: number
 
     cteCapabilities: CteCapabilities
+
+    /**
+     * Dummy table name
+     */
+    dummyTableName?: string
 
     /**
      * Performs connection to the database.

@@ -180,10 +180,10 @@ export class MongoEntityManager extends EntityManager {
                     ),
                 )
             if (deleteDateColumn && !optionsOrConditions.withDeleted) {
-                this.filterSoftDeleted(cursor, deleteDateColumn)
+                this.filterSoftDeleted(cursor, deleteDateColumn, query)
             }
         } else if (deleteDateColumn) {
-            this.filterSoftDeleted(cursor, deleteDateColumn)
+            this.filterSoftDeleted(cursor, deleteDateColumn, query)
         }
         return await cursor.toArray()
     }
@@ -1168,8 +1168,16 @@ export class MongoEntityManager extends EntityManager {
     protected filterSoftDeleted<Entity>(
         cursor: Cursor<Entity>,
         deleteDateColumn: ColumnMetadata,
+        query?: ObjectLiteral,
     ) {
-        cursor.filter({ $where: `this.${deleteDateColumn.propertyName}==null` })
+        const { $or, ...restQuery } = query ?? {}
+        cursor.filter({
+            $or: [
+                { [deleteDateColumn.propertyName]: { $eq: null } },
+                ...(Array.isArray($or) ? $or : []),
+            ],
+            ...restQuery,
+        })
     }
 
     /**
@@ -1214,10 +1222,10 @@ export class MongoEntityManager extends EntityManager {
                     ),
                 )
             if (deleteDateColumn && !findOneOptionsOrConditions.withDeleted) {
-                this.filterSoftDeleted(cursor, deleteDateColumn)
+                this.filterSoftDeleted(cursor, deleteDateColumn, query)
             }
         } else if (deleteDateColumn) {
-            this.filterSoftDeleted(cursor, deleteDateColumn)
+            this.filterSoftDeleted(cursor, deleteDateColumn, query)
         }
 
         // const result = await cursor.limit(1).next();
@@ -1256,10 +1264,10 @@ export class MongoEntityManager extends EntityManager {
                     ),
                 )
             if (deleteDateColumn && !optionsOrConditions.withDeleted) {
-                this.filterSoftDeleted(cursor, deleteDateColumn)
+                this.filterSoftDeleted(cursor, deleteDateColumn, query)
             }
         } else if (deleteDateColumn) {
-            this.filterSoftDeleted(cursor, deleteDateColumn)
+            this.filterSoftDeleted(cursor, deleteDateColumn, query)
         }
         return cursor.toArray()
     }
@@ -1295,10 +1303,10 @@ export class MongoEntityManager extends EntityManager {
                     ),
                 )
             if (deleteDateColumn && !optionsOrConditions.withDeleted) {
-                this.filterSoftDeleted(cursor, deleteDateColumn)
+                this.filterSoftDeleted(cursor, deleteDateColumn, query)
             }
         } else if (deleteDateColumn) {
-            this.filterSoftDeleted(cursor, deleteDateColumn)
+            this.filterSoftDeleted(cursor, deleteDateColumn, query)
         }
         const [results, count] = await Promise.all<any>([
             cursor.toArray(),

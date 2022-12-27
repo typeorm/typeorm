@@ -45,7 +45,7 @@ import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConne
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export abstract class QueryBuilder<Entity> {
+export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     readonly "@instanceof" = Symbol.for("QueryBuilder")
 
     // -------------------------------------------------------------------------
@@ -217,7 +217,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<Entity>(
+    update<Entity extends ObjectLiteral>(
         entity: EntityTarget<Entity>,
         updateSet?: QueryDeepPartialEntity<Entity>,
     ): UpdateQueryBuilder<Entity>
@@ -309,7 +309,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets entity's relation with which this query builder gonna work.
      */
-    relation<T>(
+    relation<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         propertyPath: string,
     ): RelationQueryBuilder<T>
@@ -1088,6 +1088,8 @@ export abstract class QueryBuilder<Entity> {
                     condition.condition,
                     true,
                 )}`
+            case "and":
+                return condition.parameters.join(" AND ")
         }
 
         throw new TypeError(
@@ -1207,6 +1209,21 @@ export abstract class QueryBuilder<Entity> {
                 qb.orWhere(new Brackets((qb) => qb.where(data)))
             }
         })
+    }
+
+    protected getExistsCondition(subQuery: any): [string, any[]] {
+        const query = subQuery
+            .clone()
+            .orderBy()
+            .groupBy()
+            .offset(undefined)
+            .limit(undefined)
+            .skip(undefined)
+            .take(undefined)
+            .select("1")
+            .setOption("disable-global-order")
+
+        return [`EXISTS (${query.getQuery()})`, query.getParameters()]
     }
 
     private findColumnsForPropertyPath(
@@ -1480,6 +1497,20 @@ export abstract class QueryBuilder<Entity> {
                         operator: "notEqual",
                         parameters: [aliasPath, ...parameters],
                     }
+                }
+            } else if (parameterValue.type === "and") {
+                const values: FindOperator<any>[] = parameterValue.value
+
+                return {
+                    operator: parameterValue.type,
+                    parameters: values.map((operator) =>
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                operator,
+                            ),
+                        ),
+                    ),
                 }
             } else {
                 return {

@@ -5,6 +5,7 @@
 -   [How to load relations in entities](#how-to-load-relations-in-entities)
 -   [Avoid relation property initializers](#avoid-relation-property-initializers)
 -   [Avoid foreign key constraint creation](#avoid-foreign-key-constraint-creation)
+-   [Avoid circular import errors](#avoid-circular-import-errors)
 
 ## How to create self referencing relation
 
@@ -260,5 +261,45 @@ export class ActionLog {
         createForeignKeyConstraints: false,
     })
     person: Person
+}
+```
+
+## Avoid circular import errors
+
+Here is an example if you want to define your entities, and you don't want those to cause errors in some environments.
+In this situation we have Action.ts and Person.ts importing each other for a many-to-many relationship.
+We use import type so that we can use the type information without any JavaScript code being generated.
+
+```typescript
+import { Entity, PrimaryColumn, Column, ManytoMany } from "typeorm"
+import type { Person } from "./Person"
+
+@Entity()
+export class ActionLog {
+    @PrimaryColumn()
+    id: number
+
+    @Column()
+    date: Date
+
+    @Column()
+    action: string
+
+    @ManyToMany("Person", "id")
+    person: Person
+}
+```
+
+```typescript
+import { Entity, PrimaryColumn, ManytoMany } from "typeorm"
+import type { ActionLog } from "./Action"
+
+@Entity()
+export class Person {
+    @PrimaryColumn()
+    id: number
+
+    @ManyToMany("ActionLog", "id")
+    log: ActionLog
 }
 ```

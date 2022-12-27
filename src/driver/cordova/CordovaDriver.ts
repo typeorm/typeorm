@@ -3,7 +3,6 @@ import { CordovaConnectionOptions } from "./CordovaConnectionOptions"
 import { CordovaQueryRunner } from "./CordovaQueryRunner"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { ReplicationMode } from "../types/ReplicationMode"
 
@@ -17,6 +16,8 @@ declare let window: Window
 export class CordovaDriver extends AbstractSqliteDriver {
     options: CordovaConnectionOptions
 
+    transactionSupport = "none" as const
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -27,13 +28,6 @@ export class CordovaDriver extends AbstractSqliteDriver {
         // this.connection = connection;
         // this.options = connection.options as CordovaConnectionOptions;
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
-
-        if (!this.options.location)
-            throw new DriverOptionNotSetError("location")
 
         // load sqlite package
         this.loadDependencies()

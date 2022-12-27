@@ -144,4 +144,6 @@ export interface SpannerConnectionOptions
          */
         readonly selector?: "RR" | "RANDOM" | "ORDER"
     }
+
+    readonly poolSize?: never
 }

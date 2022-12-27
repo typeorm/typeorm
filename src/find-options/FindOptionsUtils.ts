@@ -5,6 +5,7 @@ import { FindRelationsNotFoundError } from "../error/FindRelationsNotFoundError"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { DriverUtils } from "../driver/DriverUtils"
 import { FindTreeOptions } from "./FindTreeOptions"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * Utilities to work with FindOptions.
@@ -241,7 +242,7 @@ export class FindOptionsUtils {
         return qb;
     }*/
 
-    static applyOptionsToTreeQueryBuilder<T>(
+    static applyOptionsToTreeQueryBuilder<T extends ObjectLiteral>(
         qb: SelectQueryBuilder<T>,
         options?: FindTreeOptions,
     ): SelectQueryBuilder<T> {

@@ -116,6 +116,7 @@ export class QueryExpressionMap {
         columns?: string[]
         overwrite?: string[]
         skipUpdateIfNoValuesChanged?: boolean
+        indexPredicate?: string
         upsertType?: UpsertType
     }
 
@@ -189,6 +190,12 @@ export class QueryExpressionMap {
         | "pessimistic_read"
         | "pessimistic_write"
         | "dirty_read"
+        /*
+            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
+            will be removed in a future version.
+
+            Use onLocked instead.
+         */
         | "pessimistic_partial_write"
         | "pessimistic_write_or_fail"
         | "for_no_key_update"
@@ -203,6 +210,11 @@ export class QueryExpressionMap {
      * Tables to be specified in the "FOR UPDATE OF" clause, referred by their alias
      */
     lockTables?: string[]
+
+    /**
+     * Modify behavior when encountering locked rows. NOWAIT or SKIP LOCKED
+     */
+    onLocked?: "nowait" | "skip_locked"
 
     /**
      * Indicates if soft-deleted rows should be included in entity result.
@@ -511,6 +523,7 @@ export class QueryExpressionMap {
         map.skip = this.skip
         map.take = this.take
         map.lockMode = this.lockMode
+        map.onLocked = this.onLocked
         map.lockVersion = this.lockVersion
         map.lockTables = this.lockTables
         map.withDeleted = this.withDeleted

@@ -47,7 +47,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class SelectQueryBuilder<Entity>
+export class SelectQueryBuilder<Entity extends ObjectLiteral>
     extends QueryBuilder<Entity>
     implements WhereExpressionBuilder
 {
@@ -249,12 +249,20 @@ export class SelectQueryBuilder<Entity>
         return this
     }
 
+    fromDummy(): SelectQueryBuilder<any> {
+        return this.from(
+            this.connection.driver.dummyTableName ??
+                "(SELECT 1 AS dummy_column)",
+            "dummy_table",
+        )
+    }
+
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(
+    from<T extends ObjectLiteral>(
         entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -264,7 +272,7 @@ export class SelectQueryBuilder<Entity>
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(
+    from<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -274,7 +282,7 @@ export class SelectQueryBuilder<Entity>
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(
+    from<T extends ObjectLiteral>(
         entityTarget:
             | EntityTarget<T>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
@@ -289,7 +297,7 @@ export class SelectQueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(
+    addFrom<T extends ObjectLiteral>(
         entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -298,7 +306,7 @@ export class SelectQueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(
+    addFrom<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         aliasName: string,
     ): SelectQueryBuilder<T>
@@ -307,7 +315,7 @@ export class SelectQueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(
+    addFrom<T extends ObjectLiteral>(
         entityTarget:
             | EntityTarget<T>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
@@ -1191,6 +1199,27 @@ export class SelectQueryBuilder<Entity>
     }
 
     /**
+     * Sets a new where EXISTS clause
+     */
+    whereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.where(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new AND where EXISTS clause
+     */
+    andWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.andWhere(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new OR where EXISTS clause
+     */
+    orWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.orWhere(...this.getExistsCondition(subQuery))
+    }
+
+    /**
      * Adds new AND WHERE with conditions for the given ids.
      *
      * Ids are mixed.
@@ -1508,6 +1537,12 @@ export class SelectQueryBuilder<Entity>
             | "pessimistic_read"
             | "pessimistic_write"
             | "dirty_read"
+            /*
+                "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
+                will be removed in a future version.
+
+                Use setOnLocked instead.
+             */
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
             | "for_no_key_update"
@@ -1525,6 +1560,12 @@ export class SelectQueryBuilder<Entity>
             | "pessimistic_read"
             | "pessimistic_write"
             | "dirty_read"
+            /*
+                "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
+                will be removed in a future version.
+
+                Use setOnLocked instead.
+             */
             | "pessimistic_partial_write"
             | "pessimistic_write_or_fail"
             | "for_no_key_update"
@@ -1535,6 +1576,14 @@ export class SelectQueryBuilder<Entity>
         this.expressionMap.lockMode = lockMode
         this.expressionMap.lockVersion = lockVersion
         this.expressionMap.lockTables = lockTables
+        return this
+    }
+
+    /**
+     * Sets lock handling by adding NO WAIT or SKIP LOCKED.
+     */
+    setOnLocked(onLocked: "nowait" | "skip_locked"): this {
+        this.expressionMap.onLocked = onLocked
         return this
     }
 
@@ -1733,6 +1782,50 @@ export class SelectQueryBuilder<Entity>
 
             this.expressionMap.queryEntity = false
             const results = await this.executeCountQuery(queryRunner)
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction()
+            }
+
+            return results
+        } catch (error) {
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {}
+            }
+            throw error
+        } finally {
+            if (queryRunner !== this.queryRunner)
+                // means we created our own query runner
+                await queryRunner.release()
+        }
+    }
+
+    /**
+     * Gets exists
+     * Returns whether any rows exists matching current query.
+     */
+    async getExists(): Promise<boolean> {
+        if (this.expressionMap.lockMode === "optimistic")
+            throw new OptimisticLockCanNotBeUsedError()
+
+        const queryRunner = this.obtainQueryRunner()
+        let transactionStartedByUs: boolean = false
+        try {
+            // start transaction if it was enabled
+            if (
+                this.expressionMap.useTransaction === true &&
+                queryRunner.isTransactionActive === false
+            ) {
+                await queryRunner.startTransaction()
+                transactionStartedByUs = true
+            }
+
+            this.expressionMap.queryEntity = false
+            const results = await this.executeExistsQuery(queryRunner)
 
             // close transaction if we started it
             if (transactionStartedByUs) {
@@ -2517,7 +2610,7 @@ export class SelectQueryBuilder<Entity>
         if (this.expressionMap.lockTables) {
             if (
                 !(
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 )
             ) {
@@ -2531,15 +2624,31 @@ export class SelectQueryBuilder<Entity>
             lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ")
         }
 
+        let onLockExpression = ""
+        if (this.expressionMap.onLocked === "nowait") {
+            onLockExpression = " NOWAIT"
+        } else if (this.expressionMap.onLocked === "skip_locked") {
+            onLockExpression = " SKIP LOCKED"
+        }
         switch (this.expressionMap.lockMode) {
             case "pessimistic_read":
                 if (
-                    DriverUtils.isMySQLFamily(driver) ||
+                    driver.options.type === "mysql" ||
                     driver.options.type === "aurora-mysql"
                 ) {
+                    if (
+                        DriverUtils.isReleaseVersionOrGreater(driver, "8.0.0")
+                    ) {
+                        return (
+                            " FOR SHARE" + lockTablesClause + onLockExpression
+                        )
+                    } else {
+                        return " LOCK IN SHARE MODE"
+                    }
+                } else if (driver.options.type === "mariadb") {
                     return " LOCK IN SHARE MODE"
-                } else if (driver.options.type === "postgres") {
-                    return " FOR SHARE" + lockTablesClause
+                } else if (DriverUtils.isPostgresFamily(driver)) {
+                    return " FOR SHARE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "oracle") {
                     return " FOR UPDATE"
                 } else if (driver.options.type === "mssql") {
@@ -2553,19 +2662,19 @@ export class SelectQueryBuilder<Entity>
                     driver.options.type === "aurora-mysql" ||
                     driver.options.type === "oracle"
                 ) {
-                    return " FOR UPDATE"
+                    return " FOR UPDATE" + onLockExpression
                 } else if (
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 ) {
-                    return " FOR UPDATE" + lockTablesClause
+                    return " FOR UPDATE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "mssql") {
                     return ""
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
             case "pessimistic_partial_write":
-                if (driver.options.type === "postgres") {
+                if (DriverUtils.isPostgresFamily(driver)) {
                     return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
                 } else if (DriverUtils.isMySQLFamily(driver)) {
                     return " FOR UPDATE SKIP LOCKED"
@@ -2574,7 +2683,7 @@ export class SelectQueryBuilder<Entity>
                 }
             case "pessimistic_write_or_fail":
                 if (
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 ) {
                     return " FOR UPDATE" + lockTablesClause + " NOWAIT"
@@ -2583,24 +2692,27 @@ export class SelectQueryBuilder<Entity>
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
-
             case "for_no_key_update":
                 if (
-                    driver.options.type === "postgres" ||
+                    DriverUtils.isPostgresFamily(driver) ||
                     driver.options.type === "cockroachdb"
                 ) {
-                    return " FOR NO KEY UPDATE" + lockTablesClause
+                    return (
+                        " FOR NO KEY UPDATE" +
+                        lockTablesClause +
+                        onLockExpression
+                    )
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
-
             case "for_key_share":
-                if (driver.options.type === "postgres") {
-                    return " FOR KEY SHARE" + lockTablesClause
+                if (DriverUtils.isPostgresFamily(driver)) {
+                    return (
+                        " FOR KEY SHARE" + lockTablesClause + onLockExpression
+                    )
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
-
             default:
                 return ""
         }
@@ -2674,11 +2786,17 @@ export class SelectQueryBuilder<Entity>
               )
             : []
         const allColumns = [...columns, ...nonSelectedPrimaryColumns]
-
         const finalSelects: SelectQuery[] = []
+
+        const escapedAliasName = this.escape(aliasName)
         allColumns.forEach((column) => {
             let selectionPath =
-                this.escape(aliasName) + "." + this.escape(column.databaseName)
+                escapedAliasName + "." + this.escape(column.databaseName)
+
+            if (column.isVirtualProperty && column.query) {
+                selectionPath = `(${column.query(escapedAliasName)})`
+            }
+
             if (
                 this.connection.driver.spatialTypes.indexOf(column.type) !== -1
             ) {
@@ -2779,7 +2897,7 @@ export class SelectQueryBuilder<Entity>
 
         if (
             this.connection.driver.options.type === "cockroachdb" ||
-            this.connection.driver.options.type === "postgres"
+            DriverUtils.isPostgresFamily(this.connection.driver)
         ) {
             // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
             // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
@@ -2888,6 +3006,20 @@ export class SelectQueryBuilder<Entity>
         if (!results || !results[0] || !results[0]["cnt"]) return 0
 
         return parseInt(results[0]["cnt"])
+    }
+
+    protected async executeExistsQuery(
+        queryRunner: QueryRunner,
+    ): Promise<boolean> {
+        const results = await this.connection
+            .createQueryBuilder()
+            .fromDummy()
+            .select("1", "row_exists")
+            .whereExists(this)
+            .limit(1)
+            .loadRawResults(queryRunner)
+
+        return results.length > 0
     }
 
     protected applyFindOptions() {
@@ -3151,6 +3283,10 @@ export class SelectQueryBuilder<Entity>
                         undefined,
                         tableNames,
                     )
+
+                    if (this.findOptions.lock.onLocked) {
+                        this.setOnLocked(this.findOptions.lock.onLocked)
+                    }
                 }
             }
 
@@ -3307,9 +3443,9 @@ export class SelectQueryBuilder<Entity>
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
                 .cache(
-                    this.expressionMap.cache
-                        ? this.expressionMap.cache
-                        : this.expressionMap.cacheId,
+                    this.expressionMap.cache && this.expressionMap.cacheId
+                        ? `${this.expressionMap.cacheId}-pagination`
+                        : this.expressionMap.cache,
                     this.expressionMap.cacheDuration,
                 )
                 .setParameters(this.getParameters())
@@ -3687,7 +3823,7 @@ export class SelectQueryBuilder<Entity>
                     select[key] as FindOptionsSelect<any>,
                     metadata,
                     alias,
-                    key,
+                    propertyPath,
                 )
 
                 // } else if (relation) {
@@ -3940,13 +4076,31 @@ export class SelectQueryBuilder<Entity>
                         ? (order[key] as any).nulls
                         : undefined
                 nulls =
-                    nulls === "first"
+                    nulls?.toLowerCase() === "first"
                         ? "NULLS FIRST"
-                        : nulls === "last"
+                        : nulls?.toLowerCase() === "last"
                         ? "NULLS LAST"
                         : undefined
 
-                this.addOrderBy(`${alias}.${propertyPath}`, direction, nulls)
+                let aliasPath = `${alias}.${propertyPath}`
+                if (column.isVirtualProperty && column.query) {
+                    const selection = this.expressionMap.selects.find(
+                        (s) => s.selection === aliasPath,
+                    )
+                    if (selection) {
+                        // this is not building correctly now???
+                        aliasPath = DriverUtils.buildAlias(
+                            this.connection.driver,
+                            alias,
+                            column.databaseName,
+                        )
+                        selection.aliasName = aliasPath
+                    } else {
+                        aliasPath = `(${column.query(alias)})`
+                    }
+                }
+
+                this.addOrderBy(aliasPath, direction, nulls)
                 // this.orderBys.push({ alias: alias + "." + propertyPath, direction, nulls });
             } else if (embed) {
                 this.buildOrder(
@@ -4033,7 +4187,10 @@ export class SelectQueryBuilder<Entity>
                     )
 
                 if (column) {
-                    const aliasPath = `${alias}.${propertyPath}`
+                    let aliasPath = `${alias}.${propertyPath}`
+                    if (column.isVirtualProperty && column.query) {
+                        aliasPath = `(${column.query(alias)})`
+                    }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
                     // todo: we need to handle other operators as well?
@@ -4204,6 +4361,27 @@ export class SelectQueryBuilder<Entity>
                                     " " +
                                     parseInt(where[key].value),
                             )
+                        } else {
+                            if (
+                                relation.isManyToOne ||
+                                (relation.isOneToOne &&
+                                    relation.isOneToOneOwner)
+                            ) {
+                                const aliasPath = `${alias}.${propertyPath}`
+
+                                andConditions.push(
+                                    this.createWhereConditionExpression(
+                                        this.getWherePredicateCondition(
+                                            aliasPath,
+                                            where[key],
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                throw new Error(
+                                    `This relation isn't supported by given find operator`,
+                                )
+                            }
                         }
                     } else {
                         // const joinAlias = alias + "_" + relation.propertyName;
@@ -4223,16 +4401,13 @@ export class SelectQueryBuilder<Entity>
                         )
                         if (!existJoin) {
                             this.joins.push({
-                                type: "inner",
+                                type: "left",
                                 select: false,
                                 selection: undefined,
                                 alias: joinAlias,
                                 parentAlias: alias,
                                 relationMetadata: relation,
                             })
-                        } else {
-                            if (existJoin.type === "left")
-                                existJoin.type = "inner"
                         }
 
                         const condition = this.buildWhere(

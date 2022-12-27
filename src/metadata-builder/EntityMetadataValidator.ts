@@ -123,29 +123,39 @@ export class EntityMetadataValidator {
         })
 
         if (!(driver.options.type === "mongodb")) {
-            entityMetadata.columns.forEach((column) => {
-                const normalizedColumn = driver.normalizeType(
-                    column,
-                ) as ColumnType
-                if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
-                    throw new DataTypeNotSupportedError(
+            entityMetadata.columns
+                .filter((column) => !column.isVirtualProperty)
+                .forEach((column) => {
+                    const normalizedColumn = driver.normalizeType(
                         column,
-                        normalizedColumn,
-                        driver.options.type,
-                    )
-                if (
-                    column.length &&
-                    driver.withLengthColumnTypes.indexOf(normalizedColumn) ===
+                    ) as ColumnType
+                    if (
+                        driver.supportedDataTypes.indexOf(normalizedColumn) ===
                         -1
-                )
-                    throw new TypeORMError(
-                        `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
                     )
-                if (column.type === "enum" && !column.enum && !column.enumName)
-                    throw new TypeORMError(
-                        `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
+                        throw new DataTypeNotSupportedError(
+                            column,
+                            normalizedColumn,
+                            driver.options.type,
+                        )
+                    if (
+                        column.length &&
+                        driver.withLengthColumnTypes.indexOf(
+                            normalizedColumn,
+                        ) === -1
                     )
-            })
+                        throw new TypeORMError(
+                            `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
+                        )
+                    if (
+                        column.type === "enum" &&
+                        !column.enum &&
+                        !column.enumName
+                    )
+                        throw new TypeORMError(
+                            `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
+                        )
+                })
         }
 
         if (

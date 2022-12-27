@@ -56,7 +56,7 @@ In your main html page, you need to include reflect-metadata:
 TypeORM is able to run on Cordova, PhoneGap, Ionic apps using the
 [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin
 You have the option to choose between module loaders just like in browser package.
-For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example). **Important**: For use with Ionic, a custom webpack config file is needed! Please checkout the example to see the needed changes.
+For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example). **Important**: For use with Ionic, a custom webpack config file is needed! Please checkout the example to see the needed changes. Note that there is currently no support for transactions when using the [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin. See https://github.com/storesafe/cordova-sqlite-storage#other-limitations for more information.
 
 ## React Native
 

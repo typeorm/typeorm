@@ -14,6 +14,7 @@
         -   [`@DeleteDateColumn`](#deletedatecolumn)
         -   [`@VersionColumn`](#versioncolumn)
         -   [`@Generated`](#generated)
+        -   [`@VirtualColumn`](#virtualcolumn)
     -   [Relation decorators](#relation-decorators)
         -   [`@OneToOne`](#onetoone)
         -   [`@ManyToOne`](#manytoone)
@@ -374,6 +375,34 @@ export class User {
 
 Value will be generated only once, before inserting the entity into the database.
 
+#### `@VirtualColumn`
+
+Special column that is never saved to the database and thus acts as a readonly property.
+Each time you call `find` or `findOne` from the entity manager, the value is recalculated based on the query function that was provided in the VirtualColumn Decorator. The alias argument passed to the query references the exact entity alias of the generated query behind the scenes.
+
+```typescript
+@Entity({ name: "companies", alias: "COMP" })
+export class Company extends BaseEntity {
+  @PrimaryColumn("varchar", { length: 50 })
+  name: string;
+
+  @VirtualColumn({ query: (alias) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name` })
+  totalEmployeesCount: number;
+
+  @OneToMany((type) => Employee, (employee) => employee.company)
+  employees: Employee[];
+}
+
+@Entity({ name: "employees" })
+export class Employee extends BaseEntity {
+  @PrimaryColumn("varchar", { length: 50 })
+  name: string;
+
+  @ManyToOne((type) => Company, (company) => company.employees)
+  company: Company;
+}
+```
+
 ## Relation decorators
 
 #### `@OneToOne`
@@ -510,6 +539,7 @@ Used for `many-to-many` relations and describes join columns of the "junction" t
 Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
 You can change the name of the generated "junction" table, the column names inside the junction table, their referenced
 columns with the `joinColumn`- and `inverseJoinColumn` attributes, and the created foreign keys names.
+You can also set parameter `synchronize` to false to skip schema update(same way as in @Entity)
 
 Example:
 
@@ -529,6 +559,7 @@ export class Post {
             referencedColumnName: "id",
             foreignKeyConstraintName: "fk_question_categories_categoryId"
         },
+        synchronize: false,
     })
     categories: Category[]
 }

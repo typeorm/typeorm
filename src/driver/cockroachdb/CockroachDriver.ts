@@ -988,6 +988,7 @@ export class CockroachDriver implements Driver {
                 port: credentials.port,
                 ssl: credentials.ssl,
                 application_name: options.applicationName,
+                max: options.poolSize,
             },
             options.extra || {},
         )

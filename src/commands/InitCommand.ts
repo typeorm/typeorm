@@ -377,29 +377,56 @@ export const Routes = [{
      * Gets contents of the user controller file (used when express is enabled).
      */
     protected static getControllerTemplate(isEsm: boolean): string {
-        return `import { getRepository } from "typeorm"
+        return `import { AppDataSource } from '../data-source'
 import { NextFunction, Request, Response } from "express"
 import { User } from "../entity/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
-    private userRepository = getRepository(User)
+    private userRepository = AppDataSource.getRepository(User)
 
     async all(request: Request, response: Response, next: NextFunction) {
         return this.userRepository.find()
     }
 
     async one(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.findOne(request.params.id)
+        const id = parseInt(request.params.id)
+        
+
+        const user = await this.userRepository.findOne({
+            where: { id }
+        })
+
+        if (!user) {
+            return "unregistered user"
+        }
+        return user
     }
 
     async save(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.save(request.body)
+        const { firstName, lastName, age } = request.body;
+
+        const user = Object.assign(new User(), {
+            firstName,
+            lastName,
+            age
+        })
+
+        return this.userRepository.save(user)
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        let userToRemove = await this.userRepository.findOneBy({ id: request.params.id })
+        const id = parseInt(request.params.id)
+
+        let userToRemove = await this.userRepository.findOneBy({ id })
+
+        if (!userToRemove) {
+            return "this user not exist"
+        }
+
         await this.userRepository.remove(userToRemove)
+
+        return "user has been removed"
     }
 
 }`
@@ -525,7 +552,7 @@ AppDataSource.initialize().then(async () => {
 services:
 
   mysql:
-    image: "mysql:5.7.10"
+    image: "mysql:8.0.30"
     ports:
       - "3306:3306"
     environment:
@@ -540,7 +567,7 @@ services:
 services:
 
   mariadb:
-    image: "mariadb:10.1.16"
+    image: "mariadb:10.8.4"
     ports:
       - "3306:3306"
     environment:
@@ -555,7 +582,7 @@ services:
 services:
 
   postgres:
-    image: "postgres:9.6.1"
+    image: "postgres:14.5"
     ports:
       - "5432:5432"
     environment:
@@ -569,7 +596,7 @@ services:
 services:
 
   cockroachdb:
-    image: "cockroachdb/cockroach:v2.1.4"
+    image: "cockroachdb/cockroach:v22.1.6"
     command: start --insecure
     ports:
       - "26257:26257"
@@ -603,7 +630,7 @@ services:
 services:
 
   mongodb:
-    image: "mongo:4.0.6"
+    image: "mongo:5.0.12"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

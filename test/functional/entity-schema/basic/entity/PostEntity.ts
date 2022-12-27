@@ -19,6 +19,7 @@ export const PostEntity = new EntitySchema<Post>({
         categories: {
             type: "many-to-many",
             target: "category", // CategoryEntity
+            joinTable: true,
         },
     },
 })

@@ -239,7 +239,7 @@ export interface SqlServerConnectionOptions
 
         /**
          * A boolean determining whether or not the connection will be encrypted. Set to true if you're on
-         * Windows Azure. (default: false).
+         * Windows Azure. (default: true).
          */
         readonly encrypt?: boolean
 
@@ -272,6 +272,12 @@ export interface SqlServerConnectionOptions
          * A boolean, that when true will abort a query when an overflow or divide-by-zero error occurs during query execution.
          */
         readonly enableArithAbort?: boolean
+
+        /**
+         * Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server.
+         * (default: node-mssql)
+         */
+        readonly appName?: string
     }
 
     /**
@@ -288,4 +294,6 @@ export interface SqlServerConnectionOptions
          */
         readonly slaves: SqlServerConnectionCredentialsOptions[]
     }
+
+    readonly poolSize?: never
 }

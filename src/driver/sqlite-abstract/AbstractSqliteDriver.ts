@@ -411,6 +411,9 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -476,6 +479,16 @@ export abstract class AbstractSqliteDriver implements Driver {
                     return value()
                 } else if (typeof value === "number") {
                     return String(value)
+                }
+
+                // Sqlite does not have a boolean data type so we have to transform
+                // it to 1 or 0
+                if (typeof value === "boolean") {
+                    escapedParameters.push(+value)
+                    return this.createParameter(
+                        key,
+                        escapedParameters.length - 1,
+                    )
                 }
 
                 if (value instanceof Date) {
