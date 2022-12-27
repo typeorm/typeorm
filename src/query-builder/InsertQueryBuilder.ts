@@ -504,7 +504,9 @@ export class InsertQueryBuilder<
                             .join(", ")} )`
                         if (
                             indexPredicate &&
-                            !DriverUtils.isPostgresFamily(this.connection.driver)
+                            !DriverUtils.isPostgresFamily(
+                                this.connection.driver,
+                            )
                         ) {
                             throw new TypeORMError(
                                 `indexPredicate option is not supported by the current database driver`,
