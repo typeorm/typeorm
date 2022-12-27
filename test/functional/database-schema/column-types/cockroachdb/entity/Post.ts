@@ -143,6 +143,56 @@ export class Post {
     inet: string
 
     // -------------------------------------------------------------------------
+    // Geometry Type
+    // -------------------------------------------------------------------------
+
+    @Column("geometry")
+    point: Object
+
+    @Column("geometry")
+    polygon: Object
+
+    @Column("geometry")
+    multipoint: Object
+
+    @Column("geometry")
+    linestring: Object
+
+    @Column("geometry")
+    multilinestring: Object
+
+    @Column("geometry")
+    multipolygon: Object
+
+    @Column("geometry")
+    geometrycollection: Object
+
+    // -------------------------------------------------------------------------
+    // Geography Type
+    // -------------------------------------------------------------------------
+
+    @Column("geography")
+    point_geography: Object
+
+    @Column("geography")
+    polygon_geography: Object
+
+    @Column("geography")
+    multipoint_geography: Object
+
+    @Column("geography")
+    linestring_geography: Object
+
+    @Column("geography")
+    multilinestring_geography: Object
+
+    @Column("geography")
+    multipolygon_geography: Object
+
+    @Column("geography")
+    geometrycollection_geography: Object
+
+    // -------------------------------------------------------------------------
     // UUID Type
     // -------------------------------------------------------------------------
 

@@ -1966,6 +1966,27 @@ export class CockroachQueryRunner
             }
         }
 
+        if (
+            (newColumn.spatialFeatureType || "").toLowerCase() !==
+                (oldColumn.spatialFeatureType || "").toLowerCase() ||
+            newColumn.srid !== oldColumn.srid
+        ) {
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
+        }
+
         await this.executeQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
     }
@@ -3288,6 +3309,32 @@ export class CockroachQueryRunner
                                 tableColumn.charset =
                                     dbColumn["character_set_name"]
 
+                            if (
+                                tableColumn.type === "geometry" ||
+                                tableColumn.type === "geography"
+                            ) {
+                                const sql =
+                                    `SELECT * FROM (` +
+                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `FROM "${tableColumn.type}_columns"` +
+                                    `) AS _ ` +
+                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                    `"table_name" = '${dbColumn["table_name"]}'`
+
+                                const results: ObjectLiteral[] =
+                                    await this.query(sql)
+
+                                if (results.length > 0) {
+                                    tableColumn.spatialFeatureType =
+                                        results[0].type
+                                    tableColumn.srid = results[0].srid
+                                        ? parseInt(results[0].srid)
+                                        : undefined
+                                }
+                            }
+
                             return tableColumn
                         }),
                 )
@@ -3748,9 +3795,11 @@ export class CockroachQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE INDEX "${index.name}" ON ${this.escapePath(
-                table,
-            )} (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(table)} ${
+                index.isSpatial ? "USING GiST " : ""
+            }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
