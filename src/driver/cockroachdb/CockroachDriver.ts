@@ -329,6 +329,11 @@ export class CockroachDriver implements Driver {
             )
         }
 
+        // enable experimental alter column type support (we need it to alter enum types)
+        await this.connection.query(
+            "SET enable_experimental_alter_column_type_general = true",
+        )
+
         return Promise.resolve()
     }
 
@@ -447,6 +452,7 @@ export class CockroachDriver implements Driver {
         ) {
             if (columnMetadata.isArray) {
                 if (value === "{}") return []
+                if (Array.isArray(value)) return value
 
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
                 value = (value as string)
@@ -668,6 +674,8 @@ export class CockroachDriver implements Driver {
             return "float4"
         } else if (column.type === "character") {
             return "char"
+        } else if (column.type === "simple-enum") {
+            return "enum"
         } else if (column.type === "json") {
             return "jsonb"
         } else {
@@ -680,11 +688,33 @@ export class CockroachDriver implements Driver {
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
-        const arrayCast = columnMetadata.isArray
-            ? `::${columnMetadata.type}[]`
-            : ""
 
-        if (typeof defaultValue === "number") {
+        if (
+            (columnMetadata.type === "enum" ||
+                columnMetadata.type === "simple-enum") &&
+            defaultValue !== undefined
+        ) {
+            if (defaultValue === null) return "NULL"
+            if (columnMetadata.isArray) {
+                const enumName = this.buildEnumName(columnMetadata)
+                let arrayValue = defaultValue
+                if (typeof defaultValue === "string") {
+                    if (defaultValue === "{}") return `ARRAY[]::${enumName}[]`
+                    arrayValue = defaultValue
+                        .replace("{", "")
+                        .replace("}", "")
+                        .split(",")
+                }
+                if (Array.isArray(arrayValue)) {
+                    const expr = `ARRAY[${arrayValue
+                        .map((it) => `'${it}'`)
+                        .join(",")}]`
+                    return `${expr}::${enumName}[]`
+                }
+            } else {
+                return `'${defaultValue}'`
+            }
+        } else if (typeof defaultValue === "number") {
             return `(${defaultValue})`
         }
 
@@ -703,6 +733,9 @@ export class CockroachDriver implements Driver {
         }
 
         if (typeof defaultValue === "string") {
+            const arrayCast = columnMetadata.isArray
+                ? `::${columnMetadata.type}[]`
+                : ""
             return `'${defaultValue}'${arrayCast}`
         }
 
@@ -860,6 +893,7 @@ export class CockroachDriver implements Driver {
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
+                tableColumn.isArray !== columnMetadata.isArray ||
                 tableColumn.precision !== columnMetadata.precision ||
                 (columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
@@ -873,6 +907,13 @@ export class CockroachDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
+                tableColumn.enumName !== columnMetadata.enumName ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    )) || // enums in postgres are always strings
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
@@ -1040,5 +1081,22 @@ export class CockroachDriver implements Driver {
         comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
 
         return comment
+    }
+
+    /**
+     * Builds ENUM type name from given table and column.
+     */
+    protected buildEnumName(column: ColumnMetadata): string {
+        const { schema, tableName } = this.parseTableName(column.entityMetadata)
+        let enumName = column.enumName
+            ? column.enumName
+            : `${tableName}_${column.databaseName.toLowerCase()}_enum`
+        if (schema) enumName = `${schema}.${enumName}`
+        return enumName
+            .split(".")
+            .map((i) => {
+                return `"${i}"`
+            })
+            .join(".")
     }
 }

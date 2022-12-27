@@ -95,6 +95,14 @@ export class EnumArrayEntity {
         type: "enum",
         enum: StringEnum,
         array: true,
+        default: "{a,e}",
+    })
+    defaultArrayAsString: StringEnum[]
+
+    @Column({
+        type: "enum",
+        enum: StringEnum,
+        array: true,
         default: "{}",
     })
     legacyDefaultAsString: StringEnum[]
