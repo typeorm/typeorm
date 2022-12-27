@@ -852,8 +852,9 @@ describe("repository > basic methods", () => {
             Promise.all(
                 connections.map(async (connection) => {
                     if (
-                        connection.driver.supportedUpsertType !==
-                        "on-conflict-do-update"
+                        connection.driver.supportedUpsertTypes?.includes(
+                            "on-conflict-do-update",
+                        )
                     )
                         return
 

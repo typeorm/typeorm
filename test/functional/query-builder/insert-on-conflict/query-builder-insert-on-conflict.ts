@@ -307,8 +307,9 @@ describe("query builder > insertion > on conflict", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    connection.driver.supportedUpsertType !==
-                    "on-duplicate-key-update"
+                    connection.driver.supportedUpsertTypes?.includes(
+                        "on-duplicate-key-update",
+                    )
                 )
                     return
                 const post1 = new Post()
