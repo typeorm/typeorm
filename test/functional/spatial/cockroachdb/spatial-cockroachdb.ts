@@ -33,7 +33,7 @@ describe("spatial-cockroachdb", () => {
         }
     })
 
-    it("should create correct schema with Postgres' geometry type", () =>
+    it("should create correct schema with geometry type", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
@@ -53,7 +53,7 @@ describe("spatial-cockroachdb", () => {
             }),
         ))
 
-    it("should create correct schema with Postgres' geography type", () =>
+    it("should create correct schema with geography type", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
@@ -70,7 +70,7 @@ describe("spatial-cockroachdb", () => {
             }),
         ))
 
-    it("should create correct schema with Postgres' geometry indices", () =>
+    it("should create correct schema with geometry indices", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
