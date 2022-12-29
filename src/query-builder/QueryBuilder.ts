@@ -25,7 +25,6 @@ import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
-import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -796,22 +795,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return `/* ${this.expressionMap.comment.replace("*/", "")} */ `
     }
 
+    /**
+     * Time travel queries for CockroachDB
+     */
     protected createTimeTravelQuery(): string {
-        /**
-         * Time travel queries for CockroachDB
-         */
-
         if (
             this.expressionMap.queryType === "select" &&
-            ((this.connection.driver.options as CockroachConnectionOptions)
-                .timeTravelQueries ||
-                this.expressionMap.timeTravel) &&
-            this.expressionMap.timeTravelQueryTimestampFn
+            this.expressionMap.timeTravel
         ) {
-            return (
-                " AS OF SYSTEM TIME " +
-                this.expressionMap.timeTravelQueryTimestampFn
-            ) // TODO: Does this function need to be escaped somehow?
+            return ` AS OF SYSTEM TIME ${this.expressionMap.timeTravel}`
         }
 
         return ""

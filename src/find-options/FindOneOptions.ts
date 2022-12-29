@@ -111,14 +111,4 @@ export interface FindOneOptions<Entity = any> {
      * If this is set to true, SELECT query in a `find` method will be executed in a transaction.
      */
     transaction?: boolean
-
-    /**
-     * Indicates if query should use time travel
-     */
-    timeTravel?: string | boolean
-
-    /**
-     * Which time travel query to use (uses follower_read_timestamp() by default)
-     */
-    timeTravelFn?: string
 }

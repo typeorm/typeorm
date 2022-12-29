@@ -323,13 +323,7 @@ export class QueryExpressionMap {
      * Indicates if query should be time travel query
      * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
      */
-    timeTravel: boolean | string = false
-
-    /**
-     * Indicates the historical timestamp function to use for time travel queries
-     * https://www.cockroachlabs.com/docs/stable/follower-reads.html#follower-read-types
-     */
-    timeTravelQueryTimestampFn: string | false = "follower_read_timestamp()"
+    timeTravel?: boolean | string
 
     /**
      * Extra parameters.
@@ -544,7 +538,6 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
         map.timeTravel = this.timeTravel
-        map.timeTravelQueryTimestampFn = this.timeTravelQueryTimestampFn
         map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(

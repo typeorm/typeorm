@@ -1326,24 +1326,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Enables time travelling for the current query (only supported by cockroach currently)
      */
-    timeTravelQuery(timestampFn?: string | false): this {
-        if (
-            timestampFn &&
-            this.connection.driver.options.type !== "cockroachdb"
-        ) {
-            throw new TypeORMError(
-                `SelectQueryBuilder.timeTravelQuery is only supported by cockroachdb.`,
-            )
-        }
-
-        if (timestampFn !== false) {
-            this.expressionMap.timeTravel = true
-
-            if (timestampFn) {
-                this.expressionMap.timeTravelQueryTimestampFn = timestampFn
+    timeTravelQuery(timeTravelFn?: string | boolean): this {
+        if (this.connection.driver.options.type === "cockroachdb") {
+            if (timeTravelFn === undefined) {
+                this.expressionMap.timeTravel = "follower_read_timestamp()"
+            } else {
+                this.expressionMap.timeTravel = timeTravelFn
             }
-        } else if (timestampFn === false) {
-            this.expressionMap.timeTravel = false
         }
 
         return this
@@ -3043,13 +3032,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.withDeleted()
             }
 
-            if (this.findOptions.timeTravel) {
-                this.timeTravelQuery(
-                    this.findOptions.timeTravelFn ||
-                        this.expressionMap.timeTravelQueryTimestampFn,
-                )
-            }
-
             if (this.findOptions.select) {
                 const select = Array.isArray(this.findOptions.select)
                     ? OrmUtils.propertyPathsToTruthyObject(
@@ -3420,11 +3402,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             const originalQuery = this.clone()
 
-            const originalQueryUsesTimeTravel =
+            // preserve original timeTravel value since we set it to "false" in subquery
+            const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
-
-            const originalTimeTravelQueryFn =
-                originalQuery.expressionMap.timeTravelQueryTimestampFn
 
             rawResults = await new SelectQueryBuilder(
                 this.connection,
@@ -3435,13 +3415,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 .from(
                     `(${originalQuery
                         .orderBy()
-                        .timeTravelQuery(false)
+                        .timeTravelQuery(false) // set it to "false" since time travel clause must appear at the very end and applies to the entire SELECT clause.
                         .getQuery()})`,
                     "distinctAlias",
                 )
-                .timeTravelQuery(
-                    originalQueryUsesTimeTravel && originalTimeTravelQueryFn,
-                )
+                .timeTravelQuery(originalQueryTimeTravel)
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)

@@ -42,9 +42,7 @@ export class FindOptionsUtils {
                 typeof possibleOptions.loadEagerRelations === "boolean" ||
                 typeof possibleOptions.withDeleted === "boolean" ||
                 typeof possibleOptions.relationLoadStrategy === "string" ||
-                typeof possibleOptions.transaction === "boolean" ||
-                typeof possibleOptions.timeTravel === "boolean" ||
-                typeof possibleOptions.timeTravel === "string")
+                typeof possibleOptions.transaction === "boolean")
         )
     }
 
