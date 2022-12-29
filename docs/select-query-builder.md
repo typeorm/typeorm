@@ -1238,3 +1238,38 @@ const users = await connection.getRepository(User)
     .where(`user.id IN (SELECT "id" FROM 'insert_results')`)
     .getMany();
 ```
+
+## Time Travel Queries
+
+[Time Travel Queries](https://www.cockroachlabs.com/blog/time-travel-queries-select-witty_subtitle-the_future/)
+currently supported only in `CockroachDB` database.
+
+```typescript
+const repository = connection.getRepository(Account)
+
+// create a new account
+const account = new Account()
+account.name = "John Smith"
+account.balance = 100
+await repository.save(account)
+
+// imagine we update the account balance 1 hour after creation
+account.balance = 200
+await repository.save(account)
+
+// outputs { name: "John Smith", balance: "200" }
+console.log(account)
+
+// load account state on 1 hour back
+account = await repository
+    .createQueryBuilder("account")
+    .timeTravelQuery(`'-1h'`)
+    .getOneOrFail()
+
+// outputs { name: "John Smith", balance: "100" }
+console.log(account)
+```
+
+By default `timeTravelQuery()` uses `follower_read_timestamp()` function if no arguments passed.
+For another supported timestamp arguments and additional information please refer to
+[CockroachDB](https://www.cockroachlabs.com/docs/stable/as-of-system-time.html) docs.
