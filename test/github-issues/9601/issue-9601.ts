@@ -5,7 +5,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 
-describe.only("github issues > #9601 view+schema+synchronize broken for oracle", () => {
+describe("github issues > #9601 view+schema+synchronize broken for oracle", () => {
     let connections: DataSource[]
     before(
         async () =>
