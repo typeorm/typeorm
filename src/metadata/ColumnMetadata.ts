@@ -476,7 +476,7 @@ export class ColumnMetadata {
             this.isInsert = false
             this.isUpdate = false
         }
-        if (options.args.options.primary) {
+        if (options.args.options.generatedIdentity) {
             this.isUpdate = false
         }
         if (options.args.options.transformer)
