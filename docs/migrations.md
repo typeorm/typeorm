@@ -7,7 +7,7 @@
     - [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
     - [Transaction modes](#transaction-modes)
   - [Generating migrations](#generating-migrations)
-  - [DataSoure option](#datasoure-option)
+  - [DataSource option](#datasource-option)
   - [Timestamp option](#timestamp-option)
   - [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
