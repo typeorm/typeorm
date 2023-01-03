@@ -479,7 +479,7 @@ export class InsertQueryBuilder<
         }
         if (this.expressionMap.onUpdate?.upsertType !== "primary-key") {
             if (
-                this.connection.driver.supportedUpsertTypes?.includes(
+                this.connection.driver.supportedUpsertTypes.includes(
                     "on-conflict-do-update",
                 )
             ) {
@@ -568,7 +568,7 @@ export class InsertQueryBuilder<
                     }
                 }
             } else if (
-                this.connection.driver.supportedUpsertTypes?.includes(
+                this.connection.driver.supportedUpsertTypes.includes(
                     "on-duplicate-key-update",
                 )
             ) {

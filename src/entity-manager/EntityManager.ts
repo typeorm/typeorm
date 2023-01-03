@@ -729,7 +729,7 @@ export class EntityManager {
                     indexPredicate: options.indexPredicate,
                     upsertType:
                         options.upsertType ||
-                        this.connection.driver.supportedUpsertTypes?.[0],
+                        this.connection.driver.supportedUpsertTypes[0],
                 },
             )
             .execute()

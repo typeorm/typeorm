@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src"
+import {
+    DataSource,
+    GeometryCollection,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+} from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -28,11 +37,11 @@ describe("database schema > column types > cockroachdb", () => {
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
-                const point = {
+                const point: Point = {
                     type: "Point",
                     coordinates: [116.443987, 39.920843],
                 }
-                const linestring = {
+                const linestring: LineString = {
                     type: "LineString",
                     coordinates: [
                         [-87.623177, 41.881832],
@@ -41,7 +50,7 @@ describe("database schema > column types > cockroachdb", () => {
                         [-87.623177, 41.881832],
                     ],
                 }
-                const polygon = {
+                const polygon: Polygon = {
                     type: "Polygon",
                     coordinates: [
                         [
@@ -58,14 +67,14 @@ describe("database schema > column types > cockroachdb", () => {
                         ],
                     ],
                 }
-                const multipoint = {
+                const multipoint: MultiPoint = {
                     type: "MultiPoint",
                     coordinates: [
                         [100.0, 0.0],
                         [101.0, 1.0],
                     ],
                 }
-                const multilinestring = {
+                const multilinestring: MultiLineString = {
                     type: "MultiLineString",
                     coordinates: [
                         [
@@ -78,7 +87,7 @@ describe("database schema > column types > cockroachdb", () => {
                         ],
                     ],
                 }
-                const multipolygon = {
+                const multipolygon: MultiPolygon = {
                     type: "MultiPolygon",
                     coordinates: [
                         [
@@ -101,7 +110,7 @@ describe("database schema > column types > cockroachdb", () => {
                         ],
                     ],
                 }
-                const geometrycollection = {
+                const geometrycollection: GeometryCollection = {
                     type: "GeometryCollection",
                     geometries: [point, linestring, polygon],
                 }

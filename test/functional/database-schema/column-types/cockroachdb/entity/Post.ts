@@ -1,6 +1,15 @@
-import { Entity } from "../../../../../../src"
-import { PrimaryColumn } from "../../../../../../src"
-import { Column } from "../../../../../../src"
+import {
+    Column,
+    Entity,
+    GeometryCollection,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+    PrimaryColumn,
+} from "../../../../../../src"
 
 @Entity()
 export class Post {
@@ -147,50 +156,50 @@ export class Post {
     // -------------------------------------------------------------------------
 
     @Column("geometry")
-    point: Object
+    point: Point
 
     @Column("geometry")
-    polygon: Object
+    polygon: Polygon
 
     @Column("geometry")
-    multipoint: Object
+    multipoint: MultiPoint
 
     @Column("geometry")
-    linestring: Object
+    linestring: LineString
 
     @Column("geometry")
-    multilinestring: Object
+    multilinestring: MultiLineString
 
     @Column("geometry")
-    multipolygon: Object
+    multipolygon: MultiPolygon
 
     @Column("geometry")
-    geometrycollection: Object
+    geometrycollection: GeometryCollection
 
     // -------------------------------------------------------------------------
     // Geography Type
     // -------------------------------------------------------------------------
 
     @Column("geography")
-    point_geography: Object
+    point_geography: Point
 
     @Column("geography")
-    polygon_geography: Object
+    polygon_geography: Polygon
 
     @Column("geography")
-    multipoint_geography: Object
+    multipoint_geography: MultiPoint
 
     @Column("geography")
-    linestring_geography: Object
+    linestring_geography: LineString
 
     @Column("geography")
-    multilinestring_geography: Object
+    multilinestring_geography: MultiLineString
 
     @Column("geography")
-    multipolygon_geography: Object
+    multipolygon_geography: MultiPolygon
 
     @Column("geography")
-    geometrycollection_geography: Object
+    geometrycollection_geography: GeometryCollection
 
     // -------------------------------------------------------------------------
     // UUID Type

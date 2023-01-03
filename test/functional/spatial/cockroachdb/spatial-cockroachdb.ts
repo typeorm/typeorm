@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/index"
+import { DataSource, Point } from "../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -91,7 +91,7 @@ describe("spatial-cockroachdb", () => {
     it("should persist geometry correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const geom = {
+                const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
                 }
@@ -112,7 +112,7 @@ describe("spatial-cockroachdb", () => {
     it("should persist geography correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const geom = {
+                const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
                 }
@@ -133,11 +133,11 @@ describe("spatial-cockroachdb", () => {
     it("should update geometry correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const geom = {
+                const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
                 }
-                const geom2 = {
+                const geom2: Point = {
                     type: "Point",
                     coordinates: [45, 45],
                 }
@@ -168,11 +168,11 @@ describe("spatial-cockroachdb", () => {
     it("should re-save geometry correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const geom = {
+                const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
                 }
-                const geom2 = {
+                const geom2: Point = {
                     type: "Point",
                     coordinates: [45, 45],
                 }
@@ -197,17 +197,17 @@ describe("spatial-cockroachdb", () => {
     it("should be able to order geometries by distance", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const geoJson1 = {
+                const geoJson1: Point = {
                     type: "Point",
                     coordinates: [139.9341032213472, 36.80798008559315],
                 }
 
-                const geoJson2 = {
+                const geoJson2: Point = {
                     type: "Point",
                     coordinates: [139.933053, 36.805711],
                 }
 
-                const origin = {
+                const origin: Point = {
                     type: "Point",
                     coordinates: [139.933227, 36.808005],
                 }

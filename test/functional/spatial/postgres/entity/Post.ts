@@ -1,7 +1,12 @@
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Entity } from "../../../../../src/decorator/entity/Entity"
-import { Column } from "../../../../../src/decorator/columns/Column"
-import { Index } from "../../../../../src/decorator/Index"
+import {
+    Column,
+    Entity,
+    Geography,
+    Geometry,
+    Index,
+    Point,
+    PrimaryGeneratedColumn,
+} from "../../../../../src"
 
 @Entity()
 export class Post {
@@ -14,23 +19,23 @@ export class Post {
     @Index({
         spatial: true,
     })
-    geom: object
+    geom: Geometry
 
     @Column("geometry", {
         nullable: true,
         spatialFeatureType: "Point",
     })
-    pointWithoutSRID: object
+    pointWithoutSRID: Point
 
     @Column("geometry", {
         nullable: true,
         spatialFeatureType: "Point",
         srid: 4326,
     })
-    point: object
+    point: Point
 
     @Column("geography", {
         nullable: true,
     })
-    geog: object
+    geog: Geography
 }

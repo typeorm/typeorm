@@ -189,7 +189,7 @@ export class PostgresDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertTypes: UpsertType[] = ["on-conflict-do-update"]
+    supportedUpsertTypes: UpsertType[] = ["on-conflict-do-update"]
 
     /**
      * Gets list of spatial column data types.

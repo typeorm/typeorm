@@ -132,7 +132,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertTypes: UpsertType[] = ["on-conflict-do-update"]
+    supportedUpsertTypes: UpsertType[] = ["on-conflict-do-update"]
 
     /**
      * Gets list of column data types that support length by a driver.

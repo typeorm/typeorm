@@ -157,7 +157,7 @@ export class MysqlDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertTypes: UpsertType[] = ["on-duplicate-key-update"]
+    supportedUpsertTypes: UpsertType[] = ["on-duplicate-key-update"]
 
     /**
      * Gets list of spatial column data types.

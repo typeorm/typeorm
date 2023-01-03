@@ -198,7 +198,7 @@ There are several special column types with additional functionality available:
 
 ### Spatial columns
 
-MS SQL, MySQL / MariaDB, and PostgreSQL all support spatial columns. TypeORM's
+MS SQL, MySQL, MariaDB, PostgreSQL and CockroachDB all support spatial columns. TypeORM's
 support for each varies slightly between databases, particularly as the column
 names vary between databases.
 
@@ -207,7 +207,7 @@ be provided as [well-known text
 (WKT)](https://en.wikipedia.org/wiki/Well-known_text), so geometry columns
 should be tagged with the `string` type.
 
-TypeORM's PostgreSQL support uses [GeoJSON](http://geojson.org/) as an
+TypeORM's PostgreSQL and CockroachDB support uses [GeoJSON](http://geojson.org/) as an
 interchange format, so geometry columns should be tagged either as `object` or
 `Geometry` (or subclasses, e.g. `Point`) after importing [`geojson`
 types](https://www.npmjs.com/package/@types/geojson).
