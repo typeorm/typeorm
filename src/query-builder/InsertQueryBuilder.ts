@@ -459,7 +459,8 @@ export class InsertQueryBuilder<
         // add VALUES expression
         if (valuesExpression) {
             if (
-                this.connection.driver.options.type === "oracle" &&
+                this.connection.driver.options.type === "oracle" ||
+                this.connection.driver.options.type === "sap" &&
                 this.getValueSets().length > 1
             ) {
                 query += ` ${valuesExpression}`
