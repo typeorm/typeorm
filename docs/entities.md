@@ -235,7 +235,14 @@ interchange format, so geometry columns should be tagged either as `object` or
 types](https://www.npmjs.com/package/@types/geojson) or using TypeORM built in [GeoJSON types](../src/driver/types/GeoJsonTypes.ts).
 
 ```typescript
-import { Entity, PrimaryColumn, Column, Point, LineString } from "typeorm"
+import {
+    Entity,
+    PrimaryColumn,
+    Column,
+    Point,
+    LineString,
+    MultiPoint
+} from "typeorm"
 
 @Entity()
 export class Thing {
