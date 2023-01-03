@@ -207,10 +207,78 @@ be provided as [well-known text
 (WKT)](https://en.wikipedia.org/wiki/Well-known_text), so geometry columns
 should be tagged with the `string` type.
 
+```typescript
+import { Entity, PrimaryColumn, Column } from "typeorm"
+
+@Entity()
+export class Thing {
+    @PrimaryColumn()
+    id: number
+
+    @Column("point")
+    point: string
+
+    @Column("linestring")
+    linestring: string
+}
+
+...
+
+const thing = new Thing()
+thing.point = "POINT(1 1)"
+thing.linestring = "LINESTRING(0 0,1 1,2 2)"
+```
+
 TypeORM's PostgreSQL and CockroachDB support uses [GeoJSON](http://geojson.org/) as an
 interchange format, so geometry columns should be tagged either as `object` or
 `Geometry` (or subclasses, e.g. `Point`) after importing [`geojson`
-types](https://www.npmjs.com/package/@types/geojson).
+types](https://www.npmjs.com/package/@types/geojson) or using TypeORM built in [GeoJSON types](../src/driver/types/GeoJsonTypes.ts).
+
+```typescript
+import { Entity, PrimaryColumn, Column, Point, LineString } from "typeorm"
+
+@Entity()
+export class Thing {
+    @PrimaryColumn()
+    id: number
+
+    @Column("geometry")
+    point: Point
+
+    @Column("geometry")
+    linestring: LineString
+
+    @Column("geometry", {
+        spatialFeatureType: "MultiPoint",
+        srid: 4326,
+    })
+    multiPointWithSRID: MultiPoint
+}
+
+...
+
+const thing = new Thing()
+thing.point = {
+    type: "Point",
+    coordinates: [116.443987, 39.920843],
+}
+thing.linestring = {
+    type: "LineString",
+    coordinates: [
+        [-87.623177, 41.881832],
+        [-90.199402, 38.627003],
+        [-82.446732, 38.413651],
+        [-87.623177, 41.881832],
+    ],
+}
+thing.multiPointWithSRID = {
+    type: "MultiPoint",
+    coordinates: [
+        [100.0, 0.0],
+        [101.0, 1.0],
+    ],
+}
+```
 
 TypeORM tries to do the right thing, but it's not always possible to determine
 when a value being inserted or the result of a PostGIS function should be
@@ -219,7 +287,9 @@ to the following, where values are converted into PostGIS `geometry`s from
 GeoJSON and into GeoJSON as `json`:
 
 ```typescript
-const origin = {
+import { Point } from "typeorm"
+
+const origin: Point = {
     type: "Point",
     coordinates: [0, 0],
 }
