@@ -66,8 +66,8 @@ export class TreeRepository<
             "treeEntity",
             "treeClosure",
             entity,
-        );
-        FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options);
+        )
+        FindOptionsUtils.applyOptionsToTreeQueryBuilder(qb, options)
         return qb.getMany()
     }
 

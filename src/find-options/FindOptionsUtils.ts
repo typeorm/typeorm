@@ -6,8 +6,8 @@ import { EntityMetadata } from "../metadata/EntityMetadata"
 import { DriverUtils } from "../driver/DriverUtils"
 import { FindTreeOptions } from "./FindTreeOptions"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import {RelationMetadata} from "../metadata/RelationMetadata";
-import {EntityPropertyNotFoundError} from "../error";
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { EntityPropertyNotFoundError } from "../error"
 
 /**
  * Utilities to work with FindOptions.
@@ -288,13 +288,17 @@ export class FindOptionsUtils {
             matchedBaseRelations = allRelations
                 .filter((relation) => relation.match(regexp))
                 .map((relation) =>
-                    metadata.findRelationWithPropertyPath(relation.replace(regexp, ""))
-                ).filter(entity => entity) as RelationMetadata[]
-
+                    metadata.findRelationWithPropertyPath(
+                        relation.replace(regexp, ""),
+                    ),
+                )
+                .filter((entity) => entity) as RelationMetadata[]
         } else {
-            matchedBaseRelations = allRelations.map((relation) =>
-                metadata.findRelationWithPropertyPath(relation),
-            ).filter(entity => entity) as RelationMetadata[]
+            matchedBaseRelations = allRelations
+                .map((relation) =>
+                    metadata.findRelationWithPropertyPath(relation),
+                )
+                .filter((entity) => entity) as RelationMetadata[]
         }
         // go through all matched relations and add join for them
         matchedBaseRelations.forEach((relation) => {
@@ -309,35 +313,40 @@ export class FindOptionsUtils {
             // add a join for the found relation
             const selection = alias + "." + relation.propertyPath
             if (qb.expressionMap.relationLoadStrategy === "query") {
-                qb.concatRelationMetadata(relation);
-            }else{
-                qb.leftJoinAndSelect(selection, relationAlias);
+                qb.concatRelationMetadata(relation)
+            } else {
+                qb.leftJoinAndSelect(selection, relationAlias)
             }
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
             allRelations.splice(
                 allRelations.indexOf(
-                    prefix ? prefix + "." + relation.propertyPath : relation.propertyPath,
+                    prefix
+                        ? prefix + "." + relation.propertyPath
+                        : relation.propertyPath,
                 ),
                 1,
             )
 
             // try to find sub-relations
-            let relationMetadata: EntityMetadata | undefined;
-            let relationName: string | undefined;
+            let relationMetadata: EntityMetadata | undefined
+            let relationName: string | undefined
             if (qb.expressionMap.relationLoadStrategy === "query") {
-                relationMetadata = relation.inverseEntityMetadata;
-                relationName = relationAlias;
-            }else {
+                relationMetadata = relation.inverseEntityMetadata
+                relationName = relationAlias
+            } else {
                 const join = qb.expressionMap.joinAttributes.find(
                     (join) => join.entityOrProperty === selection,
                 )
-                relationMetadata = join!.metadata!;
-                relationName = join!.alias.name;
+                relationMetadata = join!.metadata!
+                relationName = join!.alias.name
             }
 
-            if(!relationName || !relationMetadata){
-                throw new EntityPropertyNotFoundError(relation.propertyPath, metadata)
+            if (!relationName || !relationMetadata) {
+                throw new EntityPropertyNotFoundError(
+                    relation.propertyPath,
+                    metadata,
+                )
             }
 
             this.applyRelationsRecursively(
@@ -345,14 +354,17 @@ export class FindOptionsUtils {
                 allRelations,
                 relationName,
                 relationMetadata,
-                prefix ? prefix + "." + relation.propertyPath : relation.propertyPath,
+                prefix
+                    ? prefix + "." + relation.propertyPath
+                    : relation.propertyPath,
             )
 
             // join the eager relations of the found relation
             // Only supported for "join" relationLoadStrategy
-            if(qb.expressionMap.relationLoadStrategy === "join"){
+            if (qb.expressionMap.relationLoadStrategy === "join") {
                 const relMetadata = metadata.relations.find(
-                    (metadata) => metadata.propertyName === relation.propertyPath,
+                    (metadata) =>
+                        metadata.propertyName === relation.propertyPath,
                 )
                 if (relMetadata) {
                     this.joinEagerRelations(
@@ -399,12 +411,16 @@ export class FindOptionsUtils {
                 break
             }
 
-            const joinAlreadyAdded = Boolean(qb.expressionMap.joinAttributes.find(joinAttribute => joinAttribute.entityOrProperty ===  `${alias}.${relation.propertyPath}`));
+            const joinAlreadyAdded = Boolean(
+                qb.expressionMap.joinAttributes.find(
+                    (joinAttribute) =>
+                        joinAttribute.alias.name === relationAlias,
+                ),
+            )
 
             if (addJoin && !joinAlreadyAdded) {
                 qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
             }
-
 
             // Checking whether the relation wasn't selected yet.
             // This check shall be after the join check to detect relationAlias.

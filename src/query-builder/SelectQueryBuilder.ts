@@ -3209,7 +3209,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
-    public concatRelationMetadata(relationMetadata: RelationMetadata){
+    public concatRelationMetadata(relationMetadata: RelationMetadata) {
         this.relationMetadatas.push(relationMetadata)
     }
 
@@ -3711,11 +3711,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
-    protected buildDeepRelations(relations: string[]){
-        if (!relations.length) return;
-        relations.forEach((relationName)=>{
-
-        })
+    protected buildDeepRelations(relations: string[]) {
+        if (!relations.length) return
+        relations.forEach((relationName) => {})
     }
 
     protected buildRelations(
@@ -3760,7 +3758,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     typeof relationValue === "object"
                 ) {
                     if (this.expressionMap.relationLoadStrategy === "query") {
-                        this.concatRelationMetadata(relation);
+                        this.concatRelationMetadata(relation)
                     } else {
                         // join
                         this.joins.push({
