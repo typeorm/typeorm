@@ -1,13 +1,13 @@
 # Relations
 
-* [What are relations](#what-are-relations)
+* [What are relations?](#what-are-relations)
 * [Relation options](#relation-options)
 * [Cascades](#cascades)
 	* [Cascade Options](#cascade-options)
 * [`@JoinColumn` options](#joincolumn-options)
 * [`@JoinTable` options](#jointable-options)
 
-## What are relations
+## What are relations?
 
 Relations helps you to work with related entities easily.
 There are several types of relations:
