@@ -225,7 +225,12 @@ export class RawSqlResultsToEntityTransformer {
                         column.databaseName,
                     )
                 ]
-            if (value === undefined || column.isVirtual) return
+            if (
+                value === undefined ||
+                column.isVirtual ||
+                column.isVirtualProperty
+            )
+                return
 
             // if user does not selected the whole entity or he used partial selection and does not select this particular column
             // then we don't add this column and its value into the entity
