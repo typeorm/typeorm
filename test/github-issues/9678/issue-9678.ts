@@ -48,4 +48,41 @@ describe("github issues > #9678 should not load relations with only VirtualColum
                 expect(retrievedUser!.photos).to.have.length(0)
             }),
         ))
+
+    it("should load relations if they have at least one non-virtual column property", async () =>
+        Promise.all([
+            dataSources.map(async (dataSource) => {
+                const tagOne = new Tag()
+                tagOne.value = "one"
+
+                await dataSource.getRepository(Tag).save(tagOne)
+
+                const photoFoo = new Photo()
+                photoFoo.tags = [tagOne]
+
+                await dataSource.getRepository(Photo).save(photoFoo)
+
+                const fooUser = new User()
+                fooUser.photos = [photoFoo]
+
+                const userRepository = dataSource.getRepository(User)
+
+                await userRepository.save(fooUser)
+
+                expect(fooUser.id).to.be.greaterThan(0)
+                expect(fooUser.photos).to.have.length(1)
+
+                const retrievedUser = await userRepository.findOne({
+                    where: {
+                        id: Equal(fooUser.id),
+                    },
+                    relations: {
+                        photos: true,
+                    },
+                })
+
+                expect(retrievedUser).to.not.be.undefined
+                expect(retrievedUser!.photos).to.have.length(1)
+            }),
+        ]))
 })
