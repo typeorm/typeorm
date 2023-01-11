@@ -27,9 +27,9 @@ describe("github issues > #1200: Pull request: Tests for updating multiple neste
                 user.userProperty = 1
                 user.group.groupNumber = 2
                 user.group.post.postNumber = 3
-                user.group.post.category.categoryProperty = 4
+                user.group.post.category.name = 4
                 user.post.postNumber = 5
-                user.post.category.categoryProperty = 6
+                user.post.category.name = 6
                 await connection.manager.save(user)
 
                 // load and check if saved object is correct
@@ -46,14 +46,14 @@ describe("github issues > #1200: Pull request: Tests for updating multiple neste
                         post: {
                             postNumber: 3,
                             category: {
-                                categoryProperty: 4,
+                                name: 4,
                             },
                         },
                     },
                     post: {
                         postNumber: 5,
                         category: {
-                            categoryProperty: 6,
+                            name: 6,
                         },
                     },
                 } as User)
@@ -69,14 +69,14 @@ describe("github issues > #1200: Pull request: Tests for updating multiple neste
                             post: {
                                 postNumber: 13,
                                 category: {
-                                    categoryProperty: 14,
+                                    name: 14,
                                 },
                             },
                         },
                         post: {
                             postNumber: 15,
                             category: {
-                                categoryProperty: 16,
+                                name: 16,
                             },
                         },
                     })
@@ -99,14 +99,14 @@ describe("github issues > #1200: Pull request: Tests for updating multiple neste
                         post: {
                             postNumber: 13,
                             category: {
-                                categoryProperty: 14,
+                                name: 14,
                             },
                         },
                     },
                     post: {
                         postNumber: 15,
                         category: {
-                            categoryProperty: 16,
+                            name: 16,
                         },
                     },
                 })
