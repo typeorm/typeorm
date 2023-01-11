@@ -1,8 +1,9 @@
 {
-  "name": "typeorm-steroids",
-  "version": "0.3.11-beta1",
+  "name": "@steroidsjs/typeorm",
+  "version": "0.3.11",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
+  "private": false,
   "readmeFilename": "README.md",
   "author": {
     "name": "Umed Khudoiberdiev",
