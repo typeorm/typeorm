@@ -1,9 +1,9 @@
 import "reflect-metadata"
-import { Post } from "./entity/Post"
 import { expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
+    reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { DataSource } from "../../../../../src/data-source"
 
@@ -22,12 +22,9 @@ describe("LegacyOracleNamingStrategy > create table using default naming strateg
     it("should not create the table and fail due to ORA-00972", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const post: Post = new Post()
-                post.veryLongveryLongveryLongveryLongveryLongveryLongveryLongName =
-                    "name"
-                await expect(connection.manager.save(post)).to.be.rejectedWith(
-                    /ORA-00972/gi,
-                )
+                await expect(
+                    reloadTestingDatabases([connection]),
+                ).to.be.rejectedWith(/ORA-00972/gi)
             }),
         ))
 })

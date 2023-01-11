@@ -1,9 +1,9 @@
 import "reflect-metadata"
-import { Post } from "./entity/Post"
 import { expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
+    reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { DataSource } from "../../../../../src/data-source"
 import { LegacyOracleNamingStrategy } from "../../../../../src/naming-strategy/LegacyOracleNamingStrategy"
@@ -24,10 +24,8 @@ describe("LegacyOracleNamingStrategy > create table using this naming strategy",
     it("should create the table", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const post: Post = new Post()
-                post.veryLongveryLongveryLongveryLongveryLongveryLongveryLongName =
-                    "name"
-                await expect(connection.manager.save(post)).to.be.fulfilled
+                await expect(reloadTestingDatabases([connection])).to.be
+                    .fulfilled
             }),
         ))
 })
