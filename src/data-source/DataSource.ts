@@ -268,7 +268,7 @@ export class DataSource {
         } catch (error) {
             // if for some reason build metadata fail (for example validation error during entity metadata check)
             // connection needs to be closed
-            await this.close()
+            await this.destroy()
             throw error
         }
 
