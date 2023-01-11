@@ -11,6 +11,7 @@ import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
+import { JSONValue } from "../driver/types/JSONValue"
 
 /**
  * This metadata contains all information about entity's column.
@@ -132,8 +133,9 @@ export class ColumnMetadata {
         | string
         | null
         | (number | boolean | string)[]
-        | Record<string, object>
-        | (() => string)
+        | Record<string, JSONValue>
+        | Array<JSONValue | Record<string, JSONValue>>
+        | (() => string | number)
 
     /**
      * ON UPDATE trigger. Works only for MySQL.

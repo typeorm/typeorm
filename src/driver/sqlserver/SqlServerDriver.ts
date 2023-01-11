@@ -642,7 +642,7 @@ export class SqlServerDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            const value = defaultValue()
+            const value = defaultValue().toString()
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
                 return "getdate()"
             }

@@ -1,6 +1,7 @@
 import { ColumnType } from "../../driver/types/ColumnTypes"
 import { ValueTransformer } from "./ValueTransformer"
 import { ColumnCommonOptions } from "./ColumnCommonOptions"
+import { JSONValue } from "../../driver/types/JSONValue"
 
 /**
  * Describes all column's options.
@@ -67,7 +68,15 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Default database value.
      */
-    default?: any
+    default?:
+        | number
+        | boolean
+        | string
+        | null
+        | (number | boolean | string)[]
+        | Record<string, JSONValue>
+        | Array<Record<string, JSONValue>>
+        | (() => string | number)
 
     /**
      * ON UPDATE trigger. Works only for MySQL.

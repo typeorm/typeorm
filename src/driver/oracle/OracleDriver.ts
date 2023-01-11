@@ -625,7 +625,7 @@ export class OracleDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            return defaultValue()
+            return defaultValue().toString()
         }
 
         if (typeof defaultValue === "string") {

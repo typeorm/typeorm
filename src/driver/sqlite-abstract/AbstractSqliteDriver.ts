@@ -647,7 +647,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            return defaultValue()
+            return defaultValue().toString()
         }
 
         if (typeof defaultValue === "string") {

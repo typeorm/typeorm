@@ -1019,7 +1019,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            const value = defaultValue()
+            const value = defaultValue().toString()
 
             return this.normalizeDatetimeFunction(value)
         }

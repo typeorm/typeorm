@@ -597,7 +597,7 @@ export class SapDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            return defaultValue()
+            return defaultValue().toString()
         }
 
         if (typeof defaultValue === "string") {

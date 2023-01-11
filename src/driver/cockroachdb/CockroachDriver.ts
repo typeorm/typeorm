@@ -723,7 +723,7 @@ export class CockroachDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            const value = defaultValue()
+            const value = defaultValue().toString()
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
                 return "current_timestamp()"
             } else if (value.toUpperCase() === "CURRENT_DATE") {
