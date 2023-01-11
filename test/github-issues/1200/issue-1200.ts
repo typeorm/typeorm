@@ -8,7 +8,7 @@ import { User } from "./entity/User"
 import { expect } from "chai"
 import { DataSource } from "../../../src/data-source"
 
-describe("github issues > #1200: Pull request: Tests for updating multiple nested embeddeds", () => {
+describe("github issues > #1200 Update multiple nested embeddeds", () => {
     let connections: DataSource[]
     before(
         async () =>
