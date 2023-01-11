@@ -1358,14 +1358,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     }
                 }
 
-                if (
-                    relation.relationType === "one-to-many" ||
-                    relation.relationType === "many-to-many"
-                ) {
-                    throw new Error(
-                        `Cannot query across ${relation.relationType} for property ${path}`,
-                    )
-                }
+                // if (
+                //     relation.relationType === "one-to-many" ||
+                //     relation.relationType === "many-to-many"
+                // ) {
+                //     throw new Error(
+                //         `Cannot query across ${relation.relationType} for property ${path}`,
+                //     )
+                // }
 
                 // For any other case, if the `entity[key]` contains all of the primary keys we can do a
                 // lookup via these.  We don't need to look up via any other values 'cause these are
