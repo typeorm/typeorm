@@ -38,12 +38,13 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
  * Used for find operations.
  */
 export type FindOperatorObjectLiteral<Entity> = {
-    [P in keyof Entity]?: FindOperator<Entity[P]> | Entity[P];
-};
+    [P in keyof Entity]?: FindOperator<Entity[P]> | Entity[P]
+}
 
-export type FindOptionsWhere<Entity> = FindOperatorObjectLiteral<Entity> | {
-    [P in keyof Entity]?: P extends "toString"
-        ? unknown
-        : FindOptionsWhereProperty<NonNullable<Entity[P]>>
-};
-
+export type FindOptionsWhere<Entity> =
+    | FindOperatorObjectLiteral<Entity>
+    | {
+          [P in keyof Entity]?: P extends "toString"
+              ? unknown
+              : FindOptionsWhereProperty<NonNullable<Entity[P]>>
+      }
