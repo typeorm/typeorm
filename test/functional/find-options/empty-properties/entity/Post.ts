@@ -1,7 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
 
 export type MyCustomType = "A" | "B" | "C"
-
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn()
@@ -12,7 +11,7 @@ export class Post {
 
     @Column()
     text: string
-   
+
     @Column()
     type: MyCustomType
 }
