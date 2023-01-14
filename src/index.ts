@@ -1,6 +1,6 @@
 /*!
  */
-import 'reflect-metadata';
+import "reflect-metadata"
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
@@ -96,7 +96,7 @@ export * from "./find-options/FindOptionsWhere"
 export * from "./find-options/FindTreeOptions"
 export * from "./find-options/JoinOptions"
 export * from "./find-options/OrderByCondition"
-export * from './find-options/JoinOperator'
+export * from "./find-options/JoinOperator"
 export * from "./find-options/JoinOperatorType"
 export * from "./find-options/join-operator/InnerJoin"
 export * from "./find-options/join-operator/LeftJoin"
