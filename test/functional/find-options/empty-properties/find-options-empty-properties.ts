@@ -50,7 +50,7 @@ describe("find options > where", () => {
                     .getMany()
 
                 posts.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1" },
+                    { id: 1, title: "Post #1", text: "About post #1", type: "A" },
                 ])
             }),
         ))
@@ -105,7 +105,7 @@ describe("find options > where", () => {
                     .getMany()
 
                 posts2.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1", type: 'A' },
+                    { id: 1, title: "Post #1", text: "About post #1", type: "A" },
                     { id: 2, title: "Post #2", text: "About post #2", type: "B" },
                 ])
             }),
