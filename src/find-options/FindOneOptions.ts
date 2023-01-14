@@ -9,7 +9,7 @@ import {
     FindOptionsRelations,
 } from "./FindOptionsRelations"
 import { FindOptionsOrder } from "./FindOptionsOrder"
-import { ObjectLiteral } from "../common/ObjectLiteral";
+
 
 /**
  * Defines a special criteria to find specific entity.
@@ -30,7 +30,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Simple condition that should be applied to match entities.
      */
-    where?: FindOptionsWhere<Entity>[] | FindOptionsWhere<Entity> | ObjectLiteral
+    where?: FindOptionsWhere<Entity>[] | FindOptionsWhere<Entity>
 
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
