@@ -58,6 +58,19 @@ describe("find options > where", () => {
             connections.map(async (connection) => {
                 await prepareData(connection)
 
+                // Do not throw errors if the find operators are used with custom types.
+                await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: {
+                            type: Equal("B"),
+                        },
+                        order: {
+                            id: "asc",
+                        },
+                    })
+                    .getMany()
+                
                 const posts1 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
