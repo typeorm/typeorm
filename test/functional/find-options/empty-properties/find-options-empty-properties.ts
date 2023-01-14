@@ -21,11 +21,13 @@ describe("find options > where", () => {
         const post1 = new Post()
         post1.title = "Post #1"
         post1.text = "About post #1"
+        post1.type = "A"
         await connection.manager.save(post1)
 
         const post2 = new Post()
         post2.title = "Post #2"
         post2.text = "About post #2"
+        post2.type = "B"
         await connection.manager.save(post2)
     }
 
