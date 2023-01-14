@@ -70,7 +70,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                
+
                 const posts1 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
