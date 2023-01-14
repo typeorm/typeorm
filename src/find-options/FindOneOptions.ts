@@ -10,7 +10,6 @@ import {
 } from "./FindOptionsRelations"
 import { FindOptionsOrder } from "./FindOptionsOrder"
 
-
 /**
  * Defines a special criteria to find specific entity.
  */
