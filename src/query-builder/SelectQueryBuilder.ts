@@ -3854,6 +3854,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     propertyPath,
                 )
             } else if (relation) {
+                const isJoinOperator =
+                    InstanceChecker.isJoinOperator(relationValue)
+
                 let joinAlias = alias + "_" + propertyPath.replace(".", "_")
                 joinAlias = DriverUtils.buildAlias(
                     this.connection.driver,
@@ -3870,7 +3873,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     } else {
                         // join
                         this.joins.push({
-                            type: "left",
+                            type: isJoinOperator ? relationValue.type : "left",
                             select: true,
                             selection:
                                 selection &&
@@ -3901,6 +3904,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 if (
                     typeof relationValue === "object" &&
+                    !isJoinOperator &&
                     this.expressionMap.relationLoadStrategy === "join"
                 ) {
                     this.buildRelations(
@@ -3958,6 +3962,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     joinAlias,
                 )
 
+                const isJoinOperator =
+                    InstanceChecker.isJoinOperator(relationValue)
+
                 if (
                     relationValue === true ||
                     typeof relationValue === "object"
@@ -3978,9 +3985,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             const existJoin = this.joins.find(
                                 (join) => join.alias === eagerRelationJoinAlias,
                             )
+
                             if (!existJoin) {
                                 this.joins.push({
-                                    type: "left",
+                                    type: isJoinOperator
+                                        ? relationValue.type
+                                        : "left",
                                     select: true,
                                     alias: eagerRelationJoinAlias,
                                     parentAlias: joinAlias,
@@ -4005,7 +4015,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
                 }
 
-                if (typeof relationValue === "object") {
+                if (typeof relationValue === "object" && !isJoinOperator) {
                     this.buildEagerRelations(
                         relationValue,
                         typeof selection === "object"

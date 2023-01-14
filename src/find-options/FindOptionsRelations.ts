@@ -1,4 +1,5 @@
 import { ObjectID } from "../driver/mongodb/typings"
+import { JoinOperator } from "./JoinOperator"
 
 /**
  * A single property handler for FindOptionsRelations.
@@ -6,9 +7,9 @@ import { ObjectID } from "../driver/mongodb/typings"
 export type FindOptionsRelationsProperty<Property> = Property extends Promise<
     infer I
 >
-    ? FindOptionsRelationsProperty<NonNullable<I>> | boolean
+    ? FindOptionsRelationsProperty<NonNullable<I>> | boolean | JoinOperator
     : Property extends Array<infer I>
-    ? FindOptionsRelationsProperty<NonNullable<I>> | boolean
+    ? FindOptionsRelationsProperty<NonNullable<I>> | boolean | JoinOperator
     : Property extends string
     ? never
     : Property extends number
@@ -24,7 +25,7 @@ export type FindOptionsRelationsProperty<Property> = Property extends Promise<
     : Property extends ObjectID
     ? never
     : Property extends object
-    ? FindOptionsRelations<Property> | boolean
+    ? FindOptionsRelations<Property> | boolean | JoinOperator
     : boolean
 
 /**

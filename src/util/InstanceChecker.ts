@@ -28,6 +28,7 @@ import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { DataSource } from "../data-source"
 import { BaseEntity } from "../repository/BaseEntity"
+import { JoinOperator } from "../find-options/JoinOperator"
 
 export class InstanceChecker {
     static isMssqlParameter(obj: unknown): obj is MssqlParameter {
@@ -106,6 +107,11 @@ export class InstanceChecker {
             this.check(obj, "FindOperator") || this.check(obj, "EqualOperator")
         )
     }
+
+    static isJoinOperator(obj: unknown): obj is JoinOperator {
+        return this.check(obj, "JoinOperator")
+    }
+
     static isEqualOperator(obj: unknown): obj is EqualOperator<any> {
         return this.check(obj, "EqualOperator")
     }
