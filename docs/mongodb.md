@@ -56,6 +56,7 @@ you can do the same in TypeORM:
 ```typescript
 import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
 
+@Entity()
 export class Profile {
     @Column()
     about: string
@@ -71,6 +72,7 @@ export class Profile {
 ```typescript
 import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
 
+@Entity()
 export class Photo {
     @Column()
     url: string
