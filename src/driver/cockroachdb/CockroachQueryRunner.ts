@@ -25,7 +25,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { VersionUtils } from "../../util/VersionUtils.js"
+import { VersionUtils } from "../../util/VersionUtils"
 
 /**
  * Runs queries on a single postgres database connection.
