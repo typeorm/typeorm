@@ -849,7 +849,11 @@ export class EntityMetadata {
     ): EntityMetadata {
         const childEntityMetadata =
             relation.inverseEntityMetadata.childEntityMetadatas.find(
-                (metadata) => metadata.target === value.constructor,
+                (metadata) =>
+                    metadata.target === value.constructor ||
+                    (metadata.discriminatorColumn &&
+                        value[metadata.discriminatorColumn.propertyName] ===
+                            metadata.discriminatorValue),
             )
         return childEntityMetadata
             ? childEntityMetadata
