@@ -77,7 +77,9 @@ export class DynamoEntityManager extends EntityManager {
         const changedValues = mixin(options.setValues || {}, options.where)
         indexedColumns(metadata, changedValues)
         mixin(options.setValues, changedValues)
-        delete options.setValues.id
+        if (options.setValues && options.setValues.id !== undefined) {
+            delete options.setValues.id
+        }
         const params = dynamoParamHelper.update(metadata.tablePath, options)
         return getDocumentClient().update(params).promise()
     }
