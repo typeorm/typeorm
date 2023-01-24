@@ -27,19 +27,20 @@ describe("github issues > #9528 In the old version, Huawei PRAGMA table_xinfo is
     it("should has columns", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const qr = connection.createQueryRunner();
+                const qr = connection.createQueryRunner()
 
-                expect(await qr.hasColumn('example', 'id')).to.be.true
-                expect(await qr.hasColumn('example', 'text')).to.be.true
+                expect(await qr.hasColumn("example", "id")).to.be.true
+                expect(await qr.hasColumn("example", "text")).to.be.true
             }),
         ))
 
     it("should not has columns", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const qr = connection.createQueryRunner();
+                const qr = connection.createQueryRunner()
 
-                expect(await qr.hasColumn('example', 'invalidColumn')).to.be.false
+                expect(await qr.hasColumn("example", "invalidColumn")).to.be
+                    .false
             }),
         ))
 })
