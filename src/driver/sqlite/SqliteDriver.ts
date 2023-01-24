@@ -196,6 +196,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
             const sqlite = this.options.driver || PlatformTools.load("sqlite3")
             this.sqlite = sqlite.verbose()
         } catch (e) {
+            console.error('An error ocurred while loading the sqlite3 driver', e)
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3")
         }
     }
