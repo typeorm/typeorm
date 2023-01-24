@@ -238,9 +238,25 @@ export abstract class AbstractSqliteQueryRunner
         const tableName = InstanceChecker.isTable(tableOrName)
             ? tableOrName.name
             : tableOrName
-        const sql = `PRAGMA table_xinfo(${this.escapePath(tableName)})`
-        const columns: ObjectLiteral[] = await this.query(sql)
-        return !!columns.find((column) => column["name"] === columnName)
+
+        const escapedPath = this.escapePath(tableName)
+        const results = await Promise.all(
+            [
+                `PRAGMA table_xinfo(${escapedPath})`,
+                `PRAGMA table_info(${escapedPath})`,
+            ].map(
+                (sql) =>
+                    this.query(sql).catch(() => []) as Promise<ObjectLiteral[]>,
+            ),
+        )
+
+        for (const columns of results) {
+            if (!!columns.find((column) => column["name"] === columnName)) {
+                return true
+            }
+        }
+
+        return false
     }
 
     /**
@@ -1271,8 +1287,17 @@ export abstract class AbstractSqliteQueryRunner
     }
 
     protected async loadPragmaRecords(tablePath: string, pragma: string) {
+        return this.loadPragmasRecords(tablePath, [pragma])
+    }
+
+    protected async loadPragmasRecords(tablePath: string, pragmas: string[]) {
         const [, tableName] = this.splitTablePath(tablePath)
-        return this.query(`PRAGMA ${pragma}("${tableName}")`)
+        const results = await Promise.all(
+            pragmas.map((pragma) =>
+                this.query(`PRAGMA ${pragma}("${tableName}")`).catch(() => []),
+            ),
+        )
+        return results.find((item) => item.length > 0) ?? []
     }
 
     /**
@@ -1361,7 +1386,10 @@ export abstract class AbstractSqliteQueryRunner
                 // load columns and indices
                 const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] =
                     await Promise.all([
-                        this.loadPragmaRecords(tablePath, `table_xinfo`),
+                        this.loadPragmasRecords(tablePath, [
+                            `table_xinfo`,
+                            `table_info`,
+                        ]),
                         this.loadPragmaRecords(tablePath, `index_list`),
                         this.loadPragmaRecords(tablePath, `foreign_key_list`),
                     ])
