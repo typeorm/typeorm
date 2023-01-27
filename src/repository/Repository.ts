@@ -15,6 +15,7 @@ import { ObjectID } from "../driver/mongodb/typings"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { UpsertOptions } from "./UpsertOptions"
 import { EntityTarget } from "../common/EntityTarget"
+import { PickKeysByType } from "../common/PickKeysByType"
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -474,6 +475,46 @@ export class Repository<Entity extends ObjectLiteral> {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number> {
         return this.manager.countBy(this.metadata.target, where)
+    }
+
+    /**
+     * Return the SUM of a column
+     */
+    sum(
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.sum(this.metadata.target, field, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    average(
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.average(this.metadata.target, field, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    minimum(
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.minimum(this.metadata.target, field, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    maximum(
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.maximum(this.metadata.target, field, where)
     }
 
     /**

@@ -37,6 +37,7 @@ import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { PickKeysByType } from "../common/PickKeysByType"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -999,6 +1000,67 @@ export class EntityManager {
         return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .getCount()
+    }
+
+    /**
+     * Return the SUM of a column
+     */
+    sum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "SUM", field, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    average<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "AVG", field, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    minimum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MIN", field, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    maximum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        field: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MAX", field, where)
+    }
+
+    private async callAggregateFun<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        fnName: "SUM" | "AVG" | "MIN" | "MAX",
+        field: PickKeysByType<Entity, number>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
+    ): Promise<number | null> {
+        const metadata = this.connection.getMetadata(entityClass)
+        const { [fnName]: result } = await this.createQueryBuilder(
+            entityClass,
+            metadata.name,
+        )
+            .setFindOptions({ where })
+            .select(`${fnName}(${field.toString()})`, fnName)
+            .getRawOne()
+        return result === null ? null : parseFloat(result)
     }
 
     /**

@@ -15,6 +15,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { UpsertOptions } from "./UpsertOptions"
 import { EntityTarget } from "../common/EntityTarget"
+import { PickKeysByType } from "../common/PickKeysByType"
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -406,6 +407,50 @@ export class BaseEntity {
         where: FindOptionsWhere<T>,
     ): Promise<number> {
         return this.getRepository<T>().countBy(where)
+    }
+
+    /**
+     * Return the SUM of a column
+     */
+    static sum<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        field: PickKeysByType<T, number>,
+        where: FindOptionsWhere<T>,
+    ): Promise<number | null> {
+        return this.getRepository<T>().sum(field, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    static average<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        field: PickKeysByType<T, number>,
+        where: FindOptionsWhere<T>,
+    ): Promise<number | null> {
+        return this.getRepository<T>().average(field, where)
+    }
+
+    /**
+     * Return the MIN of a column
+     */
+    static minimum<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        field: PickKeysByType<T, number>,
+        where: FindOptionsWhere<T>,
+    ): Promise<number | null> {
+        return this.getRepository<T>().minimum(field, where)
+    }
+
+    /**
+     * Return the MAX of a column
+     */
+    static maximum<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        field: PickKeysByType<T, number>,
+        where: FindOptionsWhere<T>,
+    ): Promise<number | null> {
+        return this.getRepository<T>().maximum(field, where)
     }
 
     /**
