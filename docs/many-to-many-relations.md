@@ -264,22 +264,22 @@ import { Category } from "./category"
 @Entity()
 export class PostToCategory {
     @PrimaryGeneratedColumn()
-    public postToCategoryId!: number
+    public postToCategoryId: number
 
     @Column()
-    public postId!: number
+    public postId: number
 
     @Column()
-    public categoryId!: number
+    public categoryId: number
 
     @Column()
-    public order!: number
+    public order: number
 
     @ManyToOne(() => Post, (post) => post.postToCategories)
-    public post!: Post
+    public post: Post
 
     @ManyToOne(() => Category, (category) => category.postToCategories)
-    public category!: Category
+    public category: Category
 }
 ```
 
@@ -289,10 +289,10 @@ Additionally you will have to add a relationship like the following to `Post` an
 // category.ts
 ...
 @OneToMany(() => PostToCategory, postToCategory => postToCategory.category)
-public postToCategories!: PostToCategory[];
+public postToCategories: PostToCategory[];
 
 // post.ts
 ...
 @OneToMany(() => PostToCategory, postToCategory => postToCategory.post)
-public postToCategories!: PostToCategory[];
+public postToCategories: PostToCategory[];
 ```
