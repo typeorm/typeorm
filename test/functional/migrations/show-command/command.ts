@@ -12,7 +12,7 @@ describe("migrations > show command", () => {
         async () =>
             (connections = await createTestingConnections({
                 migrations: [__dirname + "/migration/*.js"],
-                enabledDrivers: ["postgres"],
+                enabledDrivers: ["postgres", "sqlite"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
@@ -31,7 +31,12 @@ describe("migrations > show command", () => {
     it("can recognise no pending migrations", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await connection.runMigrations()
+                const m = await connection.runMigrations()
+                /*
+                    .catch((err) => { console.log(`error: ${err}`)})
+                    .then(() => { console.log('migrations done')})
+                */
+                console.log(`have performe ${m.length} migrations`)
                 const migrations = await connection.showMigrations()
                 migrations.should.be.equal(false)
             }),
