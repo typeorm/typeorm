@@ -4,7 +4,7 @@ import {
     OneToOne,
     PrimaryGeneratedColumn,
 } from "../../../../../src/index"
-import { Account } from "./Account.js"
+import { Account } from "./Account"
 
 @Entity()
 export class Person {
