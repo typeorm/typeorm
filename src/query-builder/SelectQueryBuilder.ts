@@ -3414,15 +3414,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             return metadata.primaryColumns
                                 .map((primaryColumn) => {
                                     const paramKey = `orm_distinct_ids_${index}_${primaryColumn.databaseName}`
-                                    const paramKeyResult = DriverUtils.buildAlias(
-                                        this.connection.driver,
-                                        "ids_" + mainAliasName,
-                                        primaryColumn.databaseName,
-                                    );
+                                    const paramKeyResult =
+                                        DriverUtils.buildAlias(
+                                            this.connection.driver,
+                                            "ids_" + mainAliasName,
+                                            primaryColumn.databaseName,
+                                        )
                                     parameters[paramKey] =
-                                        result[
-                                            paramKeyResult
-                                        ]
+                                        result[paramKeyResult]
                                     return `${mainAliasName}.${primaryColumn.propertyPath}=:${paramKey}`
                                 })
                                 .join(" AND ")
