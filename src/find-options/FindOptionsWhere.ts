@@ -5,26 +5,28 @@ import { EqualOperator } from "./EqualOperator"
 /**
  * A single property handler for FindOptionsWhere.
  */
-export type FindOptionsWhereProperty<Property> = Property extends Promise<
+export type FindOptionsWhereProperty<Property> = FindOptionsWherePropertyInternal<Property, FindOperator<Property>>;
+
+type FindOptionsWherePropertyInternal<Property, PropertyOperator> = Property extends Promise<
     infer I
 >
-    ? FindOptionsWhereProperty<NonNullable<I>>
+    ? FindOptionsWhereProperty<I & {}>
     : Property extends Array<infer I>
-    ? FindOptionsWhereProperty<NonNullable<I>>
+    ? FindOptionsWhereProperty<I & {}>
     : Property extends Function
     ? never
     : Property extends Buffer
-    ? Property | FindOperator<Property>
+    ? Property | PropertyOperator
     : Property extends Date
-    ? Property | FindOperator<Property>
+    ? Property | PropertyOperator
     : Property extends ObjectID
-    ? Property | FindOperator<Property>
+    ? Property | PropertyOperator
     : Property extends string
-    ? Property | FindOperator<Property>
+    ? Property | PropertyOperator
     : Property extends number
-    ? Property | FindOperator<Property>
+    ? Property | PropertyOperator
     : Property extends boolean
-    ? Property | FindOperator<Property>
+    ? Property | PropertyOperator
     : Property extends object
     ?
           | FindOptionsWhere<Property>
@@ -32,7 +34,7 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
           | EqualOperator<Property>
           | FindOperator<any>
           | boolean
-    : Property | FindOperator<Property>
+    : Property | PropertyOperator
 
 /**
  * Used for find operations.
@@ -40,5 +42,5 @@ export type FindOptionsWhereProperty<Property> = Property extends Promise<
 export type FindOptionsWhere<Entity> = {
     [P in keyof Entity]?: P extends "toString"
         ? unknown
-        : FindOptionsWhereProperty<NonNullable<Entity[P]>>
+        : FindOptionsWhereProperty<Entity[P] & {}>
 }
