@@ -498,7 +498,7 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Return the AVG of a column
+     * Return the MIN of a column
      */
     minimum(
         field: PickKeysByType<Entity, number>,
@@ -508,7 +508,7 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Return the AVG of a column
+     * Return the MAX of a column
      */
     maximum(
         field: PickKeysByType<Entity, number>,

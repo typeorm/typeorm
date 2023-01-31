@@ -1025,7 +1025,7 @@ export class EntityManager {
     }
 
     /**
-     * Return the AVG of a column
+     * Return the MIN of a column
      */
     minimum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1036,7 +1036,7 @@ export class EntityManager {
     }
 
     /**
-     * Return the AVG of a column
+     * Return the MAX of a column
      */
     maximum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
