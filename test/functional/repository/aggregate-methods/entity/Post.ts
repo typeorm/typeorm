@@ -8,5 +8,5 @@ export class Post {
     id: number
 
     @Column()
-    value: number
+    counter: number
 }
