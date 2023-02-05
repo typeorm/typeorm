@@ -9,7 +9,7 @@
 
 ## What are many-to-many relations
 
-Many-to-many is a relation where A contains multiple instances of B, and B contain multiple instances of A.
+Many-to-many is a relation where A contains multiple instances of B, and B contains multiple instances of A.
 Let's take for example `Question` and `Category` entities.
 A question can have multiple categories, and each category can have multiple questions.
 
