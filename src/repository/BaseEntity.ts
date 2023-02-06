@@ -414,10 +414,10 @@ export class BaseEntity {
      */
     static sum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        field: PickKeysByType<T, number>,
+        columnName: PickKeysByType<T, number>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().sum(field, where)
+        return this.getRepository<T>().sum(columnName, where)
     }
 
     /**
@@ -425,10 +425,10 @@ export class BaseEntity {
      */
     static average<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        field: PickKeysByType<T, number>,
+        columnName: PickKeysByType<T, number>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().average(field, where)
+        return this.getRepository<T>().average(columnName, where)
     }
 
     /**
@@ -436,10 +436,10 @@ export class BaseEntity {
      */
     static minimum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        field: PickKeysByType<T, number>,
+        columnName: PickKeysByType<T, number>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().minimum(field, where)
+        return this.getRepository<T>().minimum(columnName, where)
     }
 
     /**
@@ -447,10 +447,10 @@ export class BaseEntity {
      */
     static maximum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        field: PickKeysByType<T, number>,
+        columnName: PickKeysByType<T, number>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().maximum(field, where)
+        return this.getRepository<T>().maximum(columnName, where)
     }
 
     /**

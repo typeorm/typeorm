@@ -1007,10 +1007,10 @@ export class EntityManager {
      */
     sum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        field: PickKeysByType<Entity, number>,
+        columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "SUM", field, where)
+        return this.callAggregateFun(entityClass, "SUM", columnName, where)
     }
 
     /**
@@ -1018,10 +1018,10 @@ export class EntityManager {
      */
     average<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        field: PickKeysByType<Entity, number>,
+        columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "AVG", field, where)
+        return this.callAggregateFun(entityClass, "AVG", columnName, where)
     }
 
     /**
@@ -1029,10 +1029,10 @@ export class EntityManager {
      */
     minimum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        field: PickKeysByType<Entity, number>,
+        columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "MIN", field, where)
+        return this.callAggregateFun(entityClass, "MIN", columnName, where)
     }
 
     /**
@@ -1040,16 +1040,16 @@ export class EntityManager {
      */
     maximum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        field: PickKeysByType<Entity, number>,
+        columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "MAX", field, where)
+        return this.callAggregateFun(entityClass, "MAX", columnName, where)
     }
 
     private async callAggregateFun<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         fnName: "SUM" | "AVG" | "MIN" | "MAX",
-        field: PickKeysByType<Entity, number>,
+        columnName: PickKeysByType<Entity, number>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
     ): Promise<number | null> {
         const metadata = this.connection.getMetadata(entityClass)
@@ -1058,7 +1058,10 @@ export class EntityManager {
             metadata.name,
         )
             .setFindOptions({ where })
-            .select(`${fnName}(${field.toString()})`, fnName)
+            .select(
+                `${fnName}(${this.connection.driver.escape(columnName)})`,
+                fnName,
+            )
             .getRawOne()
         return result === null ? null : parseFloat(result)
     }
