@@ -66,7 +66,7 @@ export interface Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertType?: UpsertType
+    supportedUpsertTypes: UpsertType[]
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -106,6 +106,11 @@ export interface Driver {
     maxAliasLength?: number
 
     cteCapabilities: CteCapabilities
+
+    /**
+     * Dummy table name
+     */
+    dummyTableName?: string
 
     /**
      * Performs connection to the database.

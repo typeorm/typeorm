@@ -20,7 +20,7 @@ userRepository.find({ relations: ["profile", "photos", "videos"] });
 userRepository.find({ relations: ["profile", "photos", "videos", "videos.video_attributes"] });
 ```
 
--   `join` - 需要为实体执行联接，扩展版对的"relations"。
+-   `join` - 需要为实体执行联接，扩展版的"relations"。
 
 ```typescript
 userRepository.find({

@@ -452,6 +452,13 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Checks whether any entity exists that match given options.
+     */
+    exist(options?: FindManyOptions<Entity>): Promise<boolean> {
+        return this.manager.exists(this.metadata.target, options)
+    }
+
+    /**
      * Counts entities that match given options.
      * Useful for pagination.
      */
@@ -627,9 +634,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Extends repository with provided functions.
      */
     extend<CustomRepository>(
-        custom: CustomRepository &
-            ThisType<Repository<Entity> & CustomRepository>,
-    ): Repository<Entity> & CustomRepository {
+        custom: CustomRepository & ThisType<this & CustomRepository>,
+    ): this & CustomRepository {
         // return {
         //     ...this,
         //     ...custom

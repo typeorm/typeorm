@@ -13,33 +13,33 @@ TypeORM은 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrin
 - 항목 및 열.
 - 데이터베이스 별 열 유형.
 - 엔터티 관리자.
-- 리포지토리 및 사용자 지정 리포지토리.
+- 레포지토리 및 사용자 지정 레포지토리.
 - 명확한 객체 관계형 모델.
 - 연관(관계).
 - Eager&amp;lazy 관계.
 - 단방향, 양방향 및 자체 참조 관계.
 - 다중 상속 패턴을 지원.
-- 캐스케이드.
+- cascade.
 - 색인.
-- 트랜잭션.
-- 마이그레이션 및 자동 마이크레이션 생성.
+- transaction.
+- 마이그레이션 및 자동 마이그레이션 생성.
 - 연결 풀링.
 - 복제.
 - 다중 데이터베이스 연결 사용.
 - 여러 데이터베이스 유형 작업.
 - 데이터베이스 간, 스키마 간의 쿼리.
 - 우아한 문법과 유연하고 강력한 쿼리 빌더.
-- 왼쪽 join과 내부 join.
-- join을 사용하는 쿼리에 대한 적절한 페이지네이션
+- left join과 inner join.
+- join을 사용하는 쿼리에 대한 적절한 페이지네이션.
 - 쿼리 캐싱.
-- 원시 결과 스트리밍
+- 원상태의 결과 스트리밍.
 - 로깅.
 - 리스너 및 구독자(hooks).
 - 클로저 테이블 패턴 지원.
-- 모델 또는 별도의 설정 파일에서 스키마 선언
+- 모델 또는 별도의 설정 파일에서 스키마 선언.
 - json / xml / yml / env 형식의 연결 구성.
 - MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js를 지원.
-- MongoDB NoSQL 데이터베이스 지원
+- MongoDB NoSQL 데이터베이스 지원.
 - NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron 플랫폼에서 작동.
 - TypeScript 및 JavaScript 지원.
 - 생성된 코드는 우수한 성능과 유연함을 가지며, 클린하고 유지 관리가 용이.

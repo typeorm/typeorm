@@ -796,6 +796,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Time travel queries for CockroachDB
+     */
+    protected createTimeTravelQuery(): string {
+        if (
+            this.expressionMap.queryType === "select" &&
+            this.expressionMap.timeTravel
+        ) {
+            return ` AS OF SYSTEM TIME ${this.expressionMap.timeTravel}`
+        }
+
+        return ""
+    }
+
+    /**
      * Creates "WHERE" expression.
      */
     protected createWhereExpression() {
@@ -848,13 +862,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             conditionsArray.push(condition)
         }
 
+        let condition = ""
+
+        // time travel
+        condition += this.createTimeTravelQuery()
+
         if (!conditionsArray.length) {
-            return ""
+            condition += ""
         } else if (conditionsArray.length === 1) {
-            return ` WHERE ${conditionsArray[0]}`
+            condition += ` WHERE ${conditionsArray[0]}`
         } else {
-            return ` WHERE ( ${conditionsArray.join(" ) AND ( ")} )`
+            condition += ` WHERE ( ${conditionsArray.join(" ) AND ( ")} )`
         }
+
+        return condition
     }
 
     /**
@@ -1042,6 +1063,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     .slice(1)
                     .join(", ")})`
             case "any":
+                if (driver.options.type === "cockroachdb") {
+                    return `${condition.parameters[0]}::STRING = ANY(${condition.parameters[1]}::STRING[])`
+                }
+
                 return `${condition.parameters[0]} = ANY(${condition.parameters[1]})`
             case "isNull":
                 return `${condition.parameters[0]} IS NULL`
@@ -1055,6 +1080,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     condition.condition,
                     true,
                 )}`
+            case "and":
+                return condition.parameters.join(" AND ")
         }
 
         throw new TypeError(
@@ -1115,17 +1142,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     cte.options.recursive && databaseRequireRecusiveHint
                         ? "RECURSIVE"
                         : ""
-                const materializeClause =
-                    cte.options.materialized &&
-                    this.connection.driver.cteCapabilities.materializedHint
+                let materializeClause = ""
+                if (
+                    this.connection.driver.cteCapabilities.materializedHint &&
+                    cte.options.materialized !== undefined
+                ) {
+                    materializeClause = cte.options.materialized
                         ? "MATERIALIZED"
-                        : ""
+                        : "NOT MATERIALIZED"
+                }
 
                 return [
                     recursiveClause,
                     cteHeader,
-                    materializeClause,
                     "AS",
+                    materializeClause,
                     `(${cteBodyExpression})`,
                 ]
                     .filter(Boolean)
@@ -1174,6 +1205,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 qb.orWhere(new Brackets((qb) => qb.where(data)))
             }
         })
+    }
+
+    protected getExistsCondition(subQuery: any): [string, any[]] {
+        const query = subQuery
+            .clone()
+            .orderBy()
+            .groupBy()
+            .offset(undefined)
+            .limit(undefined)
+            .skip(undefined)
+            .take(undefined)
+            .select("1")
+            .setOption("disable-global-order")
+
+        return [`EXISTS (${query.getQuery()})`, query.getParameters()]
     }
 
     private findColumnsForPropertyPath(
@@ -1447,6 +1493,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         operator: "notEqual",
                         parameters: [aliasPath, ...parameters],
                     }
+                }
+            } else if (parameterValue.type === "and") {
+                const values: FindOperator<any>[] = parameterValue.value
+
+                return {
+                    operator: parameterValue.type,
+                    parameters: values.map((operator) =>
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                operator,
+                            ),
+                        ),
+                    ),
                 }
             } else {
                 return {

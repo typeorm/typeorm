@@ -181,7 +181,10 @@ export class EntityPersistExecutor {
             try {
                 // open transaction if its not opened yet
                 if (!queryRunner.isTransactionActive) {
-                    if (!this.options || this.options.transaction !== false) {
+                    if (
+                        this.connection.driver.transactionSupport !== "none" &&
+                        (!this.options || this.options.transaction !== false)
+                    ) {
                         // start transaction until it was not explicitly disabled
                         isTransactionStartedByUs = true
                         await queryRunner.startTransaction()

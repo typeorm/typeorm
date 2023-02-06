@@ -13,6 +13,12 @@ export interface CockroachConnectionOptions
     readonly type: "cockroachdb"
 
     /**
+     * Enable time travel queries on cockroachdb.
+     * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
+     */
+    readonly timeTravelQueries: boolean
+
+    /**
      * Schema name.
      */
     readonly schema?: string
