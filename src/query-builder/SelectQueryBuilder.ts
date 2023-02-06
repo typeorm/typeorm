@@ -3685,11 +3685,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : {}
         let savedQueryResultCacheOptions: QueryResultCacheOptions | undefined =
             undefined
+        const isCachingEnabled =
+            // Caching is enabled globally and isn't disabled locally.
+            (cacheOptions.alwaysEnabled && this.expressionMap.cache) ||
+            // ...or it's enabled locally explicitly.
+            this.expressionMap.cache
         let cacheError = false
-        if (
-            this.connection.queryResultCache &&
-            (this.expressionMap.cache || cacheOptions.alwaysEnabled)
-        ) {
+        if (this.connection.queryResultCache && isCachingEnabled) {
             try {
                 savedQueryResultCacheOptions =
                     await this.connection.queryResultCache.getFromCache(
@@ -3724,7 +3726,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (
             !cacheError &&
             this.connection.queryResultCache &&
-            (this.expressionMap.cache || cacheOptions.alwaysEnabled)
+            isCachingEnabled
         ) {
             try {
                 await this.connection.queryResultCache.storeInCache(

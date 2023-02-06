@@ -127,7 +127,7 @@ export * from "./schema-builder/options/TableUniqueOptions"
 export * from "./schema-builder/options/ViewOptions"
 export * from "./driver/mongodb/typings"
 export * from "./driver/types/DatabaseType"
-export * from "./driver/types/GeoJsonTypes.js"
+export * from "./driver/types/GeoJsonTypes"
 export * from "./driver/types/ReplicationMode"
 export * from "./driver/sqlserver/MssqlParameter"
 
