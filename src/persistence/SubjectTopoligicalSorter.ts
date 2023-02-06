@@ -69,7 +69,9 @@ export class SubjectTopoligicalSorter {
             const entityTargetSubjects = this.subjects.filter(
                 (subject) =>
                     subject.metadata.targetName === sortedEntityTarget ||
-                    subject.metadata.inheritanceTree.some(s => s.name === sortedEntityTarget)
+                    subject.metadata.inheritanceTree.some(
+                        (s) => s.name === sortedEntityTarget,
+                    ),
             )
             sortedSubjects.push(...entityTargetSubjects)
             this.removeAlreadySorted(entityTargetSubjects)
