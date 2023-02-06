@@ -4,7 +4,6 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-// import { expect } from "chai"
 
 describe("github issues > #9715 Database schema is not updated by sync/migration when 'simple-enum' is changed.", () => {
     let dataSources: DataSource[]
