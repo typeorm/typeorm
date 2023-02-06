@@ -4,38 +4,40 @@ import { EqualOperator } from "./EqualOperator"
 
 /**
  * A single property handler for FindOptionsWhere.
+ *
+ * The reason why we have both "PropertyToBeNarrowed" and "Property" is that Union is narrowed down when extends is used.
+ * It means the result of FindOptionsWhereProperty<1 | 2> doesn't include FindOperator<1 | 2> but FindOperator<1> | FindOperator<2>.
+ * So we keep the original Union as Original and pass it to the FindOperator too. Original remains Union as extends is not used for it.
  */
 export type FindOptionsWhereProperty<
-    Property,
-    Original = Property,
-> = Property extends Promise<infer I>
+    PropertyToBeNarrowed,
+    Property = PropertyToBeNarrowed,
+> = PropertyToBeNarrowed extends Promise<infer I>
     ? FindOptionsWhereProperty<NonNullable<I>>
-    : Property extends Array<infer I>
+    : PropertyToBeNarrowed extends Array<infer I>
     ? FindOptionsWhereProperty<NonNullable<I>>
-    : Property extends Function
+    : PropertyToBeNarrowed extends Function
     ? never
-    : Property extends Buffer
-    ? Property | FindOperator<Property> | FindOperator<Original>
-    : Property extends Date
-    ? Property | FindOperator<Property> | FindOperator<Original>
-    : Property extends ObjectID
-    ? Property | FindOperator<Property> | FindOperator<Original>
-    : Property extends string
-    ? Property | FindOperator<Property> | FindOperator<Original>
-    : Property extends number
-    ? Property | FindOperator<Property> | FindOperator<Original>
-    : Property extends boolean
-    ? Property | FindOperator<Property> | FindOperator<Original>
-    : Property extends object
+    : PropertyToBeNarrowed extends Buffer
+    ? Property | FindOperator<Property>
+    : PropertyToBeNarrowed extends Date
+    ? Property | FindOperator<Property>
+    : PropertyToBeNarrowed extends ObjectID
+    ? Property | FindOperator<Property>
+    : PropertyToBeNarrowed extends string
+    ? Property | FindOperator<Property>
+    : PropertyToBeNarrowed extends number
+    ? Property | FindOperator<Property>
+    : PropertyToBeNarrowed extends boolean
+    ? Property | FindOperator<Property>
+    : PropertyToBeNarrowed extends object
     ?
           | FindOptionsWhere<Property>
-          | FindOptionsWhere<Original>
           | FindOptionsWhere<Property>[]
           | EqualOperator<Property>
-          | EqualOperator<Original>
           | FindOperator<any>
           | boolean
-    : Property | FindOperator<Property> | FindOperator<Original>
+    : Property | FindOperator<Property>
 
 /**
  * Used for find operations.
