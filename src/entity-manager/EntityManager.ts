@@ -1056,7 +1056,9 @@ export class EntityManager {
         const result = await this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .select(
-                `${fnName}(${this.connection.driver.escape(String(columnName))})`,
+                `${fnName}(${this.connection.driver.escape(
+                    String(columnName),
+                )})`,
                 fnName,
             )
             .getRawOne()
