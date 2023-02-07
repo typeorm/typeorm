@@ -1,5 +1,5 @@
-import { ChildEntity } from "../../../../src/index.js"
-import { ChangeLog } from "./ChangeLog.js"
+import { ChildEntity } from "../../../../src/index"
+import { ChangeLog } from "./ChangeLog"
 
 export class Email {}
 

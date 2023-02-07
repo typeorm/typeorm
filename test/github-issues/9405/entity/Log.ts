@@ -2,7 +2,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     TableInheritance,
-} from "../../../../src/index.js"
+} from "../../../../src/index"
 
 @Entity()
 @TableInheritance({ column: { type: "varchar", name: "type" } })

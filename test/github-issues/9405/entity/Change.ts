@@ -3,8 +3,8 @@ import {
     Entity,
     ManyToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src/index.js"
-import { ChangeLog } from "./ChangeLog.js"
+} from "../../../../src/index"
+import { ChangeLog } from "./ChangeLog"
 
 @Entity()
 export class Change<T> {
