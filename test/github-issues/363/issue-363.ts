@@ -1,74 +1,87 @@
-import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
-import {Car} from "./entity/Car";
-import {Fruit} from "./entity/Fruit";
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { DataSource } from "../../../src/data-source/DataSource"
+import { expect } from "chai"
+import { Car } from "./entity/Car"
+import { Fruit } from "./entity/Fruit"
 
 describe("github issues > #363 Can't save 2 unrelated entity types in a single persist call", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-    }));
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+    it("entityManager should allow you to save unrelated entities with one persist call", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const car = new Car()
+                car.name = "Ferrari"
 
-    it("entityManager should allow you to save unrelated entities with one persist call", () => Promise.all(connections.map(async connection => {
+                const fruit = new Fruit()
+                fruit.name = "Banana"
 
-        const car = new Car();
-        car.name = "Ferrari";
+                const [savedCar, savedFruit] = await connection.manager.save([
+                    car,
+                    fruit,
+                ])
 
-        const fruit = new Fruit();
-        fruit.name = "Banana";
+                expect(savedFruit).to.have.property("name", "Banana")
+                expect(savedFruit).to.be.instanceof(Fruit)
 
-        const [savedCar, savedFruit] = await connection.manager.save([car, fruit]);
+                expect(savedCar).to.have.property("name", "Ferrari")
+                expect(savedCar).to.be.instanceof(Car)
 
-        expect(savedFruit).to.have.property("name", "Banana");
-        expect(savedFruit).to.be.instanceof(Fruit);
+                const cars = await connection.manager.find(Car)
 
-        expect(savedCar).to.have.property("name", "Ferrari");
-        expect(savedCar).to.be.instanceof(Car);
+                // before the changes in this PR, all the tests before this one actually passed
+                expect(cars).to.length(1)
+                expect(cars[0]).to.have.property("name", "Ferrari")
 
-        const cars = await connection.manager.find(Car);
+                const fruits = await connection.manager.find(Fruit)
 
-        // before the changes in this PR, all the tests before this one actually passed
-        expect(cars).to.length(1);
-        expect(cars[0]).to.have.property("name", "Ferrari");
+                expect(fruits).to.length(1)
+                expect(fruits[0]).to.have.property("name", "Banana")
+            }),
+        ))
 
-        const fruits = await connection.manager.find(Fruit);
+    it("entityManager should allow you to delete unrelated entities with one remove call", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const fruit = new Fruit()
+                fruit.name = "Banana"
 
-        expect(fruits).to.length(1);
-        expect(fruits[0]).to.have.property("name", "Banana");
+                const fruit2 = new Fruit()
+                fruit2.name = "Apple"
 
-    })));
+                const [savedFruit] = await connection.manager.save([
+                    fruit,
+                    fruit2,
+                ])
 
-    it("entityManager should allow you to delete unrelated entities with one remove call", () => Promise.all(connections.map(async connection => {
+                const car = new Car()
+                car.name = "Ferrari"
 
-        const fruit = new Fruit();
-        fruit.name = "Banana";
+                const savedCar = await connection.manager.save(car)
 
-        const fruit2 = new Fruit();
-        fruit2.name = "Apple";
+                await connection.manager.remove([savedCar, savedFruit])
 
-        const [savedFruit] = await connection.manager.save([fruit, fruit2]);
+                const cars = await connection.manager.find(Car)
 
-        const car = new Car();
-        car.name = "Ferrari";
+                expect(cars).to.length(0)
 
-        const savedCar = await connection.manager.save(car);
+                const fruits = await connection.manager.find(Fruit)
 
-        await connection.manager.remove([savedCar, savedFruit]);
-
-        const cars = await connection.manager.find(Car);
-
-        expect(cars).to.length(0);
-
-        const fruits = await connection.manager.find(Fruit);
-
-        expect(fruits).to.length(1);
-        expect(fruits[0]).to.have.property("name", "Apple");
-
-    })));
-
-});
+                expect(fruits).to.length(1)
+                expect(fruits[0]).to.have.property("name", "Apple")
+            }),
+        ))
+})

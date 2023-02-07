@@ -1,53 +1,52 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
-        comment: `E.g. 'foo', 'bar', or 'baz' etc.`
+        comment: `E.g. 'foo', 'bar', or 'baz' etc.`,
     })
-    col1: string;
+    col1: string
 
     @Column({
-        comment: `E.g. '''foo, 'bar''', or baz' etc.`
+        comment: `E.g. '''foo, 'bar''', or baz' etc.`,
     })
-    col2: string;
+    col2: string
 
     @Column({
-        comment: `E.g. "foo", "bar", or "baz" etc.`
+        comment: `E.g. "foo", "bar", or "baz" etc.`,
     })
-    col3: string;
+    col3: string
 
     @Column({
-        comment: "foo\\bar, bar\\baz, foo\\\\baz"
+        comment: "foo\\bar, bar\\baz, foo\\\\baz",
     })
-    col4: string;
+    col4: string
 
     @Column({
-        comment: "foo: \0, bar: \0\0\0"
+        comment: "foo: \0, bar: \0\0\0",
     })
-    col5: string;
+    col5: string
 
     @Column({
-        comment: `"foo", ""bar""`
+        comment: `"foo", ""bar""`,
     })
-    col6: string;
+    col6: string
 
     @Column({
-        comment: "\"foo\", \"\"bar\"\""
+        comment: '"foo", ""bar""',
     })
-    col7: string;
+    col7: string
 
     @Column({
-        comment: "foo \r \n \b \t \Z \% \_ bar"
+        comment: "foo \r \n \b \t Z % _ bar",
     })
-    col8: string;
+    col8: string
 
     @Column({
-        comment: "foo \\r \\n \\b \\t \\Z \\% \\_ bar"
+        comment: "foo \\r \\n \\b \\t \\Z \\% \\_ bar",
     })
-    col9: string;
+    col9: string
 }

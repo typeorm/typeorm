@@ -192,8 +192,6 @@
 
 - `pool.priorityRange` - 1和x之间的int值  - 如果设置了且没有可用资源，则borrowers可以在队列中指定其相对优先级(默认 `1`)。
 
-- `pool.autostart` - 布尔值，一旦调用构造函数，池应该开始创建资源等（默认为`true`）。
-
 - `pool.victionRunIntervalMillis` - 多久检查一次eviction checks。 默认值：`0`（不运行）。
 
 - `pool.numTestsPerRun` - 每次eviction checks资源数量。 默认值：`3`。
@@ -210,7 +208,7 @@
 
 - `options.packetSize` - TDS数据包的大小（需要与服务器协商）。 应该是2的幂。（默认值：`4096`）。
 
-- `options.useUTC` - 布尔值，用于确定是以UTC还是本地时间。(默认：`true`)。
+- `options.useUTC` - 布尔值，用于确定是以UTC还是本地时间。(默认：`false`)。
 
 - `options.abortTransactionOnError` - 如果在给定事务执行期间遇到任何错误，则确定是否自动回滚事务的布尔值。 这将在连接的初始SQL阶段设置`SET XACT_ABORT`的值（[文档](http://msdn.microsoft.com/en-us/library/ms188792.aspx))。
 
@@ -242,7 +240,7 @@
 
 - `options.readOnlyIntent` - 布尔值，确定连接是否将从SQL Server可用性组请求只读访问权限。 有关更多信息，请参阅此处。 （默认：`false`）。
 
-- `options.encrypt` - 确定连接是否将被加密的布尔值。 如果您使用的是Windows Azure，请设置为true。 （默认：`false`）。
+- `options.encrypt` - 确定连接是否将被加密的布尔值。 如果您使用的是Windows Azure，请设置为true。 （默认：`true`）。
 
 - `options.cryptoCredentialsDetails` - 使用加密时，可以提供一个对象，该对象在调用[tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)时将用于第一个参数（默认值：`{}`）。
 
@@ -422,11 +420,6 @@
     ],
     migrations: [
         "migration/*.js"
-    ],
-    cli: {
-        entitiesDir: "entity",
-        migrationsDir: "migration",
-        subscribersDir: "subscriber"
-    }
+    ]
 }
 ```

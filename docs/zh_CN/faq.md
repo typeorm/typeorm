@@ -168,7 +168,7 @@ createConnection({
 此外，如果要使用 ts-node CLI，可以通过以下方式执行 TypeORM：
 
 ```
-ts-node ./node_modules/bin/typeorm schema:sync
+npx typeorm-ts-node-commonjs schema:sync
 ```
 
 ## 后端如何使用Webpack？

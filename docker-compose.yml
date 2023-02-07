@@ -1,20 +1,8 @@
 version: "3"
 services:
-  # mysql-5.5
-  #mysql5.5:
-  #  image: "mysql:5.5"
-  #  container_name: "typeorm-mysql-5.5"
-  #  ports:
-  #    - "3306:3306"
-  #  environment:
-  #    MYSQL_ROOT_PASSWORD: "admin"
-  #    MYSQL_USER: "test"
-  #    MYSQL_PASSWORD: "test"
-  #    MYSQL_DATABASE: "test"
-
   # mysql
   mysql:
-    image: "mysql:5.7.24"
+    image: "mysql:5.7.37"
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
@@ -26,7 +14,7 @@ services:
 
   # mariadb
   mariadb:
-    image: "mariadb:10.4.8"
+    image: "mariadb:10.8.4"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -41,10 +29,23 @@ services:
     # mdillon/postgis is postgres + PostGIS (only). if you need additional
     # extensions, it's probably time to create a purpose-built image with all
     # necessary extensions. sorry, and thanks for adding support for them!
-    image: "mdillon/postgis:9.6"
+    image: "postgis/postgis:14-3.3"
     container_name: "typeorm-postgres"
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_DB: "test"
+
+  postgres-12:
+    # mdillon/postgis is postgres + PostGIS (only). if you need additional
+    # extensions, it's probably time to create a purpose-built image with all
+    # necessary extensions. sorry, and thanks for adding support for them!
+    image: "postgis/postgis:12-2.5"
+    container_name: "typeorm-postgres-12"
+    ports:
+      - "5532:5432"
     environment:
       POSTGRES_USER: "test"
       POSTGRES_PASSWORD: "test"
@@ -62,9 +63,9 @@ services:
 
   # cockroachdb
   cockroachdb:
-    image: "cockroachdb/cockroach:latest-v21.1"
+    image: "cockroachdb/cockroach:v22.1.6"
     container_name: "typeorm-cockroachdb"
-    command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25 --logtostderr=NONE --log-dir=""
+    command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25
     ports:
       - "26257:26257"
 
@@ -73,6 +74,17 @@ services:
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
+    networks:
+      - default
+      - typeorm
+
+  # google cloud spanner
+  spanner:
+    image: alexmesser/spanner-emulator
+    container_name: "typeorm-spanner"
+    ports:
+      - "9010:9010"
+      - "9020:9020"
 
   # sap hana (works only on linux)
   # hanaexpress:
@@ -104,7 +116,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:3.4.18"
+    image: "mongo:5.0.12"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -114,5 +126,10 @@ services:
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
+
 #volumes:
 #  volume-hana-xe:
+#  mysql8_volume:
+
+networks:
+  typeorm:

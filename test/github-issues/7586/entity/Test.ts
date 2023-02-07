@@ -1,5 +1,4 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
-
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class TestEntity {
@@ -7,5 +6,5 @@ export class TestEntity {
     id: number
 
     @Column("varchar")
-    type: string;
+    type: string
 }

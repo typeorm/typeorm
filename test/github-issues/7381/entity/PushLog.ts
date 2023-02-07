@@ -1,27 +1,27 @@
-import {Column, Entity, Index, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 @Index(["token"], { unique: false })
 @Index(["created"], { unique: false })
 export class PushLog {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    token: string;
+    token: string
 
     @Column()
-    os: string;
+    os: string
 
     @Column("text")
-    payload: string;
+    payload: string
 
     @Column("text")
-    response: string;
+    response: string
 
     @Column()
-    success: boolean;
+    success: boolean
 
     @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
-    created: Date;
+    created: Date
 }

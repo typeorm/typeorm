@@ -1,18 +1,22 @@
-import {CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn} from "../../../../src";
+import {
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+    VersionColumn,
+} from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @VersionColumn()
-    version: number;
+    version: number
 
-    @CreateDateColumn({type: "timestamp"})
-    createdAt: Date;
+    @CreateDateColumn({ type: "timestamp" })
+    createdAt: Date
 
-    @UpdateDateColumn({type: "timestamp"})
-    updatedAt: Date;
-
+    @UpdateDateColumn({ type: "timestamp" })
+    updatedAt: Date
 }

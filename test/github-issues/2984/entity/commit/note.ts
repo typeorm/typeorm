@@ -1,9 +1,7 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../../src";
+import { Entity, PrimaryGeneratedColumn } from "../../../../../src"
 
-@Entity({name: "commitNote"})
+@Entity({ name: "commitNote" })
 export class Note {
-
     @PrimaryGeneratedColumn()
-    public id: number;
-
+    public id: number
 }

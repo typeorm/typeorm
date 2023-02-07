@@ -1,11 +1,9 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 export class EditHistory {
+    @Column()
+    title: string
 
     @Column()
-    title: string;
-
-    @Column()
-    text: string;
-
+    text: string
 }

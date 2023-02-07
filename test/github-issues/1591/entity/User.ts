@@ -1,17 +1,21 @@
-import {Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn} from "../../../../src";
-import {Photo} from "./Photo";
+import {
+    Column,
+    Entity,
+    JoinTable,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { Photo } from "./Photo"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @ManyToMany(type => Photo)
+    @ManyToMany((type) => Photo)
     @JoinTable()
-    photos: Photo[];
-
+    photos: Photo[]
 }

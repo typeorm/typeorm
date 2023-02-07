@@ -1,9 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class TestChild {
     @Column()
-    public value: string;
+    public value: string
     @PrimaryGeneratedColumn("uuid")
-    public uuid: string;
+    public uuid: string
 }

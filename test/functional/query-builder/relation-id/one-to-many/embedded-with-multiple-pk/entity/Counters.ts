@@ -1,29 +1,27 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {OneToMany} from "../../../../../../../src/decorator/relations/OneToMany";
-import {Category} from "./Category";
-import {Subcounters} from "./Subcounters";
+import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
+import { OneToMany } from "../../../../../../../src/decorator/relations/OneToMany"
+import { Category } from "./Category"
+import { Subcounters } from "./Subcounters"
 
 export class Counters {
-
     @PrimaryColumn()
-    code: number;
+    code: number
 
     @Column()
-    likes: number;
+    likes: number
 
     @Column()
-    comments: number;
+    comments: number
 
     @Column()
-    favorites: number;
+    favorites: number
 
-    @OneToMany(type => Category, category => category.post)
-    categories: Category[];
+    @OneToMany((type) => Category, (category) => category.post)
+    categories: Category[]
 
-    @Column(() => Subcounters)
-    subcounters: Subcounters;
+    @Column(() => Subcounters, { prefix: "sub" })
+    subcounters: Subcounters
 
-    categoryIds: number[];
-
+    categoryIds: any[]
 }

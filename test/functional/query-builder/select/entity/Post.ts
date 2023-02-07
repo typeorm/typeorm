@@ -1,44 +1,43 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
     Column,
-    VersionColumn,
-    ManyToOne,
+    Entity,
+    JoinColumn,
     JoinTable,
     ManyToMany,
-    OneToOne, JoinColumn,
-} from "../../../../../src";
-import { Tag } from "./Tag";
-import { Category } from "./Category";
-import { HeroImage } from "./HeroImage";
+    ManyToOne,
+    OneToOne,
+    PrimaryColumn,
+    VersionColumn,
+} from "../../../../../src"
+import { Tag } from "./Tag"
+import { Category } from "./Category"
+import { HeroImage } from "./HeroImage"
 
 @Entity()
 export class Post {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
-    title: string;
+    @PrimaryColumn()
+    id: string
 
     @Column()
-    description: string;
+    title: string
 
     @Column()
-    rating: number;
+    description: string
+
+    @Column()
+    rating: number
 
     @VersionColumn()
-    version: string;
+    version: string
 
     @OneToOne(() => HeroImage, (hero) => hero.post)
     @JoinColumn()
-    heroImage: HeroImage;
+    heroImage: HeroImage
 
-    @ManyToOne(type => Category)
-    category: Category;
+    @ManyToOne((type) => Category)
+    category: Category
 
     @ManyToMany(() => Tag, (tag) => tag.posts)
     @JoinTable()
     tags: Tag[]
-
 }

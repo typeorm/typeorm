@@ -1,18 +1,24 @@
-import {Post} from "../entity/Post";
-import {EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent} from "../../../../src";
+import { Post } from "../entity/Post"
+import {
+    EntitySubscriberInterface,
+    EventSubscriber,
+    InsertEvent,
+    UpdateEvent,
+} from "../../../../src"
 
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
     listenTo() {
-        return Post;
+        return Post
     }
 
     async beforeInsert(event: InsertEvent<Post>) {
-        event.entity.inserted = true;
+        event.entity.inserted = true
     }
 
     async beforeUpdate(event: UpdateEvent<Post>) {
-        event.entity.updated = true;
+        if (event.entity) {
+            event.entity.updated = true
+        }
     }
-
 }

@@ -1,19 +1,18 @@
-import {Entity, PrimaryColumn} from "../../../../../src";
+import { Entity, PrimaryColumn } from "../../../../../src"
 
 @Entity("ambig_primary_key")
 export class AmbigiousPrimaryKey {
     @PrimaryColumn()
-    a: string;
+    a: string
 
     @PrimaryColumn()
-    b: string;
+    b: string
 
-    static make({ a, b }: { a: string, b: string }): AmbigiousPrimaryKey {
-        const apk = new AmbigiousPrimaryKey();
-        apk.a = a;
-        apk.b = b;
+    static make({ a, b }: { a: string; b: string }): AmbigiousPrimaryKey {
+        const apk = new AmbigiousPrimaryKey()
+        apk.a = a
+        apk.b = b
 
-        return apk;
+        return apk
     }
-
 }

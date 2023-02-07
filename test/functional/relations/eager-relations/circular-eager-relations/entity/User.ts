@@ -1,24 +1,22 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../../../../src/decorator/relations/JoinColumn";
-import {Profile} from "./Profile";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { OneToOne } from "../../../../../../src/decorator/relations/OneToOne"
+import { JoinColumn } from "../../../../../../src/decorator/relations/JoinColumn"
+import { Profile } from "./Profile"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
-    @OneToOne(type => Profile, profile => profile.user, { eager: true })
+    @OneToOne((type) => Profile, (profile) => profile.user, { eager: true })
     @JoinColumn()
-    profile: Profile;
-
+    profile: Profile
 }

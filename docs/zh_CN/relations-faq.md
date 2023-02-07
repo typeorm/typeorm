@@ -4,6 +4,7 @@
   * [如何使用关系id而不加入关系](#如何使用关系id而不加入关系)
   * [如何在实体中加载关系](#如何在实体中加载关系)
   * [避免关系属性初始化器](#避免关系属性初始化器)
+  * [避免创建外键约束](#避免创建外键约束)
 
 ## 如何创建自引用关系
 
@@ -200,3 +201,29 @@ Question {
 
 如何避免这种行为？ 只是不要在实体中初始化数组就行。
 同样的规则适用于构造函数，但也不要在构造函数中初始化它。
+
+## 避免创建外键约束
+
+有时出于性能原因，您可能希望在实体之间建立关系，但不需要外键约束。
+您可以使用`createForeignKeyConstraints`选项来定义是否应该创建外键约束(默认值: true)。
+
+```typescript
+import {Entity, PrimaryColumn, Column, ManyToOne} from "typeorm";
+import {Person} from "./Person";
+@Entity()
+export class ActionLog {
+    
+    @PrimaryColumn()
+    id: number;
+    @Column()
+    date: Date;
+    @Column()
+    action: string;
+    
+    @ManyToOne(type => Person, {
+        createForeignKeyConstraints: false
+    })
+    person: Person;
+    
+}
+```

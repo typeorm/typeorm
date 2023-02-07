@@ -1,7 +1,7 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Party {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: string
 }

@@ -1,80 +1,95 @@
-import {MissingDriverError} from "../error/MissingDriverError";
-import {CockroachDriver} from "./cockroachdb/CockroachDriver";
-import {MongoDriver} from "./mongodb/MongoDriver";
-import {SqlServerDriver} from "./sqlserver/SqlServerDriver";
-import {OracleDriver} from "./oracle/OracleDriver";
-import {SqliteDriver} from "./sqlite/SqliteDriver";
-import {CordovaDriver} from "./cordova/CordovaDriver";
-import {ReactNativeDriver} from "./react-native/ReactNativeDriver";
-import {NativescriptDriver} from "./nativescript/NativescriptDriver";
-import {SqljsDriver} from "./sqljs/SqljsDriver";
-import {MysqlDriver} from "./mysql/MysqlDriver";
-import {PostgresDriver} from "./postgres/PostgresDriver";
-import {ExpoDriver} from "./expo/ExpoDriver";
-import {AuroraDataApiDriver} from "./aurora-data-api/AuroraDataApiDriver";
-import {AuroraDataApiPostgresDriver} from "./aurora-data-api-pg/AuroraDataApiPostgresDriver";
-import {Driver} from "./Driver";
-import {Connection} from "../connection/Connection";
-import {SapDriver} from "./sap/SapDriver";
-import {BetterSqlite3Driver} from "./better-sqlite3/BetterSqlite3Driver";
-import {CapacitorDriver} from "./capacitor/CapacitorDriver";
+import { MissingDriverError } from "../error/MissingDriverError"
+import { CockroachDriver } from "./cockroachdb/CockroachDriver"
+import { MongoDriver } from "./mongodb/MongoDriver"
+import { SqlServerDriver } from "./sqlserver/SqlServerDriver"
+import { OracleDriver } from "./oracle/OracleDriver"
+import { SqliteDriver } from "./sqlite/SqliteDriver"
+import { CordovaDriver } from "./cordova/CordovaDriver"
+import { ReactNativeDriver } from "./react-native/ReactNativeDriver"
+import { NativescriptDriver } from "./nativescript/NativescriptDriver"
+import { SqljsDriver } from "./sqljs/SqljsDriver"
+import { MysqlDriver } from "./mysql/MysqlDriver"
+import { PostgresDriver } from "./postgres/PostgresDriver"
+import { ExpoDriver } from "./expo/ExpoDriver"
+import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
+import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
+import { Driver } from "./Driver"
+import { DataSource } from "../data-source/DataSource"
+import { SapDriver } from "./sap/SapDriver"
+import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
+import { CapacitorDriver } from "./capacitor/CapacitorDriver"
+import { SpannerDriver } from "./spanner/SpannerDriver"
 
 /**
  * Helps to create drivers.
  */
 export class DriverFactory {
-
     /**
      * Creates a new driver depend on a given connection's driver type.
      */
-    create(connection: Connection): Driver {
-        const {type} = connection.options;
+    create(connection: DataSource): Driver {
+        const { type } = connection.options
         switch (type) {
             case "mysql":
-                return new MysqlDriver(connection);
+                return new MysqlDriver(connection)
             case "postgres":
-                return new PostgresDriver(connection);
+                return new PostgresDriver(connection)
             case "cockroachdb":
-                return new CockroachDriver(connection);
+                return new CockroachDriver(connection)
             case "sap":
-                return new SapDriver(connection);
+                return new SapDriver(connection)
             case "mariadb":
-                return new MysqlDriver(connection);
+                return new MysqlDriver(connection)
             case "sqlite":
-                return new SqliteDriver(connection);
+                return new SqliteDriver(connection)
             case "better-sqlite3":
-                return new BetterSqlite3Driver(connection);
+                return new BetterSqlite3Driver(connection)
             case "cordova":
-                return new CordovaDriver(connection);
+                return new CordovaDriver(connection)
             case "nativescript":
-                return new NativescriptDriver(connection);
+                return new NativescriptDriver(connection)
             case "react-native":
-                return new ReactNativeDriver(connection);
+                return new ReactNativeDriver(connection)
             case "sqljs":
-                return new SqljsDriver(connection);
+                return new SqljsDriver(connection)
             case "oracle":
-                return new OracleDriver(connection);
+                return new OracleDriver(connection)
             case "mssql":
-                return new SqlServerDriver(connection);
+                return new SqlServerDriver(connection)
             case "mongodb":
-                return new MongoDriver(connection);
+                return new MongoDriver(connection)
             case "expo":
-                return new ExpoDriver(connection);
-            case "aurora-data-api":
-                return new AuroraDataApiDriver(connection);
-            case "aurora-data-api-pg":
-                return new AuroraDataApiPostgresDriver(connection);
+                return new ExpoDriver(connection)
+            case "aurora-mysql":
+                return new AuroraMysqlDriver(connection)
+            case "aurora-postgres":
+                return new AuroraPostgresDriver(connection)
             case "capacitor":
-                return new CapacitorDriver(connection);
+                return new CapacitorDriver(connection)
+            case "spanner":
+                return new SpannerDriver(connection)
             default:
-                throw new MissingDriverError(
-                    type,
-                    [
-                        "cordova", "expo", "mariadb", "mongodb", "mssql", "mysql", "oracle", "postgres",
-                        "sqlite", "better-sqlite3", "sqljs", "react-native", "aurora-data-api", "aurora-data-api-pg"
-                    ]
-                );
+                throw new MissingDriverError(type, [
+                    "aurora-mysql",
+                    "aurora-postgres",
+                    "better-sqlite3",
+                    "capacitor",
+                    "cockroachdb",
+                    "cordova",
+                    "expo",
+                    "mariadb",
+                    "mongodb",
+                    "mssql",
+                    "mysql",
+                    "nativescript",
+                    "oracle",
+                    "postgres",
+                    "react-native",
+                    "sap",
+                    "sqlite",
+                    "sqljs",
+                    "spanner",
+                ])
         }
     }
-
 }

@@ -1,5 +1,5 @@
-import {getMetadataArgsStorage} from "../../globals";
-import {EntitySubscriberMetadataArgs} from "../../metadata-args/EntitySubscriberMetadataArgs";
+import { getMetadataArgsStorage } from "../../globals"
+import { EntitySubscriberMetadataArgs } from "../../metadata-args/EntitySubscriberMetadataArgs"
 
 /**
  * Classes decorated with this decorator will listen to ORM events and their methods will be triggered when event
@@ -7,9 +7,8 @@ import {EntitySubscriberMetadataArgs} from "../../metadata-args/EntitySubscriber
  */
 export function EventSubscriber(): ClassDecorator {
     return function (target: Function) {
-
         getMetadataArgsStorage().entitySubscribers.push({
-            target: target
-        } as EntitySubscriberMetadataArgs);
-    };
+            target: target,
+        } as EntitySubscriberMetadataArgs)
+    }
 }

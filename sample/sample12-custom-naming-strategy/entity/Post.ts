@@ -1,18 +1,16 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
 
 @Entity("sample1_post")
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    text: string;
+    text: string
 
     @Column()
-    likesCount: number;
-
+    likesCount: number
 }

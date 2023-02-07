@@ -1,17 +1,21 @@
-import {Column, Entity, ManyToOne, PrimaryGeneratedColumn, TableInheritance} from "../../../../../../../src";
-import {Faculty} from "./Faculty";
+import {
+    Column,
+    Entity,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    TableInheritance,
+} from "../../../../../../../src"
+import { Faculty } from "./Faculty"
 
 @Entity()
-@TableInheritance({ column: { name: "type", type: "varchar" } })
+@TableInheritance({ column: { name: "type", type: String } })
 export class Staff {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @ManyToOne(type => Faculty, faculty => faculty.staff)
-    faculty: Faculty;
+    @ManyToOne((type) => Faculty, (faculty) => faculty.staff)
+    faculty: Faculty
 
     @Column()
-    type: string;
-
+    type: string
 }

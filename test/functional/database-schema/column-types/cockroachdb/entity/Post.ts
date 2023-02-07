@@ -1,179 +1,237 @@
-import {Entity} from "../../../../../../src";
-import {PrimaryColumn} from "../../../../../../src";
-import {Column} from "../../../../../../src";
+import {
+    Column,
+    Entity,
+    GeometryCollection,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+    PrimaryColumn,
+} from "../../../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("integer")
-    integer: string;
+    integer: string
 
     @Column("int4")
-    int4: number;
+    int4: number
 
     @Column("int")
-    int: string;
+    int: string
 
     @Column("smallint")
-    smallint: number;
+    smallint: number
 
     @Column("int2")
-    int2: number;
+    int2: number
 
     @Column("bigint")
-    bigint: string;
+    bigint: string
 
     @Column("int8")
-    int8: string;
+    int8: string
 
     @Column("int64")
-    int64: string;
+    int64: string
 
     @Column("double precision")
-    doublePrecision: number;
+    doublePrecision: number
 
     @Column("float4")
-    float4: number;
+    float4: number
 
     @Column("float8")
-    float8: number;
+    float8: number
 
     @Column("real")
-    real: number;
+    real: number
 
     @Column("numeric")
-    numeric: string;
+    numeric: string
 
     @Column("decimal")
-    decimal: string;
+    decimal: string
 
     @Column("dec")
-    dec: string;
+    dec: string
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("char")
-    char: string;
+    char: string
 
     @Column("character")
-    character: string;
+    character: string
 
     @Column("varchar")
-    varchar: string;
+    varchar: string
 
     @Column("character varying")
-    characterVarying: string;
+    characterVarying: string
 
     @Column("char varying")
-    charVarying: string;
+    charVarying: string
 
     @Column("string")
-    string: string;
+    string: string
 
     @Column("text")
-    text: string;
+    text: string
 
     // -------------------------------------------------------------------------
     // Binary Data Types
     // -------------------------------------------------------------------------
 
     @Column("bytes")
-    bytes: Buffer;
+    bytes: Buffer
 
     @Column("bytea")
-    bytea: Buffer;
+    bytea: Buffer
 
     @Column("blob")
-    blob: Buffer;
+    blob: Buffer
 
     // -------------------------------------------------------------------------
     // Date/Time Types
     // -------------------------------------------------------------------------
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("interval")
-    interval: any;
+    interval: any
 
     @Column("time")
-    time: string;
+    time: string
 
     @Column("time without time zone")
-    timeWithoutTimeZone: string;
+    timeWithoutTimeZone: string
 
     @Column("timestamp")
-    timestamp: Date;
+    timestamp: Date
 
     @Column("timestamp with time zone")
-    timestampWithTimeZone: Date;
+    timestampWithTimeZone: Date
 
     @Column("timestamp without time zone")
-    timestampWithoutTimeZone: Date;
+    timestampWithoutTimeZone: Date
 
     @Column("timestamptz")
-    timestamptz: Date;
+    timestamptz: Date
 
     // -------------------------------------------------------------------------
     // Boolean Type
     // -------------------------------------------------------------------------
 
     @Column("boolean")
-    boolean: boolean;
+    boolean: boolean
 
     @Column("bool")
-    bool: boolean;
+    bool: boolean
 
     // -------------------------------------------------------------------------
     // Network Address Type
     // -------------------------------------------------------------------------
 
     @Column("inet")
-    inet: string;
+    inet: string
+
+    // -------------------------------------------------------------------------
+    // Geometry Type
+    // -------------------------------------------------------------------------
+
+    @Column("geometry")
+    point: Point
+
+    @Column("geometry")
+    polygon: Polygon
+
+    @Column("geometry")
+    multipoint: MultiPoint
+
+    @Column("geometry")
+    linestring: LineString
+
+    @Column("geometry")
+    multilinestring: MultiLineString
+
+    @Column("geometry")
+    multipolygon: MultiPolygon
+
+    @Column("geometry")
+    geometrycollection: GeometryCollection
+
+    // -------------------------------------------------------------------------
+    // Geography Type
+    // -------------------------------------------------------------------------
+
+    @Column("geography")
+    point_geography: Point
+
+    @Column("geography")
+    polygon_geography: Polygon
+
+    @Column("geography")
+    multipoint_geography: MultiPoint
+
+    @Column("geography")
+    linestring_geography: LineString
+
+    @Column("geography")
+    multilinestring_geography: MultiLineString
+
+    @Column("geography")
+    multipolygon_geography: MultiPolygon
+
+    @Column("geography")
+    geometrycollection_geography: GeometryCollection
 
     // -------------------------------------------------------------------------
     // UUID Type
     // -------------------------------------------------------------------------
 
     @Column("uuid")
-    uuid: string;
+    uuid: string
 
     // -------------------------------------------------------------------------
     // JSON Type
     // -------------------------------------------------------------------------
 
     @Column("jsonb")
-    jsonb: Object;
+    jsonb: Object
 
     @Column("json")
-    json: Object;
+    json: Object
 
     // -------------------------------------------------------------------------
     // Array Type
     // -------------------------------------------------------------------------
 
     @Column("int", { array: true })
-    array: string[];
+    array: string[]
 
     // -------------------------------------------------------------------------
     // TypeOrm Specific Types
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
-    simpleArray: string[];
+    simpleArray: string[]
 
     @Column("simple-json")
-    simpleJson: { param: string };
+    simpleJson: { param: string }
 }

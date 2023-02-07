@@ -1,4 +1,4 @@
-import {TypeORMError} from "./TypeORMError";
+import { TypeORMError } from "./TypeORMError"
 
 /**
  * Thrown when consumer tries to access entity manager before connection is established.
@@ -6,7 +6,7 @@ import {TypeORMError} from "./TypeORMError";
 export class CannotGetEntityManagerNotConnectedError extends TypeORMError {
     constructor(connectionName: string) {
         super(
-            `Cannot get entity manager for "${connectionName}" connection because connection is not yet established.`
-        );
+            `Cannot get entity manager for "${connectionName}" connection because connection is not yet established.`,
+        )
     }
 }

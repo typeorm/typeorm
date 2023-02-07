@@ -22,11 +22,20 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "sqlite",
     "type": "sqlite",
-    "database": "temp/sqlitedb.db",
-    "logging": false
+    "database": "./temp/sqlitedb-1.db",
+    "logging": false,
+    "relationLoadStrategy": "join"
+  },
+  {
+    "skip": false,
+    "name": "sqlite-2",
+    "type": "sqlite",
+    "database": "./temp/sqlitedb-2.db",
+    "logging": false,
+    "relationLoadStrategy": "query"
   },
   {
     "skip": true,
@@ -40,6 +49,17 @@
     "name": "postgres",
     "type": "postgres",
     "host": "typeorm-postgres",
+    "port": 5432,
+    "username": "test",
+    "password": "test",
+    "database": "test",
+    "logging": false
+  },
+  {
+    "skip": true,
+    "name": "postgres-12",
+    "type": "postgres",
+    "host": "typeorm-postgres-12",
     "port": 5432,
     "username": "test",
     "password": "test",

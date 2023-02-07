@@ -1,64 +1,67 @@
-import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "../../../../../src";
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+} from "../../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "date", default: () => "CURRENT_DATE" })
-    col1: Date;
+    col1: Date
 
     @Column({ type: "date", default: () => "current_date" })
-    col2: Date;
+    col2: Date
 
     @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
-    col3: Date;
+    col3: Date
 
     @Column({ type: "timestamp", default: () => "current_timestamp" })
-    col4: Date;
+    col4: Date
 
     @Column({ type: "timestamp", default: () => "NOW()" })
-    col5: Date;
+    col5: Date
 
     @Column({ type: "timestamp", default: () => "now()" })
-    col6: Date;
-
+    col6: Date
 
     @CreateDateColumn({ type: "date", default: () => "CURRENT_DATE" })
-    col7: Date;
+    col7: Date
 
     @CreateDateColumn({ type: "date", default: () => "current_date" })
-    col8: Date;
+    col8: Date
 
     @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
-    col9: Date;
+    col9: Date
 
     @CreateDateColumn({ type: "timestamp", default: () => "current_timestamp" })
-    col10: Date;
+    col10: Date
 
     @CreateDateColumn({ type: "timestamp", default: () => "NOW()" })
-    col11: Date;
+    col11: Date
 
     @CreateDateColumn({ type: "timestamp", default: () => "now()" })
-    col12: Date;
-
+    col12: Date
 
     @UpdateDateColumn({ type: "date", default: () => "CURRENT_DATE" })
-    col13: Date;
+    col13: Date
 
     @UpdateDateColumn({ type: "date", default: () => "current_date" })
-    col14: Date;
+    col14: Date
 
     @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
-    col15: Date;
+    col15: Date
 
     @UpdateDateColumn({ type: "timestamp", default: () => "current_timestamp" })
-    col16: Date;
+    col16: Date
 
     @UpdateDateColumn({ type: "timestamp", default: () => "NOW()" })
-    col17: Date;
+    col17: Date
 
     @UpdateDateColumn({ type: "timestamp", default: () => "now()" })
-    col18: Date;
+    col18: Date
 }

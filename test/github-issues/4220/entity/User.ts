@@ -1,4 +1,4 @@
-import {Entity, PrimaryColumn, Column} from "../../../../src";
+import { Entity, PrimaryColumn, Column } from "../../../../src"
 
 @Entity()
 export class User {
@@ -6,9 +6,9 @@ export class User {
         comment: "The ID of this user.",
         length: 16,
         type: "binary",
-    })    
-    id: Buffer;
-    
+    })
+    id: Buffer
+
     @Column()
-    name: string;
+    name: string
 }

@@ -1,4 +1,4 @@
-import {EntitySchema} from "../../../../../../src";
+import { EntitySchema } from "../../../../../../src"
 
 export const PersonSchema = new EntitySchema<any>({
     name: "Person",
@@ -7,7 +7,7 @@ export const PersonSchema = new EntitySchema<any>({
             primary: true,
             type: "int",
             unsigned: true,
-            generated: "increment"
+            generated: "increment",
         },
         PostCode: {
             type: "int",
@@ -16,7 +16,7 @@ export const PersonSchema = new EntitySchema<any>({
         },
         FirstName: {
             type: String,
-            length: 30
+            length: 30,
         },
         LastName: {
             type: String,
@@ -25,19 +25,19 @@ export const PersonSchema = new EntitySchema<any>({
         VirtualFullName: {
             type: String,
             length: 50,
-            asExpression: "concat(`FirstName`,' ',`LastName`)"
+            asExpression: "concat(`FirstName`,' ',`LastName`)",
         },
         StoredFullName: {
             type: String,
             length: 50,
             asExpression: "concat(`FirstName`,' ',`LastName`)",
-            generatedType: "STORED"
+            generatedType: "STORED",
         },
         LastVisitDate: {
             type: "timestamp",
             precision: 3,
             default: () => "CURRENT_TIMESTAMP(3)",
-            onUpdate: "CURRENT_TIMESTAMP(3)"
-        }
-    }
-});
+            onUpdate: "CURRENT_TIMESTAMP(3)",
+        },
+    },
+})

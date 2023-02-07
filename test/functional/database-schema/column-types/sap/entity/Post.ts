@@ -1,131 +1,129 @@
-import {Entity} from "../../../../../../src";
-import {PrimaryColumn} from "../../../../../../src";
-import {Column} from "../../../../../../src";
+import { Entity } from "../../../../../../src"
+import { PrimaryColumn } from "../../../../../../src"
+import { Column } from "../../../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("int")
-    int: number;
+    int: number
 
     @Column("integer")
-    integer: number;
+    integer: number
 
     @Column("tinyint")
-    tinyint: number;
+    tinyint: number
 
     @Column("smallint")
-    smallint: number;
+    smallint: number
 
     @Column("bigint")
-    bigint: string;
+    bigint: string
 
     @Column("decimal")
-    decimal: string;
+    decimal: string
 
     @Column("dec")
-    dec: string;
+    dec: string
 
     @Column("smalldecimal")
-    smalldecimal: string;
+    smalldecimal: string
 
     @Column("real")
-    real: number;
+    real: number
 
     @Column("double")
-    double: number;
+    double: number
 
     @Column("float")
-    float: number;
+    float: number
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("char")
-    char: string;
+    char: string
 
     @Column("nchar")
-    nchar: string;
+    nchar: string
 
     @Column("varchar")
-    varchar: string;
+    varchar: string
 
     @Column("nvarchar")
-    nvarchar: string;
+    nvarchar: string
 
     @Column("alphanum")
-    alphanum: string;
+    alphanum: string
 
     @Column("text")
-    text: string;
+    text: string
 
     @Column("shorttext")
-    shorttext: string;
+    shorttext: string
 
     // -------------------------------------------------------------------------
     // Date Types
     // -------------------------------------------------------------------------
 
     @Column("date")
-    dateObj: Date;
+    dateObj: Date
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("time")
-    timeObj: Date;
+    timeObj: Date
 
     @Column("time")
-    time: string;
+    time: string
 
     @Column("timestamp")
-    timestamp: Date;
+    timestamp: Date
 
     @Column("seconddate")
-    seconddate: Date;
+    seconddate: Date
 
     // -------------------------------------------------------------------------
     // LOB Type
     // -------------------------------------------------------------------------
 
     @Column("blob")
-    blob: Buffer;
+    blob: Buffer
 
     @Column("clob")
-    clob: string;
+    clob: string
 
     @Column("nclob")
-    nclob: string;
+    nclob: string
 
     // -------------------------------------------------------------------------
     // Other Type
     // -------------------------------------------------------------------------
 
     @Column("boolean")
-    boolean: boolean;
+    boolean: boolean
 
     // @Column("varchar", { array: true })
     // array: string[];
 
     @Column("varbinary")
-    varbinary: Buffer;
+    varbinary: Buffer
 
     // -------------------------------------------------------------------------
     // TypeOrm Specific Type
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
-    simpleArray: string[];
-
+    simpleArray: string[]
 }

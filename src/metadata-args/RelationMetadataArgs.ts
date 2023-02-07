@@ -1,17 +1,16 @@
-import {RelationType} from "../metadata/types/RelationTypes";
-import {RelationOptions} from "../decorator/options/RelationOptions";
-import {PropertyTypeFactory} from "../metadata/types/PropertyTypeInFunction";
-import {RelationTypeInFunction} from "../metadata/types/RelationTypeInFunction";
+import { RelationType } from "../metadata/types/RelationTypes"
+import { RelationOptions } from "../decorator/options/RelationOptions"
+import { PropertyTypeFactory } from "../metadata/types/PropertyTypeInFunction"
+import { RelationTypeInFunction } from "../metadata/types/RelationTypeInFunction"
 
 /**
  * Arguments for RelationMetadata class.
  */
 export interface RelationMetadataArgs {
-
     /**
      * Class to which this relation is applied.
      */
-    readonly target: Function|string;
+    readonly target: Function | string
 
     /**
      * In the case if this relation is without a target, targetId must be specified.
@@ -22,12 +21,12 @@ export interface RelationMetadataArgs {
     /**
      * Class's property name to which this relation is applied.
      */
-    readonly propertyName: string;
+    readonly propertyName: string
 
     /**
      * Indicates if this relation will be lazily loaded.
      */
-    readonly isLazy: boolean;
+    readonly isLazy: boolean
 
     /**
      * Original (reflected) class's property type.
@@ -39,32 +38,31 @@ export interface RelationMetadataArgs {
     /**
      * Type of relation. Can be one of the value of the RelationTypes class.
      */
-    readonly relationType: RelationType;
+    readonly relationType: RelationType
 
     /**
      * Type of the relation. This type is in function because of language specifics and problems with recursive
      * referenced classes.
      */
-    readonly type: RelationTypeInFunction;
+    readonly type: RelationTypeInFunction
 
     /**
      * Inverse side of the relation.
      */
-    readonly inverseSideProperty?: PropertyTypeFactory<any>;
+    readonly inverseSideProperty?: PropertyTypeFactory<any>
 
     /**
      * Additional relation options.
      */
-    readonly options: RelationOptions;
+    readonly options: RelationOptions
 
     /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
      */
-    readonly isTreeParent?: boolean;
+    readonly isTreeParent?: boolean
 
     /**
      * Indicates if this is a children (can be only one-to-many relation) relation in the tree tables.
      */
-    readonly isTreeChildren?: boolean;
-
+    readonly isTreeChildren?: boolean
 }

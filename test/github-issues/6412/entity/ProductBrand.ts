@@ -1,27 +1,34 @@
-import {BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "../../../../src";
+import {
+    BaseEntity,
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+} from "../../../../src"
 
 @Entity()
 export class ProductBrand extends BaseEntity {
     @PrimaryGeneratedColumn()
-    public id: number;
+    public id: number
 
     @Column()
-    public name: string;
+    public name: string
 
     @CreateDateColumn({
-        name: 'created_at',
-        type: 'datetime',
+        name: "created_at",
+        type: "datetime",
         precision: null,
-        default: () => 'CURRENT_TIMESTAMP',
+        default: () => "CURRENT_TIMESTAMP",
     })
-    public createdAt: Date;
+    public createdAt: Date
 
     @UpdateDateColumn({
-        name: 'updated_at',
-        type: 'datetime',
+        name: "updated_at",
+        type: "datetime",
         precision: null,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP',
+        default: () => "CURRENT_TIMESTAMP",
+        onUpdate: "CURRENT_TIMESTAMP",
     })
-    public updatedAt: Date;
+    public updatedAt: Date
 }

@@ -1,18 +1,18 @@
-import { Entity, Column, PrimaryGeneratedColumn } from "../../../../src/index";
+import { Entity, Column, PrimaryGeneratedColumn } from "../../../../src/index"
 
 export class EmbeddedItem {
     @Column({ type: "integer", array: true })
-    arrayInsideEmbedded: number[];
+    arrayInsideEmbedded: number[]
 }
 
 @Entity()
 export class Item {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    someText: string;
+    someText: string
 
-    @Column(type => EmbeddedItem)
-    embedded: EmbeddedItem;
+    @Column((type) => EmbeddedItem)
+    embedded: EmbeddedItem
 }

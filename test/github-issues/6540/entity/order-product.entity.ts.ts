@@ -1,5 +1,10 @@
-import {BaseEntity, Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {OrderStatus} from "./order.entity.ts";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { OrderStatus } from "./order.entity.ts"
 
 @Entity()
 export class OrderProduct extends BaseEntity {

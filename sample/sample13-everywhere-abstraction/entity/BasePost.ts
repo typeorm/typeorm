@@ -1,14 +1,12 @@
-import {Column, PrimaryGeneratedColumn} from "../../../src/index";
+import { Column, PrimaryGeneratedColumn } from "../../../src/index"
 
 export class BasePost {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    title2312312: string;
-
+    title2312312: string
 }

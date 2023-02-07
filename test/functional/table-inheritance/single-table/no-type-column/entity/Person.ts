@@ -1,16 +1,14 @@
-import * as TypeOrm from "../../../../../../src";
-import {Note} from "./Note";
+import * as TypeOrm from "../../../../../../src"
+import { Note } from "./Note"
 
-@TypeOrm.Entity({name: "person"})
+@TypeOrm.Entity({ name: "person" })
 export class Person {
-
     @TypeOrm.PrimaryGeneratedColumn()
-    public id: number;
+    public id: number
 
     @TypeOrm.Column()
-    public name: string;
+    public name: string
 
-    @TypeOrm.OneToMany(() => Note, note => note.owner)
-    public notes: Note[];
-
+    @TypeOrm.OneToMany(() => Note, (note) => note.owner)
+    public notes: Note[]
 }

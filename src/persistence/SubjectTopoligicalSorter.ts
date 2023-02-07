@@ -1,13 +1,12 @@
-import {Subject} from "./Subject";
-import {EntityMetadata} from "../metadata/EntityMetadata";
-import { TypeORMError } from "../error";
+import { Subject } from "./Subject"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { TypeORMError } from "../error"
 
 /**
  * Orders insert or remove subjects in proper order (using topological sorting)
  * to make sure insert or remove operations are executed in a proper order.
  */
 export class SubjectTopoligicalSorter {
-
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -15,20 +14,20 @@ export class SubjectTopoligicalSorter {
     /**
      * Insert subjects needs to be sorted.
      */
-    subjects: Subject[];
+    subjects: Subject[]
 
     /**
      * Unique list of entity metadatas of this subject.
      */
-    metadatas: EntityMetadata[];
+    metadatas: EntityMetadata[]
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     constructor(subjects: Subject[]) {
-        this.subjects = [...subjects]; // copy subjects to prevent changing of sent array
-        this.metadatas = this.getUniqueMetadatas(this.subjects);
+        this.subjects = [...subjects] // copy subjects to prevent changing of sent array
+        this.metadatas = this.getUniqueMetadatas(this.subjects)
     }
 
     // -------------------------------------------------------------------------
@@ -38,53 +37,64 @@ export class SubjectTopoligicalSorter {
     /**
      * Sorts (orders) subjects in their topological order.
      */
-    sort(direction: "insert"|"delete"): Subject[] {
-
+    sort(direction: "insert" | "delete"): Subject[] {
         // if there are no metadatas it probably mean there is no subjects... we don't have to do anything here
-        if (!this.metadatas.length)
-            return this.subjects;
+        if (!this.metadatas.length) return this.subjects
 
-        const sortedSubjects: Subject[] = [];
+        const sortedSubjects: Subject[] = []
 
         // first if we sort for deletion all junction subjects
         // junction subjects are subjects without entity and database entity set
         if (direction === "delete") {
-            const junctionSubjects = this.subjects.filter(subject => !subject.entity && !subject.databaseEntity);
-            sortedSubjects.push(...junctionSubjects);
-            this.removeAlreadySorted(junctionSubjects);
+            const junctionSubjects = this.subjects.filter(
+                (subject) => !subject.entity && !subject.databaseEntity,
+            )
+            sortedSubjects.push(...junctionSubjects)
+            this.removeAlreadySorted(junctionSubjects)
         }
 
         // next we always insert entities with non-nullable relations, sort them first
-        const nonNullableDependencies = this.getNonNullableDependencies();
-        let sortedNonNullableEntityTargets = this.toposort(nonNullableDependencies);
+        const nonNullableDependencies = this.getNonNullableDependencies()
+        let sortedNonNullableEntityTargets = this.toposort(
+            nonNullableDependencies,
+        )
         if (direction === "insert")
-            sortedNonNullableEntityTargets = sortedNonNullableEntityTargets.reverse();
+            sortedNonNullableEntityTargets =
+                sortedNonNullableEntityTargets.reverse()
 
         // so we have a sorted entity targets
         // go thought each of them and find all subjects with sorted entity target
         // add those sorted targets and remove them from original array of targets
-        sortedNonNullableEntityTargets.forEach(sortedEntityTarget => {
-            const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
-            sortedSubjects.push(...entityTargetSubjects);
-            this.removeAlreadySorted(entityTargetSubjects);
-        });
+        sortedNonNullableEntityTargets.forEach((sortedEntityTarget) => {
+            const entityTargetSubjects = this.subjects.filter(
+                (subject) =>
+                    subject.metadata.targetName === sortedEntityTarget ||
+                    subject.metadata.inheritanceTree.some(
+                        (s) => s.name === sortedEntityTarget,
+                    ),
+            )
+            sortedSubjects.push(...entityTargetSubjects)
+            this.removeAlreadySorted(entityTargetSubjects)
+        })
 
         // next sort all other entities
         // same process as in above but with other entities
-        const otherDependencies: string[][] = this.getDependencies();
-        let sortedOtherEntityTargets = this.toposort(otherDependencies);
+        const otherDependencies: string[][] = this.getDependencies()
+        let sortedOtherEntityTargets = this.toposort(otherDependencies)
         if (direction === "insert")
-            sortedOtherEntityTargets = sortedOtherEntityTargets.reverse();
+            sortedOtherEntityTargets = sortedOtherEntityTargets.reverse()
 
-        sortedOtherEntityTargets.forEach(sortedEntityTarget => {
-            const entityTargetSubjects = this.subjects.filter(subject => subject.metadata.targetName === sortedEntityTarget);
-            sortedSubjects.push(...entityTargetSubjects);
-            this.removeAlreadySorted(entityTargetSubjects);
-        });
+        sortedOtherEntityTargets.forEach((sortedEntityTarget) => {
+            const entityTargetSubjects = this.subjects.filter(
+                (subject) => subject.metadata.targetName === sortedEntityTarget,
+            )
+            sortedSubjects.push(...entityTargetSubjects)
+            this.removeAlreadySorted(entityTargetSubjects)
+        })
 
         // if we have something left in the subjects add them as well
-        sortedSubjects.push(...this.subjects);
-        return sortedSubjects;
+        sortedSubjects.push(...this.subjects)
+        return sortedSubjects
     }
 
     // -------------------------------------------------------------------------
@@ -95,21 +105,21 @@ export class SubjectTopoligicalSorter {
      * Removes already sorted subjects from this.subjects list of subjects.
      */
     protected removeAlreadySorted(subjects: Subject[]) {
-        subjects.forEach(subject => {
-            this.subjects.splice(this.subjects.indexOf(subject), 1);
-        });
+        subjects.forEach((subject) => {
+            this.subjects.splice(this.subjects.indexOf(subject), 1)
+        })
     }
 
     /**
      * Extracts all unique metadatas from the given subjects.
      */
     protected getUniqueMetadatas(subjects: Subject[]) {
-        const metadatas: EntityMetadata[] = [];
-        subjects.forEach(subject => {
+        const metadatas: EntityMetadata[] = []
+        subjects.forEach((subject) => {
             if (metadatas.indexOf(subject.metadata) === -1)
-                metadatas.push(subject.metadata);
-        });
-        return metadatas;
+                metadatas.push(subject.metadata)
+        })
+        return metadatas
     }
 
     /**
@@ -118,14 +128,16 @@ export class SubjectTopoligicalSorter {
      */
     protected getNonNullableDependencies(): string[][] {
         return this.metadatas.reduce((dependencies, metadata) => {
-            metadata.relationsWithJoinColumns.forEach(relation => {
-                if (relation.isNullable)
-                    return;
+            metadata.relationsWithJoinColumns.forEach((relation) => {
+                if (relation.isNullable) return
 
-                dependencies.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
-            });
-            return dependencies;
-        }, [] as string[][]);
+                dependencies.push([
+                    metadata.targetName,
+                    relation.inverseEntityMetadata.targetName,
+                ])
+            })
+            return dependencies
+        }, [] as string[][])
     }
 
     /**
@@ -134,16 +146,17 @@ export class SubjectTopoligicalSorter {
      */
     protected getDependencies(): string[][] {
         return this.metadatas.reduce((dependencies, metadata) => {
-            metadata.relationsWithJoinColumns.forEach(relation => {
-
+            metadata.relationsWithJoinColumns.forEach((relation) => {
                 // if relation is self-referenced we skip it
-                if (relation.inverseEntityMetadata === metadata)
-                    return;
+                if (relation.inverseEntityMetadata === metadata) return
 
-                dependencies.push([metadata.targetName, relation.inverseEntityMetadata.targetName]);
-            });
-            return dependencies;
-        }, [] as string[][]);
+                dependencies.push([
+                    metadata.targetName,
+                    relation.inverseEntityMetadata.targetName,
+                ])
+            })
+            return dependencies
+        }, [] as string[][])
     }
 
     /**
@@ -152,55 +165,58 @@ export class SubjectTopoligicalSorter {
      * Algorithm is kindly taken from https://github.com/marcelklehr/toposort repository.
      */
     protected toposort(edges: any[][]) {
-
         function uniqueNodes(arr: any[]) {
-            let res = [];
+            let res = []
             for (let i = 0, len = arr.length; i < len; i++) {
-                let edge: any = arr[i];
-                if (res.indexOf(edge[0]) < 0) res.push(edge[0]);
-                if (res.indexOf(edge[1]) < 0) res.push(edge[1]);
+                let edge: any = arr[i]
+                if (res.indexOf(edge[0]) < 0) res.push(edge[0])
+                if (res.indexOf(edge[1]) < 0) res.push(edge[1])
             }
-            return res;
+            return res
         }
 
-        const nodes = uniqueNodes(edges);
-        let cursor = nodes.length
-            , sorted = new Array(cursor)
-            , visited: any = {}
-            , i = cursor;
+        const nodes = uniqueNodes(edges)
+        let cursor = nodes.length,
+            sorted = new Array(cursor),
+            visited: any = {},
+            i = cursor
 
         while (i--) {
-            if (!visited[i]) visit(nodes[i], i, []);
+            if (!visited[i]) visit(nodes[i], i, [])
         }
 
         function visit(node: any, i: number, predecessors: any[]) {
             if (predecessors.indexOf(node) >= 0) {
-                throw new TypeORMError("Cyclic dependency: " + JSON.stringify(node)); // todo: better error
+                throw new TypeORMError(
+                    "Cyclic dependency: " + JSON.stringify(node),
+                ) // todo: better error
             }
 
             if (!~nodes.indexOf(node)) {
-                throw new TypeORMError("Found unknown node. Make sure to provided all involved nodes. Unknown node: " + JSON.stringify(node));
+                throw new TypeORMError(
+                    "Found unknown node. Make sure to provided all involved nodes. Unknown node: " +
+                        JSON.stringify(node),
+                )
             }
 
-            if (visited[i]) return;
-            visited[i] = true;
+            if (visited[i]) return
+            visited[i] = true
 
             // outgoing edges
-            let outgoing = edges.filter(function(edge) {
-                return edge[0] === node;
-            });
-            if (i = outgoing.length) {
-                let preds = predecessors.concat(node);
+            let outgoing = edges.filter(function (edge) {
+                return edge[0] === node
+            })
+            if ((i = outgoing.length)) {
+                let preds = predecessors.concat(node)
                 do {
-                    let child = outgoing[--i][1];
-                    visit(child, nodes.indexOf(child), preds);
-                } while (i);
+                    let child = outgoing[--i][1]
+                    visit(child, nodes.indexOf(child), preds)
+                } while (i)
             }
 
-            sorted[--cursor] = node;
+            sorted[--cursor] = node
         }
 
-        return sorted;
+        return sorted
     }
-
 }

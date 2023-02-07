@@ -1,20 +1,18 @@
-import {RedisQueryResultCache} from "./RedisQueryResultCache";
-import {DbQueryResultCache} from "./DbQueryResultCache";
-import {QueryResultCache} from "./QueryResultCache";
-import {Connection} from "../connection/Connection";
-import { TypeORMError } from "../error/TypeORMError";
+import { RedisQueryResultCache } from "./RedisQueryResultCache"
+import { DbQueryResultCache } from "./DbQueryResultCache"
+import { QueryResultCache } from "./QueryResultCache"
+import { DataSource } from "../data-source/DataSource"
+import { TypeORMError } from "../error/TypeORMError"
 
 /**
  * Caches query result into Redis database.
  */
 export class QueryResultCacheFactory {
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
-    }
+    constructor(protected connection: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -25,19 +23,24 @@ export class QueryResultCacheFactory {
      */
     create(): QueryResultCache {
         if (!this.connection.options.cache)
-            throw new TypeORMError(`To use cache you need to enable it in connection options by setting cache: true or providing some caching options. Example: { host: ..., username: ..., cache: true }`);
+            throw new TypeORMError(
+                `To use cache you need to enable it in connection options by setting cache: true or providing some caching options. Example: { host: ..., username: ..., cache: true }`,
+            )
 
-        const cache: any = this.connection.options.cache;
+        const cache: any = this.connection.options.cache
 
         if (cache.provider && typeof cache.provider === "function") {
-            return cache.provider(this.connection);
+            return cache.provider(this.connection)
         }
 
-        if (cache.type === "redis" || cache.type === "ioredis" || cache.type === "ioredis/cluster") {
-            return new RedisQueryResultCache(this.connection, cache.type);
+        if (
+            cache.type === "redis" ||
+            cache.type === "ioredis" ||
+            cache.type === "ioredis/cluster"
+        ) {
+            return new RedisQueryResultCache(this.connection, cache.type)
         } else {
-            return new DbQueryResultCache(this.connection);
+            return new DbQueryResultCache(this.connection)
         }
     }
-
 }

@@ -5,91 +5,91 @@ import {
     PrimaryGeneratedColumn,
     Tree,
     TreeChildren,
-    TreeParent
-} from "../../../../src";
+    TreeParent,
+} from "../../../../src"
 
 @Entity()
 @Tree("closure-table")
 export class SingleIdClosure {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SingleIdClosure[];
+    children: SingleIdClosure[]
 
     @TreeParent({ onDelete: "CASCADE" })
-    parent: SingleIdClosure | null;
+    parent: SingleIdClosure | null
 }
 
 @Entity()
 @Tree("nested-set")
 export class SingleIdNested {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SingleIdNested[];
+    children: SingleIdNested[]
 
     @TreeParent({ onDelete: "CASCADE" })
-    parent: SingleIdNested | null;
+    parent: SingleIdNested | null
 }
 
 @Entity()
 @Tree("materialized-path")
 export class SingleIdMaterialized {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: SingleIdMaterialized[];
+    children: SingleIdMaterialized[]
 
     @TreeParent({ onDelete: "CASCADE" })
-    parent: SingleIdMaterialized | null;
+    parent: SingleIdMaterialized | null
 }
 
 @Entity()
 @Tree("nested-set")
 export class MultiIdNested {
     @PrimaryColumn()
-    column: string;
+    column: string
 
     @PrimaryColumn()
-    row: number;
+    row: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: MultiIdNested[];
+    children: MultiIdNested[]
 
     @TreeParent({ onDelete: "CASCADE" })
-    parent: MultiIdNested | null;
+    parent: MultiIdNested | null
 }
 
 @Entity()
 @Tree("materialized-path")
 export class MultiIdMaterialized {
     @PrimaryColumn()
-    column: string;
+    column: string
 
     @PrimaryColumn()
-    row: number;
+    row: number
 
     @Column({ nullable: true })
-    name: string;
+    name: string
 
     @TreeChildren()
-    children: MultiIdMaterialized[];
+    children: MultiIdMaterialized[]
 
     @TreeParent({ onDelete: "CASCADE" })
-    parent: MultiIdMaterialized | null;
+    parent: MultiIdMaterialized | null
 }

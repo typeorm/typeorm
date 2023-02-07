@@ -1,13 +1,13 @@
-import { Column, Entity, PrimaryColumn } from "../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class Test {
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({
-        type: 'jsonb',
-        default: {"z": 1, "a": 2},
+        type: "jsonb",
+        default: { z: 1, a: 2 },
     })
-    myjsoncolumn: string;
+    myjsoncolumn: string
 }

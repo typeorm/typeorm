@@ -1,12 +1,10 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "timestamp", nullable: true })
-    createdAt: Date;
-
+    createdAt: Date
 }

@@ -1,22 +1,20 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {AfterLoad, BeforeInsert} from "../../../../../../src";
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { AfterLoad, BeforeInsert } from "../../../../../../src"
 
 export class Information {
+    @Column()
+    description?: string
 
     @Column()
-    description?: string;
-
-    @Column()
-    comments?: number;
+    comments?: number
 
     @BeforeInsert()
     beforeInsert() {
-        this.description = "description afterLoad";
+        this.description = "description afterLoad"
     }
 
     @AfterLoad()
     afterLoad() {
-        this.comments = 1;
+        this.comments = 1
     }
-
 }

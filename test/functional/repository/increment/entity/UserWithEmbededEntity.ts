@@ -1,22 +1,21 @@
-import { Column, Entity, PrimaryColumn } from "../../../../../src";
+import { Column, Entity, PrimaryColumn } from "../../../../../src"
 
 class FriendStats {
     @Column({ default: 0 })
-    count: number;
+    count: number
 
     @Column({ default: 0 })
-    sent: number;
+    sent: number
 
     @Column({ default: 0 })
-    received: number;
+    received: number
 }
 
 @Entity()
 export class UserWithEmbededEntity {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
-    @Column(type => FriendStats)
-    friend: FriendStats;
+    @Column((type) => FriendStats)
+    friend: FriendStats
 }

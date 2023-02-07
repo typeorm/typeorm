@@ -1,16 +1,15 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
 
-@Entity({name: "POST"})
+@Entity({ name: "POST" })
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({ nullable: true })
-    title?: string;
+    title?: string
 
-    @Column({name: "named_column", nullable: true})
-    namedColumn?: string;
+    @Column({ name: "named_column", nullable: true })
+    namedColumn?: string
 }

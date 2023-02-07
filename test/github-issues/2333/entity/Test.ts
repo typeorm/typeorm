@@ -1,12 +1,10 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity("test")
 export class Test {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "datetime", nullable: true, default: null })
-    publish_date: Date;
-
+    publish_date: Date
 }

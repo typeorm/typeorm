@@ -1,7 +1,8 @@
 /**
  * List of types that FindOperator can be.
  */
-export type FindOperatorType = "not"
+export type FindOperatorType =
+    | "not"
     | "lessThan"
     | "lessThanOrEqual"
     | "moreThan"
@@ -13,4 +14,9 @@ export type FindOperatorType = "not"
     | "isNull"
     | "ilike"
     | "like"
-    | "raw";
+    | "raw"
+    | "arrayContains"
+    | "arrayContainedBy"
+    | "arrayOverlap"
+    | "and"
+    | "jsonContains"

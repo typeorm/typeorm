@@ -1,27 +1,25 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
-import {Category} from "./Category";
-import {Subcounters} from "./Subcounters";
+import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { ManyToMany } from "../../../../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../../../../src/decorator/relations/JoinTable"
+import { Category } from "./Category"
+import { Subcounters } from "./Subcounters"
 
 export class Counters {
+    @Column()
+    likes: number
 
     @Column()
-    likes: number;
+    comments: number
 
     @Column()
-    comments: number;
+    favorites: number
 
-    @Column()
-    favorites: number;
-
-    @ManyToMany(type => Category, category => category.posts)
+    @ManyToMany((type) => Category, (category) => category.posts)
     @JoinTable({ name: "counter_categories" })
-    categories: Category[];
+    categories: Category[]
 
     @Column(() => Subcounters, { prefix: "subcnt" })
-    subcounters: Subcounters;
+    subcounters: Subcounters
 
-    categoryIds: number[];
-
+    categoryIds: number[]
 }

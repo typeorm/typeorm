@@ -1,12 +1,10 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
 
 @Entity("sample19_post_metadata")
 export class PostMetadata {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("text")
-    comment: string;
-
+    comment: string
 }

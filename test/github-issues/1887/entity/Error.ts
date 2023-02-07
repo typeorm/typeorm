@@ -1,22 +1,20 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Entity, PrimaryGeneratedColumn } from "../../../../src"
+import { Column } from "../../../../src/decorator/columns/Column"
 
 @Entity("Error")
 export class Error {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("uniqueidentifier", { nullable: false })
-    executionGuid: string;
+    executionGuid: string
 
     @Column()
-    errorNumber: number;
+    errorNumber: number
 
     @Column()
-    errorDescription: string;
+    errorDescription: string
 
     @Column()
-    errorDate: Date;
-    
+    errorDate: Date
 }

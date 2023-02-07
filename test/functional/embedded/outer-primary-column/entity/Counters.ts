@@ -1,18 +1,16 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
 
 export class Counters {
-
     @PrimaryColumn()
-    code: number;
+    code: number
 
     @Column()
-    likes: number;
+    likes: number
 
     @Column()
-    comments: number;
+    comments: number
 
     @Column()
-    favorites: number;
-
+    favorites: number
 }

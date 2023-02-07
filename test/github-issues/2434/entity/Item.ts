@@ -1,18 +1,18 @@
-import { CreateDateColumn, Column } from "../../../../src";
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import { Entity } from "../../../../src/decorator/entity/Entity";
+import { CreateDateColumn, Column } from "../../../../src"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "../../../../src/decorator/entity/Entity"
 
 @Entity("ITEM")
 export class Item {
     @PrimaryGeneratedColumn("uuid")
-    id: number;
+    id: number
 
     @CreateDateColumn()
-    date: Date;
+    date: Date
 
     @Column()
-    itemName: string;
+    itemName: string
 
-    @Column({nullable: true})
-    itemDescription?: string;
+    @Column({ nullable: true })
+    itemDescription?: string
 }

@@ -1,16 +1,19 @@
-import { Post } from "./Post";
-import { Entity, ManyToMany, Column, PrimaryGeneratedColumn } from "../../../../../src";
+import { Post } from "./Post"
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../../src"
 
 @Entity()
 export class Tag {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @ManyToMany(() => Post, (post) => post.tags)
     posts: Post[]
-
 }

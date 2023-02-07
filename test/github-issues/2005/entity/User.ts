@@ -1,18 +1,16 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
         type: "tinyint",
         transformer: {
-            from: val => !!val,
-            to: val => val,
+            from: (val) => !!val,
+            to: (val) => val,
         },
     })
-    activated: boolean;
-
+    activated: boolean
 }

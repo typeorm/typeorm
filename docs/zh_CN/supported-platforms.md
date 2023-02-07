@@ -43,7 +43,7 @@ createConnection({
 
 **不要忘记引入 reflect-metadata**
 
-在主 html 页面中，你需要引入 refllect-metadata：
+在主 html 页面中，你需要引入 reflect-metadata：
 
 ```html
 <script src="./node_modules/reflect-metadata/Reflect.js"></script>

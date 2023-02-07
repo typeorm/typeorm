@@ -1,23 +1,33 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions";
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * Sqlite-specific connection options.
  */
-export interface CapacitorConnectionOptions extends BaseConnectionOptions {
+export interface CapacitorConnectionOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
-    readonly type: "capacitor";
-
-    /**
-     * Database name (capacitor-sqlite will add the suffix `SQLite.db`)
-     */
-    readonly database: string;
+    readonly type: "capacitor"
 
     /**
      * The capacitor-sqlite instance. For example, `new SQLiteConnection(CapacitorSQLite)`.
      */
-    readonly driver: any;
+    readonly driver: any
+
+    /**
+     * Database name (capacitor-sqlite will add the suffix `SQLite.db`)
+     */
+    readonly database: string
+
+    /**
+     * Set the mode for database encryption
+     */
+    readonly mode?: "no-encryption" | "encryption" | "secret" | "newsecret"
+
+    /**
+     * Database version
+     */
+    readonly version?: number
 
     /**
      * The SQLite journal mode (optional)
@@ -28,5 +38,7 @@ export interface CapacitorConnectionOptions extends BaseConnectionOptions {
         | "PERSIST"
         | "MEMORY"
         | "WAL"
-        | "OFF";
+        | "OFF"
+
+    readonly poolSize?: never
 }

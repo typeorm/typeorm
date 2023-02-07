@@ -192,7 +192,7 @@ const timber = await repository.findOne({ firstName: "Timber" });
 - `findOneOrFail` - - `findOneOrFail` - 查找匹配某些 ID 或查找选项的第一个实体。 如果没有匹配，则 Rejects 一个 promise。
 
 ```typescript
-const user = await repository.findOneOrFail(1);
+const user = await repository.findOneByOrFail({ id: 1 });
 const timber = await repository.findOneOrFail({ firstName: "Timber" });
 ```
 

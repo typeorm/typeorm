@@ -1,58 +1,55 @@
-import {createConnection} from "../globals";
-import {Connection} from "../connection/Connection";
-import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
-import * as yargs from "yargs";
-import chalk from "chalk";
+import { DataSource } from "../data-source/DataSource"
+import * as yargs from "yargs"
+import chalk from "chalk"
+import { PlatformTools } from "../platform/PlatformTools"
+import path from "path"
+import process from "process"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Synchronizes database schema with entities.
  */
 export class SchemaSyncCommand implements yargs.CommandModule {
-    command = "schema:sync";
-    describe = "Synchronizes your entities with database schema. It runs schema update queries on all connections you have. " +
-        "To run update queries on a concrete connection use -c option.";
+    command = "schema:sync"
+    describe =
+        "Synchronizes your entities with database schema. It runs schema update queries on all connections you have. " +
+        "To run update queries on a concrete connection use -c option."
 
     builder(args: yargs.Argv) {
-        return args
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe: "Name of the connection on which schema synchronization needs to to run."
-            })
-            .option("f", {
-                alias: "config",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration."
-            });
+        return args.option("dataSource", {
+            alias: "d",
+            describe:
+                "Path to the file where your DataSource instance is defined.",
+            demandOption: true,
+        })
     }
 
     async handler(args: yargs.Arguments) {
-
-        let connection: Connection|undefined = undefined;
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any
-            });
-            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
-            Object.assign(connectionOptions, {
+            dataSource = await CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
+            )
+            dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["query", "schema"]
-            });
-            connection = await createConnection(connectionOptions);
-            await connection.synchronize();
-            await connection.close();
+                logging: ["query", "schema"],
+            })
+            await dataSource.initialize()
+            await dataSource.synchronize()
+            await dataSource.destroy()
 
-            console.log(chalk.green("Schema syncronization finished successfully."));
-
+            console.log(
+                chalk.green("Schema synchronization finished successfully."),
+            )
         } catch (err) {
-            if (connection) await (connection as Connection).close();
+            PlatformTools.logCmdErr("Error during schema synchronization:", err)
 
-            console.log(chalk.black.bgRed("Error during schema synchronization:"));
-            console.error(err);
-            process.exit(1);
+            if (dataSource && dataSource.isInitialized)
+                await dataSource.destroy()
+
+            process.exit(1)
         }
     }
 }
