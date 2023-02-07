@@ -273,6 +273,30 @@ const count = await repository.count({
 const count = await repository.countBy({ firstName: "Timber" })
 ```
 
+-   `sum` - Returns the sum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const sum = await repository.sum("age", { firstName: "Timber" })
+```
+
+-   `average` - Returns the average of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const average = await repository.average("age", { firstName: "Timber" })
+```
+
+-   `minimum` - Returns the minimum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const minimum = await repository.minimum("age", { firstName: "Timber" })
+```
+
+-   `maximum` - Returns the maximum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const maximum = await repository.maximum("age", { firstName: "Timber" })
+```
+
 -   `find` - Finds entities that match given `FindOptions`.
 
 ```typescript
