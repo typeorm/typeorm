@@ -1,14 +1,17 @@
+import { TypeORMError } from "./TypeORMError"
+
 /**
  * Thrown if custom repository was not found.
  */
-export class CustomRepositoryNotFoundError extends Error {
-    name = "CustomRepositoryNotFoundError";
-
+export class CustomRepositoryNotFoundError extends TypeORMError {
     constructor(repository: any) {
-        super();
-        Object.setPrototypeOf(this, CustomRepositoryNotFoundError.prototype);
-        this.message = `Custom repository ${repository instanceof Function ? repository.name : repository.constructor.name } was not found. ` +
-            `Did you forgot to put @EntityRepository decorator on it?`;
+        super(
+            `Custom repository ${
+                typeof repository === "function"
+                    ? repository.name
+                    : repository.constructor.name
+            } was not found. ` +
+                `Did you forgot to put @EntityRepository decorator on it?`,
+        )
     }
-
 }

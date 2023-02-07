@@ -1,120 +1,124 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Column, Entity, PrimaryColumn } from "../../../../../../src"
+import { FruitEnum } from "../enum/FruitEnum"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     // -------------------------------------------------------------------------
     // Integer Types
     // -------------------------------------------------------------------------
 
     @Column("integer")
-    integer: number;
+    integer: number
 
     @Column("int")
-    int: number;
+    int: number
 
     @Column("int2")
-    int2: number;
+    int2: number
 
     @Column("int8")
-    int8: number;
+    int8: number
 
     @Column("tinyint")
-    tinyint: number;
+    tinyint: number
 
     @Column("smallint")
-    smallint: number;
+    smallint: number
 
     @Column("mediumint")
-    mediumint: number;
+    mediumint: number
 
     @Column("bigint")
-    bigint: number;
+    bigint: number
 
     @Column("unsigned big int")
-    unsignedBigInt: number;
+    unsignedBigInt: number
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("character")
-    character: string;
+    character: string
 
     @Column("varchar")
-    varchar: string;
+    varchar: string
 
     @Column("varying character")
-    varyingCharacter: string;
+    varyingCharacter: string
 
     @Column("nchar")
-    nchar: string;
+    nchar: string
 
     @Column("native character")
-    nativeCharacter: string;
+    nativeCharacter: string
 
     @Column("nvarchar")
-    nvarchar: string;
+    nvarchar: string
 
     @Column("text")
-    text: string;
+    text: string
 
     @Column("blob")
-    blob: Buffer;
+    blob: Buffer
 
     @Column("clob")
-    clob: string;
+    clob: string
 
     // -------------------------------------------------------------------------
     // Real Types
     // -------------------------------------------------------------------------
 
     @Column("real")
-    real: number;
+    real: number
 
     @Column("double")
-    double: number;
+    double: number
 
     @Column("double precision")
-    doublePrecision: number;
+    doublePrecision: number
 
     @Column("float")
-    float: number;
+    float: number
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("numeric")
-    numeric: number;
+    numeric: number
 
     @Column("decimal")
-    decimal: number;
+    decimal: number
 
     @Column("boolean")
-    boolean: boolean;
+    boolean: boolean
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("datetime")
-    datetime: Date;
+    datetime: Date
 
     // -------------------------------------------------------------------------
     // TypeOrm Specific Types
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
-    simpleArray: string[];
+    simpleArray: string[]
 
     @Column("simple-json")
-    simpleJson: { param: string };
+    simpleJson: { param: string }
+
+    @Column("simple-enum", { enum: ["A", "B", "C"] })
+    simpleEnum: string
+
+    @Column("simple-enum", { enum: FruitEnum })
+    simpleClassEnum1: FruitEnum
 }

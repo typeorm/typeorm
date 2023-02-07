@@ -40,7 +40,7 @@ export class Post {
 你需要使用以下 sql 查询（postgres dialect）创建新的迁移：
 
 ```sql
-ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name";
+ALTER TABLE "post" RENAME COLUMN "title" TO "name";
 ```
 
 运行此 sql 查询后，你的数据库架构就可以使用新的代码库了。
@@ -77,7 +77,7 @@ TypeORM 提供了一个可以编写此类 SQL 查询并在需要时运行它们�
 设置连接选项后，可以使用 CLI 创建新的迁移：
 
 ```
-typeorm migration:create -n PostRefactoring
+typeorm migration:create path-to-migrations-dir/migrationName
 ```
 
 要使用 CLI 命令，需要全局安装 typeorm（`npm i typeorm -g`）。
@@ -94,9 +94,9 @@ typeorm migration:create -n PostRefactoring
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {}
+  async up(queryRunner: QueryRunner): Promise<void> {}
 
-  async down(queryRunner: QueryRunner): Promise<any> {}
+  async down(queryRunner: QueryRunner): Promise<void> {}
 }
 ```
 
@@ -115,11 +115,11 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {
+  async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
   }
 
-  async down(queryRunner: QueryRunner): Promise<any> {
+  async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`); // 恢复"up"方法所做的事情
   }
 }
@@ -130,7 +130,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 迁移到生产后，可以使用 CLI 命令运行它们：
 
 ```
-typeorm migration:run
+typeorm migration:run -- -d path-to-datasource-config
 ```
 
 **`typeorm migration：create`和`typeorm migration：generate`将创建`.ts`文件。 `migration：run`和`migration：revert`命令仅适用于`.js`文件。 因此，在运行命令之前需要编译 typescript 文件。**或者你可以使用`ts-node`和`typeorm`来运行`.ts`迁移文件。
@@ -138,7 +138,7 @@ typeorm migration:run
 `ts-node`的示例：
 
 ```
-ts-node ./node_modules/typeorm/cli.js migration:run
+npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
 ```
 
 此命令将执行所有挂起的迁移，并按其时间戳排序的顺序运行它们。
@@ -148,7 +148,7 @@ ts-node ./node_modules/typeorm/cli.js migration:run
 如果由于某种原因你想要还原更改，则可以运行：
 
 ```
-typeorm migration:revert
+typeorm migration:revert -- -d path-to-datasource-config
 ```
 
 该命令将在最近执行的迁移中执行`down`。
@@ -171,11 +171,11 @@ typeorm migration:generate -n PostRefactoring
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {
+  async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
   }
 
-  async down(queryRunner: QueryRunner): Promise<any> {
+  async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`);
   }
 }
@@ -191,10 +191,10 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 例如:
 
 ```ts
-import { MigrationInterface, QueryRunner, Table } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableIndex, TableColumn, TableForeignKey } from "typeorm";
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
-  async up(queryRunner: QueryRunner): Promise<any> {
+  async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
         name: "question",
@@ -258,7 +258,7 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
     );
   }
 
-  async down(queryRunner: QueryRunner): Promise<any> {
+  async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable("question");
     const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
     await queryRunner.dropForeignKey("question", foreignKey);
@@ -507,7 +507,7 @@ dropColumn(table: Table|string, column: TableColumn|string): Promise<void>
 ---
 
 ```ts
-dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>
+dropColumns(table: Table|string, columns: TableColumn[]|string[]): Promise<void>
 ```
 
 - `table` - 表对象或名称

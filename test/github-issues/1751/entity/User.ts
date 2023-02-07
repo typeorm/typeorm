@@ -1,14 +1,13 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id = undefined;
+    id = undefined
 
     @Column("varchar")
-    email = "";
+    email = ""
 
     @Column("varchar")
-    avatarURL = "";
+    avatarURL = ""
 }

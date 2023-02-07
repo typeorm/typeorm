@@ -17,7 +17,10 @@ typeorm
     password: "admin",
     database: "test",
     synchronize: true,
-    entitySchemas: [require("./entity/Post"), require("./entity/Category")]
+    entities: [
+        require("./entity/Post"), 
+        require("./entity/Category")
+    ]
   })
   .then(function(connection) {
     var category1 = {
@@ -54,7 +57,9 @@ typeorm
 ##### entity/Category.js
 
 ```typescript
-module.exports = {
+var EntitySchema = require("typeorm").EntitySchema;
+
+module.exports = new EntitySchema({
   name: "Category",
   columns: {
     id: {
@@ -63,16 +68,18 @@ module.exports = {
       generated: true
     },
     name: {
-      type: "string"
+      type: "varchar"
     }
   }
-};
+});
 ```
 
 ##### entity/Post.js
 
 ```typescript
-module.exports = {
+var EntitySchema = require("typeorm").EntitySchema;
+
+module.exports = new EntitySchema({
   name: "Post",
   columns: {
     id: {
@@ -81,7 +88,7 @@ module.exports = {
       generated: true
     },
     title: {
-      type: "string"
+      type: "varchar"
     },
     text: {
       type: "text"
@@ -95,7 +102,7 @@ module.exports = {
       cascade: true
     }
   }
-};
+});
 ```
 
 您可以查看此示例[typeorm/javascript-example](https://github.com/typeorm/javascript-example)以了解更多信息。

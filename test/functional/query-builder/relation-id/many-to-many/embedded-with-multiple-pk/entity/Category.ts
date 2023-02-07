@@ -1,20 +1,18 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Post} from "./Post";
+import { Entity } from "../../../../../../../src/decorator/entity/Entity"
+import { ManyToMany } from "../../../../../../../src/decorator/relations/ManyToMany"
+import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
+import { Post } from "./Post"
 
 @Entity()
 export class Category {
+    @PrimaryColumn()
+    id: number
 
     @PrimaryColumn()
-    id: number;
+    name: string
 
-    @PrimaryColumn()
-    name: string;
+    @ManyToMany((type) => Post, (post) => post.counters.categories)
+    posts: Post[]
 
-    @ManyToMany(type => Post, post => post.counters.categories)
-    posts: Post[];
-
-    postIds: number[];
-
+    postIds: number[]
 }

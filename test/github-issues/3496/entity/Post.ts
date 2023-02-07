@@ -1,15 +1,15 @@
-import {Entity} from "../../../../src";
-import {PrimaryGeneratedColumn} from "../../../../src";
-import {Column, VersionColumn} from "../../../../src";
+import { Entity } from "../../../../src"
+import { PrimaryGeneratedColumn } from "../../../../src"
+import { Column, VersionColumn } from "../../../../src"
 
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @VersionColumn()
-    version: number;
+    version: number
 
     @Column({ type: "jsonb" })
-    problems: object;
+    problems: object
 }

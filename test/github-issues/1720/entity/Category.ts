@@ -1,19 +1,22 @@
-import {AfterLoad, Column, Entity, PrimaryGeneratedColumn} from "../../../../src";
+import {
+    AfterLoad,
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
 
 @Entity()
 export class Category {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    loaded: boolean = false;
+    loaded: boolean = false
 
     @AfterLoad()
     printMessage() {
-        this.loaded = true;
+        this.loaded = true
     }
-
 }

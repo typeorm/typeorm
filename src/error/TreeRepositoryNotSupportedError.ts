@@ -1,12 +1,10 @@
-import {Driver} from "../driver/Driver";
+import { Driver } from "../driver/Driver"
+import { TypeORMError } from "./TypeORMError"
 
-export class TreeRepositoryNotSupportedError extends Error {
-    name = "TreeRepositoryNotSupportedError";
-
+export class TreeRepositoryNotSupportedError extends TypeORMError {
     constructor(driver: Driver) {
-        super();
-        Object.setPrototypeOf(this, TreeRepositoryNotSupportedError.prototype);
-        this.message = `Tree repositories are not supported in ${driver.options.type} driver.`;
+        super(
+            `Tree repositories are not supported in ${driver.options.type} driver.`,
+        )
     }
-
 }

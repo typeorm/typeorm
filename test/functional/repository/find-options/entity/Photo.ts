@@ -1,37 +1,35 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
+import { Entity } from "../../../../../src/decorator/entity/Entity"
 import {
-    PrimaryGeneratedColumn,
+    JoinTable,
     ManyToMany,
-    JoinTable
-} from "../../../../../src/index";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Category} from "./Category";
+    PrimaryGeneratedColumn,
+} from "../../../../../src/index"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { Category } from "./Category"
 
 @Entity()
 export class Photo {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
-        length: 500
+        length: 500,
     })
-    name: string;
+    name: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    filename: string;
+    filename: string
 
     @Column()
-    views: number;
+    views: number
 
     @Column()
-    isPublished: boolean;
+    isPublished: boolean
 
-    @ManyToMany(type => Category)
+    @ManyToMany((type) => Category)
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }

@@ -1,30 +1,28 @@
-import {Category} from "./Category";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../src/decorator/relations/JoinTable";
-import {Counters} from "./Counters";
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Category } from "./Category"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { ManyToMany } from "../../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../../src/decorator/relations/JoinTable"
+import { Counters } from "./Counters"
 
 @Entity()
 export class Post {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
-    title: string;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    description: string;
+    title: string
 
-    @Column(type => Counters)
-    counters: Counters;
+    @Column()
+    description: string
 
-    @ManyToMany(type => Category, category => category.posts, {
+    @Column((type) => Counters)
+    counters: Counters
+
+    @ManyToMany((type) => Category, (category) => category.posts, {
         cascade: ["update"],
     })
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }

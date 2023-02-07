@@ -278,10 +278,16 @@ find方法或select query builder执行的所有简单查询都使用随机的`s
 如果要在查询构建器创建的SELECT中显式使用master，可以使用以下代码：
 
 ```typescript
-const postsFromMaster = await connection.createQueryBuilder(Post, "post")
-    .setQueryRunner(connection.createQueryRunner("master"))
-    .getMany();
+const masterQueryRunner = connection.createQueryRunner("master");
+try {
+    const postsFromMaster = await connection.createQueryBuilder(Post, "post")
+        .setQueryRunner(masterQueryRunner)
+        .getMany();
+} finally {
+      await masterQueryRunner.release();
+}
 ```
+请注意，需要显式释放由`QueryRunner`创建的连接。
 
 mysql，postgres和sql server数据库都支持复制。
 

@@ -1,71 +1,90 @@
-import {createConnection} from "../index";
-import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
-import {Connection} from "../connection/Connection";
-import * as process from "process";
-import * as yargs from "yargs";
-const chalk = require("chalk");
+import path from "path"
+import * as process from "process"
+import * as yargs from "yargs"
+import { PlatformTools } from "../platform/PlatformTools"
+import { DataSource } from "../data-source"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Runs migration command.
  */
 export class MigrationRunCommand implements yargs.CommandModule {
-
-    command = "migration:run";
-    describe = "Runs all pending migrations.";
-    aliases = "migrations:run";
+    command = "migration:run"
+    describe = "Runs all pending migrations."
 
     builder(args: yargs.Argv) {
         return args
-            .option("connection", {
-                alias: "c",
-                default: "default",
-                describe: "Name of the connection on which run a query."
+            .option("dataSource", {
+                alias: "d",
+                describe:
+                    "Path to the file where your DataSource instance is defined.",
+                demandOption: true,
             })
             .option("transaction", {
                 alias: "t",
                 default: "default",
-                describe: "Indicates if transaction should be used or not for migration run. Enabled by default."
+                describe:
+                    "Indicates if transaction should be used or not for migration run. Enabled by default.",
             })
-            .option("config", {
+            .option("fake", {
                 alias: "f",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration."
-            });
+                type: "boolean",
+                default: false,
+                describe:
+                    "Fakes running the migrations if table schema has already been changed manually or externally " +
+                    "(e.g. through another project)",
+            })
     }
 
     async handler(args: yargs.Arguments) {
-        if (args._[0] === "migrations:run") {
-            console.log("'migrations:run' is deprecated, please use 'migration:run' instead");
-        }
-
-        let connection: Connection|undefined = undefined;
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
-            const connectionOptions = await connectionOptionsReader.get(args.connection);
-            Object.assign(connectionOptions, {
+            dataSource = await CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
+            )
+            dataSource.setOptions({
                 subscribers: [],
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["query", "error", "schema"]
-            });
-            connection = await createConnection(connectionOptions);
+                logging: ["query", "error", "schema"],
+            })
+            await dataSource.initialize()
 
             const options = {
-                transaction: args["t"] === "false" ? false : true
-            };
-            await connection.runMigrations(options);
-            await connection.close();
+                transaction:
+                    dataSource.options.migrationsTransactionMode ??
+                    ("all" as "all" | "none" | "each"),
+                fake: !!args.f,
+            }
+
+            switch (args.t) {
+                case "all":
+                    options.transaction = "all"
+                    break
+                case "none":
+                case "false":
+                    options.transaction = "none"
+                    break
+                case "each":
+                    options.transaction = "each"
+                    break
+                default:
+                // noop
+            }
+
+            await dataSource.runMigrations(options)
+            await dataSource.destroy()
+
             // exit process if no errors
-            process.exit(0);
-
+            process.exit(0)
         } catch (err) {
-            if (connection) await (connection as Connection).close();
+            PlatformTools.logCmdErr("Error during migration run:", err)
 
-            console.log(chalk.black.bgRed("Error during migration run:"));
-            console.error(err);
-            process.exit(1);
+            if (dataSource && dataSource.isInitialized)
+                await dataSource.destroy()
+
+            process.exit(1)
         }
     }
-
 }

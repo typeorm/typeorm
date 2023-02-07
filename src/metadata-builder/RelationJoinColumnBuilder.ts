@@ -1,10 +1,11 @@
-import {ColumnMetadata} from "../metadata/ColumnMetadata";
-import {UniqueMetadata} from "../metadata/UniqueMetadata";
-import {ForeignKeyMetadata} from "../metadata/ForeignKeyMetadata";
-import {RelationMetadata} from "../metadata/RelationMetadata";
-import {JoinColumnMetadataArgs} from "../metadata-args/JoinColumnMetadataArgs";
-import {Connection} from "../connection/Connection";
-import {OracleDriver} from "../driver/oracle/OracleDriver";
+import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { UniqueMetadata } from "../metadata/UniqueMetadata"
+import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
+import { DataSource } from "../data-source/DataSource"
+import { TypeORMError } from "../error"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -37,13 +38,11 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
  * and create join column metadata args for them.
  */
 export class RelationJoinColumnBuilder {
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: Connection) {
-    }
+    constructor(private connection: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -52,16 +51,32 @@ export class RelationJoinColumnBuilder {
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
      */
-    build(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): {
-      foreignKey: ForeignKeyMetadata|undefined,
-      uniqueConstraint: UniqueMetadata|undefined,
+    build(
+        joinColumns: JoinColumnMetadataArgs[],
+        relation: RelationMetadata,
+    ): {
+        foreignKey: ForeignKeyMetadata | undefined
+        columns: ColumnMetadata[]
+        uniqueConstraint: UniqueMetadata | undefined
     } {
-        const referencedColumns = this.collectReferencedColumns(joinColumns, relation);
-        if (!referencedColumns.length)
-            return { foreignKey: undefined, uniqueConstraint: undefined }; // this case is possible only for one-to-one non owning side
+        const referencedColumns = this.collectReferencedColumns(
+            joinColumns,
+            relation,
+        )
+        const columns = this.collectColumns(
+            joinColumns,
+            relation,
+            referencedColumns,
+        )
+        if (!referencedColumns.length || !relation.createForeignKeyConstraints)
+            return {
+                foreignKey: undefined,
+                columns,
+                uniqueConstraint: undefined,
+            } // this case is possible for one-to-one non owning side and relations with createForeignKeyConstraints = false
 
-        const columns = this.collectColumns(joinColumns, relation, referencedColumns);
         const foreignKey = new ForeignKeyMetadata({
+            name: joinColumns[0]?.foreignKeyConstraintName,
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
             namingStrategy: this.connection.namingStrategy,
@@ -69,26 +84,37 @@ export class RelationJoinColumnBuilder {
             referencedColumns: referencedColumns,
             onDelete: relation.onDelete,
             onUpdate: relation.onUpdate,
-        });
+            deferrable: relation.deferrable,
+        })
 
         // Oracle does not allow both primary and unique constraints on the same column
-        if (this.connection.driver instanceof OracleDriver && columns.every(column => column.isPrimary))
-            return { foreignKey, uniqueConstraint: undefined };
+        // Postgres can't take the unique und primary at once during create and primary key is unique anyway
+        if (
+            ["oracle", "postgres"].includes(
+                this.connection.driver.options.type,
+            ) &&
+            columns.every((column) => column.isPrimary)
+        )
+            return { foreignKey, columns, uniqueConstraint: undefined }
 
+        // CockroachDB requires UNIQUE constraints on referenced columns
         if (referencedColumns.length > 0 && relation.isOneToOne) {
             const uniqueConstraint = new UniqueMetadata({
                 entityMetadata: relation.entityMetadata,
                 columns: foreignKey.columns,
                 args: {
-                    name: this.connection.namingStrategy.relationConstraintName(relation.entityMetadata.tablePath, foreignKey.columns.map(c => c.databaseName)),
+                    name: this.connection.namingStrategy.relationConstraintName(
+                        relation.entityMetadata.tableName,
+                        foreignKey.columns.map((c) => c.databaseName),
+                    ),
                     target: relation.entityMetadata.target,
-                }
-            });
-            uniqueConstraint.build(this.connection.namingStrategy);
-            return {foreignKey, uniqueConstraint};
+                },
+            })
+            uniqueConstraint.build(this.connection.namingStrategy)
+            return { foreignKey, columns, uniqueConstraint }
         }
 
-        return { foreignKey, uniqueConstraint: undefined };
+        return { foreignKey, columns, uniqueConstraint: undefined }
     }
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -97,43 +123,80 @@ export class RelationJoinColumnBuilder {
     /**
      * Collects referenced columns from the given join column args.
      */
-    protected collectReferencedColumns(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata): ColumnMetadata[] {
-        const hasAnyReferencedColumnName = joinColumns.find(joinColumnArgs => !!joinColumnArgs.referencedColumnName);
-        const manyToOneWithoutJoinColumn = joinColumns.length === 0 && relation.isManyToOne;
-        const hasJoinColumnWithoutAnyReferencedColumnName = joinColumns.length > 0 && !hasAnyReferencedColumnName;
+    protected collectReferencedColumns(
+        joinColumns: JoinColumnMetadataArgs[],
+        relation: RelationMetadata,
+    ): ColumnMetadata[] {
+        const hasAnyReferencedColumnName = joinColumns.find(
+            (joinColumnArgs) => !!joinColumnArgs.referencedColumnName,
+        )
+        const manyToOneWithoutJoinColumn =
+            joinColumns.length === 0 && relation.isManyToOne
+        const hasJoinColumnWithoutAnyReferencedColumnName =
+            joinColumns.length > 0 && !hasAnyReferencedColumnName
 
-        if (manyToOneWithoutJoinColumn || hasJoinColumnWithoutAnyReferencedColumnName) { // covers case3 and case1
-            return relation.inverseEntityMetadata.primaryColumns;
-
-        } else { // cases with referenced columns defined
-            return joinColumns.map(joinColumn => {
-                const referencedColumn = relation.inverseEntityMetadata.ownColumns.find(column => column.propertyName === joinColumn.referencedColumnName); // todo: can we also search in relations?
+        if (
+            manyToOneWithoutJoinColumn ||
+            hasJoinColumnWithoutAnyReferencedColumnName
+        ) {
+            // covers case3 and case1
+            return relation.inverseEntityMetadata.primaryColumns
+        } else {
+            // cases with referenced columns defined
+            return joinColumns.map((joinColumn) => {
+                const referencedColumn =
+                    relation.inverseEntityMetadata.ownColumns.find(
+                        (column) =>
+                            column.propertyName ===
+                            joinColumn.referencedColumnName,
+                    ) // todo: can we also search in relations?
                 if (!referencedColumn)
-                    throw new Error(`Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`);
+                    throw new TypeORMError(
+                        `Referenced column ${joinColumn.referencedColumnName} was not found in entity ${relation.inverseEntityMetadata.name}`,
+                    )
 
-                return referencedColumn;
-            });
+                return referencedColumn
+            })
         }
     }
 
     /**
      * Collects columns from the given join column args.
      */
-    private collectColumns(joinColumns: JoinColumnMetadataArgs[], relation: RelationMetadata, referencedColumns: ColumnMetadata[]): ColumnMetadata[] {
-        return referencedColumns.map(referencedColumn => {
-
+    private collectColumns(
+        joinColumns: JoinColumnMetadataArgs[],
+        relation: RelationMetadata,
+        referencedColumns: ColumnMetadata[],
+    ): ColumnMetadata[] {
+        return referencedColumns.map((referencedColumn) => {
             // in the case if relation has join column with only name set we need this check
-            const joinColumnMetadataArg = joinColumns.find(joinColumn => {
-                return (!joinColumn.referencedColumnName || joinColumn.referencedColumnName === referencedColumn.propertyName) &&
-                    !!joinColumn.name;
-            });
-            const joinColumnName = joinColumnMetadataArg ? joinColumnMetadataArg.name : this.connection.namingStrategy.joinColumnName(relation.propertyName, referencedColumn.propertyName);
+            const joinColumnMetadataArg = joinColumns.find((joinColumn) => {
+                return (
+                    (!joinColumn.referencedColumnName ||
+                        joinColumn.referencedColumnName ===
+                            referencedColumn.propertyName) &&
+                    !!joinColumn.name
+                )
+            })
+            const joinColumnName = joinColumnMetadataArg
+                ? joinColumnMetadataArg.name
+                : this.connection.namingStrategy.joinColumnName(
+                      relation.propertyName,
+                      referencedColumn.propertyName,
+                  )
 
-            let relationalColumn = relation.entityMetadata.ownColumns.find(column => column.databaseName === joinColumnName);
+            const relationalColumns = relation.embeddedMetadata
+                ? relation.embeddedMetadata.columns
+                : relation.entityMetadata.ownColumns
+            let relationalColumn = relationalColumns.find(
+                (column) =>
+                    column.databaseNameWithoutPrefixes === joinColumnName,
+            )
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata: relation.entityMetadata,
+                    embeddedMetadata: relation.embeddedMetadata,
                     args: {
                         target: "",
                         mode: "virtual",
@@ -141,7 +204,18 @@ export class RelationJoinColumnBuilder {
                         options: {
                             name: joinColumnName,
                             type: referencedColumn.type,
-                            length: referencedColumn.length,
+                            length:
+                                !referencedColumn.length &&
+                                (DriverUtils.isMySQLFamily(
+                                    this.connection.driver,
+                                ) ||
+                                    this.connection.driver.options.type ===
+                                        "aurora-mysql") &&
+                                (referencedColumn.generationStrategy ===
+                                    "uuid" ||
+                                    referencedColumn.type === "uuid")
+                                    ? "36"
+                                    : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
                             width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
@@ -150,18 +224,20 @@ export class RelationJoinColumnBuilder {
                             zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
+                            enum: referencedColumn.enum,
+                            enumName: referencedColumn.enumName,
                             primary: relation.isPrimary,
-                            nullable: relation.isNullable
-                        }
-                    }
-                });
-                relation.entityMetadata.registerColumn(relationalColumn);
+                            nullable: relation.isNullable,
+                        },
+                    },
+                })
+                relation.entityMetadata.registerColumn(relationalColumn)
             }
-            relationalColumn.referencedColumn = referencedColumn; // its important to set it here because we need to set referenced column for user defined join column
-            relationalColumn.type = referencedColumn.type; // also since types of relational column and join column must be equal we override user defined column type
-            relationalColumn.relationMetadata = relation;
-            relationalColumn.build(this.connection);
-            return relationalColumn;
-        });
+            relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
+            relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
+            relationalColumn.relationMetadata = relation
+            relationalColumn.build(this.connection)
+            return relationalColumn
+        })
     }
 }

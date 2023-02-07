@@ -1,49 +1,56 @@
-import {Column, Entity, ManyToMany, PrimaryGeneratedColumn} from "../../../src/index";
-import {ManyToOne} from "../../../src/decorator/relations/ManyToOne";
-import {OneToMany} from "../../../src/decorator/relations/OneToMany";
-import {OneToOne} from "../../../src/decorator/relations/OneToOne";
-import {JoinColumn} from "../../../src/decorator/relations/JoinColumn";
-import {JoinTable} from "../../../src/decorator/relations/JoinTable";
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { ManyToOne } from "../../../src/decorator/relations/ManyToOne"
+import { OneToMany } from "../../../src/decorator/relations/OneToMany"
+import { OneToOne } from "../../../src/decorator/relations/OneToOne"
+import { JoinColumn } from "../../../src/decorator/relations/JoinColumn"
+import { JoinTable } from "../../../src/decorator/relations/JoinTable"
 
 @Entity("sample8_category")
 export class Category {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToOne(type => Category, category => category.oneInverseCategory, {
-        cascade: true
+    @OneToOne((type) => Category, (category) => category.oneInverseCategory, {
+        cascade: true,
     })
     @JoinColumn()
-    oneCategory: Category;
+    oneCategory: Category
 
-    @OneToOne(type => Category, category => category.oneCategory, {
-        cascade: true
+    @OneToOne((type) => Category, (category) => category.oneCategory, {
+        cascade: true,
     })
-    oneInverseCategory: Category;
+    oneInverseCategory: Category
 
-   @ManyToOne(type => Category, category => category.oneManyCategories, {
-       cascade: true
+    @ManyToOne((type) => Category, (category) => category.oneManyCategories, {
+        cascade: true,
     })
-    oneManyCategory: Category;
+    oneManyCategory: Category
 
-    @OneToMany(type => Category, category => category.oneManyCategory, {
-        cascade: true
+    @OneToMany((type) => Category, (category) => category.oneManyCategory, {
+        cascade: true,
     })
-    oneManyCategories: Category[] = [];
+    oneManyCategories: Category[]
 
-    @ManyToMany(type => Category, category => category.manyInverseCategories, {
-        cascade: true
-    })
+    @ManyToMany(
+        (type) => Category,
+        (category) => category.manyInverseCategories,
+        {
+            cascade: true,
+        },
+    )
     @JoinTable()
-    manyCategories: Category[] = [];
+    manyCategories: Category[]
 
-    @ManyToMany(type => Category, category => category.manyCategories, {
-        cascade: true
+    @ManyToMany((type) => Category, (category) => category.manyCategories, {
+        cascade: true,
     })
-    manyInverseCategories: Category[] = [];
-
+    manyInverseCategories: Category[]
 }

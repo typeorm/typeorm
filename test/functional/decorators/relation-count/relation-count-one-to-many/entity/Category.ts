@@ -1,34 +1,39 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
-import {OneToMany} from "../../../../../../src/decorator/relations/OneToMany";
-import {RelationCount} from "../../../../../../src/decorator/relations/RelationCount";
-import {Image} from "./Image";
-import {Post} from "./Post";
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { ManyToOne } from "../../../../../../src/decorator/relations/ManyToOne"
+import { OneToMany } from "../../../../../../src/decorator/relations/OneToMany"
+import { RelationCount } from "../../../../../../src/decorator/relations/RelationCount"
+import { Image } from "./Image"
+import { Post } from "./Post"
 
 @Entity()
 export class Category {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
-    name: string;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    isRemoved: boolean = false;
+    name: string
 
-    @ManyToOne(type => Post, post => post.categories)
-    post: Post;
+    @Column()
+    isRemoved: boolean = false
 
-    @OneToMany(type => Image, image => image.category)
-    images: Image[];
+    @ManyToOne((type) => Post, (post) => post.categories)
+    post: Post
+
+    @OneToMany((type) => Image, (image) => image.category)
+    images: Image[]
 
     @RelationCount((category: Category) => category.images)
-    imageCount: number;
+    imageCount: number
 
-    @RelationCount((category: Category) => category.images, "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
-    removedImageCount: number;
-
+    @RelationCount(
+        (category: Category) => category.images,
+        "removedImages",
+        (qb) =>
+            qb.andWhere("removedImages.isRemoved = :isRemoved", {
+                isRemoved: true,
+            }),
+    )
+    removedImageCount: number
 }

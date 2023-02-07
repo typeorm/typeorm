@@ -1,18 +1,16 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Duration} from "./Duration";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Duration } from "./Duration"
 
 @Entity()
 export class Race {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @Column(type => Duration)
-    duration: Duration;
-
+    @Column((type) => Duration)
+    duration: Duration
 }

@@ -1,13 +1,15 @@
-import {Entity, PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Entity, PrimaryGeneratedColumn } from "../../../../src"
+import { Column } from "../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @Column("timestamp", { precision: 3, default: () => "CURRENT_TIMESTAMP(3)", onUpdate: "CURRENT_TIMESTAMP(3)"})
-    updateAt: Date;
-
+    @Column("timestamp", {
+        precision: 3,
+        default: () => "CURRENT_TIMESTAMP(3)",
+        onUpdate: "CURRENT_TIMESTAMP(3)",
+    })
+    updateAt: Date
 }

@@ -1,28 +1,22 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Unique} from "../../../../src/decorator/Unique";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
-import {Index} from "../../../../src/decorator/Index";
+import { Column, Entity, PrimaryColumn, Unique, Index } from "../../../../src"
 
 @Entity()
 @Unique(["name"])
 @Index(["text"], { unique: true })
 export class Photo {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
     @Index({ unique: true })
-    tag: string;
+    tag: string
 
     @Column({ unique: true })
-    description: string;
+    description: string
 
     @Column()
-    text: string;
-
+    text: string
 }

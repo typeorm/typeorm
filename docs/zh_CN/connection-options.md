@@ -2,9 +2,10 @@
 
   - [什么是`ConnectionOptions`](#什么是`ConnectionOptions`)
   - [常用的连接选项](#常用的连接选项)
-  - [`mysql`/`mariadb`](#mysql--mariadb)
-  - [`postgres`](#postgres)
+  - [`mysql`/`mariadb`](#mysql/mariadb)
+  - [`postgres`/`cockroachdb`连接选项](#postgres/cockroachdb连接选项)
   - [`sqlite`](#sqlite)
+  - [`better-sqlite3`](#better-sqlite3)
   - [`cordova`](#cordova)
   - [`react-native`](#react-native)
   - [`nativescript`](#nativescript)
@@ -20,7 +21,7 @@
 
 ## 常用的连接选项
 
-- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
+- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite", "better-sqlite3"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
 
 - `name` - 连接名。 在使用 `getConnection(name: string)`
   或 `ConnectionManager.get(name: string)`时候需要用到。不同连接的连接名称不能相同，它们都必须是唯一的。如果没有给出连接名称，那么它将被设置为"default"。
@@ -31,7 +32,7 @@
 
 - `subscribers` - 要加载并用于此连接的订阅者。接受要加载的实体类和目录。目录支持 glob 模式。示例：`subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`。了解有关[subscribers](listeners-and-subscribers.md)的更多信息。
 
-- `entitySchemas` - 要加载并用于此连接的实体架构。接受要加载的实体模式类和目录。目录支持 glob 模式。示例：`entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json"`。了解有关[Entity Schemas](./schema-in-files.md)的更多信息。
+- `entitySchemas` - 要加载并用于此连接的实体架构。接受要加载的实体模式类和目录。目录支持 glob 模式。示例：`entitySchemas: [PostSchema, CategorySchema, "entity-schema/*.json"`。了解有关[Entity Schemas](./schema-entity-definition.md)的更多信息。
 
 - `migrations` - 要加载和用于此连接的迁移。接受要加载的迁移类和目录。目录支持 glob 模式。
   示例: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
@@ -98,11 +99,13 @@
 
 - `multipleStatements` - 每个查询允许多个 mysql 语句。请注意，它可能会增加 SQL 注入攻击的范围。 （默认值：`false`）
 
+- `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+
 - `flags` - 使用非默认连接标志的连接标志列表。也可以将默认值列入黑名单。有关更多信息，请查看[Connection Flags](https://github.com/mysqljs/mysql#connection-flags)。
 
 - `ssl` - 带有 ssl 参数的对象或包含 ssl 配置文件名称的字符串。请参阅[SSL 选项](https://github.com/mysqljs/mysql#ssl-options)。
 
-## `postgres`
+## `postgres`/`cockroachdb`连接选项
 
 - `url` - 连接 URL
 
@@ -120,9 +123,19 @@
 
 - `ssl` - 带有 ssl 参数的对象。 详见 [TLS/SSL](https://node-postgres.com/features/ssl)。
 
+- `uuidExtension` - 生成UUID时使用的Postgres扩展。 默认为`uuid-ossp`。 如果`uuid-ossp`扩展不可用，可以更改为`pgcrypto`。
+
 ## `sqlite`
 
 - `database` - 数据库路径。 例如 "./mydb.sql"
+
+## `better-sqlite3`
+
+* `database` - 数据库路径。 例如 "./mydb.sql"
+
+* `statementCacheSize` - Sqlite 查询 Statement 缓存大小。默认100
+
+* `prepareDatabase` - 在数据库投入使用前运行的函数。你可以在这里访问到better-sqlite3原始数据库对象。
 
 ## `cordova`
 
@@ -179,8 +192,6 @@
 
 - `pool.priorityRange` - 1和x之间的int值  - 如果设置了且没有可用资源，则borrowers可以在队列中指定其相对优先级(默认 `1`)。
 
-- `pool.autostart` - 布尔值，一旦调用构造函数，池应该开始创建资源等（默认为`true`）。
-
 - `pool.victionRunIntervalMillis` - 多久检查一次eviction checks。 默认值：`0`（不运行）。
 
 - `pool.numTestsPerRun` - 每次eviction checks资源数量。 默认值：`3`。
@@ -197,7 +208,7 @@
 
 - `options.packetSize` - TDS数据包的大小（需要与服务器协商）。 应该是2的幂。（默认值：`4096`）。
 
-- `options.useUTC` - 布尔值，用于确定是以UTC还是本地时间。(默认：`true`)。
+- `options.useUTC` - 布尔值，用于确定是以UTC还是本地时间。(默认：`false`)。
 
 - `options.abortTransactionOnError` - 如果在给定事务执行期间遇到任何错误，则确定是否自动回滚事务的布尔值。 这将在连接的初始SQL阶段设置`SET XACT_ABORT`的值（[文档](http://msdn.microsoft.com/en-us/library/ms188792.aspx))。
 
@@ -229,7 +240,7 @@
 
 - `options.readOnlyIntent` - 布尔值，确定连接是否将从SQL Server可用性组请求只读访问权限。 有关更多信息，请参阅此处。 （默认：`false`）。
 
-- `options.encrypt` - 确定连接是否将被加密的布尔值。 如果您使用的是Windows Azure，请设置为true。 （默认：`false`）。
+- `options.encrypt` - 确定连接是否将被加密的布尔值。 如果您使用的是Windows Azure，请设置为true。 （默认：`true`）。
 
 - `options.cryptoCredentialsDetails` - 使用加密时，可以提供一个对象，该对象在调用[tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)时将用于第一个参数（默认值：`{}`）。
 
@@ -370,15 +381,20 @@
 
 - `database`: 应导入的原始 UInt8Array 数据库。
 
+- `sqlJsConfig`: sql.js可选启动配置
+
 - `autoSave`: 是否应禁用 autoSave。如果设置为 true，则在发生更改并指定`location`时，数据库将保存到给定的文件位置（Node.js）或 LocalStorage（浏览器）。否则可以使用`autoSaveCallback`。
 
 - `autoSaveCallback`: 在对数据库进行更改并启用`autoSave`时调用的函数。该函数获取表示数据库的`UInt8Array`。
 
 - `location`: 要加载和保存数据库的文件位置。
 
+- `useLocalForage`: 允许使用localforage库(https://github.com/localForage/localForage)从indexedDB异步保存和加载数据库，而不是在浏览器环境中使用synchron本地存储方法。 需要将localforage模块添加到项目中，并且应在页面中导入localforage.js。
+
 ## `expo`
 
 - `database` - 数据库名， 例如 "mydb".
+- `driver` - Expo SQLite 模块. 例如，`require('expo-sqlite')`.
 
 ## 连接选项示例
 
@@ -404,11 +420,6 @@
     ],
     migrations: [
         "migration/*.js"
-    ],
-    cli: {
-        entitiesDir: "entity",
-        migrationsDir: "migration",
-        subscribersDir: "subscriber"
-    }
+    ]
 }
 ```

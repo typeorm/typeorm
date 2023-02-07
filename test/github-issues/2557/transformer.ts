@@ -1,18 +1,18 @@
 export class WrappedNumber {
-    constructor (private wrapped: number) {}
+    constructor(private wrapped: number) {}
 
     getWrapped(): number {
-        return this.wrapped;
+        return this.wrapped
     }
 }
 
 export const transformer = {
-    lastValue : undefined as any,
+    lastValue: undefined as any,
     from(val: number) {
-        return new WrappedNumber(val);
+        return new WrappedNumber(val)
     },
     to(w: WrappedNumber) {
-        transformer.lastValue = w;
-        return w.getWrapped();
-    }
-};
+        transformer.lastValue = w
+        return w.getWrapped()
+    },
+}

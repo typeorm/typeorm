@@ -1,0 +1,4 @@
+contact_links:
+  - name: 🤔 Questions, General Support, and Help
+    url: https://github.com/typeorm/typeorm/blob/master/docs/support.md
+    about: This issue tracker is not for support questions. Please refer to the TypeORM community support documentation.

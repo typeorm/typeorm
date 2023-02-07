@@ -1,19 +1,22 @@
-import {Column, Entity, OneToOne, PrimaryGeneratedColumn} from "../../../src/index";
-import {Image} from "./Image";
+import {
+    Column,
+    Entity,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Image } from "./Image"
 
 @Entity("sample10_image_details")
 export class ImageDetails {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    meta: string;
+    meta: string
 
     @Column()
-    comment: string;
+    comment: string
 
-    @OneToOne(type => Image, image => image.details)
-    image: Image;
-
+    @OneToOne((type) => Image, (image) => image.details)
+    image: Image
 }

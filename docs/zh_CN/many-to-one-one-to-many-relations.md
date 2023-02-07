@@ -16,7 +16,7 @@ export class Photo {
   @Column()
   url: string;
 
-  @ManyToOne(type => User, user => user.photos)
+  @ManyToOne(() => User, user => user.photos)
   user: User;
 }
 ```
@@ -33,14 +33,14 @@ export class User {
   @Column()
   name: string;
 
-  @OneToMany(type => Photo, photo => photo.user)
+  @OneToMany(() => Photo, photo => photo.user)
   photos: Photo[];
 }
 ```
 
-这里我们将`@ManyToOne`添加到`photos`属性中，并将目标关系类型指定为`Photo`。
-你也可以在`@ManyToOne` /`@OneToMany`关系中省略`@JoinColumn`。
-没有`@ManyToOne`，`@OneToMany`就不可能存在。
+这里我们将`@OneToMany`添加到`photos`属性中，并将目标关系类型指定为`Photo`。
+你可以在`@ManyToOne` / `@OneToMany`关系中省略`@JoinColumn`，除非你需要自定义关联列在数据库中的名称。
+`@ManyToOne`可以单独使用，但`@OneToMany`必须搭配`@ManyToOne`使用。
 如果你想使用`@OneToMany`，则需要`@ManyToOne`。
 在你设置`@ManyToOne`的地方，相关实体将有"关联 id"和外键。
 

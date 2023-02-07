@@ -24,7 +24,7 @@
 你可以在项目中设置 ts-node 以简化操作，如下所示：
 
 ```
-npm install -g ts-node
+npm install ts-node --save-dev
 ```
 
 在 package.json 中的 scripts 下添加 typeorm 命令
@@ -32,7 +32,7 @@ npm install -g ts-node
 ```
 "script" {
     ...
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js"
+    "typeorm": "typeorm-ts-node-commonjs"
 }
 ```
 
@@ -161,7 +161,7 @@ typeorm subscriber:create -n UserSubscriber -d src/user/subscriber
 你可以使用 CLI 创建新的迁移：
 
 ```
-typeorm migration:create -n UserMigration
+typeorm migration:create path-to-migrations-dir/migrationName
 ```
 
 其中`UserMigration`是一个迁移文件和类名。
@@ -180,7 +180,7 @@ typeorm migration:create -n UserMigration
 如果你有一个在不同目录中具有多个迁移的多模块结构的项目，则可以提供要生成迁移的 CLI 命令的路径：
 
 ```
-typeorm migration:create -n UserMigration -d src/user/migration
+typeorm migration:create path-to-migrations-dir/migrationName
 ```
 
 了解有关[Migrations](./migrations.md)的更多信息。
@@ -212,7 +212,7 @@ typeorm migration:run
 要还原最近执行的迁移，请使用以下命令：
 
 ```
-typeorm migration:revert
+typeorm migration:revert -- -d path-to-datasource-config
 ```
 
 此命令将仅撤消上次执行的迁移。
@@ -242,7 +242,7 @@ typeorm schema:log
 要完全删除数据库架构，请使用以下命令：
 
 ```
-typeorm schema:drop
+typeorm schema:drop -- -d path-to-datasource-config
 ```
 
 在生产环境时要谨慎使用这个命令，因为它会完全删除数据库中的数据。

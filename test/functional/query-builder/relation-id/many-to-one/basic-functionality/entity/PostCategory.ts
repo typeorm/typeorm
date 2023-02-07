@@ -1,29 +1,26 @@
-import {Entity} from "../../../../../../../src/decorator/entity/Entity";
-import {ManyToOne} from "../../../../../../../src/decorator/relations/ManyToOne";
-import {Post} from "./Post";
-import {Category} from "./Category";
-import {Image} from "./Image";
+import { Entity } from "../../../../../../../src/decorator/entity/Entity"
+import { ManyToOne } from "../../../../../../../src/decorator/relations/ManyToOne"
+import { Post } from "./Post"
+import { Category } from "./Category"
+import { Image } from "./Image"
+import { PrimaryColumn } from "../../../../../../../src"
 
 @Entity()
 export class PostCategory {
+    @PrimaryColumn()
+    postId: number
 
-    @ManyToOne(type => Post, post => post.categories, {
-        primary: true
-    })
-    post: Post;
+    @PrimaryColumn()
+    categoryId: number
 
-    @ManyToOne(type => Category, category => category.posts, {
-        primary: true
-    })
-    category: Category;
+    @ManyToOne((type) => Post, (post) => post.categories)
+    post: Post
 
-    @ManyToOne(type => Image)
-    image: Image;
+    @ManyToOne((type) => Category, (category) => category.posts)
+    category: Category
 
-    postId: number;
+    @ManyToOne((type) => Image)
+    image: Image
 
-    categoryId: number;
-
-    imageId: number;
-
+    imageId: number
 }

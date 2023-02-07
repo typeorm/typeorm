@@ -4,20 +4,14 @@
 
 import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
 
+const fs = require("fs");
 const gulp = require("gulp");
 const del = require("del");
 const shell = require("gulp-shell");
 const replace = require("gulp-replace");
 const rename = require("gulp-rename");
-const mocha = require("gulp-mocha");
-const chai = require("chai");
-const tslint = require("gulp-tslint");
-const stylish = require("tslint-stylish");
 const sourcemaps = require("gulp-sourcemaps");
-const istanbul = require("gulp-istanbul");
-const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
 const ts = require("gulp-typescript");
-const args = require("yargs").argv;
 
 @Gulpclass()
 export class Gulpfile {
@@ -65,29 +59,18 @@ export class Gulpfile {
             "!./src/commands/*.ts",
             "!./src/cli.ts",
             "!./src/typeorm.ts",
-            "!./src/typeorm-model-shim.ts",
-            "!./src/platform/PlatformTools.ts"
+            "!./src/typeorm-model-shim.ts"
         ])
         .pipe(gulp.dest("./build/browser/src"));
     }
 
     /**
-     * Replaces PlatformTools with browser-specific implementation called BrowserPlatformTools.
+     * Copies templates for compilation
      */
     @Task()
-    browserCopyPlatformTools() {
-        return gulp.src("./src/platform/BrowserPlatformTools.template")
-            .pipe(rename("PlatformTools.ts"))
-            .pipe(gulp.dest("./build/browser/src/platform"));
-    }
-
-    /**
-     * Adds dummy classes for disabled drivers (replacement is done via browser entry point in package.json)
-     */
-    @Task()
-    browserCopyDisabledDriversDummy() {
-        return gulp.src("./src/platform/BrowserDisabledDriversDummy.template")
-            .pipe(rename("BrowserDisabledDriversDummy.ts"))
+    browserCopyTemplates() {
+        return gulp.src("./src/platform/*.template")
+            .pipe(rename((p: any) => { p.extname = '.ts'; }))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
@@ -98,7 +81,10 @@ export class Gulpfile {
             "lib": ["es5", "es6", "dom"],
             typescript: require("typescript")
         });
-        const tsResult = gulp.src(["./build/browser/src/**/*.ts", "./node_modules/reflect-metadata/**/*.d.ts", "./node_modules/@types/**/*.ts"])
+        const tsResult = gulp.src([
+            "./build/browser/src/**/*.ts",
+            "./node_modules/reflect-metadata/**/*.d.ts"
+        ])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
@@ -131,6 +117,17 @@ export class Gulpfile {
                 "cd ./build/package && npm publish"
             ]));
     }
+    
+    /**
+     * Packs a .tgz from ./build/package directory.
+     */
+    @Task()
+    packagePack() {
+        return gulp.src("package.json", { read: false })
+            .pipe(shell([
+                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
+            ]));
+    }
 
     /**
      * Publishes a package to npm from ./build/package directory with @next tag.
@@ -148,8 +145,12 @@ export class Gulpfile {
      */
     @MergedTask()
     packageCompile() {
-        const tsProject = ts.createProject("tsconfig.json", { typescript: require("typescript") });
-        const tsResult = gulp.src(["./src/**/*.ts", "./node_modules/@types/**/*.ts"])
+        const tsProject = ts.createProject("tsconfig.json", {
+            typescript: require("typescript")
+        });
+        const tsResult = gulp.src([
+            "./src/**/*.ts"
+        ])
             .pipe(sourcemaps.init())
             .pipe(tsProject());
 
@@ -168,6 +169,24 @@ export class Gulpfile {
     packageMoveCompiledFiles() {
         return gulp.src("./build/package/src/**/*")
             .pipe(gulp.dest("./build/package"));
+    }
+
+    /**
+     * Create ESM index file in the final package directory.
+     */
+    @Task()
+    async packageCreateEsmIndex() {
+        const buildDir = "./build/package";
+        const cjsIndex = require(`${buildDir}/index.js`);
+        const cjsKeys = Object.keys(cjsIndex).filter(key => key !== "default" && !key.startsWith("__"));
+
+        const indexMjsContent =
+            'import TypeORM from "./index.js";\n' +
+            `const {\n    ${cjsKeys.join(",\n    ")}\n} = TypeORM;\n` +
+            `export {\n    ${cjsKeys.join(",\n    ")}\n};\n` +
+            'export default TypeORM;\n';
+
+        fs.writeFileSync(`${buildDir}/index.mjs`, indexMjsContent, "utf8");
     }
 
     /**
@@ -227,9 +246,10 @@ export class Gulpfile {
     package() {
         return [
             "clean",
-            ["browserCopySources", "browserCopyPlatformTools", "browserCopyDisabledDriversDummy"],
+            ["browserCopySources", "browserCopyTemplates"],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
+            "packageCreateEsmIndex",
             [
                 "browserClearPackageDirectory",
                 "packageClearPackageDirectory",
@@ -239,6 +259,14 @@ export class Gulpfile {
                 "packageCopyShims"
             ],
         ];
+    }
+
+    /**
+     * Creates a package .tgz
+     */
+    @SequenceTask()
+    pack() {
+        return ["package", "packagePack"];
     }
 
     /**
@@ -255,109 +283,6 @@ export class Gulpfile {
     @SequenceTask("publish-next")
     publishNext() {
         return ["package", "packagePublishNext"];
-    }
-
-    // -------------------------------------------------------------------------
-    // Run tests tasks
-    // -------------------------------------------------------------------------
-
-    /**
-     * Runs ts linting to validate source code.
-     */
-    @Task()
-    tslint() {
-        return gulp.src(["./src/**/*.ts", "./test/**/*.ts", "./sample/**/*.ts"])
-            .pipe(tslint())
-            .pipe(tslint.report(stylish, {
-                emitError: true,
-                sort: true,
-                bell: true
-            }));
-    }
-
-    /**
-     * Runs before test coverage, required step to perform a test coverage.
-     */
-    @Task()
-    coveragePre() {
-        return gulp.src(["./build/compiled/src/**/*.js"])
-            .pipe(istanbul())
-            .pipe(istanbul.hookRequire());
-    }
-
-    /**
-     * Runs post coverage operations.
-     */
-    @Task()
-    coveragePost() {
-        return gulp.src(["./build/compiled/test/**/*.js"])
-            .pipe(istanbul.writeReports());
-    }
-
-    /**
-     * Runs mocha tests.
-     */
-    @Task()
-    runTests() {
-        chai.should();
-        chai.use(require("sinon-chai"));
-        chai.use(require("chai-as-promised"));
-
-        return gulp.src(["./build/compiled/test/**/*.js"])
-            .pipe(mocha({
-                bail: true,
-                grep: !!args.grep ? new RegExp(args.grep) : undefined,
-                timeout: 15000
-            }));
-    }
-
-    @Task()
-    coverageRemap() {
-        return gulp.src("./coverage/coverage-final.json")
-            .pipe(remapIstanbul())
-            .pipe(gulp.dest("./coverage"));
-    }
-
-    /**
-     * Compiles the code and runs tests + makes coverage report.
-     */
-    @SequenceTask()
-    tests() {
-        return [
-            "compile",
-            "coveragePre",
-            "runTests",
-            "coveragePost",
-            "coverageRemap"
-        ];
-    }
-
-    /**
-     * Runs tests, but creates a small delay before running them to make sure to give time for docker containers to be initialized.
-     */
-    @SequenceTask("ci-tests")
-    ciTests() {
-        return [
-            "clean",
-            "compile",
-            "tslint",
-            "wait",
-            "coveragePre",
-            "runTests",
-            "coveragePost",
-            "coverageRemap"
-        ];
-    }
-
-    // -------------------------------------------------------------------------
-    // CI tasks
-    // -------------------------------------------------------------------------
-
-    @Task()
-    createTravisOrmConfig() {
-        return gulp.src("./ormconfig.travis.json")
-            .pipe(rename("ormconfig.json"))
-            .pipe(gulp.dest("./"));
     }
 
 }

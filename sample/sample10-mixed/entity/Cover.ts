@@ -1,16 +1,19 @@
-import {Column, Entity, OneToMany, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
+import {
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Post } from "./Post"
 
 @Entity("sample10_cover")
 export class Cover {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    url: string;
+    url: string
 
-    @OneToMany(type => Post, post => post.cover)
-    posts: Post[];
-
+    @OneToMany((type) => Post, (post) => post.cover)
+    posts: Post[]
 }

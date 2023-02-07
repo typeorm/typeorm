@@ -1,13 +1,10 @@
+import { TypeORMError } from "./TypeORMError"
+
 /**
  * Thrown when consumer tries to get connection that does not exist.
  */
-export class ConnectionNotFoundError extends Error {
-    name = "ConnectionNotFoundError";
-
+export class ConnectionNotFoundError extends TypeORMError {
     constructor(name: string) {
-        super();
-        Object.setPrototypeOf(this, ConnectionNotFoundError.prototype);
-        this.message = `Connection "${name}" was not found.`;
+        super(`Connection "${name}" was not found.`)
     }
-
 }

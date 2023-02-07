@@ -1,16 +1,14 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
-import {Counters} from "./Counters";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
+import { Counters } from "./Counters"
 
 @Entity("sample26_question")
 export class Question {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
-    @Column(type => Counters)
-    counters: Counters;
-    
+    @Column((type) => Counters)
+    counters: Counters
 }

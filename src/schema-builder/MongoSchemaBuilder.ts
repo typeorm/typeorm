@@ -1,8 +1,8 @@
-import { Connection } from "../connection/Connection";
-import { SchemaBuilder } from "./SchemaBuilder";
-import { MongoDriver } from "../driver/mongodb/MongoDriver";
-import { SqlInMemory } from "../driver/SqlInMemory";
-import { MongodbIndexOptions } from "../driver/mongodb/typings";
+import { DataSource } from "../data-source/DataSource"
+import { SchemaBuilder } from "./SchemaBuilder"
+import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
+import { SqlInMemory } from "../driver/SqlInMemory"
+import { MongodbIndexOptions } from "../driver/mongodb/typings"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -19,13 +19,11 @@ import { MongodbIndexOptions } from "../driver/mongodb/typings";
  * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore
  */
 export class MongoSchemaBuilder implements SchemaBuilder {
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: Connection) {
-    }
+    constructor(protected connection: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -35,22 +33,52 @@ export class MongoSchemaBuilder implements SchemaBuilder {
      * Creates complete schemas for the given entity metadatas.
      */
     async build(): Promise<void> {
-        const queryRunner = (this.connection.driver as MongoDriver).createQueryRunner();
-        const promises: Promise<any>[] = [];
-        this.connection.entityMetadatas.forEach(metadata => {
-            metadata.indices.forEach(index => {
-                const options = <MongodbIndexOptions>{ name: index.name, unique: index.isUnique, sparse: index.isSparse, background: index.isBackground, expireAfterSeconds: index.expireAfterSeconds };
-                promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
-            });
-        });
-        await Promise.all(promises);
+        const queryRunner =
+            this.connection.createQueryRunner() as MongoQueryRunner
+        const promises: Promise<any>[] = []
+        this.connection.entityMetadatas.forEach((metadata) => {
+            metadata.indices.forEach((index) => {
+                const options: MongodbIndexOptions = Object.assign(
+                    {},
+                    {
+                        name: index.name,
+                        unique: index.isUnique,
+                        sparse: index.isSparse,
+                        background: index.isBackground,
+                    },
+                    index.expireAfterSeconds === undefined
+                        ? {}
+                        : { expireAfterSeconds: index.expireAfterSeconds },
+                )
+                promises.push(
+                    queryRunner.createCollectionIndex(
+                        metadata.tableName,
+                        index.columnNamesWithOrderingMap,
+                        options,
+                    ),
+                )
+            })
+            metadata.uniques.forEach((unique) => {
+                const options = <MongodbIndexOptions>{
+                    name: unique.name,
+                    unique: true,
+                }
+                promises.push(
+                    queryRunner.createCollectionIndex(
+                        metadata.tableName,
+                        unique.columnNamesWithOrderingMap,
+                        options,
+                    ),
+                )
+            })
+        })
+        await Promise.all(promises)
     }
 
     /**
      * Returns query to be executed by schema builder.
      */
     log(): Promise<SqlInMemory> {
-        return Promise.resolve(new SqlInMemory());
+        return Promise.resolve(new SqlInMemory())
     }
-
 }

@@ -1,15 +1,20 @@
 # Migrations
 
-* [How migrations work](#how-migrations-work)
-* [Creating a new migration](#creating-a-new-migration)
-* [Running and reverting migrations](#running-and-reverting-migrations)
-* [Generating migrations](#generating-migrations)
-* [Using migration API to write migrations](#using-migration-api-to-write-migrations)
+- [Migrations](#migrations)
+  - [How migrations work](#how-migrations-work)
+  - [Creating a new migration](#creating-a-new-migration)
+  - [Running and reverting migrations](#running-and-reverting-migrations)
+    - [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
+    - [Transaction modes](#transaction-modes)
+  - [Generating migrations](#generating-migrations)
+  - [DataSource option](#datasource-option)
+  - [Timestamp option](#timestamp-option)
+  - [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations work
 
 Once you get into production you'll need to synchronize model changes into the database.
-Typically it is unsafe to use `synchronize: true` for schema synchronization on production once
+Typically, it is unsafe to use `synchronize: true` for schema synchronization on production once
 you get data in your database. Here is where migrations come to help.
 
 A migration is just a single file with sql queries to update a database schema
@@ -18,20 +23,18 @@ and apply new changes to an existing database.
 Let's say you already have a database and a post entity:
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class Post {
-    
     @PrimaryGeneratedColumn()
-    id: number;
-    
+    id: number
+
     @Column()
-    title: string;
-    
+    title: string
+
     @Column()
-    text: string;
-    
+    text: string
 }
 ```
 
@@ -39,75 +42,64 @@ And your entity worked in production for months without any changes.
 You have thousands of posts in your database.
 
 Now you need to make a new release and rename `title` to `name`.
-What would you do? 
+What would you do?
 
-You need to create a new migration with the following sql query (postgres dialect):
+You need to create a new migration with the following SQL query (postgres dialect):
 
 ```sql
 ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name";
 ```
 
-Once you run this sql query your database schema is ready to work with your new codebase.
+Once you run this SQL query your database schema is ready to work with your new codebase.
 TypeORM provides a place where you can write such sql queries and run them when needed.
 This place is called "migrations".
 
 ## Creating a new migration
 
-Before creating a new migration you need to setup your connection options properly:
+**Pre-requisites**: [Installing CLI](./using-cli.md#installing-cli)
 
-```json
+Before creating a new migration you need to setup your data source options properly:
+
+```ts
 {
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "username": "test",
-    "password": "test",
-    "database": "test",
-    "entities": ["entity/*.js"],
-    "migrationsTableName": "custom_migration_table",
-    "migrations": ["migration/*.js"],
-    "cli": {
-        "migrationsDir": "migration"
-    }
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "test",
+    password: "test",
+    database: "test",
+    entities: [/*...*/],
+    migrations: [/*...*/],
+    migrationsTableName: "custom_migration_table",
 }
 ```
 
-Here we setup three options:
-* `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
-* `"migrations": ["migration/*.js"]` - indicates that typeorm must load migrations from the given "migration" directory.
-* `"cli": { "migrationsDir": "migration" }` - indicates that the CLI must create new migrations in the "migration" directory.
+Here we setup two options:
+
+-   `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
+-   `"migrations": [/*...*/]` - list of migrations need to be loaded by TypeORM
 
 Once you setup connection options you can create a new migration using CLI:
 
 ```
-typeorm migration:create -n PostRefactoring
+typeorm migration:create ./path-to-migrations-dir/PostRefactoring
+
 ```
 
-To use CLI commands, you need to install typeorm globally (`npm i typeorm -g`).
-Also, make sure your local typeorm version matches the global version.
-Learn more about the [TypeORM CLI](./using-cli.md).
-
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
-After you run the command you can see a new file generated in the "migration" directory 
+After you run the command you can see a new file generated in the "migration" directory
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
 Now you can open the file and add your migration sql queries there.
 
 You should see the following content inside your migration:
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm"
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        
-    }
+    async up(queryRunner: QueryRunner): Promise<void> {}
 
-    async down(queryRunner: QueryRunner): Promise<any> { 
-        
-    }
-
-    
+    async down(queryRunner: QueryRunner): Promise<void> {}
 }
 ```
 
@@ -123,19 +115,20 @@ Learn more about [query runner](./query-runner.md).
 Let's see what the migration looks like with our `Post` changes:
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm"
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `ALTER TABLE "post" RENAME COLUMN "title" TO "name"`,
+        )
     }
 
-    async down(queryRunner: QueryRunner): Promise<any> { 
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`); // reverts things made in "up" method
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `ALTER TABLE "post" RENAME COLUMN "name" TO "title"`,
+        ) // reverts things made in "up" method
     }
-
-    
 }
 ```
 
@@ -144,14 +137,25 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 Once you have a migration to run on production, you can run them using a CLI command:
 
 ```
-typeorm migration:run
+typeorm migration:run -- -d path-to-datasource-config
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files. The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files. 
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
+
 ```
-ts-node ./node_modules/typeorm/cli.js migration:run
+npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
+```
+
+Example with `ts-node` in ESM projects:
+
+```
+npx typeorm-ts-node-esm migration:run -- -d path-to-datasource-config
+```
+
+```
+npx typeorm-ts-node-esm migration:generate ./src/migrations/update-post-table -d ./src/data-source.ts
 ```
 
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
@@ -161,11 +165,56 @@ That's all! Now you have your database schema up-to-date.
 If for some reason you want to revert the changes, you can run:
 
 ```
-typeorm migration:revert
+typeorm migration:revert -- -d path-to-datasource-config
 ```
 
-This command will execute `down` in the latest executed migration. 
-If you need to revert multiple migrations you must call this command multiple times. 
+This command will execute `down` in the latest executed migration.
+If you need to revert multiple migrations you must call this command multiple times.
+
+### Faking Migrations and Rollbacks
+
+You can also fake run a migration using the `--fake` flag (`-f` for short). This will add the migration
+to the migrations table without running it. This is useful for migrations created after manual changes
+have already been made to the database or when migrations have been run externally
+(e.g. by another tool or application), and you still would like to keep a consistent migration history.
+
+```
+typeorm migration:run --fake
+```
+
+This is also possible with rollbacks.
+
+```
+typeorm migration:revert --fake
+```
+
+### Transaction modes
+
+By default, TypeORM will run all your migrations within a single wrapping transaction.
+This corresponds to the `--transaction all` flag.
+If you require more fine grained transaction control, you can use the `--transaction each` flag to wrap every migration individually, or the `--transaction none` flag to opt out of wrapping the migrations in transactions altogether.
+
+In addition to these flags, you can also override the transaction behavior on a per-migration basis by setting the `transaction` property on the `MigrationInterface` to `true` or `false`. This only works in the `each` or `none` transaction mode.
+
+```typescript
+import { MigrationInterface, QueryRunner } from "typeorm"
+
+export class AddIndexTIMESTAMP implements MigrationInterface {
+    transaction = false
+
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `CREATE INDEX CONCURRENTLY post_names_idx ON post(name)`
+        )
+    }
+
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `DROP INDEX CONCURRENTLY post_names_idx`,
+        )
+    }
+}
+```
 
 ## Generating migrations
 
@@ -181,24 +230,68 @@ typeorm migration:generate -n PostRefactoring
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
 
 ```typescript
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm"
 
 export class PostRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`);
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
+        )
     }
 
-    async down(queryRunner: QueryRunner): Promise<any> { 
-        await queryRunner.query(`ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`);
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
+        )
     }
-
-    
 }
 ```
 
-See, you don't need to write the queries on your own. 
-The rule of thumb for generating migrations is that you generate them after "each" change you made to your models.
+Alternatively you can also output your migrations as Javascript files using the `o` (alias for `--outputJs`) flag. This is useful for Javascript only projects in which TypeScript additional packages are not installed. This command, will generate a new migration file `{TIMESTAMP}-PostRefactoring.js` with the following content:
+
+```javascript
+const { MigrationInterface, QueryRunner } = require("typeorm")
+
+module.exports = class PostRefactoringTIMESTAMP {
+    async up(queryRunner) {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
+        )
+    }
+
+    async down(queryRunner) {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
+        )
+    }
+}
+```
+
+See, you don't need to write the queries on your own.
+The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
+
+## DataSource option
+
+If you need to run/revert/generate/show your migrations use the `-d` (alias for `--dataSource`) and pass the path to the file where your DataSource instance is defined as an argument
+
+```
+typeorm -d <your-data-source-path> migration:{run|revert}
+```
+
+## Timestamp option
+
+If you need to specify a timestamp for the migration name, use the `-t` (alias for `--timestamp`) and pass the timestamp (should be a non-negative number)
+
+```
+typeorm -t <specific-timestamp> migration:{create|generate}
+```
+
+You can get a timestamp from:
+
+```js
+Date.now()
+/* OR */ new Date().getTime()
+```
 
 ## Using migration API to write migrations
 
@@ -207,127 +300,154 @@ In order to use an API to change a database schema you can use `QueryRunner`.
 Example:
 
 ```ts
-import {MigrationInterface, QueryRunner, Table } from "typeorm";
+import {
+    MigrationInterface,
+    QueryRunner,
+    Table,
+    TableIndex,
+    TableColumn,
+    TableForeignKey,
+} from "typeorm"
 
 export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
-    
-    async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.createTable(new Table({
-            name: "question",
-            columns: [
-                {
-                    name: "id",
-                    type: "int",
-                    isPrimary: true
-                },
-                {
-                    name: "name",
-                    type: "varchar",
-                }
-            ]
-        }), true)        
-        
-        await queryRunner.createIndex("question", new TableIndex({
-            name: "IDX_QUESTION_NAME",
-            columnNames: ["name"]
-        }));
-        
-        await queryRunner.createTable(new Table({
-            name: "answer",
-            columns: [
-                {
-                    name: "id",
-                    type: "int",
-                    isPrimary: true
-                },
-                {
-                    name: "name",
-                    type: "varchar",
-                }
-            ]
-        }), true);
-        
-        await queryRunner.addColumn("answer", new TableColumn({
-            name: "questionId", 
-            type: "int" 
-        }));
-        
-        await queryRunner.createForeignKey("answer", new TableForeignKey({
-            columnNames: ["questionId"],
-            referencedColumnNames: ["id"],
-            referencedTableName: "question",
-            onDelete: "CASCADE"
-        }));
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.createTable(
+            new Table({
+                name: "question",
+                columns: [
+                    {
+                        name: "id",
+                        type: "int",
+                        isPrimary: true,
+                    },
+                    {
+                        name: "name",
+                        type: "varchar",
+                    },
+                ],
+            }),
+            true,
+        )
+
+        await queryRunner.createIndex(
+            "question",
+            new TableIndex({
+                name: "IDX_QUESTION_NAME",
+                columnNames: ["name"],
+            }),
+        )
+
+        await queryRunner.createTable(
+            new Table({
+                name: "answer",
+                columns: [
+                    {
+                        name: "id",
+                        type: "int",
+                        isPrimary: true,
+                    },
+                    {
+                        name: "name",
+                        type: "varchar",
+                    },
+                    {
+                        name: "created_at",
+                        type: "timestamp",
+                        default: "now()",
+                    },
+                ],
+            }),
+            true,
+        )
+
+        await queryRunner.addColumn(
+            "answer",
+            new TableColumn({
+                name: "questionId",
+                type: "int",
+            }),
+        )
+
+        await queryRunner.createForeignKey(
+            "answer",
+            new TableForeignKey({
+                columnNames: ["questionId"],
+                referencedColumnNames: ["id"],
+                referencedTableName: "question",
+                onDelete: "CASCADE",
+            }),
+        )
     }
 
-    async down(queryRunner: QueryRunner): Promise<any> {
-        const table = await queryRunner.getTable("question");
-        const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("questionId") !== -1);
-        await queryRunner.dropForeignKey("question", foreignKey);
-        await queryRunner.dropColumn("question", "questionId");
-        await queryRunner.dropTable("answer");
-        await queryRunner.dropIndex("question", "IDX_QUESTION_NAME");
-        await queryRunner.dropTable("question");
+    async down(queryRunner: QueryRunner): Promise<void> {
+        const table = await queryRunner.getTable("answer")
+        const foreignKey = table.foreignKeys.find(
+            (fk) => fk.columnNames.indexOf("questionId") !== -1,
+        )
+        await queryRunner.dropForeignKey("answer", foreignKey)
+        await queryRunner.dropColumn("answer", "questionId")
+        await queryRunner.dropTable("answer")
+        await queryRunner.dropIndex("question", "IDX_QUESTION_NAME")
+        await queryRunner.dropTable("question")
     }
-    
 }
 ```
 
 ---
 
-```ts 
+```ts
 getDatabases(): Promise<string[]>
 ```
- 
+
 Returns all available database names including system databases.
 
 ---
 
-```ts 
+```ts
 getSchemas(database?: string): Promise<string[]>
 ```
- 
-- `database` - If database parameter specified, returns schemas of that database
+
+-   `database` - If database parameter specified, returns schemas of that database
 
 Returns all available schema names including system schemas. Useful for SQLServer and Postgres only.
 
 ---
 
-```ts 
+```ts
 getTable(tableName: string): Promise<Table|undefined>
 ```
- 
-- `tableName` - name of a table to be loaded
+
+-   `tableName` - name of a table to be loaded
 
 Loads a table by a given name from the database.
 
 ---
 
-```ts 
+```ts
 getTables(tableNames: string[]): Promise<Table[]>
 ```
- 
-- `tableNames` - name of a tables to be loaded
+
+-   `tableNames` - name of a tables to be loaded
 
 Loads a tables by a given names from the database.
 
 ---
 
-```ts 
+```ts
 hasDatabase(database: string): Promise<boolean>
 ```
- 
-- `database` - name of a database to be checked
+
+-   `database` - name of a database to be checked
 
 Checks if database with the given name exist.
 
 ---
 
-```ts 
+```ts
 hasSchema(schema: string): Promise<boolean>
 ```
- 
-- `schema` - name of a schema to be checked
+
+-   `schema` - name of a schema to be checked
 
 Checks if schema with the given name exist. Used only for SqlServer and Postgres.
 
@@ -336,228 +456,228 @@ Checks if schema with the given name exist. Used only for SqlServer and Postgres
 ```ts
 hasTable(table: Table|string): Promise<boolean>
 ```
- 
-- `table` - Table object or name
+
+-   `table` - Table object or name
 
 Checks if table exist.
 
 ---
 
-```ts 
+```ts
 hasColumn(table: Table|string, columnName: string): Promise<boolean>
 ```
- 
-- `table` - Table object or name
-- `columnName` - name of a column to be checked
+
+-   `table` - Table object or name
+-   `columnName` - name of a column to be checked
 
 Checks if column exist in the table.
 
 ---
 
-```ts 
+```ts
 createDatabase(database: string, ifNotExist?: boolean): Promise<void>
 ```
- 
-- `database` - database name
-- `ifNotExist` - skips creation if `true`, otherwise throws error if database already exist
 
-Creates a new database. 
+-   `database` - database name
+-   `ifNotExist` - skips creation if `true`, otherwise throws error if database already exist
+
+Creates a new database.
 
 ---
 
-```ts 
+```ts
 dropDatabase(database: string, ifExist?: boolean): Promise<void>
 ```
- 
-- `database` - database name
-- `ifExist` - skips deletion if `true`, otherwise throws error if database was not found
+
+-   `database` - database name
+-   `ifExist` - skips deletion if `true`, otherwise throws error if database was not found
 
 Drops database.
 
 ---
 
-```ts 
+```ts
 createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
 ```
- 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
-If schema path passed, it will create schema in specified database
-- `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
+
+-   `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
+    If schema path passed, it will create schema in specified database
+-   `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
 
 Creates a new table schema.
 
 ---
 
-```ts 
+```ts
 dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>
 ```
- 
-- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter. 
-If schema path passed, it will drop schema in specified database
-- `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
-- `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
-Used only in Postgres.
+
+-   `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
+    If schema path passed, it will drop schema in specified database
+-   `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
+-   `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
+    Used only in Postgres.
 
 Drops a table schema.
 
 ---
 
-```ts 
+```ts
 createTable(table: Table, ifNotExist?: boolean, createForeignKeys?: boolean, createIndices?: boolean): Promise<void>
 ```
 
-- `table` - Table object. 
-- `ifNotExist` - skips creation if `true`, otherwise throws error if table already exist. Default `false`
-- `createForeignKeys` - indicates whether foreign keys will be created on table creation. Default `true`
-- `createIndices` - indicates whether indices will be created on table creation. Default `true`
+-   `table` - Table object.
+-   `ifNotExist` - skips creation if `true`, otherwise throws error if table already exist. Default `false`
+-   `createForeignKeys` - indicates whether foreign keys will be created on table creation. Default `true`
+-   `createIndices` - indicates whether indices will be created on table creation. Default `true`
 
 Creates a new table.
 
 ---
 
-```ts 
+```ts
 dropTable(table: Table|string, ifExist?: boolean, dropForeignKeys?: boolean, dropIndices?: boolean): Promise<void>
 ```
 
-- `table` - Table object or table name to be dropped
-- `ifExist` - skips dropping if `true`, otherwise throws error if table does not exist
-- `dropForeignKeys` - indicates whether foreign keys will be dropped on table deletion. Default `true`
-- `dropIndices` - indicates whether indices will be dropped on table deletion. Default `true`
+-   `table` - Table object or table name to be dropped
+-   `ifExist` - skips dropping if `true`, otherwise throws error if table does not exist
+-   `dropForeignKeys` - indicates whether foreign keys will be dropped on table deletion. Default `true`
+-   `dropIndices` - indicates whether indices will be dropped on table deletion. Default `true`
 
 Drops a table.
 
 ---
 
-```ts 
+```ts
 renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void>
 ```
 
-- `oldTableOrName` - old Table object or name to be renamed
-- `newTableName` - new table name
+-   `oldTableOrName` - old Table object or name to be renamed
+-   `newTableName` - new table name
 
 Renames a table.
 
 ---
 
-```ts 
+```ts
 addColumn(table: Table|string, column: TableColumn): Promise<void>
 ```
 
-- `table` - Table object or name
-- `column` - new column
+-   `table` - Table object or name
+-   `column` - new column
 
 Adds a new column.
 
 ---
 
-```ts 
+```ts
 addColumns(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columns` - new columns
+-   `table` - Table object or name
+-   `columns` - new columns
 
 Adds a new column.
 
 ---
 
-```ts 
+```ts
 renameColumn(table: Table|string, oldColumnOrName: TableColumn|string, newColumnOrName: TableColumn|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `oldColumnOrName` - old column. Accepts TableColumn object or column name
-- `newColumnOrName` - new column. Accepts TableColumn object or column name
+-   `table` - Table object or name
+-   `oldColumnOrName` - old column. Accepts TableColumn object or column name
+-   `newColumnOrName` - new column. Accepts TableColumn object or column name
 
 Renames a column.
 
 ---
 
-```ts 
+```ts
 changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn): Promise<void>
 ```
 
-- `table` - Table object or name
-- `oldColumn` -  old column. Accepts TableColumn object or column name
-- `newColumn` -  new column. Accepts TableColumn object
+-   `table` - Table object or name
+-   `oldColumn` - old column. Accepts TableColumn object or column name
+-   `newColumn` - new column. Accepts TableColumn object
 
 Changes a column in the table.
 
 ---
 
-```ts 
+```ts
 changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `changedColumns` - array of changed columns.
-  + `oldColumn` - old TableColumn object
-  + `newColumn` - new TableColumn object
+-   `table` - Table object or name
+-   `changedColumns` - array of changed columns.
+    -   `oldColumn` - old TableColumn object
+    -   `newColumn` - new TableColumn object
 
 Changes a columns in the table.
 
 ---
 
-```ts 
+```ts
 dropColumn(table: Table|string, column: TableColumn|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `column` - TableColumn object or column name to be dropped
+-   `table` - Table object or name
+-   `column` - TableColumn object or column name to be dropped
 
 Drops a column in the table.
 
 ---
 
-```ts 
-dropColumns(table: Table|string, columns: TableColumn[]): Promise<void>
+```ts
+dropColumns(table: Table|string, columns: TableColumn[]|string[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columns` - array of TableColumn objects to be dropped
+-   `table` - Table object or name
+-   `columns` - array of TableColumn objects or column names to be dropped
 
 Drops a columns in the table.
 
 ---
 
-```ts 
+```ts
 createPrimaryKey(table: Table|string, columnNames: string[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columnNames` - array of column names which will be primary
+-   `table` - Table object or name
+-   `columnNames` - array of column names which will be primary
 
 Creates a new primary key.
 
 ---
 
-```ts 
+```ts
 updatePrimaryKeys(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `columns` - array of TableColumn objects which will be updated
+-   `table` - Table object or name
+-   `columns` - array of TableColumn objects which will be updated
 
 Updates composite primary keys.
 
 ---
 
-```ts 
+```ts
 dropPrimaryKey(table: Table|string): Promise<void>
 ```
 
-- `table` - Table object or name
+-   `table` - Table object or name
 
 Drops a primary key.
 
 ---
 
-```ts 
+```ts
 createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueConstraint` - TableUnique object to be created
+-   `table` - Table object or name
+-   `uniqueConstraint` - TableUnique object to be created
 
 Creates new unique constraint.
 
@@ -565,12 +685,12 @@ Creates new unique constraint.
 
 ---
 
-```ts 
+```ts
 createUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueConstraints` - array of TableUnique objects to be created
+-   `table` - Table object or name
+-   `uniqueConstraints` - array of TableUnique objects to be created
 
 Creates new unique constraints.
 
@@ -582,8 +702,8 @@ Creates new unique constraints.
 dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueOrName` - TableUnique object or unique constraint name to be dropped
+-   `table` - Table object or name
+-   `uniqueOrName` - TableUnique object or unique constraint name to be dropped
 
 Drops an unique constraint.
 
@@ -595,8 +715,8 @@ Drops an unique constraint.
 dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `uniqueConstraints` - array of TableUnique objects to be dropped
+-   `table` - Table object or name
+-   `uniqueConstraints` - array of TableUnique objects to be dropped
 
 Drops an unique constraints.
 
@@ -608,8 +728,8 @@ Drops an unique constraints.
 createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkConstraint` - TableCheck object
+-   `table` - Table object or name
+-   `checkConstraint` - TableCheck object
 
 Creates new check constraint.
 
@@ -621,8 +741,8 @@ Creates new check constraint.
 createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkConstraints` - array of TableCheck objects
+-   `table` - Table object or name
+-   `checkConstraints` - array of TableCheck objects
 
 Creates new check constraint.
 
@@ -634,8 +754,8 @@ Creates new check constraint.
 dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkOrName` - TableCheck object or check constraint name
+-   `table` - Table object or name
+-   `checkOrName` - TableCheck object or check constraint name
 
 Drops check constraint.
 
@@ -647,8 +767,8 @@ Drops check constraint.
 dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `checkConstraints` - array of TableCheck objects
+-   `table` - Table object or name
+-   `checkConstraints` - array of TableCheck objects
 
 Drops check constraints.
 
@@ -660,8 +780,8 @@ Drops check constraints.
 createForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKey` - TableForeignKey object
+-   `table` - Table object or name
+-   `foreignKey` - TableForeignKey object
 
 Creates a new foreign key.
 
@@ -671,8 +791,8 @@ Creates a new foreign key.
 createForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKeys` - array of TableForeignKey objects
+-   `table` - Table object or name
+-   `foreignKeys` - array of TableForeignKey objects
 
 Creates a new foreign keys.
 
@@ -682,8 +802,8 @@ Creates a new foreign keys.
 dropForeignKey(table: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKeyOrName` - TableForeignKey object or foreign key name
+-   `table` - Table object or name
+-   `foreignKeyOrName` - TableForeignKey object or foreign key name
 
 Drops a foreign key.
 
@@ -693,8 +813,8 @@ Drops a foreign key.
 dropForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `foreignKeys` - array of TableForeignKey objects
+-   `table` - Table object or name
+-   `foreignKeys` - array of TableForeignKey objects
 
 Drops a foreign keys.
 
@@ -704,8 +824,8 @@ Drops a foreign keys.
 createIndex(table: Table|string, index: TableIndex): Promise<void>
 ```
 
-- `table` - Table object or name
-- `index` - TableIndex object
+-   `table` - Table object or name
+-   `index` - TableIndex object
 
 Creates a new index.
 
@@ -715,8 +835,8 @@ Creates a new index.
 createIndices(table: Table|string, indices: TableIndex[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `indices` - array of TableIndex objects
+-   `table` - Table object or name
+-   `indices` - array of TableIndex objects
 
 Creates a new indices.
 
@@ -726,8 +846,8 @@ Creates a new indices.
 dropIndex(table: Table|string, index: TableIndex|string): Promise<void>
 ```
 
-- `table` - Table object or name
-- `index` - TableIndex object or index name
+-   `table` - Table object or name
+-   `index` - TableIndex object or index name
 
 Drops an index.
 
@@ -737,8 +857,8 @@ Drops an index.
 dropIndices(table: Table|string, indices: TableIndex[]): Promise<void>
 ```
 
-- `table` - Table object or name
-- `indices` - array of TableIndex objects
+-   `table` - Table object or name
+-   `indices` - array of TableIndex objects
 
 Drops an indices.
 
@@ -748,7 +868,7 @@ Drops an indices.
 clearTable(tableName: string): Promise<void>
 ```
 
-- `tableName` - table name
+-   `tableName` - table name
 
 Clears all table contents.
 
@@ -777,7 +897,7 @@ Disables special query runner mode in which sql queries won't be executed. Previ
 clearSqlMemory(): void
 ```
 
-Flushes all memorized sqls.
+Flushes all memorized sql statements.
 
 ---
 
@@ -785,7 +905,7 @@ Flushes all memorized sqls.
 getMemorySql(): SqlInMemory
 ```
 
-- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sqls
+-   returns `SqlInMemory` object with array of `upQueries` and `downQueries` sql statements
 
 Gets sql stored in the memory. Parameters in the sql are already replaced.
 
@@ -806,4 +926,3 @@ executeMemoryDownSql(): Promise<void>
 Executes memorized down sql queries.
 
 ---
-

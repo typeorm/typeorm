@@ -1,19 +1,18 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
 
 @Entity("Tags")
 export class Tag {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    a: string;
+    a: string
 
     @Column()
-    b: string;
+    b: string
 
     @Column()
-    c: string;
+    c: string
 }

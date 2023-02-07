@@ -8,140 +8,126 @@ Let's say we have `User`, `Employee` and `Student` entities.
 All those entities have few things in common - `first name` and `last name` properties
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
-    
     @PrimaryGeneratedColumn()
-    id: string;
-    
+    id: string
+
     @Column()
-    firstName: string;
-    
+    firstName: string
+
     @Column()
-    lastName: string;
-    
+    lastName: string
+
     @Column()
-    isActive: boolean;
-    
+    isActive: boolean
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class Employee {
-    
     @PrimaryGeneratedColumn()
-    id: string;
-    
+    id: string
+
     @Column()
-    firstName: string;
-    
+    firstName: string
+
     @Column()
-    lastName: string;
-    
+    lastName: string
+
     @Column()
-    salary: string;
-    
+    salary: string
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class Student {
-    
     @PrimaryGeneratedColumn()
-    id: string;
-    
+    id: string
+
     @Column()
-    firstName: string;
-    
+    firstName: string
+
     @Column()
-    lastName: string;
-    
+    lastName: string
+
     @Column()
-    faculty: string;
-    
+    faculty: string
 }
 ```
 
 What we can do is to reduce `firstName` and `lastName` duplication by creating a new class with those columns:
 
 ```typescript
-import {Entity, Column} from "typeorm";
+import { Column } from "typeorm"
 
 export class Name {
-    
     @Column()
-    first: string;
-    
+    first: string
+
     @Column()
-    last: string;
-    
+    last: string
 }
 ```
 
-Then you can "connect" those columns in your entities: 
+Then you can "connect" those columns in your entities:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Name } from "./Name"
 
 @Entity()
 export class User {
-    
     @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
+    id: string
+
+    @Column(() => Name)
+    name: Name
+
     @Column()
-    isActive: boolean;
-    
+    isActive: boolean
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Name } from "./Name"
 
 @Entity()
 export class Employee {
-    
     @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
+    id: string
+
+    @Column(() => Name)
+    name: Name
+
     @Column()
-    salary: number;
-    
+    salary: number
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
-import {Name} from "./Name";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Name } from "./Name"
 
 @Entity()
 export class Student {
-    
     @PrimaryGeneratedColumn()
-    id: string;
-    
-    @Column(type => Name)
-    name: Name;
-    
+    id: string
+
+    @Column(() => Name)
+    name: Name
+
     @Column()
-    faculty: string;
-    
+    faculty: string
 }
 ```
 
@@ -177,6 +163,5 @@ All columns defined in the `Name` entity will be merged into `user`, `employee` 
 ```
 
 This way code duplication in the entity classes is reduced.
- You can use as many columns (or relations) in embedded classes as you need.
- You even can have nested embedded columns inside embedded classes.
- 
+You can use as many columns (or relations) in embedded classes as you need.
+You even can have nested embedded columns inside embedded classes.

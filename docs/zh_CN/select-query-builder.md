@@ -441,7 +441,7 @@ createQueryBuilder("user").groupBy("user.id");
 SELECT ... FROM users user GROUP BY user.id
 ```
 
-如果要使用更多 group-by, 则可以使用 c`addGroupBy`:
+如果要使用更多 group-by, 则可以使用 `addGroupBy`:
 
 ```typescript
 createQueryBuilder("user")
@@ -783,7 +783,7 @@ const users = await getRepository(User)
 ## 加锁
 
 QueryBuilder 支持 optimistic 和 pessimistic 锁定。
-要使用 pessimistic 读锁定，请使用以下方法：
+要使用 pessimistic 读锁定，请使用以下方式：
 
 ```typescript
 const users = await getRepository(User)
@@ -792,7 +792,7 @@ const users = await getRepository(User)
   .getMany();
 ```
 
-要使用 pessimistic 写锁定，请使用以下方法：
+要使用 pessimistic 写锁定，请使用以下方式：
 
 ```typescript
 const users = await getRepository(User)
@@ -801,7 +801,7 @@ const users = await getRepository(User)
   .getMany();
 ```
 
-要使用 optimistic 锁定，请使用以下方法：
+要使用 optimistic 读锁定，请使用以下方式：
 
 ```typescript
 const users = await getRepository(User)
@@ -810,7 +810,16 @@ const users = await getRepository(User)
   .getMany();
 ```
 
-Optimistic 锁定与`@ Version`和`@ UpdatedDate`装饰器一起使用。
+要使用 dirty 读锁定，请使用以下方式：
+
+```typescript
+const users = await getRepository(User)
+    .createQueryBuilder("user")
+    .setLock("dirty_read")
+    .getMany();
+```
+
+Optimistic 锁定与`@Version`和`@UpdatedDate`装饰器一起使用。
 
 ## 查询部分字段
 

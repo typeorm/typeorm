@@ -1,9 +1,10 @@
 {
-    "version": "2.1.1",
     "compilerOptions": {
         "lib": ["es5", "es6"],
         "outDir": "build/compiled",
-        "target": "es5",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "target": "ES2019",
         "module": "commonjs",
         "moduleResolution": "node",
         "importHelpers": true,
@@ -20,6 +21,11 @@
         "noUnusedLocals": true,
         "downlevelIteration": true
     },
+    "include": [
+      "sample",
+      "src",
+      "test"
+    ],
     "exclude": [
         "tmp",
         "temp",

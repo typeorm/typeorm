@@ -1,63 +1,60 @@
-import {createConnection} from "../index";
-import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
-import {Connection} from "../connection/Connection";
-import * as yargs from "yargs";
-const chalk = require("chalk");
+import { DataSource } from "../data-source/DataSource"
+import * as yargs from "yargs"
+import chalk from "chalk"
+import { PlatformTools } from "../platform/PlatformTools"
+import path from "path"
+import process from "process"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Clear cache command.
  */
 export class CacheClearCommand implements yargs.CommandModule {
-
-    command = "cache:clear";
-    describe = "Clears all data stored in query runner cache.";
+    command = "cache:clear"
+    describe = "Clears all data stored in query runner cache."
 
     builder(args: yargs.Argv) {
-        return args
-            .option("connection", {
-                alias: "c",
-                default: "default",
-                describe: "Name of the connection on which run a query."
-            })
-            .option("config", {
-                alias: "f",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration."
-            });
+        return args.option("dataSource", {
+            alias: "d",
+            describe:
+                "Path to the file where your DataSource instance is defined.",
+            demandOption: true,
+        })
     }
 
     async handler(args: yargs.Arguments) {
-
-        let connection: Connection|undefined = undefined;
+        let dataSource: DataSource | undefined = undefined
         try {
-            const connectionOptionsReader = new ConnectionOptionsReader({ root: process.cwd(), configName: args.config });
-            const connectionOptions = await connectionOptionsReader.get(args.connection);
-            Object.assign(connectionOptions, {
+            dataSource = await CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
+            )
+            dataSource.setOptions({
                 subscribers: [],
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["schema"]
-            });
-            connection = await createConnection(connectionOptions);
+                logging: ["schema"],
+            })
+            await dataSource.initialize()
 
-            if (!connection.queryResultCache) {
-                console.log(chalk.black.bgRed("Cache is not enabled. To use cache enable it in connection configuration."));
-                return;
+            if (!dataSource.queryResultCache) {
+                PlatformTools.logCmdErr(
+                    "Cache is not enabled. To use cache enable it in connection configuration.",
+                )
+                return
             }
 
-            await connection.queryResultCache.clear();
-            console.log(chalk.green("Cache was successfully cleared"));
+            await dataSource.queryResultCache.clear()
+            console.log(chalk.green("Cache was successfully cleared"))
 
-            if (connection) await connection.close();
-
+            await dataSource.destroy()
         } catch (err) {
-            if (connection) await (connection as Connection).close();
+            PlatformTools.logCmdErr("Error during cache clear.", err)
 
-            console.log(chalk.black.bgRed("Error during cache clear:"));
-            console.error(err);
-            process.exit(1);
+            if (dataSource && dataSource.isInitialized)
+                await (dataSource as DataSource).destroy()
+
+            process.exit(1)
         }
     }
-
 }

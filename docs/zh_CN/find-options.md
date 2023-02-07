@@ -13,14 +13,14 @@
 userRepository.find({ select: ["firstName", "lastName"] });
 ```
 
--   `relations` - 关系需要加载主体。 也可以加载子关系（join 和 leftJoinAndSelect 的简写）
+-   `relations` - 关系需要加载主体。 也可以加载子关系（`join` 和 `leftJoinAndSelect` 的简写）
 
 ```typescript
 userRepository.find({ relations: ["profile", "photos", "videos"] });
 userRepository.find({ relations: ["profile", "photos", "videos", "videos.video_attributes"] });
 ```
 
--   `join` - 需要为实体执行联接，扩展版对的"relations"。
+-   `join` - 需要为实体执行联接，扩展版的"relations"。
 
 ```typescript
 userRepository.find({
@@ -108,6 +108,23 @@ userRepository.find({
 userRepository.find({
     cache: true
 });
+```
+
+* `lock` - 启用锁查询。 只能在`findOne`方法中使用。 `lock`是一个对象，可以定义为：
+```ts
+{ mode: "optimistic", version: number|Date }
+```
+或者
+```ts
+{ mode: "pessimistic_read"|"pessimistic_write"|"dirty_read" }
+```
+
+例如:
+
+```typescript
+userRepository.findOne(1, {
+    lock: { mode: "optimistic", version: 1 }
+})
 ```
 
 find 选项的完整示例：
@@ -242,6 +259,22 @@ const loadedPosts = await connection.getRepository(Post).find({
 
 ```sql
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
+```
+
+-   `ILike`
+
+```ts
+import { ILike } from "typeorm";
+
+const loadedPosts = await connection.getRepository(Post).find({
+    title: ILike("%out #%")
+});
+```
+
+将执行以下查询：
+
+```sql
+SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
 ```
 
 -   `Between`

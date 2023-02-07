@@ -1,62 +1,60 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class PostWithOptions {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("number", { precision: 10, scale: 5 })
-    number: number;
+    number: number
 
     @Column("numeric", { precision: 10, scale: 5 })
-    numeric: number;
+    numeric: number
 
     @Column("dec", { precision: 10, scale: 5 })
-    dec: number;
+    dec: number
 
     @Column("decimal", { precision: 10, scale: 5 })
-    decimal: number;
+    decimal: number
 
     @Column("float", { precision: 24 })
-    float: number;
+    float: number
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("char", { length: 3 })
-    char: string;
+    char: string
 
     @Column("nchar", { length: 3 })
-    nchar: string;
+    nchar: string
 
     @Column("varchar2", { length: 50 })
-    varchar2: string;
+    varchar2: string
 
     @Column("nvarchar2", { length: 40 })
-    nvarchar2: string;
+    nvarchar2: string
 
     @Column("raw", { length: 500 })
-    raw: Buffer;
+    raw: Buffer
 
     // -------------------------------------------------------------------------
     // Date Types
     // -------------------------------------------------------------------------
 
     @Column("timestamp", { precision: 5 })
-    timestamp: Date;
+    timestamp: Date
 
     @Column("timestamp with time zone", { precision: 6 })
-    timestampWithTimeZone: Date;
+    timestampWithTimeZone: Date
 
     @Column("timestamp with local time zone", { precision: 7 })
-    timestampWithLocalTimeZone: Date;
-
+    timestampWithLocalTimeZone: Date
 }

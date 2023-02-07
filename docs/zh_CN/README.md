@@ -4,8 +4,8 @@
   </a>
   <br>
   <br>
-	<a href="https://travis-ci.org/typeorm/typeorm">
-		<img src="https://travis-ci.org/typeorm/typeorm.svg?branch=master">
+	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
+		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield">
 	</a>
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
@@ -22,13 +22,13 @@
 
 TypeORM 是一个[ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)框架，它可以运行在 NodeJS、Browser、Cordova、PhoneGap、Ionic、React Native、Expo 和 Electron 平台上，可以与 TypeScript 和 JavaScript (ES5,ES6,ES7,ES8)一起使用。 它的目标是始终支持最新的 JavaScript 特性并提供额外的特性以帮助你开发任何使用数据库的（不管是只有几张表的小型应用还是拥有多数据库的大型企业应用）应用程序。
 
-不同于现有的所有其他 JavaScript ORM 框架，TypeORM 支持 Active Record 和 Data Mapper 模式，这意味着你可以以最高效的方式编写高质量的、松耦合的、可扩展的、可维护的应用程序。
+不同于现有的所有其他 JavaScript ORM 框架，TypeORM 支持 [Active Record](active-record-data-mapper.md#what-is-the-active-record-pattern) 和 [Data Mapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) 模式，这意味着你可以以最高效的方式编写高质量的、松耦合的、可扩展的、可维护的应用程序。
 
 TypeORM 参考了很多其他优秀 ORM 的实现, 比如 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 和 [Entity Framework](https://www.asp.net/entity-framework)。
 
 TypeORM 的一些特性:
 
-- 支持 DataMapper 和 ActiveRecord (随你选择)
+- 支持 [DataMapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) 和 [ActiveRecord](active-record-data-mapper.md#what-is-the-active-record-pattern) (随你选择)
 - 实体和列
 - 数据库特性列类型
 - 实体管理

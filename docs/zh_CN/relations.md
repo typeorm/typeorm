@@ -11,10 +11,10 @@
 关系可以帮助你轻松地与相关实体合作。
 有几种类型的关系：
 
-- 一对一 `@OneToOne`
-- 多对一 `@ManyToOne`
-- 一对多 `@OneToMany`
-- 多对多 `@ManyToMany`
+* [一对一](./one-to-one-relations.md) 使用 `@OneToOne`
+* [多对一](./many-to-one-one-to-many-relations.md) 使用 `@ManyToOne`
+* [一对多](./many-to-one-one-to-many-relations.md) 使用 `@OneToMany`
+* [多对多](./many-to-many-relations.md) 使用 `@ManyToMany`
 
 ## 关系选项
 
@@ -25,6 +25,7 @@
 - `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - 指定删除引用对象时外键的行为方式
 - `primary: boolean` - 指示此关系的列是否为主列。
 - `nullable: boolean` -指示此关系的列是否可为空。 默认情况下是可空。
+- `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` - 将子行从其父行中删除后，确定该子行是孤立的（默认值）还是删除的。
 
 ## 级联
 

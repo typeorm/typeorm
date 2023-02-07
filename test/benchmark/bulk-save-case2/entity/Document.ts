@@ -1,31 +1,30 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../src/decorator/columns/PrimaryColumn";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
 
 @Entity()
 export class Document {
-
     @PrimaryColumn("text")
-    id: string;
+    id: string
 
     @Column("text")
-    docId: string;
+    docId: string
 
     @Column("text")
-    label: string;
+    label: string
 
     @Column("text")
-    context: string;
+    context: string
 
-    @Column({type: "jsonb"})
-    distributions: Distribution[];
+    @Column({ type: "jsonb" })
+    distributions: Distribution[]
 
-    @Column({type: "timestamp with time zone"})
-    date: Date;
+    @Column({ type: "timestamp with time zone" })
+    date: Date
 }
 
 export interface Distribution {
-    weight: string;
-    id: number;
-    docId: number;
+    weight: string
+    id: number
+    docId: number
 }
