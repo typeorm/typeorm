@@ -79,15 +79,11 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
                 const [loadedCategory] = await connection.manager.find(
                     CategoryWithVeryLongName,
                     {
-                        relations: {
-                            postsWithVeryLongName: {
-                                authorWithVeryLongName: {
-                                    groupWithVeryLongName: true,
-                                },
-                            },
+                        relations: [
+                            "postsWithVeryLongName",
                             // before: used to generate a SELECT "AS" alias like `CategoryWithVeryLongName__postsWithVeryLongName__authorWithVeryLongName_firstName`
                             // now: `CaWiVeLoNa__poWiVeLoNa__auWiVeLoNa_firstName`, which is acceptable by Postgres (limit to 63 characters)
-                            // "postsWithVeryLongName.authorWithVeryLongName",
+                            "postsWithVeryLongName.authorWithVeryLongName",
                             // before:
                             // used to generate a JOIN "AS" alias like :
                             // `CategoryWithVeryLongName__postsWithVeryLongName__authorWithVeryLongName_firstName`
@@ -99,8 +95,8 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
                             // now:
                             // `CaWiVeLoNa__poWiVeLoNa__auWiVeLoNa_firstName`
                             // `CaWiVeLoNa__poWiVeLoNa__auWiVeLoNa__grWiVeLoNa_name`
-                            // "postsWithVeryLongName.authorWithVeryLongName.groupWithVeryLongName",
-                        },
+                            "postsWithVeryLongName.authorWithVeryLongName.groupWithVeryLongName",
+                        ],
                     },
                 )
                 expect(loadedCategory).not.to.be.null
@@ -123,13 +119,11 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
                 const loadedCategories = await connection.manager.find(
                     CategoryWithVeryLongName,
                     {
-                        relations: {
-                            postsWithVeryLongName: {
-                                authorWithVeryLongName: {
-                                    groupWithVeryLongName: true,
-                                },
-                            },
-                        },
+                        relations: [
+                            "postsWithVeryLongName",
+                            "postsWithVeryLongName.authorWithVeryLongName",
+                            "postsWithVeryLongName.authorWithVeryLongName.groupWithVeryLongName",
+                        ],
                     },
                 )
                 expect(loadedCategories).to.be.an("array").that.is.not.empty

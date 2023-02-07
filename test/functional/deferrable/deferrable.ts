@@ -44,7 +44,7 @@ describe("deferrable fk constraints should be check at the end of transaction (#
 
                 // now check
                 const user = await connection.manager.findOne(User, {
-                    relations: { company: true },
+                    relations: ["company"],
                     where: { id: 1 },
                 })
 
@@ -86,7 +86,7 @@ describe("deferrable fk constraints should be check at the end of transaction (#
 
                 // now check
                 const office = await connection.manager.findOne(Office, {
-                    relations: { company: true },
+                    relations: ["company"],
                     where: { id: 2 },
                 })
 

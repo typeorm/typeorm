@@ -55,7 +55,7 @@ describe("table-inheritance > single-table > no-type-column", () => {
                 // -------------------------------------------------------------------------
 
                 const [postIt] = await postItRepo.find({
-                    relations: { owner: true },
+                    relations: ["owner"],
                 })
 
                 postIt.owner.should.be.an.instanceOf(Employee)
@@ -63,7 +63,7 @@ describe("table-inheritance > single-table > no-type-column", () => {
                 postIt.owner.employeeName.should.be.equal("Alice Foo")
 
                 const [sticky] = await stickyRepo.find({
-                    relations: { owner: true },
+                    relations: ["owner"],
                 })
 
                 sticky.owner.should.be.an.instanceOf(Author)

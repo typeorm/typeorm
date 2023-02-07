@@ -10,7 +10,6 @@ import {
     CannotExecuteNotConnectedError,
     EntityMetadataNotFoundError,
     QueryRunnerProviderAlreadyReleasedError,
-    TypeORMError,
 } from "../error"
 import { TreeRepository } from "../repository/TreeRepository"
 import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
@@ -36,6 +35,7 @@ import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
+import { TypeORMError } from "../error"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"

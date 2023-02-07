@@ -1,10 +1,44 @@
 import { QueryRunner } from "../../query-runner/QueryRunner"
+import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { Table } from "../../schema-builder/table/Table"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { View } from "../../schema-builder/view/View"
-// import {Connection} from "../../connection/Connection";
+import {
+    AggregationCursor,
+    BulkWriteOpResultObject,
+    ChangeStream,
+    ChangeStreamOptions,
+    Code,
+    Collection,
+    CollectionAggregationOptions,
+    CollectionBulkWriteOptions,
+    CollectionInsertManyOptions,
+    CollectionInsertOneOptions,
+    CollectionOptions,
+    CollStats,
+    CommandCursor,
+    Cursor,
+    DeleteWriteOpResultObject,
+    FindAndModifyWriteOpResultObject,
+    FindOneAndReplaceOption,
+    GeoHaystackSearchOptions,
+    GeoNearOptions,
+    InsertOneWriteOpResult,
+    InsertWriteOpResult,
+    MapReduceOptions,
+    MongoClient,
+    MongoCountPreferences,
+    MongodbIndexOptions,
+    OrderedBulkOperation,
+    ParallelCollectionScanOptions,
+    ReadPreference,
+    ReplaceOneOptions,
+    UnorderedBulkOperation,
+    UpdateWriteOpResult,
+} from "./typings"
+import { DataSource } from "../../data-source/DataSource"
 import { ReadStream } from "../../platform/PlatformTools"
 import { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
 import { SqlInMemory } from "../SqlInMemory"
@@ -13,53 +47,6 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TypeORMError } from "../../error"
-
-import {
-    BulkWriteResult,
-    AggregationCursor,
-    MongoClient,
-    Collection,
-    FindCursor,
-    Document,
-    AggregateOptions,
-    AnyBulkWriteOperation,
-    BulkWriteOptions,
-    Filter,
-    CountOptions,
-    CountDocumentsOptions,
-    IndexSpecification,
-    CreateIndexesOptions,
-    IndexDescription,
-    DeleteResult,
-    DeleteOptions,
-    CommandOperationOptions,
-    FindOneAndDeleteOptions,
-    ModifyResult,
-    FindOneAndReplaceOptions,
-    UpdateFilter,
-    FindOneAndUpdateOptions,
-    RenameOptions,
-    ReplaceOptions,
-    UpdateResult,
-    CollStats,
-    CollStatsOptions,
-    ChangeStreamOptions,
-    ChangeStream,
-    UpdateOptions,
-    ListIndexesOptions,
-    ListIndexesCursor,
-    OptionalId,
-    InsertOneOptions,
-    InsertOneResult,
-    InsertManyResult,
-    MapFunction,
-    ReduceFunction,
-    MapReduceOptions,
-    UnorderedBulkOperation,
-    OrderedBulkOperation,
-    IndexInformationOptions,
-} from "mongodb"
-import { DataSource } from "../../data-source/DataSource"
 import { ReplicationMode } from "../types/ReplicationMode"
 
 /**
@@ -150,8 +137,8 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    cursor(collectionName: string, filter: Filter<Document>): FindCursor<any> {
-        return this.getCollection(collectionName).find(filter || {})
+    cursor(collectionName: string, query?: ObjectLiteral): Cursor<any> {
+        return this.getCollection(collectionName).find(query || {})
     }
 
     /**
@@ -159,13 +146,10 @@ export class MongoQueryRunner implements QueryRunner {
      */
     aggregate(
         collectionName: string,
-        pipeline: Document[],
-        options?: AggregateOptions,
+        pipeline: ObjectLiteral[],
+        options?: CollectionAggregationOptions,
     ): AggregationCursor<any> {
-        return this.getCollection(collectionName).aggregate(
-            pipeline,
-            options || {},
-        )
+        return this.getCollection(collectionName).aggregate(pipeline, options)
     }
 
     /**
@@ -173,12 +157,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async bulkWrite(
         collectionName: string,
-        operations: AnyBulkWriteOperation<Document>[],
-        options?: BulkWriteOptions,
-    ): Promise<BulkWriteResult> {
+        operations: ObjectLiteral[],
+        options?: CollectionBulkWriteOptions,
+    ): Promise<BulkWriteOpResultObject> {
         return await this.getCollection(collectionName).bulkWrite(
             operations,
-            options || {},
+            options,
         )
     }
 
@@ -187,26 +171,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async count(
         collectionName: string,
-        filter: Filter<Document>,
-        options?: CountOptions,
-    ): Promise<number> {
-        return this.getCollection(collectionName).count(
-            filter || {},
-            options || {},
-        )
-    }
-
-    /**
-     * Count number of matching documents in the db to a query.
-     */
-    async countDocuments(
-        collectionName: string,
-        filter: Filter<Document>,
-        options?: CountDocumentsOptions,
+        query?: ObjectLiteral,
+        options?: MongoCountPreferences,
     ): Promise<any> {
-        return this.getCollection(collectionName).countDocuments(
-            filter || {},
-            options || {},
+        return await this.getCollection(collectionName).countDocuments(
+            query || {},
+            options,
         )
     }
 
@@ -215,12 +185,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async createCollectionIndex(
         collectionName: string,
-        indexSpec: IndexSpecification,
-        options?: CreateIndexesOptions,
+        fieldOrSpec: string | any,
+        options?: MongodbIndexOptions,
     ): Promise<string> {
-        return this.getCollection(collectionName).createIndex(
-            indexSpec,
-            options || {},
+        return await this.getCollection(collectionName).createIndex(
+            fieldOrSpec,
+            options,
         )
     }
 
@@ -230,9 +200,11 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async createCollectionIndexes(
         collectionName: string,
-        indexSpecs: IndexDescription[],
-    ): Promise<string[]> {
-        return this.getCollection(collectionName).createIndexes(indexSpecs)
+        indexSpecs: ObjectLiteral[],
+    ): Promise<void> {
+        return await this.getCollection(collectionName).createIndexes(
+            indexSpecs,
+        )
     }
 
     /**
@@ -240,12 +212,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async deleteMany(
         collectionName: string,
-        filter: Filter<Document>,
-        options: DeleteOptions,
-    ): Promise<DeleteResult> {
-        return this.getCollection(collectionName).deleteMany(
-            filter,
-            options || {},
+        query: ObjectLiteral,
+        options?: CollectionOptions,
+    ): Promise<DeleteWriteOpResultObject> {
+        return await this.getCollection(collectionName).deleteMany(
+            query,
+            options,
         )
     }
 
@@ -254,12 +226,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async deleteOne(
         collectionName: string,
-        filter: Filter<Document>,
-        options?: DeleteOptions,
-    ): Promise<DeleteResult> {
-        return this.getCollection(collectionName).deleteOne(
-            filter,
-            options || {},
+        query: ObjectLiteral,
+        options?: CollectionOptions,
+    ): Promise<DeleteWriteOpResultObject> {
+        return await this.getCollection(collectionName).deleteOne(
+            query,
+            options,
         )
     }
 
@@ -268,14 +240,14 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async distinct(
         collectionName: string,
-        key: any,
-        filter: Filter<Document>,
-        options?: CommandOperationOptions,
+        key: string,
+        query: ObjectLiteral,
+        options?: { readPreference?: ReadPreference | string },
     ): Promise<any> {
-        return this.getCollection(collectionName).distinct(
+        return await this.getCollection(collectionName).distinct(
             key,
-            filter,
-            options || {},
+            query,
+            options,
         )
     }
 
@@ -285,19 +257,19 @@ export class MongoQueryRunner implements QueryRunner {
     async dropCollectionIndex(
         collectionName: string,
         indexName: string,
-        options?: CommandOperationOptions,
-    ): Promise<Document> {
-        return this.getCollection(collectionName).dropIndex(
+        options?: CollectionOptions,
+    ): Promise<any> {
+        return await this.getCollection(collectionName).dropIndex(
             indexName,
-            options || {},
+            options,
         )
     }
 
     /**
      * Drops all indexes from the collection.
      */
-    async dropCollectionIndexes(collectionName: string): Promise<Document> {
-        return this.getCollection(collectionName).dropIndexes()
+    async dropCollectionIndexes(collectionName: string): Promise<any> {
+        return await this.getCollection(collectionName).dropIndexes()
     }
 
     /**
@@ -305,12 +277,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async findOneAndDelete(
         collectionName: string,
-        filter: Filter<Document>,
-        options?: FindOneAndDeleteOptions,
-    ): Promise<ModifyResult<Document>> {
-        return this.getCollection(collectionName).findOneAndDelete(
-            filter,
-            options || {},
+        query: ObjectLiteral,
+        options?: { projection?: Object; sort?: Object; maxTimeMS?: number },
+    ): Promise<FindAndModifyWriteOpResultObject> {
+        return await this.getCollection(collectionName).findOneAndDelete(
+            query,
+            options,
         )
     }
 
@@ -319,14 +291,14 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async findOneAndReplace(
         collectionName: string,
-        filter: Filter<Document>,
-        replacement: Document,
-        options?: FindOneAndReplaceOptions,
-    ): Promise<ModifyResult<Document>> {
-        return this.getCollection(collectionName).findOneAndReplace(
-            filter,
+        query: ObjectLiteral,
+        replacement: Object,
+        options?: FindOneAndReplaceOption,
+    ): Promise<FindAndModifyWriteOpResultObject> {
+        return await this.getCollection(collectionName).findOneAndReplace(
+            query,
             replacement,
-            options || {},
+            options,
         )
     }
 
@@ -335,22 +307,74 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async findOneAndUpdate(
         collectionName: string,
-        filter: Filter<Document>,
-        update: UpdateFilter<Document>,
-        options?: FindOneAndUpdateOptions,
-    ): Promise<ModifyResult<Document>> {
-        return this.getCollection(collectionName).findOneAndUpdate(
-            filter,
+        query: ObjectLiteral,
+        update: Object,
+        options?: FindOneAndReplaceOption,
+    ): Promise<FindAndModifyWriteOpResultObject> {
+        return await this.getCollection(collectionName).findOneAndUpdate(
+            query,
             update,
-            options || {},
+            options,
+        )
+    }
+
+    /**
+     * Execute a geo search using a geo haystack index on a collection.
+     */
+    async geoHaystackSearch(
+        collectionName: string,
+        x: number,
+        y: number,
+        options?: GeoHaystackSearchOptions,
+    ): Promise<any> {
+        return await this.getCollection(collectionName).geoHaystackSearch(
+            x,
+            y,
+            options,
+        )
+    }
+
+    /**
+     * Execute the geoNear command to search for items in the collection.
+     */
+    async geoNear(
+        collectionName: string,
+        x: number,
+        y: number,
+        options?: GeoNearOptions,
+    ): Promise<any> {
+        return await this.getCollection(collectionName).geoNear(x, y, options)
+    }
+
+    /**
+     * Run a group command across a collection.
+     */
+    async group(
+        collectionName: string,
+        keys: Object | Array<any> | Function | Code,
+        condition: Object,
+        initial: Object,
+        reduce: Function | Code,
+        finalize: Function | Code,
+        command: boolean,
+        options?: { readPreference?: ReadPreference | string },
+    ): Promise<any> {
+        return await this.getCollection(collectionName).group(
+            keys,
+            condition,
+            initial,
+            reduce,
+            finalize,
+            command,
+            options,
         )
     }
 
     /**
      * Retrieve all the indexes on the collection.
      */
-    async collectionIndexes(collectionName: string): Promise<Document> {
-        return this.getCollection(collectionName).indexes()
+    async collectionIndexes(collectionName: string): Promise<any> {
+        return await this.getCollection(collectionName).indexes()
     }
 
     /**
@@ -360,7 +384,7 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         indexes: string | string[],
     ): Promise<boolean> {
-        return this.getCollection(collectionName).indexExists(indexes)
+        return await this.getCollection(collectionName).indexExists(indexes)
     }
 
     /**
@@ -368,10 +392,10 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async collectionIndexInformation(
         collectionName: string,
-        options?: IndexInformationOptions,
+        options?: { full: boolean },
     ): Promise<any> {
-        return this.getCollection(collectionName).indexInformation(
-            options || {},
+        return await this.getCollection(collectionName).indexInformation(
+            options,
         )
     }
 
@@ -380,7 +404,7 @@ export class MongoQueryRunner implements QueryRunner {
      */
     initializeOrderedBulkOp(
         collectionName: string,
-        options?: BulkWriteOptions,
+        options?: CollectionOptions,
     ): OrderedBulkOperation {
         return this.getCollection(collectionName).initializeOrderedBulkOp(
             options,
@@ -392,7 +416,7 @@ export class MongoQueryRunner implements QueryRunner {
      */
     initializeUnorderedBulkOp(
         collectionName: string,
-        options?: BulkWriteOptions,
+        options?: CollectionOptions,
     ): UnorderedBulkOperation {
         return this.getCollection(collectionName).initializeUnorderedBulkOp(
             options,
@@ -404,12 +428,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async insertMany(
         collectionName: string,
-        docs: OptionalId<Document>[],
-        options?: BulkWriteOptions,
-    ): Promise<InsertManyResult> {
-        return this.getCollection(collectionName).insertMany(
+        docs: ObjectLiteral[],
+        options?: CollectionInsertManyOptions,
+    ): Promise<InsertWriteOpResult> {
+        return await this.getCollection(collectionName).insertMany(
             docs,
-            options || {},
+            options,
         )
     }
 
@@ -418,17 +442,17 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async insertOne(
         collectionName: string,
-        doc: OptionalId<Document>,
-        options?: InsertOneOptions,
-    ): Promise<InsertOneResult> {
-        return this.getCollection(collectionName).insertOne(doc, options || {})
+        doc: ObjectLiteral,
+        options?: CollectionInsertOneOptions,
+    ): Promise<InsertOneWriteOpResult> {
+        return await this.getCollection(collectionName).insertOne(doc, options)
     }
 
     /**
      * Returns if the collection is a capped collection.
      */
-    async isCapped(collectionName: string): Promise<boolean> {
-        return this.getCollection(collectionName).isCapped()
+    async isCapped(collectionName: string): Promise<any> {
+        return await this.getCollection(collectionName).isCapped()
     }
 
     /**
@@ -436,8 +460,11 @@ export class MongoQueryRunner implements QueryRunner {
      */
     listCollectionIndexes(
         collectionName: string,
-        options?: ListIndexesOptions,
-    ): ListIndexesCursor {
+        options?: {
+            batchSize?: number
+            readPreference?: ReadPreference | string
+        },
+    ): CommandCursor {
         return this.getCollection(collectionName).listIndexes(options)
     }
 
@@ -446,15 +473,35 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async mapReduce(
         collectionName: string,
-        map: MapFunction,
-        reduce: ReduceFunction | string,
+        map: Function | string,
+        reduce: Function | string,
         options?: MapReduceOptions,
-    ): Promise<Document | Document[]> {
-        return this.getCollection(collectionName).mapReduce(
+    ): Promise<any> {
+        return await this.getCollection(collectionName).mapReduce(
             map,
             reduce,
-            options || {},
+            options,
         )
+    }
+
+    /**
+     * Return N number of parallel cursors for a collection allowing parallel reading of entire collection.
+     * There are no ordering guarantees for returned results.
+     */
+    async parallelCollectionScan(
+        collectionName: string,
+        options?: ParallelCollectionScanOptions,
+    ): Promise<Cursor<any>[]> {
+        return await this.getCollection(collectionName).parallelCollectionScan(
+            options,
+        )
+    }
+
+    /**
+     * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
+     */
+    async reIndex(collectionName: string): Promise<any> {
+        return await this.getCollection(collectionName).reIndex()
     }
 
     /**
@@ -463,9 +510,9 @@ export class MongoQueryRunner implements QueryRunner {
     async rename(
         collectionName: string,
         newName: string,
-        options?: RenameOptions,
-    ): Promise<Collection<Document>> {
-        return this.getCollection(collectionName).rename(newName, options || {})
+        options?: { dropTarget?: boolean },
+    ): Promise<Collection<any>> {
+        return await this.getCollection(collectionName).rename(newName, options)
     }
 
     /**
@@ -473,14 +520,14 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async replaceOne(
         collectionName: string,
-        filter: Filter<Document>,
-        replacement: Document,
-        options?: ReplaceOptions,
-    ): Promise<Document | UpdateResult> {
-        return this.getCollection(collectionName).replaceOne(
-            filter,
-            replacement,
-            options || {},
+        query: ObjectLiteral,
+        doc: ObjectLiteral,
+        options?: ReplaceOneOptions,
+    ): Promise<UpdateWriteOpResult> {
+        return await this.getCollection(collectionName).replaceOne(
+            query,
+            doc,
+            options,
         )
     }
 
@@ -489,9 +536,9 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async stats(
         collectionName: string,
-        options?: CollStatsOptions,
+        options?: { scale: number },
     ): Promise<CollStats> {
-        return this.getCollection(collectionName).stats(options || {})
+        return await this.getCollection(collectionName).stats(options)
     }
 
     /**
@@ -499,7 +546,7 @@ export class MongoQueryRunner implements QueryRunner {
      */
     watch(
         collectionName: string,
-        pipeline?: Document[],
+        pipeline?: Object[],
         options?: ChangeStreamOptions,
     ): ChangeStream {
         return this.getCollection(collectionName).watch(pipeline, options)
@@ -510,14 +557,14 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async updateMany(
         collectionName: string,
-        filter: Filter<Document>,
-        update: UpdateFilter<Document>,
-        options?: UpdateOptions,
-    ): Promise<Document | UpdateResult> {
-        return this.getCollection(collectionName).updateMany(
-            filter,
+        query: ObjectLiteral,
+        update: ObjectLiteral,
+        options?: { upsert?: boolean; w?: any; wtimeout?: number; j?: boolean },
+    ): Promise<UpdateWriteOpResult> {
+        return await this.getCollection(collectionName).updateMany(
+            query,
             update,
-            options || {},
+            options,
         )
     }
 
@@ -526,14 +573,14 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async updateOne(
         collectionName: string,
-        filter: Filter<Document>,
-        update: UpdateFilter<Document>,
-        options?: UpdateOptions,
-    ): Promise<Document | UpdateResult> {
+        query: ObjectLiteral,
+        update: ObjectLiteral,
+        options?: ReplaceOneOptions,
+    ): Promise<UpdateWriteOpResult> {
         return await this.getCollection(collectionName).updateOne(
-            filter,
+            query,
             update,
-            options || {},
+            options,
         )
     }
 

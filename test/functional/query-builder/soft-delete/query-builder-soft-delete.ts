@@ -300,7 +300,7 @@ describe("query builder > soft-delete", () => {
                 await userRepository.save(user2)
 
                 const users = await userRepository.find({
-                    relations: { picture: true },
+                    relations: ["picture"],
                 })
 
                 expect(users[0].picture.deletedAt).to.equal(null)
@@ -312,7 +312,7 @@ describe("query builder > soft-delete", () => {
 
                 const usersWithSoftDelete = await userRepository.find({
                     withDeleted: true,
-                    relations: { picture: true },
+                    relations: ["picture"],
                 })
 
                 expect(usersWithSoftDelete[0].picture.deletedAt).to.not.equal(

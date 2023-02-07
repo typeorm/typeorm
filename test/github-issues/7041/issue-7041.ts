@@ -32,7 +32,7 @@ describe("github issues > #7041 When requesting nested relations on foreign key 
                     where: {
                         id: testUser.id,
                     },
-                    relations: { admin: { organization: true } },
+                    relations: ["admin", "admin.organization"],
                 })
                 expect(foundUser?.randomField).eq("foo")
                 expect(foundUser?.admin).eq(null)
@@ -50,7 +50,7 @@ describe("github issues > #7041 When requesting nested relations on foreign key 
                     where: {
                         id: testUser.id,
                     },
-                    relations: { membership: { organization: true } },
+                    relations: ["membership", "membership.organization"],
                 })
                 expect(foundUser?.randomField).eq("foo")
                 expect(foundUser?.membership).eql([])

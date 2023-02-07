@@ -1314,7 +1314,7 @@ export class EntityManager {
     ): Repository<Entity> {
         // find already created repository instance and return it if found
         const repository = this.repositories.find(
-            (repo) => repo.target === target,
+            (repository) => repository.target === target,
         )
         if (repository) return repository
 

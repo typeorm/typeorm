@@ -91,7 +91,7 @@ describe("find options > relations", () => {
                 const posts2 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
-                        relations: { author: true },
+                        relations: ["author"],
                         order: {
                             id: "asc",
                         },

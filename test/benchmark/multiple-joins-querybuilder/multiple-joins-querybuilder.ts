@@ -24,22 +24,22 @@ describe("benchmark > QueryBuilder > wide join", () => {
 
     it("testing query builder with join to 10 relations with 10 columns each", () => {
         for (let i = 1; i <= 10_000; i++) {
-            connections.forEach((connection) =>
+            connections.map((connection) =>
                 connection.manager
                     .createQueryBuilder(One, "ones")
                     .setFindOptions({
                         where: { id: 1 },
-                        relations: {
-                            two: true,
-                            three: true,
-                            four: true,
-                            five: true,
-                            six: true,
-                            seven: true,
-                            eight: true,
-                            nine: true,
-                            ten: true,
-                        },
+                        relations: [
+                            "two",
+                            "three",
+                            "four",
+                            "five",
+                            "six",
+                            "seven",
+                            "eight",
+                            "nine",
+                            "ten",
+                        ],
                     })
                     .getQuery(),
             )

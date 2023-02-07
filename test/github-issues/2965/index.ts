@@ -36,9 +36,7 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
                 await repoNote.insert({ label: "note1", owner: personA })
                 await repoNote.insert({ label: "note2", owner: personB })
 
-                const res1 = await repoPerson.find({
-                    relations: { notes: true },
-                })
+                const res1 = await repoPerson.find({ relations: ["notes"] })
 
                 const originalLoad: (...args: any[]) => Promise<any[]> =
                     connection.relationLoader.load

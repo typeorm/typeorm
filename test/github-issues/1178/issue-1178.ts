@@ -45,7 +45,7 @@ describe("github issues > #1178 subqueries must work in insert statements", () =
                         where: {
                             id: 1,
                         },
-                        relations: { user: true },
+                        relations: ["user"],
                     })
                     .should.eventually.eql({
                         id: 1,

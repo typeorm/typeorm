@@ -123,11 +123,7 @@ describe('github issues > #3120 Add relation option "createForeignKeyConstraints
                         ActionLog,
                         {
                             where: { action: "Test Log #1" },
-                            relations: {
-                                person: true,
-                                actionDetails: true,
-                                addresses: true,
-                            },
+                            relations: ["person", "actionDetails", "addresses"],
                         },
                     )
 

@@ -35,11 +35,7 @@ describe("persistence > orphanage > delete", () => {
         let postRepository: Repository<Post>
         let categoryId: number
 
-        beforeEach(async function () {
-            if (connections.length === 0) {
-                this.skip()
-            }
-
+        beforeEach(async () => {
             await Promise.all(
                 connections.map(async (connection) => {
                     categoryRepository = connection.getRepository(Category)

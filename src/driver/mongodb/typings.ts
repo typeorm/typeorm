@@ -4855,30 +4855,13 @@ export interface FindOperatorsUnordered {
 
     /**
      * Add a remove operation to the bulk operation.
-     *
-     * @deprecated deprecated since mongodb@4.0, in new code, use delete instead
      */
     remove(): UnorderedBulkOperation
 
     /**
      * Add a remove one operation to the bulk operation.
-     *
-     * @deprecated deprecated since mongodb@4.0, in new code, use deleteOne instead
      */
     removeOne(): UnorderedBulkOperation
-
-    /**
-     * Add a delete operation to the bulk operation.
-     *
-     * @deprecated deprecated since mongodb@4.0, in new code, use delete instead
-     */
-    delete(): UnorderedBulkOperation
-
-    /**
-     * Add a delete one operation to the bulk operation.
-     *
-     */
-    deleteOne(): UnorderedBulkOperation
 
     /**
      * Add a replace one operation to the bulk operation.
