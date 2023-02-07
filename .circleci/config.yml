@@ -203,7 +203,6 @@ workflows:
               node-version:
                 - "14"
                 - "16"
-                - "18"
       - test:
           name: test (cockroachdb) - Node v16
           requires:
@@ -219,9 +218,9 @@ workflows:
           databases: "oracle"
           node-version: "16"
       - test:
-          name: test (postgres 16) - Node v16
+          name: test (postgres 12) - Node v16
           requires:
             - lint
             - build
-          databases: "postgres-16"
+          databases: "postgres-12"
           node-version: "16"
