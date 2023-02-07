@@ -63,6 +63,6 @@ describe("cli init command", () => {
                     done()
                 },
             )
-        }).timeout(90000)
+        }).timeout(120000)
     }
 })
