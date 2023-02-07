@@ -1053,17 +1053,14 @@ export class EntityManager {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
     ): Promise<number | null> {
         const metadata = this.connection.getMetadata(entityClass)
-        const { [fnName]: result } = await this.createQueryBuilder(
-            entityClass,
-            metadata.name,
-        )
+        const result = await this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .select(
-                `${fnName}(${this.connection.driver.escape(columnName)})`,
+                `${fnName}(${this.connection.driver.escape(String(columnName))})`,
                 fnName,
             )
             .getRawOne()
-        return result === null ? null : parseFloat(result)
+        return result[fnName] === null ? null : parseFloat(result[fnName])
     }
 
     /**
