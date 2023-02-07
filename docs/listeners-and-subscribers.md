@@ -193,7 +193,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    @AfterSoftRemove()
+    @AfterRecover()
     updateStatus() {
         this.status = "recovered"
     }

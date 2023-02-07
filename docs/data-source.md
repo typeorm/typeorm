@@ -8,7 +8,7 @@
 
 Your interaction with the database is only possible once you setup a `DataSource`.
 TypeORM's `DataSource` holds your database connection settings and
-establishes initial database connection or connection pool depend on RDBMS you use.
+establishes initial database connection or connection pool depending on the RDBMS you use.
 
 In order to establish initial connection / connection pool you must call `initialize` method of your `DataSource` instance.
 

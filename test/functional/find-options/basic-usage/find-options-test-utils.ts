@@ -82,4 +82,15 @@ export async function prepareData(manager: EntityManager) {
     post3.counters.likes = 1
     post3.counters.likedUsers = [user2]
     await manager.save(post3)
+
+    const post4 = new Post()
+    post4.id = 4
+    post4.title = "Post #4"
+    post4.text = "About post #4"
+    post4.author = user1
+    post4.tags = []
+    post4.counters = new Counters()
+    post4.counters.likes = 1
+    post4.counters.likedUsers = [user1]
+    await manager.save(post4)
 }

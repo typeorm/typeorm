@@ -53,6 +53,7 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 transaction:
                     dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
+                fake: !!args.f,
             }
 
             switch (args.t) {

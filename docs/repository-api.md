@@ -143,8 +143,8 @@ await repository.insert([
 -   `update` - Partially updates entity by a given update options or entity id.
 
 ```typescript
-await repository.update({ firstName: "Timber" }, { firstName: "Rizzrak" })
-// executes UPDATE user SET firstName = Rizzrak WHERE firstName = Timber
+await repository.update({ age: 18 }, { category: "ADULT" })
+// executes UPDATE user SET category = ADULT WHERE age = 18
 
 await repository.update(1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
@@ -178,6 +178,7 @@ await repository.upsert(
     {
         conflictPaths: ["externalId"],
         skipUpdateIfNoValuesChanged: true, // supported by postgres, skips update if it would not change row values
+        upsertType: "upsert", //  "on-conflict-do-update" | "on-duplicate-key-update" | "upsert" - optionally provide an UpsertType - 'upsert' is currently only supported by CockroachDB
     },
 )
 /** executes
@@ -188,6 +189,30 @@ await repository.upsert(
  *  ON CONFLICT (externalId) DO UPDATE
  *  SET firstName = EXCLUDED.firstName
  *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName
+ **/
+```
+
+```typescript
+await repository.upsert(
+    [
+        { externalId: "abc123", firstName: "Rizzrak", dateAdded: "2020-01-01" },
+        { externalId: "bca321", firstName: "Karzzir", dateAdded: "2022-01-01" },
+    ],
+    {
+        conflictPaths: ["externalId"],
+        skipUpdateIfNoValuesChanged: true, // supported by postgres, skips update if it would not change row values
+        indexPredicate: "dateAdded > 2020-01-01", // supported by postgres, allows for partial indexes
+    },
+)
+/** executes
+ *  INSERT INTO user
+ *  VALUES
+ *      (externalId = abc123, firstName = Rizzrak, dateAdded = 2020-01-01),
+ *      (externalId = cba321, firstName = Karzzir, dateAdded = 2022-01-01),
+ *  ON CONFLICT (externalId) WHERE ( dateAdded > 2021-01-01 ) DO UPDATE
+ *  SET firstName = EXCLUDED.firstName,
+ *  SET dateAdded = EXCLUDED.dateAdded,
+ *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName OR user.dateAdded IS DISTINCT FROM EXCLUDED.dateAdded
  **/
 ```
 

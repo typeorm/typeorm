@@ -820,20 +820,6 @@ describe("query builder > locking", () => {
                         ])
                     })
 
-                if (connection.driver.options.type === "cockroachdb")
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_read")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne()
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-                        ])
-                    })
-
                 return
             }),
         ))
@@ -868,7 +854,7 @@ describe("query builder > locking", () => {
     it("should throw error if for key share locking not supported by given driver", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) {
+                if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return connection.manager.transaction((entityManager) => {
                         return Promise.all([
                             entityManager

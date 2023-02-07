@@ -1257,7 +1257,7 @@ export abstract class AbstractSqliteQueryRunner
             database =
                 this.driver.getAttachedDatabasePathRelativeByHandle(schema)
         }
-        const res = await this.query(
+        return this.query(
             `SELECT ${database ? `'${database}'` : null} as database, ${
                 schema ? `'${schema}'` : null
             } as schema, * FROM ${
@@ -1268,12 +1268,11 @@ export abstract class AbstractSqliteQueryRunner
                 tableOrIndex === "table" ? "name" : "tbl_name"
             }" IN ('${tableName}')`,
         )
-        return res
     }
+
     protected async loadPragmaRecords(tablePath: string, pragma: string) {
         const [, tableName] = this.splitTablePath(tablePath)
-        const res = await this.query(`PRAGMA ${pragma}("${tableName}")`)
-        return res
+        return this.query(`PRAGMA ${pragma}("${tableName}")`)
     }
 
     /**
@@ -1299,22 +1298,39 @@ export abstract class AbstractSqliteQueryRunner
                 `SELECT * FROM "sqlite_master" WHERE "type" = 'index' AND "tbl_name" IN (${tableNamesString})`,
             )
         } else {
-            dbTables = (
-                await Promise.all(
-                    tableNames.map((tableName) =>
-                        this.loadTableRecords(tableName, "table"),
+            const tableNamesWithoutDot = tableNames
+                .filter((tableName) => {
+                    return tableName.split(".").length === 1
+                })
+                .map((tableName) => `'${tableName}'`)
+
+            const tableNamesWithDot = tableNames.filter((tableName) => {
+                return tableName.split(".").length > 1
+            })
+
+            const queryPromises = (type: "table" | "index") => {
+                const promises = [
+                    ...tableNamesWithDot.map((tableName) =>
+                        this.loadTableRecords(tableName, type),
                     ),
-                )
-            )
+                ]
+
+                if (tableNamesWithoutDot.length) {
+                    promises.push(
+                        this.query(
+                            `SELECT * FROM "sqlite_master" WHERE "type" = '${type}' AND "${
+                                type === "table" ? "name" : "tbl_name"
+                            }" IN (${tableNamesWithoutDot})`,
+                        ),
+                    )
+                }
+
+                return promises
+            }
+            dbTables = (await Promise.all(queryPromises("table")))
                 .reduce((acc, res) => [...acc, ...res], [])
                 .filter(Boolean)
-            dbIndicesDef = (
-                await Promise.all(
-                    (tableNames ?? []).map((tableName) =>
-                        this.loadTableRecords(tableName, "index"),
-                    ),
-                )
-            )
+            dbIndicesDef = (await Promise.all(queryPromises("index")))
                 .reduce((acc, res) => [...acc, ...res], [])
                 .filter(Boolean)
         }

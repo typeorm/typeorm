@@ -18,3 +18,5 @@ export type FindOperatorType =
     | "arrayContains"
     | "arrayContainedBy"
     | "arrayOverlap"
+    | "and"
+    | "jsonContains"

@@ -26,6 +26,7 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType.js"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -141,6 +142,11 @@ export class SqlServerDriver implements Driver {
         "geography",
         "rowversion",
     ]
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = []
 
     /**
      * Gets list of spatial column data types.

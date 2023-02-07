@@ -29,6 +29,11 @@ export class Migration {
      */
     instance?: MigrationInterface
 
+    /**
+     * Whether to run this migration within a transaction
+     */
+    transaction?: boolean
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -38,10 +43,12 @@ export class Migration {
         timestamp: number,
         name: string,
         instance?: MigrationInterface,
+        transaction?: boolean,
     ) {
         this.id = id
         this.timestamp = timestamp
         this.name = name
         this.instance = instance
+        this.transaction = transaction
     }
 }

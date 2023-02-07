@@ -5,7 +5,7 @@ import { FindOperator } from "../FindOperator"
  * Example: { someField: ArrayContains([...]) }
  */
 export function ArrayContains<T>(
-    value: T[] | FindOperator<T>,
+    value: readonly T[] | FindOperator<T>,
 ): FindOperator<any> {
     return new FindOperator("arrayContains", value as any)
 }

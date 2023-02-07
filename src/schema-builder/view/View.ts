@@ -1,4 +1,10 @@
-import { DataSource, Driver, EntityMetadata, SelectQueryBuilder } from "../.."
+import {
+    DataSource,
+    Driver,
+    EntityMetadata,
+    SelectQueryBuilder,
+    TableIndex,
+} from "../.."
 import { ViewOptions } from "../options/ViewOptions"
 
 /**
@@ -32,6 +38,11 @@ export class View {
     materialized: boolean
 
     /**
+     * View Indices
+     */
+    indices: TableIndex[]
+
+    /**
      * View definition.
      */
     expression: string | ((connection: DataSource) => SelectQueryBuilder<any>)
@@ -41,6 +52,7 @@ export class View {
     // -------------------------------------------------------------------------
 
     constructor(options?: ViewOptions) {
+        this.indices = []
         if (options) {
             this.database = options.database
             this.schema = options.schema
@@ -65,6 +77,25 @@ export class View {
             expression: this.expression,
             materialized: this.materialized,
         })
+    }
+
+    /**
+     * Add index
+     */
+    addIndex(index: TableIndex): void {
+        this.indices.push(index)
+    }
+
+    /**
+     * Remove index
+     */
+    removeIndex(viewIndex: TableIndex): void {
+        const index = this.indices.find(
+            (index) => index.name === viewIndex.name,
+        )
+        if (index) {
+            this.indices.splice(this.indices.indexOf(index), 1)
+        }
     }
 
     // -------------------------------------------------------------------------
