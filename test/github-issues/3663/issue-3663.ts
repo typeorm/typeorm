@@ -1,33 +1,30 @@
-import "reflect-metadata";
-import { Connection } from "../../../src";
+import "reflect-metadata"
+import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
-    createTestingConnections
-} from "../../utils/test-utils";
-import { Post } from "./entity/Post";
-import { PromiseUtils } from "../../../src";
+    createTestingConnections,
+} from "../../utils/test-utils"
+import { Post } from "./entity/Post"
 
 describe("github issues > #3663 Eager loading recursive relation causes infinite loop", () => {
-    let connections: Connection[];
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
-            dropSchema: true
-        });
-    });
-    after(() => closeTestingConnections(connections));
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
 
     it("the post should be loaded correctly", () =>
-        PromiseUtils.runInSequence(connections, async connection => {
-            await connection.synchronize();
-
-            const repository = connection.getRepository(Post);
-
-            const post = new Post();
-
-            await repository.save(post);
-
-            await repository.findOne(post.id);
-        }));
-});
+        Promise.all(
+            dataSources.map(async function (dataSource) {
+                const repository = dataSource.getRepository(Post)
+                const post = new Post()
+                await repository.save(post)
+                await repository.findOneBy({ id: post.id })
+            }),
+        ))
+})
