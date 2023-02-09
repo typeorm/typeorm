@@ -1324,7 +1324,7 @@ export class MongoEntityManager extends EntityManager {
 
         const pipeline: ObjectLiteral[] = []
         let populate: string[] = []
-        let results: any
+        let results: Entity[]
         let firstPipeline: any
 
         const { referenceColumns } = this.parseColumns(metadata)
@@ -1386,20 +1386,6 @@ export class MongoEntityManager extends EntityManager {
                 // console.log(selectWithProjectPipeline)
             }
 
-            if (optionsOrConditions.skip)
-                pipeline.push({ $skip: optionsOrConditions.skip })
-
-            if (optionsOrConditions.take)
-                pipeline.push({ $limit: optionsOrConditions.take })
-
-            if (optionsOrConditions.order) {
-                pipeline.push({
-                    $sort: this.convertFindOptionsOrderToOrderCriteria(
-                        optionsOrConditions.order,
-                    ),
-                })
-            }
-
             if (deleteDateColumn && !optionsOrConditions.withDeleted) {
                 if (firstPipeline) {
                     if (firstPipeline.$match) {
@@ -1435,6 +1421,28 @@ export class MongoEntityManager extends EntityManager {
                     })
                 }
             }
+
+            /**
+             * The pipelines have to be in this order:
+             * - $match first
+             * - then $sort
+             * - then $skip & $take
+             * WHY? Read more here: https://www.mongodb.com/community/forums/t/order-of-sort-and-limit-aggregation/145087/8
+             */
+
+            if (optionsOrConditions.order) {
+                pipeline.push({
+                    $sort: this.convertFindOptionsOrderToOrderCriteria(
+                        optionsOrConditions.order,
+                    ),
+                })
+            }
+
+            if (optionsOrConditions.skip)
+                pipeline.push({ $skip: optionsOrConditions.skip })
+
+            if (optionsOrConditions.take)
+                pipeline.push({ $limit: optionsOrConditions.take })
         } else if (deleteDateColumn) {
             pipeline.push({
                 $match: {
@@ -1464,10 +1472,11 @@ export class MongoEntityManager extends EntityManager {
         // "aggregate" always returns array
         // if the relation column is not an array, should return an object
 
-        results = results.map((result: any) => {
-            populate.map((field, index) => {
-                if (refTables[index][field].isArray == false)
-                    result[field] = result[field][0]
+        results = results.map((result) => {
+            populate.forEach((column) => {
+                const metadata = refTables.find((ref) => ref[column])
+                if (metadata && !metadata[column].isArray)
+                    (result as any)[column] = (result as any)[column][0]
             })
             return result
         })
