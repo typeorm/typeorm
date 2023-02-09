@@ -215,6 +215,17 @@ export class DataSource {
             this.queryResultCache = new QueryResultCacheFactory(this).create()
         }
 
+        // todo: we must update the database in the driver as well, if it was set by setOptions method
+        //  in the future we need to refactor the code and remove "database" from the driver, and instead
+        //  use database (and options) from a single place - data source.
+        if (options.database) {
+            this.driver.database = DriverUtils.buildDriverOptions(
+                this.options,
+            ).database
+        }
+
+        // todo: need to take a look if we need to update schema and other "poor" properties
+
         return this
     }
 
@@ -257,7 +268,7 @@ export class DataSource {
         } catch (error) {
             // if for some reason build metadata fail (for example validation error during entity metadata check)
             // connection needs to be closed
-            await this.close()
+            await this.destroy()
             throw error
         }
 

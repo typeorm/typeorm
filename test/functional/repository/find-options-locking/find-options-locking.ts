@@ -547,21 +547,6 @@ describe("repository > find options > locking", () => {
                         ])
                     })
 
-                if (connection.driver.options.type === "cockroachdb")
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .getRepository(PostWithVersion)
-                                .findOne({
-                                    where: { id: 1 },
-                                    lock: { mode: "pessimistic_read" },
-                                })
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-                        ])
-                    })
-
                 return
             }),
         ))

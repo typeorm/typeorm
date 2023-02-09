@@ -420,11 +420,6 @@
     ],
     migrations: [
         "migration/*.js"
-    ],
-    cli: {
-        entitiesDir: "entity",
-        migrationsDir: "migration",
-        subscribersDir: "subscriber"
-    }
+    ]
 }
 ```

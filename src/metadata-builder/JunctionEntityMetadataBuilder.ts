@@ -59,6 +59,7 @@ export class JunctionEntityMetadataBuilder {
                 database:
                     joinTable.database || relation.entityMetadata.database,
                 schema: joinTable.schema || relation.entityMetadata.schema,
+                synchronize: joinTable.synchronize,
             },
         })
         entityMetadata.build()

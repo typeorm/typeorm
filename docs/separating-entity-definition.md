@@ -233,7 +233,7 @@ Be sure to add the `extended` columns also to the `Category` interface (e.g., vi
 ## Using Schemas to Query / Insert Data
 
 Of course, you can use the defined schemas in your repositories or entity manager as you would use the decorators.
-Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema in order to get
+Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema) in order to get
 some data or manipulate the database.
 
 ```ts

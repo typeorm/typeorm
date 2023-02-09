@@ -390,7 +390,11 @@ export class OrmUtils {
         // At last checking prototypes as good as we can
         if (!(typeof x === "object" && typeof y === "object")) return false
 
-        if (x.isPrototypeOf(y) || y.isPrototypeOf(x)) return false
+        if (
+            Object.prototype.isPrototypeOf.call(x, y) ||
+            Object.prototype.isPrototypeOf.call(y, x)
+        )
+            return false
 
         if (x.constructor !== y.constructor) return false
 

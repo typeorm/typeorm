@@ -31,4 +31,11 @@ export interface JoinTableMultipleColumnsOptions {
      * Works only in some databases (like postgres and mssql).
      */
     schema?: string
+
+    /**
+     * Indicates if schema synchronization is enabled or disabled junction table.
+     * If it will be set to false then schema sync will and migrations ignores junction table.
+     * By default schema synchronization is enabled.
+     */
+    readonly synchronize?: boolean
 }

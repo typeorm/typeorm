@@ -249,6 +249,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return this
     }
 
+    fromDummy(): SelectQueryBuilder<any> {
+        return this.from(
+            this.connection.driver.dummyTableName ??
+                "(SELECT 1 AS dummy_column)",
+            "dummy_table",
+        )
+    }
+
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
@@ -1191,6 +1199,27 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
+     * Sets a new where EXISTS clause
+     */
+    whereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.where(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new AND where EXISTS clause
+     */
+    andWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.andWhere(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new OR where EXISTS clause
+     */
+    orWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.orWhere(...this.getExistsCondition(subQuery))
+    }
+
+    /**
      * Adds new AND WHERE with conditions for the given ids.
      *
      * Ids are mixed.
@@ -1291,6 +1320,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     addGroupBy(groupBy: string): this {
         this.expressionMap.groupBys.push(groupBy)
+        return this
+    }
+
+    /**
+     * Enables time travelling for the current query (only supported by cockroach currently)
+     */
+    timeTravelQuery(timeTravelFn?: string | boolean): this {
+        if (this.connection.driver.options.type === "cockroachdb") {
+            if (timeTravelFn === undefined) {
+                this.expressionMap.timeTravel = "follower_read_timestamp()"
+            } else {
+                this.expressionMap.timeTravel = timeTravelFn
+            }
+        }
+
         return this
     }
 
@@ -1730,6 +1774,50 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             this.expressionMap.queryEntity = false
             const results = await this.executeCountQuery(queryRunner)
+
+            // close transaction if we started it
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction()
+            }
+
+            return results
+        } catch (error) {
+            // rollback transaction if we started it
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {}
+            }
+            throw error
+        } finally {
+            if (queryRunner !== this.queryRunner)
+                // means we created our own query runner
+                await queryRunner.release()
+        }
+    }
+
+    /**
+     * Gets exists
+     * Returns whether any rows exists matching current query.
+     */
+    async getExists(): Promise<boolean> {
+        if (this.expressionMap.lockMode === "optimistic")
+            throw new OptimisticLockCanNotBeUsedError()
+
+        const queryRunner = this.obtainQueryRunner()
+        let transactionStartedByUs: boolean = false
+        try {
+            // start transaction if it was enabled
+            if (
+                this.expressionMap.useTransaction === true &&
+                queryRunner.isTransactionActive === false
+            ) {
+                await queryRunner.startTransaction()
+                transactionStartedByUs = true
+            }
+
+            this.expressionMap.queryEntity = false
+            const results = await this.executeExistsQuery(queryRunner)
 
             // close transaction if we started it
             if (transactionStartedByUs) {
@@ -2912,6 +3000,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return parseInt(results[0]["cnt"])
     }
 
+    protected async executeExistsQuery(
+        queryRunner: QueryRunner,
+    ): Promise<boolean> {
+        const results = await this.connection
+            .createQueryBuilder()
+            .fromDummy()
+            .select("1", "row_exists")
+            .whereExists(this)
+            .limit(1)
+            .loadRawResults(queryRunner)
+
+        return results.length > 0
+    }
+
     protected applyFindOptions() {
         // todo: convert relations: string[] to object map to simplify code
         // todo: same with selects
@@ -3298,20 +3400,33 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 },
             )
 
+            const originalQuery = this.clone()
+
+            // preserve original timeTravel value since we set it to "false" in subquery
+            const originalQueryTimeTravel =
+                originalQuery.expressionMap.timeTravel
+
             rawResults = await new SelectQueryBuilder(
                 this.connection,
                 queryRunner,
             )
                 .select(`DISTINCT ${querySelects.join(", ")}`)
                 .addSelect(selects)
-                .from(`(${this.clone().orderBy().getQuery()})`, "distinctAlias")
+                .from(
+                    `(${originalQuery
+                        .orderBy()
+                        .timeTravelQuery(false) // set it to "false" since time travel clause must appear at the very end and applies to the entire SELECT clause.
+                        .getQuery()})`,
+                    "distinctAlias",
+                )
+                .timeTravelQuery(originalQueryTimeTravel)
                 .offset(this.expressionMap.skip)
                 .limit(this.expressionMap.take)
                 .orderBy(orderBys)
                 .cache(
-                    this.expressionMap.cache
-                        ? this.expressionMap.cache
-                        : this.expressionMap.cacheId,
+                    this.expressionMap.cache && this.expressionMap.cacheId
+                        ? `${this.expressionMap.cacheId}-pagination`
+                        : this.expressionMap.cache,
                     this.expressionMap.cacheDuration,
                 )
                 .setParameters(this.getParameters())
@@ -3570,11 +3685,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : {}
         let savedQueryResultCacheOptions: QueryResultCacheOptions | undefined =
             undefined
+        const isCachingEnabled =
+            // Caching is enabled globally and isn't disabled locally.
+            (cacheOptions.alwaysEnabled && this.expressionMap.cache) ||
+            // ...or it's enabled locally explicitly.
+            this.expressionMap.cache
         let cacheError = false
-        if (
-            this.connection.queryResultCache &&
-            (this.expressionMap.cache || cacheOptions.alwaysEnabled)
-        ) {
+        if (this.connection.queryResultCache && isCachingEnabled) {
             try {
                 savedQueryResultCacheOptions =
                     await this.connection.queryResultCache.getFromCache(
@@ -3609,7 +3726,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (
             !cacheError &&
             this.connection.queryResultCache &&
-            (this.expressionMap.cache || cacheOptions.alwaysEnabled)
+            isCachingEnabled
         ) {
             try {
                 await this.connection.queryResultCache.storeInCache(
@@ -4010,14 +4127,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     protected buildWhere(
-        where: FindOptionsWhere<any>,
+        where: FindOptionsWhere<any>[] | FindOptionsWhere<any>,
         metadata: EntityMetadata,
         alias: string,
         embedPrefix?: string,
     ) {
         let condition: string = ""
         // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
-        if (Array.isArray(where)) {
+        if (Array.isArray(where) && where.length) {
             condition =
                 "(" +
                 where
@@ -4267,16 +4384,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (!existJoin) {
                             this.joins.push({
-                                type: "inner",
+                                type: "left",
                                 select: false,
                                 selection: undefined,
                                 alias: joinAlias,
                                 parentAlias: alias,
                                 relationMetadata: relation,
                             })
-                        } else {
-                            if (existJoin.type === "left")
-                                existJoin.type = "inner"
                         }
 
                         const condition = this.buildWhere(

@@ -12,14 +12,14 @@ commands:
     steps:
       - when:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
                 command: cp ormconfig.circleci-common.json ./ormconfig.json
       - unless:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
@@ -40,9 +40,10 @@ commands:
       - restore_cache:
           name: Restore node_modules cache
           key: node_modules-<< parameters.cache-key >>-{{ checksum "package-lock.json" }}
-      - run:
-          name: Verify `package.json` and `package-lock.json` are in sync
-          command: npx lock-verify
+      #      removed this item because lock-verify is deprecated
+      #      - run:
+      #          name: Verify `package.json` and `package-lock.json` are in sync
+      #          command: npx lock-verify
       - run:
           # This uses `npm install` instead of `npm ci`
           # because of https://github.com/npm/cli/issues/558
@@ -81,21 +82,21 @@ jobs:
   lint:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:16
     steps:
       - checkout
       - install-packages:
-          cache-key: node12
+          cache-key: node16
       - run: npm run lint
 
   build:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:16
     steps:
       - checkout
       - install-packages:
-          cache-key: node12
+          cache-key: node16
       - run: npm run compile
       - persist_to_workspace:
           root: ~/typeorm
@@ -109,7 +110,7 @@ jobs:
         default: ""
       node-version:
         type: string
-        default: "12"
+        default: "16"
     working_directory: ~/typeorm
     docker:
       - image: circleci/node:<< parameters.node-version >>
@@ -200,27 +201,26 @@ workflows:
           matrix:
             parameters:
               node-version:
-                - "12"
                 - "14"
                 - "16"
       - test:
-          name: test (cockroachdb) - Node v12
+          name: test (cockroachdb) - Node v16
           requires:
             - lint
             - build
           databases: "cockroachdb"
-          node-version: "12"
+          node-version: "16"
       - test:
-          name: test (oracle) - Node v12
+          name: test (oracle) - Node v16
           requires:
             - lint
             - build
           databases: "oracle"
-          node-version: "12"
+          node-version: "16"
       - test:
-          name: test (postgres 12) - Node v12
+          name: test (postgres 12) - Node v16
           requires:
             - lint
             - build
           databases: "postgres-12"
-          node-version: "12"
+          node-version: "16"

@@ -377,29 +377,56 @@ export const Routes = [{
      * Gets contents of the user controller file (used when express is enabled).
      */
     protected static getControllerTemplate(isEsm: boolean): string {
-        return `import { getRepository } from "typeorm"
+        return `import { AppDataSource } from '../data-source'
 import { NextFunction, Request, Response } from "express"
 import { User } from "../entity/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
-    private userRepository = getRepository(User)
+    private userRepository = AppDataSource.getRepository(User)
 
     async all(request: Request, response: Response, next: NextFunction) {
         return this.userRepository.find()
     }
 
     async one(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.findOne(request.params.id)
+        const id = parseInt(request.params.id)
+        
+
+        const user = await this.userRepository.findOne({
+            where: { id }
+        })
+
+        if (!user) {
+            return "unregistered user"
+        }
+        return user
     }
 
     async save(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.save(request.body)
+        const { firstName, lastName, age } = request.body;
+
+        const user = Object.assign(new User(), {
+            firstName,
+            lastName,
+            age
+        })
+
+        return this.userRepository.save(user)
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        let userToRemove = await this.userRepository.findOneBy({ id: request.params.id })
+        const id = parseInt(request.params.id)
+
+        let userToRemove = await this.userRepository.findOneBy({ id })
+
+        if (!userToRemove) {
+            return "this user not exist"
+        }
+
         await this.userRepository.remove(userToRemove)
+
+        return "user has been removed"
     }
 
 }`
