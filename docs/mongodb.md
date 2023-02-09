@@ -184,7 +184,7 @@ export class Post {
 
     /**
      ** @ObjectIdColumn({ name: "user" })
-     ** This means it's an referenced ObjectId of a {User} in "user" collection.
+     ** This means it's a referenced ObjectId of a {User} in "user" collection.
      */
     @ObjectIdColumn({ name: "user" })
     author: ObjectID | User
