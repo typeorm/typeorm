@@ -140,10 +140,13 @@ export class PlatformTools {
     }
 
     /**
-     * Normalizes given path. Does "path.normalize".
+     * Normalizes given path. Does "path.normalize" and replaces backslashes with forward slashes on Windows.
      */
     static pathNormalize(pathStr: string): string {
-        return path.normalize(pathStr)
+        let normalizedPath = path.normalize(pathStr)
+        if (process.platform === "win32")
+            normalizedPath = normalizedPath.replace(/\\/g, "/")
+        return normalizedPath
     }
 
     /**
