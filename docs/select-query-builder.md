@@ -761,7 +761,7 @@ const user = await createQueryBuilder("user")
 
 ## Joining and mapping functionality
 
-Add `profilePhoto` to `User` entity and you can map any data into that property using `QueryBuilder`:
+Add `profilePhoto` to `User` entity, and you can map any data into that property using `QueryBuilder`:
 
 ```typescript
 export class User {
@@ -816,7 +816,7 @@ There are two types of results you can get using select query builder: **entitie
 Most of the time, you need to select real entities from your database, for example, users.
 For this purpose, you use `getOne` and `getMany`.
 However, sometimes you need to select specific data, like the _sum of all user photos_.
-Such data is not a entity, it's called raw data.
+Such data is not an entity, it's called raw data.
 To get raw data, you use `getRawOne` and `getRawMany`.
 Examples:
 
@@ -844,7 +844,7 @@ const photosSums = await dataSource
 ## Streaming result data
 
 You can use `stream` which returns you a stream.
-Streaming returns you raw data and you must handle entity transformation manually:
+Streaming returns you raw data, and you must handle entity transformation manually:
 
 ```typescript
 const stream = await dataSource
@@ -1238,3 +1238,38 @@ const users = await connection.getRepository(User)
     .where(`user.id IN (SELECT "id" FROM 'insert_results')`)
     .getMany();
 ```
+
+## Time Travel Queries
+
+[Time Travel Queries](https://www.cockroachlabs.com/blog/time-travel-queries-select-witty_subtitle-the_future/)
+currently supported only in `CockroachDB` database.
+
+```typescript
+const repository = connection.getRepository(Account)
+
+// create a new account
+const account = new Account()
+account.name = "John Smith"
+account.balance = 100
+await repository.save(account)
+
+// imagine we update the account balance 1 hour after creation
+account.balance = 200
+await repository.save(account)
+
+// outputs { name: "John Smith", balance: "200" }
+console.log(account)
+
+// load account state on 1 hour back
+account = await repository
+    .createQueryBuilder("account")
+    .timeTravelQuery(`'-1h'`)
+    .getOneOrFail()
+
+// outputs { name: "John Smith", balance: "100" }
+console.log(account)
+```
+
+By default `timeTravelQuery()` uses `follower_read_timestamp()` function if no arguments passed.
+For another supported timestamp arguments and additional information please refer to
+[CockroachDB](https://www.cockroachlabs.com/docs/stable/as-of-system-time.html) docs.

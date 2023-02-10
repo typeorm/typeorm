@@ -53,4 +53,12 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
     readonly flags?: number
 
     readonly poolSize?: never
+
+    /**
+     * Query or change the setting of the busy timeout.
+     * Time in milliseconds.
+     *
+     * @see https://www.sqlite.org/pragma.html#pragma_busy_timeout
+     */
+    readonly busyTimeout?: number
 }

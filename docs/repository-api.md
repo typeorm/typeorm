@@ -178,6 +178,7 @@ await repository.upsert(
     {
         conflictPaths: ["externalId"],
         skipUpdateIfNoValuesChanged: true, // supported by postgres, skips update if it would not change row values
+        upsertType: "upsert", //  "on-conflict-do-update" | "on-duplicate-key-update" | "upsert" - optionally provide an UpsertType - 'upsert' is currently only supported by CockroachDB
     },
 )
 /** executes
@@ -211,7 +212,7 @@ await repository.upsert(
  *  ON CONFLICT (externalId) WHERE ( dateAdded > 2021-01-01 ) DO UPDATE
  *  SET firstName = EXCLUDED.firstName,
  *  SET dateAdded = EXCLUDED.dateAdded,
- *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName OR user.dateAdded IS DISTINCT FROM EXCLUDED.dateAdded 
+ *  WHERE user.firstName IS DISTINCT FROM EXCLUDED.firstName OR user.dateAdded IS DISTINCT FROM EXCLUDED.dateAdded
  **/
 ```
 
@@ -270,6 +271,30 @@ const count = await repository.count({
 
 ```typescript
 const count = await repository.countBy({ firstName: "Timber" })
+```
+
+-   `sum` - Returns the sum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const sum = await repository.sum("age", { firstName: "Timber" })
+```
+
+-   `average` - Returns the average of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const average = await repository.average("age", { firstName: "Timber" })
+```
+
+-   `minimum` - Returns the minimum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const minimum = await repository.minimum("age", { firstName: "Timber" })
+```
+
+-   `maximum` - Returns the maximum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const maximum = await repository.maximum("age", { firstName: "Timber" })
 ```
 
 -   `find` - Finds entities that match given `FindOptions`.

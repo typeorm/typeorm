@@ -103,7 +103,7 @@ export class User {
 
 ## Spatial Indices
 
-MySQL and PostgreSQL (when PostGIS is available) both support spatial indices.
+MySQL, CockroachDB and PostgreSQL (when PostGIS is available) supports spatial indices.
 
 To create a spatial index on a column in MySQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `point`, `linestring`,
 `polygon`, `multipoint`, `multilinestring`, `multipolygon`,
@@ -118,7 +118,7 @@ export class Thing {
 }
 ```
 
-To create a spatial index on a column in PostgreSQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `geography`):
+To create a spatial index on a column add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `geography`):
 
 ```typescript
 export interface Geometry {

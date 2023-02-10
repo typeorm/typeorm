@@ -796,6 +796,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Time travel queries for CockroachDB
+     */
+    protected createTimeTravelQuery(): string {
+        if (
+            this.expressionMap.queryType === "select" &&
+            this.expressionMap.timeTravel
+        ) {
+            return ` AS OF SYSTEM TIME ${this.expressionMap.timeTravel}`
+        }
+
+        return ""
+    }
+
+    /**
      * Creates "WHERE" expression.
      */
     protected createWhereExpression() {
@@ -848,13 +862,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             conditionsArray.push(condition)
         }
 
+        let condition = ""
+
+        // time travel
+        condition += this.createTimeTravelQuery()
+
         if (!conditionsArray.length) {
-            return ""
+            condition += ""
         } else if (conditionsArray.length === 1) {
-            return ` WHERE ${conditionsArray[0]}`
+            condition += ` WHERE ${conditionsArray[0]}`
         } else {
-            return ` WHERE ( ${conditionsArray.join(" ) AND ( ")} )`
+            condition += ` WHERE ( ${conditionsArray.join(" ) AND ( ")} )`
         }
+
+        return condition
     }
 
     /**
@@ -1009,6 +1030,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 return `${condition.parameters[0]} <= ${condition.parameters[1]}`
             case "arrayContains":
                 return `${condition.parameters[0]} @> ${condition.parameters[1]}`
+            case "jsonContains":
+                return `${condition.parameters[0]} ::jsonb @> ${condition.parameters[1]}`
             case "arrayContainedBy":
                 return `${condition.parameters[0]} <@ ${condition.parameters[1]}`
             case "arrayOverlap":
@@ -1042,6 +1065,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     .slice(1)
                     .join(", ")})`
             case "any":
+                if (driver.options.type === "cockroachdb") {
+                    return `${condition.parameters[0]}::STRING = ANY(${condition.parameters[1]}::STRING[])`
+                }
+
                 return `${condition.parameters[0]} = ANY(${condition.parameters[1]})`
             case "isNull":
                 return `${condition.parameters[0]} IS NULL`
@@ -1117,17 +1144,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     cte.options.recursive && databaseRequireRecusiveHint
                         ? "RECURSIVE"
                         : ""
-                const materializeClause =
-                    cte.options.materialized &&
-                    this.connection.driver.cteCapabilities.materializedHint
+                let materializeClause = ""
+                if (
+                    this.connection.driver.cteCapabilities.materializedHint &&
+                    cte.options.materialized !== undefined
+                ) {
+                    materializeClause = cte.options.materialized
                         ? "MATERIALIZED"
-                        : ""
+                        : "NOT MATERIALIZED"
+                }
 
                 return [
                     recursiveClause,
                     cteHeader,
-                    materializeClause,
                     "AS",
+                    materializeClause,
                     `(${cteBodyExpression})`,
                 ]
                     .filter(Boolean)

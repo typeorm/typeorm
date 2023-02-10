@@ -1,6 +1,5 @@
 name: 🌈 Feature request
 description: Suggest an amazing new idea for this project
-title: "[FEATURE]:"
 labels:
   - new feature
   - requires triage

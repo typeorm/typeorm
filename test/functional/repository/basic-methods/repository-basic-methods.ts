@@ -440,7 +440,7 @@ describe("repository > basic methods", () => {
         it("should first create then update an entity", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
                     )
@@ -541,7 +541,7 @@ describe("repository > basic methods", () => {
         it("should bulk upsert", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
@@ -589,7 +589,7 @@ describe("repository > basic methods", () => {
         it("should not overwrite unspecified properties", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const postObjects = connection.getRepository(Post)
                     const externalId = "external-no-overwrite-unrelated"
@@ -688,7 +688,7 @@ describe("repository > basic methods", () => {
         it("should upsert with embedded columns", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
@@ -746,7 +746,7 @@ describe("repository > basic methods", () => {
         it("should upsert on one-to-one relation", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const oneToOneRepository = connection.getRepository(
                         OneToOneRelationEntity,
@@ -784,7 +784,7 @@ describe("repository > basic methods", () => {
         it("should bulk upsert with embedded columns", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const embeddedConstraintObjects =
                         connection.getRepository(EmbeddedUQEntity)
@@ -837,7 +837,7 @@ describe("repository > basic methods", () => {
         it("should throw if using an unsupported driver", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType != null) return
+                    if (connection.driver.supportedUpsertTypes.length) return
 
                     const postRepository = connection.getRepository(Post)
                     const externalId = "external-2"
@@ -851,9 +851,12 @@ describe("repository > basic methods", () => {
         it("should throw if using indexPredicate with an unsupported driver", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    // does not throw for cockroachdb, just returns a result
+                    if (connection.driver.options.type === "cockroachdb") return
                     if (
-                        connection.driver.supportedUpsertType !==
-                        "on-conflict-do-update"
+                        !connection.driver.supportedUpsertTypes.includes(
+                            "on-conflict-do-update",
+                        )
                     )
                         return
 

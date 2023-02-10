@@ -25,6 +25,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { DriverUtils } from "../DriverUtils"
 import { View } from "../../schema-builder/view/View"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -128,6 +129,11 @@ export class SapDriver implements Driver {
         "st_geometry",
         "st_point",
     ]
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = []
 
     /**
      * Gets list of spatial column data types.

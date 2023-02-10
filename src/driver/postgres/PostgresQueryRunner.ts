@@ -3537,48 +3537,22 @@ export class PostgresQueryRunner
                                 }
                             }
 
-                            if (tableColumn.type === "geometry") {
-                                const geometryColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geometry_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geometry_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
+                            if (
+                                tableColumn.type === "geometry" ||
+                                tableColumn.type === "geography"
+                            ) {
+                                const sql =
+                                    `SELECT * FROM (` +
+                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `FROM "${tableColumn.type}_columns"` +
+                                    `) AS _ ` +
+                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                    `"table_name" = '${dbColumn["table_name"]}'`
 
                                 const results: ObjectLiteral[] =
-                                    await this.query(geometryColumnSql)
-
-                                if (results.length > 0) {
-                                    tableColumn.spatialFeatureType =
-                                        results[0].type
-                                    tableColumn.srid = results[0].srid
-                                }
-                            }
-
-                            if (tableColumn.type === "geography") {
-                                const geographyColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geography_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geography_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
-
-                                const results: ObjectLiteral[] =
-                                    await this.query(geographyColumnSql)
+                                    await this.query(sql)
 
                                 if (results.length > 0) {
                                     tableColumn.spatialFeatureType =
@@ -3743,7 +3717,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::[\w\s\.\[\]\"]+/g, "")
+                                    ].replace(/::.+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,

@@ -303,12 +303,13 @@ describe("query builder > insertion > on conflict", () => {
                 )
             }),
         ))
-    it("should throw error if using indexPredicate amd an unsupported driver", () => {
+    it("should throw error if using indexPredicate amd an unsupported driver", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    connection.driver.supportedUpsertType !==
-                    "on-duplicate-key-update"
+                    !connection.driver.supportedUpsertTypes.includes(
+                        "on-duplicate-key-update",
+                    )
                 )
                     return
                 const post1 = new Post()
@@ -330,6 +331,5 @@ describe("query builder > insertion > on conflict", () => {
 
                 expect(sql).to.throw(Error)
             }),
-        )
-    })
+        ))
 })

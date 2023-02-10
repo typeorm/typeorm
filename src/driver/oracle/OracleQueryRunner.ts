@@ -2242,17 +2242,25 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const currentDatabase = await this.getCurrentDatabase()
         const currentSchema = await this.getCurrentSchema()
 
-        const viewNamesString = viewNames
-            .map((name) => "'" + name + "'")
-            .join(", ")
+        const viewsCondition = viewNames
+            .map((viewName) => this.driver.parseTableName(viewName))
+            .map(({ schema, tableName }) => {
+                if (!schema) {
+                    schema = this.driver.options.schema || currentSchema
+                }
+
+                return `("T"."schema" = '${schema}' AND "T"."name" = '${tableName}')`
+            })
+            .join(" OR ")
+
         let query =
             `SELECT "T".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
             )} "T" ` +
             `INNER JOIN "USER_OBJECTS" "O" ON "O"."OBJECT_NAME" = "T"."name" AND "O"."OBJECT_TYPE" IN ( 'MATERIALIZED VIEW', 'VIEW' ) ` +
-            `WHERE "T"."type" IN ( '${MetadataTableType.MATERIALIZED_VIEW}', '${MetadataTableType.VIEW}' )`
-        if (viewNamesString.length > 0)
-            query += ` AND "T"."name" IN (${viewNamesString})`
+            `WHERE "T"."type" IN ('${MetadataTableType.MATERIALIZED_VIEW}', '${MetadataTableType.VIEW}')`
+        if (viewsCondition.length > 0) query += ` AND ${viewsCondition}`
+
         const dbViews = await this.query(query)
         return dbViews.map((dbView: any) => {
             const parsedName = this.driver.parseTableName(dbView["name"])
@@ -2848,9 +2856,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
             : MetadataTableType.VIEW
+        const { schema, tableName } = this.driver.parseTableName(view)
         return this.insertTypeormMetadataSql({
             type: type,
-            name: view.name,
+            name: tableName,
+            schema: schema,
             value: expression,
         })
     }

@@ -1,6 +1,5 @@
 name: 📝 Documentation Issue
 description: Documentation is unclear or otherwise insufficient.
-title: "[DOCS]: "
 labels:
   - documentation
   - requires triage

@@ -2,7 +2,6 @@ import mkdirp from "mkdirp"
 import path from "path"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SqliteQueryRunner } from "./SqliteQueryRunner"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source/DataSource"
 import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
@@ -40,10 +39,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
         this.connection = connection
         this.options = connection.options as SqliteConnectionOptions
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
 
         // load sqlite package
         this.loadDependencies()
@@ -176,6 +171,14 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
         if (this.options.enableWAL) {
             await run(`PRAGMA journal_mode = WAL`)
+        }
+
+        if (
+            this.options.busyTimeout &&
+            typeof this.options.busyTimeout === "number" &&
+            this.options.busyTimeout > 0
+        ) {
+            await run(`PRAGMA busy_timeout = ${this.options.busyTimeout}`)
         }
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
