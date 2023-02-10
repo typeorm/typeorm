@@ -267,6 +267,17 @@ export class DateUtils {
         }
     }
 
+    /**
+     * Parse a date without the UTC-offset of the device
+     *
+     * The problem here is with wrong timezone.
+     *
+     * For example:
+     *
+     * ``new Date('2021-04-28')`` will generate `2021-04-28T00:00:00.000Z`
+     * in my timezone, which is not true for my timezone (GMT-0300). It should
+     * be `2021-04-28T03:00:00.000Z` as `new Date(2021, 3, 28)` generates.
+     */
     private static parseDateAsISO(dateString: string): Date {
         const date = new Date(dateString)
         const offset = date.getTimezoneOffset() * 60 * 1000
