@@ -795,7 +795,13 @@ export class SqlServerDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    ))
 
             // DEBUG SECTION
             // if (isColumnChanged) {
