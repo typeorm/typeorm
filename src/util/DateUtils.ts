@@ -1,5 +1,4 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import parseISO from "./parseISO"
 
 /**
  * Provides utilities to transform hydrated and persisted data.
@@ -47,22 +46,10 @@ export class DateUtils {
         toUtc: boolean = false,
         useMilliseconds = true,
     ): Date {
-        /**
-         * new Date(ISOString) is not a reliable parser to date strings.
-         * It's better to use 'date-fns' parser to parser string in ISO Format.
-         *
-         * The problem here is with wrong timezone.
-         *
-         * For example:
-         *
-         * ``new Date('2021-04-28')`` will generate `2021-04-28T00:00:00.000Z`
-         * in my timezone, which is not true for my timezone (GMT-0300). It should
-         * be `2021-04-28T03:00:00.000Z` as `new Date(2021, 3, 28)` generates.
-         *
-         * https://stackoverflow.com/a/2587398
-         */
         let date =
-            typeof mixedDate === "string" ? parseISO(mixedDate) : mixedDate
+            typeof mixedDate === "string"
+                ? DateUtils.parseDateAsISO(mixedDate)
+                : mixedDate
 
         if (toUtc)
             date = new Date(
@@ -278,5 +265,13 @@ export class DateUtils {
         } else {
             return String(value)
         }
+    }
+
+    private static parseDateAsISO(dateString: string): Date {
+        const date = new Date(dateString)
+        const offset = date.getTimezoneOffset() * 60 * 1000
+        const utc = date.getTime() + offset
+
+        return new Date(utc)
     }
 }
