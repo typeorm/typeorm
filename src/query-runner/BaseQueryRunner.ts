@@ -472,6 +472,7 @@ export abstract class BaseQueryRunner {
         newColumn: TableColumn,
         checkDefault?: boolean,
         checkComment?: boolean,
+        checkEnum = true,
     ): boolean {
         // this logs need to debug issues in column change detection. Do not delete it!
 
@@ -513,7 +514,14 @@ export abstract class BaseQueryRunner {
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
             (checkComment && oldColumn.comment !== newColumn.comment) ||
-            !OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || [])
+            (checkEnum && this.isEnumChanged(oldColumn, newColumn))
+        )
+    }
+
+    protected isEnumChanged(oldColumn: TableColumn, newColumn: TableColumn) {
+        return !OrmUtils.isArraysEqual(
+            oldColumn.enum || [],
+            newColumn.enum || [],
         )
     }
 
