@@ -283,9 +283,11 @@ export class MongoDriver implements Driver {
             if (!this.queryRunner)
                 return fail(new ConnectionIsNotSetError("mongodb"))
 
-            const handler = (err: any) => (err ? fail(err) : ok())
-            this.queryRunner.databaseConnection.close(handler)
+            // const handler = (err: any) => (err ? fail(err) : ok())
+            this.queryRunner.databaseConnection.close()
             this.queryRunner = undefined
+
+            // return ok()
         })
     }
 

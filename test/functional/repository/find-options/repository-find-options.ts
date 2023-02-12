@@ -45,7 +45,7 @@ describe("repository > find options", () => {
                 await connection.manager.save(post)
 
                 const [loadedPost] = await connection.getRepository(Post).find({
-                    relations: ["author", "categories"],
+                    relations: { author: true, categories: true },
                 })
                 expect(loadedPost).to.be.eql({
                     id: 1,
@@ -126,7 +126,7 @@ describe("repository > find options", () => {
                 const loadedPhoto = await connection
                     .getRepository(Photo)
                     .findOne({
-                        select: ["name"],
+                        select: { name: true },
                         where: {
                             id: 5,
                         },
@@ -135,14 +135,14 @@ describe("repository > find options", () => {
                 const loadedPhotos1 = await connection
                     .getRepository(Photo)
                     .find({
-                        select: ["filename", "views"],
+                        select: { filename: true, views: true },
                     })
 
                 const loadedPhotos2 = await connection
                     .getRepository(Photo)
                     .find({
-                        select: ["id", "name", "description"],
-                        relations: ["categories"],
+                        select: { id: true, name: true, description: true },
+                        relations: { categories: true },
                     })
 
                 // const loadedPhotos3 = await connection.getRepository(Photo).createQueryBuilder("photo")

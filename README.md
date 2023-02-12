@@ -251,7 +251,7 @@ await timber.remove()
 
     - for **MongoDB** (experimental)
 
-        `npm install mongodb@^3.6.0 --save`
+        `npm install mongodb@^5.0.1 --save`
 
     - for **NativeScript**, **react-native** and **Cordova**
 

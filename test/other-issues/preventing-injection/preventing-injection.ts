@@ -30,13 +30,13 @@ describe("other issues > preventing-injection", () => {
                 const postWithOnlyIdSelected = await connection.manager.find(
                     Post,
                     {
-                        select: ["id"],
+                        select: { id: true },
                     },
                 )
                 postWithOnlyIdSelected.should.be.eql([{ id: 1 }])
 
                 await connection.manager.find(Post, {
-                    select: ["(WHERE LIMIT 1)" as any],
+                    select: "(WHERE LIMIT 1)" as any,
                 }).should.be.rejected
             }),
         ))
