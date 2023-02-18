@@ -44,7 +44,6 @@ import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundErro
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -4183,10 +4182,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (InstanceChecker.isEqualOperator(where[key])) {
                         parameterValue = where[key].value
                     }
-                    if (column.transformer) {
-                        parameterValue = this.transformParameterValue(
-                            parameterValue,
+                    if (
+                        column.transformer &&
+                        !(parameterValue instanceof FindOperator)
+                    ) {
+                        parameterValue = ApplyValueTransformers.transformTo(
                             column.transformer,
+                            parameterValue,
                         )
                     }
 
@@ -4410,27 +4412,5 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             condition = andConditions.join(" AND ")
         }
         return condition
-    }
-    private transformParameterValue(
-        parameterValue: any,
-        transformer: ValueTransformer | ValueTransformer[],
-    ) {
-        if (parameterValue instanceof FindOperator) {
-            this.transformParameterValue(parameterValue.value, transformer)
-            return parameterValue
-        } else if (transformer) {
-            return Array.isArray(parameterValue)
-                ? parameterValue.map(
-                      (v: any) =>
-                          transformer &&
-                          ApplyValueTransformers.transformTo(transformer, v),
-                  )
-                : ApplyValueTransformers.transformTo(
-                      transformer,
-                      parameterValue,
-                  )
-        } else {
-            return parameterValue
-        }
     }
 }
