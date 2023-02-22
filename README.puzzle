@@ -18,3 +18,7 @@ Sept 15, 2022
 Removed IF EXISTS for constraints as that is valid
 dropIndex got mogrified to deal with already removed indexii
 Added ability to pass in a log4js to the migration executor
+
+Feb 21, 2023
+
+Fixed package.json main to point at just the index file as wanted by node 16+
