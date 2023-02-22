@@ -9,7 +9,7 @@
     "name": "Umed Khudoiberdiev",
     "email": "pleerock.me@gmail.com"
   },
-  "main": "./build/package/index.js",
+  "main": "index.js",
   "browser": {
     "./browser/driver/aurora-data-api/AuroraDataApiDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/cockroachdb/CockroachDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
@@ -92,7 +92,7 @@
     "gulp-sourcemaps": "^3.0.0",
     "gulp-typescript": "^6.0.0-alpha.1",
     "gulpclass": "^0.2.0",
-    "husky": "^5.1.1",
+    "husky": "^5.2.0",
     "lint-staged": "^10.5.4",
     "mocha": "^8.3.0",
     "mongodb": "^3.6.4",
