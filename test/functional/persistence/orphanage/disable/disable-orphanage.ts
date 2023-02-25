@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { Connection, Repository } from "../../../../../src/index"
+import { DataSource } from "../../../../../src/index"
 import {
     reloadTestingDatabases,
     createTestingConnections,
@@ -15,7 +15,7 @@ describe("persistence > orphanage > disable", () => {
     // -------------------------------------------------------------------------
 
     // connect to db
-    let connections: Connection[] = []
+    let connections: DataSource[] = []
 
     before(
         async () =>
@@ -31,54 +31,85 @@ describe("persistence > orphanage > disable", () => {
     // -------------------------------------------------------------------------
 
     describe("when a User is updated without all settings being loaded...", () => {
-        let userRepo: Repository<User>
-        let settingRepo: Repository<Setting>
-        let userId: number
-
-        beforeEach(async () => {
-            await Promise.all(
+        it("should not delete setting with orphanedRowAction=disabed", () =>
+            Promise.all(
                 connections.map(async (connection) => {
-                    userRepo = connection.getRepository(User)
-                    settingRepo = connection.getRepository(Setting)
+                    const userRepo = connection.getRepository(User)
+
+                    let userId: number
+
+                    const userToInsert = await userRepo.save(new User())
+                    userToInsert.settings = [
+                        new Setting("foo"),
+                        new Setting("bar"),
+                        new Setting("moo"),
+                    ]
+
+                    await userRepo.save(userToInsert)
+                    userId = userToInsert.id
+
+                    const userToUpdate = (await userRepo.findOneBy({
+                        id: userId,
+                    }))!
+                    userToUpdate.settings = [
+                        // untouched setting
+                        userToUpdate.settings[0],
+                        // updated setting
+                        { ...userToUpdate.settings[1], data: "bar_updated" },
+                        // skipped setting
+                        // new Setting("moo"),
+                        // new setting
+                        new Setting("cow"),
+                    ]
+
+                    await userRepo.save(userToUpdate)
+
+                    const user = await userRepo.findOneBy({ id: userId })
+                    expect(user).not.to.be.undefined
+                    expect(user!.settings).to.have.lengthOf(4)
                 }),
-            )
+            ))
 
-            const user = await userRepo.save(new User())
-            user.settings = [
-                new Setting("foo"),
-                new Setting("bar"),
-                new Setting("moo"),
-            ]
+        it("should not orphane any Settings", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const userRepo = connection.getRepository(User)
 
-            await userRepo.save(user)
-            userId = user.id
+                    let userId: number
 
-            const userToUpdate = (await userRepo.findOneBy({ id: userId }))!
-            userToUpdate.settings = [
-                // untouched setting
-                userToUpdate.settings[0],
-                // updated setting
-                { ...userToUpdate.settings[1], data: "bar_updated" },
-                // skipped setting
-                // new Setting("moo"),
-                // new setting
-                new Setting("cow"),
-            ]
+                    const userToInsert = await userRepo.save(new User())
+                    userToInsert.settings = [
+                        new Setting("foo"),
+                        new Setting("bar"),
+                        new Setting("moo"),
+                    ]
 
-            await userRepo.save(userToUpdate)
-        })
+                    await userRepo.save(userToInsert)
+                    userId = userToInsert.id
 
-        it("should not delete setting with orphanedRowAction=disabed", async () => {
-            const user = await userRepo.findOneBy({ id: userId })
-            expect(user).not.to.be.undefined
-            expect(user!.settings).to.have.lengthOf(4)
-        })
+                    const userToUpdate = (await userRepo.findOneBy({
+                        id: userId,
+                    }))!
+                    userToUpdate.settings = [
+                        // untouched setting
+                        userToUpdate.settings[0],
+                        // updated setting
+                        { ...userToUpdate.settings[1], data: "bar_updated" },
+                        // skipped setting
+                        // new Setting("moo"),
+                        // new setting
+                        new Setting("cow"),
+                    ]
 
-        it("should not orphane any Settings", async () => {
-            const itemsWithoutForeignKeys = (await settingRepo.find()).filter(
-                (p) => !p.userId,
-            )
-            expect(itemsWithoutForeignKeys).to.have.lengthOf(0)
-        })
+                    await userRepo.save(userToUpdate)
+
+                    const settingRepo = connection.getRepository(Setting)
+
+                    const itemsWithoutForeignKeys = (
+                        await settingRepo.find()
+                    ).filter((p) => !p.userId)
+                    expect(itemsWithoutForeignKeys).to.have.lengthOf(0)
+                }),
+            ))
     })
 })
