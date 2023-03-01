@@ -108,6 +108,14 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                         foo: { bar: [5, 6, 7, 8] },
                     },
                 })
+
+                result = await repository.findOneBy({
+                    jsonvalue: JsonContains([5, 6, 7, 8] as any),
+                })
+                expect(result).to.be.eql({
+                    id: "7",
+                    jsonvalue: [5, 6, 7, 8]
+                })
             }),
         )
         await closeTestingConnections(dataSources)
