@@ -142,13 +142,22 @@ export class FindOperator<T> {
         if (this._value instanceof FindOperator) {
             this._value.transformValue(transformer)
         } else {
-            this._value = Array.isArray(this._value)
-                ? this._value.map(
-                      (v: any) =>
-                          transformer &&
-                          ApplyValueTransformers.transformTo(transformer, v),
-                  )
-                : ApplyValueTransformers.transformTo(transformer, this._value)
+            // do not convert each value of json, since an array is a valid json object
+            this._value =
+                Array.isArray(this._value) &&
+                this["@instanceof"] !== Symbol.for("JsonContains")
+                    ? this._value.map(
+                          (v: any) =>
+                              transformer &&
+                              ApplyValueTransformers.transformTo(
+                                  transformer,
+                                  v,
+                              ),
+                      )
+                    : ApplyValueTransformers.transformTo(
+                          transformer,
+                          this._value,
+                      )
         }
     }
 }
