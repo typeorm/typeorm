@@ -114,7 +114,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                 })
                 expect(result).to.be.eql({
                     id: "7",
-                    jsonvalue: [5, 6, 7, 8]
+                    jsonvalue: [5, 6, 7, 8],
                 })
             }),
         )
