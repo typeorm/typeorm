@@ -224,7 +224,7 @@ Let's say you have a `Post` entity with a `title` column, and you have changed t
 You can run following command:
 
 ```
-typeorm migration:generate -n PostRefactoring
+typeorm migration:generate PostRefactoring -d path-to-datasource-config
 ```
 
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
