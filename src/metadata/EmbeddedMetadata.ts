@@ -199,10 +199,10 @@ export class EmbeddedMetadata {
             return {}
         }
 
-        if (!options?.fromDeserializer || this.isAlwaysUsingConstructor) {
-            return new (this.type as any)()
-        } else {
+        if (options?.fromDeserializer || !this.isAlwaysUsingConstructor) {
             return Object.create(this.type.prototype)
+        } else {
+            return new (this.type as any)()
         }
     }
 
