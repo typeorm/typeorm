@@ -51,18 +51,17 @@ export class EntitySchemaTransformer {
             }
             metadataArgsStorage.tables.push(tableMetadata)
 
-            const { inheritance } = options;
+            const { inheritance } = options
 
             if (inheritance) {
                 metadataArgsStorage.inheritances.push({
                     target: options.target,
                     pattern: inheritance.pattern ?? "STI",
-                    column:
-                        inheritance.column
-                            ? typeof inheritance.column === "string"
-                                ? { name: inheritance.column }
-                                : inheritance.column
-                            : undefined,
+                    column: inheritance.column
+                        ? typeof inheritance.column === "string"
+                            ? { name: inheritance.column }
+                            : inheritance.column
+                        : undefined,
                 } as InheritanceMetadataArgs)
             }
 
