@@ -3717,7 +3717,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::.+/g, "")
+                                    ].replace(/::[\w\s.\[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
