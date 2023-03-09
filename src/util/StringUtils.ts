@@ -56,6 +56,13 @@ export function abbreviate(str: string, abbrLettersCount: number = 1): string {
     }, "")
 }
 
+/**
+ * Capitalize first letter.
+ */
+export function capitalizeFirstLetter(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 export interface IShortenOptions {
     /** String used to split "segments" of the alias/column name */
     separator?: string

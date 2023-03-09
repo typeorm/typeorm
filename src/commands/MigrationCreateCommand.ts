@@ -1,5 +1,5 @@
 import { CommandUtils } from "./CommandUtils"
-import { camelCase } from "../util/StringUtils"
+import { camelCase, capitalizeFirstLetter } from "../util/StringUtils"
 import * as yargs from "yargs"
 import chalk from "chalk"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -71,9 +71,8 @@ export class MigrationCreateCommand implements yargs.CommandModule {
     protected static getTemplate(name: string, timestamp: number): string {
         return `import { MigrationInterface, QueryRunner } from "typeorm"
 
-export class ${camelCase(
-            name,
-            true,
+export class ${capitalizeFirstLetter(
+            camelCase(name, true),
         )}${timestamp} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
@@ -95,7 +94,9 @@ export class ${camelCase(
     ): string {
         return `const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class ${camelCase(name, true)}${timestamp} {
+module.exports = class ${capitalizeFirstLetter(
+            camelCase(name, true),
+        )}${timestamp} {
 
     async up(queryRunner) {
     }
