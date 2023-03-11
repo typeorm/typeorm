@@ -57,9 +57,11 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                 }
 
                 expect(foundUser[0].uuid).to.deep.equal(newUser.uuid)
+                expect(foundUser[0].inet4).to.deep.equal(newUser.inet4)
                 expect(foundUser[0].inet6).to.deep.equal(
                     allowsInet6Type ? expectedInet6 : newUser.inet6,
                 )
+                expect(foundUser[0].anotherUuid).to.not.be.undefined
 
                 const columnTypes: { COLUMN_NAME: string, DATA_TYPE: string}[] = await connection.query(`
                     SELECT 
@@ -69,17 +71,18 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                     WHERE 
                         TABLE_NAME = ? 
                         AND COLUMN_NAME IN (?, ?, ?, ?)
-                `, ["user", "id", "uuid", "inet4", "inet6"]);
+                `, ["user", "id", "uuid", "inet4", "inet6", "anotherUuid"])
                 const expectedColumnTypes: Record<string, string> = {
                     "id": "int",
                     "uuid": allowsUuidType ? "uuid" : "varchar",
                     "inet4": allowsInet4Type ? "inet4" : "varchar",
-                    "inet6": allowsInet6Type ? "inet6" : "varchar"
-                };
+                    "inet6": allowsInet6Type ? "inet6" : "varchar",
+                    "anotherUuid": allowsUuidType ? "uuid" : "varchar",
+                }
 
                 columnTypes.forEach(({ COLUMN_NAME, DATA_TYPE }) => {
                     expect(DATA_TYPE).to.equal(expectedColumnTypes[COLUMN_NAME]);
-                });
+                })
             }),
         ))
 })
