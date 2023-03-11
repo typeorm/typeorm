@@ -17,5 +17,5 @@ export class User {
 
     /** testing generation */
     @Column({ type: "uuid", generated: "uuid" })
-    anotherUuid?: string;
+    anotherUuid?: string
 }

@@ -323,7 +323,6 @@ export class MysqlDriver implements Driver {
         inet6: "varchar",
     }
 
-
     /**
      * Max length allowed by MySQL for aliases.
      * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
@@ -440,21 +439,21 @@ export class MysqlDriver implements Driver {
              * @see https://mariadb.com/kb/en/uuid-data-type/
              */
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.7.0")) {
-                this.columnTypeVersionSupportMap.uuid = "uuid";
+                this.columnTypeVersionSupportMap.uuid = "uuid"
             }
             /**
              * MariaDb version 10.10.0 supports INET4 type
              * @see https://mariadb.com/kb/en/inet4/
              */
-            if (VersionUtils.isGreaterOrEqual(dbVersion,  "10.10.0")) {
-                this.columnTypeVersionSupportMap.inet4 = "inet4";
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.10.0")) {
+                this.columnTypeVersionSupportMap.inet4 = "inet4"
             }
             /**
              * MariaDb version 10.5.0 supports INET6 type
              * @see https://mariadb.com/kb/en/inet6/
              */
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
-                this.columnTypeVersionSupportMap.inet6 = "inet6";
+                this.columnTypeVersionSupportMap.inet6 = "inet6"
             }
         } else if (this.options.type === "mysql") {
             if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
@@ -761,7 +760,7 @@ export class MysqlDriver implements Driver {
             return this.columnTypeVersionSupportMap.inet4
         } else if (column.type === "inet6") {
             return this.columnTypeVersionSupportMap.inet6
-        }else if (column.type === "json" && this.options.type === "mariadb") {
+        } else if (column.type === "json" && this.options.type === "mariadb") {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
              * and MariaDB's benchmarks indicate that performance is at least equivalent.

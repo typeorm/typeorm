@@ -18,7 +18,7 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
         inet6: "2001:0db8:0000:0000:0000:ff00:0042:8329",
     }
 
-    const expectedInet6 = "2001:db8::ff00:42:8329";
+    const expectedInet6 = "2001:db8::ff00:42:8329"
 
     before(
         async () =>
@@ -48,12 +48,15 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                 } = connection
 
                 const { allowsUuidType, allowsInet4Type, allowsInet6Type } = {
-                    allowsUuidType: type === "mariadb" &&
-                    VersionUtils.isGreaterOrEqual(version, "10.7.0"),
-                    allowsInet4Type: type === "mariadb" &&
-                    VersionUtils.isGreaterOrEqual(version, "10.10.0"),
-                    allowsInet6Type: type === "mariadb" &&
-                    VersionUtils.isGreaterOrEqual(version, "10.5.0")
+                    allowsUuidType:
+                        type === "mariadb" &&
+                        VersionUtils.isGreaterOrEqual(version, "10.7.0"),
+                    allowsInet4Type:
+                        type === "mariadb" &&
+                        VersionUtils.isGreaterOrEqual(version, "10.10.0"),
+                    allowsInet6Type:
+                        type === "mariadb" &&
+                        VersionUtils.isGreaterOrEqual(version, "10.5.0"),
                 }
 
                 expect(foundUser[0].uuid).to.deep.equal(newUser.uuid)
@@ -63,7 +66,11 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                 )
                 expect(foundUser[0].anotherUuid).to.not.be.undefined
 
-                const columnTypes: { COLUMN_NAME: string, DATA_TYPE: string}[] = await connection.query(`
+                const columnTypes: {
+                    COLUMN_NAME: string
+                    DATA_TYPE: string
+                }[] = await connection.query(
+                    `
                     SELECT 
                         COLUMN_NAME,
                         DATA_TYPE 
@@ -71,17 +78,19 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                     WHERE 
                         TABLE_NAME = ? 
                         AND COLUMN_NAME IN (?, ?, ?, ?)
-                `, ["user", "id", "uuid", "inet4", "inet6", "anotherUuid"])
+                `,
+                    ["user", "id", "uuid", "inet4", "inet6", "anotherUuid"],
+                )
                 const expectedColumnTypes: Record<string, string> = {
-                    "id": "int",
-                    "uuid": allowsUuidType ? "uuid" : "varchar",
-                    "inet4": allowsInet4Type ? "inet4" : "varchar",
-                    "inet6": allowsInet6Type ? "inet6" : "varchar",
-                    "anotherUuid": allowsUuidType ? "uuid" : "varchar",
+                    id: "int",
+                    uuid: allowsUuidType ? "uuid" : "varchar",
+                    inet4: allowsInet4Type ? "inet4" : "varchar",
+                    inet6: allowsInet6Type ? "inet6" : "varchar",
+                    anotherUuid: allowsUuidType ? "uuid" : "varchar",
                 }
 
                 columnTypes.forEach(({ COLUMN_NAME, DATA_TYPE }) => {
-                    expect(DATA_TYPE).to.equal(expectedColumnTypes[COLUMN_NAME]);
+                    expect(DATA_TYPE).to.equal(expectedColumnTypes[COLUMN_NAME])
                 })
             }),
         ))
