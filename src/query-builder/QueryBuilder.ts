@@ -25,6 +25,7 @@ import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
+import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -406,6 +407,47 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         if (this.parentQueryBuilder) {
             this.parentQueryBuilder.setParameter(key, value)
+            this.expressionMap.parameters[key] = value
+            return this
+        }
+
+        // Check condition for column transformer
+        if (
+            this.expressionMap.mainAlias === undefined ||
+            this.expressionMap.mainAlias === null
+        ) {
+            this.expressionMap.parameters[key] = value
+            return this
+        }
+
+        const [alias] = this.expressionMap.aliases
+
+        if (alias !== undefined && alias !== null && alias.hasMetadata) {
+            const column = alias.metadata.columns.find(
+                (column) =>
+                    column.databaseName === key || column.propertyName === key,
+            )
+
+            if (
+                column !== undefined &&
+                column !== null &&
+                column.transformer !== undefined &&
+                column.transformer !== null
+            ) {
+                const { transformer } = column
+
+                // if the valie is array, transformer applies on every values
+                if (Array.isArray(value)) {
+                    this.expressionMap.parameters[key] = value.map((item) =>
+                        ApplyValueTransformers.transformTo(transformer, item),
+                    )
+                    return this
+                }
+
+                this.expressionMap.parameters[key] =
+                    ApplyValueTransformers.transformTo(transformer, value)
+                return this
+            }
         }
 
         this.expressionMap.parameters[key] = value
