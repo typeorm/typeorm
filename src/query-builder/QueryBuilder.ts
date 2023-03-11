@@ -24,6 +24,7 @@ import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundErro
 import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { escapeRegExp } from "../util/escapeRegExp"
 
 // todo: completely cover query builder with tests
@@ -408,7 +409,32 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             this.parentQueryBuilder.setParameter(key, value)
         }
 
-        this.expressionMap.parameters[key] = value
+        if (!this.expressionMap.mainAlias) {
+            this.expressionMap.parameters[key] = value
+            return this
+        }
+
+        const [alias] = this.expressionMap.aliases
+
+        if (alias) {
+            const column = alias.metadata.columns.find(
+                (column) =>
+                    column.databaseName === key || column.propertyName === key,
+            )
+
+            if (column && column.transformer) {
+                this.expressionMap.parameters[key] =
+                    ApplyValueTransformers.transformTo(
+                        column.transformer,
+                        value,
+                    )
+            } else {
+                this.expressionMap.parameters[key] = value
+            }
+        } else {
+            this.expressionMap.parameters[key] = value
+        }
+
         return this
     }
 
