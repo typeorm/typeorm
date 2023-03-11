@@ -255,7 +255,7 @@ const photosSums = await dataSource
 
 ## Getting a count
 
-You can get the count on the number of rows a query will return by using `getCount()` instead of one of the `find()` methods.
+You can get the count on the number of rows a query will return by using `getCount()`. This will return the count as a number rather than an Entity result.
 
 ```typescript
 const count = await dataSource
