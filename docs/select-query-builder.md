@@ -1282,7 +1282,7 @@ You can get the generated SQL frome the query builder by calling `getQuery()` or
 If you just want the query you can use `getQuery()`
 
 ```typescript
-const sql = dataSource
+const sql = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id", { id: 1 })
@@ -1298,7 +1298,7 @@ SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`l
 Or if you want the query and the parameters you can get an array back using `getQueryAndParameters()`
 
 ```typescript
-const queryAndParams = dataSource
+const queryAndParams = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .where("user.id = :id", { id: 1 })
