@@ -152,6 +152,10 @@ export class MysqlDriver implements Driver {
         "multilinestring",
         "multipolygon",
         "geometrycollection",
+        // additional data types for mariadb
+        "uuid",
+        "inet4",
+        "inet6",
     ]
 
     /**
@@ -721,8 +725,24 @@ export class MysqlDriver implements Driver {
         } else if (column.type === Boolean) {
             return "tinyint"
         } else if (column.type === "uuid") {
-            return "varchar"
-        } else if (column.type === "json" && this.options.type === "mariadb") {
+            /**
+             * MariaDb version 10.7.0 supports UUID type
+             * @see https://mariadb.com/kb/en/uuid-data-type/
+             */
+            return this.isUUIDColumnTypeSupported() ? "uuid" : "varchar"
+        } else if (column.type === "inet4") {
+            /**
+             * MariaDb version 10.10.0 supports INET4 type
+             * @see https://mariadb.com/kb/en/inet4/
+             */
+            return this.isInet4ColumnTypeSupported() ? "inet4" : "varchar"
+        } else if (column.type === "inet6") {
+            /**
+             * MariaDb version 10.5.0 supports INET6 type
+             * @see https://mariadb.com/kb/en/inet6/
+             */
+            return this.isInet6ColumnTypeSupported() ? "inet6" : "varchar"
+        }else if (column.type === "json" && this.options.type === "mariadb") {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
              * and MariaDB's benchmarks indicate that performance is at least equivalent.
@@ -847,6 +867,13 @@ export class MysqlDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type
 
+        if (type === "uuid" && this.isUUIDColumnTypeSupported()) {
+            return type
+        }
+        if (type === "inet" && this.isInet6ColumnTypeSupported()) {
+            type += "6"
+            return type
+        }
         // used 'getColumnLength()' method, because MySQL requires column length for `varchar`, `nvarchar` and `varbinary` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
@@ -1124,6 +1151,24 @@ export class MysqlDriver implements Driver {
      */
     isUUIDGenerationSupported(): boolean {
         return false
+    }
+
+    /**
+     * MariaDb version 10.7.0 and greater allows UUID as a column type, however they do not allow this to be a default
+     */
+    isUUIDColumnTypeSupported(): boolean {
+        return this.options.type === "mariadb" && VersionUtils.isGreaterOrEqual(this.version ?? "0.0.0", "10.7.0")
+    }
+
+    isInet4ColumnTypeSupported(): boolean {
+        return this.options.type === "mariadb" && VersionUtils.isGreaterOrEqual(this.version ?? "0.0.0", "10.10.0")
+    }
+
+    /**
+     * MariaDb version 10.5.0 and greater allows INET6 as a column type.
+     */
+    isInet6ColumnTypeSupported(): boolean {
+        return this.options.type === "mariadb" && VersionUtils.isGreaterOrEqual(this.version ?? "0.0.0", "10.5.0")
     }
 
     /**

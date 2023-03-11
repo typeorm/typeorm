@@ -14,7 +14,7 @@ services:
 
   # mariadb
   mariadb:
-    image: "mariadb:10.8.4"
+    image: "mariadb:10.10.3"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"

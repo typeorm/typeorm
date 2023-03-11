@@ -369,7 +369,11 @@ or
 `timestamp`, `time`, `year`, `char`, `nchar`, `national char`, `varchar`, `nvarchar`, `national varchar`,
 `text`, `tinytext`, `mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`, `set`,
 `json`, `binary`, `varbinary`, `geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`,
-`multipolygon`, `geometrycollection`
+`multipolygon`, `geometrycollection`, `uuid`, `inet4`, `inet6`
+
+> Note: UUID, INET4, and INET6 are only available for mariadb and for respective versions that made them available. If provided and
+> the current drive/version does not support the data type the default will be varchar
+
 
 ### Column types for `postgres`
 
