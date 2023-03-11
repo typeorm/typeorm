@@ -4,6 +4,7 @@
 -   [Important note when using the `QueryBuilder`](#important-note-when-using-the-querybuilder)
 -   [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 -   [Getting values using QueryBuilder](#getting-values-using-querybuilder)
+-   [Getting a count](#getting-a-count)
 -   [What are aliases for?](#what-are-aliases-for)
 -   [Using parameters to escape data](#using-parameters-to-escape-data)
 -   [Adding `WHERE` expression](#adding-where-expression)
@@ -250,6 +251,24 @@ const photosSums = await dataSource
     .getRawMany()
 
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
+```
+
+## Getting a count
+
+You can get the count on the number of rows a query will return by using `getCount()` instead of one of the `find()` methods.
+
+```typescript
+const count = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.name = :name", { name: "Timber" })
+    .getCount()
+```
+
+Which produces the following SQL query:
+
+```sql
+SELECT count(*) FROM users user WHERE user.name = 'Timber'
 ```
 
 ## What are aliases for?
