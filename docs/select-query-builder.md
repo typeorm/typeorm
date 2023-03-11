@@ -28,6 +28,7 @@
 -   [Using subqueries](#using-subqueries)
 -   [Hidden Columns](#hidden-columns)
 -   [Querying Deleted rows](#querying-deleted-rows)
+-   [Debugging](#debugging)
 
 ## What is `QueryBuilder`
 
@@ -1273,3 +1274,43 @@ console.log(account)
 By default `timeTravelQuery()` uses `follower_read_timestamp()` function if no arguments passed.
 For another supported timestamp arguments and additional information please refer to
 [CockroachDB](https://www.cockroachlabs.com/docs/stable/as-of-system-time.html) docs.
+
+## Debugging
+
+You can get the generated SQL frome the query builder by calling `getQuery()` or `getQueryAndParameters()`.
+
+If you just want the query you can use `getQuery()`
+
+```typescript
+const sql = dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .getQuery()
+```
+
+Which results in:
+
+```sql
+SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?
+```
+
+Or if you want the query and the parameters you can get an array back using `getQueryAndParameters()`
+
+```typescript
+const queryAndParams = dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .getQueryAndParameters()
+```
+
+Which results in:
+
+```typescript
+[
+ "SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?",
+ [ 1 ]
+]
+```
+
