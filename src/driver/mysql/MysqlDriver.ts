@@ -863,8 +863,14 @@ export class MysqlDriver implements Driver {
 
         /**
          * fix https://github.com/typeorm/typeorm/issues/1139
+         * as part of adding uuid support for mariadb, we need to check that we aren't actually using the uuid type
+         * because this should not receive the length value by default
          */
-        if (column.generationStrategy === "uuid") return "36"
+        if (
+            this.columnTypeVersionSupportMap.uuid !== "uuid" &&
+            column.generationStrategy === "uuid"
+        )
+            return "36"
 
         switch (column.type) {
             case String:

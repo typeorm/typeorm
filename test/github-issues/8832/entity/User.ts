@@ -1,12 +1,18 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
+import {
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { Address } from "./Address"
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn("increment")
-    id?: number
+    @PrimaryGeneratedColumn("uuid")
+    id?: string
 
     /** can use a default but testing against mysql since they're shared drivers */
-    @Column({ type: "uuid", precision: 16 })
+    @Column({ type: "uuid" })
     uuid: string
 
     @Column({ type: "inet4" })
@@ -17,5 +23,8 @@ export class User {
 
     /** testing generation */
     @Column({ type: "uuid", generated: "uuid" })
-    anotherUuid?: string
+    another_uuid_field?: string
+
+    @OneToMany(() => Address, (address) => address.user)
+    addresses?: Address[]
 }
