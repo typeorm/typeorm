@@ -4,28 +4,14 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import {
-    Column,
-    DatabaseType,
-    DataSource,
-    Entity,
-    PrimaryGeneratedColumn,
-    TypeORMError,
-} from "../../../src/index"
+import { Column, DatabaseType, DataSource, Entity, PrimaryGeneratedColumn, TypeORMError } from "../../../src/index"
 import { expect } from "chai"
 import { User } from "../8832/entity/User"
 import { VersionUtils } from "../../../src/util/VersionUtils"
 import { Address } from "./entity/Address"
 
-function getSupportedTypesMap(
-    type: DatabaseType,
-    version: string,
-): {
-    allowsUuidType: boolean
-    allowsInet4Type: boolean
-    allowsInet6Type: boolean
-} {
-    return {
+function getSupportedTypesMap(type: DatabaseType, version: string): { allowsUuidType: boolean, allowsInet4Type: boolean; allowsInet6Type: boolean} {
+   return {
         allowsUuidType:
             type === "mariadb" &&
             VersionUtils.isGreaterOrEqual(version, "10.7.0"),
@@ -36,6 +22,7 @@ function getSupportedTypesMap(
             type === "mariadb" &&
             VersionUtils.isGreaterOrEqual(version, "10.5.0"),
     }
+
 }
 
 describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", () => {
@@ -49,44 +36,44 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
             inet4: "192.0.2.146",
             inet6: "2001:0db8:0000:0000:0000:ff00:0042:8329",
         }
-
+    
         const expectedInet6 = "2001:db8::ff00:42:8329"
-
+    
         before(
             async () =>
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
                     schemaCreate: true,
                     dropSchema: true,
-                    enabledDrivers: ["mysql", "mariadb"],
+                    enabledDrivers: ["mysql", "mariadb"], 
                 })),
         )
         beforeEach(() => reloadTestingDatabases(connections))
-
+    
         it("should create table with uuid type set to column for relevant mariadb versions", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    
                     const userRepository = connection.getRepository(User)
-
+    
                     // seems there is an issue with the persisting id that crosses over from mysql to mariadb
                     await userRepository.save(newUser)
-
+    
                     const savedUser = await userRepository.findOneOrFail({
                         where: { uuid: newUser.uuid },
                     })
-
+    
                     const foundUser = await userRepository.findOne({
                         where: { id: savedUser.id },
                     })
-
+    
                     const {
                         options: { type },
                         driver: { version = "0.0.0" },
                     } = connection
 
-                    const { allowsUuidType, allowsInet4Type, allowsInet6Type } =
-                        getSupportedTypesMap(type, version)
-
+                    const { allowsUuidType, allowsInet4Type, allowsInet6Type } = getSupportedTypesMap(type, version);
+    
                     expect(foundUser).to.not.be.null
                     expect(foundUser!.uuid).to.deep.equal(newUser.uuid)
                     expect(foundUser!.inet4).to.deep.equal(newUser.inet4)
@@ -94,7 +81,7 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                         allowsInet6Type ? expectedInet6 : newUser.inet6,
                     )
                     expect(foundUser!.another_uuid_field).to.not.be.undefined
-
+    
                     const columnTypes: {
                         COLUMN_NAME: string
                         DATA_TYPE: string
@@ -109,15 +96,7 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                             AND TABLE_NAME = ? 
                             AND COLUMN_NAME IN (?, ?, ?, ?)
                     `,
-                        [
-                            connection.driver.database,
-                            "user",
-                            "id",
-                            "uuid",
-                            "inet4",
-                            "inet6",
-                            "anotherUuid",
-                        ],
+                        [connection.driver.database, "user", "id", "uuid", "inet4", "inet6", "anotherUuid"],
                     )
                     const expectedColumnTypes: Record<string, string> = {
                         id: allowsUuidType ? "uuid" : "varchar",
@@ -126,15 +105,13 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                         inet6: allowsInet6Type ? "inet6" : "varchar",
                         another_uuid_field: allowsUuidType ? "uuid" : "varchar",
                     }
-
+    
                     columnTypes.forEach(({ COLUMN_NAME, DATA_TYPE }) => {
-                        expect(DATA_TYPE).to.equal(
-                            expectedColumnTypes[COLUMN_NAME],
-                        )
+                        expect(DATA_TYPE).to.equal(expectedColumnTypes[COLUMN_NAME])
                     })
 
                     // save a relation
-                    const addressRepository = connection.getRepository(Address)
+                    const addressRepository = connection.getRepository(Address);
 
                     const newAddress: Address = {
                         city: "Codersville",
@@ -152,14 +129,14 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                 }),
             ))
     })
-
-    describe("errors using incorrect properties for maria db supported types", () => {
+    
+    describe("mariadb entity manager metadata validations for uuid, inet4, inet6 types", () => {
         @Entity()
         class BadUuidEntity {
             @PrimaryGeneratedColumn("uuid")
             id?: string
 
-            @Column({ type: "uuid", length: "36" })
+            @Column({ type: "uuid",  length: "36"})
             badUuid: string
         }
 
@@ -168,7 +145,7 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
             @PrimaryGeneratedColumn("uuid")
             id?: string
 
-            @Column({ type: "inet4", length: "28" })
+            @Column({ type: "inet4",  length: "28"})
             badinet4: string
         }
 
@@ -177,7 +154,7 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
             @PrimaryGeneratedColumn("uuid")
             id?: string
 
-            @Column({ type: "inet6", length: "28" })
+            @Column({ type: "inet6",  length: "28"})
             badinet6: string
         }
 
@@ -193,29 +170,23 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mariadb"],
+            }).then((conns) => {
+                if (conns.some((conn) => getSupportedTypesMap(conn.options.type, conn.driver.version ?? "0.0.0").allowsUuidType)) {
+                    expect.fail(null, null, 'creating the connection did not reject with an error')
+                }
             })
-                .then(() => {
-                    expect.fail(
-                        null,
-                        null,
-                        "creating the connection did not reject with an error",
-                    )
-                })
-                .catch((err) => {
-                    expect(err.message).to.equal(expectedError.message)
-                })
+            .catch((err) => {
+                expect(err.message).to.equal(expectedError.message)
+            })
 
             await createTestingConnections({
                 entities: [BadUuidEntity],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mysql"],
-            }).catch(() => {
-                expect.fail(
-                    null,
-                    null,
-                    "creating the connection threw an unexpected error",
-                )
+            })
+            .catch(() => {
+                expect.fail(null, null, 'creating the connection threw an unexpected error')
             })
         })
 
@@ -229,29 +200,23 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mariadb"],
+            }).then((conns) => {
+                if (conns.some((conn) => getSupportedTypesMap(conn.options.type, conn.driver.version ?? "0.0.0").allowsInet4Type)) {
+                    expect.fail(null, null, 'creating the connection did not reject with an error')
+                }
             })
-                .then(() => {
-                    expect.fail(
-                        null,
-                        null,
-                        "creating the connection did not reject with an error",
-                    )
-                })
-                .catch((err) => {
-                    expect(err.message).to.equal(expectedError.message)
-                })
+            .catch((err) => {
+                expect(err.message).to.equal(expectedError.message)
+            })
 
             connections = await createTestingConnections({
                 entities: [BadInet4Entity],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mysql"],
-            }).catch(() => {
-                expect.fail(
-                    null,
-                    null,
-                    "creating the connection threw an unexpected error",
-                )
+            })
+            .catch(() => {
+                expect.fail(null, null, 'creating the connection threw an unexpected error')
             })
         })
 
@@ -265,29 +230,23 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mariadb"],
+            }).then((conns) => {
+                if (conns.some((conn) => getSupportedTypesMap(conn.options.type, conn.driver.version ?? "0.0.0").allowsInet6Type)) {
+                    expect.fail(null, null, 'creating the connection did not reject with an error')
+                }
             })
-                .then(() => {
-                    expect.fail(
-                        null,
-                        null,
-                        "creating the connection did not reject with an error",
-                    )
-                })
-                .catch((err) => {
-                    expect(err.message).to.equal(expectedError.message)
-                })
+            .catch((err) => {
+                expect(err.message).to.equal(expectedError.message)
+            })
 
             connections = await createTestingConnections({
                 entities: [BadInet6Entity],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mysql"],
-            }).catch(() => {
-                expect.fail(
-                    null,
-                    null,
-                    "creating the connection threw an unexpected error",
-                )
+            })
+            .catch(() => {
+                expect.fail(null, null, 'creating the connection threw an unexpected error')
             })
         })
     })
