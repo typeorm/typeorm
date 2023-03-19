@@ -4,18 +4,14 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import {
-    Column,
-    DatabaseType,
-    DataSource,
-    Entity,
-    PrimaryGeneratedColumn,
-    TypeORMError,
-} from "../../../src/index"
+import { DatabaseType, DataSource } from "../../../src/index"
 import { expect } from "chai"
 import { User } from "../8832/entity/User"
 import { VersionUtils } from "../../../src/util/VersionUtils"
 import { Address } from "./entity/Address"
+import { ConnectionMetadataBuilder } from "../../../src/connection/ConnectionMetadataBuilder"
+import { EntityMetadataValidator } from "../../../src/metadata-builder/EntityMetadataValidator"
+import { MysqlDriver } from "../../../src/driver/mysql/MysqlDriver"
 
 function getSupportedTypesMap(
     type: DatabaseType,
@@ -153,172 +149,83 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
             ))
     })
 
-    describe("mariadb entity manager metadata validations for uuid, inet4, inet6 types", () => {
-        @Entity()
-        class BadUuidEntity {
-            @PrimaryGeneratedColumn("uuid")
-            id?: string
+    describe("entity-metadata-validator", () => {
+        it("should throw error if mariadb uuid is supported and length is provided to property", async () => {
+            Promise.all(
+                ["BadInet4", "BadInet6", "BadUuid"].map(async (entity) => {
+                    const entityLocation = `${__dirname}/badEntity/${entity}{.js,.ts}"`
+                    const connection = new DataSource({
+                        // dummy connection options, connection won't be established anyway
+                        type: "mariadb",
+                        host: "localhost",
+                        username: "test",
+                        password: "test",
+                        database: "test",
+                        entities: [entityLocation],
+                    })
 
-            @Column({ type: "uuid", length: "36" })
-            badUuid: string
-        }
+                    // version supports all the new types
+                    connection.driver.version = "10.10.0"
+                    const driver = connection.driver as MysqlDriver
+                    driver.columnTypeVersionSupportMap.uuid = "uuid"
+                    driver.columnTypeVersionSupportMap.inet4 = "inet4"
+                    driver.columnTypeVersionSupportMap.inet6 = "inet6"
 
-        @Entity()
-        class BadInet4Entity {
-            @PrimaryGeneratedColumn("uuid")
-            id?: string
-
-            @Column({ type: "inet4", length: "28" })
-            badinet4: string
-        }
-
-        @Entity()
-        class BadInet6Entity {
-            @PrimaryGeneratedColumn("uuid")
-            id?: string
-
-            @Column({ type: "inet6", length: "28" })
-            badinet6: string
-        }
-
-        afterEach(() => closeTestingConnections(connections))
-
-        it("should throw error when validating uuid type with a length provided only for mariadb", async () => {
-            const expectedError = new TypeORMError(
-                `Column badUuid of Entity BadUuidEntity does not support length property.`,
+                    const connectionMetadataBuilder =
+                        new ConnectionMetadataBuilder(connection)
+                    const entityMetadatas =
+                        await connectionMetadataBuilder.buildEntityMetadatas([
+                            entityLocation,
+                        ])
+                    const entityMetadataValidator =
+                        new EntityMetadataValidator()
+                    expect(() =>
+                        entityMetadataValidator.validateMany(
+                            entityMetadatas,
+                            connection.driver,
+                        ),
+                    ).to.throw(Error)
+                }),
             )
-
-            await createTestingConnections({
-                entities: [BadUuidEntity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mariadb"],
-            })
-                .then((conns) => {
-                    if (
-                        conns.some(
-                            (conn) =>
-                                getSupportedTypesMap(
-                                    conn.options.type,
-                                    conn.driver.version ?? "0.0.0",
-                                ).allowsUuidType,
-                        )
-                    ) {
-                        expect.fail(
-                            null,
-                            null,
-                            "creating the connection did not reject with an error",
-                        )
-                    }
-                })
-                .catch((err) => {
-                    expect(err.message).to.equal(expectedError.message)
-                })
-
-            await createTestingConnections({
-                entities: [BadUuidEntity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql"],
-            }).catch(() => {
-                expect.fail(
-                    null,
-                    null,
-                    "creating the connection threw an unexpected error",
-                )
-            })
         })
 
-        it("should throw error when validating inet4 type with a length provided only for mariadb", async () => {
-            const expectedError = new TypeORMError(
-                `Column badinet4 of Entity BadInet4Entity does not support length property.`,
+        it("should not throw error for mysql when uuid is provided and a length property is provided", async () => {
+            Promise.all(
+                ["BadInet4", "BadInet6", "BadUuid"].map(async (entity) => {
+                    const entityLocation = `${__dirname}/badEntity/${entity}{.js,.ts}"`
+                    const connection = new DataSource({
+                        // dummy connection options, connection won't be established anyway
+                        type: "mysql",
+                        host: "localhost",
+                        username: "test",
+                        password: "test",
+                        database: "test",
+                        entities: [entityLocation],
+                    })
+
+                    // version supports all the new types
+                    connection.driver.version = "10.10.0"
+                    const driver = connection.driver as MysqlDriver
+                    driver.columnTypeVersionSupportMap.uuid = "uuid"
+                    driver.columnTypeVersionSupportMap.inet4 = "inet4"
+                    driver.columnTypeVersionSupportMap.inet6 = "inet6"
+
+                    const connectionMetadataBuilder =
+                        new ConnectionMetadataBuilder(connection)
+                    const entityMetadatas =
+                        await connectionMetadataBuilder.buildEntityMetadatas([
+                            entityLocation,
+                        ])
+                    const entityMetadataValidator =
+                        new EntityMetadataValidator()
+                    expect(() =>
+                        entityMetadataValidator.validateMany(
+                            entityMetadatas,
+                            connection.driver,
+                        ),
+                    ).not.to.throw()
+                }),
             )
-
-            await createTestingConnections({
-                entities: [BadInet4Entity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mariadb"],
-            })
-                .then((conns) => {
-                    if (
-                        conns.some(
-                            (conn) =>
-                                getSupportedTypesMap(
-                                    conn.options.type,
-                                    conn.driver.version ?? "0.0.0",
-                                ).allowsInet4Type,
-                        )
-                    ) {
-                        expect.fail(
-                            null,
-                            null,
-                            "creating the connection did not reject with an error",
-                        )
-                    }
-                })
-                .catch((err) => {
-                    expect(err.message).to.equal(expectedError.message)
-                })
-
-            connections = await createTestingConnections({
-                entities: [BadInet4Entity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql"],
-            }).catch(() => {
-                expect.fail(
-                    null,
-                    null,
-                    "creating the connection threw an unexpected error",
-                )
-            })
-        })
-
-        it("should throw error when validating inet6 type with a length provided", async () => {
-            const expectedError = new TypeORMError(
-                `Column badinet6 of Entity BadInet6Entity does not support length property.`,
-            )
-
-            await createTestingConnections({
-                entities: [BadInet6Entity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mariadb"],
-            })
-                .then((conns) => {
-                    if (
-                        conns.some(
-                            (conn) =>
-                                getSupportedTypesMap(
-                                    conn.options.type,
-                                    conn.driver.version ?? "0.0.0",
-                                ).allowsInet6Type,
-                        )
-                    ) {
-                        expect.fail(
-                            null,
-                            null,
-                            "creating the connection did not reject with an error",
-                        )
-                    }
-                })
-                .catch((err) => {
-                    expect(err.message).to.equal(expectedError.message)
-                })
-
-            connections = await createTestingConnections({
-                entities: [BadInet6Entity],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql"],
-            }).catch(() => {
-                expect.fail(
-                    null,
-                    null,
-                    "creating the connection threw an unexpected error",
-                )
-            })
         })
     })
 })
