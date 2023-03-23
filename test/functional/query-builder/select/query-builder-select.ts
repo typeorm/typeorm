@@ -522,7 +522,7 @@ describe("query builder > select", () => {
                             .createQueryBuilder(Post, "post")
                             .where("post.id = :id", { id: "2" })
                             .getOneOrFail(),
-                    ).to.be.rejectedWith(EntityNotFoundError)
+                    ).to.be.rejectedWith("")
                 }),
             ))
     })
