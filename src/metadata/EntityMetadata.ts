@@ -569,6 +569,12 @@ export class EntityMetadata {
             ret = {}
         }
 
+        // Cleaning up any undefined keys to make it work consistent
+        // with TS useDefineForClassFields option being true or false.
+        Object.keys(ret).forEach(
+            (key) => ret[key] === undefined && delete ret[key],
+        )
+
         // add "typename" property
         if (this.connection.options.typename) {
             ret[this.connection.options.typename] = this.targetName
