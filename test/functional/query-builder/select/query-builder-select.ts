@@ -5,12 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { expect } from "chai"
-import {
-    DataSource,
-    In,
-    IsNull,
-    Raw,
-} from "../../../../src"
+import { DataSource, In, IsNull, Raw } from "../../../../src"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
