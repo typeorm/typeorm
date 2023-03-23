@@ -7,7 +7,6 @@ import {
 import { expect } from "chai"
 import {
     DataSource,
-    EntityNotFoundError,
     In,
     IsNull,
     Raw,
