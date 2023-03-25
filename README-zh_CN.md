@@ -1158,6 +1158,7 @@ let photos = await connection
 - [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 - [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 - 从现有数据库生成模型 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+- 使 TypeORM Type Safe - [safe-typeorm](https://github.com/samchon/safe-typeorm)
 
 ## 贡献
 
