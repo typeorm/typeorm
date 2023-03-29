@@ -377,9 +377,12 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
         const updateColumnAndValues: string[] = [];
         const newParameters: ObjectLiteral = {};
 
+        const hmm = metadata.deleteDateColumn.softDeleteDefault;
+        const deleteTimestamp = (typeof(hmm) === "string")  ? this.escape(hmm) : ((typeof(hmm) === "function") ? hmm() : "CURRENT_TIMESTAMP");
+
         switch (this.expressionMap.queryType) {
             case "soft-delete":
-                updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = CURRENT_TIMESTAMP");
+                updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = " + deleteTimestamp);
                 break;
             case "restore":
                 updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = NULL");
@@ -390,7 +393,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
         if (metadata.versionColumn)
             updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
         if (metadata.updateDateColumn)
-            updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+            updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = DEFAULT"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
 
         if (updateColumnAndValues.length <= 0) {
             throw new UpdateValuesMissingError();

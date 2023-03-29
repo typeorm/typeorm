@@ -121,6 +121,11 @@ export class ColumnMetadata {
      */
     default?: any;
 
+     /**
+     * Default when delete a row database value.
+     */
+    softDeleteDefault?: string | Function;
+   
     /**
      * ON UPDATE trigger. Works only for MySQL.
      */

@@ -1,1 +1,0 @@
-{"version":3,"sources":["../../src/driver/types/IsolationLevel.ts"],"names":[],"mappings":"","file":"IsolationLevel.js","sourcesContent":["export type IsolationLevel = \"READ UNCOMMITTED\" | \"READ COMMITTED\" | \"REPEATABLE READ\" | \"SERIALIZABLE\";\n"],"sourceRoot":"../.."}
