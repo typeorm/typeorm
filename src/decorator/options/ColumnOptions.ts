@@ -53,6 +53,11 @@ export interface ColumnOptions extends ColumnCommonOptions {
     update?: boolean;
 
     /**
+     * The value to be used for soft deletes field
+     */
+    softDeleteDefault?: any;
+
+    /**
      * Indicates if column is always selected by QueryBuilder and find operations.
      * Default value is "true".
      */
