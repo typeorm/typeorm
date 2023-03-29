@@ -1,0 +1,1 @@
+{"version":3,"sources":["../browser/src/common/EntityFieldsNames.ts"],"names":[],"mappings":"","file":"EntityFieldsNames.js","sourcesContent":["/**\n * Interface of the entity fields names only (without functions)\n */\nexport type EntityFieldsNames<Entity = any> = {\n    [P in keyof Entity]: Entity[P] extends Function ? never : P;\n}[keyof Entity];\n"],"sourceRoot":".."}
