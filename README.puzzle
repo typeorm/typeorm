@@ -18,3 +18,6 @@ Sept 15, 2022
 Removed IF EXISTS for constraints as that is valid
 dropIndex got mogrified to deal with already removed indexii
 Added ability to pass in a log4js to the migration executor
+
+npm run compile
+npm run package
