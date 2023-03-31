@@ -492,6 +492,10 @@ var PostgresDriver = /** @class */ (function () {
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
+            /* For some reason tiemstamptz isn't in this list, seems it should have been mapped
+            down below, so our timestamptz's don't use this. THAT IS A GOOD THING, we don't
+            need TypeORM mucking with our timestamps. CWIKLA
+            */
             return DateUtils.mixedDateToDate(value);
         }
         else if (__spreadArray(["json", "jsonb"], __read(this.spatialTypes)).indexOf(columnMetadata.type) >= 0) {
