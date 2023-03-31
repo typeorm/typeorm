@@ -464,6 +464,10 @@ export class PostgresDriver implements Driver {
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
+            /* For some reason tiemstamptz isn't in this list, seems it should have been mapped
+            down below, so our timestamptz's don't use this. THAT IS A GOOD THING, we don't
+            need TypeORM mucking with our timestamps. CWIKLA
+            */
             return DateUtils.mixedDateToDate(value);
 
         } else if (["json", "jsonb", ...this.spatialTypes].indexOf(columnMetadata.type) >= 0) {
