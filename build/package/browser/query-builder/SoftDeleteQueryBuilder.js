@@ -318,7 +318,7 @@ var SoftDeleteQueryBuilder = /** @class */ (function (_super) {
         var updateColumnAndValues = [];
         var newParameters = {};
         var hmm = metadata.deleteDateColumn.softDeleteDefault; // CWIKLA
-        var deleteTimestamp = (typeof (hmm) === "string") ? this.escape(hmm) : ((typeof (hmm) === "function") ? hmm() : "NOW()");
+        var deleteTimestamp = (typeof (hmm) === "string") ? "'" + hmm + "'" : ((typeof (hmm) === "function") ? "'" + hmm() + "'" : "NOW()");
         switch (this.expressionMap.queryType) {
             case "soft-delete":
                 updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = " + deleteTimestamp);
