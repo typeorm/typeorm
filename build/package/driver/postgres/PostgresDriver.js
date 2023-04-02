@@ -70,6 +70,7 @@ var PostgresDriver = /** @class */ (function () {
             "bit varying",
             "timetz",
             "timestamptz",
+            "timestamptz3",
             "timestamp",
             "timestamp without time zone",
             "timestamp with time zone",
@@ -495,6 +496,10 @@ var PostgresDriver = /** @class */ (function () {
             || columnMetadata.type === "timestamp"
             || columnMetadata.type === "timestamp with time zone"
             || columnMetadata.type === "timestamp without time zone") {
+            /* For some reason tiemstamptz isn't in this list, seems it should have been mapped
+            down below, so our timestamptz's don't use this. THAT IS A GOOD THING, we don't
+            need TypeORM mucking with our timestamps. CWIKLA
+            */
             return DateUtils_1.DateUtils.mixedDateToDate(value);
         }
         else if (tslib_1.__spreadArray(["json", "jsonb"], tslib_1.__read(this.spatialTypes)).indexOf(columnMetadata.type) >= 0) {

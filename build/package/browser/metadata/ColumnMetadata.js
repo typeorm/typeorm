@@ -205,6 +205,9 @@ var ColumnMetadata = /** @class */ (function () {
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
         if (this.isDeleteDate) {
+            if (options.args.options.softDeleteSetter) {
+                this.softDeleteSetter = options.args.options.softDeleteSetter;
+            }
             if (!this.type)
                 this.type = options.connection.driver.mappedDataTypes.deleteDate;
             if (!this.isNullable)

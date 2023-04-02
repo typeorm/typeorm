@@ -134,6 +134,7 @@ export type SimpleColumnType =
     // date types
     |"timetz" // postgres
     |"timestamptz" // postgres, cockroachdb
+    |"timestamptz3" // postgres for Puzzle
     |"timestamp with local time zone" // oracle
     |"smalldatetime" // mssql
     |"date" // mysql, postgres, mssql, oracle, sqlite

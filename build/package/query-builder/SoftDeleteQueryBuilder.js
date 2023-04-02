@@ -320,9 +320,11 @@ var SoftDeleteQueryBuilder = /** @class */ (function (_super) {
         // prepare columns and values to be updated
         var updateColumnAndValues = [];
         var newParameters = {};
+        var hmm = metadata.deleteDateColumn.softDeleteSetter; // CWIKLA
+        var deleteTimestamp = (typeof (hmm) === "string") ? "'" + hmm + "'" : ((typeof (hmm) === "function") ? "'" + hmm() + "'" : "NOW()");
         switch (this.expressionMap.queryType) {
             case "soft-delete":
-                updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = CURRENT_TIMESTAMP");
+                updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = " + deleteTimestamp);
                 break;
             case "restore":
                 updateColumnAndValues.push(this.escape(metadata.deleteDateColumn.databaseName) + " = NULL");
@@ -333,7 +335,7 @@ var SoftDeleteQueryBuilder = /** @class */ (function (_super) {
         if (metadata.versionColumn)
             updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
         if (metadata.updateDateColumn)
-            updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+            updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = DEFAULT"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
         if (updateColumnAndValues.length <= 0) {
             throw new UpdateValuesMissingError_1.UpdateValuesMissingError();
         }

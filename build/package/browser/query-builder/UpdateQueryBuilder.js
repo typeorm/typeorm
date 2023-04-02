@@ -427,7 +427,7 @@ var UpdateQueryBuilder = /** @class */ (function (_super) {
             if (metadata.versionColumn && updatedColumns.indexOf(metadata.versionColumn) === -1)
                 updateColumnAndValues.push(this.escape(metadata.versionColumn.databaseName) + " = " + this.escape(metadata.versionColumn.databaseName) + " + 1");
             if (metadata.updateDateColumn && updatedColumns.indexOf(metadata.updateDateColumn) === -1)
-                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = CURRENT_TIMESTAMP"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+                updateColumnAndValues.push(this.escape(metadata.updateDateColumn.databaseName) + " = DEFAULT"); // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
         }
         else {
             Object.keys(valuesSet).map(function (key) {
