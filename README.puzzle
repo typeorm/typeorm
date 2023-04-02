@@ -29,7 +29,8 @@ have timestmaptz as it's case with the rest of the types,
 so it just falls through, which is actually what we want.
 
 Also added the ability to pass in a string or function for timestamp
-used for the soft delete instead of just using CURRENT_TIME. 
+used for the soft delete instead of just using CURRENT_TIME using
+softDeleteSetter
 
 
 npm run compile

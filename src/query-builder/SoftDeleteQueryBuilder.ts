@@ -377,7 +377,7 @@ export class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> impleme
         const updateColumnAndValues: string[] = [];
         const newParameters: ObjectLiteral = {};
 
-        const hmm = metadata.deleteDateColumn.softDeleteDefault; // CWIKLA
+        const hmm = metadata.deleteDateColumn.softDeleteSetter; // CWIKLA
         const deleteTimestamp = (typeof(hmm) === "string")  ? `'${hmm}'` : ((typeof(hmm) === "function") ? `'${hmm()}'` : "NOW()");
 
         switch (this.expressionMap.queryType) {

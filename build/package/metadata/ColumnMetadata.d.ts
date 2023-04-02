@@ -95,7 +95,7 @@ export declare class ColumnMetadata {
     /**
     * Default when delete a row database value.
     */
-    softDeleteDefault?: string | Function;
+    softDeleteSetter?: string | Function;
     /**
      * ON UPDATE trigger. Works only for MySQL.
      */

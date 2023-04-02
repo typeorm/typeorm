@@ -124,7 +124,7 @@ export class ColumnMetadata {
      /**
      * Default when delete a row database value.
      */
-    softDeleteDefault?: string | Function;
+    softDeleteSetter?: string | Function;
    
     /**
      * ON UPDATE trigger. Works only for MySQL.
@@ -432,8 +432,8 @@ export class ColumnMetadata {
                 this.precision = options.connection.driver.mappedDataTypes.updateDatePrecision;
         }
         if (this.isDeleteDate) {
-            if (options.args.options.softDeleteDefault) {
-                this.softDeleteDefault = options.args.options.softDeleteDefault;
+            if (options.args.options.softDeleteSetter) {
+                this.softDeleteSetter = options.args.options.softDeleteSetter;
             }
             if (!this.type)
                 this.type = options.connection.driver.mappedDataTypes.deleteDate;
