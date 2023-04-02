@@ -114,6 +114,7 @@ export class PostgresDriver implements Driver {
         "bit varying",
         "timetz",
         "timestamptz",
+        "timestamptz3",
         "timestamp",
         "timestamp without time zone",
         "timestamp with time zone",
