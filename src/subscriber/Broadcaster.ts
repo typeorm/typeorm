@@ -240,7 +240,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity ?? identifier),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -289,7 +291,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity ?? identifier),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -338,7 +342,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity ?? identifier),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -606,7 +612,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity ?? identifier),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -655,7 +663,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity ?? identifier),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -704,7 +714,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity ?? identifier),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
