@@ -353,6 +353,7 @@ export class FindOptionsUtils {
             // generate a relation alias
             let relationAlias = DriverUtils.buildAlias(
                 qb.connection.driver,
+                undefined,
                 qb.connection.namingStrategy.eagerJoinRelationAlias(
                     alias,
                     relation.propertyPath,

@@ -226,12 +226,14 @@ export class JoinAttribute {
         if (this.relation.isOwning) {
             return DriverUtils.buildAlias(
                 this.connection.driver,
+                undefined,
                 this.parentAlias!,
                 this.alias.name,
             )
         } else {
             return DriverUtils.buildAlias(
                 this.connection.driver,
+                undefined,
                 this.alias.name,
                 this.parentAlias!,
             )

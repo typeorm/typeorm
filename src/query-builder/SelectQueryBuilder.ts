@@ -2828,6 +2828,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             ? selection.aliasName
                             : DriverUtils.buildAlias(
                                   this.connection.driver,
+                                  undefined,
                                   aliasName,
                                   column.databaseName,
                               ),
@@ -2840,6 +2841,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     selection: selectionPath,
                     aliasName: DriverUtils.buildAlias(
                         this.connection.driver,
+                        undefined,
                         aliasName,
                         column.databaseName,
                     ),
@@ -3380,6 +3382,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const columnAlias = this.escape(
                         DriverUtils.buildAlias(
                             this.connection.driver,
+                            undefined,
                             mainAliasName,
                             primaryColumn.databaseName,
                         ),
@@ -3390,6 +3393,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     const alias = DriverUtils.buildAlias(
                         this.connection.driver,
+                        undefined,
                         "ids_" + mainAliasName,
                         primaryColumn.databaseName,
                     )
@@ -3454,6 +3458,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 } else {
                     const alias = DriverUtils.buildAlias(
                         this.connection.driver,
+                        undefined,
                         "ids_" + mainAliasName,
                         metadata.primaryColumns[0].databaseName,
                     )
@@ -3613,6 +3618,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         this.escape(
                             DriverUtils.buildAlias(
                                 this.connection.driver,
+                                undefined,
                                 aliasName,
                                 column!.databaseName,
                             ),
@@ -3648,6 +3654,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         this.escape(
                             DriverUtils.buildAlias(
                                 this.connection.driver,
+                                undefined,
                                 aliasName,
                                 column!.databaseName,
                             ),
@@ -4074,6 +4081,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         // this is not building correctly now???
                         aliasPath = DriverUtils.buildAlias(
                             this.connection.driver,
+                            undefined,
                             alias,
                             column.databaseName,
                         )
