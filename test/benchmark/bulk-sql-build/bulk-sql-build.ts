@@ -26,10 +26,11 @@ describe("benchmark > bulk-sql-build", () => {
                 for (let i = 0; i < 100_000; i++) {
                     // dataSource.getRepository(Post).createQueryBuilder("post")
                     // new SelectQueryBuilder(dataSource, undefined)
-                    // const alias = DriverUtils.buildAlias(
-                    //     dataSource.driver,
-                    //     "post",
-                    // )
+                    const alias = DriverUtils.buildAlias(
+                        dataSource.driver,
+                        undefined,
+                        "post",
+                    )
                     const metadata = dataSource.getMetadata(Post)
                     // new SelectQueryBuilder(dataSource, undefined).select(alias)
                     // .from(metadata.target, alias)
