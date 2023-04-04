@@ -39,17 +39,6 @@ export class InstanceChecker {
     static isColumnMetadata(obj: unknown): obj is ColumnMetadata {
         return this.check(obj, "ColumnMetadata")
     }
-    static isQueryBuilder(obj: unknown): obj is QueryBuilder<any> {
-        return (
-            this.check(obj, "QueryBuilder") ||
-            this.check(obj, "SelectQueryBuilder") ||
-            this.check(obj, "InsertQueryBuilder") ||
-            this.check(obj, "DeleteQueryBuilder") ||
-            this.check(obj, "UpdateQueryBuilder") ||
-            this.check(obj, "SoftDeleteQueryBuilder") ||
-            this.check(obj, "RelationQueryBuilder")
-        )
-    }
     static isSelectQueryBuilder(obj: unknown): obj is SelectQueryBuilder<any> {
         return this.check(obj, "SelectQueryBuilder")
     }

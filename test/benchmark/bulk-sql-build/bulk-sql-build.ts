@@ -11,12 +11,12 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("benchmark > bulk-sql-build", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                __dirname,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+        })
+        console.log(SelectQueryBuilder)
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -32,7 +32,8 @@ describe("benchmark > bulk-sql-build", () => {
                         "post",
                     )
                     const metadata = dataSource.getMetadata(Post)
-                    // new SelectQueryBuilder(dataSource, undefined).select(alias)
+                    const qb = new SelectQueryBuilder(dataSource, undefined)
+                    // qb.select(alias)
                     // .from(metadata.target, alias)
                     // .leftJoinAndSelect("post.categories", "categories")
                     // .where("post.id = 1")

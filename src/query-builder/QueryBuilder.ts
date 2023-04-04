@@ -101,14 +101,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         connectionOrQueryBuilder: DataSource | QueryBuilder<any>,
         queryRunner?: QueryRunner,
     ) {
-        if (InstanceChecker.isQueryBuilder(connectionOrQueryBuilder)) {
-            this.connection = connectionOrQueryBuilder.connection
-            this.queryRunner = connectionOrQueryBuilder.queryRunner
-            this.expressionMap = connectionOrQueryBuilder.expressionMap.clone()
-        } else {
+        if (InstanceChecker.isDataSource(connectionOrQueryBuilder)) {
             this.connection = connectionOrQueryBuilder
             this.queryRunner = queryRunner
             this.expressionMap = new QueryExpressionMap(this.connection)
+        } else {
+            this.connection = connectionOrQueryBuilder.connection
+            this.queryRunner = connectionOrQueryBuilder.queryRunner
+            this.expressionMap = connectionOrQueryBuilder.expressionMap.clone()
         }
     }
 
