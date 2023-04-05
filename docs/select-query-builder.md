@@ -1277,7 +1277,7 @@ For another supported timestamp arguments and additional information please refe
 
 ## Debugging
 
-You can get the generated SQL frome the query builder by calling `getQuery()` or `getQueryAndParameters()`.
+You can get the generated SQL from the query builder by calling `getQuery()` or `getQueryAndParameters()`.
 
 If you just want the query you can use `getQuery()`
 
