@@ -1598,38 +1598,31 @@ export class SqlServerQueryRunner
             }
 
             if (this.isEnumChanged(oldColumn, newColumn)) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} DROP CONSTRAINT "${oldColumn.enumName}"`,
+                const oldExpression = this.getEnumExpression(oldColumn)
+                const oldCheck = new TableCheck({
+                    name: this.connection.namingStrategy.checkConstraintName(
+                        table,
+                        oldExpression,
+                        true,
                     ),
-                )
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} ADD CONSTRAINT "${
-                            oldColumn.enumName
-                        }" CHECK ( ${this.getEnumExpression(newColumn)} )`,
+                    expression: oldExpression,
+                })
+
+                const newExpression = this.getEnumExpression(newColumn)
+                const newCheck = new TableCheck({
+                    name: this.connection.namingStrategy.checkConstraintName(
+                        table,
+                        newExpression,
+                        true,
                     ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} DROP CONSTRAINT "${oldColumn.enumName}"`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} ADD CONSTRAINT "${
-                            oldColumn.enumName
-                        }" CHECK ( ${this.getEnumExpression(oldColumn)} )`,
-                    ),
-                )
+                    expression: newExpression,
+                })
+
+                upQueries.push(this.dropCheckConstraintSql(table, oldCheck))
+                upQueries.push(this.createCheckConstraintSql(table, newCheck))
+
+                downQueries.push(this.dropCheckConstraintSql(table, newCheck))
+                downQueries.push(this.createCheckConstraintSql(table, oldCheck))
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -3205,10 +3198,6 @@ export class SqlServerQueryRunner
                                                     result[1],
                                                 )
                                             }
-                                            tableColumn.enumName =
-                                                checkConstraint[
-                                                    "CONSTRAINT_NAME"
-                                                ]
                                             // Skip other column constraints
                                             break
                                         }
@@ -4017,8 +4006,8 @@ export class SqlServerQueryRunner
     }
 
     private getEnumExpression(column: TableColumn) {
-        if (!column?.enum) {
-            throw new Error("Enum not defined!")
+        if (!column.enum) {
+            throw new Error(`Enum is not defined in column ${column.name}`)
         }
         return (
             column.name +
