@@ -702,20 +702,18 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Replaces all entity's propertyName to name in the given statement.
      */
-
     protected replacePropertyNames(statement: string) {
+        const replacements: { [key: string]: { [key: string]: string } } = {}
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
-            const replaceAliasNamePrefix = this.expressionMap
-                .aliasNamePrefixingEnabled
-                ? `${alias.name}.`
-                : ""
-            const replacementAliasNamePrefix = this.expressionMap
-                .aliasNamePrefixingEnabled
-                ? `${this.escape(alias.name)}.`
-                : ""
+            const replaceAliasNamePrefix =
+                this.expressionMap.aliasNamePrefixingEnabled && alias.name
+                    ? `${alias.name}.`
+                    : ""
 
-            const replacements: { [key: string]: string } = {}
+            if (!replacements[replaceAliasNamePrefix]) {
+                replacements[replaceAliasNamePrefix] = {}
+            }
 
             // Insert & overwrite the replacements from least to most relevant in our replacements object.
             // To do this we iterate and overwrite in the order of relevance.
@@ -728,8 +726,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             for (const relation of alias.metadata.relations) {
                 if (relation.joinColumns.length > 0)
-                    replacements[relation.propertyPath] =
-                        relation.joinColumns[0].databaseName
+                    replacements[replaceAliasNamePrefix][
+                        relation.propertyPath
+                    ] = relation.joinColumns[0].databaseName
             }
 
             for (const relation of alias.metadata.relations) {
@@ -740,39 +739,76 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     const propertyKey = `${relation.propertyPath}.${
                         joinColumn.referencedColumn!.propertyPath
                     }`
-                    replacements[propertyKey] = joinColumn.databaseName
+                    replacements[replaceAliasNamePrefix][propertyKey] =
+                        joinColumn.databaseName
                 }
             }
 
             for (const column of alias.metadata.columns) {
-                replacements[column.databaseName] = column.databaseName
+                replacements[replaceAliasNamePrefix][column.databaseName] =
+                    column.databaseName
             }
 
             for (const column of alias.metadata.columns) {
-                replacements[column.propertyName] = column.databaseName
+                replacements[replaceAliasNamePrefix][column.propertyName] =
+                    column.databaseName
             }
 
             for (const column of alias.metadata.columns) {
-                replacements[column.propertyPath] = column.databaseName
+                replacements[replaceAliasNamePrefix][column.propertyPath] =
+                    column.databaseName
             }
+        }
 
+        const replacementKeys = Object.keys(replacements)
+        const replaceAliasNamePrefixes = replacementKeys
+            .map((key) => escapeRegExp(key))
+            .join("|")
+
+        // const replaceAliasNamePrefix = this.expressionMap
+        //     .aliasNamePrefixingEnabled
+        //     ? `${alias.name}.`
+        //     : ""
+        // const replacementAliasNamePrefix = this.expressionMap
+        //     .aliasNamePrefixingEnabled
+        //     ? `${this.escape(alias.name)}.`
+        //     : ""
+
+        if (replacementKeys.length > 0) {
             statement = statement.replace(
                 new RegExp(
                     // Avoid a lookbehind here since it's not well supported
                     `([ =\(]|^.{0})` + // any of ' =(' or start of line
                         // followed by our prefix, e.g. 'tablename.' or ''
-                        `${escapeRegExp(
-                            replaceAliasNamePrefix,
-                        )}([^ =\(\)\,]+)` + // a possible property name: sequence of anything but ' =(),'
+                        `${
+                            replaceAliasNamePrefixes
+                                ? "(" + replaceAliasNamePrefixes + ")"
+                                : ""
+                        }([^ =\(\)\,]+)` + // a possible property name: sequence of anything but ' =(),'
                         // terminated by ' =),' or end of line
                         `(?=[ =\)\,]|.{0}$)`,
                     "gm",
                 ),
-                (match, pre, p) => {
-                    if (replacements[p]) {
-                        return `${pre}${replacementAliasNamePrefix}${this.escape(
-                            replacements[p],
-                        )}`
+                (...matches) => {
+                    let match: string, pre: string, p: string
+                    if (replaceAliasNamePrefixes) {
+                        match = matches[0]
+                        pre = matches[1]
+                        p = matches[3]
+
+                        if (replacements[matches[2]][p]) {
+                            return `${pre}${this.escape(
+                                matches[2].substring(0, matches[2].length - 1),
+                            )}.${this.escape(replacements[matches[2]][p])}`
+                        }
+                    } else {
+                        match = matches[0]
+                        pre = matches[1]
+                        p = matches[2]
+
+                        if (replacements[""][p]) {
+                            return `${pre}${this.escape(replacements[""][p])}`
+                        }
                     }
                     return match
                 },
