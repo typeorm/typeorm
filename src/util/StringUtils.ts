@@ -120,15 +120,11 @@ interface IHashOptions {
  * @param options.length Optionally, shorten the output to desired length.
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-    const hashFunction = shajs("sha256")
-
+    const hashFunction = shajs("sha1")
     hashFunction.update(input, "utf8")
-
     const hashedInput = hashFunction.digest("hex")
-
     if (options.length) {
         return hashedInput.slice(0, options.length)
     }
-
     return hashedInput
 }

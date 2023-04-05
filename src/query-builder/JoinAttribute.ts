@@ -55,7 +55,9 @@ export class JoinAttribute {
         private queryExpressionMap: QueryExpressionMap,
         joinAttribute?: JoinAttribute,
     ) {
-        ObjectUtils.assign(this, joinAttribute || {})
+        if (joinAttribute) {
+            ObjectUtils.assign(this, joinAttribute)
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -218,16 +220,25 @@ export class JoinAttribute {
      * Generates alias of junction table, whose ids we get.
      */
     get junctionAlias(): string {
-        if (!this.relation)
+        if (!this.relation) {
             throw new TypeORMError(
                 `Cannot get junction table for join without relation.`,
             )
+        }
+        if (typeof this.entityOrProperty !== "string") {
+            throw new TypeORMError(`Junction property is not defined.`)
+        }
+
+        const aliasProperty = this.entityOrProperty.substr(
+            0,
+            this.entityOrProperty.indexOf("."),
+        )
 
         if (this.relation.isOwning) {
             return DriverUtils.buildAlias(
                 this.connection.driver,
                 undefined,
-                this.parentAlias!,
+                aliasProperty,
                 this.alias.name,
             )
         } else {
@@ -235,7 +246,7 @@ export class JoinAttribute {
                 this.connection.driver,
                 undefined,
                 this.alias.name,
-                this.parentAlias!,
+                aliasProperty,
             )
         }
     }

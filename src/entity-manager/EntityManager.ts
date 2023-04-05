@@ -67,8 +67,9 @@ export class EntityManager {
 
     /**
      * Once created and then reused by repositories.
+     * Created as a future replacement for the #repositories to provide a bit more perf optimization.
      */
-    protected repositories: Repository<any>[] = []
+    protected repositories = new Map<EntityTarget<any>, Repository<any>>()
 
     /**
      * Once created and then reused by repositories.
@@ -1377,10 +1378,8 @@ export class EntityManager {
         target: EntityTarget<Entity>,
     ): Repository<Entity> {
         // find already created repository instance and return it if found
-        const repository = this.repositories.find(
-            (repository) => repository.target === target,
-        )
-        if (repository) return repository
+        const repoFromMap = this.repositories.get(target)
+        if (repoFromMap) return repoFromMap
 
         // if repository was not found then create it, store its instance and return it
         if (this.connection.driver.options.type === "mongodb") {
@@ -1389,7 +1388,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository as any)
+            this.repositories.set(target, newRepository)
             return newRepository
         } else {
             const newRepository = new Repository<any>(
@@ -1397,7 +1396,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository)
+            this.repositories.set(target, newRepository)
             return newRepository
         }
     }

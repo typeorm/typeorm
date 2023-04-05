@@ -1148,10 +1148,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         this.expressionMap.wheres = [] // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.getWhereCondition(where)
-        if (condition)
+        if (condition) {
             this.expressionMap.wheres = [
                 { type: "simple", condition: condition },
             ]
+        }
         if (parameters) this.setParameters(parameters)
         return this
     }
@@ -2008,7 +2009,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         mapToProperty?: string,
         isMappingMany?: boolean,
     ): void {
-        this.setParameters(parameters || {})
+        if (parameters) {
+            this.setParameters(parameters)
+        }
 
         const joinAttribute = new JoinAttribute(
             this.connection,
@@ -2018,16 +2021,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         joinAttribute.mapToProperty = mapToProperty
         joinAttribute.isMappingMany = isMappingMany
         joinAttribute.entityOrProperty = entityOrProperty // relationName
-        joinAttribute.condition = condition ? condition : undefined // joinInverseSideCondition
+        joinAttribute.condition = condition // joinInverseSideCondition
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
 
-        if (joinAttribute.metadata) {
+        const joinAttributeMetadata = joinAttribute.metadata
+        if (joinAttributeMetadata) {
             if (
-                joinAttribute.metadata.deleteDateColumn &&
+                joinAttributeMetadata.deleteDateColumn &&
                 !this.expressionMap.withDeleted
             ) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttribute.metadata.deleteDateColumn.propertyName} IS NULL`
+                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
                 joinAttribute.condition = joinAttribute.condition
                     ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
                     : `${conditionDeleteColumn}`
@@ -2036,7 +2040,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
                 name: aliasName,
-                metadata: joinAttribute.metadata,
+                metadata: joinAttributeMetadata,
             })
             if (
                 joinAttribute.relation &&
