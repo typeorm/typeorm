@@ -4185,10 +4185,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (column.transformer) {
                         parameterValue instanceof FindOperator
                             ? parameterValue.transformValue(column.transformer)
-                            : ApplyValueTransformers.transformTo(
-                                  column.transformer,
-                                  parameterValue,
-                              )
+                            : (parameterValue =
+                                  ApplyValueTransformers.transformTo(
+                                      column.transformer,
+                                      parameterValue,
+                                  ))
                     }
 
                     // if (parameterValue === null) {
