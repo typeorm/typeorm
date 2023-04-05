@@ -50,6 +50,9 @@ Different RDBMS-es have their own specific options.
     Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
     Learn more about [Migrations](migrations.md).
 
+-   `migrationsOutDir` - Migration output directory for CLI commands (Relative)
+    Example: `migrationsOutDir: 'database/migrations'`.
+
 -   `logging` - Indicates if logging is enabled or not.
     If set to `true` then query and error logging will be enabled.
     You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
