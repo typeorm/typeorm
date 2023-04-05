@@ -12,9 +12,6 @@ export class Post {
     @Column()
     title: string
 
-    @Column({ type: "text" })
-    text: string
-
     @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
