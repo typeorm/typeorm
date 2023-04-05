@@ -700,10 +700,19 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Replaces all entity's propertyName to name in the given statement.
+     * @deprecated this way of replace property names is too slow.
+     *  Instead, we'll replace property names at the end - once query is build.
      */
     protected replacePropertyNames(statement: string) {
+        return statement
+    }
+
+    /**
+     * Replaces all entity's propertyName to name in the given SQL string.
+     */
+    protected replacePropertyNamesForTheWholeQuery(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
+
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
             const replaceAliasNamePrefix =
@@ -732,10 +741,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
 
             for (const relation of alias.metadata.relations) {
-                for (const joinColumn of [
+                const allColumns = [
                     ...relation.joinColumns,
                     ...relation.inverseJoinColumns,
-                ]) {
+                ]
+                for (const joinColumn of allColumns) {
                     const propertyKey = `${relation.propertyPath}.${
                         joinColumn.referencedColumn!.propertyPath
                     }`
@@ -764,15 +774,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         const replaceAliasNamePrefixes = replacementKeys
             .map((key) => escapeRegExp(key))
             .join("|")
-
-        // const replaceAliasNamePrefix = this.expressionMap
-        //     .aliasNamePrefixingEnabled
-        //     ? `${alias.name}.`
-        //     : ""
-        // const replacementAliasNamePrefix = this.expressionMap
-        //     .aliasNamePrefixingEnabled
-        //     ? `${this.escape(alias.name)}.`
-        //     : ""
 
         if (replacementKeys.length > 0) {
             statement = statement.replace(

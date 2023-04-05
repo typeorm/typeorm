@@ -91,7 +91,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         sql += this.createLockExpression()
         sql = sql.trim()
         if (this.expressionMap.subQuery) sql = "(" + sql + ")"
-        return sql
+        return this.replacePropertyNamesForTheWholeQuery(sql)
     }
 
     // -------------------------------------------------------------------------

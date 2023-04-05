@@ -49,7 +49,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         sql += this.createCteExpression()
         sql += this.createOrderByExpression()
         sql += this.createLimitExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**
