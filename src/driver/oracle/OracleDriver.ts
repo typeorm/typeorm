@@ -25,7 +25,7 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType.js"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with Oracle RDBMS.

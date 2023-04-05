@@ -25,7 +25,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { DriverUtils } from "../DriverUtils"
 import { View } from "../../schema-builder/view/View"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType.js"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with SAP Hana DBMS.

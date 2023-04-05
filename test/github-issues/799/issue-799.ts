@@ -9,14 +9,9 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
     let dataSource: DataSource
 
     const path = `${__dirname}/tmp/sqlitedb.db`
-    const cleanup = (done: () => void) => {
-        rimraf(dirname(path), () => {
-            return done()
-        })
-    }
 
-    before(cleanup)
-    after(cleanup)
+    before(() => rimraf(dirname(path)))
+    after(() => rimraf(dirname(path)))
 
     afterEach(() => {
         if (dataSource && dataSource.isInitialized) {
