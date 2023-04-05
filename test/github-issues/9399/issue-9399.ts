@@ -27,9 +27,8 @@ describe("github issues > #9399 mssql: Column is dropped and recreated in every 
                     .createSchemaBuilder()
                     .log()
 
-                expect(sqlInMemory.upQueries).to.eql([])
-                expect(sqlInMemory.downQueries).to.eql([])
+                expect(sqlInMemory.upQueries.length).to.eql(0)
+                expect(sqlInMemory.downQueries.length).to.eql(0)
             }),
         ))
-    // you can add additional tests if needed
 })

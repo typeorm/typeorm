@@ -1036,8 +1036,8 @@ export class SqlServerDriver implements Driver {
         if (columnMetadata.asExpression) return false
 
         return (
-            tableColumn.length?.toUpperCase() !==
-            this.getColumnLength(columnMetadata)?.toUpperCase()
+            tableColumn.length.toUpperCase() !==
+            this.getColumnLength(columnMetadata).toUpperCase()
         )
     }
 
