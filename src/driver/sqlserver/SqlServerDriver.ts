@@ -795,7 +795,14 @@ export class SqlServerDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                tableColumn.isUnique !==
+                    this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    ))
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -1035,7 +1042,10 @@ export class SqlServerDriver implements Driver {
         // of data type precedence to the expressions specified in the formula.
         if (columnMetadata.asExpression) return false
 
-        return tableColumn.length !== this.getColumnLength(columnMetadata)
+        return (
+            tableColumn.length.toUpperCase() !==
+            this.getColumnLength(columnMetadata).toUpperCase()
+        )
     }
 
     protected lowerDefaultValueIfNecessary(value: string | undefined) {
