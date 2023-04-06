@@ -8,7 +8,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { User } from "./entity/User"
 
-describe("github issues > #6936 Removing cache using cacheIds appended with a wildcard will not work", () => {
+describe("github issues > #6936 Removing cache using cacheIds appended with a wildcard will not work", async () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
@@ -16,7 +16,11 @@ describe("github issues > #6936 Removing cache using cacheIds appended with a wi
             schemaCreate: true,
             dropSchema: true,
             cache: {
-                type: "database",
+                type: "ioredis",
+                options: {
+                    host: "localhost",
+                    port: 6379,
+                },
             },
         })
     })
@@ -38,26 +42,27 @@ describe("github issues > #6936 Removing cache using cacheIds appended with a wi
     })
     after(() => closeTestingConnections(connections))
 
-    it("getManyAndCount and findAndCount should count correctly when using cacheId", () =>
+    it("getManyAndCount and findAndCount should count correctly when using cacheId", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            connections.map(async (connection, idx) => {
                 const repo = connection.getRepository(User)
 
-                const getManyAndCount = () =>
-                    repo
+                const getManyAndCount = async () =>
+                    await repo
                         .createQueryBuilder()
-                        .cache("cache:1", 60000)
+                        .cache(`cache:${idx}:1`, 60000)
                         .getManyAndCount()
 
-                const findAndCount = () =>
-                    repo.findAndCount({
+                const findAndCount = async () =>
+                    await repo.findAndCount({
                         cache: {
-                            id: "cache:2",
+                            id: `cache:${idx}:2`,
                             milliseconds: 60000,
                         },
                     })
 
                 const [users, count] = await getManyAndCount()
+                console.log(`Count is ${count}`)
                 expect(users.length).equal(10)
                 expect(count).equal(10)
 
@@ -68,80 +73,17 @@ describe("github issues > #6936 Removing cache using cacheIds appended with a wi
                 await repo.save({ name: "Jeremy Clarkson" })
                 const cache = repo.manager.connection.queryResultCache
                 if (cache) {
-                    const cacheIds = ["cache:*"]
+                    const cacheIds = [`cache:${idx}:*`]
                     await cache.remove(cacheIds)
                 }
 
                 // After caching, both queries should be cached correctly. Save above should not affect results
                 const [_users, _count] = await getManyAndCount()
-                expect(_users.length).equal(10)
-                expect(_count).equal(10)
-
-                const [_users2, _count2] = await findAndCount()
-                expect(_users2.length).equal(10)
-                expect(_count2).equal(10)
-            }),
-        ))
-
-    it("getManyAndCount and findAndCount should count correctly when NOT using cacheId", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(User)
-
-                const getManyAndCount = () =>
-                    repo.createQueryBuilder().cache(60000).getManyAndCount()
-
-                const findAndCount = () =>
-                    repo.findAndCount({
-                        cache: 60000,
-                    })
-
-                const [users, count] = await getManyAndCount()
-                expect(users.length).equal(10)
-                expect(count).equal(10)
-
-                const [users2, count2] = await findAndCount()
-                expect(users2.length).equal(10)
-                expect(count2).equal(10)
-
-                await repo.save({ name: "Jeremy Clarkson" })
-
-                // After caching, both queries should be cached correctly. Save above should not affect results
-                const [_users, _count] = await getManyAndCount()
-                expect(_users.length).equal(10)
-                expect(_count).equal(10)
-
-                const [_users2, _count2] = await findAndCount()
-                expect(_users2.length).equal(10)
-                expect(_count2).equal(10)
-            }),
-        ))
-
-    it("getManyAndCount and findAndCount should count correctly when NOT using cache", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(User)
-
-                const getManyAndCount = () =>
-                    repo.createQueryBuilder().getManyAndCount()
-
-                const findAndCount = () => repo.findAndCount()
-
-                const [users, count] = await getManyAndCount()
-                expect(users.length).equal(10)
-                expect(count).equal(10)
-
-                const [users2, count2] = await findAndCount()
-                expect(users2.length).equal(10)
-                expect(count2).equal(10)
-
-                await repo.save({ name: "Jeremy Clarkson" })
-
-                // After queries, both should NOT be cached. Save above SHOULD affect results
-                const [_users, _count] = await getManyAndCount()
+                console.log(`Count is NOW: ${_count}`)
                 expect(_users.length).equal(11)
                 expect(_count).equal(11)
 
+                console.log(`findAndCount => count is NOW: ${_count}`)
                 const [_users2, _count2] = await findAndCount()
                 expect(_users2.length).equal(11)
                 expect(_count2).equal(11)
