@@ -88,8 +88,11 @@ export class RelationJoinColumnBuilder {
         })
 
         // Oracle does not allow both primary and unique constraints on the same column
+        // Postgres can't take the unique und primary at once during create and primary key is unique anyway
         if (
-            this.connection.driver.options.type === "oracle" &&
+            ["oracle", "postgres"].includes(
+                this.connection.driver.options.type,
+            ) &&
             columns.every((column) => column.isPrimary)
         )
             return { foreignKey, columns, uniqueConstraint: undefined }

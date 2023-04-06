@@ -261,6 +261,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.softRemoveSubjects.length)
@@ -270,6 +271,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.recoverSubjects.length)
@@ -279,6 +281,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         return result
@@ -317,6 +320,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.softRemoveSubjects.length)
@@ -326,6 +330,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.recoverSubjects.length)
@@ -335,6 +340,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         return result

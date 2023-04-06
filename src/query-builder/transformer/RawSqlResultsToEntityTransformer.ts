@@ -72,6 +72,7 @@ export class RawSqlResultsToEntityTransformer {
                 ...alias.metadata.columns.map((column) =>
                     DriverUtils.buildAlias(
                         this.driver,
+                        undefined,
                         alias.name,
                         column.databaseName,
                     ),
@@ -82,6 +83,7 @@ export class RawSqlResultsToEntityTransformer {
                 ...alias.metadata.primaryColumns.map((column) =>
                     DriverUtils.buildAlias(
                         this.driver,
+                        undefined,
                         alias.name,
                         column.databaseName,
                     ),
@@ -131,6 +133,7 @@ export class RawSqlResultsToEntityTransformer {
                     result[
                         DriverUtils.buildAlias(
                             this.driver,
+                            undefined,
                             alias.name,
                             alias.metadata.discriminatorColumn!.databaseName,
                         )
@@ -221,6 +224,7 @@ export class RawSqlResultsToEntityTransformer {
                 rawResults[0][
                     DriverUtils.buildAlias(
                         this.driver,
+                        undefined,
                         alias.name,
                         column.databaseName,
                     )
@@ -415,6 +419,7 @@ export class RawSqlResultsToEntityTransformer {
                     rawSqlResults[0][
                         DriverUtils.buildAlias(
                             this.driver,
+                            undefined,
                             alias.name,
                             referenceColumnName,
                         )
@@ -474,6 +479,7 @@ export class RawSqlResultsToEntityTransformer {
                             rawSqlResult[
                                 DriverUtils.buildAlias(
                                     this.driver,
+                                    undefined,
                                     parentAlias,
                                     column.databaseName,
                                 )
@@ -486,6 +492,7 @@ export class RawSqlResultsToEntityTransformer {
                             rawSqlResult[
                                 DriverUtils.buildAlias(
                                     this.driver,
+                                    undefined,
                                     parentAlias,
                                     column.referencedColumn!.databaseName,
                                 )

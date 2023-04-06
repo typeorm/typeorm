@@ -391,7 +391,7 @@ export class UserController {
 
     async one(request: Request, response: Response, next: NextFunction) {
         const id = parseInt(request.params.id)
-        
+
 
         const user = await this.userRepository.findOne({
             where: { id }
@@ -718,7 +718,7 @@ Steps to run this project:
                 packageJson.dependencies["oracledb"] = "^5.1.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^7.3.0"
+                packageJson.dependencies["mssql"] = "^9.1.1"
                 break
             case "mongodb":
                 packageJson.dependencies["mongodb"] = "^3.0.8"

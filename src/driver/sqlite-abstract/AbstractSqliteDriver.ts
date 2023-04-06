@@ -127,6 +127,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "date",
         "time",
         "datetime",
+        "json",
     ]
 
     /**
@@ -340,6 +341,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             // to string conversation needs because SQLite stores date as integer number, when date came as Object
             // TODO: think about `toUTC` conversion
             return DateUtils.mixedDateToUtcDatetimeString(value)
+        } else if (columnMetadata.type === "json") {
+            return JSON.stringify(value)
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === "simple-json") {
@@ -405,6 +408,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
+        } else if (columnMetadata.type === "json") {
+            value = typeof value === "string" ? JSON.parse(value) : value
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
@@ -786,6 +791,12 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    )) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
 
@@ -842,6 +853,15 @@ export abstract class AbstractSqliteDriver implements Driver {
             //         "isUnique:",
             //         tableColumn.isUnique,
             //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log(
+            //         "enum:",
+            //         tableColumn.enum &&
+            //             columnMetadata.enum &&
+            //             !OrmUtils.isArraysEqual(
+            //                 tableColumn.enum,
+            //                 columnMetadata.enum.map((val) => val + ""),
+            //             ),
             //     )
             //     console.log(
             //         "isGenerated:",

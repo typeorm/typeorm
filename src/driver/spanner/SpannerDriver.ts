@@ -20,7 +20,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { CteCapabilities } from "../types/CteCapabilities"
-import { UpsertType } from "../types/UpsertType.js"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with Spanner DBMS.

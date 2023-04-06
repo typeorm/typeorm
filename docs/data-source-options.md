@@ -97,10 +97,6 @@ Different RDBMS-es have their own specific options.
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
     Read more about caching [here](caching.md).
 
--   `cli.entitiesDir` - Directory where entities should be created by default by CLI.
-
--   `cli.subscribersDir` - Directory where subscribers should be created by default by CLI.
-
 ## `mysql` / `mariadb` data source options
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
@@ -553,11 +549,6 @@ Here is a small example of data source options for mysql:
     ],
     migrations: [
         "migration/*.js"
-    ],
-    cli: {
-        entitiesDir: "entity",
-        migrationsDir: "migration",
-        subscribersDir: "subscriber"
-    }
+    ]
 }
 ```

@@ -163,7 +163,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         databaseConnection.exec(`PRAGMA foreign_keys = ON`)
 
         // turn on WAL mode to enhance performance
-        databaseConnection.exec(`PRAGMA journal_mode = WAL`)
+        if (this.options.enableWAL) {
+            databaseConnection.exec(`PRAGMA journal_mode = WAL`)
+        }
 
         return databaseConnection
     }

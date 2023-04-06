@@ -11,17 +11,13 @@ import { TableType } from "../metadata/types/TableTypes"
 import { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
 import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
+import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
 import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
  */
 export class EntitySchemaOptions<T> {
-    /**
-     * Name of the schema it extends.
-     */
-    extends?: string
-
     /**
      * Target bind to this entity schema. Optional.
      */
@@ -123,4 +119,9 @@ export class EntitySchemaOptions<T> {
      * View expression.
      */
     expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+
+    /**
+     * Inheritance options.
+     */
+    inheritance?: EntitySchemaInheritanceOptions
 }

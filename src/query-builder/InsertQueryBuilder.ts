@@ -37,7 +37,7 @@ export class InsertQueryBuilder<
         let sql = this.createComment()
         sql += this.createCteExpression()
         sql += this.createInsertExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**

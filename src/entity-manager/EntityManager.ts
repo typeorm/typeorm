@@ -37,6 +37,7 @@ import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { PickKeysByType } from "../common/PickKeysByType"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -66,8 +67,9 @@ export class EntityManager {
 
     /**
      * Once created and then reused by repositories.
+     * Created as a future replacement for the #repositories to provide a bit more perf optimization.
      */
-    protected repositories: Repository<any>[] = []
+    protected repositories = new Map<EntityTarget<any>, Repository<any>>()
 
     /**
      * Once created and then reused by repositories.
@@ -1002,6 +1004,69 @@ export class EntityManager {
     }
 
     /**
+     * Return the SUM of a column
+     */
+    sum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "SUM", columnName, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    average<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "AVG", columnName, where)
+    }
+
+    /**
+     * Return the MIN of a column
+     */
+    minimum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MIN", columnName, where)
+    }
+
+    /**
+     * Return the MAX of a column
+     */
+    maximum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MAX", columnName, where)
+    }
+
+    private async callAggregateFun<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        fnName: "SUM" | "AVG" | "MIN" | "MAX",
+        columnName: PickKeysByType<Entity, number>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
+    ): Promise<number | null> {
+        const metadata = this.connection.getMetadata(entityClass)
+        const result = await this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions({ where })
+            .select(
+                `${fnName}(${this.connection.driver.escape(
+                    String(columnName),
+                )})`,
+                fnName,
+            )
+            .getRawOne()
+        return result[fnName] === null ? null : parseFloat(result[fnName])
+    }
+
+    /**
      * Finds entities that match given find options.
      */
     async find<Entity extends ObjectLiteral>(
@@ -1313,10 +1378,8 @@ export class EntityManager {
         target: EntityTarget<Entity>,
     ): Repository<Entity> {
         // find already created repository instance and return it if found
-        const repository = this.repositories.find(
-            (repository) => repository.target === target,
-        )
-        if (repository) return repository
+        const repoFromMap = this.repositories.get(target)
+        if (repoFromMap) return repoFromMap
 
         // if repository was not found then create it, store its instance and return it
         if (this.connection.driver.options.type === "mongodb") {
@@ -1325,7 +1388,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository as any)
+            this.repositories.set(target, newRepository)
             return newRepository
         } else {
             const newRepository = new Repository<any>(
@@ -1333,7 +1396,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository)
+            this.repositories.set(target, newRepository)
             return newRepository
         }
     }
