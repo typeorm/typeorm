@@ -79,11 +79,9 @@ describe("github issues > #6936 Removing cache using cacheIds appended with a wi
 
                 // After caching, both queries should be cached correctly. Save above should not affect results
                 const [_users, _count] = await getManyAndCount()
-                console.log(`Count is NOW: ${_count}`)
                 expect(_users.length).equal(11)
                 expect(_count).equal(11)
 
-                console.log(`findAndCount => count is NOW: ${_count}`)
                 const [_users2, _count2] = await findAndCount()
                 expect(_users2.length).equal(11)
                 expect(_count2).equal(11)
