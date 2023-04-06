@@ -333,7 +333,6 @@ export class MigrationExecutor {
                     transactionStartedByUs = true
                 }
 
-                this.connection.logger.log("info", "--start migration--")
                 await migration
                     .instance!.up(queryRunner)
                     .catch((error) => {
