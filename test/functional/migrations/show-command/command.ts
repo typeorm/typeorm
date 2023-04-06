@@ -31,12 +31,7 @@ describe("migrations > show command", () => {
     it("can recognise no pending migrations", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const m = await connection.runMigrations()
-                /*
-                    .catch((err) => { console.log(`error: ${err}`)})
-                    .then(() => { console.log('migrations done')})
-                */
-                console.log(`have performe ${m.length} migrations`)
+                await connection.runMigrations()
                 const migrations = await connection.showMigrations()
                 migrations.should.be.equal(false)
             }),
