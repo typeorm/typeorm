@@ -9,7 +9,7 @@
 
 ## What are many-to-many relations
 
-Many-to-many is a relation where A contains multiple instances of B, and B contain multiple instances of A.
+Many-to-many is a relation where A contains multiple instances of B, and B contains multiple instances of A.
 Let's take for example `Question` and `Category` entities.
 A question can have multiple categories, and each category can have multiple questions.
 
@@ -109,7 +109,12 @@ With [cascades](./relations.md#cascades) enabled, you can delete this relation w
 To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
 
 ```typescript
-const question = dataSource.getRepository(Question)
+const question = await dataSource.getRepository(Question).findOne({
+    relations: {
+        categories: true,
+    },
+    where: { id: 1 }
+})
 question.categories = question.categories.filter((category) => {
     return category.id !== categoryToRemove.id
 })

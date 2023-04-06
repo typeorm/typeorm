@@ -164,10 +164,10 @@ interface Window {
 }
 
 declare var window: Window;
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && typeof require !== "undefined") {
     window.Buffer = require("buffer/").Buffer;
 }
 // NativeScript uses global, not window
-if (typeof global !== "undefined") {
+if (typeof global !== "undefined" && typeof require !== "undefined") {
     global.Buffer = require("buffer/").Buffer;
 }

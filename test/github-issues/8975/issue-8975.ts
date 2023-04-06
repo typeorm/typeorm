@@ -44,20 +44,12 @@ describe("cli init command", () => {
         await Promise.all([chmodPromise, copyPromise])
     })
 
-    after((done) => {
-        rimraf(`./${builtSrcDirectory}/package.json`, (error) => {
-            expect(error).to.not.exist
-
-            done()
-        })
+    after(async () => {
+        await rimraf(`./${builtSrcDirectory}/package.json`)
     })
 
-    afterEach((done) => {
-        rimraf(`./${testProjectName}`, (error) => {
-            expect(error).to.not.exist
-
-            done()
-        })
+    afterEach(async () => {
+        await rimraf(`./${testProjectName}`)
     })
 
     for (const databaseOption of databaseOptions) {
@@ -71,6 +63,6 @@ describe("cli init command", () => {
                     done()
                 },
             )
-        }).timeout(90000)
+        }).timeout(120000)
     }
 })

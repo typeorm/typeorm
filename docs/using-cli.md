@@ -60,13 +60,7 @@ If you want to load more modules like [module-alias](https://github.com/ilearnio
 Then you may run the command like this:
 
 ```
-npm run typeorm migration:run
-```
-
-If you need to pass parameter with dash to npm script, you will need to add them after --. For example, if you need to _generate_, the command is like this:
-
-```
-npm run typeorm migration:generate -- -n migrationNameHere
+npm run typeorm migration:run -- -d path-to-datasource-config
 ```
 
 ### How to read the documentation
@@ -131,27 +125,7 @@ typeorm init --docker
 You can create a new entity using CLI:
 
 ```
-typeorm entity:create -n User
-```
-
-where `User` is an entity file and class name.
-Running the command will create a new empty entity in `entitiesDir` of the project.
-To set up the `entitiesDir` of the project you must add it in data source options:
-
-```
-{
-    cli: {
-        entitiesDir: "src/entity"
-    }
-}
-```
-
-Learn more about [data source options](./data-source-options.md).
-If you have a multi-module project structure with multiple entities in different directories
-you can provide the path to the CLI command where you want to generate an entity:
-
-```
-typeorm entity:create -n User -d src/user/entity
+typeorm entity:create path-to-entity-dir/entity
 ```
 
 Learn more about [entities](./entities.md).
@@ -161,27 +135,7 @@ Learn more about [entities](./entities.md).
 You can create a new subscriber using CLI:
 
 ```
-typeorm subscriber:create -n UserSubscriber
-```
-
-where `UserSubscriber` is a subscriber file and class name.
-Running the following command will create a new empty subscriber in the `subscribersDir` of the project.
-To setup `subscribersDir` you must add it in data source options:
-
-```
-{
-    cli: {
-        subscribersDir: "src/subscriber"
-    }
-}
-```
-
-Learn more about [data source options](./data-source-options.md).
-If you have a multi-module project structure with multiple subscribers in different directories
-you can provide a path to the CLI command where you want to generate a subscriber:
-
-```
-typeorm subscriber:create -n UserSubscriber -d src/user/subscriber
+typeorm subscriber:create path-to-subscriber-dir/subscriber
 ```
 
 Learn more about [Subscribers](./listeners-and-subscribers.md).
@@ -191,29 +145,8 @@ Learn more about [Subscribers](./listeners-and-subscribers.md).
 You can create a new migration using CLI:
 
 ```
-typeorm migration:create -n UserMigration
+typeorm migration:create path-to-migrations-dir/migrationName
 ```
-
-where `UserMigration` is a migration file and class name.
-Running the command will create a new empty migration in the `migrationsDir` of the project.
-To setup `migrationsDir` you must add it in data source options:
-
-```
-{
-    cli: {
-        migrationsDir: "src/migration"
-    }
-}
-```
-
-Learn more about [data source options](./data-source-options.md).
-If you have a multi-module project structure with multiple migrations in different directories
-you can provide a path to the CLI command where you want to generate a migration:
-
-```
-typeorm migration:create -n UserMigration -d src/user/migration
-```
-
 Learn more about [Migrations](./migrations.md).
 
 ## Generate a migration from existing table schema
@@ -238,7 +171,7 @@ Learn more about [Migrations](./migrations.md).
 To execute all pending migrations use following command:
 
 ```
-typeorm migration:run
+typeorm migration:run -- -d path-to-datasource-config
 ```
 
 Learn more about [Migrations](./migrations.md).
@@ -248,7 +181,7 @@ Learn more about [Migrations](./migrations.md).
 To revert the most recently executed migration use the following command:
 
 ```
-typeorm migration:revert
+typeorm migration:revert -- -d path-to-datasource-config
 ```
 
 This command will undo only the last executed migration.
@@ -260,7 +193,7 @@ Learn more about [Migrations](./migrations.md).
 To show all migrations and whether they've been run or not use following command:
 
 ```
-typeorm migration:show
+typeorm migration:show  -- -d path-to-datasource-config
 ```
 
 [X] = Migration has been ran
@@ -292,7 +225,7 @@ typeorm schema:log
 To completely drop a database schema use:
 
 ```
-typeorm schema:drop
+typeorm schema:drop -- -d path-to-datasource-config
 ```
 
 Be careful with this command on production since it completely removes data from your database.

@@ -303,7 +303,7 @@ describe("query builder > insertion > on conflict", () => {
                 )
             }),
         ))
-    it("should throw error if using indexPredicate amd an unsupported driver", () => {
+    it("should throw error if using indexPredicate amd an unsupported driver", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (
@@ -331,6 +331,5 @@ describe("query builder > insertion > on conflict", () => {
 
                 expect(sql).to.throw(Error)
             }),
-        )
-    })
+        ))
 })

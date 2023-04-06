@@ -1734,7 +1734,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!entity) {
             throw new EntityNotFoundError(
                 this.expressionMap.mainAlias!.target,
-                this,
+                this.expressionMap.parameters,
             )
         }
 
@@ -4127,14 +4127,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     protected buildWhere(
-        where: FindOptionsWhere<any>,
+        where: FindOptionsWhere<any>[] | FindOptionsWhere<any>,
         metadata: EntityMetadata,
         alias: string,
         embedPrefix?: string,
     ) {
         let condition: string = ""
         // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
-        if (Array.isArray(where)) {
+        if (Array.isArray(where) && where.length) {
             condition =
                 "(" +
                 where

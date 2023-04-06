@@ -409,7 +409,7 @@ export class MigrationExecutor {
         // if no migrations found in the database then nothing to revert
         if (!lastTimeExecutedMigration) {
             this.connection.logger.logSchemaBuild(
-                `No migrations was found in the database. Nothing to revert!`,
+                `No migrations were found in the database. Nothing to revert!`,
             )
             return
         }

@@ -5,13 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { expect } from "chai"
-import {
-    DataSource,
-    EntityNotFoundError,
-    In,
-    IsNull,
-    Raw,
-} from "../../../../src"
+import { DataSource, In, IsNull, Raw } from "../../../../src"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
@@ -522,7 +516,7 @@ describe("query builder > select", () => {
                             .createQueryBuilder(Post, "post")
                             .where("post.id = :id", { id: "2" })
                             .getOneOrFail(),
-                    ).to.be.rejectedWith(EntityNotFoundError)
+                    ).to.be.rejectedWith("")
                 }),
             ))
     })

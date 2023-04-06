@@ -1030,6 +1030,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 return `${condition.parameters[0]} <= ${condition.parameters[1]}`
             case "arrayContains":
                 return `${condition.parameters[0]} @> ${condition.parameters[1]}`
+            case "jsonContains":
+                return `${condition.parameters[0]} ::jsonb @> ${condition.parameters[1]}`
             case "arrayContainedBy":
                 return `${condition.parameters[0]} <@ ${condition.parameters[1]}`
             case "arrayOverlap":

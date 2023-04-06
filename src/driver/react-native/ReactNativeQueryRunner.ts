@@ -13,6 +13,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Database driver used by connection.
      */
+    // @ts-ignore temporary, we need to fix the issue with the AbstractSqliteDriver and circular errors
     driver: ReactNativeDriver
 
     // -------------------------------------------------------------------------
