@@ -285,7 +285,7 @@ export class ActionLog {
     @Column()
     action: string
 
-    @ManyToMany("Person", "id")
+    @ManyToMany("Person", (person: Person) => person.id)
     person: Person
 }
 ```
@@ -299,7 +299,7 @@ export class Person {
     @PrimaryColumn()
     id: number
 
-    @ManyToMany("ActionLog", "id")
+    @ManyToMany("ActionLog", (actionLog: ActionLog) => actionLog.id)
     log: ActionLog
 }
 ```

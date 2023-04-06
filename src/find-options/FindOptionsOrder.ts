@@ -24,7 +24,7 @@ export type FindOptionsOrderProperty<Property> = Property extends Promise<
     : Property extends ObjectID
     ? FindOptionsOrderValue
     : Property extends object
-    ? FindOptionsOrder<Property>
+    ? FindOptionsOrder<Property> | FindOptionsOrderValue
     : FindOptionsOrderValue
 
 /**

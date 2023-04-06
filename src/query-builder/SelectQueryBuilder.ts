@@ -1734,7 +1734,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!entity) {
             throw new EntityNotFoundError(
                 this.expressionMap.mainAlias!.target,
-                this,
+                this.expressionMap.parameters,
             )
         }
 
