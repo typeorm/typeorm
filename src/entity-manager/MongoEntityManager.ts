@@ -4,10 +4,10 @@ import { EntityTarget } from "../common/EntityTarget"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import { MongoDriver } from "../driver/mongodb/MongoDriver"
-// import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
+import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
 import { FindManyOptions } from "../find-options/FindManyOptions"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-// import { PlatformTools } from "../platform/PlatformTools";
+import { PlatformTools } from "../platform/PlatformTools"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
@@ -64,7 +64,6 @@ import {
 } from "../find-options/FindOptionsSelect"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -109,7 +108,7 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             )
-        const cursor = this.createEntityCursor(
+        const cursor = this.createEntityCursor<Entity>(
             entityClassOrName,
             query as Filter<Entity>,
         )
@@ -177,7 +176,7 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             ) || {}
-        const objectIdInstance = ObjectId
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
         query["_id"] = {
             $in: ids.map((id) => {
                 if (typeof id === "string") {
@@ -198,7 +197,7 @@ export class MongoEntityManager extends EntityManager {
             }),
         }
 
-        const cursor = this.createEntityCursor(
+        const cursor = this.createEntityCursor<Entity>(
             entityClassOrName,
             query as Filter<Entity>,
         )
@@ -972,7 +971,7 @@ export class MongoEntityManager extends EntityManager {
         metadata: EntityMetadata,
         idMap: any,
     ): ObjectLiteral {
-        const objectIdInstance = ObjectId
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
 
         // check first if it's ObjectId compatible:
         // string, number, Buffer, ObjectId or ObjectId-like
@@ -1066,8 +1065,9 @@ export class MongoEntityManager extends EntityManager {
         optionsOrConditions?: any,
         maybeOptions?: MongoFindOneOptions<Entity>,
     ): Promise<Entity | null> {
+        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
         const id =
-            optionsOrConditions instanceof ObjectId ||
+            optionsOrConditions instanceof objectIdInstance ||
             typeof optionsOrConditions === "string"
                 ? optionsOrConditions
                 : undefined
@@ -1079,9 +1079,10 @@ export class MongoEntityManager extends EntityManager {
                 findOneOptionsOrConditions,
             ) || {}
         if (id) {
-            query["_id"] = id instanceof ObjectId ? id : new ObjectId(id)
+            query["_id"] =
+                id instanceof objectIdInstance ? id : new ObjectId(id)
         }
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
+        const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =
             this.connection.getMetadata(entityClassOrName).deleteDateColumn
         if (FindOptionsUtils.isFindOneOptions(findOneOptionsOrConditions)) {
@@ -1120,7 +1121,7 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             )
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
+        const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =
             this.connection.getMetadata(entityClassOrName).deleteDateColumn
 
