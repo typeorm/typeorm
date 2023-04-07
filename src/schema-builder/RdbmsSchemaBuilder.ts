@@ -365,7 +365,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             renamedColumn.name = renamedMetadataColumns[0].databaseName
 
             this.connection.logger.logSchemaBuild(
-                `renaming column "${renamedTableColumns[0].name}" in to "${renamedColumn.name}"`,
+                `renaming column "${renamedTableColumns[0].name}" in "${table.name}" to "${renamedColumn.name}"`,
             )
             await this.queryRunner.renameColumn(
                 table,
