@@ -1,4 +1,4 @@
-import { Column, Entity, ObjectID, ObjectIdColumn } from "../../../../src"
+import { Column, Entity, ObjectId, ObjectIdColumn } from "../../../../src"
 
 @Entity()
 export class Product {
@@ -9,7 +9,7 @@ export class Product {
     }
 
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     name: string

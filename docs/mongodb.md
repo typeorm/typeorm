@@ -20,12 +20,12 @@ instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn`.
 Simple entity example:
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     firstName: string
@@ -54,7 +54,7 @@ Since MongoDB stores objects and objects inside objects (or documents inside doc
 you can do the same in TypeORM:
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 export class Profile {
     @Column()
@@ -69,7 +69,7 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 export class Photo {
     @Column()
@@ -90,12 +90,12 @@ export class Photo {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     firstName: string

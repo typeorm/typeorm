@@ -1,13 +1,6 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { Repository } from "./Repository"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
-import {
-    FindAndModifyWriteOpResultObject,
-    MongoCountPreferences,
-    MongodbIndexOptions,
-    ObjectID,
-    ReplaceOneOptions,
-} from "../driver/mongodb/typings"
 import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
@@ -16,6 +9,10 @@ import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions
 import { FindOneOptions } from "../find-options/FindOneOptions"
 
 import {
+    CreateIndexesOptions,
+    ObjectId,
+    ReplaceOptions,
+    //
     AggregateOptions,
     AggregationCursor,
     AnyBulkWriteOperation,
@@ -41,13 +38,12 @@ import {
     InsertOneResult,
     ListIndexesCursor,
     ListIndexesOptions,
-    ModifyResult,
     OrderedBulkOperation,
     UnorderedBulkOperation,
     UpdateFilter,
     UpdateOptions,
     UpdateResult,
-} from "mongodb"
+} from "../driver/mongodb/typings"
 import { FindManyOptions } from "../find-options/FindManyOptions"
 
 /**
@@ -167,7 +163,7 @@ export class MongoRepository<
      * })
      */
     async findOneById(
-        id: string | number | Date | ObjectID,
+        id: string | number | Date | ObjectId,
     ): Promise<Entity | null> {
         return this.manager.findOneById(this.metadata.target, id)
     }
@@ -251,17 +247,8 @@ export class MongoRepository<
     /**
      * Count number of matching documents in the db to a query.
      */
-    countBy(
-        query?: ObjectLiteral,
-        options?: MongoCountPreferences,
-    ): Promise<number> {
-        let where = {}
-        if (query !== undefined) {
-            where = query
-        } else if (options !== undefined) {
-            where = options
-        }
-        return this.manager.countBy(this.metadata.target, where)
+    countBy(query?: ObjectLiteral, options?: CountOptions): Promise<number> {
+        return this.manager.countBy(this.metadata.target, query, options)
     }
 
     /**
@@ -269,7 +256,7 @@ export class MongoRepository<
      */
     createCollectionIndex(
         fieldOrSpec: string | any,
-        options?: MongodbIndexOptions,
+        options?: CreateIndexesOptions,
     ): Promise<string> {
         return this.manager.createCollectionIndex(
             this.metadata.target,
@@ -353,7 +340,7 @@ export class MongoRepository<
     findOneAndDelete(
         query: ObjectLiteral,
         options?: FindOneAndDeleteOptions,
-    ): Promise<FindAndModifyWriteOpResultObject> {
+    ): Promise<Document> {
         return this.manager.findOneAndDelete(
             this.metadata.tableName,
             query,
@@ -368,7 +355,7 @@ export class MongoRepository<
         query: ObjectLiteral,
         replacement: Object,
         options?: FindOneAndReplaceOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         return this.manager.findOneAndReplace(
             this.metadata.tableName,
             query,
@@ -384,7 +371,7 @@ export class MongoRepository<
         query: ObjectLiteral,
         update: Object,
         options?: FindOneAndUpdateOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         return this.manager.findOneAndUpdate(
             this.metadata.tableName,
             query,
@@ -495,7 +482,7 @@ export class MongoRepository<
     replaceOne(
         query: ObjectLiteral,
         doc: ObjectLiteral,
-        options?: ReplaceOneOptions,
+        options?: ReplaceOptions,
     ): Promise<Document | UpdateResult> {
         return this.manager.replaceOne(
             this.metadata.tableName,

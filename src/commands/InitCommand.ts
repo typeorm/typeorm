@@ -315,7 +315,7 @@ temp/`
     protected static getUserEntityTemplate(database: string): string {
         return `import { Entity, ${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectID"
+                ? "ObjectIdColumn, ObjectId"
                 : "PrimaryGeneratedColumn"
         }, Column } from "typeorm"
 
@@ -327,7 +327,7 @@ export class User {
             ? "@ObjectIdColumn()"
             : "@PrimaryGeneratedColumn()"
     }
-    id: ${database === "mongodb" ? "ObjectID" : "number"}
+    id: ${database === "mongodb" ? "ObjectId" : "number"}
 
     @Column()
     firstName: string
@@ -721,7 +721,7 @@ Steps to run this project:
                 packageJson.dependencies["mssql"] = "^9.1.1"
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^3.0.8"
+                packageJson.dependencies["mongodb"] = "^5.2.0"
                 break
             case "spanner":
                 packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"

@@ -34,7 +34,6 @@ import {
     DeleteOptions,
     CommandOperationOptions,
     FindOneAndDeleteOptions,
-    ModifyResult,
     FindOneAndReplaceOptions,
     UpdateFilter,
     FindOneAndUpdateOptions,
@@ -55,7 +54,7 @@ import {
     UnorderedBulkOperation,
     OrderedBulkOperation,
     IndexInformationOptions,
-} from "mongodb"
+} from "../../driver/mongodb/typings"
 import { DataSource } from "../../data-source/DataSource"
 import { ReplicationMode } from "../types/ReplicationMode"
 
@@ -304,7 +303,7 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         filter: Filter<Document>,
         options?: FindOneAndDeleteOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         return this.getCollection(collectionName).findOneAndDelete(
             filter,
             options || {},
@@ -319,7 +318,7 @@ export class MongoQueryRunner implements QueryRunner {
         filter: Filter<Document>,
         replacement: Document,
         options?: FindOneAndReplaceOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         return this.getCollection(collectionName).findOneAndReplace(
             filter,
             replacement,
@@ -335,7 +334,7 @@ export class MongoQueryRunner implements QueryRunner {
         filter: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         return this.getCollection(collectionName).findOneAndUpdate(
             filter,
             update,
