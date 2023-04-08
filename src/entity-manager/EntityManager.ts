@@ -1054,11 +1054,20 @@ export class EntityManager {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
     ): Promise<number | null> {
         const metadata = this.connection.getMetadata(entityClass)
+        const column = metadata.columns.find(
+            (item) => item.propertyPath === columnName,
+        )
+        if (!column) {
+            throw new TypeORMError(
+                `Column "${columnName}" was not found in table "${metadata.name}"`,
+            )
+        }
+
         const result = await this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    String(columnName),
+                    column.databaseName,
                 )})`,
                 fnName,
             )
