@@ -695,7 +695,10 @@ Steps to run this project:
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
         Object.assign(packageJson.dependencies, {
-            typeorm: require("../package.json").version,
+            typeorm:
+                require("../package.json").version !== "0.0.0"
+                    ? require("../package.json").version // install version from package.json if present
+                    : require("../package.json").installFrom, // else use custom source
             "reflect-metadata": "^0.1.13",
         })
 

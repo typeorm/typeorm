@@ -35,10 +35,8 @@ describe("cli init command", () => {
             const packageJson = JSON.parse(
                 readFileSync("./package.json", "utf8"),
             )
-            // change the version to a specific string to trick the
-            // cli into thinking the file location is the version of
-            // typeorm to install
-            packageJson.version = `file:../${builtSrcDirectory}`
+            packageJson.version = `0.0.0` // install no version but
+            packageJson.installFrom = `file:../${builtSrcDirectory}` // use the built src directory
             // write the modified package.json to the build directory
             writeFileSync(
                 `./${builtSrcDirectory}/package.json`,
@@ -63,6 +61,7 @@ describe("cli init command", () => {
             exec(
                 `${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
                 (error, stdout, stderr) => {
+                    if (error) console.log(error)
                     expect(error).to.not.exist
                     expect(stderr).to.be.empty
 
