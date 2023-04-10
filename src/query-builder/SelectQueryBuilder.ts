@@ -2801,7 +2801,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 return this.expressionMap.selects.some(
                     (select) =>
                         select.selection ===
-                        aliasName + "." + column.propertyPath,
+                            aliasName + "." + column.propertyPath ||
+                        select.selection ===
+                            aliasName + "." + column.databaseName,
                 )
             }),
         )
@@ -3849,7 +3851,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
             const column =
-                metadata.findColumnWithPropertyPathStrict(propertyPath)
+                metadata.findColumnWithPropertyPathStrict(propertyPath) ||
+                metadata.findColumnWithDatabaseName(propertyPath)
             const embed = metadata.findEmbeddedWithPropertyPath(propertyPath)
             const relation = metadata.findRelationWithPropertyPath(propertyPath)
 
@@ -4094,7 +4097,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
             const column =
-                metadata.findColumnWithPropertyPathStrict(propertyPath)
+                metadata.findColumnWithPropertyPathStrict(propertyPath) ||
+                metadata.findColumnWithDatabaseName(propertyPath)
             const embed = metadata.findEmbeddedWithPropertyPath(propertyPath)
             const relation = metadata.findRelationWithPropertyPath(propertyPath)
 
@@ -4219,7 +4223,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
                 const column =
-                    metadata.findColumnWithPropertyPathStrict(propertyPath)
+                    metadata.findColumnWithPropertyPathStrict(propertyPath) ||
+                    metadata.findColumnWithDatabaseName(propertyPath)
                 const embed =
                     metadata.findEmbeddedWithPropertyPath(propertyPath)
                 const relation =
