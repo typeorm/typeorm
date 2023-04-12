@@ -55,7 +55,7 @@ import {
     UnorderedBulkOperation,
     OrderedBulkOperation,
     IndexInformationOptions,
-} from "mongodb"
+} from "../../driver/mongodb/typings"
 import { DataSource } from "../../data-source/DataSource"
 import { ReplicationMode } from "../types/ReplicationMode"
 

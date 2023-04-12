@@ -1,9 +1,9 @@
-import { Entity, ObjectID, ObjectIdColumn, Column } from "../../../../src"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "../../../../src"
 
 @Entity("warnings")
 export class Warn {
     @ObjectIdColumn()
-    id!: ObjectID
+    id!: ObjectId
 
     @Column()
     guild!: string

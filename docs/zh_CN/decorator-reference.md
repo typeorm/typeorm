@@ -248,16 +248,16 @@ export class User {
 
 #### `@ObjectIdColumn`
 
-将实体中的属性标记为 ObjectID。
+将实体中的属性标记为 ObjectId。
 此装饰器仅用于 MongoDB。
-MongoDB 中的每个实体都必须具有 ObjectID 列。
+MongoDB 中的每个实体都必须具有 ObjectId 列。
 例如：
 
 ```typescript
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectID;
+    id: ObjectId;
 }
 ```
 

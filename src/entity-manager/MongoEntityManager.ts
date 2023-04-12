@@ -1,11 +1,6 @@
 import { EntityManager } from "./EntityManager"
 import { EntityTarget } from "../common/EntityTarget"
 
-import {
-    MongoCallback,
-    CursorResult,
-    ObjectID,
-} from "../driver/mongodb/typings"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import { MongoDriver } from "../driver/mongodb/MongoDriver"
@@ -37,7 +32,6 @@ import {
     DeleteOptions,
     CommandOperationOptions,
     FindOneAndDeleteOptions,
-    ModifyResult,
     FindOneAndReplaceOptions,
     UpdateFilter,
     FindOneAndUpdateOptions,
@@ -59,9 +53,8 @@ import {
     OrderedBulkOperation,
     IndexInformationOptions,
     ObjectId,
-    MongoError,
     FilterOperators,
-} from "mongodb"
+} from "../driver/mongodb/typings"
 import { DataSource } from "../data-source/DataSource"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
 import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
@@ -258,7 +251,7 @@ export class MongoEntityManager extends EntityManager {
      */
     async findOneById<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-        id: string | number | Date | ObjectID,
+        id: string | number | Date | ObjectId,
     ): Promise<Entity | null> {
         return this.executeFindOne(entityClassOrName, id)
     }
@@ -632,7 +625,7 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         query: ObjectLiteral,
         options?: FindOneAndDeleteOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndDelete(
             metadata.tableName,
@@ -649,7 +642,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         replacement: Document,
         options?: FindOneAndReplaceOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndReplace(
             metadata.tableName,
@@ -667,7 +660,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
-    ): Promise<ModifyResult<Document>> {
+    ): Promise<Document> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndUpdate(
             metadata.tableName,
@@ -1015,94 +1008,38 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const queryRunner = this.mongoQueryRunner
-        cursor.toArray = function (callback?: MongoCallback<Entity[]>) {
-            if (callback) {
-                cursor
-                    .clone()
-                    .toArray.call(
-                        this,
-                        (error: MongoError, results: Entity[]): void => {
-                            if (error) {
-                                callback(error, results)
-                                return
-                            }
-
-                            const transformer =
-                                new DocumentToEntityTransformer()
-                            const entities = transformer.transformAll(
-                                results,
-                                metadata,
-                            )
-
-                            // broadcast "load" events
-                            queryRunner.broadcaster
-                                .broadcast("Load", metadata, entities)
-                                .then(() => callback(error, entities))
-                        },
+        cursor.toArray = () =>
+            cursor
+                .clone()
+                .toArray()
+                .then(async (results: Entity[]) => {
+                    const transformer = new DocumentToEntityTransformer()
+                    const entities = transformer.transformAll(results, metadata)
+                    // broadcast "load" events
+                    await queryRunner.broadcaster.broadcast(
+                        "Load",
+                        metadata,
+                        entities,
                     )
-            } else {
-                return cursor
-                    .clone()
-                    .toArray.call(this)
-                    .then((results: Entity[]) => {
-                        const transformer = new DocumentToEntityTransformer()
-                        const entities = transformer.transformAll(
-                            results,
-                            metadata,
-                        )
+                    return entities
+                })
 
-                        // broadcast "load" events
-                        return queryRunner.broadcaster
-                            .broadcast("Load", metadata, entities)
-                            .then(() => entities)
-                    })
-            }
-        }
-        cursor.next = function (callback?: MongoCallback<CursorResult>) {
-            if (callback) {
-                cursor
-                    .clone()
-                    .next.call(
-                        this,
-                        (error: MongoError, result: CursorResult): void => {
-                            if (error || !result) {
-                                callback(error, result)
-                                return
-                            }
-
-                            const transformer =
-                                new DocumentToEntityTransformer()
-                            const entity = transformer.transform(
-                                result,
-                                metadata,
-                            )
-
-                            // broadcast "load" events
-
-                            queryRunner.broadcaster
-                                .broadcast("Load", metadata, [entity])
-                                .then(() => callback(error, entity))
-                        },
-                    )
-            } else {
-                return cursor
-                    .clone()
-                    .next.call(this)
-                    .then((result: Entity) => {
-                        if (!result) {
-                            return result
-                        }
-
-                        const transformer = new DocumentToEntityTransformer()
-                        const entity = transformer.transform(result, metadata)
-
-                        // broadcast "load" events
-                        return queryRunner.broadcaster
-                            .broadcast("Load", metadata, [entity])
-                            .then(() => entity)
-                    })
-            }
-        }
+        cursor.next = () =>
+            cursor
+                .clone()
+                .next()
+                .then(async (result: Entity) => {
+                    if (!result) {
+                        return result
+                    }
+                    const transformer = new DocumentToEntityTransformer()
+                    const entity = transformer.transform(result, metadata)
+                    // broadcast "load" events
+                    await queryRunner.broadcaster.broadcast("Load", metadata, [
+                        entity,
+                    ])
+                    return entity
+                })
     }
 
     protected filterSoftDeleted<Entity>(

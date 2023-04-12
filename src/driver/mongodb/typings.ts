@@ -1,5797 +1,1743 @@
-import { EventEmitter, Readable, Writable } from "../../platform/PlatformTools"
-
-/**
- * Creates a new MongoClient instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/MongoClient.html
- */
-export declare class MongoClient extends EventEmitter {
-    constructor(uri: string, options?: MongoClientOptions)
-
-    /**
-     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
-     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
-     *
-     * @param url The connection URI string.
-     * @param callback The command result callback.
-     */
-    static connect(url: string, callback: MongoCallback<Db>): void
-
-    /**
-     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
-     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
-     *
-     * @param url The connection URI string.
-     * @param options Optional settings.
-     */
-    static connect(url: string, options?: MongoClientOptions): Promise<Db>
-
-    /**
-     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
-     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
-     *
-     * @param url The connection URI string.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     */
-    static connect(
-        url: string,
-        options: MongoClientOptions,
-        callback: MongoCallback<Db>,
-    ): void
-
-    /**
-     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
-     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
-     */
-    connect(): Promise<MongoClient>
-
-    /**
-     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
-     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
-     *
-     * @param url The connection URI string.
-     * @param callback The command result callback.
-     */
-    connect(url: string, callback: MongoCallback<Db>): void
-
-    /**
-     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
-     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
-     *
-     * @param url The connection URI string.
-     * @param options Optional settings.
-     */
-    connect(url: string, options?: MongoClientOptions): Promise<Db>
-
-    /**
-     * Connect to MongoDB using a url as documented at docs.mongodb.org/manual/reference/connection-string/
-     * Note that for replicasets the replicaSet query parameter is required in the 2.0 driver.
-     *
-     * @param url The connection URI string.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     */
-    connect(
-        url: string,
-        options: MongoClientOptions,
-        callback: MongoCallback<Db>,
-    ): void
-
-    /**
-     * Close the db and its underlying connections.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
-     */
-    close(callback: MongoCallback<void>): void
-
-    /**
-     * Close the db and its underlying connections.
-     * @param force Force close, emitting no events.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
-     */
-    close(force?: boolean): Promise<void>
-
-    /**
-     * Close the db and its underlying connections.
-     * @param force Force close, emitting no events.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#close
-     */
-    close(force: boolean, callback: MongoCallback<void>): void
-
-    /**
-     * Create a new Db instance sharing the current socket connections. Be aware that the new db instances are
-     * related in a parent-child relationship to the original instance so that events are correctly emitted on child
-     * db instances. Child db instances are cached so performing db('db1') twice will return the same instance.
-     * You can control these behaviors with the options noListener and returnNonCachedInstance.
-     * @param dbName The name of the database we want to use. If not provided, use database name from connection string.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#db
-     */
-    db(dbName?: string, options?: MongoClientCommonOption): Db
-
-    /**
-     * Check if MongoClient is connected.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#isConnected
-     */
-    isConnected(options?: MongoClientCommonOption): boolean
-
-    /**
-     * Logout user from server, fire off on all connections and remove all auth info.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#logout
-     */
-    logout(callback: MongoCallback<any>): void
-    logout(options?: { dbName?: string }): Promise<any>
-    logout(options: { dbName?: string }, callback: MongoCallback<any>): void
-
-    /**
-     * Starts a new session on the server.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#startSession
-     */
-    startSession(options?: SessionOptions): ClientSession
-
-    /**
-     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this cluster.
-     * Will ignore all changes to system collections, as well as the local, admin, and config databases.
-     * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch
-     */
-    watch(
-        pipeline?: Object[],
-        options?: ChangeStreamOptions & {
-            startAtClusterTime?: Timestamp
-            session?: ClientSession
-        },
-    ): ChangeStream
-
-    /**
-     * Runs a given operation with an implicitly created session. The lifetime of the session will be handled without the need for user interaction.
-     * @param operation An operation to execute with an implicitly created session. The signature of this MUST be `(session) => {}`
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession
-     */
-    withSession(
-        operation: (session: ClientSession) => Promise<any>,
-    ): Promise<void>
-
-    /**
-     * Runs a given operation with an implicitly created session. The lifetime of the session will be handled without the need for user interaction.
-     * @param options Optional settings to be appled to implicitly created session.
-     * @param operation An operation to execute with an implicitly created session. The signature of this MUST be `(session) => {}`
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/MongoClient.html#withSession
-     */
-    withSession(
-        options: SessionOptions,
-        operation: (session: ClientSession) => Promise<any>,
-    ): Promise<void>
-}
-
-/**
- * The callback format for results.
- */
-export interface MongoCallback<T> {
-    /**
-     * @param error An error instance representing the error during the execution.
-     * @param result The result of execution.
-     */
-    (error: MongoError, result: T): void
-}
-
-// http://mongodb.github.io/node-mongodb-native/2.1/api/MongoError.html
-export declare class MongoError extends Error {
-    constructor(message: string)
-    static create(options: Object): MongoError
-}
-
-/**
- * Options for MongoClient#connect method.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.2/api/MongoClient.html#.connect
- */
-export interface MongoClientOptions {
-    /**
-     * The maximum size of the individual server pool.
-     */
-    poolSize?: number
-
-    /**
-     * Enable SSL connection.
-     */
-    ssl?: boolean
-
-    /**
-     * SSL Certificate store binary buffer.
-     */
-    sslCA?: Buffer
-
-    /**
-     * Uri decode the user name and password for authentication.
-     */
-    uri_decode_auth?: boolean
-
-    /**
-     * A hash of options to set on the db object, see Db constructor.
-     */
-    db?: DbCreateOptions
-
-    /**
-     * A hash of options to set on the server objects, see Server constructor**.
-     */
-    server?: ServerOptions
-
-    /**
-     * A hash of options to set on the replSet object, see ReplSet constructor**.
-     */
-    replSet?: ReplSetOptions
-
-    /**
-     * A hash of options to set on the mongos object, see Mongos constructor**.
-     */
-    mongos?: MongosOptions
-
-    /**
-     * A Promise library class the application wishes to use such as Bluebird, must be ES6 compatible.
-     */
-    promiseLibrary?: Object
-}
-
-export interface CommandOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Number of milliseconds to wait before aborting the query.
-     */
-    maxTimeMS?: number
-}
-
-/**
- * Options for Db class.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html
- */
-export interface DbCreateOptions {
-    /**
-     * If the database authentication is dependent on another databaseName.
-     */
-    authSource?: string
-
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * The current value of the parameter native_parser.
-     */
-    native_parser?: boolean
-
-    /**
-     * Force server to assign _id values instead of driver.
-     */
-    forceServerObjectId?: boolean
-
-    /**
-     * Serialize functions on any object.
-     */
-    serializeFunctions?: boolean
-
-    /**
-     * Specify if the BSON serializer should ignore undefined fields.
-     */
-    ignoreUndefined?: boolean
-
-    /**
-     * Return document results as raw BSON buffers.
-     */
-    raw?: boolean
-
-    /**
-     * Promotes Long values to number if they fit inside the 53 bits resolution.
-     */
-    promoteLongs?: boolean
-
-    /**
-     * Sets a cap on how many operations the driver will buffer up before giving up on getting a working connection, default is -1 which is unlimited.
-     */
-    bufferMaxEntries?: number
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * A primary key factory object for generation of custom _id keys.
-     */
-    pkFactory?: Object
-
-    /**
-     * A Promise library class the application wishes to use such as Bluebird, must be ES6 compatible.
-     */
-    promiseLibrary?: Object
-
-    /**
-     * Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
-     */
-    readConcern?: ReadConcern
-}
-
-/**
- * Creates a new ReadPreference instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/ReadPreference.html
- */
-export declare class ReadPreference {
-    constructor(mode: string, tags: Object)
-
-    /**
-     * The ReadPreference mode as listed above.
-     */
-    mode: string
-
-    /**
-     * An object representing read preference tags.
-     */
-    tags: any
-
-    /**
-     * Read from primary only. All operations produce an error (throw an exception where applicable) if primary is unavailable. Cannot be combined with tags (This is the default.).
-     */
-    static PRIMARY: string
-
-    /**
-     * Read from primary if available, otherwise a secondary.
-     */
-    static PRIMARY_PREFERRED: string
-
-    /**
-     * Read from secondary if available, otherwise error.
-     */
-    static SECONDARY: string
-
-    /**
-     * Read from a secondary if available, otherwise read from the primary.
-     */
-    static SECONDARY_PREFERRED: string
-
-    /**
-     * All modes read from among the nearest candidates, but unlike other modes, NEAREST will include both the primary and all secondaries in the random selection.
-     */
-    static NEAREST: string
-
-    /**
-     * Validate if a mode is legal.
-     */
-    isValid(mode: string): boolean
-
-    /**
-     * Validate if a mode is legal.
-     */
-    static isValid(mode: string): boolean
-}
-
-/**
- * Creates a new Server instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
- */
-export interface SocketOptions {
-    /**
-     * Reconnect on error.
-     */
-    autoReconnect?: boolean
-
-    /**
-     * TCP Socket NoDelay option.
-     */
-    noDelay?: boolean
-
-    /**
-     * TCP KeepAlive on the socket with a X ms delay before start.
-     */
-    keepAlive?: number
-
-    /**
-     * TCP Connection timeout setting.
-     */
-    connectTimeoutMS?: number
-
-    /**
-     * TCP Socket timeout setting.
-     */
-    socketTimeoutMS?: number
-}
-
-/**
- * Creates a new Server instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
- */
-export interface ServerOptions {
-    /**
-     * Number of connections in the connection pool for each server instance, set to 5 as default for legacy reasons.
-     */
-    poolSize?: number
-
-    /**
-     * Use ssl connection (needs to have a mongod server with ssl support).
-     */
-    ssl?: boolean
-
-    /**
-     * Validate mongod server certificate against ca (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslValidate?: Object
-
-    /**
-     * Ensure we check server identify during SSL, set to false to disable checking. Only works for Node 0.12.x or higher. You can pass in a boolean or your own checkServerIdentity override function.
-     */
-    checkServerIdentity?: boolean | Function
-
-    /**
-     * Array of valid certificates either as Buffers or Strings (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslCA?: Array<Buffer | string>
-
-    /**
-     * String or buffer containing the certificate we wish to present (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslCert?: Buffer | string
-
-    /**
-     * String or buffer containing the certificate private key we wish to present (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslKey?: Buffer | string
-
-    /**
-     * String or buffer containing the certificate password (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslPass?: Buffer | string
-
-    /**
-     * Socket options.
-     */
-    socketOptions?: SocketOptions
-
-    /**
-     * Server attempt to reconnect #times.
-     */
-    reconnectTries?: number
-
-    /**
-     * Server will wait # milliseconds between retries.
-     */
-    reconnectInterval?: number
-}
-
-/**
- * Creates a new ReplSet instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/ReplSet.html
- */
-export interface ReplSetOptions {
-    /**
-     * Turn on high availability monitoring.
-     */
-    ha?: boolean
-
-    /**
-     * Time between each replicaset status check.
-     */
-    haInterval?: number
-
-    /**
-     * The name of the replicaset to connect to.
-     */
-    replicaSet?: string
-
-    /**
-     * Sets the range of servers to pick when using NEAREST (lowest ping ms + the latency fence, ex: range of 1 to (1 + 15) ms).
-     */
-    secondaryAcceptableLatencyMS?: number
-
-    /**
-     * Sets if the driver should connect even if no primary is available.
-     */
-    connectWithNoPrimary?: boolean
-
-    /**
-     * Number of connections in the connection pool for each server instance, set to 5 as default for legacy reasons.
-     */
-    poolSize?: number
-
-    /**
-     * Use ssl connection (needs to have a mongod server with ssl support).
-     */
-    ssl?: boolean
-
-    /**
-     * Validate mongod server certificate against ca (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslValidate?: Object
-
-    /**
-     * Ensure we check server identify during SSL, set to false to disable checking. Only works for Node 0.12.x or higher. You can pass in a boolean or your own checkServerIdentity override function.
-     */
-    checkServerIdentity?: boolean | Function
-
-    /**
-     * Array of valid certificates either as Buffers or Strings (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslCA?: Array<Buffer | string>
-
-    /**
-     * String or buffer containing the certificate we wish to present (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslCert?: Buffer | string
-
-    /**
-     * String or buffer containing the certificate private key we wish to present (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslKey?: Buffer | string
-
-    /**
-     * String or buffer containing the certificate private key we wish to present (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslPass?: Buffer | string
-
-    /**
-     * Socket options.
-     */
-    socketOptions?: SocketOptions
-}
-
-/**
- * Creates a new Mongos instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Mongos.html
- */
-export interface MongosOptions {
-    /**
-     * Turn on high availability monitoring.
-     */
-    ha?: boolean
-
-    /**
-     * Time between each replicaset status check.
-     */
-    haInterval?: number
-
-    /**
-     * Number of connections in the connection pool for each server instance, set to 5 as default for legacy reasons.
-     */
-    poolSize?: number
-
-    /**
-     * Use ssl connection (needs to have a mongod server with ssl support).
-     */
-    ssl?: boolean
-
-    /**
-     * Validate mongod server certificate against ca (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslValidate?: Object
-
-    /**
-     * Ensure we check server identify during SSL, set to false to disable checking. Only works for Node 0.12.x or higher. You can pass in a boolean or your own checkServerIdentity override function.
-     */
-    checkServerIdentity?: boolean | Function
-
-    /**
-     * Array of valid certificates either as Buffers or Strings (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslCA?: Array<Buffer | string>
-
-    /**
-     * String or buffer containing the certificate we wish to present (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslCert?: Buffer | string
-
-    /**
-     * String or buffer containing the certificate private key we wish to present (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslKey?: Buffer | string
-
-    /**
-     * String or buffer containing the certificate password (needs to have a mongod server with ssl support, 2.4 or higher).
-     */
-    sslPass?: Buffer | string
-
-    /**
-     * Socket options.
-     */
-    socketOptions?: SocketOptions
-}
-
-export interface DbOptions {
-    /**
-     * Do not make the db an event listener to the original connection.
-     */
-    noListener?: boolean
-
-    /**
-     * Control if you want to return a cached instance or have a new one created.
-     */
-    returnNonCachedInstance?: boolean
-}
-
-export interface IndexInformationOptions {
-    /**
-     * Returns the full raw index information.
-     */
-    full?: boolean
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY,
-     * ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY,
-     * ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-}
-
-export interface ExecuteDbAdminCommandOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    // maxTimeMS?: number;
-}
-
-export interface ListCollectionsOptions {
-    /**
-     * The batchSize for the returned command cursor or if pre 2.8 the systems batch collection.
-     */
-    batchSize?: number
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-}
-
-/**
- * Db.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html
- */
-export declare class Db extends EventEmitter {
-    /**
-     *
-     * @param databaseName The name of the database this instance represents.
-     * @param serverConfig The server topology for the database.
-     * @param options Optional.
-     */
-    constructor(
-        databaseName: string,
-        serverConfig: Server | ReplSet | Mongos,
-        options?: DbCreateOptions,
-    )
-
-    /**
-     * Get the current db topology.
-     */
-    serverConfig: Server | ReplSet | Mongos
-
-    /**
-     * Current bufferMaxEntries value for the database.
-     */
-    bufferMaxEntries: number
-
-    /**
-     * The name of the database this instance represents.
-     */
-    databaseName: string
-
-    /**
-     * The options associated with the db instance.
-     */
-    options: any
-
-    /**
-     * The current value of the parameter native_parser.
-     */
-    native_parser: boolean
-
-    /**
-     * The current slaveOk value for the db instance.
-     */
-    slaveOk: boolean
-
-    /**
-     * The current write concern values.
-     */
-    writeConcern: WriteConcern
-
-    /**
-     * Add a user to the database.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#addUser
-     */
-    addUser(
-        username: string,
-        password: string,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Add a user to the database.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#addUser
-     */
-    addUser(
-        username: string,
-        password: string,
-        options?: DbAddUserOptions,
-    ): Promise<any>
-
-    /**
-     * Add a user to the database.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#addUser
-     */
-    addUser(
-        username: string,
-        password: string,
-        options: DbAddUserOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Return the Admin db instance.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#admin
-     */
-    admin(): Admin
-
-    /**
-     * Authenticate a user against the server.
-     *
-     * @param userName The username.
-     * @param password The password.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#authenticate
-     */
-    authenticate(
-        userName: string,
-        password: string,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Authenticate a user against the server.
-     *
-     * @param userName The username.
-     * @param password The password.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#authenticate
-     */
-    authenticate(
-        userName: string,
-        password: string,
-        options?: { authMechanism: string },
-    ): Promise<any>
-
-    /**
-     * Authenticate a user against the server.
-     *
-     * @param userName The username.
-     * @param password The password.
-     * @param password
-     * @param options
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#authenticate
-     */
-    authenticate(
-        userName: string,
-        password: string,
-        options: { authMechanism: string },
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Close the db and its underlying connections.
-     *
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#close
-     */
-    close(callback: MongoCallback<void>): void
-
-    /**
-     * Close the db and its underlying connections.
-     *
-     * @param forceClose Force close, emitting no events.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#close
-     */
-    close(forceClose?: boolean): Promise<void>
-
-    /**
-     * Close the db and its underlying connections.
-     *
-     * @param forceClose Force close, emitting no events.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#close
-     */
-    close(forceClose: boolean, callback: MongoCallback<void>): void
-
-    /**
-     * Fetch a specific collection (containing the actual collection information). If the application does not use strict mode you can
-     * can use it without a callback in the following way: var collection = db.collection('mycollection');
-     *
-     * @param name The collection name we wish to access.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collection
-     */
-    collection(name: string): Collection<any>
-
-    /**
-     * Fetch a specific collection (containing the actual collection information). If the application does not use strict mode you can
-     * can use it without a callback in the following way: var collection = db.collection('mycollection');
-     *
-     * @param name The collection name we wish to access.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collection
-     */
-    collection(
-        name: string,
-        callback: MongoCallback<Collection<any>>,
-    ): Collection<any>
-
-    /**
-     * Fetch a specific collection (containing the actual collection information). If the application does not use strict mode you can
-     * can use it without a callback in the following way: var collection = db.collection('mycollection');
-     *
-     * @param name The collection name we wish to access.
-     * @param options Optional settings.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collection
-     */
-    collection(
-        name: string,
-        options: DbCollectionOptions,
-        callback: MongoCallback<Collection<any>>,
-    ): Collection<any>
-
-    /**
-     * Fetch all collections for the current db.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collections
-     */
-    collections(): Promise<Collection<any>[]>
-
-    /**
-     * Fetch all collections for the current db.
-     *
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collections
-     */
-    collections(callback: MongoCallback<Collection<any>[]>): void
-
-    /**
-     * Execute a command.
-     *
-     * @param command The command hash.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#command
-     */
-    command(command: Object, callback: MongoCallback<any>): void
-
-    /**
-     * Execute a command.
-     *
-     * @param command The command hash.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#command
-     */
-    command(
-        command: Object,
-        options?: { readPreference: ReadPreference | string },
-    ): Promise<any>
-
-    /**
-     * Execute a command.
-     *
-     * @param command The command hash.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#command
-     */
-    command(
-        command: Object,
-        options: { readPreference: ReadPreference | string },
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Create a new collection on a server with the specified options. Use this to create capped collections.
-     *
-     * @param name The collection name we wish to access.
-     * @param callback The results callback
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
-     */
-    createCollection(
-        name: string,
-        callback: MongoCallback<Collection<any>>,
-    ): void
-
-    /**
-     * Create a new collection on a server with the specified options. Use this to create capped collections.
-     *
-     * @param name The collection name we wish to access.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
-     */
-    createCollection(
-        name: string,
-        options?: CollectionCreateOptions,
-    ): Promise<Collection<any>>
-
-    /**
-     * Create a new collection on a server with the specified options. Use this to create capped collections.
-     *
-     * @param name The collection name we wish to access.
-     * @param options Optional settings.
-     * @param callback The results callback
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
-     */
-    createCollection(
-        name: string,
-        options: CollectionCreateOptions,
-        callback: MongoCallback<Collection<any>>,
-    ): void
-
-    /**
-     * Creates an index on the db and collection collection.
-     *
-     * @param name Name of the collection to create the index on.
-     * @param fieldOrSpec Defines the index.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createIndex
-     */
-    createIndex(
-        name: string,
-        fieldOrSpec: string | Object,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Creates an index on the db and collection collection.
-     *
-     * @param name Name of the collection to create the index on.
-     * @param fieldOrSpec Defines the index.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createIndex
-     */
-    createIndex(
-        name: string,
-        fieldOrSpec: string | Object,
-        options?: MongodbIndexOptions,
-    ): Promise<any>
-
-    /**
-     * Creates an index on the db and collection collection.
-     *
-     * @param name Name of the collection to create the index on.
-     * @param fieldOrSpec Defines the index.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createIndex
-     */
-    createIndex(
-        name: string,
-        fieldOrSpec: string | Object,
-        options: MongodbIndexOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Create a new Db instance sharing the current socket connections. Be aware that the new db instances are
-     * related in a parent-child relationship to the original instance so that events are correctly emitted on child
-     * db instances. Child db instances are cached so performing db('db1') twice will return the same instance.
-     * You can control these behaviors with the options noListener and returnNonCachedInstance.
-     *
-     * @param dbName The name of the database we want to use.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#db
-     */
-    db(dbName: string): Db
-
-    /**
-     * Create a new Db instance sharing the current socket connections. Be aware that the new db instances are
-     * related in a parent-child relationship to the original instance so that events are correctly emitted on child
-     * db instances. Child db instances are cached so performing db('db1') twice will return the same instance.
-     * You can control these behaviors with the options noListener and returnNonCachedInstance.
-     *
-     * @param dbName The name of the database we want to use.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#db
-     */
-    db(dbName: string, options: DbOptions): Db
-
-    /**
-     * Drop a collection from the database, removing it permanently. New accesses will create a new collection.
-     *
-     * @param name Name of collection to drop.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#dropCollection
-     */
-    dropCollection(name: string): Promise<boolean>
-
-    /**
-     * Drop a collection from the database, removing it permanently. New accesses will create a new collection.
-     *
-     * @param name Name of collection to drop.
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#dropCollection
-     */
-    dropCollection(name: string, callback: MongoCallback<boolean>): void
-
-    /**
-     * Drop a database, removing it permanently from the server.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#dropDatabase
-     */
-    dropDatabase(): Promise<any>
-
-    /**
-     * Drop a database, removing it permanently from the server.
-     *
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#dropDatabase
-     */
-    dropDatabase(callback: MongoCallback<any>): void
-
-    // deprecated http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#ensureIndex
-    // ensureIndex(collectionName: any, fieldOrSpec: any, options: IndexOptions, callback: Function): void;
-    // deprecated http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#eval
-    // eval(code: any, parameters: any[], options?: any, callback?: MongoCallback<any>): void;
-
-    /**
-     * Runs a command on the database as admin.
-     *
-     * @param command The command hash.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#executeDbAdminCommand
-     */
-    executeDbAdminCommand(command: Object, callback: MongoCallback<any>): void
-
-    /**
-     * Runs a command on the database as admin.
-     *
-     * @param command The command hash.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#executeDbAdminCommand
-     */
-    executeDbAdminCommand(
-        command: Object,
-        options?: ExecuteDbAdminCommandOptions,
-    ): Promise<any>
-
-    /**
-     * Runs a command on the database as admin.
-     *
-     * @param command The command hash.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#executeDbAdminCommand
-     */
-    executeDbAdminCommand(
-        command: Object,
-        options: ExecuteDbAdminCommandOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Retrieves this collections index info.
-     *
-     * @param name The name of the collection.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#indexInformation
-     */
-    indexInformation(name: string, callback: MongoCallback<any>): void
-
-    /**
-     * Retrieves this collections index info.
-     *
-     * @param name The name of the collection.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#indexInformation
-     */
-    indexInformation(
-        name: string,
-        options?: IndexInformationOptions,
-    ): Promise<any>
-
-    /**
-     * Retrieves this collections index info.
-     *
-     * @param name The name of the collection.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#indexInformation
-     */
-    indexInformation(
-        name: string,
-        options: IndexInformationOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Get the list of all collection information for the specified db.
-     *
-     * @param filter Query to filter collections by.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#listCollections
-     */
-    listCollections(
-        filter: Object,
-        options?: ListCollectionsOptions,
-    ): CommandCursor
-
-    /**
-     * Logout user from server, fire off on all connections and remove all auth info.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#logout
-     */
-    logout(callback: MongoCallback<any>): void
-
-    /**
-     * Logout user from server, fire off on all connections and remove all auth info.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#logout
-     */
-    logout(options?: { dbName?: string }): Promise<any>
-
-    /**
-     * Logout user from server, fire off on all connections and remove all auth info.
-     *
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#logout
-     */
-    logout(options: { dbName?: string }, callback: MongoCallback<any>): void
-
-    /**
-     * Open the database.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#open
-     */
-    open(): Promise<Db>
-
-    /**
-     * Open the database
-     *
-     * @param callback Callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#open
-     */
-    open(callback: MongoCallback<Db>): void
-
-    /**
-     *
-     * @param username
-     * @param callback
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#removeUser
-     */
-    removeUser(username: string, callback: MongoCallback<any>): void
-    removeUser(
-        username: string,
-        options?: { w?: number | string; wtimeout?: number; j?: boolean },
-    ): Promise<any>
-    removeUser(
-        username: string,
-        options: { w?: number | string; wtimeout?: number; j?: boolean },
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Rename a collection.
-     *
-     * @param fromCollection Name of current collection to rename.
-     * @param toCollection New name of of the collection.
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#renameCollection
-     */
-    renameCollection(
-        fromCollection: string,
-        toCollection: string,
-        callback: MongoCallback<Collection<any>>,
-    ): void
-
-    /**
-     * Rename a collection.
-     *
-     * @param fromCollection Name of current collection to rename.
-     * @param toCollection New name of of the collection.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#renameCollection
-     */
-    renameCollection(
-        fromCollection: string,
-        toCollection: string,
-        options?: { dropTarget?: boolean },
-    ): Promise<Collection<any>>
-
-    /**
-     * Rename a collection.
-     *
-     * @param fromCollection Name of current collection to rename.
-     * @param toCollection New name of of the collection.
-     * @param options Optional settings.
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#renameCollection
-     */
-    renameCollection(
-        fromCollection: string,
-        toCollection: string,
-        options: { dropTarget?: boolean },
-        callback: MongoCallback<Collection<any>>,
-    ): void
-
-    /**
-     * Get all the db statistics.
-     *
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#stats
-     */
-    stats(callback: MongoCallback<any>): void
-
-    /**
-     * Get all the db statistics.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#stats
-     */
-    stats(options?: { scale?: number }): Promise<any>
-
-    /**
-     * Get all the db statistics.
-     *
-     * @param options Optional settings.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#stats
-     */
-    stats(options: { scale?: number }, callback: MongoCallback<any>): void
-
-    /**
-     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this database. Will ignore all changes to system collections.
-     * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch
-     */
-    watch(
-        pipeline?: Object[],
-        options?: ChangeStreamOptions & {
-            startAtClusterTime?: Timestamp
-            session?: ClientSession
-        },
-    ): ChangeStream
-}
-
-/**
- * Server.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
- */
-export declare class Server extends EventEmitter {
-    /**
-     *
-     * @param host The host for the server, can be either an IP4, IP6 or domain socket style host.
-     * @param port The server port if IP4.
-     * @param options Optional.
-     */
-    constructor(host: string, port: number, options?: ServerOptions)
-
-    /**
-     * All raw connections.
-     */
-    connections(): Array<any>
-}
-
-/**
- * ReplSet.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/ReplSet.html
- */
-export declare class ReplSet extends EventEmitter {
-    /**
-     *
-     * @param servers A seedlist of servers participating in the replicaset.
-     * @param options Optional.
-     */
-    constructor(servers: Array<Server>, options?: ReplSetOptions)
-
-    /**
-     * All raw connections
-     */
-    connections(): Array<any>
-}
-
-/**
- * Mongos.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Mongos.html
- */
-export declare class Mongos extends EventEmitter {
-    /**
-     *
-     * @param servers A seedlist of servers participating in the replicaset.
-     * @param options Optional.
-     */
-    constructor(servers: Array<Server>, options?: MongosOptions)
-
-    /**
-     * All raw connections
-     */
-    connections(): Array<any>
-}
-
-/**
- * Creates a new Db instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#addUser
- */
-export interface DbAddUserOptions {
-    /**
-     * The write concern.
-     */
-    w?: string | number
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Custom data associated with the user (only Mongodb 2.6 or higher).
-     */
-    customData?: Object
-
-    /**
-     * Roles associated with the created user (only Mongodb 2.6 or higher).
-     */
-    roles?: Object[]
-}
-
-/**
- * Creates a new Db instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createCollection
- */
-export interface CollectionCreateOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Return document results as raw BSON buffers.
-     */
-    raw?: boolean
-
-    /**
-     * A primary key factory object for generation of custom _id keys.
-     */
-    pkFactory?: Object
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Serialize functions on any object.
-     */
-    serializeFunctions?: boolean
-
-    /**
-     * Returns an error if the collection does not exist.
-     */
-    strict?: boolean
-
-    /**
-     * Create a capped collection.
-     */
-    capped?: boolean
-
-    /**
-     * The size of the capped collection in bytes.
-     */
-    size?: number
-
-    /**
-     * The maximum number of documents in the capped collection.
-     */
-    max?: number
-
-    /**
-     * Create an index on the _id field of the document, True by default on MongoDB 2.2 or higher off for version < 2.2.
-     */
-    autoIndexId?: boolean
-}
-
-/**
- * Creates a new Db instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#collection
- */
-export interface DbCollectionOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Return document results as raw BSON buffers.
-     */
-    raw?: boolean
-
-    /**
-     * A primary key factory object for generation of custom _id keys.
-     */
-    pkFactory?: Object
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Serialize functions on any object.
-     */
-    serializeFunctions?: boolean
-
-    /**
-     * Returns an error if the collection does not exist.
-     */
-    strict?: boolean
-
-    /**
-     * Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
-     */
-    readConcern?: ReadConcern
-}
-
-/**
- * Creates an index on the db and collection collection.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Db.html#createIndex
- */
-export interface MongodbIndexOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Creates an unique index.
-     */
-    unique?: boolean
-
-    /**
-     * Creates a sparse index.
-     */
-    sparse?: boolean
-
-    /**
-     * Creates the index in the background, yielding whenever possible.
-     */
-    background?: boolean
-
-    /**
-     * A unique index cannot be created on a key that has pre-existing duplicate values.
-     * If you would like to create the index anyway, keeping the first document
-     * the database indexes and deleting all subsequent documents that have duplicate value.
-     */
-    dropDups?: boolean
-
-    /**
-     * For geospatial indexes set the lower bound for the co-ordinates.
-     */
-    min?: number
-
-    /**
-     * For geospatial indexes set the high bound for the co-ordinates.
-     */
-    max?: number
-
-    /**
-     * Specify the format version of the indexes.
-     */
-    v?: number
-
-    /**
-     * Allows you to expire data on indexes applied to a data (MongoDB 2.2 or higher).
-     */
-    expireAfterSeconds?: number
-
-    /**
-     * Override the autogenerated index name (useful if the resulting name is larger than 128 bytes).
-     */
-    name?: string
-}
-
-/**
- * Admin.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html
- */
-export interface Admin {
-    /**
-     * Add a user to the database.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#addUser
-     */
-    addUser(
-        username: string,
-        password: string,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Add a user to the database.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#addUser
-     */
-    addUser(
-        username: string,
-        password: string,
-        options?: AddUserOptions,
-    ): Promise<any>
-
-    /**
-     * Add a user to the database.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#addUser
-     */
-    addUser(
-        username: string,
-        password: string,
-        options: AddUserOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Authenticate a user against the server.
-     *
-     * @param username The username.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#authenticate
-     */
-    authenticate(username: string, callback: MongoCallback<any>): void
-
-    /**
-     * Authenticate a user against the server.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#authenticate
-     */
-    authenticate(username: string, password?: string): Promise<any>
-
-    /**
-     * Authenticate a user against the server.
-     *
-     * @param username The username.
-     * @param password The password.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#authenticate
-     */
-    authenticate(
-        username: string,
-        password: string,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Retrieve the server information for the current instance of the db client
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#buildInfo
-     */
-    buildInfo(): Promise<any>
-
-    /**
-     * Retrieve the server information for the current instance of the db client
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#buildInfo
-     */
-    buildInfo(callback: MongoCallback<any>): void
-
-    /**
-     * Execute a command.
-     *
-     * @param command The command hash.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#command
-     */
-    command(command: Object, callback: MongoCallback<any>): void
-
-    /**
-     * Execute a command.
-     *
-     * @param command The command hash.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#command
-     */
-    command(command: Object, options?: CommandOptions): Promise<any>
-
-    /**
-     * Execute a command.
-     *
-     * @param command The command hash.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#command
-     */
-    command(
-        command: Object,
-        options: CommandOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * List the available databases.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#listDatabases
-     */
-    listDatabases(): Promise<any>
-
-    /**
-     * List the available databases.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#listDatabases
-     */
-    listDatabases(callback: MongoCallback<any>): void
-
-    /**
-     * Logout user from server, fire off on all connections and remove all auth info.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#logout.
-     */
-    logout(): Promise<any>
-
-    /**
-     * Logout user from server, fire off on all connections and remove all auth info.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#logout.
-     */
-    logout(callback: MongoCallback<any>): void
-
-    /**
-     * Ping the MongoDB server and retrieve results.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#ping
-     */
-    ping(): Promise<any>
-
-    /**
-     * Ping the MongoDB server and retrieve results.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#ping
-     */
-    ping(callback: MongoCallback<any>): void
-
-    /**
-     * Retrive the current profiling information for MongoDB.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#profilingInfo
-     */
-    profilingInfo(): Promise<any>
-
-    /**
-     * Retrive the current profiling information for MongoDB.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#profilingInfo
-     */
-    profilingInfo(callback: MongoCallback<any>): void
-
-    /**
-     * Retrieve the current profiling Level for MongoDB.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#profilingLevel
-     */
-    profilingLevel(): Promise<any>
-
-    /**
-     * Retrieve the current profiling Level for MongoDB.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#profilingLevel
-     */
-    profilingLevel(callback: MongoCallback<any>): void
-
-    /**
-     * Remove a user from a database.
-     *
-     * @param username The username.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#removeUser
-     */
-    removeUser(username: string, callback: MongoCallback<any>): void
-
-    /**
-     * Remove a user from a database.
-     *
-     * @param username The username.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#removeUser
-     */
-    removeUser(username: string, options?: FSyncOptions): Promise<any>
-
-    /**
-     * Remove a user from a database.
-     *
-     * @param username The username.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#removeUser
-     */
-    removeUser(
-        username: string,
-        options: FSyncOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Get ReplicaSet status.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#replSetGetStatus
-     */
-    replSetGetStatus(): Promise<any>
-
-    /**
-     * Get ReplicaSet status.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#replSetGetStatus
-     */
-    replSetGetStatus(callback: MongoCallback<any>): void
-
-    /**
-     * Retrieve the server information for the current
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#serverInfo
-     */
-    serverInfo(): Promise<any>
-
-    /**
-     * instance of the db client
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#serverInfo
-     * @param callback The command result callback.
-     */
-    serverInfo(callback: MongoCallback<any>): void
-
-    /**
-     * Retrieve this db's server status.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#serverStatus
-     */
-    serverStatus(): Promise<any>
-
-    /**
-     * Retrieve this db's server status.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#serverStatus
-     */
-    serverStatus(callback: MongoCallback<any>): void
-
-    /**
-     * Set the current profiling level of MongoDB.
-     *
-     * @param level The new profiling level (off, slow_only, all).
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#setProfilingLevel
-     */
-    setProfilingLevel(level: string): Promise<any>
-
-    /**
-     * Set the current profiling level of MongoDB.
-     *
-     * @param level The new profiling level (off, slow_only, all).
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#setProfilingLevel
-     */
-    setProfilingLevel(level: string, callback: MongoCallback<any>): void
-
-    /**
-     * Validate an existing collection
-     *
-     * @param collectionNme The name of the collection to validate.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#validateCollection
-     */
-    validateCollection(
-        collectionNme: string,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Validate an existing collection
-     *
-     * @param collectionNme The name of the collection to validate.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#validateCollection
-     */
-    validateCollection(collectionNme: string, options?: Object): Promise<any>
-
-    /**
-     * Validate an existing collection
-     *
-     * @param collectionNme The name of the collection to validate.
-     * @param options Optional settings.
-     * @param callback The command result callback
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#validateCollection
-     */
-    validateCollection(
-        collectionNme: string,
-        options: Object,
-        callback: MongoCallback<any>,
-    ): void
-}
-
-/**
- * Add a user to the database.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#addUser
- */
-export interface AddUserOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Specify a file sync write concern.
-     */
-    fsync: boolean
-
-    /**
-     * Custom data associated with the user (only Mongodb 2.6 or higher).
-     */
-    customData?: Object
-
-    /**
-     * Roles associated with the created user (only Mongodb 2.6 or higher).
-     */
-    roles?: Object[]
-}
-export interface ListIndexesOptions {
-    /**
-     * The batchSize for the returned command cursor or if pre 2.8 the systems batch collection.
-     */
-    batchSize?: number
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-}
-
-export interface GroupOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-}
-
-/**
- * Remove a user from a database.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Admin.html#removeUser
- */
-export interface FSyncOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Specify a file sync write concern.
-     */
-    fsync?: boolean
-}
-
-export interface FindOneAndDeleteOptions {
-    /**
-     * Limits the fields to return for all matching documents.
-     */
-    projection?: Object
-
-    /**
-     * Determines which document the operation modifies if the query selects multiple documents.
-     */
-    sort?: Object
-
-    /**
-     * The maximum amount of time to allow the query to run.
-     */
-    maxTimeMS?: number
-}
-
-/**
- * Create a new ObjectID instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/ObjectID.html
- */
-export declare class ObjectID {
-    constructor(s?: string | number)
-
-    /**
-     * The generation time of this ObjectId instance.
-     */
-    generationTime: number
-
-    /**
-     * Creates an ObjectID from a hex string representation of an ObjectID.
-     */
-    static createFromHexString(hexString: string): ObjectID
-
-    /**
-     * Creates an ObjectID from a second based number, with the rest of the ObjectID zeroed out. Used for comparisons or sorting the ObjectID.
-     */
-    static createFromTime(time: number): ObjectID
-
-    /**
-     * Checks if a value is a valid bson ObjectId.
-     */
-    static isValid(id: any): boolean
-
-    /**
-     * Compares the equality of this ObjectID with otherID.
-     */
-    equals(otherID: ObjectID): boolean
-
-    /**
-     * Generate a 12 byte id buffer used in ObjectID's.
-     */
-    generate(time?: number): string
-
-    /**
-     * Returns the generation date (accurate up to the second) that this ID was generated.
-     *
-     */
-    getTimestamp(): Date
-
-    /**
-     * Return the ObjectID id as a 24 byte hex string representation.
-     */
-    toHexString(): string
-
-    /**
-     * Get the timestamp and validate correctness.
-     */
-    toString(): string
-}
-
-/**
- * A class representation of the BSON Binary type.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Binary.html
- */
-export declare class Binary {
-    /**
-     * @param buffer A buffer object containing the binary data.
-     * @param subType The option binary type.
-     */
-    constructor(buffer: Buffer, subType?: number)
-
-    /**
-     * Byte Array BSON type.
-     */
-    static SUBTYPE_BYTE_ARRAY: number
-
-    /**
-     * Default BSON type.
-     */
-    static SUBTYPE_DEFAULT: number
-
-    /**
-     * Function BSON type.
-     */
-    static SUBTYPE_FUNCTION: number
-
-    /**
-     * MD5 BSON type.
-     */
-    static SUBTYPE_MD5: number
-
-    /**
-     * User BSON type.
-     */
-    static SUBTYPE_USER_DEFINED: number
-
-    /**
-     * UUID BSON type.
-     */
-    static SUBTYPE_UUID: number
-
-    /**
-     * OLD UUID BSON type
-     */
-    static SUBTYPE_UUID_OLD: number
-
-    /**
-     * The length of the binary.
-     */
-    length(): number
-
-    /**
-     * Updates this binary with byte_value.
-     *
-     * @param byte_value A single byte we wish to write.
-     */
-    put(byte_value: number | string): void
-
-    /**
-     * Reads length bytes starting at position.
-     *
-     * @param position Read from the given position in the Binary.
-     * @param length The number of bytes to read.
-     */
-    read(position: number, length: number): Buffer
-
-    /**
-     * Returns the value of this binary as a string.
-     */
-    value(): string
-
-    /**
-     * Writes a buffer or string to the binary
-     *
-     * @param buffer A string or buffer to be written to the Binary BSON object.
-     * @param offset Specify the binary of where to write the content.
-     */
-    write(buffer: Buffer | string, offset: number): void
-}
-/**
- * A class representation of the BSON Double type.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Double.html
- */
-export declare class Double {
-    /**
-     * @param value The number we want to represent as a double.
-     */
-    constructor(value: number)
-
-    /**
-     * Access the number value.
-     */
-    valueOf(): number
-}
-
-/**
- * Long
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Long.html
- */
-export declare class Long {
-    /**
-     * @param low The low (signed) 32 bits of the Long.
-     * @param high The high (signed) 32 bits of the Long.
-     */
-    constructor(low: number, high: number)
-
-    static MAX_VALUE: Long
-    static MIN_VALUE: Long
-    static NEG_ONE: Long
-    static ONE: Long
-    static ZERO: Long
-
-    /**
-     * Returns a Long representing the 64-bit integer that comes by concatenating the given high and low bits.
-     * Each is assumed to use 32 bits.
-     *
-     * @param lowBits The low 32-bits.
-     * @param highBits The high 32-bits.
-     */
-    static fromBits(lowBits: number, highBits: number): Long
-
-    /**
-     * Returns a Long representing the given (32-bit) integer value.
-     *
-     * @param value The 32-bit integer in question.
-     */
-    static fromInt(value: number): Long
-
-    /**
-     * Returns a Long representing the given value, provided that it is a finite number. Otherwise, zero is returned.
-     *
-     * @param value The number in question.
-     */
-    static fromNumber(value: number): Long
-
-    /**
-     * Returns a Long representation of the given string, written using the given radix.
-     *
-     * @param str The textual representation of the Long.
-     * @param radix The radix in which the text is written.
-     */
-    static fromString(str: string, radix?: number): Long
-
-    /**
-     * Returns the sum of this and the given Long.
-     *
-     * @param other Long to add to this one.
-     */
-    add(other: Long): Long
-
-    /**
-     * Returns the bitwise-AND of this Long and the given one.
-     *
-     * @param other The Long with which to AND.
-     */
-    and(other: Long): Long
-
-    /**
-     * Compares this Long with the given one.
-     *
-     * @param other Long to compare against.
-     */
-    compare(other: Long): number
-
-    /**
-     * Returns this Long divided by the given one.
-     *
-     * @param other Long by which to divide.
-     */
-    div(other: Long): Long
-
-    /**
-     * Return whether this Long equals the other.
-     *
-     * @param other Long to compare against.
-     */
-    equals(other: Long): boolean
-
-    /**
-     * Return the high 32-bits value.
-     */
-    getHighBits(): number
-
-    /**
-     * Return the low 32-bits value.
-     */
-    getLowBits(): number
-
-    /**
-     * Return the low unsigned 32-bits value.
-     */
-    getLowBitsUnsigned(): number
-
-    /**
-     * Returns the number of bits needed to represent the absolute value of this Long.
-     */
-    getNumBitsAbs(): number
-
-    /**
-     * Return whether this Long is greater than the other.
-     *
-     * @param other Long to compare against.
-     */
-    greaterThan(other: Long): number
-
-    /**
-     * Return whether this Long is greater than or equal to the other.
-     *
-     * @param other Long to compare against.
-     */
-    greaterThanOrEqual(other: Long): number
-
-    /**
-     * Return whether this value is negative.
-     */
-    isNegative(): boolean
-
-    /**
-     * Return whether this value is odd.
-     */
-    isOdd(): boolean
-
-    /**
-     * Return whether this value is zero.
-     */
-    isZero(): boolean
-
-    /**
-     * Return whether this Long is less than the other.
-     *
-     * @param other Long to compare against.
-     */
-    lessThan(other: Long): boolean
-
-    /**
-     * Return whether this Long is less than or equal to the other.
-     *
-     * @param other Long to compare against.
-     */
-    lessThanOrEqual(other: Long): boolean
-
-    /**
-     * Returns this Long modulo the given one.
-     *
-     * @param other Long by which to mod.
-     */
-    modulo(other: Long): Long
-
-    /**
-     * Returns the product of this and the given Long.
-     *
-     * @param other Long to multiply with this.
-     */
-    multiply(other: Long): Long
-
-    /**
-     * The negation of this value.
-     */
-    negate(): Long
-
-    /**
-     * The bitwise-NOT of this value.
-     */
-    not(): Long
-
-    /**
-     * Return whether this Long does not equal the other.
-     *
-     * @param other Long to compare against.
-     */
-    notEquals(other: Long): boolean
-
-    /**
-     * Returns the bitwise-OR of this Long and the given one.
-     *
-     * @param other The Long with which to OR.
-     */
-    or(other: Long): Long
-
-    /**
-     * Returns this Long with bits shifted to the left by the given amount.
-     *
-     * @param other The number of bits by which to shift.
-     */
-    shiftLeft(other: number): Long
-
-    /**
-     * Returns this Long with bits shifted to the right by the given amount.
-     *
-     * @param other The number of bits by which to shift.
-     */
-    shiftRight(other: number): Long
-
-    /**
-     * Returns this Long with bits shifted to the right by the given amount, with the new top bits matching the current sign bit.
-     *
-     * @param other The number of bits by which to shift.
-     */
-    shiftRightUnsigned(other: number): Long
-
-    /**
-     * Returns the difference of this and the given Long.
-     *
-     * @param other Long to subtract from this.
-     */
-    subtract(other: Long): Long
-
-    /**
-     * Return the int value.
-     */
-    toInt(): number
-
-    /**
-     * Return the JSON value.
-     */
-    toJSON(): string
-
-    /**
-     * Return the Number value.
-     */
-    toNumber(): number
-
-    /**
-     * Return the String value.
-     *
-     * @param opt_radix The radix in which the text should be written.
-     */
-    toString(opt_radix?: number): string
-
-    /**
-     * Returns the bitwise-XOR of this Long and the given one.
-     *
-     * @param other The Long with which to XOR.
-     */
-    xor(other: Long): Long
-}
-
-/**
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/MaxKey.html
- */
-export declare class MaxKey {}
-
-/**
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/MinKey.html
- */
-export declare class MinKey {}
-
-/**
- * Timestamp.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Timestamp.html
- */
-export declare class Timestamp {
-    /**
-     * @param low The low (signed) 32 bits of the Timestamp.
-     * @param high The high (signed) 32 bits of the Timestamp.
-     */
-    constructor(low: number, high: number)
-
-    static MAX_VALUE: Timestamp
-    static MIN_VALUE: Timestamp
-    static NEG_ONE: Timestamp
-    static ONE: Timestamp
-    static ZERO: Timestamp
-
-    /**
-     * Returns a Timestamp representing the 64-bit integer that comes by concatenating the
-     * given high and low bits. Each is assumed to use 32 bits..
-     *
-     * @param lowBits The low 32-bits.
-     * @param highBits The high 32-bits.
-     */
-    static fromBits(lowBits: number, highBits: number): Timestamp
-
-    /**
-     * Returns a Timestamp representing the given (32-bit) integer value.
-     *
-     * @param value The 32-bit integer in question.
-     */
-    static fromInt(value: number): Timestamp
-
-    /**
-     * Returns a Timestamp representing the given value, provided that it is a finite number. Otherwise, zero is returned.
-     *
-     * @param value The number in question.
-     */
-    static fromNumber(value: number): Timestamp
-
-    /**
-     * Returns a Timestamp representation of the given string, written using the given radix.
-     *
-     * @param str The textual representation of the Timestamp.
-     * @param radix The radix in which the text is written.
-     */
-    static fromString(str: string, radix?: number): Timestamp
-
-    /**
-     * Returns the sum of this and the given Timestamp.
-     *
-     * @param other Timestamp to add to this one.
-     */
-    add(other: Timestamp): Timestamp
-
-    /**
-     * Returns the bitwise-AND of this Timestamp and the given one.
-     *
-     * @param other Timestamp to add to this one.
-     */
-    and(other: Timestamp): Timestamp
-
-    /**
-     * Compares this Timestamp with the given one.
-     *
-     * @param other Timestamp to compare against.
-     */
-    compare(other: Timestamp): number
-
-    /**
-     * Returns this Timestamp divided by the given one.
-     *
-     * @param other Timestamp by which to divide.
-     */
-    div(other: Timestamp): Timestamp
-
-    /**
-     * Return whether this Timestamp equals the other
-     *
-     * @param other
-     */
-    equals(other: Timestamp): boolean
-
-    /**
-     * Return the high 32-bits value.
-     */
-    getHighBits(): number
-
-    /**
-     * Return the low 32-bits value.
-     */
-    getLowBits(): number
-
-    /**
-     * Return the low unsigned 32-bits value.
-     */
-    getLowBitsUnsigned(): number
-
-    /**
-     * Returns the number of bits needed to represent the absolute value of this Timestamp.
-     */
-    getNumBitsAbs(): number
-
-    /**
-     * Return whether this Timestamp is greater than the other.
-     *
-     * @param other Timestamp to compare against.
-     */
-    greaterThan(other: Timestamp): number
-
-    /**
-     * Return whether this Timestamp is greater than or equal to the other.
-     *
-     * @param other Timestamp to compare against.
-     */
-    greaterThanOrEqual(other: Timestamp): number
-
-    /**
-     * Return whether this value is negative.
-     */
-    isNegative(): boolean
-
-    /**
-     * IsOdd.
-     * Return whether this value is odd.
-     */
-    isOdd(): boolean
-
-    /**
-     * Return whether this value is zero.
-     */
-    isZero(): boolean
-
-    /**
-     * Return whether this Timestamp is less than the other.
-     *
-     * @param other Timestamp to compare against.
-     */
-    lessThan(other: Timestamp): boolean
-
-    /**
-     * Return whether this Timestamp is less than or equal to the other.
-     *
-     * @param other Timestamp to compare against.
-     */
-    lessThanOrEqual(other: Timestamp): boolean
-
-    /**
-     * Returns this Timestamp modulo the given one.
-     *
-     * @param other Timestamp by which to mod.
-     */
-    modulo(other: Timestamp): Timestamp
-
-    /**
-     * Returns the product of this and the given Timestamp.
-     *
-     * @param other Timestamp to multiply with this.
-     */
-    multiply(other: Timestamp): Timestamp
-
-    /**
-     * The negation of this value.
-     */
-    negate(): Timestamp
-
-    /**
-     * The bitwise-NOT of this value.
-     */
-    not(): Timestamp
-
-    /**
-     * Return whether this Timestamp does not equal the other.
-     *
-     * @param other Timestamp to compare against.
-     */
-    notEquals(other: Timestamp): boolean
-
-    /**
-     * Returns the bitwise-OR of this Timestamp and the given one.
-     *
-     * @param other The Timestamp with which to OR.
-     */
-    or(other: Timestamp): Timestamp
-
-    /**
-     * Returns this Timestamp with bits shifted to the left by the given amount.
-     *
-     * @param other The number of bits by which to shift.
-     */
-    shiftLeft(other: number): Timestamp
-
-    /**
-     * Returns this Timestamp with bits shifted to the right by the given amount.
-     *
-     * @param other The number of bits by which to shift.
-     */
-    shiftRight(other: number): Timestamp
-
-    /**
-     * Returns this Timestamp with bits shifted to the right by the given amount, with the new top bits matching the current sign bit.
-     *
-     * @param other
-     */
-    shiftRightUnsigned(other: number): Timestamp
-
-    /**
-     * Returns the difference of this and the given Timestamp.
-     *
-     * @param other Timestamp to subtract from this.
-     */
-    subtract(other: Timestamp): Timestamp
-
-    /**
-     * Return the int value.
-     */
-    toInt(): number
-
-    /**
-     * Return the JSON value.
-     */
-    toJSON(): string
-
-    /**
-     * Return the Number value.
-     */
-    toNumber(): number
-
-    /**
-     * Return the String value.
-     *
-     * @param radix The radix in which the text should be written.
-     */
-    toString(radix?: number): string
-
-    /**
-     * Returns the bitwise-XOR of this Timestamp and the given one.
-     *
-     * @param other The Timestamp with which to XOR.
-     */
-    xor(other: Timestamp): Timestamp
-}
-
-export interface CollectionDeleteOneOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimmeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Allow driver to bypass schema validation in MongoDB 3.2 or higher.
-     */
-    bypassDocumentValidation?: boolean
-}
-
-export interface CollectionDistinctOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-}
-
-/**
- * Create a new ObjectID instance.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html
- */
-export interface Collection<T> {
-    /**
-     * Get the collection name.
-     */
-    collectionName: string
-
-    /**
-     * Get the full collection namespace.
-     */
-    namespace: string
-
-    /**
-     * The current write concern values.
-     */
-    writeConcern: WriteConcern
-
-    /**
-     * The current read concern values.
-     */
-    readConcern: ReadConcern
-
-    /**
-     * Get current index hint for collection.
-     */
-    hint: any
-
-    /**
-     * Execute an aggregation framework pipeline against the collection, needs MongoDB >= 2.2
-     *
-     * @param pipeline Array containing all the aggregation framework commands for the execution.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#aggregate
-     */
-    aggregate(
-        pipeline: Object[],
-        callback: MongoCallback<any>,
-    ): AggregationCursor<any>
-
-    /**
-     * Execute an aggregation framework pipeline against the collection, needs MongoDB >= 2.2
-     *
-     * @param pipeline Array containing all the aggregation framework commands for the execution.
-     * @param options Optional.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#aggregate
-     */
-    aggregate(
-        pipeline: Object[],
-        options?: CollectionAggregationOptions,
-        callback?: MongoCallback<any>,
-    ): AggregationCursor<any>
-
-    /**
-     * Execute an aggregation framework pipeline against the collection, needs MongoDB >= 2.2
-     *
-     * @param pipeline Array containing all the aggregation framework commands for the execution.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#aggregate
-     */
-    aggregate<T>(
-        pipeline: Object[],
-        callback: MongoCallback<any>,
-    ): AggregationCursor<T>
-
-    /**
-     * Execute an aggregation framework pipeline against the collection, needs MongoDB >= 2.2
-     *
-     * @param pipeline Array containing all the aggregation framework commands for the execution.
-     * @param options Optional.
-     * @param callback Optional
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#aggregate
-     */
-    aggregate<T>(
-        pipeline: Object[],
-        options?: CollectionAggregationOptions,
-        callback?: MongoCallback<any>,
-    ): AggregationCursor<T>
-
-    /**
-     * BulkWrite.
-     *
-     * @param operations Bulk operations to perform.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#bulkWrite
-     */
-    bulkWrite(
-        operations: Object[],
-        callback: MongoCallback<BulkWriteOpResultObject>,
-    ): void
-
-    /**
-     * BulkWrite.
-     *
-     * @param operations Bulk operations to perform.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#bulkWrite
-     */
-    bulkWrite(
-        operations: Object[],
-        options?: CollectionBulkWriteOptions,
-    ): Promise<BulkWriteOpResultObject>
-
-    /**
-     * BulkWrite.
-     *
-     * @param operations Bulk operations to perform.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#bulkWrite
-     */
-    bulkWrite(
-        operations: Object[],
-        options: CollectionBulkWriteOptions,
-        callback: MongoCallback<BulkWriteOpResultObject>,
-    ): void
-
-    /**
-     * Count number of matching documents in the db to a query.
-     *
-     * @param query The query for the count.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
-     */
-    count(query: FilterQuery<T>, callback: MongoCallback<number>): void
-
-    /**
-     * Count number of matching documents in the db to a query.
-     *
-     * @param query The query for the count.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
-     */
-    count(
-        query: FilterQuery<T>,
-        options?: MongoCountPreferences,
-    ): Promise<number>
-
-    /**
-     * Count number of matching documents in the db to a query.
-     *
-     * @param query The query for the count=
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
-     */
-    count(
-        query: FilterQuery<T>,
-        options: MongoCountPreferences,
-        callback: MongoCallback<number>,
-    ): void
-
-    /**
-     * Count number of matching documents in the db to a query.
-     *
-     * @param query The query for the countDocuments.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocumentst
-     */
-    countDocuments(query: FilterQuery<T>, callback: MongoCallback<number>): void
-
-    /**
-     * Count number of matching documents in the db to a query.
-     *
-     * @param query The query for the count.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocuments
-     */
-    countDocuments(
-        query: FilterQuery<T>,
-        options?: MongoCountPreferences,
-    ): Promise<number>
-
-    /**
-     * Count number of matching documents in the db to a query.
-     *
-     * @param query The query for the count=
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#countDocuments
-     */
-    countDocuments(
-        query: FilterQuery<T>,
-        options: MongoCountPreferences,
-        callback: MongoCallback<number>,
-    ): void
-
-    /**
-     * Creates an index on the db and collection collection.
-     *
-     * @param fieldOrSpec Defines the index.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#createIndex
-     */
-    createIndex(
-        fieldOrSpec: string | any,
-        callback: MongoCallback<string>,
-    ): void
-
-    /**
-     * Creates an index on the db and collection collection.
-     *
-     * @param fieldOrSpec Defines the index.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#createIndex
-     */
-    createIndex(
-        fieldOrSpec: string | any,
-        options?: MongodbIndexOptions,
-    ): Promise<string>
-
-    /**
-     * Creates an index on the db and collection collection.
-     *
-     * @param fieldOrSpec Defines the index.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#createIndex
-     */
-    createIndex(
-        fieldOrSpec: string | any,
-        options: MongodbIndexOptions,
-        callback: MongoCallback<string>,
-    ): void
-
-    /**
-     * CreateIndexes.
-     *
-     * @param indexSpecs An array of index specifications to be created.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#createIndexes and http://docs.mongodb.org/manual/reference/command/createIndexes/
-     */
-    createIndexes(indexSpecs: Object[]): Promise<any>
-
-    /**
-     * CreateIndexes.
-     *
-     * @param indexSpecs An array of index specifications to be created.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#createIndexes and http://docs.mongodb.org/manual/reference/command/createIndexes/
-     */
-    createIndexes(indexSpecs: Object[], callback: MongoCallback<any>): void
-
-    /**
-     * Delete multiple documents on MongoDB.
-     *
-     * @param filter The Filter used to select the documents to remove.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
-     */
-    deleteMany(
-        filter: FilterQuery<T>,
-        callback: MongoCallback<DeleteWriteOpResultObject>,
-    ): void
-
-    /**
-     * Delete multiple documents on MongoDB.
-     *
-     * @param filter The Filter used to select the documents to remove.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
-     */
-    deleteMany(
-        filter: FilterQuery<T>,
-        options?: CollectionOptions,
-    ): Promise<DeleteWriteOpResultObject>
-
-    /**
-     * Delete multiple documents on MongoDB.
-     *
-     * @param filter The Filter used to select the documents to remove.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
-     */
-    deleteMany(
-        filter: FilterQuery<T>,
-        options: CollectionOptions,
-        callback: MongoCallback<DeleteWriteOpResultObject>,
-    ): void
-
-    /**
-     * Delete a document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to remove.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteOne
-     */
-    deleteOne(
-        filter: FilterQuery<T>,
-        callback: MongoCallback<DeleteWriteOpResultObject>,
-    ): void
-
-    /**
-     * Delete a document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to remove.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteOne
-     */
-    deleteOne(
-        filter: FilterQuery<T>,
-        options?: CollectionDeleteOneOptions,
-    ): Promise<DeleteWriteOpResultObject>
-
-    /**
-     * Delete a document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to remove.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteOne
-     */
-    deleteOne(
-        filter: FilterQuery<T>,
-        options: CollectionDeleteOneOptions,
-        callback: MongoCallback<DeleteWriteOpResultObject>,
-    ): void
-
-    /**
-     * The distinct command returns returns a list of distinct values for the given key across a collection.
-     *
-     * @param key Field of the document to find distinct values for.
-     * @param query The query for filtering the set of documents to which we apply the distinct filter.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#distinct
-     */
-    distinct(
-        key: string,
-        query: FilterQuery<T>,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * The distinct command returns returns a list of distinct values for the given key across a collection.
-     *
-     * @param key Field of the document to find distinct values for.
-     * @param query The query for filtering the set of documents to which we apply the distinct filter.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#distinct
-     */
-    distinct(
-        key: string,
-        query: FilterQuery<T>,
-        options?: CollectionDistinctOptions,
-    ): Promise<any>
-
-    /**
-     * The distinct command returns returns a list of distinct values for the given key across a collection.
-     *
-     * @param key Field of the document to find distinct values for.
-     * @param query The query for filtering the set of documents to which we apply the distinct filter.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#distinct
-     */
-    distinct(
-        key: string,
-        query: FilterQuery<T>,
-        options: CollectionDistinctOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Drop the collection from the database, removing it permanently. New accesses will create a new collection.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#drop
-     */
-    drop(): Promise<any>
-
-    /**
-     * Drop the collection from the database, removing it permanently. New accesses will create a new collection.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#drop
-     */
-    drop(callback: MongoCallback<any>): void
-
-    /**
-     * Drops an index from this collection.
-     *
-     * @param indexName Name of the index to drop.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#dropIndex
-     */
-    dropIndex(indexName: string, callback: MongoCallback<any>): void
-
-    /**
-     * Drops an index from this collection.
-     *
-     * @param indexName Name of the index to drop.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#dropIndex
-     */
-    dropIndex(indexName: string, options?: CollectionOptions): Promise<any>
-
-    /**
-     * Drops an index from this collection.
-     *
-     * @param indexName Name of the index to drop.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#dropIndex
-     */
-    dropIndex(
-        indexName: string,
-        options: CollectionOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Drops all indexes from this collection.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#dropIndexes
-     */
-    dropIndexes(): Promise<any>
-
-    /**
-     * Drops all indexes from this collection.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#dropIndexes
-     */
-    dropIndexes(callback?: MongoCallback<any>): void
-
-    /**
-     * Creates a cursor for a query that can be used to iterate over results from MongoDB.
-     *
-     * @param query The cursor query object.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#find
-     */
-    find(query?: Object): Cursor<any>
-
-    /**
-     * Creates a cursor for a query that can be used to iterate over results from MongoDB.
-     *
-     * @param query The cursor query object.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#find
-     */
-    find<T>(query?: FilterQuery<T>): Cursor<T>
-
-    /** @deprecated */
-    find(
-        query: FilterQuery<T>,
-        fields?: Object,
-        skip?: number,
-        limit?: number,
-        timeout?: number,
-    ): Cursor<any>
-
-    /**
-     * Fetches the first document that matches the query.
-     *
-     * @param query Query for find Operation.
-     * @param callback The command result callback.
-     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
-     */
-    findOne(query: FilterQuery<T>, callback: MongoCallback<any>): void
-
-    /**
-     * Fetches the first document that matches the query.
-     *
-     * @param query Query for find Operation.
-     * @param options Optional.
-     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
-     */
-    findOne(
-        query: FilterQuery<T>,
-        options?: MongodbFindOneOptions,
-    ): Promise<any>
-
-    /**
-     * Fetches the first document that matches the query.
-     *
-     * @param query Query for find Operation.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see https://mongodb.github.io/node-mongodb-native/3.6/api/Collection.html#findOne
-     */
-    findOne(
-        query: FilterQuery<T>,
-        options: MongodbFindOneOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndDelete
-     */
-    findOneAndDelete(
-        filter: FilterQuery<T>,
-        callback: MongoCallback<FindAndModifyWriteOpResultObject>,
-    ): void
-
-    /**
-     * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndDelete
-     */
-    findOneAndDelete(
-        filter: FilterQuery<T>,
-        options?: FindOneAndDeleteOptions,
-    ): Promise<FindAndModifyWriteOpResultObject>
-
-    /**
-     * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param options Optional settings.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndDelete
-     */
-    findOneAndDelete(
-        filter: FilterQuery<T>,
-        options: FindOneAndDeleteOptions,
-        callback: MongoCallback<FindAndModifyWriteOpResultObject>,
-    ): void
-
-    /**
-     * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param replacement Document replacing the matching document.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
-     */
-    findOneAndReplace(
-        filter: FilterQuery<T>,
-        replacement: Object,
-        callback: MongoCallback<FindAndModifyWriteOpResultObject>,
-    ): void
-
-    /**
-     * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param replacement Document replacing the matching document.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
-     */
-    findOneAndReplace(
-        filter: FilterQuery<T>,
-        replacement: Object,
-        options?: FindOneAndReplaceOption,
-    ): Promise<FindAndModifyWriteOpResultObject>
-
-    /**
-     * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param replacement Document replacing the matching document.
-     * @param options Optional settings.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
-     */
-    findOneAndReplace(
-        filter: FilterQuery<T>,
-        replacement: Object,
-        options: FindOneAndReplaceOption,
-        callback: MongoCallback<FindAndModifyWriteOpResultObject>,
-    ): void
-
-    /**
-     * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param update Update operations to be performed on the document.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndUpdate
-     */
-    findOneAndUpdate(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        callback: MongoCallback<FindAndModifyWriteOpResultObject>,
-    ): void
-
-    /**
-     * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param update Update operations to be performed on the document.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndUpdate
-     */
-    findOneAndUpdate(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options?: FindOneAndReplaceOption,
-    ): Promise<FindAndModifyWriteOpResultObject>
-
-    /**
-     * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
-     *
-     * @param filter Document selection filter.
-     * @param update Update operations to be performed on the document.
-     * @param options Optional settings.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndUpdate
-     */
-    findOneAndUpdate(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options: FindOneAndReplaceOption,
-        callback: MongoCallback<FindAndModifyWriteOpResultObject>,
-    ): void
-
-    /**
-     * Execute a geo search using a geo haystack index on a collection.
-     *
-     * @param x Point to search on the x axis, ensure the indexes are ordered in the same order.
-     * @param y Point to search on the y axis, ensure the indexes are ordered in the same order.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoHaystackSearch
-     */
-    geoHaystackSearch(x: number, y: number, callback: MongoCallback<any>): void
-
-    /**
-     * Execute a geo search using a geo haystack index on a collection.
-     *
-     * @param x Point to search on the x axis, ensure the indexes are ordered in the same order.
-     * @param y Point to search on the y axis, ensure the indexes are ordered in the same order.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoHaystackSearch
-     */
-    geoHaystackSearch(
-        x: number,
-        y: number,
-        options?: GeoHaystackSearchOptions,
-    ): Promise<any>
-
-    /**
-     * Execute a geo search using a geo haystack index on a collection.
-     *
-     * @param x Point to search on the x axis, ensure the indexes are ordered in the same order.
-     * @param y Point to search on the y axis, ensure the indexes are ordered in the same order.
-     * @param options Optional settings
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoHaystackSearch
-     */
-    geoHaystackSearch(
-        x: number,
-        y: number,
-        options: GeoHaystackSearchOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Execute the geoNear command to search for items in the collection.
-     *
-     * @param x Point to search on the x axis, ensure the indexes are ordered in the same order.
-     * @param y Point to search on the y axis, ensure the indexes are ordered in the same order.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoNear
-     */
-    geoNear(x: number, y: number, callback: MongoCallback<any>): void
-
-    /**
-     * Execute the geoNear command to search for items in the collection.
-     *
-     * @param x Point to search on the x axis, ensure the indexes are ordered in the same order.
-     * @param y Point to search on the y axis, ensure the indexes are ordered in the same order.
-     * @param options Optionals.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoNear
-     */
-    geoNear(x: number, y: number, options?: GeoNearOptions): Promise<any>
-
-    /**
-     * Execute the geoNear command to search for items in the collection.
-     *
-     * @param x Point to search on the x axis, ensure the indexes are ordered in the same order.
-     * @param y Point to search on the y axis, ensure the indexes are ordered in the same order.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoNear
-     */
-    geoNear(
-        x: number,
-        y: number,
-        options: GeoNearOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Run a group command across a collection.
-     *
-     * @param keys An object, array or function expressing the keys to group by.
-     * @param condition An optional condition that must be true for a row to be considered.
-     * @param initial Initial value of the aggregation counter object.
-     * @param reduce The reduce function aggregates (reduces) the objects iterated.
-     * @param finalize An optional function to be run on each item in the result set just before the item is returned.
-     * @param command Specify if you wish to run using the internal group command or using eval, default is true.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#group
-     */
-    group(
-        keys: Object | Array<any> | Function | Code,
-        condition: Object,
-        initial: Object,
-        reduce: Function | Code,
-        finalize: Function | Code,
-        command: boolean,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Run a group command across a collection.
-     *
-     * @param keys An object, array or function expressing the keys to group by.
-     * @param condition An optional condition that must be true for a row to be considered.
-     * @param initial Initial value of the aggregation counter object.
-     * @param reduce The reduce function aggregates (reduces) the objects iterated.
-     * @param finalize An optional function to be run on each item in the result set just before the item is returned.
-     * @param command Specify if you wish to run using the internal group command or using eval, default is true.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#group
-     */
-    group(
-        keys: Object | Array<any> | Function | Code,
-        condition: Object,
-        initial: Object,
-        reduce: Function | Code,
-        finalize: Function | Code,
-        command: boolean,
-        options?: GroupOptions,
-    ): Promise<any>
-
-    /**
-     * Run a group command across a collection.
-     *
-     * @param keys An object, array or function expressing the keys to group by.
-     * @param condition An optional condition that must be true for a row to be considered.
-     * @param initial Initial value of the aggregation counter object.
-     * @param reduce The reduce function aggregates (reduces) the objects iterated.
-     * @param finalize An optional function to be run on each item in the result set just before the item is returned.
-     * @param command Specify if you wish to run using the internal group command or using eval, default is true.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#group
-     */
-    group(
-        keys: Object | Array<any> | Function | Code,
-        condition: Object,
-        initial: Object,
-        reduce: Function | Code,
-        finalize: Function | Code,
-        command: boolean,
-        options: GroupOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Retrieve all the indexes on the collection.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#indexes
-     */
-    indexes(): Promise<any>
-
-    /**
-     * Retrieve all the indexes on the collection.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#indexes
-     */
-    indexes(callback: MongoCallback<any>): void
-
-    /**
-     * Checks if one or more indexes exist on the collection, fails on first non-existing index.
-     *
-     * @param indexes One or more index names to check.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#indexExists
-     */
-    indexExists(indexes: string | string[]): Promise<boolean>
-
-    /**
-     * Checks if one or more indexes exist on the collection, fails on first non-existing index.
-     *
-     * @param indexes One or more index names to check.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#indexExists
-     */
-    indexExists(
-        indexes: string | string[],
-        callback: MongoCallback<boolean>,
-    ): void
-
-    /**
-     * Retrieves this collections index info.
-     *
-     * @param callback The command result callback
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#indexInformation
-     */
-    indexInformation(callback: MongoCallback<any>): void
-
-    /**
-     * Retrieves this collections index info.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#indexInformation
-     */
-    indexInformation(options?: { full: boolean }): Promise<any>
-
-    /**
-     * Retrieves this collections index info.
-     *
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#indexInformation
-     */
-    indexInformation(
-        options: { full: boolean },
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Initiate an In order bulk write operation, operations will be serially executed in the order they are added,
-     * creating a new operation for each switch in types.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#initializeOrderedBulkOp
-     */
-    initializeOrderedBulkOp(options?: CollectionOptions): OrderedBulkOperation
-
-    /**
-     * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#initializeUnorderedBulkOp
-     */
-    initializeUnorderedBulkOp(
-        options?: CollectionOptions,
-    ): UnorderedBulkOperation
-
-    // http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertOne
-    /** @deprecated Use insertOne, insertMany or bulkWrite */
-    insert(docs: Object, callback: MongoCallback<InsertOneWriteOpResult>): void
-    /** @deprecated Use insertOne, insertMany or bulkWrite */
-    insert(
-        docs: Object,
-        options?: CollectionInsertOneOptions,
-    ): Promise<InsertOneWriteOpResult>
-    /** @deprecated Use insertOne, insertMany or bulkWrite */
-    insert(
-        docs: Object,
-        options: CollectionInsertOneOptions,
-        callback: MongoCallback<InsertOneWriteOpResult>,
-    ): void
-
-    /**
-     * InsertMany.
-     *
-     * @param docs Documents to insert.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertMany
-     */
-    insertMany(
-        docs: Object[],
-        callback: MongoCallback<InsertWriteOpResult>,
-    ): void
-
-    /**
-     * InsertMany.
-     *
-     * @param docs Documents to insert.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertMany
-     */
-    insertMany(
-        docs: Object[],
-        options?: CollectionInsertManyOptions,
-    ): Promise<InsertWriteOpResult>
-
-    /**
-     * InsertMany.
-     *
-     * @param docs Documents to insert.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertMany
-     */
-    insertMany(
-        docs: Object[],
-        options: CollectionInsertManyOptions,
-        callback: MongoCallback<InsertWriteOpResult>,
-    ): void
-
-    /**
-     * InsertOne.
-     *
-     * @param docs Document to insert.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertOne
-     */
-    insertOne(
-        docs: Object,
-        callback: MongoCallback<InsertOneWriteOpResult>,
-    ): void
-
-    /**
-     * InsertOne.
-     *
-     * @param docs Document to insert.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertOne
-     */
-    insertOne(
-        docs: Object,
-        options?: CollectionInsertOneOptions,
-    ): Promise<InsertOneWriteOpResult>
-
-    /**
-     * InsertOne.
-     *
-     * @param docs Document to insert.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertOne
-     */
-    insertOne(
-        docs: Object,
-        options: CollectionInsertOneOptions,
-        callback: MongoCallback<InsertOneWriteOpResult>,
-    ): void
-
-    /**
-     * Returns if the collection is a capped collection.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#isCapped
-     */
-    isCapped(): Promise<any>
-
-    /**
-     * Returns if the collection is a capped collection.
-     *
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#isCapped
-     */
-    isCapped(callback: MongoCallback<any>): void
-
-    /**
-     * Get the list of all indexes information for the collection.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#listIndexes
-     */
-    listIndexes(options?: ListIndexesOptions): CommandCursor
-
-    /**
-     * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
-     *
-     * @param map The mapping function.
-     * @param reduce The reduce function.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#mapReduce
-     * @deprecated since 5.0, instead use an aggregation pipeline
-     */
-    mapReduce(
-        map: Function | string,
-        reduce: Function | string,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
-     *
-     * @param map The mapping function.
-     * @param reduce The reduce function.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#mapReduce
-     * @deprecated since 5.0, instead use an aggregation pipeline
-     */
-    mapReduce(
-        map: Function | string,
-        reduce: Function | string,
-        options?: MapReduceOptions,
-    ): Promise<any>
-
-    /**
-     * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
-     *
-     * @param map The mapping function.
-     * @param reduce The reduce function.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#mapReduce
-     */
-    mapReduce(
-        map: Function | string,
-        reduce: Function | string,
-        options: MapReduceOptions,
-        callback: MongoCallback<any>,
-    ): void
-
-    /**
-     * Returns the options of the collection.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#options
-     */
-    options(): Promise<any>
-
-    /**
-     * Returns the options of the collection.
-     *
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#options
-     */
-    options(callback: MongoCallback<any>): void
-
-    /**
-     * Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are
-     * no ordering guarantees for returned results.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#parallelCollectionScan
-     */
-    parallelCollectionScan(callback: MongoCallback<Cursor<any>[]>): void
-
-    /**
-     * Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are
-     * no ordering guarantees for returned results.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#parallelCollectionScan
-     */
-    parallelCollectionScan(
-        options?: ParallelCollectionScanOptions,
-    ): Promise<Cursor<any>[]>
-
-    /**
-     * Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are
-     * no ordering guarantees for returned results.
-     *
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#parallelCollectionScan
-     */
-    parallelCollectionScan(
-        options: ParallelCollectionScanOptions,
-        callback: MongoCallback<Cursor<any>[]>,
-    ): void
-
-    /**
-     * Reindex all indexes on the collection.
-     *
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#reIndex
-     */
-    reIndex(): Promise<any>
-
-    /**
-     * Reindex all indexes on the collection.
-     *
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#reIndex
-     */
-    reIndex(callback: MongoCallback<any>): void
-
-    // http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#remove
-    /** @deprecated Use use deleteOne, deleteMany or bulkWrite */
-    remove(selector: Object, callback: MongoCallback<WriteOpResult>): void
-    /** @deprecated Use use deleteOne, deleteMany or bulkWrite */
-    remove(
-        selector: Object,
-        options?: CollectionOptions & { single?: boolean },
-    ): Promise<WriteOpResult>
-    /** @deprecated Use use deleteOne, deleteMany or bulkWrite */
-    remove(
-        selector: Object,
-        options?: CollectionOptions & { single?: boolean },
-        callback?: MongoCallback<WriteOpResult>,
-    ): void
-
-    /**
-     * Rename the collection.
-     *
-     * @param newName New name of of the collection.
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#rename
-     */
-    rename(newName: string, callback: MongoCallback<Collection<T>>): void
-
-    /**
-     * Rename the collection.
-     *
-     * @param newName New name of of the collection.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#rename
-     */
-    rename(
-        newName: string,
-        options?: { dropTarget?: boolean },
-    ): Promise<Collection<T>>
-
-    /**
-     * Rename the collection.
-     *
-     * @param newName New name of of the collection.
-     * @param options Optional settings.
-     * @param callback The results callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#rename
-     */
-    rename(
-        newName: string,
-        options: { dropTarget?: boolean },
-        callback: MongoCallback<Collection<T>>,
-    ): void
-
-    /**
-     * Replace a document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param doc The Document that replaces the matching document.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
-     */
-    replaceOne(
-        filter: FilterQuery<T>,
-        doc: Object,
-        callback: MongoCallback<UpdateWriteOpResult>,
-    ): void
-
-    /**
-     * Replace a document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param doc The Document that replaces the matching document.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
-     */
-    replaceOne(
-        filter: FilterQuery<T>,
-        doc: Object,
-        options?: ReplaceOneOptions,
-    ): Promise<UpdateWriteOpResult>
-
-    /**
-     * Replace a document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param doc The Document that replaces the matching document.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
-     */
-    replaceOne(
-        filter: FilterQuery<T>,
-        doc: Object,
-        options: ReplaceOneOptions,
-        callback: MongoCallback<UpdateWriteOpResult>,
-    ): void
-
-    // http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#save
-    /** @deprecated Use insertOne, insertMany, updateOne or updateMany */
-    save(doc: Object, callback: MongoCallback<WriteOpResult>): void
-    /** @deprecated Use insertOne, insertMany, updateOne or updateMany */
-    save(doc: Object, options?: CollectionOptions): Promise<WriteOpResult>
-    /** @deprecated Use insertOne, insertMany, updateOne or updateMany */
-    save(
-        doc: Object,
-        options: CollectionOptions,
-        callback: MongoCallback<WriteOpResult>,
-    ): void
-
-    /**
-     * Get all the collection statistics.
-     *
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#stats
-     */
-    stats(callback: MongoCallback<CollStats>): void
-
-    /**
-     * Get all the collection statistics.
-     *
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#stats
-     */
-    stats(options?: { scale: number }): Promise<CollStats>
-
-    /**
-     * Get all the collection statistics.
-     *
-     * @param options Optional settings.
-     * @param callback The collection result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#stats
-     */
-    stats(options: { scale: number }, callback: MongoCallback<CollStats>): void
-
-    // http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#update
-    /** @deprecated use updateOne, updateMany or bulkWrite */
-    update(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        callback: MongoCallback<WriteOpResult>,
-    ): void
-    /** @deprecated use updateOne, updateMany or bulkWrite */
-    update(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options?: ReplaceOneOptions & { multi?: boolean },
-    ): Promise<WriteOpResult>
-    /** @deprecated use updateOne, updateMany or bulkWrite */
-    update(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options: ReplaceOneOptions & { multi?: boolean },
-        callback: MongoCallback<WriteOpResult>,
-    ): void
-
-    /**
-     * Update multiple documents on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param update The update operations to be applied to the document.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateMany
-     */
-    updateMany(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        callback: MongoCallback<UpdateWriteOpResult>,
-    ): void
-
-    /**
-     * Update multiple documents on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param update The update operations to be applied to the document.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateMany
-     */
-    updateMany(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options?: UpdateManyOptions,
-    ): Promise<UpdateWriteOpResult>
-
-    /**
-     * Update multiple documents on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param update The update operations to be applied to the document.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateMany
-     */
-    updateMany(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options: UpdateManyOptions,
-        callback: MongoCallback<UpdateWriteOpResult>,
-    ): void
-
-    /**
-     * Update a single document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param update The update operations to be applied to the document.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateOne
-     */
-    updateOne(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        callback: MongoCallback<UpdateWriteOpResult>,
-    ): void
-
-    /**
-     * Update a single document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param update The update operations to be applied to the document.
-     * @param options Optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateOne
-     */
-    updateOne(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options?: ReplaceOneOptions,
-    ): Promise<UpdateWriteOpResult>
-
-    /**
-     * Update a single document on MongoDB.
-     *
-     * @param filter The Filter used to select the document to update.
-     * @param update The update operations to be applied to the document.
-     * @param options Optional settings.
-     * @param callback The command result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#updateOne
-     */
-    updateOne(
-        filter: FilterQuery<T>,
-        update: UpdateQuery<T>,
-        options: ReplaceOneOptions,
-        callback: MongoCallback<UpdateWriteOpResult>,
-    ): void
-
-    /**
-     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
-     * @param pipeline An array of aggregation pipeline stages through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#watch
-     */
-    watch(
-        pipeline?: Object[],
-        options?: ChangeStreamOptions & {
-            startAtClusterTime?: Timestamp
-            session?: ClientSession
-        },
-    ): ChangeStream
-}
-
-/**
- * Condition.
- */
-export type Condition<T, P extends keyof T> = {
-    $eq?: T[P]
-    $gt?: T[P]
-    $gte?: T[P]
-    $in?: T[P][]
-    $lt?: T[P]
-    $lte?: T[P]
-    $ne?: T[P]
-    $nin?: T[P][]
-    $and?: (FilterQuery<T[P]> | T[P])[]
-    $or?: (FilterQuery<T[P]> | T[P])[]
-    $not?: (FilterQuery<T[P]> | T[P])[] | T[P]
-    $expr?: any
-    $jsonSchema?: any
-    $mod?: [number, number]
-    $regex?: RegExp
-    $options?: string
-    $text?: {
-        $search: string
-        $language?: string
-        $caseSensitive?: boolean
-        $diacraticSensitive?: boolean
-    }
-    $where?: Object
-    $geoIntersects?: Object
-    $geoWithin?: Object
-    $near?: Object
-    $nearSphere?: Object
-    $elemMatch?: Object
-    $size?: number
-    $bitsAllClear?: Object
-    $bitsAllSet?: Object
-    $bitsAnyClear?: Object
-    $bitsAnySet?: Object
-    [key: string]: any
-}
-
-/**
- * @see https://docs.mongodb.com/manual/reference/operator/update
- */
-export type UpdateQuery<T> = {
-    $inc?: { [P in keyof T]?: number } | { [key: string]: number }
-    $min?: { [P in keyof T]?: number } | { [key: string]: number }
-    $max?: { [P in keyof T]?: number } | { [key: string]: number }
-    $mul?: { [P in keyof T]?: number } | { [key: string]: number }
-    $set?: Partial<T> | { [key: string]: any }
-    $setOnInsert?: Partial<T> | { [key: string]: any }
-    $unset?: { [P in keyof T]?: "" } | { [key: string]: "" }
-    $rename?: { [key: string]: keyof T } | { [key: string]: string }
-    $currentDate?:
-        | { [P in keyof T]?: true | { $type: "date" | "timestamp" } }
-        | { [key: string]: true | { $type: "date" | "timestamp" } }
-    $addToSet?: Partial<T> | { [key: string]: any }
-    $pop?: { [P in keyof T]?: -1 | 1 } | { [key: string]: -1 | 1 }
-    $pull?: Partial<T> | { [key: string]: Condition<T, keyof T> }
-    $push?: Partial<T> | { [key: string]: any }
-    $pushAll?: Partial<T> | { [key: string]: Array<any> }
-    $each?: Partial<T> | { [key: string]: Array<any> }
-    $bit?: { [P in keyof T]?: any } | { [key: string]: any }
-}
-
-export type FilterQuery<T> =
-    | {
-          [P in keyof T]?: T[P] | Condition<T, P>
-      }
-    | { [key: string]: any }
-
-/**
- * The name of the target collection.
- *
- * @see http://docs.mongodb.org/manual/reference/command/collStats/
- */
-export interface CollStats {
-    /**
-     * Namespace.
-     */
-    ns: string
-
-    /**
-     * The number of objects or documents in this collection.
-     */
-    count: number
-
-    /**
-     * Collection size in bytes.
-     */
-    size: number
-
-    /**
-     * Average object size in bytes.
-     */
-    avgObjSize: number
-
-    /**
-     * (Pre)allocated space for the collection in bytes.
-     */
-    storageSize: number
-
-    /**
-     * Number of extents (contiguously allocated chunks of datafile space).
-     */
-    numExtents: number
-
-    /**
-     * Number of indexes.
-     */
-    nindexes: number
-
-    /**
-     * Size of the most recently created extent in bytes.
-     */
-    lastExtentSize: number
-
-    /**
-     * Padding can speed up updates if documents grow.
-     */
-    paddingFactor: number
-
-    /**
-     * A number that indicates the user-set flags on the collection. userFlags
-     * only appears when using the mmapv1 storage engine.
-     */
-    userFlags: number
-
-    /**
-     * Total index size in bytes.
-     */
-    totalIndexSize: number
-
-    /**
-     * Size of specific indexes in bytes.
-     */
-    indexSizes: {
-        _id_: number
-        username: number
-    }
-
-    /**
-     * This field will be “true” if the collection is capped.
-     */
-    capped: boolean
-
-    /**
-     * Shows the maximum size of a capped collection.
-     */
-    maxSize: boolean
-
-    /**
-     * This document contains data reported directly by the WiredTiger engine and other data for internal diagnostic use.
-     */
-    wiredTiger: any
-
-    /**
-     * A document that reports data from the WiredTiger storage engine for each index in the collection.
-     * Other storage engines will return an empty document.
-     */
-    indexDetails: any
-
-    /**
-     *
-     */
-    ok: number
-}
-
-/**
- * CollectionAggregationOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#aggregate
- */
-export interface CollectionAggregationOptions {
-    readPreference?: ReadPreference | string
-
-    /**
-     * Return the query as cursor, on 2.6 > it returns as a real cursor on pre 2.6 it returns as an emulated cursor.
-     */
-    cursor?: { batchSize: number }
-
-    /**
-     * Explain returns the aggregation execution plan (requires mongodb 2.6 >).
-     */
-    explain?: boolean
-
-    /**
-     * allowDiskUse lets the server know if it can use disk to store temporary results for the aggregation (requires mongodb 2.6 >).
-     */
-    allowDiskUse?: boolean
-
-    /**
-     * maxTimeMS specifies a cumulative time limit in milliseconds for processing operations on the cursor. MongoDB interrupts the operation at the earliest following interrupt point.
-     */
-    maxTimeMS?: boolean
-
-    /**
-     * Allow driver to bypass schema validation in MongoDB 3.2 or higher.
-     */
-    bypassDocumentValidation?: boolean
-}
-
-/**
- * CollectionInsertManyOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertMany
- */
-export interface CollectionInsertManyOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Serialize functions on any object.
-     */
-    serializeFunctions?: boolean
-
-    /**
-     * Force server to assign _id values instead of driver.
-     */
-    forceServerObjectId?: boolean
-}
-
-export interface UpdateManyOptions {
-    /**
-     * Update operation is an upsert.
-     */
-    upsert?: boolean
-
-    /**
-     * The write concern.
-     */
-    w?: any
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-}
-
-/**
- * CollectionBulkWriteOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#bulkWrite
- */
-export interface CollectionBulkWriteOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Serialize functions on any object.
-     */
-    serializeFunctions?: boolean
-
-    /**
-     * Execute write operation in ordered or unordered fashion.
-     */
-    ordered?: boolean
-
-    /**
-     * Allow driver to bypass schema validation in MongoDB 3.2 or higher.
-     */
-    bypassDocumentValidation?: boolean
-}
-
-/**
- * BulkWriteOpResultObject.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#~BulkWriteOpResult
- */
-export interface BulkWriteOpResultObject {
-    /**
-     * Number of documents inserted.
-     */
-    insertedCount?: number
-
-    /**
-     * Number of documents matched for update.
-     */
-    matchedCount?: number
-
-    /**
-     * Number of documents modified.
-     */
-    modifiedCount?: number
-
-    /**
-     * Number of documents deleted.
-     */
-    deletedCount?: number
-
-    /**
-     * Number of documents upserted.
-     */
-    upsertedCount?: number
-
-    /**
-     * Inserted document generated Id's, hash key is the index of the originating operation.
-     */
-    insertedIds?: any
-
-    /**
-     * Upserted document generated Id's, hash key is the index of the originating operation.
-     */
-    upsertedIds?: any
-
-    /**
-     * The command result object.
-     */
-    result?: any
-}
-
-/**
- * MongoCountPreferences.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#count
- */
-export interface MongoCountPreferences {
-    /**
-     * The limit of documents to count.
-     */
-    limit?: number
-
-    /**
-     * The number of documents to skip for the count.
-     */
-    skip?: boolean
-
-    /**
-     * An index name hint for the query.
-     */
-    hint?: string
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-}
-
-/**
- * DeleteWriteOpResultObject.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#~deleteWriteOpResult
- */
-export interface DeleteWriteOpResultObject {
-    /**
-     * The raw result returned from MongoDB, field will vary depending on server version.
-     * @param ok Is 1 if the command executed correctly.
-     * @param n The total count of documents deleted.
-     */
-    result: {
-        ok?: number
-        n?: number
-    }
-
-    /**
-     * The connection object used for the operation.
-     */
-    connection?: any
-
-    /**
-     * The number of documents deleted.
-     */
-    deletedCount?: number
-}
-
-/**
- * FindAndModifyWriteOpResultObject.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#~findAndModifyWriteOpResult
- */
-export interface FindAndModifyWriteOpResultObject {
-    /**
-     * Document returned from findAndModify command.
-     */
-    value?: any
-
-    /**
-     * The raw lastErrorObject returned from the command.
-     */
-    lastErrorObject?: any
-
-    /**
-     * Is 1 if the command executed correctly.
-     */
-    ok?: number
-}
-
-/**
- * FindOneAndReplaceOption.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOneAndReplace
- */
-export interface FindOneAndReplaceOption {
-    /**
-     * Limits the fields to return for all matching documents.
-     */
-    projection?: Object
-
-    /**
-     * Determines which document the operation modifies if the query selects multiple documents.
-     */
-    sort?: Object
-
-    /**
-     * The maximum amount of time to allow the query to run.
-     */
-    maxTimeMS?: number
-
-    /**
-     * Upsert the document if it does not exist.
-     */
-    upsert?: boolean
-
-    /**
-     * When false, returns the updated document rather than the original. The default is true.
-     */
-    returnOriginal?: boolean
-}
-
-/**
- * GeoHaystackSearchOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoHaystackSearch
- */
-export interface GeoHaystackSearchOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Include results up to maxDistance from the point.
-     */
-    maxDistance?: number
-
-    /**
-     * Filter the results by a query.
-     */
-    search?: Object
-
-    /**
-     * Max number of results to return.
-     */
-    limit?: number
-}
-
-/**
- * GeoNearOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#geoNear
- */
-export interface GeoNearOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Max number of results to return.
-     */
-    num?: number
-
-    /**
-     * Include results starting at minDistance from a point (2.6 or higher).
-     */
-    minDistance?: number
-
-    /**
-     * Include results up to maxDistance from the point.
-     */
-    maxDistance?: number
-
-    /**
-     * Include a value to multiply the distances with allowing for range conversions.
-     */
-    distanceMultiplier?: number
-
-    /**
-     * Filter the results by a query.
-     */
-    query?: Object
-
-    /**
-     * Perform query using a spherical model.
-     */
-    spherical?: boolean
-
-    /**
-     * The closest location in a document to the center of the search region will always be returned MongoDB > 2.X.
-     */
-    uniqueDocs?: boolean
-
-    /**
-     * Include the location data fields in the top level of the results MongoDB > 2.X.
-     */
-    includeLocs?: boolean
-}
-
-/**
- * A class representation of the BSON Code type.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Code.html
- */
-export declare class Code {
-    /**
-     *
-     * @param code a string or function.
-     * @param scope optional
-     */
-    constructor(code: string | Function, scope?: Object)
-
-    /**
-     * A string or function.
-     */
-    code: string | Function
-
-    /**
-     * An optional scope for the function.
-     */
-    scope: any
-}
-
-/**
- * CollectionOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#deleteMany
- */
-export interface CollectionOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-}
-
-/**
- * Create a new OrderedBulkOperation instance (INTERNAL TYPE, do not instantiate directly).
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/OrderedBulkOperation.html
- */
-export interface OrderedBulkOperation {
-    /**
-     * Get the number of operations in the bulk.
-     */
-    length: number
-
-    /**
-     * Execute the ordered bulk operation.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/OrderedBulkOperation.html#execute
-     */
-    execute(callback: MongoCallback<BulkWriteResult>): void
-
-    /**
-     * Execute the ordered bulk operation.
-     * @param options optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/OrderedBulkOperation.html#execute
-     */
-    execute(options?: FSyncOptions): Promise<BulkWriteResult>
-
-    /**
-     * Execute the ordered bulk operation.
-     * @param options Optional settings.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/OrderedBulkOperation.html#execute
-     */
-    execute(
-        options: FSyncOptions,
-        callback: MongoCallback<BulkWriteResult>,
-    ): void
-
-    /**
-     * Initiate a find operation for an update/updateOne/remove/removeOne/replaceOne.
-     * @param selector The selector for the bulk operation.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/OrderedBulkOperation.html#find
-     */
-    find(selector: Object): FindOperatorsOrdered
-
-    /**
-     * Add a single insert document to the bulk operation.
-     * @param doc The document to insert
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/OrderedBulkOperation.html#insert
-     */
-    insert(doc: Object): OrderedBulkOperation
-}
-
-/**
- * BulkWriteResult.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/BulkWriteResult.html
- */
-export interface BulkWriteResult {
-    /**
-     * Did bulk operation correctly execute.
-     */
-    ok: number
-
-    /**
-     * number of inserted documents.
-     */
-    nInserted: number
-
-    /**
-     * number of documents updated logically.
-     */
-    nUpdated: number
-
-    /**
-     * Number of upserted documents.
-     */
-    nUpserted: number
-
-    /**
-     *
-     Number of documents updated physically on disk.
-     */
-    nModified: number
-
-    /**
-     * Number of removed documents.
-     */
-    nRemoved: number
-
-    /**
-     * Return an array of inserted ids.
-     */
-    getInsertedIds(): Array<Object>
-
-    /**
-     * Retrieve lastOp if available.
-     */
-    getLastOp(): Object
-
-    /**
-     * Return raw internal result.
-     */
-    getRawResponse(): Object
-
-    /**
-     * Return the upserted id at position x.
-     */
-    getUpsertedIdAt(index: number): Object
-
-    /**
-     * Return an array of upserted ids.
-     */
-    getUpsertedIds(): Array<{ _id: string; index: number }>
-
-    /**
-     * Retrieve the write concern error if any.
-     */
-    getWriteConcernError(): WriteConcernError
-
-    /**
-     * Returns a specific write error object.
-     */
-    getWriteErrorAt(index: number): WriteError
-
-    /**
-     * Returns the number of write errors off the bulk operation.
-     */
-    getWriteErrorCount(): number
-
-    /**
-     * Retrieve all write errors.
-     */
-    getWriteErrors(): Array<Object>
-
-    /**
-     * Returns true if the bulk operation contains a write error.
-     */
-    hasWriteErrors(): boolean
-}
-
-/**
- * Create a new WriteError instance (INTERNAL TYPE, do not instantiate directly).
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/WriteError.html
- */
-export interface WriteError {
-    /**
-     * Write concern error code.
-     */
-    code: number
-
-    /**
-     * Write concern error original bulk operation index.
-     */
-    index: number
-
-    /**
-     * Write concern error message.
-     */
-    errmsg: string
-}
-
-/**
- * Create a new WriteConcernError instance (INTERNAL TYPE, do not instantiate directly).
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/WriteConcernError.html
- */
-export interface WriteConcernError {
-    /**
-     * Write concern error code.
-     */
-    code: number
-
-    /**
-     * Write concern error message.
-     */
-    errmsg: string
-}
-
-/**
- * Create a FindOperatorsOrdered instance (INTERNAL TYPE, do not instantiate directly).
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/FindOperatorsOrdered.html
- */
-export interface FindOperatorsOrdered {
-    /**
-     * Add a remove operation to the bulk operation.
-     */
-    delete(): OrderedBulkOperation
-
-    /**
-     * Add a remove one operation to the bulk operation.
-     */
-    deleteOne(): OrderedBulkOperation
-
-    /**
-     * Add a replace one operation to the bulk operation.
-     */
-    replaceOne(doc: Object): OrderedBulkOperation
-
-    /**
-     * Add a single update document to the bulk operation.
-     */
-    update(doc: Object): OrderedBulkOperation
-
-    /**
-     * Add a single update one document to the bulk operation.
-     */
-    updateOne(doc: Object): OrderedBulkOperation
-
-    /**
-     * Upsert modifier for update bulk operation.
-     */
-    upsert(): FindOperatorsOrdered
-}
-
-/**
- * Create a new UnorderedBulkOperation instance (INTERNAL TYPE, do not instantiate directly).
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/UnorderedBulkOperation.html
- */
-export interface UnorderedBulkOperation {
-    /**
-     * Get the number of operations in the bulk.
-     */
-    length: number
-
-    /**
-     * Execute the ordered bulk operation.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/UnorderedBulkOperation.html#execute
-     */
-    execute(callback: MongoCallback<BulkWriteResult>): void
-
-    /**
-     * Execute the ordered bulk operation.
-     * @param options optional.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/UnorderedBulkOperation.html#execute
-     */
-    execute(options?: FSyncOptions): Promise<BulkWriteResult>
-
-    /**
-     * Execute the ordered bulk operation.
-     * @param options Optional settings.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/UnorderedBulkOperation.html#execute
-     */
-    execute(
-        options: FSyncOptions,
-        callback: MongoCallback<BulkWriteResult>,
-    ): void
-
-    /**
-     * Initiate a find operation for an update/updateOne/remove/removeOne/replaceOne.
-     * @param selector The selector for the bulk operation.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/UnorderedBulkOperation.html#find
-     */
-    find(selector: Object): FindOperatorsUnordered
-
-    /**
-     * Add a single insert document to the bulk operation.
-     * @param doc The document to insert.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/UnorderedBulkOperation.html#insert
-     */
-    insert(doc: Object): UnorderedBulkOperation
-}
-
-/**
- * Create a FindOperatorsUnordered instance (INTERNAL TYPE, do not instantiate directly).
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/FindOperatorsUnordered.html
- */
-export interface FindOperatorsUnordered {
-    /**
-     * Get the number of operations in the bulk.
-     */
-    length: number
-
-    /**
-     * Add a remove operation to the bulk operation.
-     *
-     * @deprecated deprecated since mongodb@4.0, in new code, use delete instead
-     */
-    remove(): UnorderedBulkOperation
-
-    /**
-     * Add a remove one operation to the bulk operation.
-     *
-     * @deprecated deprecated since mongodb@4.0, in new code, use deleteOne instead
-     */
-    removeOne(): UnorderedBulkOperation
-
-    /**
-     * Add a delete operation to the bulk operation.
-     *
-     * @deprecated deprecated since mongodb@4.0, in new code, use delete instead
-     */
-    delete(): UnorderedBulkOperation
-
-    /**
-     * Add a delete one operation to the bulk operation.
-     *
-     */
-    deleteOne(): UnorderedBulkOperation
-
-    /**
-     * Add a replace one operation to the bulk operation.
-     * @param doc The new document to replace the existing one with.
-     */
-    replaceOne(doc: Object): UnorderedBulkOperation
-
-    /**
-     * Add a single update document to the bulk operation.
-     * @param doc Update operations
-     */
-    update(doc: Object): UnorderedBulkOperation
-
-    /**
-     * Add a single update one document to the bulk operation.
-     * @param doc Update operations
-     */
-    updateOne(doc: Object): UnorderedBulkOperation
-
-    /**
-     * Upsert modifier for update bulk operation.
-     */
-    upsert(): FindOperatorsUnordered
-}
-
-/**
- * MongodbFindOneOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#findOne
- */
-export interface MongodbFindOneOptions {
-    /**
-     * Sets the limit of documents returned in the query.
-     */
-    limit?: number
-
-    /**
-     * Set to sort the documents coming back from the query. Array of indexes, [['a', 1]] etc.
-     */
-    sort?: Array<any> | Object
-
-    /**
-     * The fields to return in the query. Object of fields to include or exclude (not both), {'a':1}.
-     */
-    fields?: Object
-
-    /**
-     * Set to skip N documents ahead in your query (useful for pagination).
-     */
-    skip?: number
-
-    /**
-     * Tell the query to use specific indexes in the query. Object of indexes to use, {'_id':1}.
-     */
-    hint?: Object
-
-    /**
-     * Explain the query instead of returning the data.
-     */
-    explain?: boolean
-
-    /**
-     * Snapshot query.
-     */
-    snapshot?: boolean
-
-    /**
-     * Specify if the cursor can timeout.
-     */
-    timeout?: boolean
-
-    /**
-     * Specify if the cursor is tailable.
-     */
-    tailable?: boolean
-
-    /**
-     * Set the batchSize for the getMoreCommand when iterating over the query results.
-     */
-    batchSize?: number
-
-    /**
-     * Only return the index key.
-     */
-    returnKey?: boolean
-
-    /**
-     * Limit the number of items to scan.
-     */
-    maxScan?: number
-
-    /**
-     * Set index bounds.
-     */
-    min?: number
-
-    /**
-     * Set index bounds.
-     */
-    max?: number
-
-    /**
-     * Show disk location of results.
-     */
-    showDiskLoc?: boolean
-
-    /**
-     * You can put a $comment field on a query to make looking in the profiler logs simpler.
-     */
-    comment?: string
-
-    /**
-     * Return document results as raw BSON buffers.
-     */
-    raw?: boolean
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Specify if the cursor should return partial results when querying against a sharded system.
-     */
-    partial?: boolean
-
-    /**
-     * Number of milliseconds to wait before aborting the query.
-     */
-    maxTimeMs?: number
-}
-
-/**
- * InsertWriteOpResult.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#~insertWriteOpResult
- */
-export interface InsertWriteOpResult {
-    /**
-     * The total amount of documents inserted.
-     */
-    insertedCount: number
-
-    /**
-     * All the documents inserted using insertOne/insertMany/replaceOne.
-     * Documents contain the _id field if forceServerObjectId == false for insertOne/insertMany.
-     */
-    ops: Array<any>
-
-    /**
-     * All the generated _id's for the inserted documents.
-     */
-    insertedIds: Array<ObjectID>
-
-    /**
-     * The connection object used for the operation.
-     */
-    connection: any
-
-    /**
-     * The raw command result object returned from MongoDB (content might vary by server version).
-     * @param ok Is 1 if the command executed correctly.
-     * @param n The total count of documents inserted.
-     */
-    result: { ok: number; n: number }
-}
-
-/**
- * CollectionInsertOneOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#insertOne
- */
-export interface CollectionInsertOneOptions {
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Serialize functions on any object.
-     */
-    serializeFunctions?: boolean
-
-    /**
-     * Force server to assign _id values instead of driver.
-     */
-    forceServerObjectId?: boolean
-
-    /**
-     * Allow driver to bypass schema validation in MongoDB 3.2 or higher.
-     */
-    bypassDocumentValidation?: boolean
-}
-
-/**
- * InsertOneWriteOpResult.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#~insertOneWriteOpResult
- */
-export interface InsertOneWriteOpResult {
-    /**
-     * The total amount of documents inserted.
-     */
-    insertedCount: number
-
-    /**
-     * All the documents inserted using insertOne/insertMany/replaceOne.
-     * Documents contain the _id field if forceServerObjectId == false for insertOne/insertMany.
-     */
-    ops: Array<any>
-
-    /**
-     * The driver generated ObjectId for the insert operation.
-     */
-    insertedId: ObjectID
-
-    /**
-     * The connection object used for the operation.
-     */
-    connection: any
-
-    /**
-     * The raw command result object returned from MongoDB (content might vary by server version).
-     * @param ok Is 1 if the command executed correctly.
-     * @param n The total count of documents inserted.
-     */
-    result: { ok: number; n: number }
-}
-
-/**
- * ParallelCollectionScanOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#parallelCollectionScan
- */
-export interface ParallelCollectionScanOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Set the batchSize for the getMoreCommand when iterating over the query results.
-     */
-    batchSize?: number
-
-    /**
-     * The maximum number of parallel command cursors to return (the number of returned cursors will be in the range 1:numCursors).
-     */
-    numCursors?: number
-
-    /**
-     * Return all BSON documents as Raw Buffer documents.
-     */
-    raw?: boolean
-}
-
-/**
- * ParallelCollectionScanOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#replaceOne
- */
-export interface ReplaceOneOptions {
-    /**
-     * Update operation is an upsert.
-     */
-    upsert?: boolean
-
-    /**
-     * The write concern.
-     */
-    w?: number | string
-
-    /**
-     * The write concern timeout.
-     */
-    wtimeout?: number
-
-    /**
-     * Specify a journal write concern.
-     */
-    j?: boolean
-
-    /**
-     * Allow driver to bypass schema validation in MongoDB 3.2 or higher.
-     */
-    bypassDocumentValidation?: boolean
-}
-
-/**
- * ParallelCollectionScanOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#~updateWriteOpResult
- */
-export interface UpdateWriteOpResult {
-    /**
-     * The raw result returned from MongoDB, field will vary depending on server version.
-     * @param ok Is 1 if the command executed correctly.
-     * @param n The total count of documents scanned.
-     * @param nModified The total count of documents modified.
-     */
-    result: { ok: number; n: number; nModified: number }
-
-    /**
-     * The connection object used for the operation.
-     */
-    connection: any
-
-    /**
-     * The number of documents that matched the filter.
-     */
-    matchedCount: number
-
-    /**
-     * The number of documents that were modified.
-     */
-    modifiedCount: number
-
-    /**
-     * The number of documents upserted.
-     */
-    upsertedCount: number
-
-    /**
-     * The upserted id.
-     * @param _id The upserted _id returned from the server.
-     */
-    upsertedId: { _id: ObjectID }
-}
-
-/**
- * ParallelCollectionScanOptions.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#mapReduce
- */
-export interface MapReduceOptions {
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
-
-    /**
-     * Sets the output target for the map reduce job.
-     * {inline:1} | {replace:'collectionName'} | {merge:'collectionName'} | {reduce:'collectionName'}.
-     */
-    out?: Object
-
-    /**
-     * Query filter object.
-     */
-    query?: Object
-
-    /**
-     * Sorts the input objects using this key. Useful for optimization, like sorting by the emit key for fewer reduces.
-     */
-    sort?: Object
-
-    /**
-     * Number of objects to return from collection.
-     */
-    limit?: number
-
-    /**
-     * Keep temporary data.
-     */
-    keeptemp?: boolean
-
-    /**
-     * Finalize function.
-     */
-    finalize?: Function | string
-
-    /**
-     * Can pass in variables that can be access from map/reduce/finalize.
-     */
-    scope?: Object
-
-    /**
-     * It is possible to make the execution stay in JS. Provided in MongoDB > 2.0.X.
-     */
-    jsMode?: boolean
-
-    /**
-     * Provide statistics on job execution time.
-     */
-    verbose?: boolean
-
-    /**
-     * Allow driver to bypass schema validation in MongoDB 3.2 or higher.
-     */
-    bypassDocumentValidation?: boolean
-}
-
-/**
- * WriteOpResult.
- *
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#~WriteOpResult
- */
-export interface WriteOpResult {
-    /**
-     * All the documents inserted using insertOne/insertMany/replaceOne.
-     * Documents contain the _id field if forceServerObjectId == false for insertOne/insertMany.
-     */
-    ops: Array<any>
-
-    /**
-     * The connection object used for the operation.
-     */
-    connection: any
-
-    /**
-     * The command result object.
-     */
-    result: any
-}
-
-/**
- * WriteOpResult.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#~resultCallback
- */
-export type CursorResult = any | void | boolean
-
-/**
- * Creates a new Cursor instance (INTERNAL TYPE, do not instantiate directly).
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html
- */
-export declare class Cursor<T> extends Readable {
-    [Symbol.asyncIterator](): AsyncIterableIterator<T>
-
-    /**
-     * Cursor query sort setting.
-     */
-    sortValue: string
-
-    /**
-     * Is Cursor able to time out.
-     */
-    timeout: boolean
-
-    /**
-     * Get cursor ReadPreference.
-     */
-    readPreference: ReadPreference
-
-    /**
-     * @param flag The flag to set, must be one of following ['tailable', 'oplogReplay', 'noCursorTimeout', 'awaitData', 'partial'].
-     * @param value The flag boolean value.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#addCursorFlag
-     */
-    addCursorFlag(flag: string, value: boolean): Cursor<T>
-
-    /**
-     * @param name The query modifier (must start with $, such as $orderby etc).
-     * @param value The flag boolean value.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#addQueryModifier
-     */
-    addQueryModifier(name: string, value: boolean): Cursor<T>
-
-    /**
-     * @param value The batchSize for the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#batchSize
-     */
-    batchSize(value: number): Cursor<T>
-
-    /**
-     * Clone the cursor.
-     * still returns the same type.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#clone
-     */
-    clone(): Cursor<T>
-
-    /**
-     * Close the cursor, sending a KillCursor command and emitting close.
-     * The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#close
-     */
-    close(): Promise<CursorResult>
-
-    /**
-     * Close the cursor, sending a KillCursor command and emitting close.
-     * The result callback.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#close
-     */
-    close(callback: MongoCallback<CursorResult>): void
-
-    /**
-     * Add a comment to the cursor query allowing for tracking the comment in the log.
-     * @param value The comment attached to this query.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#comment
-     */
-    comment(value: string): Cursor<T>
-
-    /**
-     * Get the count of documents for this cursor.
-     * @param applySkipLimit Should the count command apply limit and skip settings on the cursor or in the passed in options.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#count
-     */
-    count(applySkipLimit: boolean, callback: MongoCallback<number>): void
-
-    /**
-     * Get the count of documents for this cursor.
-     * @param applySkipLimit Should the count command apply limit and skip settings on the cursor or in the passed in options.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#count
-     */
-    count(
-        applySkipLimit: boolean,
-        options?: CursorCommentOptions,
-    ): Promise<number>
-
-    /**
-     * Get the count of documents for this cursor.
-     * @param applySkipLimit Should the count command apply limit and skip settings on the cursor or in the passed in options.
-     * @param options Optional settings.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#count
-     */
-    count(
-        applySkipLimit: boolean,
-        options: CursorCommentOptions,
-        callback: MongoCallback<number>,
-    ): void
-
-    /**
-     * Execute the explain for the cursor.
-     * returns Promise if no callback passed.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#explain
-     */
-    explain(): Promise<CursorResult>
-
-    /**
-     * Execute the explain for the cursor.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#explain
-     */
-    explain(callback: MongoCallback<CursorResult>): void
-
-    /**
-     * Set the cursor query.
-     * @param filter The filter object used for the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#filter
-     */
-    filter(filter: Object): Cursor<T>
-
+import {
+    BSON,
+    BSONRegExp,
+    BSONSymbol,
+    BSONType,
+    Binary,
+    Code,
+    DBRef,
+    Decimal128,
+    DeserializeOptions,
+    Document,
+    Double,
+    Int32,
+    Long,
+    MaxKey,
+    MinKey,
+    ObjectId,
+    ObjectIdLike,
+    SerializeOptions,
+    Timestamp,
+    deserialize,
+    serialize,
+} from "./bson.typings"
+import type { ConnectionOptions as ConnectionOptions_2 } from "tls"
+import type { Socket } from "net"
+import type { SrvRecord } from "dns"
+import type { TcpNetConnectOpts } from "net"
+import type { TLSSocket } from "tls"
+import type { TLSSocketOptions } from "tls"
+import { Readable, EventEmitter } from "../../platform/PlatformTools"
+
+/** @public */
+export declare abstract class AbstractCursor<
+    TSchema = any,
+    CursorEvents extends AbstractCursorEvents = AbstractCursorEvents,
+> extends TypedEventEmitter<CursorEvents> {
+    /* Excluded from this release type: [kId] */
+    /* Excluded from this release type: [kSession] */
+    /* Excluded from this release type: [kServer] */
+    /* Excluded from this release type: [kNamespace] */
+    /* Excluded from this release type: [kDocuments] */
+    /* Excluded from this release type: [kClient] */
+    /* Excluded from this release type: [kTransform] */
+    /* Excluded from this release type: [kInitialized] */
+    /* Excluded from this release type: [kClosed] */
+    /* Excluded from this release type: [kKilled] */
+    /* Excluded from this release type: [kOptions] */
+    /** @event */
+    static readonly CLOSE: "close"
+    /* Excluded from this release type: __constructor */
+    get id(): Long | undefined
+    /* Excluded from this release type: client */
+    /* Excluded from this release type: server */
+    get namespace(): MongoDBNamespace
+    get readPreference(): ReadPreference
+    get readConcern(): ReadConcern | undefined
+    /* Excluded from this release type: session */
+    /* Excluded from this release type: session */
+    /* Excluded from this release type: cursorOptions */
+    get closed(): boolean
+    get killed(): boolean
+    get loadBalanced(): boolean
+    /** Returns current buffered documents length */
+    bufferedCount(): number
+    /** Returns current buffered documents */
+    readBufferedDocuments(number?: number): TSchema[]
+    [Symbol.asyncIterator](): AsyncGenerator<TSchema, void, void>
+    stream(options?: CursorStreamOptions): Readable & AsyncIterable<TSchema>
+    hasNext(): Promise<boolean>
+    /** Get the next available document from the cursor, returns null if no more documents are available. */
+    next(): Promise<TSchema | null>
+    /**
+     * Try to get the next available document from the cursor or `null` if an empty batch is returned
+     */
+    tryNext(): Promise<TSchema | null>
     /**
      * Iterates over all the documents for this cursor using the iterator, callback pattern.
-     * @param iterator The iteration callback.
-     * @param callback The end callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/Cursor.html#forEach
+     *
+     * If the iterator returns `false`, iteration will stop.
+     *
+     * @param iterator - The iteration callback.
      */
-    forEach(iterator: IteratorCallback<T>, callback: EndCallback): void
-    forEach(iterator: IteratorCallback<T>): Promise<void>
-
+    forEach(iterator: (doc: TSchema) => boolean | void): Promise<void>
+    close(): Promise<void>
     /**
-     * Check if there is any document still available in the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#hasNext
+     * Returns an array of documents. The caller is responsible for making sure that there
+     * is enough memory to store the results. Note that the array only contains partial
+     * results when this cursor had been previously accessed. In that case,
+     * cursor.rewind() can be used to reset the cursor.
      */
-    hasNext(): Promise<boolean>
-
+    toArray(): Promise<TSchema[]>
     /**
-     * Check if there is any document still available in the cursor.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#hasNext
+     * Add a cursor flag to the cursor
+     *
+     * @param flag - The flag to set, must be one of following ['tailable', 'oplogReplay', 'noCursorTimeout', 'awaitData', 'partial' -.
+     * @param value - The flag boolean value.
      */
-    hasNext(callback: MongoCallback<boolean>): void
-
+    addCursorFlag(flag: CursorFlag, value: boolean): this
     /**
-     * Set the cursor hint.
-     * @param hint If specified, then the query system will only consider plans using the hinted index.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#hint
+     * Map all documents using the provided function
+     * If there is a transform set on the cursor, that will be called first and the result passed to
+     * this function's transform.
+     *
+     * @remarks
+     *
+     * **Note** Cursors use `null` internally to indicate that there are no more documents in the cursor. Providing a mapping
+     * function that maps values to `null` will result in the cursor closing itself before it has finished iterating
+     * all documents.  This will **not** result in a memory leak, just surprising behavior.  For example:
+     *
+     * ```typescript
+     * const cursor = collection.find({});
+     * cursor.map(() => null);
+     *
+     * const documents = await cursor.toArray();
+     * // documents is always [], regardless of how many documents are in the collection.
+     * ```
+     *
+     * Other falsey values are allowed:
+     *
+     * ```typescript
+     * const cursor = collection.find({});
+     * cursor.map(() => '');
+     *
+     * const documents = await cursor.toArray();
+     * // documents is now an array of empty strings
+     * ```
+     *
+     * **Note for Typescript Users:** adding a transform changes the return type of the iteration of this cursor,
+     * it **does not** return a new instance of a cursor. This means when calling map,
+     * you should always assign the result to a new variable in order to get a correctly typed cursor variable.
+     * Take note of the following example:
+     *
+     * @example
+     * ```typescript
+     * const cursor: FindCursor<Document> = coll.find();
+     * const mappedCursor: FindCursor<number> = cursor.map(doc => Object.keys(doc).length);
+     * const keyCounts: number[] = await mappedCursor.toArray(); // cursor.toArray() still returns Document[]
+     * ```
+     * @param transform - The mapping transformation method.
      */
-    hint(hint: Object): Cursor<T>
-
-    /**
-     * Is the cursor closed.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#isClosed
-     */
-    isClosed(): boolean
-
-    /**
-     * Set the limit for the cursor.
-     * @param value The limit for the cursor query.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#limit
-     */
-    limit(value: number): Cursor<T>
-
-    /**
-     * SMap all documents using the provided function.
-     * @param transform The mapping transformation method.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#map
-     */
-    map(transform: Function): Cursor<T>
-
-    /**
-     * Set the cursor max.
-     * @param max Specify a $max value to specify the exclusive upper bound for a specific index in
-     * order to constrain the results of find(). The $max specifies the upper bound for
-     * all keys of a specific index in order.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#max
-     */
-    max(max: number): Cursor<T>
-
-    /**
-     * Set a maxAwaitTimeMS on a tailing cursor query to allow to customize the
-     * timeout value for the option awaitData (Only supported on MongoDB 3.2 or higher, ignored otherwise).
-     * @param value Number of milliseconds to wait before aborting the tailed query.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#maxAwaitTimeMS
-     */
-    maxAwaitTimeMS(value: number): Cursor<T>
-
-    /**
-     * Set the cursor maxScan.
-     * @param maxScan Constrains the query to only scan the specified number of documents when fulfilling the query.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#maxScan
-     */
-    maxScan(maxScan: Object): Cursor<T>
-
-    /**
-     * Set a maxTimeMS on the cursor query, allowing for hard timeout limits on queries (Only supported on MongoDB 2.6 or higher).
-     * @param value Number of milliseconds to wait before aborting the query.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#maxTimeMS
-     */
-    maxTimeMS(value: number): Cursor<T>
-
-    /**
-     * Set the cursor min.
-     * @param min Specify a $min value to specify the inclusive lower bound for a specific index in order to
-     * constrain the results of find(). The $min specifies the lower bound for all keys of a specific index in order.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#min
-     */
-    min(min: number): Cursor<T>
-
-    /**
-     * Get the next available document from the cursor, returns null if no more documents are available.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#next
-     */
-    next(): Promise<CursorResult>
-
-    /**
-     * Get the next available document from the cursor, returns null if no more documents are available.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#next
-     */
-    next(callback: MongoCallback<CursorResult>): void
-
-    /**
-     * Sets a field projection for the query.
-     * @param value The field projection object.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#project
-     */
-    project(value: Object): Cursor<T>
-
-    /**
-     * The read() method pulls some data out of the internal buffer and returns it.
-     * If there is no data available, then it will return null.
-     * @param size Optional argument to specify how much data to read.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#read
-     */
-    read(size: number): string | Buffer | void
-
-    /**
-     * Set the cursor returnKey.
-     * @param returnKey Only return the index field or fields for the results of the query. If $returnKey is set
-     * to true and the query does not use an index to perform the read operation,
-     * the returned documents will not contain any fields. Use one of the following forms:
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#next
-     */
-    returnKey(returnKey: Object): Cursor<T>
-
-    /**
-     * Resets the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#rewind
-     */
-    rewind(): void
-
-    /**
-     * Set a node.js specific cursor option.
-     * @param field The cursor option to set ['numberOfRetries', 'tailableRetryInterval'].
-     * @param value The field value.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#setCursorOption
-     */
-    setCursorOption(field: string, value: Object): Cursor<T>
-
+    map<T = any>(transform: (doc: TSchema) => T): AbstractCursor<T>
     /**
      * Set the ReadPreference for the cursor.
-     * @param readPreference The new read preference for the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#setReadPreference
+     *
+     * @param readPreference - The new read preference for the cursor.
      */
-    setReadPreference(readPreference: string | ReadPreference): Cursor<T>
-
+    withReadPreference(readPreference: ReadPreferenceLike): this
     /**
-     * Set the cursor showRecordId.
-     * @param showRecordId The $showDiskLoc option has now been deprecated and replaced with the
-     * showRecordId field. $showDiskLoc will still be accepted for OP_QUERY stye find.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#showRecordId
+     * Set the ReadPreference for the cursor.
+     *
+     * @param readPreference - The new read preference for the cursor.
      */
-    showRecordId(showRecordId: Object): Cursor<T>
-
+    withReadConcern(readConcern: ReadConcernLike): this
     /**
-     * Set the skip for the cursor.
-     * @param value The skip for the cursor query.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#skip
+     * Set a maxTimeMS on the cursor query, allowing for hard timeout limits on queries (Only supported on MongoDB 2.6 or higher)
+     *
+     * @param value - Number of milliseconds to wait before aborting the query.
      */
-    skip(value: number): Cursor<T>
-
+    maxTimeMS(value: number): this
     /**
-     * Set the cursor snapshot.
-     * @param snapshot The $snapshot operator prevents the cursor from returning a document more than
-     * once because an intervening write operation results in a move of the document.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#snapshot
+     * Set the batch size for the cursor.
+     *
+     * @param value - The number of documents to return per batch. See {@link https://www.mongodb.com/docs/manual/reference/command/find/|find command documentation}.
      */
-    snapshot(snapshot: Object): Cursor<T>
-
+    batchSize(value: number): this
     /**
-     * Sets the sort order of the cursor query.
-     * @param keyOrList The key or keys set for the sort.
-     * @param direction The direction of the sorting (1 or -1).
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#sort
+     * Rewind this cursor to its uninitialized state. Any options that are present on the cursor will
+     * remain in effect. Iterating this cursor will cause new queries to be sent to the server, even
+     * if the resultant data has already been retrieved by this cursor.
      */
-    sort(keyOrList: string | Object[] | Object, direction?: number): Cursor<T>
-
+    rewind(): void
     /**
-     * Return a modified Readable stream including a possible transform method.
-     * @param options Optional settings.
-     * @param transform A transformation method applied to each document emitted by the stream.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#stream
+     * Returns a new uninitialized copy of this cursor, with options matching those that have been set on the current instance
      */
-    stream(options?: { transform?: Function }): Cursor<T>
-
-    /**
-     * Returns an array of documents. The caller is responsible for making sure that there is enough
-     * memory to store the results. Note that the array only contain partial results when this cursor had
-     * been previously accessed. In that case, cursor.rewind() can be used to reset the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#toArray
-     */
-    toArray(): Promise<T[]>
-
-    /**
-     * Returns an array of documents. The caller is responsible for making sure that there is enough
-     * memory to store the results. Note that the array only contain partial results when this cursor had
-     * been previously accessed. In that case, cursor.rewind() can be used to reset the cursor.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#toArray
-     */
-    toArray(callback: MongoCallback<T[]>): void
-
-    /**
-     * This is useful in certain cases where a stream is being consumed by a parser, which needs to "un-consume" some
-     * data that it has optimistically pulled out of the source, so that the stream can be passed on to some other party.
-     * @param stream Chunk of data to unshift onto the read queue.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#unshift
-     */
-    unshift(stream: Buffer | string): void
+    abstract clone(): AbstractCursor<TSchema>
+    /* Excluded from this release type: _initialize */
+    /* Excluded from this release type: _getMore */
+    /* Excluded from this release type: [kInit] */
 }
 
-/**
- * Get the count of documents for this cursor.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#count
- */
-export interface CursorCommentOptions {
-    /**
-     * The number of documents to skip.
-     */
-    skip?: number
-
-    /**
-     * The maximum amounts to count before aborting.
-     */
-    limit?: number
-
-    /**
-     * Number of miliseconds to wait before aborting the query.
-     */
-    maxTimeMS?: number
-
-    /**
-     * An index name hint for the query.
-     */
-    hint?: string
-
-    /**
-     * The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED,
-     * ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST).
-     */
-    readPreference?: ReadPreference | string
+/** @public */
+export declare type AbstractCursorEvents = {
+    [AbstractCursor.CLOSE](): void
 }
 
-/**
- * Creates a new Change Stream instance.
- * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html
- */
-export declare class ChangeStream extends Readable {
-    constructor(
-        changeDomain: MongoClient | Db | Collection<any>,
-        pipeline: Object[],
-        options?: ChangeStreamOptions,
-    )
-
+/** @public */
+export declare interface AbstractCursorOptions extends BSONSerializeOptions {
+    session?: ClientSession
+    readPreference?: ReadPreferenceLike
+    readConcern?: ReadConcernLike
     /**
-     * Close the Change Stream.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#close
-     */
-    close(): Promise<any>
-
-    /**
-     * Close the Change Stream.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#close
-     */
-    close(callback: MongoCallback<any>): void
-
-    /**
-     * Check if there is any document still available in the Change Stream.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#hasNext
-     */
-    hasNext(): Promise<any>
-
-    /**
-     * Check if there is any document still available in the Change Stream.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#hasNext
-     */
-    hasNext(callback: MongoCallback<any>): void
-
-    /**
-     * Is the cursor closed.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#isClosed
-     */
-    isClosed(): boolean
-
-    /**
-     * Get the next available document from the Change Stream, returns null if no more documents are available.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#next
-     */
-    next(): Promise<any>
-
-    /**
-     * Get the next available document from the Change Stream, returns null if no more documents are available.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#next
-     */
-    next(callback: MongoCallback<any>): void
-
-    /**
-     * Return a modified Readable stream including a possible transform method.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ChangeStream.html#stream
-     */
-    stream(options?: { transform: Function }): Cursor<any>
-}
-
-/**
- * ChangeStreamOptions
- */
-export interface ChangeStreamOptions {
-    /**
-     * Allowed values: ‘default’, ‘updateLookup’.
-     * When set to ‘updateLookup’, the change stream will include both a delta describing the changes to the document,
-     * as well as a copy of the entire document that was changed from some time after the change occurred.
-     */
-    fullDocument?: string
-
-    /**
-     * The maximum amount of time for the server to wait on new documents to satisfy a change stream query
-     */
-    maxAwaitTimeMS?: number
-
-    /**
-     * Specifies the logical starting point for the new change stream.
-     * This should be the _id field from a previously returned change stream document.
-     */
-    resumeAfter?: Object
-
-    /**
-     * The number of documents to return per batch.
+     * Specifies the number of documents to return in each response from MongoDB
      */
     batchSize?: number
-
     /**
-     * Specify collation settings for operation.
+     * When applicable `maxTimeMS` controls the amount of time the initial command
+     * that constructs a cursor should take. (ex. find, aggregate, listCollections)
      */
-    collation?: CollationDocument
-
+    maxTimeMS?: number
     /**
-     * The read preference. Defaults to the read preference of the database or collection.
+     * When applicable `maxAwaitTimeMS` controls the amount of time subsequent getMores
+     * that a cursor uses to fetch more data should take. (ex. cursor.next())
      */
-    readPreference?: ReadPreference
+    maxAwaitTimeMS?: number
+    /**
+     * Comment to apply to the operation.
+     *
+     * In server versions pre-4.4, 'comment' must be string.  A server
+     * error will be thrown if any other type is provided.
+     *
+     * In server versions 4.4 and above, 'comment' can be any valid BSON type.
+     */
+    comment?: unknown
+    /**
+     * By default, MongoDB will automatically close a cursor when the
+     * client has exhausted all results in the cursor. However, for [capped collections](https://www.mongodb.com/docs/manual/core/capped-collections)
+     * you may use a Tailable Cursor that remains open after the client exhausts
+     * the results in the initial cursor.
+     */
+    tailable?: boolean
+    /**
+     * If awaitData is set to true, when the cursor reaches the end of the capped collection,
+     * MongoDB blocks the query thread for a period of time waiting for new data to arrive.
+     * When new data is inserted into the capped collection, the blocked thread is signaled
+     * to wake up and return the next batch to the client.
+     */
+    awaitData?: boolean
+    noCursorTimeout?: boolean
+}
+
+/* Excluded from this release type: AbstractOperation */
+
+/** @public */
+export declare type AcceptedFields<TSchema, FieldType, AssignableType> = {
+    readonly [key in KeysOfAType<TSchema, FieldType>]?: AssignableType
+}
+
+/** @public */
+export declare type AddToSetOperators<Type> = {
+    $each?: Array<Flatten<Type>>
+}
+
+/** @public */
+export declare interface AddUserOptions extends CommandOperationOptions {
+    /** Roles associated with the created user */
+    roles?: string | string[] | RoleSpecification | RoleSpecification[]
+    /** Custom data associated with the user (only Mongodb 2.6 or higher) */
+    customData?: Document
 }
 
 /**
- * CollationDocument
+ * The **Admin** class is an internal class that allows convenient access to
+ * the admin functionality and commands for MongoDB.
+ *
+ * **ADMIN Cannot directly be instantiated**
+ * @public
+ *
+ * @example
+ * ```ts
+ * import { MongoClient } from 'mongodb';
+ *
+ * const client = new MongoClient('mongodb://localhost:27017');
+ * const admin = client.db().admin();
+ * const dbInfo = await admin.listDatabases();
+ * for (const db of dbInfo.databases) {
+ *   console.log(db.name);
+ * }
+ * ```
  */
-export interface CollationDocument {
+export declare class Admin {
+    /* Excluded from this release type: s */
+    /* Excluded from this release type: __constructor */
+    /**
+     * Execute a command
+     *
+     * @param command - The command to execute
+     * @param options - Optional settings for the command
+     */
+    command(command: Document, options?: RunCommandOptions): Promise<Document>
+    /**
+     * Retrieve the server build information
+     *
+     * @param options - Optional settings for the command
+     */
+    buildInfo(options?: CommandOperationOptions): Promise<Document>
+    /**
+     * Retrieve the server build information
+     *
+     * @param options - Optional settings for the command
+     */
+    serverInfo(options?: CommandOperationOptions): Promise<Document>
+    /**
+     * Retrieve this db's server status.
+     *
+     * @param options - Optional settings for the command
+     */
+    serverStatus(options?: CommandOperationOptions): Promise<Document>
+    /**
+     * Ping the MongoDB server and retrieve results
+     *
+     * @param options - Optional settings for the command
+     */
+    ping(options?: CommandOperationOptions): Promise<Document>
+    /**
+     * Add a user to the database
+     *
+     * @param username - The username for the new user
+     * @param passwordOrOptions - An optional password for the new user, or the options for the command
+     * @param options - Optional settings for the command
+     */
+    addUser(
+        username: string,
+        passwordOrOptions?: string | AddUserOptions,
+        options?: AddUserOptions,
+    ): Promise<Document>
+    /**
+     * Remove a user from a database
+     *
+     * @param username - The username to remove
+     * @param options - Optional settings for the command
+     */
+    removeUser(username: string, options?: RemoveUserOptions): Promise<boolean>
+    /**
+     * Validate an existing collection
+     *
+     * @param collectionName - The name of the collection to validate.
+     * @param options - Optional settings for the command
+     */
+    validateCollection(
+        collectionName: string,
+        options?: ValidateCollectionOptions,
+    ): Promise<Document>
+    /**
+     * List the available databases
+     *
+     * @param options - Optional settings for the command
+     */
+    listDatabases(options?: ListDatabasesOptions): Promise<ListDatabasesResult>
+    /**
+     * Get ReplicaSet status
+     *
+     * @param options - Optional settings for the command
+     */
+    replSetGetStatus(options?: CommandOperationOptions): Promise<Document>
+}
+
+/* Excluded from this release type: AdminPrivate */
+
+/* Excluded from this release type: AggregateOperation */
+
+/** @public */
+export declare interface AggregateOptions extends CommandOperationOptions {
+    /** allowDiskUse lets the server know if it can use disk to store temporary results for the aggregation (requires mongodb 2.6 \>). */
+    allowDiskUse?: boolean
+    /** The number of documents to return per batch. See [aggregation documentation](https://www.mongodb.com/docs/manual/reference/command/aggregate). */
+    batchSize?: number
+    /** Allow driver to bypass schema validation in MongoDB 3.2 or higher. */
+    bypassDocumentValidation?: boolean
+    /** Return the query as cursor, on 2.6 \> it returns as a real cursor on pre 2.6 it returns as an emulated cursor. */
+    cursor?: Document
+    /** specifies a cumulative time limit in milliseconds for processing operations on the cursor. MongoDB interrupts the operation at the earliest following interrupt point. */
+    maxTimeMS?: number
+    /** The maximum amount of time for the server to wait on new documents to satisfy a tailable cursor query. */
+    maxAwaitTimeMS?: number
+    /** Specify collation. */
+    collation?: CollationOptions
+    /** Add an index selection hint to an aggregation command */
+    hint?: Hint
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+    out?: string
+}
+
+/**
+ * The **AggregationCursor** class is an internal class that embodies an aggregation cursor on MongoDB
+ * allowing for iteration over the results returned from the underlying query. It supports
+ * one by one document iteration, conversion to an array or can be iterated as a Node 4.X
+ * or higher stream
+ * @public
+ */
+export declare class AggregationCursor<
+    TSchema = any,
+> extends AbstractCursor<TSchema> {
+    /* Excluded from this release type: [kPipeline] */
+    /* Excluded from this release type: [kOptions] */
+    /* Excluded from this release type: __constructor */
+    get pipeline(): Document[]
+    clone(): AggregationCursor<TSchema>
+    map<T>(transform: (doc: TSchema) => T): AggregationCursor<T>
+    /* Excluded from this release type: _initialize */
+    /** Execute the explain for the cursor */
+    explain(verbosity?: ExplainVerbosityLike): Promise<Document>
+    /** Add a group stage to the aggregation pipeline */
+    group<T = TSchema>($group: Document): AggregationCursor<T>
+    /** Add a limit stage to the aggregation pipeline */
+    limit($limit: number): this
+    /** Add a match stage to the aggregation pipeline */
+    match($match: Document): this
+    /** Add an out stage to the aggregation pipeline */
+    out(
+        $out:
+            | {
+                  db: string
+                  coll: string
+              }
+            | string,
+    ): this
+    /**
+     * Add a project stage to the aggregation pipeline
+     *
+     * @remarks
+     * In order to strictly type this function you must provide an interface
+     * that represents the effect of your projection on the result documents.
+     *
+     * By default chaining a projection to your cursor changes the returned type to the generic {@link Document} type.
+     * You should specify a parameterized type to have assertions on your final results.
+     *
+     * @example
+     * ```typescript
+     * // Best way
+     * const docs: AggregationCursor<{ a: number }> = cursor.project<{ a: number }>({ _id: 0, a: true });
+     * // Flexible way
+     * const docs: AggregationCursor<Document> = cursor.project({ _id: 0, a: true });
+     * ```
+     *
+     * @remarks
+     * In order to strictly type this function you must provide an interface
+     * that represents the effect of your projection on the result documents.
+     *
+     * **Note for Typescript Users:** adding a transform changes the return type of the iteration of this cursor,
+     * it **does not** return a new instance of a cursor. This means when calling project,
+     * you should always assign the result to a new variable in order to get a correctly typed cursor variable.
+     * Take note of the following example:
+     *
+     * @example
+     * ```typescript
+     * const cursor: AggregationCursor<{ a: number; b: string }> = coll.aggregate([]);
+     * const projectCursor = cursor.project<{ a: number }>({ _id: 0, a: true });
+     * const aPropOnlyArray: {a: number}[] = await projectCursor.toArray();
+     *
+     * // or always use chaining and save the final cursor
+     *
+     * const cursor = coll.aggregate().project<{ a: string }>({
+     *   _id: 0,
+     *   a: { $convert: { input: '$a', to: 'string' }
+     * }});
+     * ```
+     */
+    project<T extends Document = Document>(
+        $project: Document,
+    ): AggregationCursor<T>
+    /** Add a lookup stage to the aggregation pipeline */
+    lookup($lookup: Document): this
+    /** Add a redact stage to the aggregation pipeline */
+    redact($redact: Document): this
+    /** Add a skip stage to the aggregation pipeline */
+    skip($skip: number): this
+    /** Add a sort stage to the aggregation pipeline */
+    sort($sort: Sort): this
+    /** Add a unwind stage to the aggregation pipeline */
+    unwind($unwind: Document | string): this
+    /** Add a geoNear stage to the aggregation pipeline */
+    geoNear($geoNear: Document): this
+}
+
+/** @public */
+export declare interface AggregationCursorOptions
+    extends AbstractCursorOptions,
+        AggregateOptions {}
+
+/**
+ * It is possible to search using alternative types in mongodb e.g.
+ * string types can be searched using a regex in mongo
+ * array types can be searched using their element type
+ * @public
+ */
+export declare type AlternativeType<T> = T extends ReadonlyArray<infer U>
+    ? T | RegExpOrString<U>
+    : RegExpOrString<T>
+
+/** @public */
+export declare type AnyBulkWriteOperation<TSchema extends Document = Document> =
+
+        | {
+              insertOne: InsertOneModel<TSchema>
+          }
+        | {
+              replaceOne: ReplaceOneModel<TSchema>
+          }
+        | {
+              updateOne: UpdateOneModel<TSchema>
+          }
+        | {
+              updateMany: UpdateManyModel<TSchema>
+          }
+        | {
+              deleteOne: DeleteOneModel<TSchema>
+          }
+        | {
+              deleteMany: DeleteManyModel<TSchema>
+          }
+
+/** @public */
+export declare type AnyError = MongoError | Error
+
+/** @public */
+export declare type ArrayElement<Type> = Type extends ReadonlyArray<infer Item>
+    ? Item
+    : never
+
+/** @public */
+export declare type ArrayOperator<Type> = {
+    $each?: Array<Flatten<Type>>
+    $slice?: number
+    $position?: number
+    $sort?: Sort
+}
+
+/** @public */
+export declare interface Auth {
+    /** The username for auth */
+    username?: string
+    /** The password for auth */
+    password?: string
+}
+
+/* Excluded from this release type: AuthContext */
+
+/** @public */
+export declare const AuthMechanism: Readonly<{
+    readonly MONGODB_AWS: "MONGODB-AWS"
+    readonly MONGODB_CR: "MONGODB-CR"
+    readonly MONGODB_DEFAULT: "DEFAULT"
+    readonly MONGODB_GSSAPI: "GSSAPI"
+    readonly MONGODB_PLAIN: "PLAIN"
+    readonly MONGODB_SCRAM_SHA1: "SCRAM-SHA-1"
+    readonly MONGODB_SCRAM_SHA256: "SCRAM-SHA-256"
+    readonly MONGODB_X509: "MONGODB-X509"
+    /** @experimental */
+    readonly MONGODB_OIDC: "MONGODB-OIDC"
+}>
+
+/** @public */
+export declare type AuthMechanism =
+    (typeof AuthMechanism)[keyof typeof AuthMechanism]
+
+/** @public */
+export declare interface AuthMechanismProperties extends Document {
+    SERVICE_HOST?: string
+    SERVICE_NAME?: string
+    SERVICE_REALM?: string
+    CANONICALIZE_HOST_NAME?: GSSAPICanonicalizationValue
+    AWS_SESSION_TOKEN?: string
+    /** @experimental */
+    REQUEST_TOKEN_CALLBACK?: OIDCRequestFunction
+    /** @experimental */
+    REFRESH_TOKEN_CALLBACK?: OIDCRefreshFunction
+    /** @experimental */
+    PROVIDER_NAME?: "aws"
+}
+
+/** @public */
+export declare interface AutoEncrypter {
+    new (client: MongoClient, options: AutoEncryptionOptions): AutoEncrypter
+    init(cb: Callback): void
+    teardown(force: boolean, callback: Callback): void
+    encrypt(
+        ns: string,
+        cmd: Document,
+        options: any,
+        callback: Callback<Document>,
+    ): void
+    decrypt(cmd: Document, options: any, callback: Callback<Document>): void
+    /** @experimental */
+    readonly cryptSharedLibVersionInfo: {
+        version: bigint
+        versionStr: string
+    } | null
+}
+
+/** @public */
+export declare const AutoEncryptionLoggerLevel: Readonly<{
+    readonly FatalError: 0
+    readonly Error: 1
+    readonly Warning: 2
+    readonly Info: 3
+    readonly Trace: 4
+}>
+
+/** @public */
+export declare type AutoEncryptionLoggerLevel =
+    (typeof AutoEncryptionLoggerLevel)[keyof typeof AutoEncryptionLoggerLevel]
+
+/** @public */
+export declare interface AutoEncryptionOptions {
+    /* Excluded from this release type: metadataClient */
+    /** A `MongoClient` used to fetch keys from a key vault */
+    keyVaultClient?: MongoClient
+    /** The namespace where keys are stored in the key vault */
+    keyVaultNamespace?: string
+    /** Configuration options that are used by specific KMS providers during key generation, encryption, and decryption. */
+    kmsProviders?: {
+        /** Configuration options for using 'aws' as your KMS provider */
+        aws?:
+            | {
+                  /** The access key used for the AWS KMS provider */
+                  accessKeyId: string
+                  /** The secret access key used for the AWS KMS provider */
+                  secretAccessKey: string
+                  /**
+                   * An optional AWS session token that will be used as the
+                   * X-Amz-Security-Token header for AWS requests.
+                   */
+                  sessionToken?: string
+              }
+            | Record<string, never>
+        /** Configuration options for using 'local' as your KMS provider */
+        local?: {
+            /**
+             * The master key used to encrypt/decrypt data keys.
+             * A 96-byte long Buffer or base64 encoded string.
+             */
+            key: Buffer | string
+        }
+        /** Configuration options for using 'azure' as your KMS provider */
+        azure?:
+            | {
+                  /** The tenant ID identifies the organization for the account */
+                  tenantId: string
+                  /** The client ID to authenticate a registered application */
+                  clientId: string
+                  /** The client secret to authenticate a registered application */
+                  clientSecret: string
+                  /**
+                   * If present, a host with optional port. E.g. "example.com" or "example.com:443".
+                   * This is optional, and only needed if customer is using a non-commercial Azure instance
+                   * (e.g. a government or China account, which use different URLs).
+                   * Defaults to "login.microsoftonline.com"
+                   */
+                  identityPlatformEndpoint?: string | undefined
+              }
+            | {
+                  /**
+                   * If present, an access token to authenticate with Azure.
+                   */
+                  accessToken: string
+              }
+            | Record<string, never>
+        /** Configuration options for using 'gcp' as your KMS provider */
+        gcp?:
+            | {
+                  /** The service account email to authenticate */
+                  email: string
+                  /** A PKCS#8 encrypted key. This can either be a base64 string or a binary representation */
+                  privateKey: string | Buffer
+                  /**
+                   * If present, a host with optional port. E.g. "example.com" or "example.com:443".
+                   * Defaults to "oauth2.googleapis.com"
+                   */
+                  endpoint?: string | undefined
+              }
+            | {
+                  /**
+                   * If present, an access token to authenticate with GCP.
+                   */
+                  accessToken: string
+              }
+            | Record<string, never>
+        /**
+         * Configuration options for using 'kmip' as your KMS provider
+         */
+        kmip?: {
+            /**
+             * The output endpoint string.
+             * The endpoint consists of a hostname and port separated by a colon.
+             * E.g. "example.com:123". A port is always present.
+             */
+            endpoint?: string
+        }
+    }
+    /**
+     * A map of namespaces to a local JSON schema for encryption
+     *
+     * **NOTE**: Supplying options.schemaMap provides more security than relying on JSON Schemas obtained from the server.
+     * It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending decrypted data that should be encrypted.
+     * Schemas supplied in the schemaMap only apply to configuring automatic encryption for Client-Side Field Level Encryption.
+     * Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
+     */
+    schemaMap?: Document
+    /** @experimental Public Technical Preview: Supply a schema for the encrypted fields in the document  */
+    encryptedFieldsMap?: Document
+    /** Allows the user to bypass auto encryption, maintaining implicit decryption */
+    bypassAutoEncryption?: boolean
+    /** @experimental Public Technical Preview: Allows users to bypass query analysis */
+    bypassQueryAnalysis?: boolean
+    options?: {
+        /** An optional hook to catch logging messages from the underlying encryption engine */
+        logger?: (level: AutoEncryptionLoggerLevel, message: string) => void
+    }
+    extraOptions?: {
+        /**
+         * A local process the driver communicates with to determine how to encrypt values in a command.
+         * Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise
+         */
+        mongocryptdURI?: string
+        /** If true, autoEncryption will not attempt to spawn a mongocryptd before connecting  */
+        mongocryptdBypassSpawn?: boolean
+        /** The path to the mongocryptd executable on the system */
+        mongocryptdSpawnPath?: string
+        /** Command line arguments to use when auto-spawning a mongocryptd */
+        mongocryptdSpawnArgs?: string[]
+        /**
+         * Full path to a MongoDB Crypt shared library to be used (instead of mongocryptd).
+         *
+         * This needs to be the path to the file itself, not a directory.
+         * It can be an absolute or relative path. If the path is relative and
+         * its first component is `$ORIGIN`, it will be replaced by the directory
+         * containing the mongodb-client-encryption native addon file. Otherwise,
+         * the path will be interpreted relative to the current working directory.
+         *
+         * Currently, loading different MongoDB Crypt shared library files from different
+         * MongoClients in the same process is not supported.
+         *
+         * If this option is provided and no MongoDB Crypt shared library could be loaded
+         * from the specified location, creating the MongoClient will fail.
+         *
+         * If this option is not provided and `cryptSharedLibRequired` is not specified,
+         * the AutoEncrypter will attempt to spawn and/or use mongocryptd according
+         * to the mongocryptd-specific `extraOptions` options.
+         *
+         * Specifying a path prevents mongocryptd from being used as a fallback.
+         *
+         * Requires the MongoDB Crypt shared library, available in MongoDB 6.0 or higher.
+         */
+        cryptSharedLibPath?: string
+        /**
+         * If specified, never use mongocryptd and instead fail when the MongoDB Crypt
+         * shared library could not be loaded.
+         *
+         * This is always true when `cryptSharedLibPath` is specified.
+         *
+         * Requires the MongoDB Crypt shared library, available in MongoDB 6.0 or higher.
+         */
+        cryptSharedLibRequired?: boolean
+        /* Excluded from this release type: cryptSharedLibSearchPaths */
+    }
+    proxyOptions?: ProxyOptions
+    /** The TLS options to use connecting to the KMS provider */
+    tlsOptions?: {
+        aws?: AutoEncryptionTlsOptions
+        local?: AutoEncryptionTlsOptions
+        azure?: AutoEncryptionTlsOptions
+        gcp?: AutoEncryptionTlsOptions
+        kmip?: AutoEncryptionTlsOptions
+    }
+}
+
+/** @public */
+export declare interface AutoEncryptionTlsOptions {
+    /**
+     * Specifies the location of a local .pem file that contains
+     * either the client's TLS/SSL certificate and key or only the
+     * client's TLS/SSL key when tlsCertificateFile is used to
+     * provide the certificate.
+     */
+    tlsCertificateKeyFile?: string
+    /**
+     * Specifies the password to de-crypt the tlsCertificateKeyFile.
+     */
+    tlsCertificateKeyFilePassword?: string
+    /**
+     * Specifies the location of a local .pem file that contains the
+     * root certificate chain from the Certificate Authority.
+     * This file is used to validate the certificate presented by the
+     * KMS provider.
+     */
+    tlsCAFile?: string
+}
+
+/**
+ * Keeps the state of a unordered batch so we can rewrite the results
+ * correctly after command execution
+ *
+ * @public
+ */
+export declare class Batch<T = Document> {
+    originalZeroIndex: number
+    currentIndex: number
+    originalIndexes: number[]
+    batchType: BatchType
+    operations: T[]
+    size: number
+    sizeBytes: number
+    constructor(batchType: BatchType, originalZeroIndex: number)
+}
+
+/** @public */
+export declare const BatchType: Readonly<{
+    readonly INSERT: 1
+    readonly UPDATE: 2
+    readonly DELETE: 3
+}>
+
+/** @public */
+export declare type BatchType = (typeof BatchType)[keyof typeof BatchType]
+
+export { Binary }
+
+/* Excluded from this release type: BinMsg */
+
+/** @public */
+export declare type BitwiseFilter =
+    | number /** numeric bit mask */
+    | Binary /** BinData bit mask */
+    | ReadonlyArray<number>
+
+export { BSON }
+
+export { BSONRegExp }
+
+/**
+ * BSON Serialization options.
+ * @public
+ */
+export declare interface BSONSerializeOptions
+    extends Omit<SerializeOptions, "index">,
+        Omit<
+            DeserializeOptions,
+            | "evalFunctions"
+            | "cacheFunctions"
+            | "cacheFunctionsCrc32"
+            | "allowObjectSmallerThanBufferSize"
+            | "index"
+            | "validation"
+        > {
+    /**
+     * Enabling the raw option will return a [Node.js Buffer](https://nodejs.org/api/buffer.html)
+     * which is allocated using [allocUnsafe API](https://nodejs.org/api/buffer.html#static-method-bufferallocunsafesize).
+     * See this section from the [Node.js Docs here](https://nodejs.org/api/buffer.html#what-makes-bufferallocunsafe-and-bufferallocunsafeslow-unsafe)
+     * for more detail about what "unsafe" refers to in this context.
+     * If you need to maintain your own editable clone of the bytes returned for an extended life time of the process, it is recommended you allocate
+     * your own buffer and clone the contents:
+     *
+     * @example
+     * ```ts
+     * const raw = await collection.findOne({}, { raw: true });
+     * const myBuffer = Buffer.alloc(raw.byteLength);
+     * myBuffer.set(raw, 0);
+     * // Only save and use `myBuffer` beyond this point
+     * ```
+     *
+     * @remarks
+     * Please note there is a known limitation where this option cannot be used at the MongoClient level (see [NODE-3946](https://jira.mongodb.org/browse/NODE-3946)).
+     * It does correctly work at `Db`, `Collection`, and per operation the same as other BSON options work.
+     */
+    raw?: boolean
+    /** Enable utf8 validation when deserializing BSON documents.  Defaults to true. */
+    enableUtf8Validation?: boolean
+}
+
+export { BSONSymbol }
+
+export { BSONType }
+
+/** @public */
+export declare type BSONTypeAlias = keyof typeof BSONType
+
+/* Excluded from this release type: BufferPool */
+
+/** @public */
+export declare abstract class BulkOperationBase {
+    isOrdered: boolean
+    /* Excluded from this release type: s */
+    operationId?: number
+    /* Excluded from this release type: __constructor */
+    /**
+     * Add a single insert document to the bulk operation
+     *
+     * @example
+     * ```ts
+     * const bulkOp = collection.initializeOrderedBulkOp();
+     *
+     * // Adds three inserts to the bulkOp.
+     * bulkOp
+     *   .insert({ a: 1 })
+     *   .insert({ b: 2 })
+     *   .insert({ c: 3 });
+     * await bulkOp.execute();
+     * ```
+     */
+    insert(document: Document): BulkOperationBase
+    /**
+     * Builds a find operation for an update/updateOne/delete/deleteOne/replaceOne.
+     * Returns a builder object used to complete the definition of the operation.
+     *
+     * @example
+     * ```ts
+     * const bulkOp = collection.initializeOrderedBulkOp();
+     *
+     * // Add an updateOne to the bulkOp
+     * bulkOp.find({ a: 1 }).updateOne({ $set: { b: 2 } });
+     *
+     * // Add an updateMany to the bulkOp
+     * bulkOp.find({ c: 3 }).update({ $set: { d: 4 } });
+     *
+     * // Add an upsert
+     * bulkOp.find({ e: 5 }).upsert().updateOne({ $set: { f: 6 } });
+     *
+     * // Add a deletion
+     * bulkOp.find({ g: 7 }).deleteOne();
+     *
+     * // Add a multi deletion
+     * bulkOp.find({ h: 8 }).delete();
+     *
+     * // Add a replaceOne
+     * bulkOp.find({ i: 9 }).replaceOne({writeConcern: { j: 10 }});
+     *
+     * // Update using a pipeline (requires Mongodb 4.2 or higher)
+     * bulk.find({ k: 11, y: { $exists: true }, z: { $exists: true } }).updateOne([
+     *   { $set: { total: { $sum: [ '$y', '$z' ] } } }
+     * ]);
+     *
+     * // All of the ops will now be executed
+     * await bulkOp.execute();
+     * ```
+     */
+    find(selector: Document): FindOperators
+    /** Specifies a raw operation to perform in the bulk write. */
+    raw(op: AnyBulkWriteOperation): this
+    get bsonOptions(): BSONSerializeOptions
+    get writeConcern(): WriteConcern | undefined
+    get batches(): Batch[]
+    execute(options?: BulkWriteOptions): Promise<BulkWriteResult>
+    /* Excluded from this release type: handleWriteError */
+    abstract addToOperationsList(
+        batchType: BatchType,
+        document: Document | UpdateStatement | DeleteStatement,
+    ): this
+}
+
+/* Excluded from this release type: BulkOperationPrivate */
+
+/* Excluded from this release type: BulkResult */
+
+/** @public */
+export declare interface BulkWriteOperationError {
+    index: number
+    code: number
+    errmsg: string
+    errInfo: Document
+    op: Document | UpdateStatement | DeleteStatement
+}
+
+/** @public */
+export declare interface BulkWriteOptions extends CommandOperationOptions {
+    /** Allow driver to bypass schema validation in MongoDB 3.2 or higher. */
+    bypassDocumentValidation?: boolean
+    /** If true, when an insert fails, don't execute the remaining writes. If false, continue with remaining inserts when one fails. */
+    ordered?: boolean
+    /** Force server to assign _id values instead of driver. */
+    forceServerObjectId?: boolean
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+}
+
+/**
+ * @public
+ * The result of a bulk write.
+ */
+export declare class BulkWriteResult {
+    private readonly result
+    /** Number of documents inserted. */
+    readonly insertedCount: number
+    /** Number of documents matched for update. */
+    readonly matchedCount: number
+    /** Number of documents modified. */
+    readonly modifiedCount: number
+    /** Number of documents deleted. */
+    readonly deletedCount: number
+    /** Number of documents upserted. */
+    readonly upsertedCount: number
+    /** Upserted document generated Id's, hash key is the index of the originating operation */
+    readonly upsertedIds: {
+        [key: number]: any
+    }
+    /** Inserted document generated Id's, hash key is the index of the originating operation */
+    readonly insertedIds: {
+        [key: number]: any
+    }
+    private static generateIdMap
+    /* Excluded from this release type: __constructor */
+    /** Evaluates to true if the bulk operation correctly executes */
+    get ok(): number
+    /** The number of inserted documents */
+    get nInserted(): number
+    /** Number of upserted documents */
+    get nUpserted(): number
+    /** Number of matched documents */
+    get nMatched(): number
+    /** Number of documents updated physically on disk */
+    get nModified(): number
+    /** Number of removed documents */
+    get nRemoved(): number
+    /** Returns an array of all inserted ids */
+    getInsertedIds(): Document[]
+    /** Returns an array of all upserted ids */
+    getUpsertedIds(): Document[]
+    /** Returns the upserted id at the given index */
+    getUpsertedIdAt(index: number): Document | undefined
+    /** Returns raw internal result */
+    getRawResponse(): Document
+    /** Returns true if the bulk operation contains a write error */
+    hasWriteErrors(): boolean
+    /** Returns the number of write errors off the bulk operation */
+    getWriteErrorCount(): number
+    /** Returns a specific write error object */
+    getWriteErrorAt(index: number): WriteError | undefined
+    /** Retrieve all write errors */
+    getWriteErrors(): WriteError[]
+    /** Retrieve the write concern error if one exists */
+    getWriteConcernError(): WriteConcernError | undefined
+    toString(): string
+    isOk(): boolean
+}
+
+/**
+ * MongoDB Driver style callback
+ * @public
+ */
+export declare type Callback<T = any> = (error?: AnyError, result?: T) => void
+
+/** @public */
+export declare class CancellationToken extends TypedEventEmitter<{
+    cancel(): void
+}> {}
+
+/**
+ * Creates a new Change Stream instance. Normally created using {@link Collection#watch|Collection.watch()}.
+ * @public
+ */
+export declare class ChangeStream<
+    TSchema extends Document = Document,
+    TChange extends Document = ChangeStreamDocument<TSchema>,
+> extends TypedEventEmitter<ChangeStreamEvents<TSchema, TChange>> {
+    pipeline: Document[]
+    /**
+     * @remarks WriteConcern can still be present on the options because
+     * we inherit options from the client/db/collection.  The
+     * key must be present on the options in order to delete it.
+     * This allows typescript to delete the key but will
+     * not allow a writeConcern to be assigned as a property on options.
+     */
+    options: ChangeStreamOptions & {
+        writeConcern?: never
+    }
+    parent: MongoClient | Db | Collection
+    namespace: MongoDBNamespace
+    type: symbol
+    /* Excluded from this release type: cursor */
+    streamOptions?: CursorStreamOptions
+    /* Excluded from this release type: [kCursorStream] */
+    /* Excluded from this release type: [kClosed] */
+    /* Excluded from this release type: [kMode] */
+    /** @event */
+    static readonly RESPONSE: "response"
+    /** @event */
+    static readonly MORE: "more"
+    /** @event */
+    static readonly INIT: "init"
+    /** @event */
+    static readonly CLOSE: "close"
+    /**
+     * Fired for each new matching change in the specified namespace. Attaching a `change`
+     * event listener to a Change Stream will switch the stream into flowing mode. Data will
+     * then be passed as soon as it is available.
+     * @event
+     */
+    static readonly CHANGE: "change"
+    /** @event */
+    static readonly END: "end"
+    /** @event */
+    static readonly ERROR: "error"
+    /**
+     * Emitted each time the change stream stores a new resume token.
+     * @event
+     */
+    static readonly RESUME_TOKEN_CHANGED: "resumeTokenChanged"
+    /* Excluded from this release type: __constructor */
+    /* Excluded from this release type: cursorStream */
+    /** The cached resume token that is used to resume after the most recently returned change. */
+    get resumeToken(): ResumeToken
+    /** Check if there is any document still available in the Change Stream */
+    hasNext(): Promise<boolean>
+    /** Get the next available document from the Change Stream. */
+    next(): Promise<TChange>
+    /**
+     * Try to get the next available document from the Change Stream's cursor or `null` if an empty batch is returned
+     */
+    tryNext(): Promise<Document | null>
+    [Symbol.asyncIterator](): AsyncGenerator<TChange, void, void>
+    /** Is the cursor closed */
+    get closed(): boolean
+    /** Close the Change Stream */
+    close(): Promise<void>
+    /**
+     * Return a modified Readable stream including a possible transform method.
+     *
+     * NOTE: When using a Stream to process change stream events, the stream will
+     * NOT automatically resume in the case a resumable error is encountered.
+     *
+     * @throws MongoChangeStreamError if the underlying cursor or the change stream is closed
+     */
+    stream(options?: CursorStreamOptions): Readable & AsyncIterable<TChange>
+    /* Excluded from this release type: _setIsEmitter */
+    /* Excluded from this release type: _setIsIterator */
+    /* Excluded from this release type: _createChangeStreamCursor */
+    /* Excluded from this release type: _closeEmitterModeWithError */
+    /* Excluded from this release type: _streamEvents */
+    /* Excluded from this release type: _endStream */
+    /* Excluded from this release type: _processChange */
+    /* Excluded from this release type: _processErrorStreamMode */
+    /* Excluded from this release type: _processErrorIteratorMode */
+}
+
+/* Excluded from this release type: ChangeStreamAggregateRawResult */
+
+/**
+ * Only present when the `showExpandedEvents` flag is enabled.
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/
+ */
+export declare interface ChangeStreamCollModDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "modify"
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/
+ */
+export declare interface ChangeStreamCreateDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "create"
+}
+
+/**
+ * Only present when the `showExpandedEvents` flag is enabled.
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/
+ */
+export declare interface ChangeStreamCreateIndexDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID,
+        ChangeStreamDocumentOperationDescription {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "createIndexes"
+}
+
+/* Excluded from this release type: ChangeStreamCursor */
+
+/* Excluded from this release type: ChangeStreamCursorOptions */
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#delete-event
+ */
+export declare interface ChangeStreamDeleteDocument<
+    TSchema extends Document = Document,
+> extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentKey<TSchema>,
+        ChangeStreamDocumentCollectionUUID {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "delete"
+    /** Namespace the delete event occurred on */
+    ns: ChangeStreamNameSpace
+    /**
+     * Contains the pre-image of the modified or deleted document if the
+     * pre-image is available for the change event and either 'required' or
+     * 'whenAvailable' was specified for the 'fullDocumentBeforeChange' option
+     * when creating the change stream. If 'whenAvailable' was specified but the
+     * pre-image is unavailable, this will be explicitly set to null.
+     */
+    fullDocumentBeforeChange?: TSchema
+}
+
+/** @public */
+export declare type ChangeStreamDocument<TSchema extends Document = Document> =
+    | ChangeStreamInsertDocument<TSchema>
+    | ChangeStreamUpdateDocument<TSchema>
+    | ChangeStreamReplaceDocument<TSchema>
+    | ChangeStreamDeleteDocument<TSchema>
+    | ChangeStreamDropDocument
+    | ChangeStreamRenameDocument
+    | ChangeStreamDropDatabaseDocument
+    | ChangeStreamInvalidateDocument
+    | ChangeStreamCreateIndexDocument
+    | ChangeStreamCreateDocument
+    | ChangeStreamCollModDocument
+    | ChangeStreamDropIndexDocument
+    | ChangeStreamShardCollectionDocument
+    | ChangeStreamReshardCollectionDocument
+    | ChangeStreamRefineCollectionShardKeyDocument
+
+/** @public */
+export declare interface ChangeStreamDocumentCollectionUUID {
+    /**
+     * The UUID (Binary subtype 4) of the collection that the operation was performed on.
+     *
+     * Only present when the `showExpandedEvents` flag is enabled.
+     *
+     * **NOTE:** collectionUUID will be converted to a NodeJS Buffer if the promoteBuffers
+     *    flag is enabled.
+     *
+     * @sinceServerVersion 6.1.0
+     */
+    collectionUUID: Binary
+}
+
+/** @public */
+export declare interface ChangeStreamDocumentCommon {
+    /**
+     * The id functions as an opaque token for use when resuming an interrupted
+     * change stream.
+     */
+    _id: ResumeToken
+    /**
+     * The timestamp from the oplog entry associated with the event.
+     * For events that happened as part of a multi-document transaction, the associated change stream
+     * notifications will have the same clusterTime value, namely the time when the transaction was committed.
+     * On a sharded cluster, events that occur on different shards can have the same clusterTime but be
+     * associated with different transactions or even not be associated with any transaction.
+     * To identify events for a single transaction, you can use the combination of lsid and txnNumber in the change stream event document.
+     */
+    clusterTime?: Timestamp
+    /**
+     * The transaction number.
+     * Only present if the operation is part of a multi-document transaction.
+     *
+     * **NOTE:** txnNumber can be a Long if promoteLongs is set to false
+     */
+    txnNumber?: number
+    /**
+     * The identifier for the session associated with the transaction.
+     * Only present if the operation is part of a multi-document transaction.
+     */
+    lsid?: ServerSessionId
+}
+
+/** @public */
+export declare interface ChangeStreamDocumentKey<
+    TSchema extends Document = Document,
+> {
+    /**
+     * For unsharded collections this contains a single field `_id`.
+     * For sharded collections, this will contain all the components of the shard key
+     */
+    documentKey: {
+        _id: InferIdType<TSchema>
+        [shardKey: string]: any
+    }
+}
+
+/** @public */
+export declare interface ChangeStreamDocumentOperationDescription {
+    /**
+     * An description of the operation.
+     *
+     * Only present when the `showExpandedEvents` flag is enabled.
+     *
+     * @sinceServerVersion 6.1.0
+     */
+    operationDescription?: Document
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#dropdatabase-event
+ */
+export declare interface ChangeStreamDropDatabaseDocument
+    extends ChangeStreamDocumentCommon {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "dropDatabase"
+    /** The database dropped */
+    ns: {
+        db: string
+    }
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#drop-event
+ */
+export declare interface ChangeStreamDropDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "drop"
+    /** Namespace the drop event occurred on */
+    ns: ChangeStreamNameSpace
+}
+
+/**
+ * Only present when the `showExpandedEvents` flag is enabled.
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/
+ */
+export declare interface ChangeStreamDropIndexDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID,
+        ChangeStreamDocumentOperationDescription {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "dropIndexes"
+}
+
+/** @public */
+export declare type ChangeStreamEvents<
+    TSchema extends Document = Document,
+    TChange extends Document = ChangeStreamDocument<TSchema>,
+> = {
+    resumeTokenChanged(token: ResumeToken): void
+    init(response: any): void
+    more(response?: any): void
+    response(): void
+    end(): void
+    error(error: Error): void
+    change(change: TChange): void
+} & AbstractCursorEvents
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#insert-event
+ */
+export declare interface ChangeStreamInsertDocument<
+    TSchema extends Document = Document,
+> extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentKey<TSchema>,
+        ChangeStreamDocumentCollectionUUID {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "insert"
+    /** This key will contain the document being inserted */
+    fullDocument: TSchema
+    /** Namespace the insert event occurred on */
+    ns: ChangeStreamNameSpace
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#invalidate-event
+ */
+export declare interface ChangeStreamInvalidateDocument
+    extends ChangeStreamDocumentCommon {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "invalidate"
+}
+
+/** @public */
+export declare interface ChangeStreamNameSpace {
+    db: string
+    coll: string
+}
+
+/**
+ * Options that can be passed to a ChangeStream. Note that startAfter, resumeAfter, and startAtOperationTime are all mutually exclusive, and the server will error if more than one is specified.
+ * @public
+ */
+export declare interface ChangeStreamOptions
+    extends Omit<AggregateOptions, "writeConcern"> {
+    /**
+     * Allowed values: 'updateLookup', 'whenAvailable', 'required'.
+     *
+     * When set to 'updateLookup', the change notification for partial updates
+     * will include both a delta describing the changes to the document as well
+     * as a copy of the entire document that was changed from some time after
+     * the change occurred.
+     *
+     * When set to 'whenAvailable', configures the change stream to return the
+     * post-image of the modified document for replace and update change events
+     * if the post-image for this event is available.
+     *
+     * When set to 'required', the same behavior as 'whenAvailable' except that
+     * an error is raised if the post-image is not available.
+     */
+    fullDocument?: string
+    /**
+     * Allowed values: 'whenAvailable', 'required', 'off'.
+     *
+     * The default is to not send a value, which is equivalent to 'off'.
+     *
+     * When set to 'whenAvailable', configures the change stream to return the
+     * pre-image of the modified document for replace, update, and delete change
+     * events if it is available.
+     *
+     * When set to 'required', the same behavior as 'whenAvailable' except that
+     * an error is raised if the pre-image is not available.
+     */
+    fullDocumentBeforeChange?: string
+    /** The maximum amount of time for the server to wait on new documents to satisfy a change stream query. */
+    maxAwaitTimeMS?: number
+    /**
+     * Allows you to start a changeStream after a specified event.
+     * @see https://www.mongodb.com/docs/manual/changeStreams/#resumeafter-for-change-streams
+     */
+    resumeAfter?: ResumeToken
+    /**
+     * Similar to resumeAfter, but will allow you to start after an invalidated event.
+     * @see https://www.mongodb.com/docs/manual/changeStreams/#startafter-for-change-streams
+     */
+    startAfter?: ResumeToken
+    /** Will start the changeStream after the specified operationTime. */
+    startAtOperationTime?: OperationTime
+    /**
+     * The number of documents to return per batch.
+     * @see https://www.mongodb.com/docs/manual/reference/command/aggregate
+     */
+    batchSize?: number
+    /**
+     * When enabled, configures the change stream to include extra change events.
+     *
+     * - createIndexes
+     * - dropIndexes
+     * - modify
+     * - create
+     * - shardCollection
+     * - reshardCollection
+     * - refineCollectionShardKey
+     */
+    showExpandedEvents?: boolean
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/
+ */
+export declare interface ChangeStreamRefineCollectionShardKeyDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID,
+        ChangeStreamDocumentOperationDescription {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "refineCollectionShardKey"
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#rename-event
+ */
+export declare interface ChangeStreamRenameDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "rename"
+    /** The new name for the `ns.coll` collection */
+    to: {
+        db: string
+        coll: string
+    }
+    /** The "from" namespace that the rename occurred on */
+    ns: ChangeStreamNameSpace
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#replace-event
+ */
+export declare interface ChangeStreamReplaceDocument<
+    TSchema extends Document = Document,
+> extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentKey<TSchema> {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "replace"
+    /** The fullDocument of a replace event represents the document after the insert of the replacement document */
+    fullDocument: TSchema
+    /** Namespace the replace event occurred on */
+    ns: ChangeStreamNameSpace
+    /**
+     * Contains the pre-image of the modified or deleted document if the
+     * pre-image is available for the change event and either 'required' or
+     * 'whenAvailable' was specified for the 'fullDocumentBeforeChange' option
+     * when creating the change stream. If 'whenAvailable' was specified but the
+     * pre-image is unavailable, this will be explicitly set to null.
+     */
+    fullDocumentBeforeChange?: TSchema
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/
+ */
+export declare interface ChangeStreamReshardCollectionDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID,
+        ChangeStreamDocumentOperationDescription {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "reshardCollection"
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/
+ */
+export declare interface ChangeStreamShardCollectionDocument
+    extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentCollectionUUID,
+        ChangeStreamDocumentOperationDescription {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "shardCollection"
+}
+
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/change-events/#update-event
+ */
+export declare interface ChangeStreamUpdateDocument<
+    TSchema extends Document = Document,
+> extends ChangeStreamDocumentCommon,
+        ChangeStreamDocumentKey<TSchema>,
+        ChangeStreamDocumentCollectionUUID {
+    /** Describes the type of operation represented in this change notification */
+    operationType: "update"
+    /**
+     * This is only set if `fullDocument` is set to `'updateLookup'`
+     * Contains the point-in-time post-image of the modified document if the
+     * post-image is available and either 'required' or 'whenAvailable' was
+     * specified for the 'fullDocument' option when creating the change stream.
+     */
+    fullDocument?: TSchema
+    /** Contains a description of updated and removed fields in this operation */
+    updateDescription: UpdateDescription<TSchema>
+    /** Namespace the update event occurred on */
+    ns: ChangeStreamNameSpace
+    /**
+     * Contains the pre-image of the modified or deleted document if the
+     * pre-image is available for the change event and either 'required' or
+     * 'whenAvailable' was specified for the 'fullDocumentBeforeChange' option
+     * when creating the change stream. If 'whenAvailable' was specified but the
+     * pre-image is unavailable, this will be explicitly set to null.
+     */
+    fullDocumentBeforeChange?: TSchema
+}
+
+/**
+ * @public
+ * @see https://github.com/mongodb/specifications/blob/master/source/mongodb-handshake/handshake.rst#hello-command
+ */
+export declare interface ClientMetadata {
+    driver: {
+        name: string
+        version: string
+    }
+    os: {
+        type: string
+        name: NodeJS.Platform
+        architecture: string
+        version: string
+    }
+    platform: string
+    application?: {
+        name: string
+    }
+}
+
+/** @public */
+export declare interface ClientMetadataOptions {
+    driverInfo?: {
+        name?: string
+        version?: string
+        platform?: string
+    }
+    appName?: string
+}
+
+/**
+ * A class representing a client session on the server
+ *
+ * NOTE: not meant to be instantiated directly.
+ * @public
+ */
+export declare class ClientSession extends TypedEventEmitter<ClientSessionEvents> {
+    /* Excluded from this release type: client */
+    /* Excluded from this release type: sessionPool */
+    hasEnded: boolean
+    clientOptions?: MongoOptions
+    supports: {
+        causalConsistency: boolean
+    }
+    clusterTime?: ClusterTime
+    operationTime?: Timestamp
+    explicit: boolean
+    /* Excluded from this release type: owner */
+    defaultTransactionOptions: TransactionOptions
+    transaction: Transaction
+    /* Excluded from this release type: [kServerSession] */
+    /* Excluded from this release type: [kSnapshotTime] */
+    /* Excluded from this release type: [kSnapshotEnabled] */
+    /* Excluded from this release type: [kPinnedConnection] */
+    /* Excluded from this release type: [kTxnNumberIncrement] */
+    /* Excluded from this release type: __constructor */
+    /** The server id associated with this session */
+    get id(): ServerSessionId | undefined
+    get serverSession(): ServerSession
+    /** Whether or not this session is configured for snapshot reads */
+    get snapshotEnabled(): boolean
+    get loadBalanced(): boolean
+    /* Excluded from this release type: pinnedConnection */
+    /* Excluded from this release type: pin */
+    /* Excluded from this release type: unpin */
+    get isPinned(): boolean
+    /**
+     * Ends this session on the server
+     *
+     * @param options - Optional settings. Currently reserved for future use
+     */
+    endSession(options?: EndSessionOptions): Promise<void>
+    /**
+     * Advances the operationTime for a ClientSession.
+     *
+     * @param operationTime - the `BSON.Timestamp` of the operation type it is desired to advance to
+     */
+    advanceOperationTime(operationTime: Timestamp): void
+    /**
+     * Advances the clusterTime for a ClientSession to the provided clusterTime of another ClientSession
+     *
+     * @param clusterTime - the $clusterTime returned by the server from another session in the form of a document containing the `BSON.Timestamp` clusterTime and signature
+     */
+    advanceClusterTime(clusterTime: ClusterTime): void
+    /**
+     * Used to determine if this session equals another
+     *
+     * @param session - The session to compare to
+     */
+    equals(session: ClientSession): boolean
+    /**
+     * Increment the transaction number on the internal ServerSession
+     *
+     * @privateRemarks
+     * This helper increments a value stored on the client session that will be
+     * added to the serverSession's txnNumber upon applying it to a command.
+     * This is because the serverSession is lazily acquired after a connection is obtained
+     */
+    incrementTransactionNumber(): void
+    /** @returns whether this session is currently in a transaction or not */
+    inTransaction(): boolean
+    /**
+     * Starts a new transaction with the given options.
+     *
+     * @param options - Options for the transaction
+     */
+    startTransaction(options?: TransactionOptions): void
+    /**
+     * Commits the currently active transaction in this session.
+     */
+    commitTransaction(): Promise<Document>
+    /**
+     * Aborts the currently active transaction in this session.
+     */
+    abortTransaction(): Promise<Document>
+    /**
+     * This is here to ensure that ClientSession is never serialized to BSON.
+     */
+    toBSON(): never
+    /**
+     * Runs a provided callback within a transaction, retrying either the commitTransaction operation
+     * or entire transaction as needed (and when the error permits) to better ensure that
+     * the transaction can complete successfully.
+     *
+     * **IMPORTANT:** This method requires the user to return a Promise, and `await` all operations.
+     * Any callbacks that do not return a Promise will result in undefined behavior.
+     *
+     * @remarks
+     * This function:
+     * - Will return the command response from the final commitTransaction if every operation is successful (can be used as a truthy object)
+     * - Will return `undefined` if the transaction is explicitly aborted with `await session.abortTransaction()`
+     * - Will throw if one of the operations throws or `throw` statement is used inside the `withTransaction` callback
+     *
+     * Checkout a descriptive example here:
+     * @see https://www.mongodb.com/developer/quickstart/node-transactions/
+     *
+     * @param fn - callback to run within a transaction
+     * @param options - optional settings for the transaction
+     * @returns A raw command response or undefined
+     */
+    withTransaction<T = void>(
+        fn: WithTransactionCallback<T>,
+        options?: TransactionOptions,
+    ): Promise<Document | undefined>
+}
+
+/** @public */
+export declare type ClientSessionEvents = {
+    ended(session: ClientSession): void
+}
+
+/** @public */
+export declare interface ClientSessionOptions {
+    /** Whether causal consistency should be enabled on this session */
+    causalConsistency?: boolean
+    /** Whether all read operations should be read from the same snapshot for this session (NOTE: not compatible with `causalConsistency=true`) */
+    snapshot?: boolean
+    /** The default TransactionOptions to use for transactions started on this session. */
+    defaultTransactionOptions?: TransactionOptions
+    /* Excluded from this release type: owner */
+    /* Excluded from this release type: explicit */
+    /* Excluded from this release type: initialClusterTime */
+}
+
+/** @public */
+export declare interface CloseOptions {
+    force?: boolean
+}
+
+/** @public
+ * Configuration options for clustered collections
+ * @see https://www.mongodb.com/docs/manual/core/clustered-collections/
+ */
+export declare interface ClusteredCollectionOptions extends Document {
+    name?: string
+    key: Document
+    unique: boolean
+}
+
+/** @public */
+export declare interface ClusterTime {
+    clusterTime: Timestamp
+    signature: {
+        hash: Binary
+        keyId: Long
+    }
+}
+
+export { Code }
+
+/** @public */
+export declare interface CollationOptions {
     locale: string
-    strength?: number
     caseLevel?: boolean
     caseFirst?: string
+    strength?: number
     numericOrdering?: boolean
     alternate?: string
     maxVariable?: string
@@ -5800,786 +1746,5322 @@ export interface CollationDocument {
 }
 
 /**
- * A class representing a client session on the server.
- * WARNING: not meant to be instantiated directly.
- * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html
+ * The **Collection** class is an internal class that embodies a MongoDB collection
+ * allowing for insert/find/update/delete and other command operation on that MongoDB collection.
+ *
+ * **COLLECTION Cannot directly be instantiated**
+ * @public
+ *
+ * @example
+ * ```ts
+ * import { MongoClient } from 'mongodb';
+ *
+ * interface Pet {
+ *   name: string;
+ *   kind: 'dog' | 'cat' | 'fish';
+ * }
+ *
+ * const client = new MongoClient('mongodb://localhost:27017');
+ * const pets = client.db().collection<Pet>('pets');
+ *
+ * const petCursor = pets.find();
+ *
+ * for await (const pet of petCursor) {
+ *   console.log(`${pet.name} is a ${pet.kind}!`);
+ * }
+ * ```
  */
-export interface ClientSession extends EventEmitter {
+export declare class Collection<TSchema extends Document = Document> {
+    /* Excluded from this release type: s */
+    /* Excluded from this release type: __constructor */
     /**
-     * The server id associated with this session
+     * The name of the database this collection belongs to
      */
-    id: any
+    get dbName(): string
+    /**
+     * The name of this collection
+     */
+    get collectionName(): string
+    /**
+     * The namespace of this collection, in the format `${this.dbName}.${this.collectionName}`
+     */
+    get namespace(): string
+    /**
+     * The current readConcern of the collection. If not explicitly defined for
+     * this collection, will be inherited from the parent DB
+     */
+    get readConcern(): ReadConcern | undefined
+    /**
+     * The current readPreference of the collection. If not explicitly defined for
+     * this collection, will be inherited from the parent DB
+     */
+    get readPreference(): ReadPreference | undefined
+    get bsonOptions(): BSONSerializeOptions
+    /**
+     * The current writeConcern of the collection. If not explicitly defined for
+     * this collection, will be inherited from the parent DB
+     */
+    get writeConcern(): WriteConcern | undefined
+    /** The current index hint for the collection */
+    get hint(): Hint | undefined
+    set hint(v: Hint | undefined)
+    /**
+     * Inserts a single document into MongoDB. If documents passed in do not contain the **_id** field,
+     * one will be added to each of the documents missing it by the driver, mutating the document. This behavior
+     * can be overridden by setting the **forceServerObjectId** flag.
+     *
+     * @param doc - The document to insert
+     * @param options - Optional settings for the command
+     */
+    insertOne(
+        doc: OptionalUnlessRequiredId<TSchema>,
+        options?: InsertOneOptions,
+    ): Promise<InsertOneResult<TSchema>>
+    /**
+     * Inserts an array of documents into MongoDB. If documents passed in do not contain the **_id** field,
+     * one will be added to each of the documents missing it by the driver, mutating the document. This behavior
+     * can be overridden by setting the **forceServerObjectId** flag.
+     *
+     * @param docs - The documents to insert
+     * @param options - Optional settings for the command
+     */
+    insertMany(
+        docs: OptionalUnlessRequiredId<TSchema>[],
+        options?: BulkWriteOptions,
+    ): Promise<InsertManyResult<TSchema>>
+    /**
+     * Perform a bulkWrite operation without a fluent API
+     *
+     * Legal operation types are
+     * - `insertOne`
+     * - `replaceOne`
+     * - `updateOne`
+     * - `updateMany`
+     * - `deleteOne`
+     * - `deleteMany`
+     *
+     * If documents passed in do not contain the **_id** field,
+     * one will be added to each of the documents missing it by the driver, mutating the document. This behavior
+     * can be overridden by setting the **forceServerObjectId** flag.
+     *
+     * @param operations - Bulk operations to perform
+     * @param options - Optional settings for the command
+     * @throws MongoDriverError if operations is not an array
+     */
+    bulkWrite(
+        operations: AnyBulkWriteOperation<TSchema>[],
+        options?: BulkWriteOptions,
+    ): Promise<BulkWriteResult>
+    /**
+     * Update a single document in a collection
+     *
+     * @param filter - The filter used to select the document to update
+     * @param update - The update operations to be applied to the document
+     * @param options - Optional settings for the command
+     */
+    updateOne(
+        filter: Filter<TSchema>,
+        update: UpdateFilter<TSchema> | Partial<TSchema>,
+        options?: UpdateOptions,
+    ): Promise<UpdateResult>
+    /**
+     * Replace a document in a collection with another document
+     *
+     * @param filter - The filter used to select the document to replace
+     * @param replacement - The Document that replaces the matching document
+     * @param options - Optional settings for the command
+     */
+    replaceOne(
+        filter: Filter<TSchema>,
+        replacement: WithoutId<TSchema>,
+        options?: ReplaceOptions,
+    ): Promise<UpdateResult | Document>
+    /**
+     * Update multiple documents in a collection
+     *
+     * @param filter - The filter used to select the documents to update
+     * @param update - The update operations to be applied to the documents
+     * @param options - Optional settings for the command
+     */
+    updateMany(
+        filter: Filter<TSchema>,
+        update: UpdateFilter<TSchema>,
+        options?: UpdateOptions,
+    ): Promise<UpdateResult>
+    /**
+     * Delete a document from a collection
+     *
+     * @param filter - The filter used to select the document to remove
+     * @param options - Optional settings for the command
+     */
+    deleteOne(
+        filter?: Filter<TSchema>,
+        options?: DeleteOptions,
+    ): Promise<DeleteResult>
+    /**
+     * Delete multiple documents from a collection
+     *
+     * @param filter - The filter used to select the documents to remove
+     * @param options - Optional settings for the command
+     */
+    deleteMany(
+        filter?: Filter<TSchema>,
+        options?: DeleteOptions,
+    ): Promise<DeleteResult>
+    /**
+     * Rename the collection.
+     *
+     * @remarks
+     * This operation does not inherit options from the Db or MongoClient.
+     *
+     * @param newName - New name of of the collection.
+     * @param options - Optional settings for the command
+     */
+    rename(newName: string, options?: RenameOptions): Promise<Collection>
+    /**
+     * Drop the collection from the database, removing it permanently. New accesses will create a new collection.
+     *
+     * @param options - Optional settings for the command
+     */
+    drop(options?: DropCollectionOptions): Promise<boolean>
+    /**
+     * Fetches the first document that matches the filter
+     *
+     * @param filter - Query for find Operation
+     * @param options - Optional settings for the command
+     */
+    findOne(): Promise<WithId<TSchema> | null>
+    findOne(filter: Filter<TSchema>): Promise<WithId<TSchema> | null>
+    findOne(
+        filter: Filter<TSchema>,
+        options: FindOptions,
+    ): Promise<WithId<TSchema> | null>
+    findOne<T = TSchema>(): Promise<T | null>
+    findOne<T = TSchema>(filter: Filter<TSchema>): Promise<T | null>
+    findOne<T = TSchema>(
+        filter: Filter<TSchema>,
+        options?: FindOptions,
+    ): Promise<T | null>
+    /**
+     * Creates a cursor for a filter that can be used to iterate over results from MongoDB
+     *
+     * @param filter - The filter predicate. If unspecified, then all documents in the collection will match the predicate
+     */
+    find(): FindCursor<WithId<TSchema>>
+    find(
+        filter: Filter<TSchema>,
+        options?: FindOptions,
+    ): FindCursor<WithId<TSchema>>
+    find<T extends Document>(
+        filter: Filter<TSchema>,
+        options?: FindOptions,
+    ): FindCursor<T>
+    /**
+     * Returns the options of the collection.
+     *
+     * @param options - Optional settings for the command
+     */
+    options(options?: OperationOptions): Promise<Document>
+    /**
+     * Returns if the collection is a capped collection
+     *
+     * @param options - Optional settings for the command
+     */
+    isCapped(options?: OperationOptions): Promise<boolean>
+    /**
+     * Creates an index on the db and collection collection.
+     *
+     * @param indexSpec - The field name or index specification to create an index for
+     * @param options - Optional settings for the command
+     *
+     * @example
+     * ```ts
+     * const collection = client.db('foo').collection('bar');
+     *
+     * await collection.createIndex({ a: 1, b: -1 });
+     *
+     * // Alternate syntax for { c: 1, d: -1 } that ensures order of indexes
+     * await collection.createIndex([ [c, 1], [d, -1] ]);
+     *
+     * // Equivalent to { e: 1 }
+     * await collection.createIndex('e');
+     *
+     * // Equivalent to { f: 1, g: 1 }
+     * await collection.createIndex(['f', 'g'])
+     *
+     * // Equivalent to { h: 1, i: -1 }
+     * await collection.createIndex([ { h: 1 }, { i: -1 } ]);
+     *
+     * // Equivalent to { j: 1, k: -1, l: 2d }
+     * await collection.createIndex(['j', ['k', -1], { l: '2d' }])
+     * ```
+     */
+    createIndex(
+        indexSpec: IndexSpecification,
+        options?: CreateIndexesOptions,
+    ): Promise<string>
+    /**
+     * Creates multiple indexes in the collection, this method is only supported for
+     * MongoDB 2.6 or higher. Earlier version of MongoDB will throw a command not supported
+     * error.
+     *
+     * **Note**: Unlike {@link Collection#createIndex| createIndex}, this function takes in raw index specifications.
+     * Index specifications are defined {@link https://www.mongodb.com/docs/manual/reference/command/createIndexes/| here}.
+     *
+     * @param indexSpecs - An array of index specifications to be created
+     * @param options - Optional settings for the command
+     *
+     * @example
+     * ```ts
+     * const collection = client.db('foo').collection('bar');
+     * await collection.createIndexes([
+     *   // Simple index on field fizz
+     *   {
+     *     key: { fizz: 1 },
+     *   }
+     *   // wildcard index
+     *   {
+     *     key: { '$**': 1 }
+     *   },
+     *   // named index on darmok and jalad
+     *   {
+     *     key: { darmok: 1, jalad: -1 }
+     *     name: 'tanagra'
+     *   }
+     * ]);
+     * ```
+     */
+    createIndexes(
+        indexSpecs: IndexDescription[],
+        options?: CreateIndexesOptions,
+    ): Promise<string[]>
+    /**
+     * Drops an index from this collection.
+     *
+     * @param indexName - Name of the index to drop.
+     * @param options - Optional settings for the command
+     */
+    dropIndex(
+        indexName: string,
+        options?: DropIndexesOptions,
+    ): Promise<Document>
+    /**
+     * Drops all indexes from this collection.
+     *
+     * @param options - Optional settings for the command
+     */
+    dropIndexes(options?: DropIndexesOptions): Promise<Document>
+    /**
+     * Get the list of all indexes information for the collection.
+     *
+     * @param options - Optional settings for the command
+     */
+    listIndexes(options?: ListIndexesOptions): ListIndexesCursor
+    /**
+     * Checks if one or more indexes exist on the collection, fails on first non-existing index
+     *
+     * @param indexes - One or more index names to check.
+     * @param options - Optional settings for the command
+     */
+    indexExists(
+        indexes: string | string[],
+        options?: IndexInformationOptions,
+    ): Promise<boolean>
+    /**
+     * Retrieves this collections index info.
+     *
+     * @param options - Optional settings for the command
+     */
+    indexInformation(options?: IndexInformationOptions): Promise<Document>
+    /**
+     * Gets an estimate of the count of documents in a collection using collection metadata.
+     * This will always run a count command on all server versions.
+     *
+     * due to an oversight in versions 5.0.0-5.0.8 of MongoDB, the count command,
+     * which estimatedDocumentCount uses in its implementation, was not included in v1 of
+     * the Stable API, and so users of the Stable API with estimatedDocumentCount are
+     * recommended to upgrade their server version to 5.0.9+ or set apiStrict: false to avoid
+     * encountering errors.
+     *
+     * @see {@link https://www.mongodb.com/docs/manual/reference/command/count/#behavior|Count: Behavior}
+     * @param options - Optional settings for the command
+     */
+    estimatedDocumentCount(
+        options?: EstimatedDocumentCountOptions,
+    ): Promise<number>
+    /**
+     * Gets the number of documents matching the filter.
+     * For a fast count of the total documents in a collection see {@link Collection#estimatedDocumentCount| estimatedDocumentCount}.
+     * **Note**: When migrating from {@link Collection#count| count} to {@link Collection#countDocuments| countDocuments}
+     * the following query operators must be replaced:
+     *
+     * | Operator | Replacement |
+     * | -------- | ----------- |
+     * | `$where`   | [`$expr`][1] |
+     * | `$near`    | [`$geoWithin`][2] with [`$center`][3] |
+     * | `$nearSphere` | [`$geoWithin`][2] with [`$centerSphere`][4] |
+     *
+     * [1]: https://www.mongodb.com/docs/manual/reference/operator/query/expr/
+     * [2]: https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/
+     * [3]: https://www.mongodb.com/docs/manual/reference/operator/query/center/#op._S_center
+     * [4]: https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/#op._S_centerSphere
+     *
+     * @param filter - The filter for the count
+     * @param options - Optional settings for the command
+     *
+     * @see https://www.mongodb.com/docs/manual/reference/operator/query/expr/
+     * @see https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/
+     * @see https://www.mongodb.com/docs/manual/reference/operator/query/center/#op._S_center
+     * @see https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/#op._S_centerSphere
+     */
+    countDocuments(
+        filter?: Document,
+        options?: CountDocumentsOptions,
+    ): Promise<number>
+    /**
+     * The distinct command returns a list of distinct values for the given key across a collection.
+     *
+     * @param key - Field of the document to find distinct values for
+     * @param filter - The filter for filtering the set of documents to which we apply the distinct filter.
+     * @param options - Optional settings for the command
+     */
+    distinct<Key extends keyof WithId<TSchema>>(
+        key: Key,
+    ): Promise<Array<Flatten<WithId<TSchema>[Key]>>>
+    distinct<Key extends keyof WithId<TSchema>>(
+        key: Key,
+        filter: Filter<TSchema>,
+    ): Promise<Array<Flatten<WithId<TSchema>[Key]>>>
+    distinct<Key extends keyof WithId<TSchema>>(
+        key: Key,
+        filter: Filter<TSchema>,
+        options: DistinctOptions,
+    ): Promise<Array<Flatten<WithId<TSchema>[Key]>>>
+    distinct(key: string): Promise<any[]>
+    distinct(key: string, filter: Filter<TSchema>): Promise<any[]>
+    distinct(
+        key: string,
+        filter: Filter<TSchema>,
+        options: DistinctOptions,
+    ): Promise<any[]>
+    /**
+     * Retrieve all the indexes on the collection.
+     *
+     * @param options - Optional settings for the command
+     */
+    indexes(options?: IndexInformationOptions): Promise<Document[]>
+    /**
+     * Get all the collection statistics.
+     *
+     * @param options - Optional settings for the command
+     */
+    stats(options?: CollStatsOptions): Promise<CollStats>
+    /**
+     * Find a document and delete it in one atomic operation. Requires a write lock for the duration of the operation.
+     *
+     * @param filter - The filter used to select the document to remove
+     * @param options - Optional settings for the command
+     */
+    findOneAndDelete(
+        filter: Filter<TSchema>,
+        options?: FindOneAndDeleteOptions,
+    ): Promise<ModifyResult<TSchema>>
+    /**
+     * Find a document and replace it in one atomic operation. Requires a write lock for the duration of the operation.
+     *
+     * @param filter - The filter used to select the document to replace
+     * @param replacement - The Document that replaces the matching document
+     * @param options - Optional settings for the command
+     */
+    findOneAndReplace(
+        filter: Filter<TSchema>,
+        replacement: WithoutId<TSchema>,
+        options?: FindOneAndReplaceOptions,
+    ): Promise<ModifyResult<TSchema>>
+    /**
+     * Find a document and update it in one atomic operation. Requires a write lock for the duration of the operation.
+     *
+     * @param filter - The filter used to select the document to update
+     * @param update - Update operations to be performed on the document
+     * @param options - Optional settings for the command
+     */
+    findOneAndUpdate(
+        filter: Filter<TSchema>,
+        update: UpdateFilter<TSchema>,
+        options?: FindOneAndUpdateOptions,
+    ): Promise<ModifyResult<TSchema>>
+    /**
+     * Execute an aggregation framework pipeline against the collection, needs MongoDB \>= 2.2
+     *
+     * @param pipeline - An array of aggregation pipelines to execute
+     * @param options - Optional settings for the command
+     */
+    aggregate<T extends Document = Document>(
+        pipeline?: Document[],
+        options?: AggregateOptions,
+    ): AggregationCursor<T>
+    /**
+     * Create a new Change Stream, watching for new changes (insertions, updates, replacements, deletions, and invalidations) in this collection.
+     *
+     * @remarks
+     * watch() accepts two generic arguments for distinct use cases:
+     * - The first is to override the schema that may be defined for this specific collection
+     * - The second is to override the shape of the change stream document entirely, if it is not provided the type will default to ChangeStreamDocument of the first argument
+     * @example
+     * By just providing the first argument I can type the change to be `ChangeStreamDocument<{ _id: number }>`
+     * ```ts
+     * collection.watch<{ _id: number }>()
+     *   .on('change', change => console.log(change._id.toFixed(4)));
+     * ```
+     *
+     * @example
+     * Passing a second argument provides a way to reflect the type changes caused by an advanced pipeline.
+     * Here, we are using a pipeline to have MongoDB filter for insert changes only and add a comment.
+     * No need start from scratch on the ChangeStreamInsertDocument type!
+     * By using an intersection we can save time and ensure defaults remain the same type!
+     * ```ts
+     * collection
+     *   .watch<Schema, ChangeStreamInsertDocument<Schema> & { comment: string }>([
+     *     { $addFields: { comment: 'big changes' } },
+     *     { $match: { operationType: 'insert' } }
+     *   ])
+     *   .on('change', change => {
+     *     change.comment.startsWith('big');
+     *     change.operationType === 'insert';
+     *     // No need to narrow in code because the generics did that for us!
+     *     expectType<Schema>(change.fullDocument);
+     *   });
+     * ```
+     *
+     * @param pipeline - An array of {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation-pipeline/|aggregation pipeline stages} through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
+     * @param options - Optional settings for the command
+     * @typeParam TLocal - Type of the data being detected by the change stream
+     * @typeParam TChange - Type of the whole change stream document emitted
+     */
+    watch<
+        TLocal extends Document = TSchema,
+        TChange extends Document = ChangeStreamDocument<TLocal>,
+    >(
+        pipeline?: Document[],
+        options?: ChangeStreamOptions,
+    ): ChangeStream<TLocal, TChange>
+    /**
+     * Initiate an Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+     *
+     * @throws MongoNotConnectedError
+     * @remarks
+     * **NOTE:** MongoClient must be connected prior to calling this method due to a known limitation in this legacy implementation.
+     * However, `collection.bulkWrite()` provides an equivalent API that does not require prior connecting.
+     */
+    initializeUnorderedBulkOp(
+        options?: BulkWriteOptions,
+    ): UnorderedBulkOperation
+    /**
+     * Initiate an In order bulk write operation. Operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+     *
+     * @throws MongoNotConnectedError
+     * @remarks
+     * **NOTE:** MongoClient must be connected prior to calling this method due to a known limitation in this legacy implementation.
+     * However, `collection.bulkWrite()` provides an equivalent API that does not require prior connecting.
+     */
+    initializeOrderedBulkOp(options?: BulkWriteOptions): OrderedBulkOperation
+    /**
+     * An estimated count of matching documents in the db to a filter.
+     *
+     * **NOTE:** This method has been deprecated, since it does not provide an accurate count of the documents
+     * in a collection. To obtain an accurate count of documents in the collection, use {@link Collection#countDocuments| countDocuments}.
+     * To obtain an estimated count of all documents in the collection, use {@link Collection#estimatedDocumentCount| estimatedDocumentCount}.
+     *
+     * @deprecated use {@link Collection#countDocuments| countDocuments} or {@link Collection#estimatedDocumentCount| estimatedDocumentCount} instead
+     *
+     * @param filter - The filter for the count.
+     * @param options - Optional settings for the command
+     */
+    count(filter?: Filter<TSchema>, options?: CountOptions): Promise<number>
+}
 
-    /**
-     * Aborts the currently active transaction in this session.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#abortTransaction
-     */
-    abortTransaction(): Promise<void>
+/** @public */
+export declare interface CollectionInfo extends Document {
+    name: string
+    type?: string
+    options?: Document
+    info?: {
+        readOnly?: false
+        uuid?: Binary
+    }
+    idIndex?: Document
+}
 
-    /**
-     * Aborts the currently active transaction in this session.
-     * @param callback Optional callback for completion of this operation
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#abortTransaction
-     */
-    abortTransaction(callback?: MongoCallback<void>): Promise<void>
+/** @public */
+export declare interface CollectionOptions
+    extends BSONSerializeOptions,
+        WriteConcernOptions {
+    /** Specify a read concern for the collection. (only MongoDB 3.2 or higher supported) */
+    readConcern?: ReadConcernLike
+    /** The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST). */
+    readPreference?: ReadPreferenceLike
+}
 
-    /**
-     * Advances the operationTime for a ClientSession.
-     * @param operationTime the BSON.Timestamp of the operation type it is desired to advance to.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#advanceOperationTime
-     */
-    advanceOperationTime(operationTime: Timestamp): void
+/* Excluded from this release type: CollectionPrivate */
 
-    /**
-     * Commits the currently active transaction in this session.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#commitTransaction
-     */
-    commitTransaction(): Promise<void>
+/**
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/command/collStats/
+ */
+export declare interface CollStats extends Document {
+    /** Namespace */
+    ns: string
+    /** Number of documents */
+    count: number
+    /** Collection size in bytes */
+    size: number
+    /** Average object size in bytes */
+    avgObjSize: number
+    /** (Pre)allocated space for the collection in bytes */
+    storageSize: number
+    /** Number of extents (contiguously allocated chunks of datafile space) */
+    numExtents: number
+    /** Number of indexes */
+    nindexes: number
+    /** Size of the most recently created extent in bytes */
+    lastExtentSize: number
+    /** Padding can speed up updates if documents grow */
+    paddingFactor: number
+    /** A number that indicates the user-set flags on the collection. userFlags only appears when using the mmapv1 storage engine */
+    userFlags?: number
+    /** Total index size in bytes */
+    totalIndexSize: number
+    /** Size of specific indexes in bytes */
+    indexSizes: {
+        _id_: number
+        [index: string]: number
+    }
+    /** `true` if the collection is capped */
+    capped: boolean
+    /** The maximum number of documents that may be present in a capped collection */
+    max: number
+    /** The maximum size of a capped collection */
+    maxSize: number
+    /** This document contains data reported directly by the WiredTiger engine and other data for internal diagnostic use */
+    wiredTiger?: WiredTigerData
+    /** The fields in this document are the names of the indexes, while the values themselves are documents that contain statistics for the index provided by the storage engine */
+    indexDetails?: any
+    ok: number
+    /** The amount of storage available for reuse. The scale argument affects this value. */
+    freeStorageSize?: number
+    /** An array that contains the names of the indexes that are currently being built on the collection */
+    indexBuilds?: number
+    /** The sum of the storageSize and totalIndexSize. The scale argument affects this value */
+    totalSize: number
+    /** The scale value used by the command. */
+    scaleFactor: number
+}
 
-    /**
-     * Commits the currently active transaction in this session.
-     * @param callback Optional callback for completion of this operation.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#commitTransaction
-     */
-    commitTransaction(callback?: MongoCallback<void>): Promise<void>
-
-    /**
-     * Ends this session on the server.
-     * @param callback Optional callback for completion of this operation.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#endSession
-     */
-    endSession(callback?: MongoCallback<void>): void
-
-    /**
-     * Ends this session on the server.
-     * @param options Optional settings. Currently reserved for future use.
-     * @param callback Optional callback for completion of this operation.
-     * @see @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#endSession
-     */
-    endSession(options?: any, callback?: MongoCallback<void>): void
-
-    /**
-     * Used to determine if this session equals another.
-     * @param session A class representing a client session on the server.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#equals
-     */
-    equals(session: ClientSession): boolean
-
-    /**
-     * Increment the transaction number on the internal ServerSession.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#incrementTransactionNumber
-     */
-    incrementTransactionNumber(): void
-
-    /**
-     * Check this session is currently in a transaction or not.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#inTransaction
-     */
-    inTransaction(): boolean
-
-    /**
-     * Starts a new transaction with the given options.
-     * @param options Optional settings.
-     * @see http://mongodb.github.io/node-mongodb-native/3.1/api/ClientSession.html#startTransaction
-     */
-    startTransaction(options?: TransactionOptions): void
+/** @public */
+export declare interface CollStatsOptions extends CommandOperationOptions {
+    /** Divide the returned sizes by scale value. */
+    scale?: number
 }
 
 /**
- * Options to pass when creating a Client Session
- * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#SessionOptions
+ * An event indicating the failure of a given command
+ * @public
+ * @category Event
  */
-export interface SessionOptions {
-    /**
-     * Whether causal consistency should be enabled on this session
-     */
-    causalConsistency?: boolean
+export declare class CommandFailedEvent {
+    address: string
+    connectionId?: string | number
+    requestId: number
+    duration: number
+    commandName: string
+    failure: Error
+    serviceId?: ObjectId
+    /* Excluded from this release type: __constructor */
+    get hasServiceId(): boolean
+}
 
+/* Excluded from this release type: CommandOperation */
+
+/** @public */
+export declare interface CommandOperationOptions
+    extends OperationOptions,
+        WriteConcernOptions,
+        ExplainOptions {
+    /** Specify a read concern and level for the collection. (only MongoDB 3.2 or higher supported) */
+    readConcern?: ReadConcernLike
+    /** Collation */
+    collation?: CollationOptions
+    maxTimeMS?: number
     /**
-     * The default TransactionOptions to use for transactions started on this session.
+     * Comment to apply to the operation.
+     *
+     * In server versions pre-4.4, 'comment' must be string.  A server
+     * error will be thrown if any other type is provided.
+     *
+     * In server versions 4.4 and above, 'comment' can be any valid BSON type.
      */
-    defaultTransactionOptions?: TransactionOptions
+    comment?: unknown
+    /** Should retry failed writes */
+    retryWrites?: boolean
+    dbName?: string
+    authdb?: string
+    noResponse?: boolean
+}
+
+/* Excluded from this release type: CommandOptions */
+
+/**
+ * An event indicating the start of a given
+ * @public
+ * @category Event
+ */
+export declare class CommandStartedEvent {
+    commandObj?: Document
+    requestId: number
+    databaseName: string
+    commandName: string
+    command: Document
+    address: string
+    connectionId?: string | number
+    serviceId?: ObjectId
+    /* Excluded from this release type: __constructor */
+    get hasServiceId(): boolean
 }
 
 /**
- * TransactionOptions
+ * An event indicating the success of a given command
+ * @public
+ * @category Event
  */
-export interface TransactionOptions {
-    readConcern?: ReadConcern
-    writeConcern?: WriteConcern
+export declare class CommandSucceededEvent {
+    address: string
+    connectionId?: string | number
+    requestId: number
+    duration: number
+    commandName: string
+    reply: unknown
+    serviceId?: ObjectId
+    /* Excluded from this release type: __constructor */
+    get hasServiceId(): boolean
+}
+
+/** @public */
+export declare type CommonEvents = "newListener" | "removeListener"
+
+/** @public */
+export declare const Compressor: Readonly<{
+    readonly none: 0
+    readonly snappy: 1
+    readonly zlib: 2
+    readonly zstd: 3
+}>
+
+/** @public */
+export declare type Compressor = (typeof Compressor)[CompressorName]
+
+/** @public */
+export declare type CompressorName = keyof typeof Compressor
+
+/** @public */
+export declare type Condition<T> =
+    | AlternativeType<T>
+    | FilterOperators<AlternativeType<T>>
+
+/* Excluded from this release type: Connection */
+
+/**
+ * An event published when a connection is checked into the connection pool
+ * @public
+ * @category Event
+ */
+export declare class ConnectionCheckedInEvent extends ConnectionPoolMonitoringEvent {
+    /** The id of the connection */
+    connectionId: number | "<monitor>"
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a connection is checked out of the connection pool
+ * @public
+ * @category Event
+ */
+export declare class ConnectionCheckedOutEvent extends ConnectionPoolMonitoringEvent {
+    /** The id of the connection */
+    connectionId: number | "<monitor>"
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a request to check a connection out fails
+ * @public
+ * @category Event
+ */
+export declare class ConnectionCheckOutFailedEvent extends ConnectionPoolMonitoringEvent {
+    /** The reason the attempt to check out failed */
+    reason: AnyError | string
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a request to check a connection out begins
+ * @public
+ * @category Event
+ */
+export declare class ConnectionCheckOutStartedEvent extends ConnectionPoolMonitoringEvent {
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a connection is closed
+ * @public
+ * @category Event
+ */
+export declare class ConnectionClosedEvent extends ConnectionPoolMonitoringEvent {
+    /** The id of the connection */
+    connectionId: number | "<monitor>"
+    /** The reason the connection was closed */
+    reason: string
+    serviceId?: ObjectId
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a connection pool creates a new connection
+ * @public
+ * @category Event
+ */
+export declare class ConnectionCreatedEvent extends ConnectionPoolMonitoringEvent {
+    /** A monotonically increasing, per-pool id for the newly created connection */
+    connectionId: number | "<monitor>"
+    /* Excluded from this release type: __constructor */
+}
+
+/** @public */
+export declare type ConnectionEvents = {
+    commandStarted(event: CommandStartedEvent): void
+    commandSucceeded(event: CommandSucceededEvent): void
+    commandFailed(event: CommandFailedEvent): void
+    clusterTimeReceived(clusterTime: Document): void
+    close(): void
+    message(message: any): void
+    pinned(pinType: string): void
+    unpinned(pinType: string): void
+}
+
+/** @public */
+export declare interface ConnectionOptions
+    extends SupportedNodeConnectionOptions,
+        StreamDescriptionOptions,
+        ProxyOptions {
+    id: number | "<monitor>"
+    generation: number
+    hostAddress: HostAddress
+    autoEncrypter?: AutoEncrypter
+    serverApi?: ServerApi
+    monitorCommands: boolean
+    /* Excluded from this release type: connectionType */
+    credentials?: MongoCredentials
+    connectTimeoutMS?: number
+    tls: boolean
+    keepAlive?: boolean
+    keepAliveInitialDelay?: number
+    noDelay?: boolean
+    socketTimeoutMS?: number
+    cancellationToken?: CancellationToken
+    metadata: ClientMetadata
+}
+
+/* Excluded from this release type: ConnectionPool */
+
+/**
+ * An event published when a connection pool is cleared
+ * @public
+ * @category Event
+ */
+export declare class ConnectionPoolClearedEvent extends ConnectionPoolMonitoringEvent {
+    /* Excluded from this release type: serviceId */
+    interruptInUseConnections?: boolean
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a connection pool is closed
+ * @public
+ * @category Event
+ */
+export declare class ConnectionPoolClosedEvent extends ConnectionPoolMonitoringEvent {
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a connection pool is created
+ * @public
+ * @category Event
+ */
+export declare class ConnectionPoolCreatedEvent extends ConnectionPoolMonitoringEvent {
+    /** The options used to create this connection pool */
+    options?: ConnectionPoolOptions
+    /* Excluded from this release type: __constructor */
+}
+
+/** @public */
+export declare type ConnectionPoolEvents = {
+    connectionPoolCreated(event: ConnectionPoolCreatedEvent): void
+    connectionPoolReady(event: ConnectionPoolReadyEvent): void
+    connectionPoolClosed(event: ConnectionPoolClosedEvent): void
+    connectionPoolCleared(event: ConnectionPoolClearedEvent): void
+    connectionCreated(event: ConnectionCreatedEvent): void
+    connectionReady(event: ConnectionReadyEvent): void
+    connectionClosed(event: ConnectionClosedEvent): void
+    connectionCheckOutStarted(event: ConnectionCheckOutStartedEvent): void
+    connectionCheckOutFailed(event: ConnectionCheckOutFailedEvent): void
+    connectionCheckedOut(event: ConnectionCheckedOutEvent): void
+    connectionCheckedIn(event: ConnectionCheckedInEvent): void
+} & Omit<ConnectionEvents, "close" | "message">
+
+/* Excluded from this release type: ConnectionPoolMetrics */
+
+/**
+ * The base export class for all monitoring events published from the connection pool
+ * @public
+ * @category Event
+ */
+export declare class ConnectionPoolMonitoringEvent {
+    /** A timestamp when the event was created  */
+    time: Date
+    /** The address (host/port pair) of the pool */
+    address: string
+    /* Excluded from this release type: __constructor */
+}
+
+/** @public */
+export declare interface ConnectionPoolOptions
+    extends Omit<ConnectionOptions, "id" | "generation"> {
+    /** The maximum number of connections that may be associated with a pool at a given time. This includes in use and available connections. */
+    maxPoolSize: number
+    /** The minimum number of connections that MUST exist at any moment in a single connection pool. */
+    minPoolSize: number
+    /** The maximum number of connections that may be in the process of being established concurrently by the connection pool. */
+    maxConnecting: number
+    /** The maximum amount of time a connection should remain idle in the connection pool before being marked idle. */
+    maxIdleTimeMS: number
+    /** The maximum amount of time operation execution should wait for a connection to become available. The default is 0 which means there is no limit. */
+    waitQueueTimeoutMS: number
+    /** If we are in load balancer mode. */
+    loadBalanced: boolean
+    /* Excluded from this release type: minPoolSizeCheckFrequencyMS */
+}
+
+/**
+ * An event published when a connection pool is ready
+ * @public
+ * @category Event
+ */
+export declare class ConnectionPoolReadyEvent extends ConnectionPoolMonitoringEvent {
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * An event published when a connection is ready for use
+ * @public
+ * @category Event
+ */
+export declare class ConnectionReadyEvent extends ConnectionPoolMonitoringEvent {
+    /** The id of the connection */
+    connectionId: number | "<monitor>"
+    /* Excluded from this release type: __constructor */
+}
+
+/** @public */
+export declare interface ConnectOptions {
     readPreference?: ReadPreference
 }
 
-/**
- * MongoClientCommonOption
- */
-export interface MongoClientCommonOption {
-    /**
-     * Do not make the db an event listener to the original connection.
-     */
-    noListener?: boolean
+/** @public */
+export declare interface CountDocumentsOptions extends AggregateOptions {
+    /** The number of documents to skip. */
+    skip?: number
+    /** The maximum amounts to count before aborting. */
+    limit?: number
+}
 
+/** @public */
+export declare interface CountOptions extends CommandOperationOptions {
+    /** The number of documents to skip. */
+    skip?: number
+    /** The maximum amounts to count before aborting. */
+    limit?: number
+    /** Number of milliseconds to wait before aborting the query. */
+    maxTimeMS?: number
+    /** An index name hint for the query. */
+    hint?: string | Document
+}
+
+/** @public */
+export declare interface CreateCollectionOptions
+    extends CommandOperationOptions {
+    /** Returns an error if the collection does not exist */
+    strict?: boolean
+    /** Create a capped collection */
+    capped?: boolean
+    /** @deprecated Create an index on the _id field of the document. This option is deprecated in MongoDB 3.2+ and will be removed once no longer supported by the server. */
+    autoIndexId?: boolean
+    /** The size of the capped collection in bytes */
+    size?: number
+    /** The maximum number of documents in the capped collection */
+    max?: number
+    /** Available for the MMAPv1 storage engine only to set the usePowerOf2Sizes and the noPadding flag */
+    flags?: number
+    /** Allows users to specify configuration to the storage engine on a per-collection basis when creating a collection */
+    storageEngine?: Document
+    /** Allows users to specify validation rules or expressions for the collection. For more information, see Document Validation */
+    validator?: Document
+    /** Determines how strictly MongoDB applies the validation rules to existing documents during an update */
+    validationLevel?: string
+    /** Determines whether to error on invalid documents or just warn about the violations but allow invalid documents to be inserted */
+    validationAction?: string
+    /** Allows users to specify a default configuration for indexes when creating a collection */
+    indexOptionDefaults?: Document
+    /** The name of the source collection or view from which to create the view. The name is not the full namespace of the collection or view (i.e., does not include the database name and implies the same database as the view to create) */
+    viewOn?: string
+    /** An array that consists of the aggregation pipeline stage. Creates the view by applying the specified pipeline to the viewOn collection or view */
+    pipeline?: Document[]
+    /** A primary key factory function for generation of custom _id keys. */
+    pkFactory?: PkFactory
+    /** A document specifying configuration options for timeseries collections. */
+    timeseries?: TimeSeriesCollectionOptions
+    /** A document specifying configuration options for clustered collections. For MongoDB 5.3 and above. */
+    clusteredIndex?: ClusteredCollectionOptions
+    /** The number of seconds after which a document in a timeseries or clustered collection expires. */
+    expireAfterSeconds?: number
+    /** @experimental */
+    encryptedFields?: Document
     /**
-     * Control if you want to return a cached instance or have a new one created
+     * If set, enables pre-update and post-update document events to be included for any
+     * change streams that listen on this collection.
      */
-    returnNonCachedInstance?: boolean
+    changeStreamPreAndPostImages?: {
+        enabled: boolean
+    }
+}
+
+/** @public */
+export declare interface CreateIndexesOptions
+    extends Omit<CommandOperationOptions, "writeConcern"> {
+    /** Creates the index in the background, yielding whenever possible. */
+    background?: boolean
+    /** Creates an unique index. */
+    unique?: boolean
+    /** Override the autogenerated index name (useful if the resulting name is larger than 128 bytes) */
+    name?: string
+    /** Creates a partial index based on the given filter object (MongoDB 3.2 or higher) */
+    partialFilterExpression?: Document
+    /** Creates a sparse index. */
+    sparse?: boolean
+    /** Allows you to expire data on indexes applied to a data (MongoDB 2.2 or higher) */
+    expireAfterSeconds?: number
+    /** Allows users to configure the storage engine on a per-index basis when creating an index. (MongoDB 3.0 or higher) */
+    storageEngine?: Document
+    /** (MongoDB 4.4. or higher) Specifies how many data-bearing members of a replica set, including the primary, must complete the index builds successfully before the primary marks the indexes as ready. This option accepts the same values for the "w" field in a write concern plus "votingMembers", which indicates all voting data-bearing nodes. */
+    commitQuorum?: number | string
+    /** Specifies the index version number, either 0 or 1. */
+    version?: number
+    weights?: Document
+    default_language?: string
+    language_override?: string
+    textIndexVersion?: number
+    "2dsphereIndexVersion"?: number
+    bits?: number
+    /** For geospatial indexes set the lower bound for the co-ordinates. */
+    min?: number
+    /** For geospatial indexes set the high bound for the co-ordinates. */
+    max?: number
+    bucketSize?: number
+    wildcardProjection?: Document
+    /** Specifies that the index should exist on the target collection but should not be used by the query planner when executing operations. (MongoDB 4.4 or higher) */
+    hidden?: boolean
+}
+
+/** @public */
+export declare const CURSOR_FLAGS: readonly [
+    "tailable",
+    "oplogReplay",
+    "noCursorTimeout",
+    "awaitData",
+    "exhaust",
+    "partial",
+]
+
+/** @public */
+export declare type CursorFlag = (typeof CURSOR_FLAGS)[number]
+
+/** @public */
+export declare interface CursorStreamOptions {
+    /** A transformation method applied to each document emitted by the stream */
+    transform?(this: void, doc: Document): Document
 }
 
 /**
- * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
+ * The **Db** class is a class that represents a MongoDB Database.
+ * @public
+ *
+ * @example
+ * ```ts
+ * import { MongoClient } from 'mongodb';
+ *
+ * interface Pet {
+ *   name: string;
+ *   kind: 'dog' | 'cat' | 'fish';
+ * }
+ *
+ * const client = new MongoClient('mongodb://localhost:27017');
+ * const db = client.db();
+ *
+ * // Create a collection that validates our union
+ * await db.createCollection<Pet>('pets', {
+ *   validator: { $expr: { $in: ['$kind', ['dog', 'cat', 'fish']] } }
+ * })
+ * ```
  */
-export type ReadConcernLevel =
-    | "local"
-    | "available"
-    | "majority"
-    | "linearizable"
-    | "snapshot"
-
-/**
- * The MongoDB ReadConcern, which allows for control of the consistency and isolation properties
- * of the data read from replica sets and replica set shards.
- * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
- */
-export interface ReadConcern {
-    level?: ReadConcernLevel
-}
-
-/**
- * A MongoDB WriteConcern, which describes the level of acknowledgement
- * requested from MongoDB for write operations.
- * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#WriteConcern
- */
-export interface WriteConcern {
+export declare class Db {
+    /* Excluded from this release type: s */
+    static SYSTEM_NAMESPACE_COLLECTION: string
+    static SYSTEM_INDEX_COLLECTION: string
+    static SYSTEM_PROFILE_COLLECTION: string
+    static SYSTEM_USER_COLLECTION: string
+    static SYSTEM_COMMAND_COLLECTION: string
+    static SYSTEM_JS_COLLECTION: string
     /**
-     * requests acknowledgement that the write operation has
-     * propagated to a specified number of mongod hosts
-     */
-    w?: number | "majority" | string
-
-    /**
-     * requests acknowledgement from MongoDB that the write operation has
-     * been written to the journal
-     */
-    j?: boolean
-
-    /**
-     * a time limit, in milliseconds, for the write concern
-     */
-    wtimeout?: number
-}
-
-/**
- * The callback format for the forEach iterator method.
- * @param doc An emitted document for the iterator.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#~iteratorCallback
- */
-export interface IteratorCallback<T> {
-    (doc: T): void
-}
-
-/**
- * The callback error format for the forEach iterator method.
- * @param error An error instance representing the error during the execution.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#~endCallback
- */
-export interface EndCallback {
-    (error: MongoError): void
-}
-
-/**
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#~resultCallback
- */
-export type AggregationCursorResult = any | void
-
-/**
- * Creates a new Aggregation Cursor instance (INTERNAL TYPE, do not instantiate directly),
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html
- */
-export interface AggregationCursor<T> extends Readable {
-    /**
-     * Set the batch size for the cursor.
-     * @param value The batchSize for the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#batchSize
-     */
-    batchSize(value: number): AggregationCursor<T>
-
-    /**
-     * Clone the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#clone
-     */
-    clone(): AggregationCursor<T>
-
-    /**
-     * Close the cursor, sending a AggregationCursor command and emitting close.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#close
-     */
-    close(): Promise<AggregationCursorResult>
-
-    /**
-     * Close the cursor, sending a AggregationCursor command and emitting close.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#close
-     */
-    close(callback: MongoCallback<AggregationCursorResult>): void
-
-    /**
-     * Iterates over all the documents for this cursor. As with {cursor.toArray}, not all of the elements will
-     * be iterated if this cursor had been previously accessed. In that case, {cursor.rewind} can be used to reset
-     * the cursor. However, unlike {cursor.toArray}, the cursor will only hold a maximum of batch size elements
-     * at any given time if batch size is specified. Otherwise, the caller is responsible for making sure
-     * that the entire result can fit the memory.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#each
-     */
-    each(callback: MongoCallback<AggregationCursorResult>): void
-
-    /**
-     * Execute the explain for the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#explain
-     */
-    explain(): Promise<AggregationCursorResult>
-
-    /**
-     * Execute the explain for the cursor.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#explain
-     */
-    explain(callback: MongoCallback<AggregationCursorResult>): void
-
-    /**
-     * Add a geoNear stage to the aggregation pipeline.
-     * @param document The geoNear stage document.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#geoNear
-     */
-    geoNear(document: Object): AggregationCursor<T>
-
-    /**
-     * Add a group stage to the aggregation pipeline.
-     * @param document The group stage document.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#group
-     */
-    group(document: Object): AggregationCursor<T>
-
-    /**
-     * Is the cursor closed.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#isClosed
-     */
-    isClosed(): boolean
-
-    /**
-     * Add a limit stage to the aggregation pipeline.
-     * @param value The state limit value.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#limit
-     */
-    limit(value: number): AggregationCursor<T>
-
-    /**
-     * Add a match stage to the aggregation pipeline.
-     * @param document The match stage document.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#match
-     */
-    match(document: Object): AggregationCursor<T>
-
-    /**
-     * Add a maxTimeMS stage to the aggregation pipeline.
-     * @param value The state maxTimeMS value.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#maxTimeMS
-     */
-    maxTimeMS(value: number): AggregationCursor<T>
-
-    /**
-     * Get the next available document from the cursor, returns null if no more documents are available.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#next
-     */
-    next(): Promise<AggregationCursorResult>
-
-    /**
-     * Get the next available document from the cursor, returns null if no more documents are available.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#next
-     */
-    next(callback: MongoCallback<AggregationCursorResult>): void
-
-    /**
-     * Add a out stage to the aggregation pipeline.
-     * @param destination The destination name.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#out
-     */
-    out(destination: string): AggregationCursor<T>
-
-    /**
-     * Add a project stage to the aggregation pipeline.
-     * @param document The project stage document.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#project
-     */
-    project(document: Object): AggregationCursor<T>
-
-    /**
-     * The read() method pulls some data out of the internal buffer and returns it.
-     * If there is no data available, then it will return null.
-     * @param size Optional argument to specify how much data to read.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#read
-     */
-    read(size: number): string | Buffer | void
-
-    /**
-     * Add a redact stage to the aggregation pipeline.
-     * @param document The redact stage document.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#redact
-     */
-    redact(document: Object): AggregationCursor<T>
-
-    /**
-     * Resets the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#rewind
-     */
-    rewind(): AggregationCursor<T>
-
-    /**
-     * Add a skip stage to the aggregation pipeline.
-     * @param value The state skip value.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#setEncoding
-     */
-    skip(value: number): AggregationCursor<T>
-
-    /**
-     * Add a sort stage to the aggregation pipeline.
-     * @param document The sort stage document.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#sort
-     */
-    sort(document: Object): AggregationCursor<T>
-
-    /**
-     * Returns an array of documents. The caller is responsible for making sure that there
-     * is enough memory to store the results. Note that the array only contain partial
-     * results when this cursor had been previously accessed. In that case,
-     * cursor.rewind() can be used to reset the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#toArray
-     */
-    toArray(): Promise<T[]>
-
-    /**
-     * Returns an array of documents. The caller is responsible for making sure that there
-     * is enough memory to store the results. Note that the array only contain partial
-     * results when this cursor had been previously accessed. In that case,
-     * cursor.rewind() can be used to reset the cursor.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#toArray
-     */
-    toArray(callback: MongoCallback<T[]>): void
-
-    /**
-     * This is useful in certain cases where a stream is being consumed by a parser,
-     * which needs to "un-consume" some data that it has optimistically pulled out of the source,
-     * so that the stream can be passed on to some other party.
-     * @param stream Chunk of data to unshift onto the read queue.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#unshift
-     */
-    unshift(stream: Buffer | string): void
-
-    /**
-     * Add a unwind stage to the aggregation pipeline.
-     * @param field The unwind field name.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#unwind
-     */
-    unwind(field: string): AggregationCursor<T>
-}
-
-/**
- * CommandCursor.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html
- */
-export interface CommandCursor extends Readable {
-    /**
-     * Set the batch size for the cursor.
-     * @param value The batchSize for the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#batchSize
-     */
-    batchSize(value: number): CommandCursor
-
-    /**
-     * Clone the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#clone
-     */
-    clone(): CommandCursor
-
-    /**
-     * Close the cursor, sending a KillCursor command and emitting close.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#close
-     */
-    close(): Promise<AggregationCursorResult>
-
-    /**
-     * Close the cursor, sending a KillCursor command and emitting close.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#close
-     */
-    close(callback: MongoCallback<AggregationCursorResult>): void
-
-    /**
-     * Each
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#each
-     */
-    each(callback: MongoCallback<AggregationCursorResult>): void
-
-    /**
-     * Is the cursor closed.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#isClosed
-     */
-    isClosed(): boolean
-
-    /**
-     * Add a maxTimeMS stage to the aggregation pipeline.
-     * @param value The state maxTimeMS value.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#maxTimeMS
-     */
-    maxTimeMS(value: number): CommandCursor
-
-    /**
-     * Get the next available document from the cursor, returns null if no more documents are available.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#next
-     */
-    next(): Promise<AggregationCursorResult>
-
-    /**
-     * Get the next available document from the cursor, returns null if no more documents are available.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#next
-     */
-    next(callback: MongoCallback<AggregationCursorResult>): void
-
-    /**
-     * The read() method pulls some data out of the internal buffer and returns it.
-     * If there is no data available, then it will return null.
-     * @param size Optional argument to specify how much data to read.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#read
-     */
-    read(size: number): string | Buffer | void
-
-    /**
-     * Resets the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#rewind
-     */
-    rewind(): CommandCursor
-
-    /**
-     * Set the ReadPreference for the cursor.
-     * @param readPreference The new read preference for the cursor.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#setReadPreference
-     */
-    setReadPreference(readPreference: string | ReadPreference): CommandCursor
-
-    /**
-     * Returns an array of documents. The caller is responsible for making sure that there is enough memory
-     * to store the results. Note that the array only contain partial results when this cursor had been previously accessed.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#toArray
-     */
-    toArray(): Promise<any[]>
-
-    /**
-     * Returns an array of documents. The caller is responsible for making sure that there is enough memory
-     * to store the results. Note that the array only contain partial results when this cursor had been previously accessed.
-     * @param callback The result callback.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#toArray
-     */
-    toArray(callback: MongoCallback<any[]>): void
-
-    /**
-     * This is useful in certain cases where a stream is being consumed by a parser,
-     * which needs to "un-consume" some data that it has optimistically pulled out of the source,
-     * so that the stream can be passed on to some other party.
-     * @param stream Chunk of data to unshift onto the read queue.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/CommandCursor.html#unshift
-     */
-    unshift(stream: Buffer | string): void
-}
-
-/**
- * GridFSBucket.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html
- */
-export declare class GridFSBucket {
-    /**
+     * Creates a new Db instance
      *
-     * @param db A db handle.
-     * @param options Optional settings.
+     * @param client - The MongoClient for the database.
+     * @param databaseName - The name of the database this instance represents.
+     * @param options - Optional settings for Db construction
      */
+    constructor(client: MongoClient, databaseName: string, options?: DbOptions)
+    get databaseName(): string
+    get options(): DbOptions | undefined
+    /**
+     * Check if a secondary can be used (because the read preference is *not* set to primary)
+     */
+    get secondaryOk(): boolean
+    get readConcern(): ReadConcern | undefined
+    /**
+     * The current readPreference of the Db. If not explicitly defined for
+     * this Db, will be inherited from the parent MongoClient
+     */
+    get readPreference(): ReadPreference
+    get bsonOptions(): BSONSerializeOptions
+    get writeConcern(): WriteConcern | undefined
+    get namespace(): string
+    /**
+     * Create a new collection on a server with the specified options. Use this to create capped collections.
+     * More information about command options available at https://www.mongodb.com/docs/manual/reference/command/create/
+     *
+     * @param name - The name of the collection to create
+     * @param options - Optional settings for the command
+     */
+    createCollection<TSchema extends Document = Document>(
+        name: string,
+        options?: CreateCollectionOptions,
+    ): Promise<Collection<TSchema>>
+    /**
+     * Execute a command
+     *
+     * @remarks
+     * This command does not inherit options from the MongoClient.
+     *
+     * @param command - The command to run
+     * @param options - Optional settings for the command
+     */
+    command(command: Document, options?: RunCommandOptions): Promise<Document>
+    /**
+     * Execute an aggregation framework pipeline against the database, needs MongoDB \>= 3.6
+     *
+     * @param pipeline - An array of aggregation stages to be executed
+     * @param options - Optional settings for the command
+     */
+    aggregate<T extends Document = Document>(
+        pipeline?: Document[],
+        options?: AggregateOptions,
+    ): AggregationCursor<T>
+    /** Return the Admin db instance */
+    admin(): Admin
+    /**
+     * Returns a reference to a MongoDB Collection. If it does not exist it will be created implicitly.
+     *
+     * @param name - the collection name we wish to access.
+     * @returns return the new Collection instance
+     */
+    collection<TSchema extends Document = Document>(
+        name: string,
+        options?: CollectionOptions,
+    ): Collection<TSchema>
+    /**
+     * Get all the db statistics.
+     *
+     * @param options - Optional settings for the command
+     */
+    stats(options?: DbStatsOptions): Promise<Document>
+    /**
+     * List all collections of this database with optional filter
+     *
+     * @param filter - Query to filter collections by
+     * @param options - Optional settings for the command
+     */
+    listCollections(
+        filter: Document,
+        options: Exclude<ListCollectionsOptions, "nameOnly"> & {
+            nameOnly: true
+        },
+    ): ListCollectionsCursor<Pick<CollectionInfo, "name" | "type">>
+    listCollections(
+        filter: Document,
+        options: Exclude<ListCollectionsOptions, "nameOnly"> & {
+            nameOnly: false
+        },
+    ): ListCollectionsCursor<CollectionInfo>
+    listCollections<
+        T extends Pick<CollectionInfo, "name" | "type"> | CollectionInfo =
+            | Pick<CollectionInfo, "name" | "type">
+            | CollectionInfo,
+    >(
+        filter?: Document,
+        options?: ListCollectionsOptions,
+    ): ListCollectionsCursor<T>
+    /**
+     * Rename a collection.
+     *
+     * @remarks
+     * This operation does not inherit options from the MongoClient.
+     *
+     * @param fromCollection - Name of current collection to rename
+     * @param toCollection - New name of of the collection
+     * @param options - Optional settings for the command
+     */
+    renameCollection<TSchema extends Document = Document>(
+        fromCollection: string,
+        toCollection: string,
+        options?: RenameOptions,
+    ): Promise<Collection<TSchema>>
+    /**
+     * Drop a collection from the database, removing it permanently. New accesses will create a new collection.
+     *
+     * @param name - Name of collection to drop
+     * @param options - Optional settings for the command
+     */
+    dropCollection(
+        name: string,
+        options?: DropCollectionOptions,
+    ): Promise<boolean>
+    /**
+     * Drop a database, removing it permanently from the server.
+     *
+     * @param options - Optional settings for the command
+     */
+    dropDatabase(options?: DropDatabaseOptions): Promise<boolean>
+    /**
+     * Fetch all collections for the current db.
+     *
+     * @param options - Optional settings for the command
+     */
+    collections(options?: ListCollectionsOptions): Promise<Collection[]>
+    /**
+     * Creates an index on the db and collection.
+     *
+     * @param name - Name of the collection to create the index on.
+     * @param indexSpec - Specify the field to index, or an index specification
+     * @param options - Optional settings for the command
+     */
+    createIndex(
+        name: string,
+        indexSpec: IndexSpecification,
+        options?: CreateIndexesOptions,
+    ): Promise<string>
+    /**
+     * Add a user to the database
+     *
+     * @param username - The username for the new user
+     * @param passwordOrOptions - An optional password for the new user, or the options for the command
+     * @param options - Optional settings for the command
+     */
+    addUser(
+        username: string,
+        passwordOrOptions?: string | AddUserOptions,
+        options?: AddUserOptions,
+    ): Promise<Document>
+    /**
+     * Remove a user from a database
+     *
+     * @param username - The username to remove
+     * @param options - Optional settings for the command
+     */
+    removeUser(username: string, options?: RemoveUserOptions): Promise<boolean>
+    /**
+     * Set the current profiling level of MongoDB
+     *
+     * @param level - The new profiling level (off, slow_only, all).
+     * @param options - Optional settings for the command
+     */
+    setProfilingLevel(
+        level: ProfilingLevel,
+        options?: SetProfilingLevelOptions,
+    ): Promise<ProfilingLevel>
+    /**
+     * Retrieve the current profiling Level for MongoDB
+     *
+     * @param options - Optional settings for the command
+     */
+    profilingLevel(options?: ProfilingLevelOptions): Promise<string>
+    /**
+     * Retrieves this collections index info.
+     *
+     * @param name - The name of the collection.
+     * @param options - Optional settings for the command
+     */
+    indexInformation(
+        name: string,
+        options?: IndexInformationOptions,
+    ): Promise<Document>
+    /**
+     * Create a new Change Stream, watching for new changes (insertions, updates,
+     * replacements, deletions, and invalidations) in this database. Will ignore all
+     * changes to system collections.
+     *
+     * @remarks
+     * watch() accepts two generic arguments for distinct use cases:
+     * - The first is to provide the schema that may be defined for all the collections within this database
+     * - The second is to override the shape of the change stream document entirely, if it is not provided the type will default to ChangeStreamDocument of the first argument
+     *
+     * @param pipeline - An array of {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation-pipeline/|aggregation pipeline stages} through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
+     * @param options - Optional settings for the command
+     * @typeParam TSchema - Type of the data being detected by the change stream
+     * @typeParam TChange - Type of the whole change stream document emitted
+     */
+    watch<
+        TSchema extends Document = Document,
+        TChange extends Document = ChangeStreamDocument<TSchema>,
+    >(
+        pipeline?: Document[],
+        options?: ChangeStreamOptions,
+    ): ChangeStream<TSchema, TChange>
+}
+
+/* Excluded from this release type: DB_AGGREGATE_COLLECTION */
+
+/** @public */
+export declare interface DbOptions
+    extends BSONSerializeOptions,
+        WriteConcernOptions {
+    /** If the database authentication is dependent on another databaseName. */
+    authSource?: string
+    /** Force server to assign _id values instead of driver. */
+    forceServerObjectId?: boolean
+    /** The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST). */
+    readPreference?: ReadPreferenceLike
+    /** A primary key factory object for generation of custom _id keys. */
+    pkFactory?: PkFactory
+    /** Specify a read concern for the collection. (only MongoDB 3.2 or higher supported) */
+    readConcern?: ReadConcern
+    /** Should retry failed writes */
+    retryWrites?: boolean
+}
+
+/* Excluded from this release type: DbPrivate */
+export { DBRef }
+
+/** @public */
+export declare interface DbStatsOptions extends CommandOperationOptions {
+    /** Divide the returned sizes by scale value. */
+    scale?: number
+}
+
+export { Decimal128 }
+
+/** @public */
+export declare interface DeleteManyModel<TSchema extends Document = Document> {
+    /** The filter to limit the deleted documents. */
+    filter: Filter<TSchema>
+    /** Specifies a collation. */
+    collation?: CollationOptions
+    /** The index to use. If specified, then the query system will only consider plans using the hinted index. */
+    hint?: Hint
+}
+
+/** @public */
+export declare interface DeleteOneModel<TSchema extends Document = Document> {
+    /** The filter to limit the deleted documents. */
+    filter: Filter<TSchema>
+    /** Specifies a collation. */
+    collation?: CollationOptions
+    /** The index to use. If specified, then the query system will only consider plans using the hinted index. */
+    hint?: Hint
+}
+
+/** @public */
+export declare interface DeleteOptions
+    extends CommandOperationOptions,
+        WriteConcernOptions {
+    /** If true, when an insert fails, don't execute the remaining writes. If false, continue with remaining inserts when one fails. */
+    ordered?: boolean
+    /** Specifies the collation to use for the operation */
+    collation?: CollationOptions
+    /** Specify that the update query should only consider plans using the hinted index */
+    hint?: string | Document
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+}
+
+/** @public */
+export declare interface DeleteResult {
+    /** Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined. */
+    acknowledged: boolean
+    /** The number of documents that were deleted */
+    deletedCount: number
+}
+
+/** @public */
+export declare interface DeleteStatement {
+    /** The query that matches documents to delete. */
+    q: Document
+    /** The number of matching documents to delete. */
+    limit: number
+    /** Specifies the collation to use for the operation. */
+    collation?: CollationOptions
+    /** A document or string that specifies the index to use to support the query predicate. */
+    hint?: Hint
+}
+
+export { deserialize }
+
+/* Excluded from this release type: DestroyOptions */
+
+/** @public */
+export declare type DistinctOptions = CommandOperationOptions
+
+export { Document }
+
+export { Double }
+
+/** @public */
+export declare interface DriverInfo {
+    name?: string
+    version?: string
+    platform?: string
+}
+
+/** @public */
+export declare interface DropCollectionOptions extends CommandOperationOptions {
+    /** @experimental */
+    encryptedFields?: Document
+}
+
+/** @public */
+export declare type DropDatabaseOptions = CommandOperationOptions
+
+/** @public */
+export declare type DropIndexesOptions = CommandOperationOptions
+
+/* Excluded from this release type: Encrypter */
+
+/* Excluded from this release type: EncrypterOptions */
+
+/** @public */
+export declare interface EndSessionOptions {
+    /* Excluded from this release type: error */
+    force?: boolean
+    forceClear?: boolean
+}
+
+/** TypeScript Omit (Exclude to be specific) does not work for objects with an "any" indexed type, and breaks discriminated unions @public */
+export declare type EnhancedOmit<TRecordOrUnion, KeyUnion> =
+    string extends keyof TRecordOrUnion
+        ? TRecordOrUnion
+        : TRecordOrUnion extends any
+        ? Pick<TRecordOrUnion, Exclude<keyof TRecordOrUnion, KeyUnion>>
+        : never
+
+/** @public */
+export declare interface ErrorDescription extends Document {
+    message?: string
+    errmsg?: string
+    $err?: string
+    errorLabels?: string[]
+    errInfo?: Document
+}
+
+/** @public */
+export declare interface EstimatedDocumentCountOptions
+    extends CommandOperationOptions {
+    /**
+     * The maximum amount of time to allow the operation to run.
+     *
+     * This option is sent only if the caller explicitly provides a value. The default is to not send a value.
+     */
+    maxTimeMS?: number
+}
+
+/** @public */
+export declare interface EvalOptions extends CommandOperationOptions {
+    nolock?: boolean
+}
+
+/** @public */
+export declare type EventEmitterWithState = {
+    /* Excluded from this release type: stateChanged */
+}
+
+/**
+ * Event description type
+ * @public
+ */
+export declare type EventsDescription = Record<string, GenericListener>
+
+/* Excluded from this release type: ExecutionResult */
+
+/* Excluded from this release type: Explain */
+
+/** @public */
+export declare interface ExplainOptions {
+    /** Specifies the verbosity mode for the explain output. */
+    explain?: ExplainVerbosityLike
+}
+
+/** @public */
+export declare const ExplainVerbosity: Readonly<{
+    readonly queryPlanner: "queryPlanner"
+    readonly queryPlannerExtended: "queryPlannerExtended"
+    readonly executionStats: "executionStats"
+    readonly allPlansExecution: "allPlansExecution"
+}>
+
+/** @public */
+export declare type ExplainVerbosity = string
+
+/**
+ * For backwards compatibility, true is interpreted as "allPlansExecution"
+ * and false as "queryPlanner". Prior to server version 3.6, aggregate()
+ * ignores the verbosity parameter and executes in "queryPlanner".
+ * @public
+ */
+export declare type ExplainVerbosityLike = ExplainVerbosity | boolean
+
+/** A MongoDB filter can be some portion of the schema or a set of operators @public */
+export declare type Filter<TSchema> = {
+    [P in keyof WithId<TSchema>]?: Condition<WithId<TSchema>[P]>
+} & RootFilterOperators<WithId<TSchema>>
+
+/** @public */
+export declare type FilterOperations<T> = T extends Record<string, any>
+    ? {
+          [key in keyof T]?: FilterOperators<T[key]>
+      }
+    : FilterOperators<T>
+
+/** @public */
+export declare interface FilterOperators<TValue>
+    extends NonObjectIdLikeDocument {
+    $eq?: TValue
+    $gt?: TValue
+    $gte?: TValue
+    $in?: ReadonlyArray<TValue>
+    $lt?: TValue
+    $lte?: TValue
+    $ne?: TValue
+    $nin?: ReadonlyArray<TValue>
+    $not?: TValue extends string
+        ? FilterOperators<TValue> | RegExp
+        : FilterOperators<TValue>
+    /**
+     * When `true`, `$exists` matches the documents that contain the field,
+     * including documents where the field value is null.
+     */
+    $exists?: boolean
+    $type?: BSONType | BSONTypeAlias
+    $expr?: Record<string, any>
+    $jsonSchema?: Record<string, any>
+    $mod?: TValue extends number ? [number, number] : never
+    $regex?: TValue extends string ? RegExp | BSONRegExp | string : never
+    $options?: TValue extends string ? string : never
+    $geoIntersects?: {
+        $geometry: Document
+    }
+    $geoWithin?: Document
+    $near?: Document
+    $nearSphere?: Document
+    $maxDistance?: number
+    $all?: ReadonlyArray<any>
+    $elemMatch?: Document
+    $size?: TValue extends ReadonlyArray<any> ? number : never
+    $bitsAllClear?: BitwiseFilter
+    $bitsAllSet?: BitwiseFilter
+    $bitsAnyClear?: BitwiseFilter
+    $bitsAnySet?: BitwiseFilter
+    $rand?: Record<string, never>
+}
+
+/** @public */
+export declare class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
+    /* Excluded from this release type: [kFilter] */
+    /* Excluded from this release type: [kNumReturned] */
+    /* Excluded from this release type: [kBuiltOptions] */
+    /* Excluded from this release type: __constructor */
+    clone(): FindCursor<TSchema>
+    map<T>(transform: (doc: TSchema) => T): FindCursor<T>
+    /* Excluded from this release type: _initialize */
+    /* Excluded from this release type: _getMore */
+    /**
+     * Get the count of documents for this cursor
+     * @deprecated Use `collection.estimatedDocumentCount` or `collection.countDocuments` instead
+     */
+    count(options?: CountOptions): Promise<number>
+    /** Execute the explain for the cursor */
+    explain(verbosity?: ExplainVerbosityLike): Promise<Document>
+    /** Set the cursor query */
+    filter(filter: Document): this
+    /**
+     * Set the cursor hint
+     *
+     * @param hint - If specified, then the query system will only consider plans using the hinted index.
+     */
+    hint(hint: Hint): this
+    /**
+     * Set the cursor min
+     *
+     * @param min - Specify a $min value to specify the inclusive lower bound for a specific index in order to constrain the results of find(). The $min specifies the lower bound for all keys of a specific index in order.
+     */
+    min(min: Document): this
+    /**
+     * Set the cursor max
+     *
+     * @param max - Specify a $max value to specify the exclusive upper bound for a specific index in order to constrain the results of find(). The $max specifies the upper bound for all keys of a specific index in order.
+     */
+    max(max: Document): this
+    /**
+     * Set the cursor returnKey.
+     * If set to true, modifies the cursor to only return the index field or fields for the results of the query, rather than documents.
+     * If set to true and the query does not use an index to perform the read operation, the returned documents will not contain any fields.
+     *
+     * @param value - the returnKey value.
+     */
+    returnKey(value: boolean): this
+    /**
+     * Modifies the output of a query by adding a field $recordId to matching documents. $recordId is the internal key which uniquely identifies a document in a collection.
+     *
+     * @param value - The $showDiskLoc option has now been deprecated and replaced with the showRecordId field. $showDiskLoc will still be accepted for OP_QUERY stye find.
+     */
+    showRecordId(value: boolean): this
+    /**
+     * Add a query modifier to the cursor query
+     *
+     * @param name - The query modifier (must start with $, such as $orderby etc)
+     * @param value - The modifier value.
+     */
+    addQueryModifier(
+        name: string,
+        value: string | boolean | number | Document,
+    ): this
+    /**
+     * Add a comment to the cursor query allowing for tracking the comment in the log.
+     *
+     * @param value - The comment attached to this query.
+     */
+    comment(value: string): this
+    /**
+     * Set a maxAwaitTimeMS on a tailing cursor query to allow to customize the timeout value for the option awaitData (Only supported on MongoDB 3.2 or higher, ignored otherwise)
+     *
+     * @param value - Number of milliseconds to wait before aborting the tailed query.
+     */
+    maxAwaitTimeMS(value: number): this
+    /**
+     * Set a maxTimeMS on the cursor query, allowing for hard timeout limits on queries (Only supported on MongoDB 2.6 or higher)
+     *
+     * @param value - Number of milliseconds to wait before aborting the query.
+     */
+    maxTimeMS(value: number): this
+    /**
+     * Add a project stage to the aggregation pipeline
+     *
+     * @remarks
+     * In order to strictly type this function you must provide an interface
+     * that represents the effect of your projection on the result documents.
+     *
+     * By default chaining a projection to your cursor changes the returned type to the generic
+     * {@link Document} type.
+     * You should specify a parameterized type to have assertions on your final results.
+     *
+     * @example
+     * ```typescript
+     * // Best way
+     * const docs: FindCursor<{ a: number }> = cursor.project<{ a: number }>({ _id: 0, a: true });
+     * // Flexible way
+     * const docs: FindCursor<Document> = cursor.project({ _id: 0, a: true });
+     * ```
+     *
+     * @remarks
+     *
+     * **Note for Typescript Users:** adding a transform changes the return type of the iteration of this cursor,
+     * it **does not** return a new instance of a cursor. This means when calling project,
+     * you should always assign the result to a new variable in order to get a correctly typed cursor variable.
+     * Take note of the following example:
+     *
+     * @example
+     * ```typescript
+     * const cursor: FindCursor<{ a: number; b: string }> = coll.find();
+     * const projectCursor = cursor.project<{ a: number }>({ _id: 0, a: true });
+     * const aPropOnlyArray: {a: number}[] = await projectCursor.toArray();
+     *
+     * // or always use chaining and save the final cursor
+     *
+     * const cursor = coll.find().project<{ a: string }>({
+     *   _id: 0,
+     *   a: { $convert: { input: '$a', to: 'string' }
+     * }});
+     * ```
+     */
+    project<T extends Document = Document>(value: Document): FindCursor<T>
+    /**
+     * Sets the sort order of the cursor query.
+     *
+     * @param sort - The key or keys set for the sort.
+     * @param direction - The direction of the sorting (1 or -1).
+     */
+    sort(sort: Sort | string, direction?: SortDirection): this
+    /**
+     * Allows disk use for blocking sort operations exceeding 100MB memory. (MongoDB 3.2 or higher)
+     *
+     * @remarks
+     * {@link https://www.mongodb.com/docs/manual/reference/command/find/#find-cmd-allowdiskuse | find command allowDiskUse documentation}
+     */
+    allowDiskUse(allow?: boolean): this
+    /**
+     * Set the collation options for the cursor.
+     *
+     * @param value - The cursor collation options (MongoDB 3.4 or higher) settings for update operation (see 3.4 documentation for available fields).
+     */
+    collation(value: CollationOptions): this
+    /**
+     * Set the limit for the cursor.
+     *
+     * @param value - The limit for the cursor query.
+     */
+    limit(value: number): this
+    /**
+     * Set the skip for the cursor.
+     *
+     * @param value - The skip for the cursor query.
+     */
+    skip(value: number): this
+}
+
+/** @public */
+export declare interface FindOneAndDeleteOptions
+    extends CommandOperationOptions {
+    /** An optional hint for query optimization. See the {@link https://www.mongodb.com/docs/manual/reference/command/update/#update-command-hint|update command} reference for more information.*/
+    hint?: Document
+    /** Limits the fields to return for all matching documents. */
+    projection?: Document
+    /** Determines which document the operation modifies if the query selects multiple documents. */
+    sort?: Sort
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+}
+
+/** @public */
+export declare interface FindOneAndReplaceOptions
+    extends CommandOperationOptions {
+    /** Allow driver to bypass schema validation in MongoDB 3.2 or higher. */
+    bypassDocumentValidation?: boolean
+    /** An optional hint for query optimization. See the {@link https://www.mongodb.com/docs/manual/reference/command/update/#update-command-hint|update command} reference for more information.*/
+    hint?: Document
+    /** Limits the fields to return for all matching documents. */
+    projection?: Document
+    /** When set to 'after', returns the updated document rather than the original. The default is 'before'.  */
+    returnDocument?: ReturnDocument
+    /** Determines which document the operation modifies if the query selects multiple documents. */
+    sort?: Sort
+    /** Upsert the document if it does not exist. */
+    upsert?: boolean
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+}
+
+/** @public */
+export declare interface FindOneAndUpdateOptions
+    extends CommandOperationOptions {
+    /** Optional list of array filters referenced in filtered positional operators */
+    arrayFilters?: Document[]
+    /** Allow driver to bypass schema validation in MongoDB 3.2 or higher. */
+    bypassDocumentValidation?: boolean
+    /** An optional hint for query optimization. See the {@link https://www.mongodb.com/docs/manual/reference/command/update/#update-command-hint|update command} reference for more information.*/
+    hint?: Document
+    /** Limits the fields to return for all matching documents. */
+    projection?: Document
+    /** When set to 'after', returns the updated document rather than the original. The default is 'before'.  */
+    returnDocument?: ReturnDocument
+    /** Determines which document the operation modifies if the query selects multiple documents. */
+    sort?: Sort
+    /** Upsert the document if it does not exist. */
+    upsert?: boolean
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+}
+
+/**
+ * A builder object that is returned from {@link BulkOperationBase#find}.
+ * Is used to build a write operation that involves a query filter.
+ *
+ * @public
+ */
+export declare class FindOperators {
+    bulkOperation: BulkOperationBase
+    /* Excluded from this release type: __constructor */
+    /** Add a multiple update operation to the bulk operation */
+    update(updateDocument: Document | Document[]): BulkOperationBase
+    /** Add a single update operation to the bulk operation */
+    updateOne(updateDocument: Document | Document[]): BulkOperationBase
+    /** Add a replace one operation to the bulk operation */
+    replaceOne(replacement: Document): BulkOperationBase
+    /** Add a delete one operation to the bulk operation */
+    deleteOne(): BulkOperationBase
+    /** Add a delete many operation to the bulk operation */
+    delete(): BulkOperationBase
+    /** Upsert modifier for update bulk operation, noting that this operation is an upsert. */
+    upsert(): this
+    /** Specifies the collation for the query condition. */
+    collation(collation: CollationOptions): this
+    /** Specifies arrayFilters for UpdateOne or UpdateMany bulk operations. */
+    arrayFilters(arrayFilters: Document[]): this
+    /** Specifies hint for the bulk operation. */
+    hint(hint: Hint): this
+}
+
+/**
+ * @public
+ * @typeParam TSchema - Unused schema definition, deprecated usage, only specify `FindOptions` with no generic
+ */
+export declare interface FindOptions<TSchema extends Document = Document>
+    extends Omit<CommandOperationOptions, "writeConcern"> {
+    /** Sets the limit of documents returned in the query. */
+    limit?: number
+    /** Set to sort the documents coming back from the query. Array of indexes, `[['a', 1]]` etc. */
+    sort?: Sort
+    /** The fields to return in the query. Object of fields to either include or exclude (one of, not both), `{'a':1, 'b': 1}` **or** `{'a': 0, 'b': 0}` */
+    projection?: Document
+    /** Set to skip N documents ahead in your query (useful for pagination). */
+    skip?: number
+    /** Tell the query to use specific indexes in the query. Object of indexes to use, `{'_id':1}` */
+    hint?: Hint
+    /** Specify if the cursor can timeout. */
+    timeout?: boolean
+    /** Specify if the cursor is tailable. */
+    tailable?: boolean
+    /** Specify if the cursor is a tailable-await cursor. Requires `tailable` to be true */
+    awaitData?: boolean
+    /** Set the batchSize for the getMoreCommand when iterating over the query results. */
+    batchSize?: number
+    /** If true, returns only the index keys in the resulting documents. */
+    returnKey?: boolean
+    /** The inclusive lower bound for a specific index */
+    min?: Document
+    /** The exclusive upper bound for a specific index */
+    max?: Document
+    /** Number of milliseconds to wait before aborting the query. */
+    maxTimeMS?: number
+    /** The maximum amount of time for the server to wait on new documents to satisfy a tailable cursor query. Requires `tailable` and `awaitData` to be true */
+    maxAwaitTimeMS?: number
+    /** The server normally times out idle cursors after an inactivity period (10 minutes) to prevent excess memory use. Set this option to prevent that. */
+    noCursorTimeout?: boolean
+    /** Specify collation (MongoDB 3.4 or higher) settings for update operation (see 3.4 documentation for available fields). */
+    collation?: CollationOptions
+    /** Allows disk use for blocking sort operations exceeding 100MB memory. (MongoDB 3.2 or higher) */
+    allowDiskUse?: boolean
+    /** Determines whether to close the cursor after the first batch. Defaults to false. */
+    singleBatch?: boolean
+    /** For queries against a sharded collection, allows the command (or subsequent getMore commands) to return partial results, rather than an error, if one or more queried shards are unavailable. */
+    allowPartialResults?: boolean
+    /** Determines whether to return the record identifier for each document. If true, adds a field $recordId to the returned documents. */
+    showRecordId?: boolean
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+    /**
+     * Option to enable an optimized code path for queries looking for a particular range of `ts` values in the oplog. Requires `tailable` to be true.
+     * @deprecated Starting from MongoDB 4.4 this flag is not needed and will be ignored.
+     */
+    oplogReplay?: boolean
+}
+
+/** @public */
+export declare type Flatten<Type> = Type extends ReadonlyArray<infer Item>
+    ? Item
+    : Type
+
+/** @public */
+export declare type GenericListener = (...args: any[]) => void
+
+/**
+ * Constructor for a streaming GridFS interface
+ * @public
+ */
+export declare class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
+    /* Excluded from this release type: s */
+    /**
+     * When the first call to openUploadStream is made, the upload stream will
+     * check to see if it needs to create the proper indexes on the chunks and
+     * files collections. This event is fired either when 1) it determines that
+     * no index creation is necessary, 2) when it successfully creates the
+     * necessary indexes.
+     * @event
+     */
+    static readonly INDEX: "index"
     constructor(db: Db, options?: GridFSBucketOptions)
-
     /**
-     * Deletes a file with the given id.
-     * @param id The id of the file doc
-     * @param callback The result callback
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#delete
-     */
-    delete(id: ObjectID, callback?: GridFSBucketErrorCallback): void
-
-    /**
-     * Removes this bucket's files collection, followed by its chunks collection.
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#drop
-     */
-    drop(callback?: GridFSBucketErrorCallback): void
-
-    /**
-     * Convenience wrapper around find on the files collection
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#find
-     */
-    find(filter?: Object, options?: GridFSBucketFindOptions): Cursor<any>
-
-    /**
-     * Returns a readable stream (GridFSBucketReadStream) for streaming file.
-     * @param id The id of the file doc.
-     * @param options Optional settings
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openDownloadStream
-     */
-    openDownloadStream(
-        id: ObjectID,
-        options?: { start: number; end: number },
-    ): GridFSBucketReadStream
-
-    /**
-     * Returns a readable stream (GridFSBucketReadStream) for streaming file
-     * @param filename The id of the file doc
-     * @param options Optional settings
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openDownloadStreamByName
-     */
-
-    openDownloadStreamByName(
-        filename: string,
-        options?: { revision: number; start: number; end: number },
-    ): GridFSBucketReadStream
-
-    /**
-     * Returns a writable stream (GridFSBucketWriteStream) for writing buffers to GridFS.
-     * The stream's 'id' property contains the resulting file's id.
-     * @param filename The value of the 'filename' key in the files doc.
-     * @param options Optional settings
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openUploadStream
+     * Returns a writable stream (GridFSBucketWriteStream) for writing
+     * buffers to GridFS. The stream's 'id' property contains the resulting
+     * file's id.
+     *
+     * @param filename - The value of the 'filename' key in the files doc
+     * @param options - Optional settings.
      */
     openUploadStream(
         filename: string,
-        options?: GridFSBucketOpenUploadStreamOptions,
+        options?: GridFSBucketWriteStreamOptions,
     ): GridFSBucketWriteStream
-
     /**
-     * Returns a writable stream (GridFSBucketWriteStream) for writing buffers to GridFS for a custom file id.
-     * The stream's 'id' property contains the resulting file's id.
-     * @param id A custom id used to identify the file.
-     * @param filename The value of the 'filename' key in the files doc.
-     * @param options Optional settings
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openUploadStreamWithId
+     * Returns a writable stream (GridFSBucketWriteStream) for writing
+     * buffers to GridFS for a custom file id. The stream's 'id' property contains the resulting
+     * file's id.
      */
     openUploadStreamWithId(
-        id: string | number | Object,
+        id: ObjectId,
         filename: string,
-        options?: GridFSBucketOpenUploadStreamOptions,
+        options?: GridFSBucketWriteStreamOptions,
     ): GridFSBucketWriteStream
-
-    /**
-     * Renames the file with the given _id to the given string.
-     * @param id the id of the file to rename.
-     * @param filename new name for the file.
-     * @param callback The result callback
-     * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#rename
-     */
-    rename(
-        id: ObjectID,
-        filename: string,
-        callback?: GridFSBucketErrorCallback,
-    ): void
-}
-
-/**
- * Constructor for a streaming GridFS interface.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html
- */
-export interface GridFSBucketOptions {
-    /**
-     * The 'files' and 'chunks' collections will be prefixed with the bucket name followed by a dot.
-     */
-    bucketName?: string
-
-    /**
-     * Number of bytes stored in each chunk. Defaults to 255KB.
-     */
-    chunkSizeBytes?: number
-
-    /**
-     * Optional write concern to be passed to write operations, for instance { w: 1 }.
-     */
-    writeConcern?: WriteConcern
-
-    /**
-     * Optional read preference to be passed to read operations.
-     */
-    ReadPreference?: ReadPreference
-}
-
-/**
- * GridFSBucketErrorCallback.
- * @param err An error instance representing any errors that occurred.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#~errorCallback
- */
-export interface GridFSBucketErrorCallback {
-    (err?: MongoError): void
-}
-
-/**
- * GridFSBucketFindOptions.
- * @see http://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#find
- */
-export interface GridFSBucketFindOptions {
-    /**
-     * Optional batch size for cursor.
-     */
-    batchSize?: number
-
-    /**
-     * Optional limit for cursor.
-     */
-    limit?: number
-
-    /**
-     * Optional maxTimeMS for cursor.
-     */
-    maxTimeMS?: number
-
-    /**
-     * Optionally set cursor's noCursorTimeout flag.
-     */
-    noCursorTimeout?: boolean
-
-    /**
-     * Optional skip for cursor.
-     */
-    skip?: number
-
-    /**
-     * Optional sort for cursor.
-     */
-    sort?: Object
-}
-
-/**
- * GridFSBucketOpenUploadStreamOptions.
- * @see https://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucket.html#openUploadStream
- */
-export interface GridFSBucketOpenUploadStreamOptions {
-    /**
-     * Optional overwrite this bucket's chunkSizeBytes for this file.
-     */
-    chunkSizeBytes?: number
-
-    /**
-     * Optional object to store in the file document's metadata field.
-     */
-    metadata?: Object
-
-    /**
-     * Optional string to store in the file document's contentType field.
-     */
-    contentType?: string
-
-    /**
-     * Optional array of strings to store in the file document's aliases field.
-     */
-    aliases?: Array<string>
-}
-
-/**
- * GridFSBucketReadStream.
- * @see https://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucketReadStream.html
- */
-export declare class GridFSBucketReadStream extends Readable {
-    /**
-     *
-     * @param chunks Handle for chunks collection.
-     * @param files Handle for files collection.
-     * @param readPreference The read preference to use.
-     * @param filter The query to use to find the file document.
-     * @param options Optional settings.
-     */
-    constructor(
-        chunks: Collection<any>,
-        files: Collection<any>,
-        readPreference: Object,
-        filter: Object,
+    /** Returns a readable stream (GridFSBucketReadStream) for streaming file data from GridFS. */
+    openDownloadStream(
+        id: ObjectId,
         options?: GridFSBucketReadStreamOptions,
-    )
+    ): GridFSBucketReadStream
+    /**
+     * Deletes a file with the given id
+     *
+     * @param id - The id of the file doc
+     */
+    delete(id: ObjectId): Promise<void>
+    /** Convenience wrapper around find on the files collection */
+    find(
+        filter?: Filter<GridFSFile>,
+        options?: FindOptions,
+    ): FindCursor<GridFSFile>
+    /**
+     * Returns a readable stream (GridFSBucketReadStream) for streaming the
+     * file with the given name from GridFS. If there are multiple files with
+     * the same name, this will stream the most recent file with the given name
+     * (as determined by the `uploadDate` field). You can set the `revision`
+     * option to change this behavior.
+     */
+    openDownloadStreamByName(
+        filename: string,
+        options?: GridFSBucketReadStreamOptionsWithRevision,
+    ): GridFSBucketReadStream
+    /**
+     * Renames the file with the given _id to the given string
+     *
+     * @param id - the id of the file to rename
+     * @param filename - new name for the file
+     */
+    rename(id: ObjectId, filename: string): Promise<void>
+    /** Removes this bucket's files collection, followed by its chunks collection. */
+    drop(): Promise<void>
 }
 
+/** @public */
+export declare type GridFSBucketEvents = {
+    index(): void
+}
+
+/** @public */
+export declare interface GridFSBucketOptions extends WriteConcernOptions {
+    /** The 'files' and 'chunks' collections will be prefixed with the bucket name followed by a dot. */
+    bucketName?: string
+    /** Number of bytes stored in each chunk. Defaults to 255KB */
+    chunkSizeBytes?: number
+    /** Read preference to be passed to read operations */
+    readPreference?: ReadPreference
+}
+
+/* Excluded from this release type: GridFSBucketPrivate */
+
 /**
- * GridFSBucketReadStreamOptions.
- * @see https://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucketReadStream.html
+ * A readable stream that enables you to read buffers from GridFS.
+ *
+ * Do not instantiate this class directly. Use `openDownloadStream()` instead.
+ * @public
  */
-export interface GridFSBucketReadStreamOptions {
+export declare class GridFSBucketReadStream
+    extends Readable
+    implements NodeJS.ReadableStream
+{
+    /* Excluded from this release type: s */
     /**
-     * Optional sort for the file find query.
+     * An error occurred
+     * @event
      */
-    sort?: number
+    static readonly ERROR: "error"
+    /**
+     * Fires when the stream loaded the file document corresponding to the provided id.
+     * @event
+     */
+    static readonly FILE: "file"
+    /**
+     * Emitted when a chunk of data is available to be consumed.
+     * @event
+     */
+    static readonly DATA: "data"
+    /**
+     * Fired when the stream is exhausted (no more data events).
+     * @event
+     */
+    static readonly END: "end"
+    /**
+     * Fired when the stream is exhausted and the underlying cursor is killed
+     * @event
+     */
+    static readonly CLOSE: "close"
+    /* Excluded from this release type: __constructor */
+    /* Excluded from this release type: _read */
+    /**
+     * Sets the 0-based offset in bytes to start streaming from. Throws
+     * an error if this stream has entered flowing mode
+     * (e.g. if you've already called `on('data')`)
+     *
+     * @param start - 0-based offset in bytes to start streaming from
+     */
+    start(start?: number): this
+    /**
+     * Sets the 0-based offset in bytes to start streaming from. Throws
+     * an error if this stream has entered flowing mode
+     * (e.g. if you've already called `on('data')`)
+     *
+     * @param end - Offset in bytes to stop reading at
+     */
+    end(end?: number): this
+    /**
+     * Marks this stream as aborted (will never push another `data` event)
+     * and kills the underlying cursor. Will emit the 'end' event, and then
+     * the 'close' event once the cursor is successfully killed.
+     */
+    abort(): Promise<void>
+}
 
-    /**
-     * Optional skip for the file find query.
-     */
+/** @public */
+export declare interface GridFSBucketReadStreamOptions {
+    sort?: Sort
     skip?: number
-
     /**
-     * Optional 0-based offset in bytes to start streaming from.
+     * 0-indexed non-negative byte offset from the beginning of the file
      */
     start?: number
-
     /**
-     * Optional 0-based offset in bytes to stop streaming before.
+     * 0-indexed non-negative byte offset to the end of the file contents
+     * to be returned by the stream. `end` is non-inclusive
      */
     end?: number
 }
 
+/** @public */
+export declare interface GridFSBucketReadStreamOptionsWithRevision
+    extends GridFSBucketReadStreamOptions {
+    /** The revision number relative to the oldest file with the given filename. 0
+     * gets you the oldest file, 1 gets you the 2nd oldest, -1 gets you the
+     * newest. */
+    revision?: number
+}
+
+/* Excluded from this release type: GridFSBucketReadStreamPrivate */
+
 /**
- * GridFSBucketWriteStream
- * @see https://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucketWriteStream.html
+ * A writable stream that enables you to write buffers to GridFS.
+ *
+ * Do not instantiate this class directly. Use `openUploadStream()` instead.
+ * @public
  */
-export declare class GridFSBucketWriteStream extends Writable {
+export declare class GridFSBucketWriteStream {
+    /*
+    `implements NodeJS.WritableStream`
+    Has to be removed, otherwise tsc places a `/// <reference types="vinyl-fs" />` in the output file,
+    because vinyl-fs messed with NodeJS.WritableStream in the global scope:
+    https://github.com/DefinitelyTyped/DefinitelyTyped/blob/45372bb8a679f310f65765321ed38399055dcf1b/types/vinyl-fs/v1/index.d.ts#L9 */
+
+    bucket: GridFSBucket
+    chunks: Collection<GridFSChunk>
+    filename: string
+    files: Collection<GridFSFile>
+    options: GridFSBucketWriteStreamOptions
+    done: boolean
+    id: ObjectId
+    chunkSizeBytes: number
+    bufToStore: Buffer
+    length: number
+    n: number
+    pos: number
+    state: {
+        streamEnd: boolean
+        outstandingRequests: number
+        errored: boolean
+        aborted: boolean
+    }
+    writeConcern?: WriteConcern
+    /** @event */
+    static readonly CLOSE = "close"
+    /** @event */
+    static readonly ERROR = "error"
     /**
+     * `end()` was called and the write stream successfully wrote the file metadata and all the chunks to MongoDB.
+     * @event
+     */
+    static readonly FINISH = "finish"
+    /* Excluded from this release type: __constructor */
+    /**
+     * Write a buffer to the stream.
      *
-     * @param bucket Handle for this stream's corresponding bucket.
-     * @param filename The value of the 'filename' key in the files doc.
-     * @param options Optional settings.
+     * @param chunk - Buffer to write
+     * @param encodingOrCallback - Optional encoding for the buffer
+     * @param callback - Function to call when the chunk was added to the buffer, or if the entire chunk was persisted to MongoDB if this chunk caused a flush.
+     * @returns False if this write required flushing a chunk to MongoDB. True otherwise.
+     */
+    write(chunk: Buffer | string): boolean
+    write(chunk: Buffer | string, callback: Callback<void>): boolean
+    write(chunk: Buffer | string, encoding: BufferEncoding | undefined): boolean
+    write(
+        chunk: Buffer | string,
+        encoding: BufferEncoding | undefined,
+        callback: Callback<void>,
+    ): boolean
+    /**
+     * Places this write stream into an aborted state (all future writes fail)
+     * and deletes all chunks that have already been written.
+     */
+    abort(): Promise<void>
+    /**
+     * Tells the stream that no more data will be coming in. The stream will
+     * persist the remaining data to MongoDB, write the files document, and
+     * then emit a 'finish' event.
+     *
+     * @param chunk - Buffer to write
+     * @param encoding - Optional encoding for the buffer
+     * @param callback - Function to call when all files and chunks have been persisted to MongoDB
+     */
+    end(): this
+    end(chunk: Buffer): this
+    end(callback: Callback<GridFSFile | void>): this
+    end(chunk: Buffer, callback: Callback<GridFSFile | void>): this
+    end(chunk: Buffer, encoding: BufferEncoding): this
+    end(
+        chunk: Buffer,
+        encoding: BufferEncoding | undefined,
+        callback: Callback<GridFSFile | void>,
+    ): this
+}
+
+/** @public */
+export declare interface GridFSBucketWriteStreamOptions
+    extends WriteConcernOptions {
+    /** Overwrite this bucket's chunkSizeBytes for this file */
+    chunkSizeBytes?: number
+    /** Custom file id for the GridFS file. */
+    id?: ObjectId
+    /** Object to store in the file document's `metadata` field */
+    metadata?: Document
+    /** String to store in the file document's `contentType` field */
+    contentType?: string
+    /** Array of strings to store in the file document's `aliases` field */
+    aliases?: string[]
+}
+
+/** @public */
+export declare interface GridFSChunk {
+    _id: ObjectId
+    files_id: ObjectId
+    n: number
+    data: Buffer | Uint8Array
+}
+
+/** @public */
+export declare interface GridFSFile {
+    _id: ObjectId
+    length: number
+    chunkSize: number
+    filename: string
+    contentType?: string
+    aliases?: string[]
+    metadata?: Document
+    uploadDate: Date
+}
+
+/** @public */
+export declare const GSSAPICanonicalizationValue: Readonly<{
+    readonly on: true
+    readonly off: false
+    readonly none: "none"
+    readonly forward: "forward"
+    readonly forwardAndReverse: "forwardAndReverse"
+}>
+
+/** @public */
+export declare type GSSAPICanonicalizationValue =
+    (typeof GSSAPICanonicalizationValue)[keyof typeof GSSAPICanonicalizationValue]
+
+/** @public */
+export declare interface HedgeOptions {
+    /** Explicitly enable or disable hedged reads. */
+    enabled?: boolean
+}
+
+/** @public */
+export declare type Hint = string | Document
+
+/** @public */
+export declare class HostAddress {
+    host: string | undefined
+    port: number | undefined
+    socketPath: string | undefined
+    isIPv6: boolean
+    constructor(hostString: string)
+    inspect(): string
+    toString(): string
+    static fromString(this: void, s: string): HostAddress
+    static fromHostPort(host: string, port: number): HostAddress
+    static fromSrvRecord({ name, port }: SrvRecord): HostAddress
+}
+
+/** @public */
+export declare interface IndexDescription
+    extends Pick<
+        CreateIndexesOptions,
+        | "background"
+        | "unique"
+        | "partialFilterExpression"
+        | "sparse"
+        | "hidden"
+        | "expireAfterSeconds"
+        | "storageEngine"
+        | "version"
+        | "weights"
+        | "default_language"
+        | "language_override"
+        | "textIndexVersion"
+        | "2dsphereIndexVersion"
+        | "bits"
+        | "min"
+        | "max"
+        | "bucketSize"
+        | "wildcardProjection"
+    > {
+    collation?: CollationOptions
+    name?: string
+    key:
+        | {
+              [key: string]: IndexDirection
+          }
+        | Map<string, IndexDirection>
+}
+
+/** @public */
+export declare type IndexDirection =
+    | -1
+    | 1
+    | "2d"
+    | "2dsphere"
+    | "text"
+    | "geoHaystack"
+    | "hashed"
+    | number
+
+/** @public */
+export declare interface IndexInformationOptions {
+    full?: boolean
+    readPreference?: ReadPreference
+    session?: ClientSession
+}
+
+/** @public */
+export declare type IndexSpecification = OneOrMore<
+    | string
+    | [string, IndexDirection]
+    | {
+          [key: string]: IndexDirection
+      }
+    | Map<string, IndexDirection>
+>
+
+/** Given an object shaped type, return the type of the _id field or default to ObjectId @public */
+export declare type InferIdType<TSchema> = TSchema extends {
+    _id: infer IdType
+}
+    ? Record<any, never> extends IdType
+        ? never
+        : IdType
+    : TSchema extends {
+          _id?: infer IdType
+      }
+    ? unknown extends IdType
+        ? ObjectId
+        : IdType
+    : ObjectId
+
+/** @public */
+export declare interface InsertManyResult<TSchema = Document> {
+    /** Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined */
+    acknowledged: boolean
+    /** The number of inserted documents for this operations */
+    insertedCount: number
+    /** Map of the index of the inserted document to the id of the inserted document */
+    insertedIds: {
+        [key: number]: InferIdType<TSchema>
+    }
+}
+
+/** @public */
+export declare interface InsertOneModel<TSchema extends Document = Document> {
+    /** The document to insert. */
+    document: OptionalId<TSchema>
+}
+
+/** @public */
+export declare interface InsertOneOptions extends CommandOperationOptions {
+    /** Allow driver to bypass schema validation in MongoDB 3.2 or higher. */
+    bypassDocumentValidation?: boolean
+    /** Force server to assign _id values instead of driver. */
+    forceServerObjectId?: boolean
+}
+
+/** @public */
+export declare interface InsertOneResult<TSchema = Document> {
+    /** Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined */
+    acknowledged: boolean
+    /** The identifier that was inserted. If the server generated the identifier, this value will be null as the driver does not have access to that data */
+    insertedId: InferIdType<TSchema>
+}
+
+export { Int32 }
+
+/** @public */
+export declare type IntegerType = number | Int32 | Long | bigint
+
+/* Excluded from this release type: InternalAbstractCursorOptions */
+
+/** @public */
+export declare type IsAny<Type, ResultIfAny, ResultIfNotAny> =
+    true extends false & Type ? ResultIfAny : ResultIfNotAny
+
+/**
+ * Helper types for dot-notation filter attributes
+ */
+/** @public */
+export declare type Join<T extends unknown[], D extends string> = T extends []
+    ? ""
+    : T extends [string | number]
+    ? `${T[0]}`
+    : T extends [string | number, ...infer R]
+    ? `${T[0]}${D}${Join<R, D>}`
+    : string
+
+/* Excluded from this release type: kBeforeHandshake */
+
+/* Excluded from this release type: kBuffer */
+
+/* Excluded from this release type: kBuiltOptions */
+
+/* Excluded from this release type: kCancellationToken */
+
+/* Excluded from this release type: kCancellationToken_2 */
+
+/* Excluded from this release type: kCancelled */
+
+/* Excluded from this release type: kCancelled_2 */
+
+/* Excluded from this release type: kCheckedOut */
+
+/* Excluded from this release type: kClient */
+
+/* Excluded from this release type: kClosed */
+
+/* Excluded from this release type: kClosed_2 */
+
+/* Excluded from this release type: kClusterTime */
+
+/* Excluded from this release type: kConnection */
+
+/* Excluded from this release type: kConnectionCounter */
+
+/* Excluded from this release type: kConnections */
+
+/* Excluded from this release type: kCursorStream */
+
+/* Excluded from this release type: kDelayedTimeoutId */
+
+/* Excluded from this release type: kDescription */
+
+/* Excluded from this release type: kDocuments */
+
+/* Excluded from this release type: kErrorLabels */
+
+/** @public */
+export declare type KeysOfAType<TSchema, Type> = {
+    [key in keyof TSchema]: NonNullable<TSchema[key]> extends Type ? key : never
+}[keyof TSchema]
+
+/** @public */
+export declare type KeysOfOtherType<TSchema, Type> = {
+    [key in keyof TSchema]: NonNullable<TSchema[key]> extends Type ? never : key
+}[keyof TSchema]
+
+/* Excluded from this release type: kFilter */
+
+/* Excluded from this release type: kGeneration */
+
+/* Excluded from this release type: kGeneration_2 */
+
+/* Excluded from this release type: kHello */
+
+/* Excluded from this release type: kId */
+
+/* Excluded from this release type: kInit */
+
+/* Excluded from this release type: kInitialized */
+
+/* Excluded from this release type: kInternalClient */
+
+/* Excluded from this release type: kKilled */
+
+/* Excluded from this release type: kLastUseTime */
+
+/* Excluded from this release type: kMessageStream */
+
+/* Excluded from this release type: kMetrics */
+
+/* Excluded from this release type: kMinPoolSizeTimer */
+
+/* Excluded from this release type: kMode */
+
+/* Excluded from this release type: kMonitor */
+
+/* Excluded from this release type: kMonitorId */
+
+/* Excluded from this release type: kNamespace */
+
+/* Excluded from this release type: kNumReturned */
+
+/* Excluded from this release type: kOptions */
+
+/* Excluded from this release type: kOptions_2 */
+
+/* Excluded from this release type: kOptions_3 */
+
+/* Excluded from this release type: kPending */
+
+/* Excluded from this release type: kPinnedConnection */
+
+/* Excluded from this release type: kPipeline */
+
+/* Excluded from this release type: kPoolState */
+
+/* Excluded from this release type: kProcessingWaitQueue */
+
+/* Excluded from this release type: kQueue */
+
+/* Excluded from this release type: kRoundTripTime */
+
+/* Excluded from this release type: kRTTPinger */
+
+/* Excluded from this release type: kServer */
+
+/* Excluded from this release type: kServer_2 */
+
+/* Excluded from this release type: kServer_3 */
+
+/* Excluded from this release type: kServerError */
+
+/* Excluded from this release type: kServerSession */
+
+/* Excluded from this release type: kServiceGenerations */
+
+/* Excluded from this release type: kSession */
+
+/* Excluded from this release type: kSession_2 */
+
+/* Excluded from this release type: kSnapshotEnabled */
+
+/* Excluded from this release type: kSnapshotTime */
+
+/* Excluded from this release type: kStream */
+
+/* Excluded from this release type: kTransform */
+
+/* Excluded from this release type: kTxnNumberIncrement */
+
+/* Excluded from this release type: kWaitQueue */
+
+/* Excluded from this release type: kWaitQueue_2 */
+
+/** @public */
+export declare const LEGAL_TCP_SOCKET_OPTIONS: readonly [
+    "family",
+    "hints",
+    "localAddress",
+    "localPort",
+    "lookup",
+]
+
+/** @public */
+export declare const LEGAL_TLS_SOCKET_OPTIONS: readonly [
+    "ALPNProtocols",
+    "ca",
+    "cert",
+    "checkServerIdentity",
+    "ciphers",
+    "crl",
+    "ecdhCurve",
+    "key",
+    "minDHSize",
+    "passphrase",
+    "pfx",
+    "rejectUnauthorized",
+    "secureContext",
+    "secureProtocol",
+    "servername",
+    "session",
+]
+
+/* Excluded from this release type: List */
+
+/** @public */
+export declare class ListCollectionsCursor<
+    T extends Pick<CollectionInfo, "name" | "type"> | CollectionInfo =
+        | Pick<CollectionInfo, "name" | "type">
+        | CollectionInfo,
+> extends AbstractCursor<T> {
+    parent: Db
+    filter: Document
+    options?: ListCollectionsOptions
+    constructor(db: Db, filter: Document, options?: ListCollectionsOptions)
+    clone(): ListCollectionsCursor<T>
+    /* Excluded from this release type: _initialize */
+}
+
+/** @public */
+export declare interface ListCollectionsOptions
+    extends Omit<CommandOperationOptions, "writeConcern"> {
+    /** Since 4.0: If true, will only return the collection name in the response, and will omit additional info */
+    nameOnly?: boolean
+    /** Since 4.0: If true and nameOnly is true, allows a user without the required privilege (i.e. listCollections action on the database) to run the command when access control is enforced. */
+    authorizedCollections?: boolean
+    /** The batchSize for the returned command cursor or if pre 2.8 the systems batch collection */
+    batchSize?: number
+}
+
+/** @public */
+export declare interface ListDatabasesOptions extends CommandOperationOptions {
+    /** A query predicate that determines which databases are listed */
+    filter?: Document
+    /** A flag to indicate whether the command should return just the database names, or return both database names and size information */
+    nameOnly?: boolean
+    /** A flag that determines which databases are returned based on the user privileges when access control is enabled */
+    authorizedDatabases?: boolean
+}
+
+/** @public */
+export declare interface ListDatabasesResult {
+    databases: ({
+        name: string
+        sizeOnDisk?: number
+        empty?: boolean
+    } & Document)[]
+    totalSize?: number
+    totalSizeMb?: number
+    ok: 1 | 0
+}
+
+/** @public */
+export declare class ListIndexesCursor extends AbstractCursor {
+    parent: Collection
+    options?: ListIndexesOptions
+    constructor(collection: Collection, options?: ListIndexesOptions)
+    clone(): ListIndexesCursor
+    /* Excluded from this release type: _initialize */
+}
+
+/** @public */
+export declare interface ListIndexesOptions
+    extends Omit<CommandOperationOptions, "writeConcern"> {
+    /** The batchSize for the returned command cursor or if pre 2.8 the systems batch collection */
+    batchSize?: number
+}
+
+export { Long }
+
+/** @public */
+export declare type MatchKeysAndValues<TSchema> = Readonly<Partial<TSchema>> &
+    Record<string, any>
+
+export { MaxKey }
+
+/* Excluded from this release type: MessageHeader */
+
+/* Excluded from this release type: MessageStream */
+
+/* Excluded from this release type: MessageStreamOptions */
+export { MinKey }
+
+/**
+ * @public
+ * @deprecated This type will be completely removed and findOneAndUpdate,
+ *             findOneAndDelete, and findOneAndReplace will then return the
+ *             actual result document.
+ */
+export declare interface ModifyResult<TSchema = Document> {
+    value: WithId<TSchema> | null
+    lastErrorObject?: Document
+    ok: 0 | 1
+}
+
+/** @public */
+export declare const MONGO_CLIENT_EVENTS: readonly [
+    "connectionPoolCreated",
+    "connectionPoolReady",
+    "connectionPoolCleared",
+    "connectionPoolClosed",
+    "connectionCreated",
+    "connectionReady",
+    "connectionClosed",
+    "connectionCheckOutStarted",
+    "connectionCheckOutFailed",
+    "connectionCheckedOut",
+    "connectionCheckedIn",
+    "commandStarted",
+    "commandSucceeded",
+    "commandFailed",
+    "serverOpening",
+    "serverClosed",
+    "serverDescriptionChanged",
+    "topologyOpening",
+    "topologyClosed",
+    "topologyDescriptionChanged",
+    "error",
+    "timeout",
+    "close",
+    "serverHeartbeatStarted",
+    "serverHeartbeatSucceeded",
+    "serverHeartbeatFailed",
+]
+
+/**
+ * An error generated when the driver API is used incorrectly
+ *
+ * @privateRemarks
+ * Should **never** be directly instantiated
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoAPIError extends MongoDriverError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * A error generated when the user attempts to authenticate
+ * via AWS, but fails
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoAWSError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error generated when a batch command is re-executed after one of the commands in the batch
+ * has failed
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoBatchReExecutionError extends MongoAPIError {
+    constructor(message?: string)
+    get name(): string
+}
+
+/**
+ * An error indicating an unsuccessful Bulk Write
+ * @public
+ * @category Error
+ */
+export declare class MongoBulkWriteError extends MongoServerError {
+    result: BulkWriteResult
+    writeErrors: OneOrMore<WriteError>
+    err?: WriteConcernError
+    /** Creates a new MongoBulkWriteError */
+    constructor(
+        error:
+            | {
+                  message: string
+                  code: number
+                  writeErrors?: WriteError[]
+              }
+            | WriteConcernError
+            | AnyError,
+        result: BulkWriteResult,
+    )
+    get name(): string
+    /** Number of documents inserted. */
+    get insertedCount(): number
+    /** Number of documents matched for update. */
+    get matchedCount(): number
+    /** Number of documents modified. */
+    get modifiedCount(): number
+    /** Number of documents deleted. */
+    get deletedCount(): number
+    /** Number of documents upserted. */
+    get upsertedCount(): number
+    /** Inserted document generated Id's, hash key is the index of the originating operation */
+    get insertedIds(): {
+        [key: number]: any
+    }
+    /** Upserted document generated Id's, hash key is the index of the originating operation */
+    get upsertedIds(): {
+        [key: number]: any
+    }
+}
+
+/**
+ * An error generated when a ChangeStream operation fails to execute.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoChangeStreamError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * The **MongoClient** class is a class that allows for making Connections to MongoDB.
+ * @public
+ *
+ * @remarks
+ * The programmatically provided options take precedence over the URI options.
+ *
+ * @example
+ * ```ts
+ * import { MongoClient } from 'mongodb';
+ *
+ * // Enable command monitoring for debugging
+ * const client = new MongoClient('mongodb://localhost:27017', { monitorCommands: true });
+ *
+ * client.on('commandStarted', started => console.log(started));
+ * client.db().collection('pets');
+ * await client.insertOne({ name: 'spot', kind: 'dog' });
+ * ```
+ */
+export declare class MongoClient extends TypedEventEmitter<MongoClientEvents> {
+    /* Excluded from this release type: s */
+    /* Excluded from this release type: topology */
+    /* Excluded from this release type: mongoLogger */
+    /* Excluded from this release type: connectionLock */
+    /* Excluded from this release type: [kOptions] */
+    constructor(url: string, options?: MongoClientOptions)
+    get options(): Readonly<MongoOptions>
+    get serverApi(): Readonly<ServerApi | undefined>
+    /* Excluded from this release type: monitorCommands */
+    /* Excluded from this release type: monitorCommands */
+    get autoEncrypter(): AutoEncrypter | undefined
+    get readConcern(): ReadConcern | undefined
+    get writeConcern(): WriteConcern | undefined
+    get readPreference(): ReadPreference
+    get bsonOptions(): BSONSerializeOptions
+    /**
+     * Connect to MongoDB using a url
+     *
+     * @see docs.mongodb.org/manual/reference/connection-string/
+     */
+    connect(): Promise<this>
+    /* Excluded from this release type: _connect */
+    /**
+     * Close the client and its underlying connections
+     *
+     * @param force - Force close, emitting no events
+     */
+    close(force?: boolean): Promise<void>
+    /**
+     * Create a new Db instance sharing the current socket connections.
+     *
+     * @param dbName - The name of the database we want to use. If not provided, use database name from connection string.
+     * @param options - Optional settings for Db construction
+     */
+    db(dbName?: string, options?: DbOptions): Db
+    /**
+     * Connect to MongoDB using a url
+     *
+     * @remarks
+     * The programmatically provided options take precedence over the URI options.
+     *
+     * @see https://www.mongodb.com/docs/manual/reference/connection-string/
+     */
+    static connect(
+        url: string,
+        options?: MongoClientOptions,
+    ): Promise<MongoClient>
+    /** Starts a new session on the server */
+    startSession(options?: ClientSessionOptions): ClientSession
+    /**
+     * Runs a given operation with an implicitly created session. The lifetime of the session
+     * will be handled without the need for user interaction.
+     *
+     * NOTE: presently the operation MUST return a Promise (either explicit or implicitly as an async function)
+     *
+     * @param options - Optional settings for the command
+     * @param callback - An callback to execute with an implicitly created session
+     */
+    withSession(callback: WithSessionCallback): Promise<void>
+    withSession(
+        options: ClientSessionOptions,
+        callback: WithSessionCallback,
+    ): Promise<void>
+    /**
+     * Create a new Change Stream, watching for new changes (insertions, updates,
+     * replacements, deletions, and invalidations) in this cluster. Will ignore all
+     * changes to system collections, as well as the local, admin, and config databases.
+     *
+     * @remarks
+     * watch() accepts two generic arguments for distinct use cases:
+     * - The first is to provide the schema that may be defined for all the data within the current cluster
+     * - The second is to override the shape of the change stream document entirely, if it is not provided the type will default to ChangeStreamDocument of the first argument
+     *
+     * @param pipeline - An array of {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation-pipeline/|aggregation pipeline stages} through which to pass change stream documents. This allows for filtering (using $match) and manipulating the change stream documents.
+     * @param options - Optional settings for the command
+     * @typeParam TSchema - Type of the data being detected by the change stream
+     * @typeParam TChange - Type of the whole change stream document emitted
+     */
+    watch<
+        TSchema extends Document = Document,
+        TChange extends Document = ChangeStreamDocument<TSchema>,
+    >(
+        pipeline?: Document[],
+        options?: ChangeStreamOptions,
+    ): ChangeStream<TSchema, TChange>
+}
+
+/** @public */
+export declare type MongoClientEvents = Pick<
+    TopologyEvents,
+    (typeof MONGO_CLIENT_EVENTS)[number]
+> & {
+    open(mongoClient: MongoClient): void
+}
+
+/**
+ * Describes all possible URI query options for the mongo client
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/connection-string
+ */
+export declare interface MongoClientOptions
+    extends BSONSerializeOptions,
+        SupportedNodeConnectionOptions {
+    /** Specifies the name of the replica set, if the mongod is a member of a replica set. */
+    replicaSet?: string
+    /** Enables or disables TLS/SSL for the connection. */
+    tls?: boolean
+    /** A boolean to enable or disables TLS/SSL for the connection. (The ssl option is equivalent to the tls option.) */
+    ssl?: boolean
+    /** Specifies the location of a local TLS Certificate */
+    tlsCertificateFile?: string
+    /** Specifies the location of a local .pem file that contains either the client's TLS/SSL certificate and key or only the client's TLS/SSL key when tlsCertificateFile is used to provide the certificate. */
+    tlsCertificateKeyFile?: string
+    /** Specifies the password to de-crypt the tlsCertificateKeyFile. */
+    tlsCertificateKeyFilePassword?: string
+    /** Specifies the location of a local .pem file that contains the root certificate chain from the Certificate Authority. This file is used to validate the certificate presented by the mongod/mongos instance. */
+    tlsCAFile?: string
+    /** Bypasses validation of the certificates presented by the mongod/mongos instance */
+    tlsAllowInvalidCertificates?: boolean
+    /** Disables hostname validation of the certificate presented by the mongod/mongos instance. */
+    tlsAllowInvalidHostnames?: boolean
+    /** Disables various certificate validations. */
+    tlsInsecure?: boolean
+    /** The time in milliseconds to attempt a connection before timing out. */
+    connectTimeoutMS?: number
+    /** The time in milliseconds to attempt a send or receive on a socket before the attempt times out. */
+    socketTimeoutMS?: number
+    /** An array or comma-delimited string of compressors to enable network compression for communication between this client and a mongod/mongos instance. */
+    compressors?: CompressorName[] | string
+    /** An integer that specifies the compression level if using zlib for network compression. */
+    zlibCompressionLevel?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined
+    /** The maximum number of hosts to connect to when using an srv connection string, a setting of `0` means unlimited hosts */
+    srvMaxHosts?: number
+    /**
+     * Modifies the srv URI to look like:
+     *
+     * `_{srvServiceName}._tcp.{hostname}.{domainname}`
+     *
+     * Querying this DNS URI is expected to respond with SRV records
+     */
+    srvServiceName?: string
+    /** The maximum number of connections in the connection pool. */
+    maxPoolSize?: number
+    /** The minimum number of connections in the connection pool. */
+    minPoolSize?: number
+    /** The maximum number of connections that may be in the process of being established concurrently by the connection pool. */
+    maxConnecting?: number
+    /** The maximum number of milliseconds that a connection can remain idle in the pool before being removed and closed. */
+    maxIdleTimeMS?: number
+    /** The maximum time in milliseconds that a thread can wait for a connection to become available. */
+    waitQueueTimeoutMS?: number
+    /** Specify a read concern for the collection (only MongoDB 3.2 or higher supported) */
+    readConcern?: ReadConcernLike
+    /** The level of isolation */
+    readConcernLevel?: ReadConcernLevel
+    /** Specifies the read preferences for this connection */
+    readPreference?: ReadPreferenceMode | ReadPreference
+    /** Specifies, in seconds, how stale a secondary can be before the client stops using it for read operations. */
+    maxStalenessSeconds?: number
+    /** Specifies the tags document as a comma-separated list of colon-separated key-value pairs.  */
+    readPreferenceTags?: TagSet[]
+    /** The auth settings for when connection to server. */
+    auth?: Auth
+    /** Specify the database name associated with the user’s credentials. */
+    authSource?: string
+    /** Specify the authentication mechanism that MongoDB will use to authenticate the connection. */
+    authMechanism?: AuthMechanism
+    /** Specify properties for the specified authMechanism as a comma-separated list of colon-separated key-value pairs. */
+    authMechanismProperties?: AuthMechanismProperties
+    /** The size (in milliseconds) of the latency window for selecting among multiple suitable MongoDB instances. */
+    localThresholdMS?: number
+    /** Specifies how long (in milliseconds) to block for server selection before throwing an exception.  */
+    serverSelectionTimeoutMS?: number
+    /** heartbeatFrequencyMS controls when the driver checks the state of the MongoDB deployment. Specify the interval (in milliseconds) between checks, counted from the end of the previous check until the beginning of the next one. */
+    heartbeatFrequencyMS?: number
+    /** Sets the minimum heartbeat frequency. In the event that the driver has to frequently re-check a server's availability, it will wait at least this long since the previous check to avoid wasted effort. */
+    minHeartbeatFrequencyMS?: number
+    /** The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this value in the server log upon establishing each connection. It is also recorded in the slow query log and profile collections */
+    appName?: string
+    /** Enables retryable reads. */
+    retryReads?: boolean
+    /** Enable retryable writes. */
+    retryWrites?: boolean
+    /** Allow a driver to force a Single topology type with a connection string containing one host */
+    directConnection?: boolean
+    /** Instruct the driver it is connecting to a load balancer fronting a mongos like service */
+    loadBalanced?: boolean
+    /**
+     * The write concern w value
+     * @deprecated Please use the `writeConcern` option instead
+     */
+    w?: W
+    /**
+     * The write concern timeout
+     * @deprecated Please use the `writeConcern` option instead
+     */
+    wtimeoutMS?: number
+    /**
+     * The journal write concern
+     * @deprecated Please use the `writeConcern` option instead
+     */
+    journal?: boolean
+    /**
+     * A MongoDB WriteConcern, which describes the level of acknowledgement
+     * requested from MongoDB for write operations.
+     *
+     * @see https://www.mongodb.com/docs/manual/reference/write-concern/
+     */
+    writeConcern?: WriteConcern | WriteConcernSettings
+    /** Validate mongod server certificate against Certificate Authority */
+    sslValidate?: boolean
+    /** SSL Certificate file path. */
+    sslCA?: string
+    /** SSL Certificate file path. */
+    sslCert?: string
+    /** SSL Key file file path. */
+    sslKey?: string
+    /** SSL Certificate pass phrase. */
+    sslPass?: string
+    /** SSL Certificate revocation list file path. */
+    sslCRL?: string
+    /** TCP Connection no delay */
+    noDelay?: boolean
+    /** TCP Connection keep alive enabled */
+    keepAlive?: boolean
+    /** The number of milliseconds to wait before initiating keepAlive on the TCP socket */
+    keepAliveInitialDelay?: number
+    /** Force server to assign `_id` values instead of driver */
+    forceServerObjectId?: boolean
+    /** A primary key factory function for generation of custom `_id` keys */
+    pkFactory?: PkFactory
+    /** Enable command monitoring for this client */
+    monitorCommands?: boolean
+    /** Server API version */
+    serverApi?: ServerApi | ServerApiVersion
+    /**
+     * Optionally enable in-use auto encryption
+     *
+     * @remarks
+     *  Automatic encryption is an enterprise only feature that only applies to operations on a collection. Automatic encryption is not supported for operations on a database or view, and operations that are not bypassed will result in error
+     *  (see [libmongocrypt: Auto Encryption Allow-List](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst#libmongocrypt-auto-encryption-allow-list)). To bypass automatic encryption for all operations, set bypassAutoEncryption=true in AutoEncryptionOpts.
+     *
+     *  Automatic encryption requires the authenticated user to have the [listCollections privilege action](https://www.mongodb.com/docs/manual/reference/command/listCollections/#dbcmd.listCollections).
+     *
+     *  If a MongoClient with a limited connection pool size (i.e a non-zero maxPoolSize) is configured with AutoEncryptionOptions, a separate internal MongoClient is created if any of the following are true:
+     *  - AutoEncryptionOptions.keyVaultClient is not passed.
+     *  - AutoEncryptionOptions.bypassAutomaticEncryption is false.
+     *
+     * If an internal MongoClient is created, it is configured with the same options as the parent MongoClient except minPoolSize is set to 0 and AutoEncryptionOptions is omitted.
+     */
+    autoEncryption?: AutoEncryptionOptions
+    /** Allows a wrapping driver to amend the client metadata generated by the driver to include information about the wrapping driver */
+    driverInfo?: DriverInfo
+    /** Configures a Socks5 proxy host used for creating TCP connections. */
+    proxyHost?: string
+    /** Configures a Socks5 proxy port used for creating TCP connections. */
+    proxyPort?: number
+    /** Configures a Socks5 proxy username when the proxy in proxyHost requires username/password authentication. */
+    proxyUsername?: string
+    /** Configures a Socks5 proxy password when the proxy in proxyHost requires username/password authentication. */
+    proxyPassword?: string
+    /* Excluded from this release type: srvPoller */
+    /* Excluded from this release type: connectionType */
+    /* Excluded from this release type: __index */
+}
+
+/* Excluded from this release type: MongoClientPrivate */
+
+/**
+ * An error generated when a feature that is not enabled or allowed for the current server
+ * configuration is used
+ *
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoCompatibilityError extends MongoAPIError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * A representation of the credentials used by MongoDB
+ * @public
+ */
+export declare class MongoCredentials {
+    /** The username used for authentication */
+    readonly username: string
+    /** The password used for authentication */
+    readonly password: string
+    /** The database that the user should authenticate against */
+    readonly source: string
+    /** The method used to authenticate */
+    readonly mechanism: AuthMechanism
+    /** Special properties used by some types of auth mechanisms */
+    readonly mechanismProperties: AuthMechanismProperties
+    constructor(options: MongoCredentialsOptions)
+    /** Determines if two MongoCredentials objects are equivalent */
+    equals(other: MongoCredentials): boolean
+    /**
+     * If the authentication mechanism is set to "default", resolves the authMechanism
+     * based on the server version and server supported sasl mechanisms.
+     *
+     * @param hello - A hello response from the server
+     */
+    resolveAuthMechanism(hello?: Document): MongoCredentials
+    validate(): void
+    static merge(
+        creds: MongoCredentials | undefined,
+        options: Partial<MongoCredentialsOptions>,
+    ): MongoCredentials
+}
+
+/** @public */
+export declare interface MongoCredentialsOptions {
+    username: string
+    password: string
+    source: string
+    db?: string
+    mechanism?: AuthMechanism
+    mechanismProperties: AuthMechanismProperties
+}
+
+/**
+ * An error thrown when an attempt is made to read from a cursor that has been exhausted
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoCursorExhaustedError extends MongoAPIError {
+    constructor(message?: string)
+    get name(): string
+}
+
+/**
+ * An error thrown when the user attempts to add options to a cursor that has already been
+ * initialized
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoCursorInUseError extends MongoAPIError {
+    constructor(message?: string)
+    get name(): string
+}
+
+/** @public */
+export declare class MongoDBNamespace {
+    db: string
+    collection: string | undefined
+    /**
+     * Create a namespace object
+     *
+     * @param db - database name
+     * @param collection - collection name
+     */
+    constructor(db: string, collection?: string)
+    toString(): string
+    withCollection(collection: string): MongoDBNamespace
+    static fromString(namespace?: string): MongoDBNamespace
+}
+
+/**
+ * An error generated when the driver fails to decompress
+ * data received from the server.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoDecompressionError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error generated by the driver
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoDriverError extends MongoError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * @public
+ * @category Error
+ *
+ * @privateRemarks
+ * mongodb-client-encryption has a dependency on this error, it uses the constructor with a string argument
+ */
+export declare class MongoError extends Error {
+    /* Excluded from this release type: [kErrorLabels] */
+    /**
+     * This is a number in MongoServerError and a string in MongoDriverError
+     * @privateRemarks
+     * Define the type override on the subclasses when we can use the override keyword
+     */
+    code?: number | string
+    topologyVersion?: TopologyVersion
+    connectionGeneration?: number
+    cause?: Error
+    constructor(message: string | Error)
+    get name(): string
+    /** Legacy name for server error responses */
+    get errmsg(): string
+    /**
+     * Checks the error to see if it has an error label
+     *
+     * @param label - The error label to check for
+     * @returns returns true if the error has the provided error label
+     */
+    hasErrorLabel(label: string): boolean
+    addErrorLabel(label: string): void
+    get errorLabels(): string[]
+}
+
+/** @public */
+export declare const MongoErrorLabel: Readonly<{
+    readonly RetryableWriteError: "RetryableWriteError"
+    readonly TransientTransactionError: "TransientTransactionError"
+    readonly UnknownTransactionCommitResult: "UnknownTransactionCommitResult"
+    readonly ResumableChangeStreamError: "ResumableChangeStreamError"
+    readonly HandshakeError: "HandshakeError"
+    readonly ResetPool: "ResetPool"
+    readonly InterruptInUseConnections: "InterruptInUseConnections"
+    readonly NoWritesPerformed: "NoWritesPerformed"
+}>
+
+/** @public */
+export declare type MongoErrorLabel =
+    (typeof MongoErrorLabel)[keyof typeof MongoErrorLabel]
+
+/**
+ * An error generated when the user attempts to operate
+ * on a session that has expired or has been closed.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoExpiredSessionError extends MongoAPIError {
+    constructor(message?: string)
+    get name(): string
+}
+
+/**
+ * An error generated when a malformed or invalid chunk is
+ * encountered when reading from a GridFSStream.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoGridFSChunkError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/** An error generated when a GridFSStream operation fails to execute.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoGridFSStreamError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error generated when the user supplies malformed or unexpected arguments
+ * or when a required argument or field is not provided.
+ *
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoInvalidArgumentError extends MongoAPIError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * A error generated when the user attempts to authenticate
+ * via Kerberos, but fails to connect to the Kerberos client.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoKerberosError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/* Excluded from this release type: MongoLoggableComponent */
+
+/* Excluded from this release type: MongoLogger */
+
+/* Excluded from this release type: MongoLoggerEnvOptions */
+
+/* Excluded from this release type: MongoLoggerMongoClientOptions */
+
+/* Excluded from this release type: MongoLoggerOptions */
+
+/**
+ * An error generated when the user fails to provide authentication credentials before attempting
+ * to connect to a mongo server instance.
+ *
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoMissingCredentialsError extends MongoAPIError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error generated when a required module or dependency is not present in the local environment
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoMissingDependencyError extends MongoAPIError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error indicating an issue with the network, including TCP errors and timeouts.
+ * @public
+ * @category Error
+ */
+export declare class MongoNetworkError extends MongoError {
+    /* Excluded from this release type: [kBeforeHandshake] */
+    constructor(message: string | Error, options?: MongoNetworkErrorOptions)
+    get name(): string
+}
+
+/** @public */
+export declare interface MongoNetworkErrorOptions {
+    /** Indicates the timeout happened before a connection handshake completed */
+    beforeHandshake: boolean
+}
+
+/**
+ * An error indicating a network timeout occurred
+ * @public
+ * @category Error
+ *
+ * @privateRemarks
+ * mongodb-client-encryption has a dependency on this error with an instanceof check
+ */
+export declare class MongoNetworkTimeoutError extends MongoNetworkError {
+    constructor(message: string, options?: MongoNetworkErrorOptions)
+    get name(): string
+}
+
+/**
+ * An error thrown when the user attempts to operate on a database or collection through a MongoClient
+ * that has not yet successfully called the "connect" method
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoNotConnectedError extends MongoAPIError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * Mongo Client Options
+ * @public
+ */
+export declare interface MongoOptions
+    extends Required<
+            Pick<
+                MongoClientOptions,
+                | "autoEncryption"
+                | "connectTimeoutMS"
+                | "directConnection"
+                | "driverInfo"
+                | "forceServerObjectId"
+                | "minHeartbeatFrequencyMS"
+                | "heartbeatFrequencyMS"
+                | "keepAlive"
+                | "keepAliveInitialDelay"
+                | "localThresholdMS"
+                | "maxConnecting"
+                | "maxIdleTimeMS"
+                | "maxPoolSize"
+                | "minPoolSize"
+                | "monitorCommands"
+                | "noDelay"
+                | "pkFactory"
+                | "raw"
+                | "replicaSet"
+                | "retryReads"
+                | "retryWrites"
+                | "serverSelectionTimeoutMS"
+                | "socketTimeoutMS"
+                | "srvMaxHosts"
+                | "srvServiceName"
+                | "tlsAllowInvalidCertificates"
+                | "tlsAllowInvalidHostnames"
+                | "tlsInsecure"
+                | "waitQueueTimeoutMS"
+                | "zlibCompressionLevel"
+            >
+        >,
+        SupportedNodeConnectionOptions {
+    appName?: string
+    hosts: HostAddress[]
+    srvHost?: string
+    credentials?: MongoCredentials
+    readPreference: ReadPreference
+    readConcern: ReadConcern
+    loadBalanced: boolean
+    serverApi: ServerApi
+    compressors: CompressorName[]
+    writeConcern: WriteConcern
+    dbName: string
+    metadata: ClientMetadata
+    autoEncrypter?: AutoEncrypter
+    proxyHost?: string
+    proxyPort?: number
+    proxyUsername?: string
+    proxyPassword?: string
+    /* Excluded from this release type: connectionType */
+    /* Excluded from this release type: encrypter */
+    /* Excluded from this release type: userSpecifiedAuthSource */
+    /* Excluded from this release type: userSpecifiedReplicaSet */
+    /**
+     * # NOTE ABOUT TLS Options
+     *
+     * If set TLS enabled, equivalent to setting the ssl option.
+     *
+     * ### Additional options:
+     *
+     * |    nodejs option     | MongoDB equivalent                                       | type                                   |
+     * |:---------------------|--------------------------------------------------------- |:---------------------------------------|
+     * | `ca`                 | `sslCA`, `tlsCAFile`                                     | `string \| Buffer \| Buffer[]`         |
+     * | `crl`                | `sslCRL`                                                 | `string \| Buffer \| Buffer[]`         |
+     * | `cert`               | `sslCert`, `tlsCertificateFile`, `tlsCertificateKeyFile` | `string \| Buffer \| Buffer[]`         |
+     * | `key`                | `sslKey`, `tlsCertificateKeyFile`                        | `string \| Buffer \| KeyObject[]`      |
+     * | `passphrase`         | `sslPass`, `tlsCertificateKeyFilePassword`               | `string`                               |
+     * | `rejectUnauthorized` | `sslValidate`                                            | `boolean`                              |
+     *
+     */
+    tls: boolean
+    /* Excluded from this release type: __index */
+    /* Excluded from this release type: mongoLoggerOptions */
+}
+
+/**
+ * An error used when attempting to parse a value (like a connection string)
+ * @public
+ * @category Error
+ */
+export declare class MongoParseError extends MongoDriverError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error generated when the driver encounters unexpected input
+ * or reaches an unexpected/invalid internal state
+ *
+ * @privateRemarks
+ * Should **never** be directly instantiated.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoRuntimeError extends MongoDriverError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error generated when an attempt is made to operate
+ * on a closed/closing server.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoServerClosedError extends MongoAPIError {
+    constructor(message?: string)
+    get name(): string
+}
+
+/**
+ * An error coming from the mongo server
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoServerError extends MongoError {
+    codeName?: string
+    writeConcernError?: Document
+    errInfo?: Document
+    ok?: number;
+    [key: string]: any
+    constructor(message: ErrorDescription)
+    get name(): string
+}
+
+/**
+ * An error signifying a client-side server selection error
+ * @public
+ * @category Error
+ */
+export declare class MongoServerSelectionError extends MongoSystemError {
+    constructor(message: string, reason: TopologyDescription)
+    get name(): string
+}
+
+/**
+ * An error signifying a general system issue
+ * @public
+ * @category Error
+ */
+export declare class MongoSystemError extends MongoError {
+    /** An optional reason context, such as an error saved during flow of monitoring and selecting servers */
+    reason?: TopologyDescription
+    constructor(message: string, reason: TopologyDescription)
+    get name(): string
+}
+
+/**
+ * An error thrown when the user calls a function or method not supported on a tailable cursor
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoTailableCursorError extends MongoAPIError {
+    constructor(message?: string)
+    get name(): string
+}
+
+/**
+ * An error generated when an attempt is made to operate on a
+ * dropped, or otherwise unavailable, database.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoTopologyClosedError extends MongoAPIError {
+    constructor(message?: string)
+    get name(): string
+}
+
+/**
+ * An error generated when the user makes a mistake in the usage of transactions.
+ * (e.g. attempting to commit a transaction with a readPreference other than primary)
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoTransactionError extends MongoAPIError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error generated when a **parsable** unexpected response comes from the server.
+ * This is generally an error where the driver in a state expecting a certain behavior to occur in
+ * the next message from MongoDB but it receives something else.
+ * This error **does not** represent an issue with wire message formatting.
+ *
+ * #### Example
+ * When an operation fails, it is the driver's job to retry it. It must perform serverSelection
+ * again to make sure that it attempts the operation against a server in a good state. If server
+ * selection returns a server that does not support retryable operations, this error is used.
+ * This scenario is unlikely as retryable support would also have been determined on the first attempt
+ * but it is possible the state change could report a selectable server that does not support retries.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoUnexpectedServerResponseError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * An error thrown when the server reports a writeConcernError
+ * @public
+ * @category Error
+ */
+export declare class MongoWriteConcernError extends MongoServerError {
+    /** The result document (provided if ok: 1) */
+    result?: Document
+    constructor(message: ErrorDescription, result?: Document)
+    get name(): string
+}
+
+/* Excluded from this release type: Monitor */
+
+/** @public */
+export declare type MonitorEvents = {
+    serverHeartbeatStarted(event: ServerHeartbeatStartedEvent): void
+    serverHeartbeatSucceeded(event: ServerHeartbeatSucceededEvent): void
+    serverHeartbeatFailed(event: ServerHeartbeatFailedEvent): void
+    resetServer(error?: MongoError): void
+    resetConnectionPool(): void
+    close(): void
+} & EventEmitterWithState
+
+/* Excluded from this release type: MonitorInterval */
+
+/* Excluded from this release type: MonitorIntervalOptions */
+
+/** @public */
+export declare interface MonitorOptions
+    extends Omit<ConnectionOptions, "id" | "generation" | "hostAddress"> {
+    connectTimeoutMS: number
+    heartbeatFrequencyMS: number
+    minHeartbeatFrequencyMS: number
+}
+
+/* Excluded from this release type: MonitorPrivate */
+
+/* Excluded from this release type: Msg */
+
+/**
+ * @public
+ * returns tuple of strings (keys to be joined on '.') that represent every path into a schema
+ * https://www.mongodb.com/docs/manual/tutorial/query-embedded-documents/
+ *
+ * @remarks
+ * Through testing we determined that a depth of 8 is safe for the typescript compiler
+ * and provides reasonable compilation times. This number is otherwise not special and
+ * should be changed if issues are found with this level of checking. Beyond this
+ * depth any helpers that make use of NestedPaths should devolve to not asserting any
+ * type safety on the input.
+ */
+export declare type NestedPaths<
+    Type,
+    Depth extends number[],
+> = Depth["length"] extends 8
+    ? []
+    : Type extends
+          | string
+          | number
+          | bigint
+          | boolean
+          | Date
+          | RegExp
+          | Buffer
+          | Uint8Array
+          | ((...args: any[]) => any)
+          | {
+                _bsontype: string
+            }
+    ? []
+    : Type extends ReadonlyArray<infer ArrayType>
+    ? [] | [number, ...NestedPaths<ArrayType, [...Depth, 1]>]
+    : Type extends Map<string, any>
+    ? [string]
+    : Type extends object
+    ? {
+          [Key in Extract<keyof Type, string>]: Type[Key] extends Type
+              ? [Key]
+              : Type extends Type[Key]
+              ? [Key]
+              : Type[Key] extends ReadonlyArray<infer ArrayType>
+              ? Type extends ArrayType
+                  ? [Key]
+                  : ArrayType extends Type
+                  ? [Key]
+                  : [Key, ...NestedPaths<Type[Key], [...Depth, 1]>] // child is not structured the same as the parent
+              : [Key, ...NestedPaths<Type[Key], [...Depth, 1]>] | [Key]
+      }[Extract<keyof Type, string>]
+    : []
+
+/**
+ * @public
+ * returns keys (strings) for every path into a schema with a value of type
+ * https://www.mongodb.com/docs/manual/tutorial/query-embedded-documents/
+ */
+export declare type NestedPathsOfType<TSchema, Type> = KeysOfAType<
+    {
+        [Property in Join<NestedPaths<TSchema, []>, ".">]: PropertyType<
+            TSchema,
+            Property
+        >
+    },
+    Type
+>
+
+/**
+ * @public
+ * A type that extends Document but forbids anything that "looks like" an object id.
+ */
+export declare type NonObjectIdLikeDocument = {
+    [key in keyof ObjectIdLike]?: never
+} & Document
+
+/** It avoids using fields with not acceptable types @public */
+export declare type NotAcceptedFields<TSchema, FieldType> = {
+    readonly [key in KeysOfOtherType<TSchema, FieldType>]?: never
+}
+
+/** @public */
+export declare type NumericType = IntegerType | Decimal128 | Double
+
+export { ObjectId }
+
+/**
+ * @public
+ * @experimental
+ */
+export declare interface OIDCMechanismServerStep1 {
+    authorizationEndpoint?: string
+    tokenEndpoint?: string
+    deviceAuthorizationEndpoint?: string
+    clientId: string
+    clientSecret?: string
+    requestScopes?: string[]
+}
+
+/**
+ * @public
+ * @experimental
+ */
+export declare type OIDCRefreshFunction = (
+    principalName: string,
+    serverResult: OIDCMechanismServerStep1,
+    result: OIDCRequestTokenResult,
+    timeout: AbortSignal | number,
+) => Promise<OIDCRequestTokenResult>
+
+/**
+ * @public
+ * @experimental
+ */
+export declare type OIDCRequestFunction = (
+    principalName: string,
+    serverResult: OIDCMechanismServerStep1,
+    timeout: AbortSignal | number,
+) => Promise<OIDCRequestTokenResult>
+
+/**
+ * @public
+ * @experimental
+ */
+export declare interface OIDCRequestTokenResult {
+    accessToken: string
+    expiresInSeconds?: number
+    refreshToken?: string
+}
+
+/** @public */
+export declare type OneOrMore<T> = T | ReadonlyArray<T>
+
+/** @public */
+export declare type OnlyFieldsOfType<
+    TSchema,
+    FieldType = any,
+    AssignableType = FieldType,
+> = IsAny<
+    TSchema[keyof TSchema],
+    Record<string, FieldType>,
+    AcceptedFields<TSchema, FieldType, AssignableType> &
+        NotAcceptedFields<TSchema, FieldType> &
+        Record<string, AssignableType>
+>
+
+/* Excluded from this release type: OperationDescription */
+
+/** @public */
+export declare interface OperationOptions extends BSONSerializeOptions {
+    /** Specify ClientSession for this command */
+    session?: ClientSession
+    willRetryWrite?: boolean
+    /** The preferred read preference (ReadPreference.primary, ReadPreference.primary_preferred, ReadPreference.secondary, ReadPreference.secondary_preferred, ReadPreference.nearest). */
+    readPreference?: ReadPreferenceLike
+    /* Excluded from this release type: bypassPinningCheck */
+    omitReadPreference?: boolean
+}
+
+/* Excluded from this release type: OperationParent */
+
+/**
+ * Represents a specific point in time on a server. Can be retrieved by using `db.command()`
+ * @public
+ * @see https://www.mongodb.com/docs/manual/reference/method/db.runCommand/#response
+ */
+export declare type OperationTime = Timestamp
+
+/* Excluded from this release type: OpMsgOptions */
+
+/* Excluded from this release type: OpQueryOptions */
+
+/* Excluded from this release type: OpResponseOptions */
+
+/**
+ * Add an optional _id field to an object shaped type
+ * @public
+ */
+export declare type OptionalId<TSchema> = EnhancedOmit<TSchema, "_id"> & {
+    _id?: InferIdType<TSchema>
+}
+
+/**
+ * Adds an optional _id field to an object shaped type, unless the _id field is required on that type.
+ * In the case _id is required, this method continues to require_id.
+ *
+ * @public
+ *
+ * @privateRemarks
+ * `ObjectId extends TSchema['_id']` is a confusing ordering at first glance. Rather than ask
+ * `TSchema['_id'] extends ObjectId` which translated to "Is the _id property ObjectId?"
+ * we instead ask "Does ObjectId look like (have the same shape) as the _id?"
+ */
+export declare type OptionalUnlessRequiredId<TSchema> = TSchema extends {
+    _id: any
+}
+    ? TSchema
+    : OptionalId<TSchema>
+
+/** @public */
+export declare class OrderedBulkOperation extends BulkOperationBase {
+    /* Excluded from this release type: __constructor */
+    addToOperationsList(
+        batchType: BatchType,
+        document: Document | UpdateStatement | DeleteStatement,
+    ): this
+}
+
+/** @public */
+export declare interface PkFactory {
+    createPk(): any
+}
+
+/* Excluded from this release type: PoolState */
+
+/** @public */
+export declare const ProfilingLevel: Readonly<{
+    readonly off: "off"
+    readonly slowOnly: "slow_only"
+    readonly all: "all"
+}>
+
+/** @public */
+export declare type ProfilingLevel =
+    (typeof ProfilingLevel)[keyof typeof ProfilingLevel]
+
+/** @public */
+export declare type ProfilingLevelOptions = CommandOperationOptions
+
+/** @public */
+export declare type PropertyType<
+    Type,
+    Property extends string,
+> = string extends Property
+    ? unknown
+    : Property extends keyof Type
+    ? Type[Property]
+    : Property extends `${number}`
+    ? Type extends ReadonlyArray<infer ArrayType>
+        ? ArrayType
+        : unknown
+    : Property extends `${infer Key}.${infer Rest}`
+    ? Key extends `${number}`
+        ? Type extends ReadonlyArray<infer ArrayType>
+            ? PropertyType<ArrayType, Rest>
+            : unknown
+        : Key extends keyof Type
+        ? Type[Key] extends Map<string, infer MapType>
+            ? MapType
+            : PropertyType<Type[Key], Rest>
+        : unknown
+    : unknown
+
+/** @public */
+export declare interface ProxyOptions {
+    proxyHost?: string
+    proxyPort?: number
+    proxyUsername?: string
+    proxyPassword?: string
+}
+
+/** @public */
+export declare type PullAllOperator<TSchema> = ({
+    readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?: TSchema[key]
+} & NotAcceptedFields<TSchema, ReadonlyArray<any>>) & {
+    readonly [key: string]: ReadonlyArray<any>
+}
+
+/** @public */
+export declare type PullOperator<TSchema> = ({
+    readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?:
+        | Partial<Flatten<TSchema[key]>>
+        | FilterOperations<Flatten<TSchema[key]>>
+} & NotAcceptedFields<TSchema, ReadonlyArray<any>>) & {
+    readonly [key: string]: FilterOperators<any> | any
+}
+
+/** @public */
+export declare type PushOperator<TSchema> = ({
+    readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?:
+        | Flatten<TSchema[key]>
+        | ArrayOperator<Array<Flatten<TSchema[key]>>>
+} & NotAcceptedFields<TSchema, ReadonlyArray<any>>) & {
+    readonly [key: string]: ArrayOperator<any> | any
+}
+
+/* Excluded from this release type: Query */
+
+/**
+ * The MongoDB ReadConcern, which allows for control of the consistency and isolation properties
+ * of the data read from replica sets and replica set shards.
+ * @public
+ *
+ * @see https://www.mongodb.com/docs/manual/reference/read-concern/index.html
+ */
+export declare class ReadConcern {
+    level: ReadConcernLevel | string
+    /** Constructs a ReadConcern from the read concern level.*/
+    constructor(level: ReadConcernLevel)
+    /**
+     * Construct a ReadConcern given an options object.
+     *
+     * @param options - The options object from which to extract the write concern.
+     */
+    static fromOptions(options?: {
+        readConcern?: ReadConcernLike
+        level?: ReadConcernLevel
+    }): ReadConcern | undefined
+    static get MAJORITY(): "majority"
+    static get AVAILABLE(): "available"
+    static get LINEARIZABLE(): "linearizable"
+    static get SNAPSHOT(): "snapshot"
+    toJSON(): Document
+}
+
+/** @public */
+export declare const ReadConcernLevel: Readonly<{
+    readonly local: "local"
+    readonly majority: "majority"
+    readonly linearizable: "linearizable"
+    readonly available: "available"
+    readonly snapshot: "snapshot"
+}>
+
+/** @public */
+export declare type ReadConcernLevel =
+    (typeof ReadConcernLevel)[keyof typeof ReadConcernLevel]
+
+/** @public */
+export declare type ReadConcernLike =
+    | ReadConcern
+    | {
+          level: ReadConcernLevel
+      }
+    | ReadConcernLevel
+
+/**
+ * The **ReadPreference** class is a class that represents a MongoDB ReadPreference and is
+ * used to construct connections.
+ * @public
+ *
+ * @see https://www.mongodb.com/docs/manual/core/read-preference/
+ */
+export declare class ReadPreference {
+    mode: ReadPreferenceMode
+    tags?: TagSet[]
+    hedge?: HedgeOptions
+    maxStalenessSeconds?: number
+    minWireVersion?: number
+    static PRIMARY: "primary"
+    static PRIMARY_PREFERRED: "primaryPreferred"
+    static SECONDARY: "secondary"
+    static SECONDARY_PREFERRED: "secondaryPreferred"
+    static NEAREST: "nearest"
+    static primary: ReadPreference
+    static primaryPreferred: ReadPreference
+    static secondary: ReadPreference
+    static secondaryPreferred: ReadPreference
+    static nearest: ReadPreference
+    /**
+     * @param mode - A string describing the read preference mode (primary|primaryPreferred|secondary|secondaryPreferred|nearest)
+     * @param tags - A tag set used to target reads to members with the specified tag(s). tagSet is not available if using read preference mode primary.
+     * @param options - Additional read preference options
      */
     constructor(
-        bucket: GridFSBucket,
-        filename: string,
-        options?: GridFSBucketWriteStreamOptions,
+        mode: ReadPreferenceMode,
+        tags?: TagSet[],
+        options?: ReadPreferenceOptions,
     )
+    get preference(): ReadPreferenceMode
+    static fromString(mode: string): ReadPreference
+    /**
+     * Construct a ReadPreference given an options object.
+     *
+     * @param options - The options object from which to extract the read preference.
+     */
+    static fromOptions(
+        options?: ReadPreferenceFromOptions,
+    ): ReadPreference | undefined
+    /**
+     * Replaces options.readPreference with a ReadPreference instance
+     */
+    static translate(
+        options: ReadPreferenceLikeOptions,
+    ): ReadPreferenceLikeOptions
+    /**
+     * Validate if a mode is legal
+     *
+     * @param mode - The string representing the read preference mode.
+     */
+    static isValid(mode: string): boolean
+    /**
+     * Validate if a mode is legal
+     *
+     * @param mode - The string representing the read preference mode.
+     */
+    isValid(mode?: string): boolean
+    /**
+     * Indicates that this readPreference needs the "SecondaryOk" bit when sent over the wire
+     * @see https://www.mongodb.com/docs/manual/reference/mongodb-wire-protocol/#op-query
+     */
+    secondaryOk(): boolean
+    /**
+     * Check if the two ReadPreferences are equivalent
+     *
+     * @param readPreference - The read preference with which to check equality
+     */
+    equals(readPreference: ReadPreference): boolean
+    /** Return JSON representation */
+    toJSON(): Document
+}
+
+/** @public */
+export declare interface ReadPreferenceFromOptions
+    extends ReadPreferenceLikeOptions {
+    session?: ClientSession
+    readPreferenceTags?: TagSet[]
+    hedge?: HedgeOptions
+}
+
+/** @public */
+export declare type ReadPreferenceLike = ReadPreference | ReadPreferenceMode
+
+/** @public */
+export declare interface ReadPreferenceLikeOptions
+    extends ReadPreferenceOptions {
+    readPreference?:
+        | ReadPreferenceLike
+        | {
+              mode?: ReadPreferenceMode
+              preference?: ReadPreferenceMode
+              tags?: TagSet[]
+              maxStalenessSeconds?: number
+          }
+}
+
+/** @public */
+export declare const ReadPreferenceMode: Readonly<{
+    readonly primary: "primary"
+    readonly primaryPreferred: "primaryPreferred"
+    readonly secondary: "secondary"
+    readonly secondaryPreferred: "secondaryPreferred"
+    readonly nearest: "nearest"
+}>
+
+/** @public */
+export declare type ReadPreferenceMode =
+    (typeof ReadPreferenceMode)[keyof typeof ReadPreferenceMode]
+
+/** @public */
+export declare interface ReadPreferenceOptions {
+    /** Max secondary read staleness in seconds, Minimum value is 90 seconds.*/
+    maxStalenessSeconds?: number
+    /** Server mode in which the same query is dispatched in parallel to multiple replica set members. */
+    hedge?: HedgeOptions
+}
+
+/** @public */
+export declare type RegExpOrString<T> = T extends string
+    ? BSONRegExp | RegExp | T
+    : T
+
+/** @public */
+export declare type RemoveUserOptions = CommandOperationOptions
+
+/** @public */
+export declare interface RenameOptions extends CommandOperationOptions {
+    /** Drop the target name collection if it previously exists. */
+    dropTarget?: boolean
+    /** Unclear */
+    new_collection?: boolean
+}
+
+/** @public */
+export declare interface ReplaceOneModel<TSchema extends Document = Document> {
+    /** The filter to limit the replaced document. */
+    filter: Filter<TSchema>
+    /** The document with which to replace the matched document. */
+    replacement: WithoutId<TSchema>
+    /** Specifies a collation. */
+    collation?: CollationOptions
+    /** The index to use. If specified, then the query system will only consider plans using the hinted index. */
+    hint?: Hint
+    /** When true, creates a new document if no document matches the query. */
+    upsert?: boolean
+}
+
+/** @public */
+export declare interface ReplaceOptions extends CommandOperationOptions {
+    /** If true, allows the write to opt-out of document level validation */
+    bypassDocumentValidation?: boolean
+    /** Specifies a collation */
+    collation?: CollationOptions
+    /** Specify that the update query should only consider plans using the hinted index */
+    hint?: string | Document
+    /** When true, creates a new document if no document matches the query */
+    upsert?: boolean
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+}
+
+/* Excluded from this release type: Response */
+
+/**
+ * @public
+ * @deprecated Please use the ChangeStreamCursorOptions type instead.
+ */
+export declare interface ResumeOptions {
+    startAtOperationTime?: Timestamp
+    batchSize?: number
+    maxAwaitTimeMS?: number
+    collation?: CollationOptions
+    readPreference?: ReadPreference
+    resumeAfter?: ResumeToken
+    startAfter?: ResumeToken
+    fullDocument?: string
 }
 
 /**
- * GridFSBucketWriteStreamOptions.
- * @see https://mongodb.github.io/node-mongodb-native/2.1/api/GridFSBucketWriteStream.html
+ * Represents the logical starting point for a new ChangeStream or resuming a ChangeStream on the server.
+ * @see https://www.mongodb.com/docs/manual/changeStreams/#std-label-change-stream-resume
+ * @public
  */
-export interface GridFSBucketWriteStreamOptions {
-    /**
-     * Custom file id for the GridFS file.
-     */
-    id?: string | number | Object
+export declare type ResumeToken = unknown
 
-    /**
-     * The chunk size to use, in bytes.
-     */
-    chunkSizeBytes?: number
+/** @public */
+export declare const ReturnDocument: Readonly<{
+    readonly BEFORE: "before"
+    readonly AFTER: "after"
+}>
 
-    /**
-     * The write concern.
-     */
-    w?: number
+/** @public */
+export declare type ReturnDocument =
+    (typeof ReturnDocument)[keyof typeof ReturnDocument]
 
+/** @public */
+export declare interface RoleSpecification {
     /**
-     * The write concern timeout.
+     * A role grants privileges to perform sets of actions on defined resources.
+     * A given role applies to the database on which it is defined and can grant access down to a collection level of granularity.
      */
-    wtimeout?: number
-
-    /**
-     * The journal write concern.
-     */
-    j?: number
+    role: string
+    /** The database this user's role should effect. */
+    db: string
 }
+
+/** @public */
+export declare interface RootFilterOperators<TSchema> extends Document {
+    $and?: Filter<TSchema>[]
+    $nor?: Filter<TSchema>[]
+    $or?: Filter<TSchema>[]
+    $text?: {
+        $search: string
+        $language?: string
+        $caseSensitive?: boolean
+        $diacriticSensitive?: boolean
+    }
+    $where?: string | ((this: TSchema) => boolean)
+    $comment?: string | Document
+}
+
+/* Excluded from this release type: RTTPinger */
+
+/* Excluded from this release type: RTTPingerOptions */
+
+/** @public */
+export declare type RunCommandOptions = CommandOperationOptions
+
+/** @public */
+export declare type SchemaMember<T, V> =
+    | {
+          [P in keyof T]?: V
+      }
+    | {
+          [key: string]: V
+      }
+
+/** @public */
+export declare interface SelectServerOptions {
+    readPreference?: ReadPreferenceLike
+    /** How long to block for server selection before throwing an error */
+    serverSelectionTimeoutMS?: number
+    session?: ClientSession
+}
+
+export { serialize }
+
+/* Excluded from this release type: Server */
+
+/** @public */
+export declare interface ServerApi {
+    version: ServerApiVersion
+    strict?: boolean
+    deprecationErrors?: boolean
+}
+
+/** @public */
+export declare const ServerApiVersion: Readonly<{
+    readonly v1: "1"
+}>
+
+/** @public */
+export declare type ServerApiVersion =
+    (typeof ServerApiVersion)[keyof typeof ServerApiVersion]
+
+/** @public */
+export declare class ServerCapabilities {
+    maxWireVersion: number
+    minWireVersion: number
+    constructor(hello: Document)
+    get hasAggregationCursor(): boolean
+    get hasWriteCommands(): boolean
+    get hasTextSearch(): boolean
+    get hasAuthCommands(): boolean
+    get hasListCollectionsCommand(): boolean
+    get hasListIndexesCommand(): boolean
+    get supportsSnapshotReads(): boolean
+    get commandsTakeWriteConcern(): boolean
+    get commandsTakeCollation(): boolean
+}
+
+/**
+ * Emitted when server is closed.
+ * @public
+ * @category Event
+ */
+export declare class ServerClosedEvent {
+    /** A unique identifier for the topology */
+    topologyId: number
+    /** The address (host/port pair) of the server */
+    address: string
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * The client's view of a single server, based on the most recent hello outcome.
+ *
+ * Internal type, not meant to be directly instantiated
+ * @public
+ */
+export declare class ServerDescription {
+    address: string
+    type: ServerType
+    hosts: string[]
+    passives: string[]
+    arbiters: string[]
+    tags: TagSet
+    error: MongoError | null
+    topologyVersion: TopologyVersion | null
+    minWireVersion: number
+    maxWireVersion: number
+    roundTripTime: number
+    lastUpdateTime: number
+    lastWriteDate: number
+    me: string | null
+    primary: string | null
+    setName: string | null
+    setVersion: number | null
+    electionId: ObjectId | null
+    logicalSessionTimeoutMinutes: number | null
+    $clusterTime?: ClusterTime
+    /* Excluded from this release type: __constructor */
+    get hostAddress(): HostAddress
+    get allHosts(): string[]
+    /** Is this server available for reads*/
+    get isReadable(): boolean
+    /** Is this server data bearing */
+    get isDataBearing(): boolean
+    /** Is this server available for writes */
+    get isWritable(): boolean
+    get host(): string
+    get port(): number
+    /**
+     * Determines if another `ServerDescription` is equal to this one per the rules defined
+     * in the {@link https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring.rst#serverdescription|SDAM spec}
+     */
+    equals(other?: ServerDescription | null): boolean
+}
+
+/**
+ * Emitted when server description changes, but does NOT include changes to the RTT.
+ * @public
+ * @category Event
+ */
+export declare class ServerDescriptionChangedEvent {
+    /** A unique identifier for the topology */
+    topologyId: number
+    /** The address (host/port pair) of the server */
+    address: string
+    /** The previous server description */
+    previousDescription: ServerDescription
+    /** The new server description */
+    newDescription: ServerDescription
+    /* Excluded from this release type: __constructor */
+}
+
+/* Excluded from this release type: ServerDescriptionOptions */
+
+/** @public */
+export declare type ServerEvents = {
+    serverHeartbeatStarted(event: ServerHeartbeatStartedEvent): void
+    serverHeartbeatSucceeded(event: ServerHeartbeatSucceededEvent): void
+    serverHeartbeatFailed(event: ServerHeartbeatFailedEvent): void
+    /* Excluded from this release type: connect */
+    descriptionReceived(description: ServerDescription): void
+    closed(): void
+    ended(): void
+} & ConnectionPoolEvents &
+    EventEmitterWithState
+
+/**
+ * Emitted when the server monitor’s hello fails, either with an “ok: 0” or a socket exception.
+ * @public
+ * @category Event
+ */
+export declare class ServerHeartbeatFailedEvent {
+    /** The connection id for the command */
+    connectionId: string
+    /** The execution time of the event in ms */
+    duration: number
+    /** The command failure */
+    failure: Error
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * Emitted when the server monitor’s hello command is started - immediately before
+ * the hello command is serialized into raw BSON and written to the socket.
+ *
+ * @public
+ * @category Event
+ */
+export declare class ServerHeartbeatStartedEvent {
+    /** The connection id for the command */
+    connectionId: string
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * Emitted when the server monitor’s hello succeeds.
+ * @public
+ * @category Event
+ */
+export declare class ServerHeartbeatSucceededEvent {
+    /** The connection id for the command */
+    connectionId: string
+    /** The execution time of the event in ms */
+    duration: number
+    /** The command reply */
+    reply: Document
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * Emitted when server is initialized.
+ * @public
+ * @category Event
+ */
+export declare class ServerOpeningEvent {
+    /** A unique identifier for the topology */
+    topologyId: number
+    /** The address (host/port pair) of the server */
+    address: string
+    /* Excluded from this release type: __constructor */
+}
+
+/* Excluded from this release type: ServerOptions */
+
+/* Excluded from this release type: ServerPrivate */
+
+/* Excluded from this release type: ServerSelectionCallback */
+
+/* Excluded from this release type: ServerSelectionRequest */
+
+/* Excluded from this release type: ServerSelector */
+
+/**
+ * Reflects the existence of a session on the server. Can be reused by the session pool.
+ * WARNING: not meant to be instantiated directly. For internal use only.
+ * @public
+ */
+export declare class ServerSession {
+    id: ServerSessionId
+    lastUse: number
+    txnNumber: number
+    isDirty: boolean
+    /* Excluded from this release type: __constructor */
+    /**
+     * Determines if the server session has timed out.
+     *
+     * @param sessionTimeoutMinutes - The server's "logicalSessionTimeoutMinutes"
+     */
+    hasTimedOut(sessionTimeoutMinutes: number): boolean
+    /* Excluded from this release type: clone */
+}
+
+/** @public */
+export declare type ServerSessionId = {
+    id: Binary
+}
+
+/* Excluded from this release type: ServerSessionPool */
+
+/**
+ * An enumeration of server types we know about
+ * @public
+ */
+export declare const ServerType: Readonly<{
+    readonly Standalone: "Standalone"
+    readonly Mongos: "Mongos"
+    readonly PossiblePrimary: "PossiblePrimary"
+    readonly RSPrimary: "RSPrimary"
+    readonly RSSecondary: "RSSecondary"
+    readonly RSArbiter: "RSArbiter"
+    readonly RSOther: "RSOther"
+    readonly RSGhost: "RSGhost"
+    readonly Unknown: "Unknown"
+    readonly LoadBalancer: "LoadBalancer"
+}>
+
+/** @public */
+export declare type ServerType = (typeof ServerType)[keyof typeof ServerType]
+
+/** @public */
+export declare type SetFields<TSchema> = ({
+    readonly [key in KeysOfAType<TSchema, ReadonlyArray<any> | undefined>]?:
+        | OptionalId<Flatten<TSchema[key]>>
+        | AddToSetOperators<Array<OptionalId<Flatten<TSchema[key]>>>>
+} & NotAcceptedFields<TSchema, ReadonlyArray<any> | undefined>) & {
+    readonly [key: string]: AddToSetOperators<any> | any
+}
+
+/** @public */
+export declare type SetProfilingLevelOptions = CommandOperationOptions
+
+/* Excluded from this release type: SeverityLevel */
+
+/** @public */
+export declare type Sort =
+    | string
+    | Exclude<
+          SortDirection,
+          {
+              $meta: string
+          }
+      >
+    | string[]
+    | {
+          [key: string]: SortDirection
+      }
+    | Map<string, SortDirection>
+    | [string, SortDirection][]
+    | [string, SortDirection]
+
+/** @public */
+export declare type SortDirection =
+    | 1
+    | -1
+    | "asc"
+    | "desc"
+    | "ascending"
+    | "descending"
+    | {
+          $meta: string
+      }
+
+/* Excluded from this release type: SortDirectionForCmd */
+
+/* Excluded from this release type: SortForCmd */
+
+/* Excluded from this release type: SrvPoller */
+
+/* Excluded from this release type: SrvPollerEvents */
+
+/* Excluded from this release type: SrvPollerOptions */
+
+/* Excluded from this release type: SrvPollingEvent */
+
+/** @public */
+export declare type Stream = Socket | TLSSocket
+
+/** @public */
+export declare class StreamDescription {
+    address: string
+    type: string
+    minWireVersion?: number
+    maxWireVersion?: number
+    maxBsonObjectSize: number
+    maxMessageSizeBytes: number
+    maxWriteBatchSize: number
+    compressors: CompressorName[]
+    compressor?: CompressorName
+    logicalSessionTimeoutMinutes?: number
+    loadBalanced: boolean
+    __nodejs_mock_server__?: boolean
+    zlibCompressionLevel?: number
+    constructor(address: string, options?: StreamDescriptionOptions)
+    receiveResponse(response: Document | null): void
+}
+
+/** @public */
+export declare interface StreamDescriptionOptions {
+    compressors?: CompressorName[]
+    logicalSessionTimeoutMinutes?: number
+    loadBalanced: boolean
+}
+
+/**
+ * @public
+ * @experimental
+ */
+export declare type StrictFilter<TSchema> =
+    | Partial<TSchema>
+    | ({
+          [Property in Join<NestedPaths<WithId<TSchema>, []>, ".">]?: Condition<
+              PropertyType<WithId<TSchema>, Property>
+          >
+      } & RootFilterOperators<WithId<TSchema>>)
+
+/**
+ * @public
+ * @experimental
+ */
+export declare type StrictMatchKeysAndValues<TSchema> = Readonly<
+    {
+        [Property in Join<NestedPaths<TSchema, []>, ".">]?: PropertyType<
+            TSchema,
+            Property
+        >
+    } & {
+        [Property in `${NestedPathsOfType<TSchema, any[]>}.$${
+            | `[${string}]`
+            | ""}`]?: ArrayElement<
+            PropertyType<
+                TSchema,
+                Property extends `${infer Key}.$${string}` ? Key : never
+            >
+        >
+    } & {
+        [Property in `${NestedPathsOfType<TSchema, Record<string, any>[]>}.$${
+            | `[${string}]`
+            | ""}.${string}`]?: any
+    } & Document
+>
+
+/**
+ * @public
+ * @experimental
+ */
+export declare type StrictUpdateFilter<TSchema> = {
+    $currentDate?: OnlyFieldsOfType<
+        TSchema,
+        Date | Timestamp,
+        | true
+        | {
+              $type: "date" | "timestamp"
+          }
+    >
+    $inc?: OnlyFieldsOfType<TSchema, NumericType | undefined>
+    $min?: StrictMatchKeysAndValues<TSchema>
+    $max?: StrictMatchKeysAndValues<TSchema>
+    $mul?: OnlyFieldsOfType<TSchema, NumericType | undefined>
+    $rename?: Record<string, string>
+    $set?: StrictMatchKeysAndValues<TSchema>
+    $setOnInsert?: StrictMatchKeysAndValues<TSchema>
+    $unset?: OnlyFieldsOfType<TSchema, any, "" | true | 1>
+    $addToSet?: SetFields<TSchema>
+    $pop?: OnlyFieldsOfType<TSchema, ReadonlyArray<any>, 1 | -1>
+    $pull?: PullOperator<TSchema>
+    $push?: PushOperator<TSchema>
+    $pullAll?: PullAllOperator<TSchema>
+    $bit?: OnlyFieldsOfType<
+        TSchema,
+        NumericType | undefined,
+        | {
+              and: IntegerType
+          }
+        | {
+              or: IntegerType
+          }
+        | {
+              xor: IntegerType
+          }
+    >
+} & Document
+
+/** @public */
+export declare type SupportedNodeConnectionOptions =
+    SupportedTLSConnectionOptions &
+        SupportedTLSSocketOptions &
+        SupportedSocketOptions
+
+/** @public */
+export declare type SupportedSocketOptions = Pick<
+    TcpNetConnectOpts,
+    (typeof LEGAL_TCP_SOCKET_OPTIONS)[number]
+>
+
+/** @public */
+export declare type SupportedTLSConnectionOptions = Pick<
+    ConnectionOptions_2,
+    Extract<
+        keyof ConnectionOptions_2,
+        (typeof LEGAL_TLS_SOCKET_OPTIONS)[number]
+    >
+>
+
+/** @public */
+export declare type SupportedTLSSocketOptions = Pick<
+    TLSSocketOptions,
+    Extract<keyof TLSSocketOptions, (typeof LEGAL_TLS_SOCKET_OPTIONS)[number]>
+>
+
+/** @public */
+export declare type TagSet = {
+    [key: string]: string
+}
+
+/* Excluded from this release type: TimerQueue */
+
+/** @public
+ * Configuration options for timeseries collections
+ * @see https://www.mongodb.com/docs/manual/core/timeseries-collections/
+ */
+export declare interface TimeSeriesCollectionOptions extends Document {
+    timeField: string
+    metaField?: string
+    granularity?: "seconds" | "minutes" | "hours" | string
+}
+
+export { Timestamp }
+
+/* Excluded from this release type: Topology */
+
+/**
+ * Emitted when topology is closed.
+ * @public
+ * @category Event
+ */
+export declare class TopologyClosedEvent {
+    /** A unique identifier for the topology */
+    topologyId: number
+    /* Excluded from this release type: __constructor */
+}
+
+/**
+ * Representation of a deployment of servers
+ * @public
+ */
+export declare class TopologyDescription {
+    type: TopologyType
+    setName: string | null
+    maxSetVersion: number | null
+    maxElectionId: ObjectId | null
+    servers: Map<string, ServerDescription>
+    stale: boolean
+    compatible: boolean
+    compatibilityError?: string
+    logicalSessionTimeoutMinutes: number | null
+    heartbeatFrequencyMS: number
+    localThresholdMS: number
+    commonWireVersion: number
+    /**
+     * Create a TopologyDescription
+     */
+    constructor(
+        topologyType: TopologyType,
+        serverDescriptions?: Map<string, ServerDescription> | null,
+        setName?: string | null,
+        maxSetVersion?: number | null,
+        maxElectionId?: ObjectId | null,
+        commonWireVersion?: number | null,
+        options?: TopologyDescriptionOptions | null,
+    )
+    /* Excluded from this release type: updateFromSrvPollingEvent */
+    /* Excluded from this release type: update */
+    get error(): MongoServerError | null
+    /**
+     * Determines if the topology description has any known servers
+     */
+    get hasKnownServers(): boolean
+    /**
+     * Determines if this topology description has a data-bearing server available.
+     */
+    get hasDataBearingServers(): boolean
+    /* Excluded from this release type: hasServer */
+}
+
+/**
+ * Emitted when topology description changes.
+ * @public
+ * @category Event
+ */
+export declare class TopologyDescriptionChangedEvent {
+    /** A unique identifier for the topology */
+    topologyId: number
+    /** The old topology description */
+    previousDescription: TopologyDescription
+    /** The new topology description */
+    newDescription: TopologyDescription
+    /* Excluded from this release type: __constructor */
+}
+
+/** @public */
+export declare interface TopologyDescriptionOptions {
+    heartbeatFrequencyMS?: number
+    localThresholdMS?: number
+}
+
+/** @public */
+export declare type TopologyEvents = {
+    /* Excluded from this release type: connect */
+    serverOpening(event: ServerOpeningEvent): void
+    serverClosed(event: ServerClosedEvent): void
+    serverDescriptionChanged(event: ServerDescriptionChangedEvent): void
+    topologyClosed(event: TopologyClosedEvent): void
+    topologyOpening(event: TopologyOpeningEvent): void
+    topologyDescriptionChanged(event: TopologyDescriptionChangedEvent): void
+    error(error: Error): void
+    /* Excluded from this release type: open */
+    close(): void
+    timeout(): void
+} & Omit<ServerEvents, "connect"> &
+    ConnectionPoolEvents &
+    ConnectionEvents &
+    EventEmitterWithState
+
+/**
+ * Emitted when topology is initialized.
+ * @public
+ * @category Event
+ */
+export declare class TopologyOpeningEvent {
+    /** A unique identifier for the topology */
+    topologyId: number
+    /* Excluded from this release type: __constructor */
+}
+
+/* Excluded from this release type: TopologyOptions */
+
+/* Excluded from this release type: TopologyPrivate */
+
+/**
+ * An enumeration of topology types we know about
+ * @public
+ */
+export declare const TopologyType: Readonly<{
+    readonly Single: "Single"
+    readonly ReplicaSetNoPrimary: "ReplicaSetNoPrimary"
+    readonly ReplicaSetWithPrimary: "ReplicaSetWithPrimary"
+    readonly Sharded: "Sharded"
+    readonly Unknown: "Unknown"
+    readonly LoadBalanced: "LoadBalanced"
+}>
+
+/** @public */
+export declare type TopologyType =
+    (typeof TopologyType)[keyof typeof TopologyType]
+
+/** @public */
+export declare interface TopologyVersion {
+    processId: ObjectId
+    counter: Long
+}
+
+/**
+ * @public
+ * A class maintaining state related to a server transaction. Internal Only
+ */
+export declare class Transaction {
+    /* Excluded from this release type: state */
+    options: TransactionOptions
+    /* Excluded from this release type: _pinnedServer */
+    /* Excluded from this release type: _recoveryToken */
+    /* Excluded from this release type: __constructor */
+    /* Excluded from this release type: server */
+    get recoveryToken(): Document | undefined
+    get isPinned(): boolean
+    /** @returns Whether the transaction has started */
+    get isStarting(): boolean
+    /**
+     * @returns Whether this session is presently in a transaction
+     */
+    get isActive(): boolean
+    get isCommitted(): boolean
+    /* Excluded from this release type: transition */
+    /* Excluded from this release type: pinServer */
+    /* Excluded from this release type: unpinServer */
+}
+
+/**
+ * Configuration options for a transaction.
+ * @public
+ */
+export declare interface TransactionOptions extends CommandOperationOptions {
+    /** A default read concern for commands in this transaction */
+    readConcern?: ReadConcernLike
+    /** A default writeConcern for commands in this transaction */
+    writeConcern?: WriteConcern
+    /** A default read preference for commands in this transaction */
+    readPreference?: ReadPreferenceLike
+    /** Specifies the maximum amount of time to allow a commit action on a transaction to run in milliseconds */
+    maxCommitTimeMS?: number
+}
+
+/* Excluded from this release type: TxnState */
+
+/**
+ * Typescript type safe event emitter
+ * @public
+ */
+export declare interface TypedEventEmitter<Events extends EventsDescription>
+    extends EventEmitter {
+    addListener<EventKey extends keyof Events>(
+        event: EventKey,
+        listener: Events[EventKey],
+    ): this
+    addListener(
+        event: CommonEvents,
+        listener: (
+            eventName: string | symbol,
+            listener: GenericListener,
+        ) => void,
+    ): this
+    addListener(event: string | symbol, listener: GenericListener): this
+    on<EventKey extends keyof Events>(
+        event: EventKey,
+        listener: Events[EventKey],
+    ): this
+    on(
+        event: CommonEvents,
+        listener: (
+            eventName: string | symbol,
+            listener: GenericListener,
+        ) => void,
+    ): this
+    on(event: string | symbol, listener: GenericListener): this
+    once<EventKey extends keyof Events>(
+        event: EventKey,
+        listener: Events[EventKey],
+    ): this
+    once(
+        event: CommonEvents,
+        listener: (
+            eventName: string | symbol,
+            listener: GenericListener,
+        ) => void,
+    ): this
+    once(event: string | symbol, listener: GenericListener): this
+    removeListener<EventKey extends keyof Events>(
+        event: EventKey,
+        listener: Events[EventKey],
+    ): this
+    removeListener(
+        event: CommonEvents,
+        listener: (
+            eventName: string | symbol,
+            listener: GenericListener,
+        ) => void,
+    ): this
+    removeListener(event: string | symbol, listener: GenericListener): this
+    off<EventKey extends keyof Events>(
+        event: EventKey,
+        listener: Events[EventKey],
+    ): this
+    off(
+        event: CommonEvents,
+        listener: (
+            eventName: string | symbol,
+            listener: GenericListener,
+        ) => void,
+    ): this
+    off(event: string | symbol, listener: GenericListener): this
+    removeAllListeners<EventKey extends keyof Events>(
+        event?: EventKey | CommonEvents | symbol | string,
+    ): this
+    listeners<EventKey extends keyof Events>(
+        event: EventKey | CommonEvents | symbol | string,
+    ): Events[EventKey][]
+    rawListeners<EventKey extends keyof Events>(
+        event: EventKey | CommonEvents | symbol | string,
+    ): Events[EventKey][]
+    emit<EventKey extends keyof Events>(
+        event: EventKey | symbol,
+        ...args: Parameters<Events[EventKey]>
+    ): boolean
+    listenerCount<EventKey extends keyof Events>(
+        type: EventKey | CommonEvents | symbol | string,
+    ): number
+    prependListener<EventKey extends keyof Events>(
+        event: EventKey,
+        listener: Events[EventKey],
+    ): this
+    prependListener(
+        event: CommonEvents,
+        listener: (
+            eventName: string | symbol,
+            listener: GenericListener,
+        ) => void,
+    ): this
+    prependListener(event: string | symbol, listener: GenericListener): this
+    prependOnceListener<EventKey extends keyof Events>(
+        event: EventKey,
+        listener: Events[EventKey],
+    ): this
+    prependOnceListener(
+        event: CommonEvents,
+        listener: (
+            eventName: string | symbol,
+            listener: GenericListener,
+        ) => void,
+    ): this
+    prependOnceListener(event: string | symbol, listener: GenericListener): this
+    eventNames(): string[]
+    getMaxListeners(): number
+    setMaxListeners(n: number): this
+}
+
+/**
+ * Typescript type safe event emitter
+ * @public
+ */
+export declare class TypedEventEmitter<
+    Events extends EventsDescription,
+> extends EventEmitter {}
+
+/** @public */
+export declare class UnorderedBulkOperation extends BulkOperationBase {
+    /* Excluded from this release type: __constructor */
+    handleWriteError(callback: Callback, writeResult: BulkWriteResult): boolean
+    addToOperationsList(
+        batchType: BatchType,
+        document: Document | UpdateStatement | DeleteStatement,
+    ): this
+}
+
+/** @public */
+export declare interface UpdateDescription<
+    TSchema extends Document = Document,
+> {
+    /**
+     * A document containing key:value pairs of names of the fields that were
+     * changed, and the new value for those fields.
+     */
+    updatedFields?: Partial<TSchema>
+    /**
+     * An array of field names that were removed from the document.
+     */
+    removedFields?: string[]
+    /**
+     * An array of documents which record array truncations performed with pipeline-based updates using one or more of the following stages:
+     * - $addFields
+     * - $set
+     * - $replaceRoot
+     * - $replaceWith
+     */
+    truncatedArrays?: Array<{
+        /** The name of the truncated field. */
+        field: string
+        /** The number of elements in the truncated array. */
+        newSize: number
+    }>
+    /**
+     * A document containing additional information about any ambiguous update paths from the update event.  The document
+     * maps the full ambiguous update path to an array containing the actual resolved components of the path.  For example,
+     * given a document shaped like `{ a: { '0': 0 } }`, and an update of `{ $inc: 'a.0' }`, disambiguated paths would look like
+     * the following:
+     *
+     * ```
+     *   {
+     *     'a.0': ['a', '0']
+     *   }
+     * ```
+     *
+     * This field is only present when there are ambiguous paths that are updated as a part of the update event and `showExpandedEvents`
+     * is enabled for the change stream.
+     * @sinceServerVersion 6.1.0
+     */
+    disambiguatedPaths?: Document
+}
+
+/** @public */
+export declare type UpdateFilter<TSchema> = {
+    $currentDate?: OnlyFieldsOfType<
+        TSchema,
+        Date | Timestamp,
+        | true
+        | {
+              $type: "date" | "timestamp"
+          }
+    >
+    $inc?: OnlyFieldsOfType<TSchema, NumericType | undefined>
+    $min?: MatchKeysAndValues<TSchema>
+    $max?: MatchKeysAndValues<TSchema>
+    $mul?: OnlyFieldsOfType<TSchema, NumericType | undefined>
+    $rename?: Record<string, string>
+    $set?: MatchKeysAndValues<TSchema>
+    $setOnInsert?: MatchKeysAndValues<TSchema>
+    $unset?: OnlyFieldsOfType<TSchema, any, "" | true | 1>
+    $addToSet?: SetFields<TSchema>
+    $pop?: OnlyFieldsOfType<TSchema, ReadonlyArray<any>, 1 | -1>
+    $pull?: PullOperator<TSchema>
+    $push?: PushOperator<TSchema>
+    $pullAll?: PullAllOperator<TSchema>
+    $bit?: OnlyFieldsOfType<
+        TSchema,
+        NumericType | undefined,
+        | {
+              and: IntegerType
+          }
+        | {
+              or: IntegerType
+          }
+        | {
+              xor: IntegerType
+          }
+    >
+} & Document
+
+/** @public */
+export declare interface UpdateManyModel<TSchema extends Document = Document> {
+    /** The filter to limit the updated documents. */
+    filter: Filter<TSchema>
+    /** A document or pipeline containing update operators. */
+    update: UpdateFilter<TSchema> | UpdateFilter<TSchema>[]
+    /** A set of filters specifying to which array elements an update should apply. */
+    arrayFilters?: Document[]
+    /** Specifies a collation. */
+    collation?: CollationOptions
+    /** The index to use. If specified, then the query system will only consider plans using the hinted index. */
+    hint?: Hint
+    /** When true, creates a new document if no document matches the query. */
+    upsert?: boolean
+}
+
+/** @public */
+export declare interface UpdateOneModel<TSchema extends Document = Document> {
+    /** The filter to limit the updated documents. */
+    filter: Filter<TSchema>
+    /** A document or pipeline containing update operators. */
+    update: UpdateFilter<TSchema> | UpdateFilter<TSchema>[]
+    /** A set of filters specifying to which array elements an update should apply. */
+    arrayFilters?: Document[]
+    /** Specifies a collation. */
+    collation?: CollationOptions
+    /** The index to use. If specified, then the query system will only consider plans using the hinted index. */
+    hint?: Hint
+    /** When true, creates a new document if no document matches the query. */
+    upsert?: boolean
+}
+
+/** @public */
+export declare interface UpdateOptions extends CommandOperationOptions {
+    /** A set of filters specifying to which array elements an update should apply */
+    arrayFilters?: Document[]
+    /** If true, allows the write to opt-out of document level validation */
+    bypassDocumentValidation?: boolean
+    /** Specifies a collation */
+    collation?: CollationOptions
+    /** Specify that the update query should only consider plans using the hinted index */
+    hint?: Hint
+    /** When true, creates a new document if no document matches the query */
+    upsert?: boolean
+    /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
+    let?: Document
+}
+
+/** @public */
+export declare interface UpdateResult {
+    /** Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined */
+    acknowledged: boolean
+    /** The number of documents that matched the filter */
+    matchedCount: number
+    /** The number of documents that were modified */
+    modifiedCount: number
+    /** The number of documents that were upserted */
+    upsertedCount: number
+    /** The identifier of the inserted document if an upsert took place */
+    upsertedId: ObjectId
+}
+
+/** @public */
+export declare interface UpdateStatement {
+    /** The query that matches documents to update. */
+    q: Document
+    /** The modifications to apply. */
+    u: Document | Document[]
+    /**  If true, perform an insert if no documents match the query. */
+    upsert?: boolean
+    /** If true, updates all documents that meet the query criteria. */
+    multi?: boolean
+    /** Specifies the collation to use for the operation. */
+    collation?: CollationOptions
+    /** An array of filter documents that determines which array elements to modify for an update operation on an array field. */
+    arrayFilters?: Document[]
+    /** A document or string that specifies the index to use to support the query predicate. */
+    hint?: Hint
+}
+
+/** @public */
+export declare interface ValidateCollectionOptions
+    extends CommandOperationOptions {
+    /** Validates a collection in the background, without interrupting read or write traffic (only in MongoDB 4.4+) */
+    background?: boolean
+}
+
+/** @public */
+export declare type W = number | "majority"
+
+/* Excluded from this release type: WaitQueueMember */
+
+/** @public */
+export declare interface WiredTigerData extends Document {
+    LSM: {
+        "bloom filter false positives": number
+        "bloom filter hits": number
+        "bloom filter misses": number
+        "bloom filter pages evicted from cache": number
+        "bloom filter pages read into cache": number
+        "bloom filters in the LSM tree": number
+        "chunks in the LSM tree": number
+        "highest merge generation in the LSM tree": number
+        "queries that could have benefited from a Bloom filter that did not exist": number
+        "sleep for LSM checkpoint throttle": number
+        "sleep for LSM merge throttle": number
+        "total size of bloom filters": number
+    } & Document
+    "block-manager": {
+        "allocations requiring file extension": number
+        "blocks allocated": number
+        "blocks freed": number
+        "checkpoint size": number
+        "file allocation unit size": number
+        "file bytes available for reuse": number
+        "file magic number": number
+        "file major version number": number
+        "file size in bytes": number
+        "minor version number": number
+    }
+    btree: {
+        "btree checkpoint generation": number
+        "column-store fixed-size leaf pages": number
+        "column-store internal pages": number
+        "column-store variable-size RLE encoded values": number
+        "column-store variable-size deleted values": number
+        "column-store variable-size leaf pages": number
+        "fixed-record size": number
+        "maximum internal page key size": number
+        "maximum internal page size": number
+        "maximum leaf page key size": number
+        "maximum leaf page size": number
+        "maximum leaf page value size": number
+        "maximum tree depth": number
+        "number of key/value pairs": number
+        "overflow pages": number
+        "pages rewritten by compaction": number
+        "row-store internal pages": number
+        "row-store leaf pages": number
+    } & Document
+    cache: {
+        "bytes currently in the cache": number
+        "bytes read into cache": number
+        "bytes written from cache": number
+        "checkpoint blocked page eviction": number
+        "data source pages selected for eviction unable to be evicted": number
+        "hazard pointer blocked page eviction": number
+        "in-memory page passed criteria to be split": number
+        "in-memory page splits": number
+        "internal pages evicted": number
+        "internal pages split during eviction": number
+        "leaf pages split during eviction": number
+        "modified pages evicted": number
+        "overflow pages read into cache": number
+        "overflow values cached in memory": number
+        "page split during eviction deepened the tree": number
+        "page written requiring lookaside records": number
+        "pages read into cache": number
+        "pages read into cache requiring lookaside entries": number
+        "pages requested from the cache": number
+        "pages written from cache": number
+        "pages written requiring in-memory restoration": number
+        "tracked dirty bytes in the cache": number
+        "unmodified pages evicted": number
+    } & Document
+    cache_walk: {
+        "Average difference between current eviction generation when the page was last considered": number
+        "Average on-disk page image size seen": number
+        "Clean pages currently in cache": number
+        "Current eviction generation": number
+        "Dirty pages currently in cache": number
+        "Entries in the root page": number
+        "Internal pages currently in cache": number
+        "Leaf pages currently in cache": number
+        "Maximum difference between current eviction generation when the page was last considered": number
+        "Maximum page size seen": number
+        "Minimum on-disk page image size seen": number
+        "On-disk page image sizes smaller than a single allocation unit": number
+        "Pages created in memory and never written": number
+        "Pages currently queued for eviction": number
+        "Pages that could not be queued for eviction": number
+        "Refs skipped during cache traversal": number
+        "Size of the root page": number
+        "Total number of pages currently in cache": number
+    } & Document
+    compression: {
+        "compressed pages read": number
+        "compressed pages written": number
+        "page written failed to compress": number
+        "page written was too small to compress": number
+        "raw compression call failed, additional data available": number
+        "raw compression call failed, no additional data available": number
+        "raw compression call succeeded": number
+    } & Document
+    cursor: {
+        "bulk-loaded cursor-insert calls": number
+        "create calls": number
+        "cursor-insert key and value bytes inserted": number
+        "cursor-remove key bytes removed": number
+        "cursor-update value bytes updated": number
+        "insert calls": number
+        "next calls": number
+        "prev calls": number
+        "remove calls": number
+        "reset calls": number
+        "restarted searches": number
+        "search calls": number
+        "search near calls": number
+        "truncate calls": number
+        "update calls": number
+    }
+    reconciliation: {
+        "dictionary matches": number
+        "fast-path pages deleted": number
+        "internal page key bytes discarded using suffix compression": number
+        "internal page multi-block writes": number
+        "internal-page overflow keys": number
+        "leaf page key bytes discarded using prefix compression": number
+        "leaf page multi-block writes": number
+        "leaf-page overflow keys": number
+        "maximum blocks required for a page": number
+        "overflow values written": number
+        "page checksum matches": number
+        "page reconciliation calls": number
+        "page reconciliation calls for eviction": number
+        "pages deleted": number
+    } & Document
+}
+
+/* Excluded from this release type: WithConnectionCallback */
+
+/** Add an _id field to an object shaped type @public */
+export declare type WithId<TSchema> = EnhancedOmit<TSchema, "_id"> & {
+    _id: InferIdType<TSchema>
+}
+
+/** Remove the _id field from an object shaped type @public */
+export declare type WithoutId<TSchema> = Omit<TSchema, "_id">
+
+/** @public */
+export declare type WithSessionCallback = (
+    session: ClientSession,
+) => Promise<any>
+
+/** @public */
+export declare type WithTransactionCallback<T = void> = (
+    session: ClientSession,
+) => Promise<T>
+
+/**
+ * A MongoDB WriteConcern, which describes the level of acknowledgement
+ * requested from MongoDB for write operations.
+ * @public
+ *
+ * @see https://www.mongodb.com/docs/manual/reference/write-concern/
+ */
+export declare class WriteConcern {
+    /** request acknowledgment that the write operation has propagated to a specified number of mongod instances or to mongod instances with specified tags. */
+    w?: W
+    /** specify a time limit to prevent write operations from blocking indefinitely */
+    wtimeout?: number
+    /** request acknowledgment that the write operation has been written to the on-disk journal */
+    j?: boolean
+    /** equivalent to the j option */
+    fsync?: boolean | 1
+    /**
+     * Constructs a WriteConcern from the write concern properties.
+     * @param w - request acknowledgment that the write operation has propagated to a specified number of mongod instances or to mongod instances with specified tags.
+     * @param wtimeout - specify a time limit to prevent write operations from blocking indefinitely
+     * @param j - request acknowledgment that the write operation has been written to the on-disk journal
+     * @param fsync - equivalent to the j option
+     */
+    constructor(w?: W, wtimeout?: number, j?: boolean, fsync?: boolean | 1)
+    /** Construct a WriteConcern given an options object. */
+    static fromOptions(
+        options?: WriteConcernOptions | WriteConcern | W,
+        inherit?: WriteConcernOptions | WriteConcern,
+    ): WriteConcern | undefined
+}
+
+/**
+ * An error representing a failure by the server to apply the requested write concern to the bulk operation.
+ * @public
+ * @category Error
+ */
+export declare class WriteConcernError {
+    /* Excluded from this release type: [kServerError] */
+    constructor(error: WriteConcernErrorData)
+    /** Write concern error code. */
+    get code(): number | undefined
+    /** Write concern error message. */
+    get errmsg(): string | undefined
+    /** Write concern error info. */
+    get errInfo(): Document | undefined
+    toJSON(): WriteConcernErrorData
+    toString(): string
+}
+
+/** @public */
+export declare interface WriteConcernErrorData {
+    code: number
+    errmsg: string
+    errInfo?: Document
+}
+
+/** @public */
+export declare interface WriteConcernOptions {
+    /** Write Concern as an object */
+    writeConcern?: WriteConcern | WriteConcernSettings
+}
+
+/** @public */
+export declare interface WriteConcernSettings {
+    /** The write concern */
+    w?: W
+    /** The write concern timeout */
+    wtimeoutMS?: number
+    /** The journal write concern */
+    journal?: boolean
+    /** The journal write concern */
+    j?: boolean
+    /** The write concern timeout */
+    wtimeout?: number
+    /** The file sync write concern */
+    fsync?: boolean | 1
+}
+
+/**
+ * An error that occurred during a BulkWrite on the server.
+ * @public
+ * @category Error
+ */
+export declare class WriteError {
+    err: BulkWriteOperationError
+    constructor(err: BulkWriteOperationError)
+    /** WriteError code. */
+    get code(): number
+    /** WriteError original bulk operation index. */
+    get index(): number
+    /** WriteError message. */
+    get errmsg(): string | undefined
+    /** WriteError details. */
+    get errInfo(): Document | undefined
+    /** Returns the underlying operation that caused the error */
+    getOperation(): Document
+    toJSON(): {
+        code: number
+        index: number
+        errmsg?: string
+        op: Document
+    }
+    toString(): string
+}
+
+/* Excluded from this release type: WriteProtocolMessageType */
+
+export {}
