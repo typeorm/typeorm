@@ -482,7 +482,7 @@ export function closeTestingConnections(connections: DataSource[]) {
     return Promise.all(
         connections.map((connection) =>
             connection && connection.isInitialized
-                ? connection.close()
+                ? connection.destroy()
                 : undefined,
         ),
     )
