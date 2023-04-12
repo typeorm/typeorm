@@ -3648,6 +3648,7 @@ export interface Collection<T> {
      * @param reduce The reduce function.
      * @param callback The command result callback.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#mapReduce
+     * @deprecated since 5.0, instead use an aggregation pipeline
      */
     mapReduce(
         map: Function | string,
@@ -3662,6 +3663,7 @@ export interface Collection<T> {
      * @param reduce The reduce function.
      * @param options Optional.
      * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Collection.html#mapReduce
+     * @deprecated since 5.0, instead use an aggregation pipeline
      */
     mapReduce(
         map: Function | string,
@@ -4855,13 +4857,30 @@ export interface FindOperatorsUnordered {
 
     /**
      * Add a remove operation to the bulk operation.
+     *
+     * @deprecated deprecated since mongodb@4.0, in new code, use delete instead
      */
     remove(): UnorderedBulkOperation
 
     /**
      * Add a remove one operation to the bulk operation.
+     *
+     * @deprecated deprecated since mongodb@4.0, in new code, use deleteOne instead
      */
     removeOne(): UnorderedBulkOperation
+
+    /**
+     * Add a delete operation to the bulk operation.
+     *
+     * @deprecated deprecated since mongodb@4.0, in new code, use delete instead
+     */
+    delete(): UnorderedBulkOperation
+
+    /**
+     * Add a delete one operation to the bulk operation.
+     *
+     */
+    deleteOne(): UnorderedBulkOperation
 
     /**
      * Add a replace one operation to the bulk operation.

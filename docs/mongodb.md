@@ -373,10 +373,6 @@ Returns if the collection is a capped collection.
 
 Get the list of all indexes information for the collection.
 
-#### `mapReduce`
-
-Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
-
 #### `parallelCollectionScan`
 
 Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are no ordering guarantees for returned results

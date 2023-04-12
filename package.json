@@ -121,7 +121,7 @@
     "gulpclass": "^0.2.0",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
-    "mongodb": "^3.7.3",
+    "mongodb": "^5.0.1",
     "mssql": "^9.1.1",
     "mysql": "^2.18.1",
     "mysql2": "^3.1.1",
@@ -146,8 +146,8 @@
     "better-sqlite3": "^7.1.2 || ^8.0.0",
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",
-    "mongodb": "^3.6.0",
     "mssql": "^9.1.1",
+    "mongodb": "^5.0.1",
     "mysql2": "^2.2.5 || ^3.0.1",
     "oracledb": "^5.1.0",
     "pg": "^8.5.1",
@@ -229,14 +229,14 @@
     "yargs": "^17.6.2"
   },
   "scripts": {
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
-    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 60000 ./build/compiled/test",
+    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
+    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
     "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
     "pack": "gulp pack",
     "lint": "prettier --check \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
-    "format": "prettier --write \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
+    "format": "prettier --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
   },
   "bin": {
