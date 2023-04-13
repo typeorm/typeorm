@@ -9,6 +9,10 @@ import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions
 import { FindOneOptions } from "../find-options/FindOneOptions"
 
 import {
+    CreateIndexesOptions,
+    ObjectId,
+    ReplaceOptions,
+    //
     AggregateOptions,
     AggregationCursor,
     AnyBulkWriteOperation,
@@ -39,9 +43,6 @@ import {
     UpdateFilter,
     UpdateOptions,
     UpdateResult,
-    ObjectId,
-    CreateIndexesOptions,
-    ReplaceOptions,
 } from "../driver/mongodb/typings"
 import { FindManyOptions } from "../find-options/FindManyOptions"
 

@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { Connection } from "../../../src"
+import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,8 +8,8 @@ import {
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
 
-describe("github issues > #7907 add support for mongodb driver v4", () => {
-    let connections: Connection[]
+describe("github issues > #7907 add support for mongodb driver v5", () => {
+    let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
