@@ -28,117 +28,119 @@ TypeORM 参考了很多其他优秀 ORM 的实现, 比如 [Hibernate](http://hib
 
 TypeORM 的一些特性:
 
-- 支持 [DataMapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) 和 [ActiveRecord](active-record-data-mapper.md#what-is-the-active-record-pattern) (随你选择)
-- 实体和列
-- 数据库特性列类型
-- 实体管理
-- 存储库和自定义存储库
-- 清晰的对象关系模型
-- 关联（关系）
-- 贪婪和延迟关系
-- 单向的，双向的和自引用的关系
-- 支持多重继承模式
-- 级联
-- 索引
-- 事务
-- 迁移和自动迁移
-- 连接池
-- 主从复制
-- 使用多个数据库连接
-- 使用多个数据库类型
-- 跨数据库和跨模式查询
-- 优雅的语法，灵活而强大的 QueryBuilder
-- 左联接和内联接
-- 使用联查查询的适当分页
-- 查询缓存
-- 原始结果流
-- 日志
-- 监听者和订阅者（钩子）
-- 支持闭包表模式
-- 在模型或者分离的配置文件中声明模式
-- json / xml / yml / env 格式的连接配置
-- 支持 MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
-- 支持 MongoDB NoSQL 数据库
-- 可在 NodeJS / 浏览器 / Ionic / Cordova / React Native / Expo / Electron 平台上使用
-- 支持 TypeScript 和 JavaScript
-- 生成高性能、灵活、清晰和可维护的代码
-- 遵循所有可能的最佳实践
-- 命令行工具
+-   支持 [DataMapper](active-record-data-mapper.md#what-is-the-data-mapper-pattern) 和 [ActiveRecord](active-record-data-mapper.md#what-is-the-active-record-pattern) (随你选择)
+-   实体和列
+-   数据库特性列类型
+-   实体管理
+-   存储库和自定义存储库
+-   清晰的对象关系模型
+-   关联（关系）
+-   贪婪和延迟关系
+-   单向的，双向的和自引用的关系
+-   支持多重继承模式
+-   级联
+-   索引
+-   事务
+-   迁移和自动迁移
+-   连接池
+-   主从复制
+-   使用多个数据库连接
+-   使用多个数据库类型
+-   跨数据库和跨模式查询
+-   优雅的语法，灵活而强大的 QueryBuilder
+-   左联接和内联接
+-   使用联查查询的适当分页
+-   查询缓存
+-   原始结果流
+-   日志
+-   监听者和订阅者（钩子）
+-   支持闭包表模式
+-   在模型或者分离的配置文件中声明模式
+-   支持 MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / sql.js
+-   支持 MongoDB NoSQL 数据库
+-   可在 NodeJS / 浏览器 / Ionic / Cordova / React Native / Expo / Electron 平台上使用
+-   支持 TypeScript 和 JavaScript
+-   生成高性能、灵活、清晰和可维护的代码
+-   遵循所有可能的最佳实践
+-   命令行工具
 
 还有更多...
 
 通过使用 `TypeORM` 你的 `models` 看起来像这样:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number
 
-  @Column()
-  firstName: string;
+    @Column()
+    firstName: string
 
-  @Column()
-  lastName: string;
+    @Column()
+    lastName: string
 
-  @Column()
-  age: number;
+    @Column()
+    age: number
 }
 ```
 
 逻辑操作就像是这样:
 
 ```typescript
-const user = new User();
-user.firstName = "Timber";
-user.lastName = "Saw";
-user.age = 25;
-await repository.save(user);
+const user = new User()
+user.firstName = "Timber"
+user.lastName = "Saw"
+user.age = 25
+await repository.save(user)
 
-const allUsers = await repository.find();
-const firstUser = await repository.findOne(1); // find by id
-const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" });
+const allUsers = await repository.find()
+const firstUser = await repository.findOne(1) // find by id
+const timber = await repository.findOne({
+    firstName: "Timber",
+    lastName: "Saw",
+})
 
-await repository.remove(timber);
+await repository.remove(timber)
 ```
 
 或者，如果你更喜欢使用`ActiveRecord`实现，也可以这样用：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm"
 
 @Entity()
 export class User extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number
 
-  @Column()
-  firstName: string;
+    @Column()
+    firstName: string
 
-  @Column()
-  lastName: string;
+    @Column()
+    lastName: string
 
-  @Column()
-  age: number;
+    @Column()
+    age: number
 }
 ```
 
 逻辑操作如下所示:
 
 ```typescript
-const user = new User();
-user.firstName = "Timber";
-user.lastName = "Saw";
-user.age = 25;
-await user.save();
+const user = new User()
+user.firstName = "Timber"
+user.lastName = "Saw"
+user.age = 25
+await user.save()
 
-const allUsers = await User.find();
-const firstUser = await User.findOne(1);
-const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" });
+const allUsers = await User.find()
+const firstUser = await User.findOne(1)
+const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" })
 
-await timber.remove();
+await timber.remove()
 ```
 
 # 入门
@@ -147,56 +149,56 @@ await timber.remove();
 
 1. 通过`npm`安装:
 
-   `npm install typeorm --save`
+    `npm install typeorm --save`
 
 2. 你还需要安装 `reflect-metadata`:
 
-   `npm install reflect-metadata --save`
+    `npm install reflect-metadata --save`
 
-   并且需要在应用程序的全局位置导入（例如在`app.ts`中）
+    并且需要在应用程序的全局位置导入（例如在`app.ts`中）
 
-   `import "reflect-metadata";`
+    `import "reflect-metadata";`
 
 3. 你可能还需要安装 node typings(以此来使用 Node 的智能提示):
 
-   `npm install @types/node --save`
+    `npm install @types/node --save`
 
 4. 安装数据库驱动:
 
-   - **MySQL** 或者 **MariaDB**
+    - **MySQL** 或者 **MariaDB**
 
-     `npm install mysql --save` (也可以安装 `mysql2`)
+        `npm install mysql --save` (也可以安装 `mysql2`)
 
-   - **PostgreSQL**
+    - **PostgreSQL**
 
-     `npm install pg --save`
+        `npm install pg --save`
 
-   - **SQLite**
+    - **SQLite**
 
-     `npm install sqlite3 --save`
+        `npm install sqlite3 --save`
 
-   - **Microsoft SQL Server**
+    - **Microsoft SQL Server**
 
-     `npm install mssql --save`
+        `npm install mssql --save`
 
-   - **sql.js**
+    - **sql.js**
 
-     `npm install sql.js --save`
+        `npm install sql.js --save`
 
-   - **Oracle**
+    - **Oracle**
 
-     `npm install oracledb --save`
+        `npm install oracledb --save`
 
-     根据你使用的数据库，仅安装其中*一个*即可。
-     要使 Oracle 驱动程序正常工作，需要按照其[站点](https://github.com/oracle/node-oracledb)中的安装说明进行操作。
+        根据你使用的数据库，仅安装其中*一个*即可。
+        要使 Oracle 驱动程序正常工作，需要按照其[站点](https://github.com/oracle/node-oracledb)中的安装说明进行操作。
 
-   - **MongoDB** (试验性)
+    - **MongoDB** (试验性)
 
-     `npm install mongodb --save`
+        `npm install mongodb --save`
 
-   - **NativeScript**, **react-native** 和 **Cordova**
+    - **NativeScript**, **react-native** 和 **Cordova**
 
-     查看 [支持的平台](/supported-platforms.md)
+        查看 [支持的平台](/supported-platforms.md)
 
 ##### TypeScript 配置
 
@@ -260,17 +262,17 @@ npm install
 
 ```json
 {
-  "type": "mysql",
-  "host": "localhost",
-  "port": 3306,
-  "username": "test",
-  "password": "test",
-  "database": "test",
-  "synchronize": true,
-  "logging": false,
-  "entities": ["src/entity/**/*.ts"],
-  "migrations": ["src/migration/**/*.ts"],
-  "subscribers": ["src/subscriber/**/*.ts"]
+    "type": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "username": "test",
+    "password": "test",
+    "database": "test",
+    "synchronize": true,
+    "logging": false,
+    "entities": ["src/entity/**/*.ts"],
+    "migrations": ["src/migration/**/*.ts"],
+    "subscribers": ["src/subscriber/**/*.ts"]
 }
 ```
 
@@ -300,11 +302,11 @@ npm start
 
 ```typescript
 export class Photo {
-  id: number;
-  name: string;
-  description: string;
-  filename: string;
-  views: number;
+    id: number
+    name: string
+    description: string
+    filename: string
+    views: number
 }
 ```
 
@@ -317,16 +319,16 @@ export class Photo {
 让我们将`Photo`模型作为一个实体
 
 ```typescript
-import { Entity } from "typeorm";
+import { Entity } from "typeorm"
 
 @Entity()
 export class Photo {
-  id: number;
-  name: string;
-  description: string;
-  filename: string;
-  views: number;
-  isPublished: boolean;
+    id: number
+    name: string
+    description: string
+    filename: string
+    views: number
+    isPublished: boolean
 }
 ```
 
@@ -338,27 +340,27 @@ export class Photo {
 要添加数据库列，你只需要将要生成的实体属性加上`@Column`装饰器。
 
 ```typescript
-import { Entity, Column } from "typeorm";
+import { Entity, Column } from "typeorm"
 
 @Entity()
 export class Photo {
-  @Column()
-  id: number;
+    @Column()
+    id: number
 
-  @Column()
-  name: string;
+    @Column()
+    name: string
 
-  @Column()
-  description: string;
+    @Column()
+    description: string
 
-  @Column()
-  filename: string;
+    @Column()
+    filename: string
 
-  @Column()
-  views: number;
+    @Column()
+    views: number
 
-  @Column()
-  isPublished: boolean;
+    @Column()
+    isPublished: boolean
 }
 ```
 
@@ -372,27 +374,27 @@ export class Photo {
 每个实体**必须**至少有一个主键列。这是必须的，你无法避免。要使列成为主键，您需要使用`@PrimaryColumn`装饰器。
 
 ```typescript
-import { Entity, Column, PrimaryColumn } from "typeorm";
+import { Entity, Column, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class Photo {
-  @PrimaryColumn()
-  id: number;
+    @PrimaryColumn()
+    id: number
 
-  @Column()
-  name: string;
+    @Column()
+    name: string
 
-  @Column()
-  description: string;
+    @Column()
+    description: string
 
-  @Column()
-  filename: string;
+    @Column()
+    filename: string
 
-  @Column()
-  views: number;
+    @Column()
+    views: number
 
-  @Column()
-  isPublished: boolean;
+    @Column()
+    isPublished: boolean
 }
 ```
 
@@ -401,27 +403,27 @@ export class Photo {
 假设你希望 id 列自动生成（这称为 auto-increment/sequence/serial/generated identity column）。为此你需要将`@PrimaryColumn`装饰器更改为`@PrimaryGeneratedColumn`装饰器：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class Photo {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number
 
-  @Column()
-  name: string;
+    @Column()
+    name: string
 
-  @Column()
-  description: string;
+    @Column()
+    description: string
 
-  @Column()
-  filename: string;
+    @Column()
+    filename: string
 
-  @Column()
-  views: number;
+    @Column()
+    views: number
 
-  @Column()
-  isPublished: boolean;
+    @Column()
+    isPublished: boolean
 }
 ```
 
@@ -431,29 +433,29 @@ export class Photo {
 数字被映射到一个类似整数类型（取决于数据库类型）。但是我们不希望所有的列都是有限的 varchars 或整数，让我们修改下代码以设置想要的数据类型：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class Photo {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number
 
-  @Column({
-    length: 100
-  })
-  name: string;
+    @Column({
+        length: 100,
+    })
+    name: string
 
-  @Column("text")
-  description: string;
+    @Column("text")
+    description: string
 
-  @Column()
-  filename: string;
+    @Column()
+    filename: string
 
-  @Column("double")
-  views: number;
+    @Column("double")
+    views: number
 
-  @Column()
-  isPublished: boolean;
+    @Column()
+    isPublished: boolean
 }
 ```
 
@@ -464,25 +466,25 @@ export class Photo {
 当实体被创建后，让我们创建一个`index.ts`（或`app.ts`，无论你怎么命名）文件，并配置数据库连接：:
 
 ```typescript
-import "reflect-metadata";
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import "reflect-metadata"
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection({
-  type: "mysql",
-  host: "localhost",
-  port: 3306,
-  username: "root",
-  password: "admin",
-  database: "test",
-  entities: [Photo],
-  synchronize: true,
-  logging: false
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    entities: [Photo],
+    synchronize: true,
+    logging: false,
 })
-  .then(connection => {
-    // 这里可以写实体操作相关的代码
-  })
-  .catch(error => console.log(error));
+    .then((connection) => {
+        // 这里可以写实体操作相关的代码
+    })
+    .catch((error) => console.log(error))
 ```
 
 我们在此示例中使用 MySQL，你可以使用任何其他受支持的数据库。要使用其他数据库，只需将选项中的`type`更改为希望使用的数据库类型：mysql，mariadb，postgres，sqlite，mssql，oracle，cordova，nativescript，react-native，expo 或 mongodb。同时还要确保 host, port, username, password 和数据库设置的正确性。
@@ -496,22 +498,22 @@ createConnection({
 之后当我们创建更多实体时，都需要将一一它们添加到配置中的实体中，但是这不是很方便，所以我们可以设置整个目录，从中连接所有实体并在连接中使用：
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "typeorm"
 
 createConnection({
-  type: "mysql",
-  host: "localhost",
-  port: 3306,
-  username: "root",
-  password: "admin",
-  database: "test",
-  entities: [__dirname + "/entity/*.js"],
-  synchronize: true
+    type: "mysql",
+    host: "localhost",
+    port: 3306,
+    username: "root",
+    password: "admin",
+    database: "test",
+    entities: [__dirname + "/entity/*.js"],
+    synchronize: true,
 })
-  .then(connection => {
-    // 这里可以写实体操作相关的代码
-  })
-  .catch(error => console.log(error));
+    .then((connection) => {
+        // 这里可以写实体操作相关的代码
+    })
+    .catch((error) => console.log(error))
 ```
 
 但要小心这种方法。
@@ -541,23 +543,23 @@ createConnection({
 现在创建一个新的 photo 存到数据库：
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection(/*...*/)
-  .then(connection => {
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.views = 1;
-    photo.isPublished = true;
+    .then((connection) => {
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.views = 1
+        photo.isPublished = true
 
-    return connection.manager.save(photo).then(photo => {
-      console.log("Photo has been saved. Photo id is", photo.id);
-    });
-  })
-  .catch(error => console.log(error));
+        return connection.manager.save(photo).then((photo) => {
+            console.log("Photo has been saved. Photo id is", photo.id)
+        })
+    })
+    .catch((error) => console.log(error))
 ```
 
 保存实体后，它将获得新生成的 ID。 `save`方法返回传递给它的同一对象的实例。但它不是对象的新副本，只是修改了它的"id"并返回它。
@@ -567,22 +569,22 @@ createConnection(/*...*/)
 我们可以使用最新的 ES8（ES2017）功能，并使用 async / await 语法代替：
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.views = 1;
-    photo.isPublished = true;
+    .then(async (connection) => {
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.views = 1
+        photo.isPublished = true
 
-    await connection.manager.save(photo);
-    console.log("Photo has been saved");
-  })
-  .catch(error => console.log(error));
+        await connection.manager.save(photo)
+        console.log("Photo has been saved")
+    })
+    .catch((error) => console.log(error))
 ```
 
 ### 使用 Entity Manager
@@ -592,16 +594,16 @@ createConnection(/*...*/)
 例如，加载已经保存的实体：
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    /*...*/
-    let savedPhotos = await connection.manager.find(Photo);
-    console.log("All photos from the db: ", savedPhotos);
-  })
-  .catch(error => console.log(error));
+    .then(async (connection) => {
+        /*...*/
+        let savedPhotos = await connection.manager.find(Photo)
+        console.log("All photos from the db: ", savedPhotos)
+    })
+    .catch((error) => console.log(error))
 ```
 
 `savedPhotos`是一个 Photo 对象数组，其中包含从数据库加载的数据。
@@ -613,27 +615,27 @@ createConnection(/*...*/)
 现在让我们重构之前的代码，并使用`Repository`而不是`EntityManager`。每个实体都有自己的存储库，可以处理其实体的所有操作。当你经常处理实体时，Repositories 比 EntityManagers 更方便使用：
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.views = 1;
-    photo.isPublished = true;
+    .then(async (connection) => {
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.views = 1
+        photo.isPublished = true
 
-    let photoRepository = connection.getRepository(Photo);
+        let photoRepository = connection.getRepository(Photo)
 
-    await photoRepository.save(photo);
-    console.log("Photo has been saved");
+        await photoRepository.save(photo)
+        console.log("Photo has been saved")
 
-    let savedPhotos = await photoRepository.find();
-    console.log("All photos from the db: ", savedPhotos);
-  })
-  .catch(error => console.log(error));
+        let savedPhotos = await photoRepository.find()
+        console.log("All photos from the db: ", savedPhotos)
+    })
+    .catch((error) => console.log(error))
 ```
 
 了解[更多](./docs/working-with-repository.md)有关 Repository 的信息。
@@ -643,32 +645,36 @@ createConnection(/*...*/)
 让我们使用 Repository 尝试更多的加载操作:
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    /*...*/
-    let allPhotos = await photoRepository.find();
-    console.log("All photos from the db: ", allPhotos);
+    .then(async (connection) => {
+        /*...*/
+        let allPhotos = await photoRepository.find()
+        console.log("All photos from the db: ", allPhotos)
 
-    let firstPhoto = await photoRepository.findOne(1);
-    console.log("First photo from the db: ", firstPhoto);
+        let firstPhoto = await photoRepository.findOne(1)
+        console.log("First photo from the db: ", firstPhoto)
 
-    let meAndBearsPhoto = await photoRepository.findOne({ name: "Me and Bears" });
-    console.log("Me and Bears photo from the db: ", meAndBearsPhoto);
+        let meAndBearsPhoto = await photoRepository.findOne({
+            name: "Me and Bears",
+        })
+        console.log("Me and Bears photo from the db: ", meAndBearsPhoto)
 
-    let allViewedPhotos = await photoRepository.find({ views: 1 });
-    console.log("All viewed photos: ", allViewedPhotos);
+        let allViewedPhotos = await photoRepository.find({ views: 1 })
+        console.log("All viewed photos: ", allViewedPhotos)
 
-    let allPublishedPhotos = await photoRepository.find({ isPublished: true });
-    console.log("All published photos: ", allPublishedPhotos);
+        let allPublishedPhotos = await photoRepository.find({
+            isPublished: true,
+        })
+        console.log("All published photos: ", allPublishedPhotos)
 
-    let [allPhotos, photosCount] = await photoRepository.findAndCount();
-    console.log("All photos: ", allPhotos);
-    console.log("Photos count: ", photosCount);
-  })
-  .catch(error => console.log(error));
+        let [allPhotos, photosCount] = await photoRepository.findAndCount()
+        console.log("All photos: ", allPhotos)
+        console.log("Photos count: ", photosCount)
+    })
+    .catch((error) => console.log(error))
 ```
 
 ### 在数据库中更新
@@ -676,17 +682,17 @@ createConnection(/*...*/)
 让我们从数据库加载出 photo，更新并保存到数据库：
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    /*...*/
-    let photoToUpdate = await photoRepository.findOne(1);
-    photoToUpdate.name = "Me, my friends and polar bears";
-    await photoRepository.save(photoToUpdate);
-  })
-  .catch(error => console.log(error));
+    .then(async (connection) => {
+        /*...*/
+        let photoToUpdate = await photoRepository.findOne(1)
+        photoToUpdate.name = "Me, my friends and polar bears"
+        await photoRepository.save(photoToUpdate)
+    })
+    .catch((error) => console.log(error))
 ```
 
 这个`id = 1`的 photo 在数据库中就成功更新了。
@@ -696,16 +702,16 @@ createConnection(/*...*/)
 让我们从数据库中删除我们的 Photo:
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    /*...*/
-    let photoToRemove = await photoRepository.findOne(1);
-    await photoRepository.remove(photoToRemove);
-  })
-  .catch(error => console.log(error));
+    .then(async (connection) => {
+        /*...*/
+        let photoToRemove = await photoRepository.findOne(1)
+        await photoRepository.remove(photoToRemove)
+    })
+    .catch((error) => console.log(error))
 ```
 
 这个`id = 1`的 photo 在数据库中被移除了。
@@ -715,32 +721,38 @@ createConnection(/*...*/)
 让我们与另一个类创建一对一的关系。先在`PhotoMetadata.ts`中创建一个新类。此 PhotoMetadata 类应包含 photo 的其他元信息：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
-import { Photo } from "./Photo";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    JoinColumn,
+} from "typeorm"
+import { Photo } from "./Photo"
 
 @Entity()
 export class PhotoMetadata {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number
 
-  @Column("int")
-  height: number;
+    @Column("int")
+    height: number
 
-  @Column("int")
-  width: number;
+    @Column("int")
+    width: number
 
-  @Column()
-  orientation: string;
+    @Column()
+    orientation: string
 
-  @Column()
-  compressed: boolean;
+    @Column()
+    compressed: boolean
 
-  @Column()
-  comment: string;
+    @Column()
+    comment: string
 
-  @OneToOne(type => Photo)
-  @JoinColumn()
-  photo: Photo;
+    @OneToOne((type) => Photo)
+    @JoinColumn()
+    photo: Photo
 }
 ```
 
@@ -771,42 +783,44 @@ export class PhotoMetadata {
 现在来创建一个 photo，它的元信息将它们互相连接起来。
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
-import { PhotoMetadata } from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
+import { PhotoMetadata } from "./entity/PhotoMetadata"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    // 创建 photo
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.isPublished = true;
+    .then(async (connection) => {
+        // 创建 photo
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.isPublished = true
 
-    // 创建 photo metadata
-    let metadata = new PhotoMetadata();
-    metadata.height = 640;
-    metadata.width = 480;
-    metadata.compressed = true;
-    metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
-    metadata.photo = photo; // 联接两者
+        // 创建 photo metadata
+        let metadata = new PhotoMetadata()
+        metadata.height = 640
+        metadata.width = 480
+        metadata.compressed = true
+        metadata.comment = "cybershoot"
+        metadata.orientation = "portait"
+        metadata.photo = photo // 联接两者
 
-    // 获取实体 repositories
-    let photoRepository = connection.getRepository(Photo);
-    let metadataRepository = connection.getRepository(PhotoMetadata);
+        // 获取实体 repositories
+        let photoRepository = connection.getRepository(Photo)
+        let metadataRepository = connection.getRepository(PhotoMetadata)
 
-    // 先保存photo
-    await photoRepository.save(photo);
+        // 先保存photo
+        await photoRepository.save(photo)
 
-    // 然后保存photo的metadata
-    await metadataRepository.save(metadata);
+        // 然后保存photo的metadata
+        await metadataRepository.save(metadata)
 
-    // 完成
-    console.log("Metadata is saved, and relation between metadata and photo is created in the database too");
-  })
-  .catch(error => console.log(error));
+        // 完成
+        console.log(
+            "Metadata is saved, and relation between metadata and photo is created in the database too",
+        )
+    })
+    .catch((error) => console.log(error))
 ```
 
 ### 反向关系
@@ -814,29 +828,35 @@ createConnection(/*...*/)
 关系可以是单向的或双向的。目前 PhotoMetadata 和 Photo 之间的关系是单向的。关系的所有者是 PhotoMetadata，而 Photo 对 PhotoMetadata 一无所知。这使得从 Photo 中访问 PhotoMetadata 变得很复杂。要解决这个问题，我们应该在 PhotoMetadata 和 Photo 之间建立双向关系。让我们来修改一下实体：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
-import { Photo } from "./Photo";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    JoinColumn,
+} from "typeorm"
+import { Photo } from "./Photo"
 
 @Entity()
 export class PhotoMetadata {
-  /* ... other columns */
+    /* ... other columns */
 
-  @OneToOne(type => Photo, photo => photo.metadata)
-  @JoinColumn()
-  photo: Photo;
+    @OneToOne((type) => Photo, (photo) => photo.metadata)
+    @JoinColumn()
+    photo: Photo
 }
 ```
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from "typeorm";
-import { PhotoMetadata } from "./PhotoMetadata";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from "typeorm"
+import { PhotoMetadata } from "./PhotoMetadata"
 
 @Entity()
 export class Photo {
-  /* ... other columns */
+    /* ... other columns */
 
-  @OneToOne(type => PhotoMetadata, photoMetadata => photoMetadata.photo)
-  metadata: PhotoMetadata;
+    @OneToOne((type) => PhotoMetadata, (photoMetadata) => photoMetadata.photo)
+    metadata: PhotoMetadata
 }
 ```
 
@@ -849,17 +869,17 @@ export class Photo {
 在一个查询中加载 photo 及 photo metadata 有两种方法。使用`find *`或使用`QueryBuilder`。我们先使用`find *`方法。 `find *`方法允许你使用`FindOneOptions` / `FindManyOptions`接口指定对象。
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
-import { PhotoMetadata } from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
+import { PhotoMetadata } from "./entity/PhotoMetadata"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    /*...*/
-    let photoRepository = connection.getRepository(Photo);
-    let photos = await photoRepository.find({ relations: ["metadata"] });
-  })
-  .catch(error => console.log(error));
+    .then(async (connection) => {
+        /*...*/
+        let photoRepository = connection.getRepository(Photo)
+        let photos = await photoRepository.find({ relations: ["metadata"] })
+    })
+    .catch((error) => console.log(error))
 ```
 
 photos 将包含来自数据库的 photos 数组，每个 photo 将包含其 photo metadata。详细了解本文档中的[查找选项](./docs/find-options.md)。
@@ -867,20 +887,20 @@ photos 将包含来自数据库的 photos 数组，每个 photo 将包含其 pho
 使用查找选项很简单，但是如果你需要更复杂的查询，则应该使用`QueryBuilder`。 `QueryBuilder`允许以更优雅的方式使用更复杂的查询：
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
-import { PhotoMetadata } from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
+import { PhotoMetadata } from "./entity/PhotoMetadata"
 
 createConnection(/*...*/)
-  .then(async connection => {
-    /*...*/
-    let photos = await connection
-      .getRepository(Photo)
-      .createQueryBuilder("photo")
-      .innerJoinAndSelect("photo.metadata", "metadata")
-      .getMany();
-  })
-  .catch(error => console.log(error));
+    .then(async (connection) => {
+        /*...*/
+        let photos = await connection
+            .getRepository(Photo)
+            .createQueryBuilder("photo")
+            .innerJoinAndSelect("photo.metadata", "metadata")
+            .getMany()
+    })
+    .catch((error) => console.log(error))
 ```
 
 `QueryBuilder`允许创建和执行几乎任何复杂性的 SQL 查询。使用`QueryBuilder`时，请考虑创建 SQL 查询。在此示例中，"photo"和"metadata"是应用于所选 photos 的 ​​ 别名。你可以使用别名来访问所选数据的列和属性。
@@ -891,12 +911,12 @@ createConnection(/*...*/)
 
 ```typescript
 export class Photo {
-  /// ... other columns
+    /// ... other columns
 
-  @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
-    cascade: true
-  })
-  metadata: PhotoMetadata;
+    @OneToOne((type) => PhotoMetadata, (metadata) => metadata.photo, {
+        cascade: true,
+    })
+    metadata: PhotoMetadata
 }
 ```
 
@@ -904,33 +924,33 @@ export class Photo {
 
 ```typescript
 createConnection(options)
-  .then(async connection => {
-    // 创建 photo 对象
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.isPublished = true;
+    .then(async (connection) => {
+        // 创建 photo 对象
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.isPublished = true
 
-    // 创建 photo metadata 对象
-    let metadata = new PhotoMetadata();
-    metadata.height = 640;
-    metadata.width = 480;
-    metadata.compressed = true;
-    metadata.comment = "cybershoot";
-    metadata.orientation = "portait";
+        // 创建 photo metadata 对象
+        let metadata = new PhotoMetadata()
+        metadata.height = 640
+        metadata.width = 480
+        metadata.compressed = true
+        metadata.comment = "cybershoot"
+        metadata.orientation = "portait"
 
-    photo.metadata = metadata; // this way we connect them
+        photo.metadata = metadata // this way we connect them
 
-    // 获取 repository
-    let photoRepository = connection.getRepository(Photo);
+        // 获取 repository
+        let photoRepository = connection.getRepository(Photo)
 
-    // 保存photo的同时保存metadata
-    await photoRepository.save(photo);
+        // 保存photo的同时保存metadata
+        await photoRepository.save(photo)
 
-    console.log("Photo is saved, photo metadata is saved too.");
-  })
-  .catch(error => console.log(error));
+        console.log("Photo is saved, photo metadata is saved too.")
+    })
+    .catch((error) => console.log(error))
 ```
 
 ### 创建多对一/一对多关系
@@ -938,19 +958,25 @@ createConnection(options)
 让我们创建一个多对一/一对多的关系。假设一个 photo 有一个 author，每个 author 都可以有多个 photos。首先让我们创建一个`Author`类：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn } from "typeorm";
-import { Photo } from "./Photo";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToMany,
+    JoinColumn,
+} from "typeorm"
+import { Photo } from "./Photo"
 
 @Entity()
 export class Author {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number
 
-  @Column()
-  name: string;
+    @Column()
+    name: string
 
-  @OneToMany(type => Photo, photo => photo.author) // note: we will create author property in the Photo class below
-  photos: Photo[];
+    @OneToMany((type) => Photo, (photo) => photo.author) // note: we will create author property in the Photo class below
+    photos: Photo[]
 }
 ```
 
@@ -960,16 +986,16 @@ export class Author {
 现在让我们将关系的所有者方添加到 Photo 实体中：
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
-import { PhotoMetadata } from "./PhotoMetadata";
-import { Author } from "./Author";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm"
+import { PhotoMetadata } from "./PhotoMetadata"
+import { Author } from "./Author"
 
 @Entity()
 export class Photo {
-  /* ... other columns */
+    /* ... other columns */
 
-  @ManyToOne(type => Author, author => author.photos)
-  author: Author;
+    @ManyToOne((type) => Author, (author) => author.photos)
+    author: Author
 }
 ```
 
@@ -1005,19 +1031,25 @@ export class Photo {
 假设一个 photo 可以放在多个 albums 中，每个 albums 可以包含多个 photo。让我们创建一个`Album`类：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToMany,
+    JoinTable,
+} from "typeorm"
 
 @Entity()
 export class Album {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number
 
-  @Column()
-  name: string;
+    @Column()
+    name: string
 
-  @ManyToMany(type => Photo, photo => photo.albums)
-  @JoinTable()
-  photos: Photo[];
+    @ManyToMany((type) => Photo, (photo) => photo.albums)
+    @JoinTable()
+    photos: Photo[]
 }
 ```
 
@@ -1027,10 +1059,10 @@ export class Album {
 
 ```typescript
 export class Photo {
-  /// ... other columns
+    /// ... other columns
 
-  @ManyToMany(type => Album, album => album.photos)
-  albums: Album[];
+    @ManyToMany((type) => Album, (album) => album.photos)
+    albums: Album[]
 }
 ```
 
@@ -1049,36 +1081,38 @@ export class Photo {
 
 ```typescript
 const options: ConnectionOptions = {
-  // ... other options
-  entities: [Photo, PhotoMetadata, Author, Album]
-};
+    // ... other options
+    entities: [Photo, PhotoMetadata, Author, Album],
+}
 ```
 
 现在让我们将 albums 和 photos 插入我们的数据库:
 
 ```typescript
-let connection = await createConnection(options);
+let connection = await createConnection(options)
 
 // create a few albums
-let album1 = new Album();
-album1.name = "Bears";
-await connection.manager.save(album1);
+let album1 = new Album()
+album1.name = "Bears"
+await connection.manager.save(album1)
 
-let album2 = new Album();
-album2.name = "Me";
-await connection.manager.save(album2);
+let album2 = new Album()
+album2.name = "Me"
+await connection.manager.save(album2)
 
 // create a few photos
-let photo = new Photo();
-photo.name = "Me and Bears";
-photo.description = "I am near polar bears";
-photo.filename = "photo-with-bears.jpg";
-photo.albums = [album1, album2];
-await connection.manager.save(photo);
+let photo = new Photo()
+photo.name = "Me and Bears"
+photo.description = "I am near polar bears"
+photo.filename = "photo-with-bears.jpg"
+photo.albums = [album1, album2]
+await connection.manager.save(photo)
 
 // now our photo is saved and albums are attached to it
 // now lets load them:
-const loadedPhoto = await connection.getRepository(Photo).findOne(1, { relations: ["albums"] });
+const loadedPhoto = await connection
+    .getRepository(Photo)
+    .findOne(1, { relations: ["albums"] })
 ```
 
 `loadedPhoto` 如下所示:
@@ -1105,17 +1139,17 @@ const loadedPhoto = await connection.getRepository(Photo).findOne(1, { relations
 
 ```typescript
 let photos = await connection
-  .getRepository(Photo)
-  .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
-  .innerJoinAndSelect("photo.metadata", "metadata")
-  .leftJoinAndSelect("photo.albums", "album")
-  .where("photo.isPublished = true")
-  .andWhere("(photo.name = :photoName OR photo.name = :bearName)")
-  .orderBy("photo.id", "DESC")
-  .skip(5)
-  .take(10)
-  .setParameters({ photoName: "My", bearName: "Mishka" })
-  .getMany();
+    .getRepository(Photo)
+    .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
+    .innerJoinAndSelect("photo.metadata", "metadata")
+    .leftJoinAndSelect("photo.albums", "album")
+    .where("photo.isPublished = true")
+    .andWhere("(photo.name = :photoName OR photo.name = :bearName)")
+    .orderBy("photo.id", "DESC")
+    .skip(5)
+    .take(10)
+    .setParameters({ photoName: "My", bearName: "Mishka" })
+    .getMany()
 ```
 
 此查询选择所有 published 的 name 等于"My"或"Mishka"的 photos。它将从结果中的第 5 个（分页偏移）开始，并且仅选择 10 个结果（分页限制）。得到的结果将按 ID 降序排序。photo 的 albums 将被 left-joined，其元数据将被 inner joined。
@@ -1129,27 +1163,27 @@ let photos = await connection
 
 下面这些 repositories 可以帮助你快速开始：
 
-- [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
-- [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
-- [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
-- [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
-- [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
-- [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
-- [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
-- [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
-- [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
-- [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
-- [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
-- [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
+-   [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
+-   [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
+-   [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
+-   [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
+-   [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
+-   [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
+-   [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
+-   [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
+-   [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
+-   [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
+-   [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
+-   [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
 
 ## 扩展
 
 这几个扩展可以简化 TypeORM 的使用，并将其与其他模块集成：
 
-- [TypeORM + GraphQL framework](http://vesper-framework.com)
-- [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
-- [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
-- 从现有数据库生成模型 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+-   [TypeORM + GraphQL framework](http://vesper-framework.com)
+-   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
+-   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
+-   从现有数据库生成模型 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
 
 ## 贡献
 
@@ -1170,4 +1204,3 @@ let photos = await connection
 成为金牌赞助商，并从我们的核心贡献者那里获得高级技术支持。 [成为金牌赞助商](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/gold-sponsor.svg?width=890"></a>
-

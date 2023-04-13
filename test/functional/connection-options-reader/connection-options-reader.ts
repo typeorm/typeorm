@@ -1,4 +1,4 @@
-import { promises as fs, existsSync } from "fs"
+import { promises as fs } from "fs"
 import { expect } from "chai"
 import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
@@ -13,16 +13,6 @@ async function createDotenvFiles() {
     await fs.writeFile(
         path.join(__dirname, "configs/ormconfig.env"),
         "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-ormconfig-env",
-    )
-}
-
-async function createYamlFiles() {
-    if (!existsSync(path.join(__dirname, "configs/yaml"))) {
-        await fs.mkdir(path.join(__dirname, "configs/yaml"))
-    }
-    await fs.writeFile(
-        path.join(__dirname, "configs/yaml/test-yaml.yaml"),
-        '- type: "sqlite"\n  name: "file"\n  database: "test-yaml"',
     )
 }
 
@@ -130,17 +120,5 @@ describe("ConnectionOptionsReader", () => {
             await connectionOptionsReader.all()
         expect(fileOptions.database).to.have.string("test-ormconfig-env")
         expect(process.env.TYPEORM_DATABASE).to.equal("test-ormconfig-env")
-    })
-
-    it("properly loads config from yaml", async () => {
-        await createYamlFiles()
-
-        const connectionOptionsReader = new ConnectionOptionsReader({
-            root: path.join(__dirname, "configs/yaml"),
-            configName: "test-yaml",
-        })
-        const fileOptions: DataSourceOptions =
-            await connectionOptionsReader.get("file")
-        expect(fileOptions.database).to.have.string("/test-yaml")
     })
 })
