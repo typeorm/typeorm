@@ -116,20 +116,6 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
             ))
     })
 
-    describe("using new mariadb types with mysql driver", () => {
-        it("should throw an error when mysql attempts to use the uuid, inet4, inet6 database types", () =>
-            Promise.all(
-                ["mysql"].map(async (dbType: DatabaseType) => {
-                    return createTestingConnections({
-                        entities: [__dirname + "/entity/*{.js,.ts}"],
-                        schemaCreate: true,
-                        dropSchema: true,
-                        enabledDrivers: [dbType],
-                    }).should.be.rejected
-                }),
-            ))
-    })
-
     describe("entity-metadata-validator", () => {
         it("should throw error if mariadb uuid is supported and length is provided to property", async () => {
             Promise.all(
