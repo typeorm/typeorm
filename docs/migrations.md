@@ -234,12 +234,6 @@ If you encounter any error, it require you have the path to migration name and d
 ```
 typeorm migration:generate -d <path/to/datasource> path/to/migrations/<migration-name>
 ```
-__Here is any example:__
-
-```
-typeorm migration:generate -d src/data-source.ts src/migrations/ChangeUserNameField
-
-```
 
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
 
