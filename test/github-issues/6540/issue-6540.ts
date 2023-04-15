@@ -38,6 +38,7 @@ describe("github issues > #6540 Enum not resolved if it is from an external file
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
+                console.log(connection.driver.options.type, sqlInMemory.upQueries)
                 sqlInMemory.upQueries.length.should.be.equal(0)
                 sqlInMemory.downQueries.length.should.be.equal(0)
             }),

@@ -315,15 +315,6 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Managing version specific data types
-     */
-    columnTypeVersionSupportMap = {
-        uuid: "varchar",
-        inet4: "varchar",
-        inet6: "varchar",
-    }
-
-    /**
      * Max length allowed by MySQL for aliases.
      * @see https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
      */
@@ -433,27 +424,6 @@ export class MysqlDriver implements Driver {
             }
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.2.0")) {
                 this.cteCapabilities.enabled = true
-            }
-            /**
-             * MariaDb version 10.7.0 supports UUID type
-             * @see https://mariadb.com/kb/en/uuid-data-type/
-             */
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.7.0")) {
-                this.columnTypeVersionSupportMap.uuid = "uuid"
-            }
-            /**
-             * MariaDb version 10.10.0 supports INET4 type
-             * @see https://mariadb.com/kb/en/inet4/
-             */
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.10.0")) {
-                this.columnTypeVersionSupportMap.inet4 = "inet4"
-            }
-            /**
-             * MariaDb version 10.5.0 supports INET6 type
-             * @see https://mariadb.com/kb/en/inet6/
-             */
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
-                this.columnTypeVersionSupportMap.inet6 = "inet6"
             }
         } else if (this.options.type === "mysql") {
             if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
@@ -754,12 +724,8 @@ export class MysqlDriver implements Driver {
             return "blob"
         } else if (column.type === Boolean) {
             return "tinyint"
-        } else if (column.type === "uuid") {
-            return this.columnTypeVersionSupportMap.uuid
-        } else if (column.type === "inet4") {
-            return this.columnTypeVersionSupportMap.inet4
-        } else if (column.type === "inet6") {
-            return this.columnTypeVersionSupportMap.inet6
+        } else if (column.type === "uuid" && this.options.type === "mysql") {
+            return "varchar"
         } else if (column.type === "json" && this.options.type === "mariadb") {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
@@ -863,14 +829,9 @@ export class MysqlDriver implements Driver {
 
         /**
          * fix https://github.com/typeorm/typeorm/issues/1139
-         * as part of adding uuid support for mariadb, we need to check that we aren't actually using the uuid type
-         * because this should not receive the length value by default
+         * note that if the db did support uuid column type it wouldn't have been defaulted to varchar
          */
-        if (
-            this.columnTypeVersionSupportMap.uuid !== "uuid" &&
-            column.generationStrategy === "uuid"
-        )
-            return "36"
+        if (column.generationStrategy === "uuid" && column.type !== "uuid") return "36"
 
         switch (column.type) {
             case String:

@@ -7,32 +7,9 @@ import {
 import { DatabaseType, DataSource } from "../../../src/index"
 import { expect } from "chai"
 import { User } from "../8832/entity/User"
-import { VersionUtils } from "../../../src/util/VersionUtils"
 import { Address } from "./entity/Address"
 import { ConnectionMetadataBuilder } from "../../../src/connection/ConnectionMetadataBuilder"
 import { EntityMetadataValidator } from "../../../src/metadata-builder/EntityMetadataValidator"
-import { MysqlDriver } from "../../../src/driver/mysql/MysqlDriver"
-
-function getSupportedTypesMap(
-    type: DatabaseType,
-    version: string,
-): {
-    allowsUuidType: boolean
-    allowsInet4Type: boolean
-    allowsInet6Type: boolean
-} {
-    return {
-        allowsUuidType:
-            type === "mariadb" &&
-            VersionUtils.isGreaterOrEqual(version, "10.7.0"),
-        allowsInet4Type:
-            type === "mariadb" &&
-            VersionUtils.isGreaterOrEqual(version, "10.10.0"),
-        allowsInet6Type:
-            type === "mariadb" &&
-            VersionUtils.isGreaterOrEqual(version, "10.5.0"),
-    }
-}
 
 describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", () => {
     let connections: DataSource[]
@@ -54,7 +31,7 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                     entities: [__dirname + "/entity/*{.js,.ts}"],
                     schemaCreate: true,
                     dropSchema: true,
-                    enabledDrivers: ["mysql", "mariadb"],
+                    enabledDrivers: ["mariadb"],
                 })),
         )
         beforeEach(() => reloadTestingDatabases(connections))
@@ -75,20 +52,10 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                         where: { id: savedUser.id },
                     })
 
-                    const {
-                        options: { type },
-                        driver: { version = "0.0.0" },
-                    } = connection
-
-                    const { allowsUuidType, allowsInet4Type, allowsInet6Type } =
-                        getSupportedTypesMap(type, version)
-
                     expect(foundUser).to.not.be.null
                     expect(foundUser!.uuid).to.deep.equal(newUser.uuid)
                     expect(foundUser!.inet4).to.deep.equal(newUser.inet4)
-                    expect(foundUser!.inet6).to.deep.equal(
-                        allowsInet6Type ? expectedInet6 : newUser.inet6,
-                    )
+                    expect(foundUser!.inet6).to.deep.equal(expectedInet6)
                     expect(foundUser!.another_uuid_field).to.not.be.undefined
 
                     const columnTypes: {
@@ -116,11 +83,11 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                         ],
                     )
                     const expectedColumnTypes: Record<string, string> = {
-                        id: allowsUuidType ? "uuid" : "varchar",
-                        uuid: allowsUuidType ? "uuid" : "varchar",
-                        inet4: allowsInet4Type ? "inet4" : "varchar",
-                        inet6: allowsInet6Type ? "inet6" : "varchar",
-                        another_uuid_field: allowsUuidType ? "uuid" : "varchar",
+                        id: "uuid",
+                        uuid: "uuid",
+                        inet4: "inet4",
+                        inet6: "inet6",
+                        another_uuid_field: "uuid",
                     }
 
                     columnTypes.forEach(({ COLUMN_NAME, DATA_TYPE }) => {
@@ -149,6 +116,20 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
             ))
     })
 
+    describe("using new mariadb types with mysql driver", () => {
+        it("should throw an error when mysql attempts to use the uuid, inet4, inet6 database types", () =>
+            Promise.all(
+                ["mysql"].map(async (dbType: DatabaseType) => {
+                    return createTestingConnections({
+                        entities: [__dirname + "/entity/*{.js,.ts}"],
+                        schemaCreate: true,
+                        dropSchema: true,
+                        enabledDrivers: [dbType],
+                    }).should.be.rejected
+                }),
+            ))
+    })
+
     describe("entity-metadata-validator", () => {
         it("should throw error if mariadb uuid is supported and length is provided to property", async () => {
             Promise.all(
@@ -166,10 +147,6 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
 
                     // version supports all the new types
                     connection.driver.version = "10.10.0"
-                    const driver = connection.driver as MysqlDriver
-                    driver.columnTypeVersionSupportMap.uuid = "uuid"
-                    driver.columnTypeVersionSupportMap.inet4 = "inet4"
-                    driver.columnTypeVersionSupportMap.inet6 = "inet6"
 
                     const connectionMetadataBuilder =
                         new ConnectionMetadataBuilder(connection)
@@ -205,10 +182,6 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
 
                     // version supports all the new types
                     connection.driver.version = "10.10.0"
-                    const driver = connection.driver as MysqlDriver
-                    driver.columnTypeVersionSupportMap.uuid = "uuid"
-                    driver.columnTypeVersionSupportMap.inet4 = "inet4"
-                    driver.columnTypeVersionSupportMap.inet6 = "inet6"
 
                     const connectionMetadataBuilder =
                         new ConnectionMetadataBuilder(connection)
