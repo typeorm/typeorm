@@ -50,7 +50,7 @@ describe("github issue > #1416 Wrong behavior when fetching an entity that has a
                     where: {
                         name: photoAuthor.name,
                     },
-                    relations: ["photos"],
+                    relations: { photos: true },
                 })) as Author
                 expect(author).not.to.be.null
                 expect(author.photos[0]).not.to.be.undefined

@@ -1,5 +1,6 @@
 import { expect } from "chai"
 import { exec } from "child_process"
+import { readFileSync, writeFileSync } from "fs"
 import { dirname } from "path"
 import rimraf from "rimraf"
 
@@ -29,16 +30,19 @@ describe("cli init command", () => {
             })
         })
 
-        const copyPromise = new Promise<void>((resolve) => {
-            exec(
-                `cp package.json ${builtSrcDirectory}`,
-                (error, stdout, stderr) => {
-                    expect(error).to.not.exist
-                    expect(stderr).to.be.empty
-
-                    resolve()
-                },
+        const copyPromise = new Promise<void>(async (resolve) => {
+            // load package.json from the root of the project
+            const packageJson = JSON.parse(
+                readFileSync("./package.json", "utf8"),
             )
+            packageJson.version = `0.0.0` // install no version but
+            packageJson.installFrom = `file:../${builtSrcDirectory}` // use the built src directory
+            // write the modified package.json to the build directory
+            writeFileSync(
+                `./${builtSrcDirectory}/package.json`,
+                JSON.stringify(packageJson, null, 4),
+            )
+            resolve()
         })
 
         await Promise.all([chmodPromise, copyPromise])
@@ -57,6 +61,7 @@ describe("cli init command", () => {
             exec(
                 `${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
                 (error, stdout, stderr) => {
+                    if (error) console.log(error)
                     expect(error).to.not.exist
                     expect(stderr).to.be.empty
 

@@ -151,8 +151,9 @@ jobs:
                     map(select(.skip == false)
                       | select(.host)
                       | select(.port)
-                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up")
-                      | join(" && ")
+                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up"
+                    )
+                    | join(" && ")
                   '
             )
             echo "Running '$COMMANDS'"
@@ -162,6 +163,24 @@ jobs:
               --tty \
               ubuntu:trusty \
               timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+      - run:
+          name: "Wait for OracleDB to be Available"
+          command: |
+            COMMANDS=$(
+                cat ormconfig.json \
+                  | jq -r '
+                    map(select(.skip == false)
+                      | select(.name == "oracle")
+                      | "sleep 60"
+                    )
+                    | join(" && ")
+                  '
+            )
+            if [ ! -z "$COMMANDS" ]; then
+              echo "$COMMANDS seconds to wait for oracledb";
+              $COMMANDS
+            fi
+
       # Download and cache dependencies
       - run:
           name: "Run Tests with Coverage"

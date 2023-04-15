@@ -39,7 +39,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
                 await connection.manager.save(user)
 
                 const users = await connection.manager.find(User, {
-                    relations: ["profile"],
+                    relations: { profile: true },
                 })
 
                 users.should.eql([
@@ -73,10 +73,10 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
                 await connection.manager.save(user)
 
                 const users = await connection.manager.find(User, {
-                    relations: ["photos"],
+                    relations: { photos: true },
                 })
                 const photos = await connection.manager.find(Photo, {
-                    relations: ["user"],
+                    relations: { user: true },
                 })
 
                 // Check one-to-many
@@ -130,7 +130,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
                 await connection.manager.save(question)
 
                 const questions = await connection.manager.find(Question, {
-                    relations: ["categories"],
+                    relations: { categories: true },
                 })
 
                 questions[0].categories.should.have.deep.members([

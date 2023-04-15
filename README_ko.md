@@ -184,7 +184,7 @@ await timber.remove();
 
     - **MongoDB** (experimental)의 경우
 
-        `npm install mongodb@^3.6.0 --save`
+        `npm install mongodb@^5.2.0 --save`
 
     - **NativeScript**, **react-native**, **Cordova**의 경우
 

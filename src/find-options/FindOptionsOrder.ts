@@ -1,4 +1,4 @@
-import { ObjectID } from "../driver/mongodb/typings"
+import { ObjectId } from "../driver/mongodb/typings"
 
 /**
  * A single property handler for FindOptionsOrder.
@@ -21,7 +21,7 @@ export type FindOptionsOrderProperty<Property> = Property extends Promise<
     ? FindOptionsOrderValue
     : Property extends Date
     ? FindOptionsOrderValue
-    : Property extends ObjectID
+    : Property extends ObjectId
     ? FindOptionsOrderValue
     : Property extends object
     ? FindOptionsOrder<Property> | FindOptionsOrderValue
