@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DatabaseType, DataSource } from "../../../src/index"
+import { DataSource } from "../../../src/index"
 import { expect } from "chai"
 import { User } from "../8832/entity/User"
 import { Address } from "./entity/Address"
