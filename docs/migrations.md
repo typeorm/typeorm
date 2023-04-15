@@ -86,6 +86,8 @@ typeorm migration:create ./path-to-migrations-dir/PostRefactoring
 
 ```
 
+
+
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
 After you run the command you can see a new file generated in the "migration" directory
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
@@ -225,6 +227,18 @@ You can run following command:
 
 ```
 typeorm migration:generate PostRefactoring -d path-to-datasource-config
+```
+
+If you encounter any error, it require you have the path to migration name and data source. You can try this option
+
+```
+typeorm migration:generate -d <path/to/datasource> path/to/migrations/<migration-name>
+```
+__Here is any example:__
+
+```
+typeorm migration:generate -d src/data-source.ts src/migrations/ChangeUserNameField
+
 ```
 
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:
