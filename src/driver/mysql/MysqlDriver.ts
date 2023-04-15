@@ -831,7 +831,8 @@ export class MysqlDriver implements Driver {
          * fix https://github.com/typeorm/typeorm/issues/1139
          * note that if the db did support uuid column type it wouldn't have been defaulted to varchar
          */
-        if (column.generationStrategy === "uuid" && column.type !== "uuid") return "36"
+        if (column.generationStrategy === "uuid" && column.type !== "uuid")
+            return "36"
 
         switch (column.type) {
             case String:
