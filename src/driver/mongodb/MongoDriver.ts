@@ -217,6 +217,7 @@ export class MongoDriver implements Driver {
         "useUnifiedTopology",
         "autoEncryption",
         "retryWrites",
+        "directConnection",
     ]
 
     cteCapabilities: CteCapabilities = {
