@@ -170,7 +170,7 @@ export class EntityManager {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.connection.query(query, parameters, this.queryRunner)
     }
 
