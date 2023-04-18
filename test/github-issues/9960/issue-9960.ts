@@ -13,6 +13,7 @@ describe("github issues > #9960", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
+            enabledDrivers: ["postgres"]
         })
     })
 
