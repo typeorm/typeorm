@@ -515,11 +515,11 @@ export class DataSource {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(
+    async query<T = any>(
         query: string,
         parameters?: any[],
         queryRunner?: QueryRunner,
-    ): Promise<any> {
+    ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
 
