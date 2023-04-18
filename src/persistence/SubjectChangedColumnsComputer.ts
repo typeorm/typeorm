@@ -166,7 +166,10 @@ export class SubjectChangedColumnsComputer {
                     if (normalizedValue === databaseValue) return
                 }
             }
-            subject.diffColumns.push(column)
+
+            if (!subject.diffColumns.includes(column))
+                subject.diffColumns.push(column)
+
             subject.changeMaps.push({
                 column: column,
                 value: entityValue,
