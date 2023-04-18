@@ -1,24 +1,24 @@
-import { Column } from "../../../../src/decorator/columns/Column";
-import { Entity } from "../../../../src/decorator/entity/Entity";
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "../../../../src/decorator/entity/Entity"
 
 @Entity()
 export class Role {
     @Column({
         name: "role_id",
         primary: true,
-        type: 'int',
-        generated: 'increment',
+        type: "int",
+        generated: "increment",
         transformer: {
             to(value: object) {
-                return value?.toString();
+                return value?.toString()
             },
             from(value: object) {
-                return value?.toString();
+                return value?.toString()
             },
-        }
+        },
     })
-    roleId: string;
+    roleId: string
 
     @Column({ name: "role_name" })
-    roleName: string;
+    roleName: string
 }
