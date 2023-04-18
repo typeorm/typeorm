@@ -19,7 +19,7 @@ describe("github issues > #9960", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("order by must work without issues", async () => {
+    it("select + order by must work without issues", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const example1 = new ExampleEntity()
@@ -28,6 +28,7 @@ describe("github issues > #9960", () => {
 
                 const examples = await dataSource.manager
                     .createQueryBuilder(ExampleEntity, "example")
+                    .select(["example.id", "example.name"])
                     .addOrderBy("example.name", "DESC", "NULLS LAST")
                     .take(1)
                     .skip(0)

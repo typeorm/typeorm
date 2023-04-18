@@ -2515,9 +2515,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                     column.databaseName,
                                 )
                                 return (
-                                    this.escape(orderAlias) +
-                                    " " +
-                                    orderBys[columnName]
+                                    this.escape(orderAlias) + " " + orderValue
                                 )
                             }
                         }
