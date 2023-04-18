@@ -252,7 +252,7 @@ const timber = await manager.findOne(User, {
 -   `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
 
 ```typescript
-const timber = await manager.findOne(User, { firstName: "Timber" })
+const timber = await manager.findOneBy(User, { firstName: "Timber" })
 ```
 
 -   `findOneOrFail` - Finds the first entity that matches some id or find options.
