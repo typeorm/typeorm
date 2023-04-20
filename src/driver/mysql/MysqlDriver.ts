@@ -335,6 +335,9 @@ export class MysqlDriver implements Driver {
             update: false,
         }
 
+    /** MariaDB supports uuid type for version 10.7.0 and up */
+    private uuidColumnTypeSuported = false
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -424,6 +427,9 @@ export class MysqlDriver implements Driver {
             }
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.2.0")) {
                 this.cteCapabilities.enabled = true
+            }
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.7.0")) {
+                this.uuidColumnTypeSuported = true
             }
         } else if (this.options.type === "mysql") {
             if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
@@ -724,7 +730,7 @@ export class MysqlDriver implements Driver {
             return "blob"
         } else if (column.type === Boolean) {
             return "tinyint"
-        } else if (column.type === "uuid" && this.options.type === "mysql") {
+        } else if (column.type === "uuid" && !this.uuidColumnTypeSuported) {
             return "varchar"
         } else if (column.type === "json" && this.options.type === "mariadb") {
             /*
@@ -831,7 +837,7 @@ export class MysqlDriver implements Driver {
          * fix https://github.com/typeorm/typeorm/issues/1139
          * note that if the db did support uuid column type it wouldn't have been defaulted to varchar
          */
-        if (column.generationStrategy === "uuid" && column.type !== "uuid")
+        if (column.generationStrategy === "uuid" && column.type === "varchar")
             return "36"
 
         switch (column.type) {

@@ -10,6 +10,7 @@ import { User } from "../8832/entity/User"
 import { Address } from "./entity/Address"
 import { ConnectionMetadataBuilder } from "../../../src/connection/ConnectionMetadataBuilder"
 import { EntityMetadataValidator } from "../../../src/metadata-builder/EntityMetadataValidator"
+import { UuidEntity } from "./entity/UuidEntity"
 
 describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", () => {
     let connections: DataSource[]
@@ -36,7 +37,7 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
         )
         beforeEach(() => reloadTestingDatabases(connections))
 
-        it("should create table with uuid type set to column for relevant mariadb versions", () =>
+        it("should create table with uuid, inet4, and inet6 type set to column for relevant mariadb versions", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     const userRepository = connection.getRepository(User)
@@ -112,6 +113,63 @@ describe("github issues > #8832 Add uuid, inet4, and inet6 types for mariadb", (
                     })
 
                     expect(foundAddress).to.not.be.null
+                }),
+            ))
+    })
+
+    describe("regression test mysql uuid generation", () => {
+        const uuidEntity: UuidEntity = {
+            id: "ceb2897c-a1cf-11ed-8dbd-040300000000",
+        }
+
+        before(
+            async () =>
+                (connections = await createTestingConnections({
+                    entities: [UuidEntity],
+                    schemaCreate: true,
+                    dropSchema: true,
+                    enabledDrivers: ["mysql", "mariadb"],
+                })),
+        )
+        beforeEach(() => reloadTestingDatabases(connections))
+
+        it("should create table with with varchar with length 36 when version is mysql", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const uuidRepository = connection.getRepository(UuidEntity)
+
+                    // seems there is an issue with the persisting id that crosses over from mysql to mariadb
+                    await uuidRepository.save(uuidEntity)
+
+                    const columnTypes: {
+                        DATA_TYPE: string
+                        CHARACTER_MAXIMUM_LENGTH: string
+                    }[] = await connection.query(
+                        `
+                    SELECT 
+                        DATA_TYPE,
+                        CHARACTER_MAXIMUM_LENGTH
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE
+                        TABLE_SCHEMA = ?
+                        AND TABLE_NAME = ? 
+                        AND COLUMN_NAME = ?
+                `,
+                        [connection.driver.database, "UuidEntity", "id"],
+                    )
+
+                    const isMysql = connection.driver.options.type === "mysql"
+                    const expectedType = isMysql ? "varchar" : "uuid"
+                    const expectedLength = isMysql ? "36" : null
+
+                    columnTypes.forEach(
+                        ({ DATA_TYPE, CHARACTER_MAXIMUM_LENGTH }) => {
+                            expect(DATA_TYPE).to.equal(expectedType)
+                            expect(CHARACTER_MAXIMUM_LENGTH).to.equal(
+                                expectedLength,
+                            )
+                        },
+                    )
                 }),
             ))
     })
