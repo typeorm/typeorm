@@ -123,7 +123,7 @@ export interface SqlServerConnectionOptions
          * The named instance to connect to
          */
         readonly instanceName?: string
-        
+
         /**
          * By default, if the database requestion by options.database cannot be accessed, the connection will fail with
          * an error. However, if options.fallbackToDefaultDb is set to true, then the user's default database will
