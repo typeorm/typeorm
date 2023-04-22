@@ -1,5 +1,10 @@
-import {Column, Entity, ManyToMany, PrimaryGeneratedColumn} from "../../../../src"
-import {Author} from "./Author";
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { Author } from "./Author"
 
 @Entity()
 export class PostWithCascade {
@@ -9,6 +14,8 @@ export class PostWithCascade {
     @Column()
     name: string
 
-    @ManyToMany(() => Author, author => author.postsWithCascade, {cascade: true})
+    @ManyToMany(() => Author, (author) => author.postsWithCascade, {
+        cascade: true,
+    })
     authors: Author[]
 }

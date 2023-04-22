@@ -1,11 +1,13 @@
 import {
     EntitySubscriberInterface,
-    EventSubscriber, InsertEvent,
+    EventSubscriber,
+    InsertEvent,
 } from "../../../../src"
 
 @EventSubscriber()
-export class AuthorPostWithCascadeSubscriber implements EntitySubscriberInterface {
-
+export class AuthorPostWithCascadeSubscriber
+    implements EntitySubscriberInterface
+{
     static beforeInsertEntity: any
     static afterInsertEntity: any
 
@@ -13,11 +15,11 @@ export class AuthorPostWithCascadeSubscriber implements EntitySubscriberInterfac
         return "author_posts_with_cascade_post_with_cascade"
     }
 
-    beforeInsert({metadata, entity}: InsertEvent<any>) {
+    beforeInsert({ metadata, entity }: InsertEvent<any>) {
         AuthorPostWithCascadeSubscriber.beforeInsertEntity = entity
     }
 
-    afterInsert({metadata, entity}: InsertEvent<any>) {
+    afterInsert({ metadata, entity }: InsertEvent<any>) {
         AuthorPostWithCascadeSubscriber.afterInsertEntity = entity
     }
 }

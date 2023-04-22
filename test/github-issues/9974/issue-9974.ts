@@ -4,13 +4,13 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import {DataSource} from "../../../src/data-source/DataSource"
-import {expect} from "chai"
-import {Post} from "./entity/Post"
-import {Author} from "./entity/Author";
-import {AuthorPostSubscriber} from "./subscriber/AuthorPostSubscriber";
-import {PostWithCascade} from "./entity/PostWithCascade";
-import {AuthorPostWithCascadeSubscriber} from "./subscriber/AuthorPostWithCascadeSubscriber";
+import { DataSource } from "../../../src/data-source/DataSource"
+import { expect } from "chai"
+import { Post } from "./entity/Post"
+import { Author } from "./entity/Author"
+import { AuthorPostSubscriber } from "./subscriber/AuthorPostSubscriber"
+import { PostWithCascade } from "./entity/PostWithCascade"
+import { AuthorPostWithCascadeSubscriber } from "./subscriber/AuthorPostWithCascadeSubscriber"
 
 describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missing data for junctionTables", () => {
     let dataSources: DataSource[]
@@ -18,17 +18,20 @@ describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missin
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                subscribers: [AuthorPostSubscriber, AuthorPostWithCascadeSubscriber],
+                subscribers: [
+                    AuthorPostSubscriber,
+                    AuthorPostWithCascadeSubscriber,
+                ],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
     beforeEach(() => {
-        AuthorPostSubscriber.beforeInsertEntity = undefined;
-        AuthorPostSubscriber.afterInsertEntity = undefined;
+        AuthorPostSubscriber.beforeInsertEntity = undefined
+        AuthorPostSubscriber.afterInsertEntity = undefined
 
-        AuthorPostWithCascadeSubscriber.beforeInsertEntity = undefined;
-        AuthorPostWithCascadeSubscriber.afterInsertEntity = undefined;
+        AuthorPostWithCascadeSubscriber.beforeInsertEntity = undefined
+        AuthorPostWithCascadeSubscriber.afterInsertEntity = undefined
 
         return reloadTestingDatabases(dataSources)
     })
@@ -39,9 +42,9 @@ describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missin
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
 
-                const author = new Author();
+                const author = new Author()
                 author.name = "author"
-                await manager.save(author);
+                await manager.save(author)
 
                 const post = new Post()
                 post.name = "post"
@@ -49,8 +52,14 @@ describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missin
                 await manager.save(post)
 
                 // Before is undefined since post is not saved yet and has no ID in beforeInsert
-                expect(AuthorPostSubscriber.beforeInsertEntity).to.be.eql({authorId: 1, postId: undefined})
-                expect(AuthorPostSubscriber.afterInsertEntity).to.be.eql({authorId: 1, postId: 1})
+                expect(AuthorPostSubscriber.beforeInsertEntity).to.be.eql({
+                    authorId: 1,
+                    postId: undefined,
+                })
+                expect(AuthorPostSubscriber.afterInsertEntity).to.be.eql({
+                    authorId: 1,
+                    postId: 1,
+                })
             }),
         ))
 
@@ -59,7 +68,7 @@ describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missin
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
 
-                const author = new Author();
+                const author = new Author()
                 author.name = "author"
 
                 const post = new PostWithCascade()
@@ -68,8 +77,15 @@ describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missin
                 await manager.save(post)
 
                 // Before is undefined since post and author are not saved yet and have no ID in beforeInsert
-                expect(AuthorPostWithCascadeSubscriber.beforeInsertEntity).to.be.eql({authorId: undefined, postWithCascadeId: undefined})
-                expect(AuthorPostWithCascadeSubscriber.afterInsertEntity).to.be.eql({authorId: 1, postWithCascadeId: 1})
+                expect(
+                    AuthorPostWithCascadeSubscriber.beforeInsertEntity,
+                ).to.be.eql({
+                    authorId: undefined,
+                    postWithCascadeId: undefined,
+                })
+                expect(
+                    AuthorPostWithCascadeSubscriber.afterInsertEntity,
+                ).to.be.eql({ authorId: 1, postWithCascadeId: 1 })
             }),
         ))
 
@@ -78,7 +94,7 @@ describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missin
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
 
-                const author = new Author();
+                const author = new Author()
                 author.name = "author"
                 await manager.save(author)
 
@@ -86,10 +102,20 @@ describe("github issues > #9974 EventSubscriber beforeInsert, afterInsert missin
                 post.name = "post"
                 await manager.save(post)
 
-                await dataSource.createQueryBuilder().relation(Post, "authors").of(1).add(1);
+                await dataSource
+                    .createQueryBuilder()
+                    .relation(Post, "authors")
+                    .of(1)
+                    .add(1)
 
-                expect(AuthorPostSubscriber.beforeInsertEntity).to.be.eql({authorId: 1, postId: 1})
-                expect(AuthorPostSubscriber.afterInsertEntity).to.be.eql({authorId: 1, postId: 1})
+                expect(AuthorPostSubscriber.beforeInsertEntity).to.be.eql({
+                    authorId: 1,
+                    postId: 1,
+                })
+                expect(AuthorPostSubscriber.afterInsertEntity).to.be.eql({
+                    authorId: 1,
+                    postId: 1,
+                })
             }),
         ))
 })

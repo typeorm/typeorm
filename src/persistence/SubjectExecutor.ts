@@ -240,7 +240,8 @@ export class SubjectExecutor {
                 this.queryRunner.broadcaster.broadcastBeforeInsertEvent(
                     result,
                     subject.metadata,
-                    subject.entity ?? subject.createValueSetAndChangeMapsWithoutValues()[0],
+                    subject.entity ??
+                        subject.createValueSetAndChangeMapsWithoutValues()[0],
                 ),
             )
         if (this.updateSubjects.length)

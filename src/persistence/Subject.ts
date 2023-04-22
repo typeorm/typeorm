@@ -304,7 +304,8 @@ export class Subject {
      * Important note: this method pops data from this subject's change maps.
      */
     createValueSetAndPopChangeMap(): ObjectLiteral {
-        const [changeSet, changeMapsWithoutValues] = this.createValueSetAndChangeMapsWithoutValues();
+        const [changeSet, changeMapsWithoutValues] =
+            this.createValueSetAndChangeMapsWithoutValues()
         this.changeMaps = changeMapsWithoutValues
         return changeSet
     }

@@ -1,11 +1,11 @@
 import {
     EntitySubscriberInterface,
-    EventSubscriber, InsertEvent,
+    EventSubscriber,
+    InsertEvent,
 } from "../../../../src"
 
 @EventSubscriber()
 export class AuthorPostSubscriber implements EntitySubscriberInterface {
-
     static beforeInsertEntity: any
     static afterInsertEntity: any
 
@@ -13,11 +13,11 @@ export class AuthorPostSubscriber implements EntitySubscriberInterface {
         return "author_posts_post"
     }
 
-    beforeInsert({entity}: InsertEvent<any>) {
+    beforeInsert({ entity }: InsertEvent<any>) {
         AuthorPostSubscriber.beforeInsertEntity = entity
     }
 
-    afterInsert({entity}: InsertEvent<any>) {
+    afterInsert({ entity }: InsertEvent<any>) {
         AuthorPostSubscriber.afterInsertEntity = entity
     }
 }
