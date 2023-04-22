@@ -234,9 +234,8 @@ export class Subject {
     /**
      * Creates a value set needs to be inserted / updated in the database.
      * Value set is based on the entity and change maps of the subject.
-     * Important note: this method pops data from this subject's change maps.
      */
-    createValueSetAndPopChangeMap(): ObjectLiteral {
+    createValueSetAndChangeMapsWithoutValues() {
         const changeMapsWithoutValues: SubjectChangeMap[] = []
         const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
             let value = changeMap.value
@@ -296,6 +295,16 @@ export class Subject {
             OrmUtils.mergeDeep(updateMap, valueMap)
             return updateMap
         }, {} as ObjectLiteral)
+        return [changeSet, changeMapsWithoutValues] as const
+    }
+
+    /**
+     * Creates a value set needs to be inserted / updated in the database.
+     * Value set is based on the entity and change maps of the subject.
+     * Important note: this method pops data from this subject's change maps.
+     */
+    createValueSetAndPopChangeMap(): ObjectLiteral {
+        const [changeSet, changeMapsWithoutValues] = this.createValueSetAndChangeMapsWithoutValues();
         this.changeMaps = changeMapsWithoutValues
         return changeSet
     }

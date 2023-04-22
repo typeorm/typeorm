@@ -240,7 +240,7 @@ export class SubjectExecutor {
                 this.queryRunner.broadcaster.broadcastBeforeInsertEvent(
                     result,
                     subject.metadata,
-                    subject.entity!,
+                    subject.entity ?? subject.createValueSetAndChangeMapsWithoutValues()[0],
                 ),
             )
         if (this.updateSubjects.length)
@@ -299,7 +299,7 @@ export class SubjectExecutor {
                 this.queryRunner.broadcaster.broadcastAfterInsertEvent(
                     result,
                     subject.metadata,
-                    subject.entity!,
+                    subject.entity ?? subject.insertedValueSet,
                 ),
             )
         if (this.updateSubjects.length)
