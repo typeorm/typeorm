@@ -278,6 +278,12 @@ export interface SqlServerConnectionOptions
          * (default: node-mssql)
          */
         readonly appName?: string
+
+        /**
+         * A boolean, that specifies whether encryption occurs if there is no verifiable server certificate. 
+         * (default: false)
+         */
+        readonly trustServerCertificate?: boolean
     }
 
     /**
