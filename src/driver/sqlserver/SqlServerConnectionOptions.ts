@@ -280,7 +280,7 @@ export interface SqlServerConnectionOptions
         readonly appName?: string
 
         /**
-         * A boolean, that specifies whether encryption occurs if there is no verifiable server certificate. 
+         * A boolean, that specifies whether encryption occurs if there is no verifiable server certificate.
          * (default: false)
          */
         readonly trustServerCertificate?: boolean

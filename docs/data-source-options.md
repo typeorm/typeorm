@@ -378,6 +378,8 @@ Different RDBMS-es have their own specific options.
 
 -   `options.appName` - Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server. (default: `node-mssql`)
 
+-   `options.trustServerCertificate` - A boolean, controlling whether encryption occurs if there is no verifiable server certificate. (default: `false`)
+
 -   `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
     details (default: `false`).
 
