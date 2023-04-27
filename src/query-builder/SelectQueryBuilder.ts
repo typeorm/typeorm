@@ -8,6 +8,7 @@ import { JoinAttribute } from "./JoinAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdLoader } from "./relation-id/RelationIdLoader"
+import { RelationIdLoader as QueryStrategyRelationIdLoader } from "./RelationIdLoader"
 import { RelationIdMetadataToAttributeTransformer } from "./relation-id/RelationIdMetadataToAttributeTransformer"
 import { RelationCountLoader } from "./relation-count/RelationCountLoader"
 import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer"
@@ -3572,6 +3573,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         if (this.expressionMap.relationLoadStrategy === "query") {
+            const queryStrategyRelationIdLoader =
+                new QueryStrategyRelationIdLoader(this.connection, queryRunner)
+
             await Promise.all(
                 this.relationMetadatas.map(async (relation) => {
                     const relationTarget = relation.inverseEntityMetadata.target
@@ -3617,7 +3621,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         })
                     if (entities.length > 0) {
                         const relatedEntityGroups: any[] =
-                            await this.connection.relationIdLoader.loadManyToManyRelationIdsAndGroup(
+                            await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
                                 relation,
                                 entities,
                                 undefined,
