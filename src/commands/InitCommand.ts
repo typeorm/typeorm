@@ -315,7 +315,7 @@ temp/`
     protected static getUserEntityTemplate(database: string): string {
         return `import { Entity, ${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectID"
+                ? "ObjectIdColumn, ObjectId"
                 : "PrimaryGeneratedColumn"
         }, Column } from "typeorm"
 
@@ -327,7 +327,7 @@ export class User {
             ? "@ObjectIdColumn()"
             : "@PrimaryGeneratedColumn()"
     }
-    id: ${database === "mongodb" ? "ObjectID" : "number"}
+    id: ${database === "mongodb" ? "ObjectId" : "number"}
 
     @Column()
     firstName: string
@@ -391,7 +391,7 @@ export class UserController {
 
     async one(request: Request, response: Response, next: NextFunction) {
         const id = parseInt(request.params.id)
-        
+
 
         const user = await this.userRepository.findOne({
             where: { id }
@@ -695,7 +695,10 @@ Steps to run this project:
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
         Object.assign(packageJson.dependencies, {
-            typeorm: require("../package.json").version,
+            typeorm:
+                require("../package.json").version !== "0.0.0"
+                    ? require("../package.json").version // install version from package.json if present
+                    : require("../package.json").installFrom, // else use custom source
             "reflect-metadata": "^0.1.13",
         })
 
@@ -718,10 +721,10 @@ Steps to run this project:
                 packageJson.dependencies["oracledb"] = "^5.1.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^7.3.0"
+                packageJson.dependencies["mssql"] = "^9.1.1"
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^3.0.8"
+                packageJson.dependencies["mongodb"] = "^5.2.0"
                 break
             case "spanner":
                 packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"

@@ -37,7 +37,6 @@ TypeORM은 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrin
 - 리스너 및 구독자(hooks).
 - 클로저 테이블 패턴 지원.
 - 모델 또는 별도의 설정 파일에서 스키마 선언.
-- json / xml / yml / env 형식의 연결 구성.
 - MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js를 지원.
 - MongoDB NoSQL 데이터베이스 지원.
 - NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron 플랫폼에서 작동.
@@ -185,7 +184,7 @@ await timber.remove();
 
     - **MongoDB** (experimental)의 경우
 
-        `npm install mongodb@^3.6.0 --save`
+        `npm install mongodb@^5.2.0 --save`
 
     - **NativeScript**, **react-native**, **Cordova**의 경우
 

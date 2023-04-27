@@ -217,6 +217,7 @@ export class MongoDriver implements Driver {
         "useUnifiedTopology",
         "autoEncryption",
         "retryWrites",
+        "directConnection",
     ]
 
     cteCapabilities: CteCapabilities = {
@@ -248,26 +249,17 @@ export class MongoDriver implements Driver {
     /**
      * Performs connection to the database.
      */
-    connect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const options = DriverUtils.buildMongoDBDriverOptions(this.options)
+    async connect(): Promise<void> {
+        const options = DriverUtils.buildMongoDBDriverOptions(this.options)
 
-            this.mongodb.MongoClient.connect(
-                this.buildConnectionUrl(options),
-                this.buildConnectionOptions(options),
-                (err: any, client: any) => {
-                    if (err) return fail(err)
+        const client = await this.mongodb.MongoClient.connect(
+            this.buildConnectionUrl(options),
+            this.buildConnectionOptions(options),
+        )
 
-                    this.queryRunner = new MongoQueryRunner(
-                        this.connection,
-                        client,
-                    )
-                    ObjectUtils.assign(this.queryRunner, {
-                        manager: this.connection.manager,
-                    })
-                    ok()
-                },
-            )
+        this.queryRunner = new MongoQueryRunner(this.connection, client)
+        ObjectUtils.assign(this.queryRunner, {
+            manager: this.connection.manager,
         })
     }
 
@@ -279,14 +271,11 @@ export class MongoDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            if (!this.queryRunner)
-                return fail(new ConnectionIsNotSetError("mongodb"))
-
-            const handler = (err: any) => (err ? fail(err) : ok())
-            this.queryRunner.databaseConnection.close(handler)
-            this.queryRunner = undefined
-        })
+        if (!this.queryRunner) throw new ConnectionIsNotSetError("mongodb")
+        // const handler = (err: any) => (err ? fail(err) : ok())
+        this.queryRunner.databaseConnection.close()
+        this.queryRunner = undefined
+        // return ok()
     }
 
     /**

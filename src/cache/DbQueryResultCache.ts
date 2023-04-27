@@ -131,7 +131,7 @@ export class DbQueryResultCache implements QueryResultCache {
     }
 
     /**
-     * Caches given query result.
+     * Get data from cache.
      * Returns cache result if found.
      * Returns undefined if result is not cached.
      */

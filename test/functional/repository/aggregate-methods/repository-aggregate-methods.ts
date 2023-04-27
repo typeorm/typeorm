@@ -46,7 +46,9 @@ describe("repository > aggregate methods", () => {
     describe("average", () => {
         it("should return the aggregate average", async () => {
             const average = await repository.average("counter")
-            expect(average).to.equal(50.5)
+            // Some RDBMSs (e.g. SQL Server) will return an int when averaging an int column, so either
+            // answer is acceptable.
+            expect([50, 50.5]).to.include(average)
         })
 
         it("should return null when 0 rows match the query", async () => {

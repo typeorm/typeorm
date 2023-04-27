@@ -56,7 +56,6 @@ TypeORM 的一些特性:
 - 监听者和订阅者（钩子）
 - 支持闭包表模式
 - 在模型或者分离的配置文件中声明模式
-- json / xml / yml / env 格式的连接配置
 - 支持 MySQL / MariaDB / Postgres / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js
 - 支持 MongoDB NoSQL 数据库
 - 可在 NodeJS / 浏览器 / Ionic / Cordova / React Native / Expo / Electron 平台上使用

@@ -11,6 +11,17 @@ export class ObjectUtils {
     }
 
     /**
+     * Checks if given value is an object.
+     * We cannot use instanceof because it has problems when running on different contexts.
+     * And we don't simply use typeof because typeof null === "object".
+     */
+    static isObjectWithName(val: any): val is Object & { name: string } {
+        return (
+            val !== null && typeof val === "object" && val["name"] !== undefined
+        )
+    }
+
+    /**
      * Copy the values of all of the enumerable own properties from one or more source objects to a
      * target object.
      * @param target The target object to copy to.

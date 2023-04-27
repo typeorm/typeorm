@@ -7,13 +7,13 @@ import { UserProfile } from "./entity/UserProfile"
 import { User } from "./entity/User"
 import { expect } from "chai"
 
-describe("github issues > #8485 second migration is generated for a combination of PrimaryColumn and JoinColumn with Postgres", () => {
+describe("github issues > #8485 second migration is generated for a combination of PrimaryColumn and JoinColumn", () => {
     let dataSources: DataSource[]
     before(
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [User, UserProfile],
-                enabledDrivers: ["postgres"],
+                enabledDrivers: ["mariadb", "mysql", "oracle", "postgres"],
                 dropSchema: true,
                 schemaCreate: false,
             })),

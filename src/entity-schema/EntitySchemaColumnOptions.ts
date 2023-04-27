@@ -9,7 +9,7 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     primary?: boolean
 
     /**
-     * Indicates if this column is of type ObjectID
+     * Indicates if this column is of type ObjectId
      */
     objectId?: boolean
 

@@ -49,7 +49,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
 
                 let loadedPost1 = await connection.manager.findOne(Post, {
                     where: { id: 1 },
-                    relations: ["categories"],
+                    relations: { categories: true },
                 })
                 expect(loadedPost1!.categories).to.deep.include({
                     id: 1,
@@ -64,7 +64,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
 
                 loadedPost1 = await connection.manager.findOne(Post, {
                     where: { id: 1 },
-                    relations: ["categories"],
+                    relations: { categories: true },
                 })
                 expect(loadedPost1!.categories).to.be.eql([])
 
@@ -76,7 +76,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
 
                 let loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
-                    relations: ["categories"],
+                    relations: { categories: true },
                 })
                 expect(loadedPost2!.categories).to.deep.include({
                     id: 2,
@@ -91,7 +91,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
 
                 loadedPost1 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
-                    relations: ["categories"],
+                    relations: { categories: true },
                 })
                 expect(loadedPost1!.categories).to.be.eql([])
             }),

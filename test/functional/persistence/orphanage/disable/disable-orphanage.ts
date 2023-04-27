@@ -35,7 +35,11 @@ describe("persistence > orphanage > disable", () => {
         let settingRepo: Repository<Setting>
         let userId: number
 
-        beforeEach(async () => {
+        beforeEach(async function () {
+            if (connections.length === 0) {
+                this.skip()
+            }
+
             await Promise.all(
                 connections.map(async (connection) => {
                     userRepo = connection.getRepository(User)

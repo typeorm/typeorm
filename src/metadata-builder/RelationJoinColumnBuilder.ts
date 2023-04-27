@@ -34,7 +34,7 @@ import { DriverUtils } from "../driver/DriverUtils"
  * ])
  *
  * Since for many-to-one relations having JoinColumn decorator is not required,
- * we need to go thought each many-to-one relation without join column decorator set
+ * we need to go through each many-to-one relation without join column decorator set
  * and create join column metadata args for them.
  */
 export class RelationJoinColumnBuilder {
@@ -80,42 +80,39 @@ export class RelationJoinColumnBuilder {
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
             namingStrategy: this.connection.namingStrategy,
-            columns: columns,
-            referencedColumns: referencedColumns,
+            columns,
+            referencedColumns,
             onDelete: relation.onDelete,
             onUpdate: relation.onUpdate,
             deferrable: relation.deferrable,
         })
 
-        // Oracle does not allow both primary and unique constraints on the same column
-        // Postgres can't take the unique und primary at once during create and primary key is unique anyway
+        // SQL requires UNIQUE/PK constraints on columns referenced by a FK
+        // Skip creating the unique constraint for the referenced columns if
+        // they are already contained in the PK of the referenced entity
         if (
-            ["oracle", "postgres"].includes(
-                this.connection.driver.options.type,
-            ) &&
-            columns.every((column) => column.isPrimary)
-        )
+            columns.every((column) => column.isPrimary) ||
+            !relation.isOneToOne
+        ) {
             return { foreignKey, columns, uniqueConstraint: undefined }
-
-        // CockroachDB requires UNIQUE constraints on referenced columns
-        if (referencedColumns.length > 0 && relation.isOneToOne) {
-            const uniqueConstraint = new UniqueMetadata({
-                entityMetadata: relation.entityMetadata,
-                columns: foreignKey.columns,
-                args: {
-                    name: this.connection.namingStrategy.relationConstraintName(
-                        relation.entityMetadata.tableName,
-                        foreignKey.columns.map((c) => c.databaseName),
-                    ),
-                    target: relation.entityMetadata.target,
-                },
-            })
-            uniqueConstraint.build(this.connection.namingStrategy)
-            return { foreignKey, columns, uniqueConstraint }
         }
 
-        return { foreignKey, columns, uniqueConstraint: undefined }
+        const uniqueConstraint = new UniqueMetadata({
+            entityMetadata: relation.entityMetadata,
+            columns: foreignKey.columns,
+            args: {
+                name: this.connection.namingStrategy.relationConstraintName(
+                    relation.entityMetadata.tableName,
+                    foreignKey.columns.map((column) => column.databaseName),
+                ),
+                target: relation.entityMetadata.target,
+            },
+        })
+        uniqueConstraint.build(this.connection.namingStrategy)
+
+        return { foreignKey, columns, uniqueConstraint }
     }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -211,6 +208,10 @@ export class RelationJoinColumnBuilder {
                                 ) ||
                                     this.connection.driver.options.type ===
                                         "aurora-mysql") &&
+                                // some versions of mariadb support the column type and should not try to provide the length property
+                                this.connection.driver.normalizeType(
+                                    referencedColumn,
+                                ) !== "uuid" &&
                                 (referencedColumn.generationStrategy ===
                                     "uuid" ||
                                     referencedColumn.type === "uuid")

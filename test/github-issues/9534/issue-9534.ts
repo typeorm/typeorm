@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { Category } from "./entity/Category"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

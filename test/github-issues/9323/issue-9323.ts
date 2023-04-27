@@ -121,7 +121,7 @@ describe("github issues > #9323 Add new VirtualColumn decorator feature", () => 
             }),
         ))
 
-    it("should be able to save and find sub-select data in the databse", () =>
+    it("should be able to save and find sub-select data in the database", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const companyName = "My Company 1"

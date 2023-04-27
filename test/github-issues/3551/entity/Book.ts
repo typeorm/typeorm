@@ -1,4 +1,4 @@
-import { Entity, ObjectIdColumn, Column, ObjectID } from "../../../../src"
+import { Entity, ObjectIdColumn, Column, ObjectId } from "../../../../src"
 
 export class Page {
     @Column()
@@ -16,7 +16,7 @@ export class Chapter {
 @Entity()
 export class Book {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     title: string

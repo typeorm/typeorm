@@ -104,7 +104,7 @@ describe("mongodb > MongoRepository", () => {
             }),
         ))
 
-    it("should be able to use findByIds with both objectId and strings", () =>
+    it("should be able to use findByIds with both ObjectId and strings", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)

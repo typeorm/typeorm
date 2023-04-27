@@ -109,7 +109,12 @@ With [cascades](./relations.md#cascades) enabled, you can delete this relation w
 To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
 
 ```typescript
-const question = dataSource.getRepository(Question)
+const question = await dataSource.getRepository(Question).findOne({
+    relations: {
+        categories: true,
+    },
+    where: { id: 1 }
+})
 question.categories = question.categories.filter((category) => {
     return category.id !== categoryToRemove.id
 })

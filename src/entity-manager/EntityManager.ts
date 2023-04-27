@@ -26,7 +26,7 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { EntityPersistExecutor } from "../persistence/EntityPersistExecutor"
-import { ObjectID } from "../driver/mongodb/typings"
+import { ObjectId } from "../driver/mongodb/typings"
 import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
@@ -67,8 +67,9 @@ export class EntityManager {
 
     /**
      * Once created and then reused by repositories.
+     * Created as a future replacement for the #repositories to provide a bit more perf optimization.
      */
-    protected repositories: Repository<any>[] = []
+    protected repositories = new Map<EntityTarget<any>, Repository<any>>()
 
     /**
      * Once created and then reused by repositories.
@@ -169,7 +170,7 @@ export class EntityManager {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.connection.query(query, parameters, this.queryRunner)
     }
 
@@ -752,8 +753,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
@@ -807,8 +808,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
@@ -861,8 +862,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
@@ -915,8 +916,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
@@ -1223,7 +1224,7 @@ export class EntityManager {
      */
     async findOneById<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        id: number | string | Date | ObjectID,
+        id: number | string | Date | ObjectId,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1377,10 +1378,8 @@ export class EntityManager {
         target: EntityTarget<Entity>,
     ): Repository<Entity> {
         // find already created repository instance and return it if found
-        const repository = this.repositories.find(
-            (repository) => repository.target === target,
-        )
-        if (repository) return repository
+        const repoFromMap = this.repositories.get(target)
+        if (repoFromMap) return repoFromMap
 
         // if repository was not found then create it, store its instance and return it
         if (this.connection.driver.options.type === "mongodb") {
@@ -1389,7 +1388,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository as any)
+            this.repositories.set(target, newRepository)
             return newRepository
         } else {
             const newRepository = new Repository<any>(
@@ -1397,7 +1396,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository)
+            this.repositories.set(target, newRepository)
             return newRepository
         }
     }

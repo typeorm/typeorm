@@ -506,6 +506,8 @@ Different RDBMS-es have their own specific options.
 
 -   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
+-   `directConnection` - Specifies whether to force dispatch all operations to the specified host.
+
 ## `sql.js` data source options
 
 -   `database`: The raw UInt8Array database that should be imported.

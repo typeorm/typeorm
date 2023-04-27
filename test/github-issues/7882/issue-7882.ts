@@ -25,13 +25,13 @@ describe("github issues > #7882  .findOne reduces relations to an empty array", 
     it("should delete all documents related to search pattern", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const relations = ["exampleText"]
+                const relations = { exampleText: true }
 
                 const repo = connection.getRepository(Example)
 
                 await repo.find({ relations })
 
-                expect(relations).to.be.eql(["exampleText"])
+                expect(relations).to.be.eql({ exampleText: true })
             }),
         ))
 })

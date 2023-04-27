@@ -1570,7 +1570,7 @@ export abstract class AbstractSqliteQueryRunner
                         )
 
                         return new TableForeignKey({
-                            name: fkMapping!.name,
+                            name: fkMapping?.name,
                             columnNames: columnNames,
                             referencedTableName: foreignKey["table"],
                             referencedColumnNames: referencedColumnNames,

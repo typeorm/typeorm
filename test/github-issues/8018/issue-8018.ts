@@ -40,7 +40,7 @@ describe("github issues > #8018 Non-unique relation property names causes entity
                 await connection.manager.save([parent, child1, child2])
 
                 const result = await connection.manager.find(Parent, {
-                    relations: ["children"],
+                    relations: { children: true },
                 })
 
                 expect(result).to.have.lengthOf(1)
