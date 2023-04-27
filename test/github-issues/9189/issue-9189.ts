@@ -1,38 +1,36 @@
 import "reflect-metadata"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import { DataSource, TypeORMError } from "../../../src"
 import { expect } from "chai"
 
 describe("github issues > #9189 check invalid constraint options", () => {
-    let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: false,
-                dropSchema: true,
-                enabledDrivers: ["oracle"],
-            })),
-    )
+    let dataSources: DataSource[] = []
+
     after(() => closeTestingConnections(dataSources))
 
-    it("should throw an exception, when invalid option is configured", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                let error
-                try {
-                    await dataSource.driver.createSchemaBuilder().log()
-                } catch (e) {
-                    error = e
-                }
-                expect(error).to.eql(
-                    new Error("RESTRICT not a valid option for oracle!"),
-                )
-            }),
-        ))
+    it("should throw an exception, when invalid option is configured", async () => {
+        let err
+        try {
+            await Promise.all(
+                (dataSources = await createTestingConnections({
+                    entities: [__dirname + "/entity/*{.js,.ts}"],
+                    schemaCreate: false,
+                    dropSchema: true,
+                    enabledDrivers: ["oracle"],
+                })),
+            )
+        } catch (e) {
+            err = e
+        }
+        expect(err).to.eql(
+            new TypeORMError(
+                'OnDeleteType "RESTRICT" is not supported for oracle!',
+            ),
+        )
+    })
 
     // you can add additional tests if needed
 })

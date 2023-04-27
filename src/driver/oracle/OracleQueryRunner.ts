@@ -2786,7 +2786,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         this.getTablePath(fk),
                     )} (${referencedColumnNames})`
                     if (fk.onDelete && fk.onDelete !== "NO ACTION") {
-                        this.validateOracleOnDeleteTypeOption(fk.onDelete)
                         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
                         constraint += ` ON DELETE ${fk.onDelete}`
                     }
@@ -3040,7 +3039,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             )} (${referencedColumnNames})`
         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
         if (foreignKey.onDelete && foreignKey.onDelete !== "NO ACTION") {
-            this.validateOracleOnDeleteTypeOption(foreignKey.onDelete)
             sql += ` ON DELETE ${foreignKey.onDelete}`
         }
         return new Query(sql)
@@ -3103,14 +3101,5 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return `"${tableName}"`
-    }
-
-    /**
-     * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/sql-language-reference.pdf
-     */
-    private validateOracleOnDeleteTypeOption(type: string) {
-        if (!["CASCADE", "SET NULL"].includes(type)) {
-            throw new Error(`${type} not a valid option for oracle!`)
-        }
     }
 }

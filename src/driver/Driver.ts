@@ -14,6 +14,8 @@ import { Table } from "../schema-builder/table/Table"
 import { View } from "../schema-builder/view/View"
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { UpsertType } from "./types/UpsertType"
+import { OnDeleteType } from "../metadata/types/OnDeleteType"
+import { OnUpdateType } from "../metadata/types/OnUpdateType"
 
 export type ReturningType = "insert" | "update" | "delete"
 
@@ -67,6 +69,16 @@ export interface Driver {
      * Returns type of upsert supported by driver if any
      */
     supportedUpsertTypes: UpsertType[]
+
+    /**
+     * Returns list of supported onDelete types by driver
+     */
+    supportedOnDeleteTypes?: OnDeleteType[]
+
+    /**
+     * Returns list of supported onUpdate types by driver
+     */
+    supportedOnUpdateTypes?: OnUpdateType[]
 
     /**
      * Default values of length, precision and scale depends on column data type.
