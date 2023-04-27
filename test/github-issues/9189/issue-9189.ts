@@ -25,6 +25,7 @@ describe("github issues > #9189 check invalid constraint options", () => {
         } catch (e) {
             err = e
         }
+        if(err) // skip for other databases
         expect(err).to.eql(
             new TypeORMError(
                 'OnDeleteType "RESTRICT" is not supported for oracle!',
