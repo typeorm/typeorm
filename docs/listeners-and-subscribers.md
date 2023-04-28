@@ -215,6 +215,15 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     listenTo() {
         return Post
     }
+    
+    async afterLoad(entity: Post, event?: LoadEvent<Post>) {
+        console.log(`AFTER ENTITY LOADED: `, entity);
+        const data = await event.manager.getRepository(Files).find({
+          where: { tabela: 'post', tabela_id: entity.id },
+        });
+
+        entity.imagens = data;
+     }
 
     /**
      * Called before post insertion.
