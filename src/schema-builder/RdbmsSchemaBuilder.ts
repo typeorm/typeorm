@@ -1,22 +1,22 @@
-import { Table } from "./table/Table"
-import { TableColumn } from "./table/TableColumn"
-import { TableForeignKey } from "./table/TableForeignKey"
-import { TableIndex } from "./table/TableIndex"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import { DataSource } from "../data-source/DataSource"
+import { DriverUtils } from "../driver/DriverUtils"
+import { SqlInMemory } from "../driver/SqlInMemory"
+import { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { EntityMetadata } from "../metadata/EntityMetadata"
-import { DataSource } from "../data-source/DataSource"
+import { QueryRunner } from "../query-runner/QueryRunner"
 import { SchemaBuilder } from "./SchemaBuilder"
-import { SqlInMemory } from "../driver/SqlInMemory"
-import { TableUtils } from "./util/TableUtils"
 import { TableColumnOptions } from "./options/TableColumnOptions"
-import { TableUnique } from "./table/TableUnique"
+import { Table } from "./table/Table"
 import { TableCheck } from "./table/TableCheck"
+import { TableColumn } from "./table/TableColumn"
 import { TableExclusion } from "./table/TableExclusion"
-import { View } from "./view/View"
+import { TableForeignKey } from "./table/TableForeignKey"
+import { TableIndex } from "./table/TableIndex"
+import { TableUnique } from "./table/TableUnique"
+import { TableUtils } from "./util/TableUtils"
 import { ViewUtils } from "./util/ViewUtils"
-import { DriverUtils } from "../driver/DriverUtils"
-import { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
+import { View } from "./view/View"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -204,7 +204,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected hasGeneratedColumns(): boolean {
         return this.connection.entityMetadatas.some((entityMetadata) => {
-            return entityMetadata.columns.some((column) => column.generatedType)
+            return entityMetadata.columns.some((column) => column.generatedType || column.asExpression)
         })
     }
 
