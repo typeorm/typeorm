@@ -48,7 +48,7 @@ export class DateUtils {
     ): Date {
         let date =
             typeof mixedDate === "string"
-                ? DateUtils.parseDateAsISO(mixedDate)
+                ? DateUtils.parseDateAsISOLocal(mixedDate)
                 : mixedDate
 
         if (toUtc)
@@ -268,9 +268,11 @@ export class DateUtils {
     }
 
     /**
-     * Parse a date without the UTC-offset of the device
+     * Parse a ISO 8601 date(-time) string taking into account the local timezone (if none is given).
      *
-     * The problem here is with wrong timezone.
+     * The problem here is with wrong timezone and ECMA-Script being weird about when to use time zones and when not.
+     *
+     * **Caution:** The function expects an ISO8601 date(-time) string as input.
      *
      * For example:
      *
@@ -278,11 +280,18 @@ export class DateUtils {
      * in my timezone, which is not true for my timezone (GMT-0300). It should
      * be `2021-04-28T03:00:00.000Z` as `new Date(2021, 3, 28)` generates.
      */
-    private static parseDateAsISO(dateString: string): Date {
-        const date = new Date(dateString)
-        const offset = date.getTimezoneOffset() * 60 * 1000
-        const utc = date.getTime() + offset
+    private static parseDateAsISOLocal(isoDateTimeString: string): Date {
+        // From ECMA-262 specification:
+        // "The String may be interpreted as a local time, a UTC time, or a time in some other time zone, depending on the contents of the String. [...]
+        //  When the UTC offset representation is absent, date-only forms are interpreted as a UTC time and date-time forms are interpreted as a local time."
+        // See https://tc39.es/ecma262/#sec-date-time-string-format for further information
 
-        return new Date(utc)
+        const dateStringRegex = /$\d{4}-\d{2}-\d{2}^/
+        const isDateString = dateStringRegex.test(isoDateTimeString.trim())
+        if (isDateString) {
+            // This lets the date parser know that the date is to be treat as local time.
+            isoDateTimeString = `${isoDateTimeString}T00:00:00`
+        }
+        return new Date(isoDateTimeString)
     }
 }
