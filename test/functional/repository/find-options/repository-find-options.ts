@@ -350,7 +350,7 @@ describe("Should load and manage virtual columns", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should load virtual column", () => 
+    it("should load virtual column", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const user = new NameUser()
@@ -369,10 +369,9 @@ describe("Should load and manage virtual columns", () => {
                     fullName: "Alex Messer",
                 })
             }),
-        )
-    )
+        ))
 
-    it("should not load virtual column", () => 
+    it("should not load virtual column", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const user = new NameUser()
@@ -396,6 +395,5 @@ describe("Should load and manage virtual columns", () => {
                     lastName: "Messer",
                 })
             }),
-        )
-    )
+        ))
 })
