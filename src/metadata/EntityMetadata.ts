@@ -794,7 +794,9 @@ export class EntityMetadata {
      */
     hasVirtualPropertyWithPropertyPath(propertyPath: string): boolean {
         return this.columns.some(
-            (embedded) => embedded.propertyPath === propertyPath && embedded.isVirtualProperty,
+            (embedded) =>
+                embedded.propertyPath === propertyPath &&
+                embedded.isVirtualProperty,
         )
     }
 

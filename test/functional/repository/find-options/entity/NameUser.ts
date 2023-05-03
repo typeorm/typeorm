@@ -3,7 +3,7 @@ import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/Pri
 import { Column } from "../../../../../src/decorator/columns/Column"
 import { VirtualColumn } from "../../../../../src"
 
-@Entity('name_user')
+@Entity("name_user")
 export class NameUser {
     @PrimaryGeneratedColumn()
     id: number
@@ -15,7 +15,8 @@ export class NameUser {
     lastName: string
 
     @VirtualColumn({
-        query: (alias) => `SELECT nu.firstName || ' ' || nu.lastName FROM name_user nu WHERE nu.id = ${alias}.id`
+        query: (alias) =>
+            `SELECT nu.firstName || ' ' || nu.lastName FROM name_user nu WHERE nu.id = ${alias}.id`,
     })
-    fullName: string;
+    fullName: string
 }

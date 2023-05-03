@@ -3903,7 +3903,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : relationName
             const embed = metadata.findEmbeddedWithPropertyPath(propertyPath)
             const relation = metadata.findRelationWithPropertyPath(propertyPath)
-            const isVirtualProperty = metadata.hasVirtualPropertyWithPropertyPath(propertyPath);
+            const isVirtualProperty =
+                metadata.hasVirtualPropertyWithPropertyPath(propertyPath)
 
             if (!embed && !relation && !isVirtualProperty)
                 throw new EntityPropertyNotFoundError(propertyPath, metadata)
