@@ -15,6 +15,7 @@ import sinon from "sinon"
 import { FileLogger } from "../../../../src"
 import { promisify } from "util"
 import { readFile, unlink } from "fs"
+import { NameUser } from "./entity/NameUser"
 
 describe("repository > find options", () => {
     let connections: DataSource[]
@@ -336,4 +337,60 @@ describe("repository > find options > cache", () => {
                 expect(users4.length).to.be.equal(4)
             }),
         ))
+})
+
+describe('Should load and manage virtual columns', () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
+
+    it('should load virtual column', () => {
+        Promise.all(
+            connections.map(async (connection) => {
+                const user = new NameUser()
+                user.firstName = "Alex"
+                user.lastName = "Messer"
+                await connection.manager.save(user)
+
+                const [loadedUser] = await connection.getRepository(NameUser).find();
+                
+                expect(loadedUser).to.be.eq({
+                    id: 1,
+                    firstName: 'Alex',
+                    lastName: 'Messer',
+                    fullName: 'Alex Messer'
+                })
+            }))
+    })
+
+    it('should not load virtual column', () => {
+        Promise.all(
+            connections.map(async (connection) => {
+                const user = new NameUser()
+                user.firstName = "Alex"
+                user.lastName = "Messer"
+                await connection.manager.save(user)
+
+                const [loadedUser] = await connection.getRepository(NameUser).find({
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        id: true,
+                    }
+                });
+                
+                expect(loadedUser).to.be.eq({
+                    id: 1,
+                    firstName: 'Alex',
+                    lastName: 'Messer'
+                })
+            }));
+
+    })
 })

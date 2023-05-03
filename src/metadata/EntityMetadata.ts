@@ -790,6 +790,15 @@ export class EntityMetadata {
     }
 
     /**
+     * Checks if there is a virtual property with a given property path
+     */
+    hasVirtualPropertyWithPropertyPath(propertyPath: string): boolean {
+        return this.columns.some(
+            (embedded) => embedded.propertyPath === propertyPath && embedded.isVirtualProperty,
+        )
+    }
+
+    /**
      * Finds embedded with a given property path.
      */
     findEmbeddedWithPropertyPath(
