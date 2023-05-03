@@ -16,7 +16,7 @@ export class NameUser {
 
     @VirtualColumn({
         query: (alias) =>
-            `SELECT nu.firstName || ' ' || nu.lastName FROM name_user nu WHERE nu.id = ${alias}.id`,
+            `SELECT "nu"."firstName" || ' ' || "nu"."lastName" FROM "name_user" "nu" WHERE "nu"."id" = "${alias}"."id"`,
     })
     fullName: string
 }
