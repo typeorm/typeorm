@@ -156,6 +156,18 @@ const users = await dataSource.getRepository(User).find({
 })
 ```
 
+You can also use `loadRelationIds` option to load relation ids instead of relation objects:
+
+```typescript
+const users = await dataSource.getRepository(User).find({
+    loadRelationIds: {
+        profile: true,
+        photos: true,
+        videos: true,
+    },
+})
+```
+
 Alternative and more flexible way is to use `QueryBuilder`:
 
 ```typescript
