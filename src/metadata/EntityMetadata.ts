@@ -516,7 +516,6 @@ export class EntityMetadata {
      */
     propertiesMap: ObjectLiteral
 
-
     /**
      * Table comment. Not supported by all database types.
      */
@@ -1068,7 +1067,7 @@ export class EntityMetadata {
         this.isClosureJunction =
             this.tableMetadataArgs.type === "closure-junction"
 
-        this.comment = this.tableMetadataArgs.comment  
+        this.comment = this.tableMetadataArgs.comment
     }
 
     /**
