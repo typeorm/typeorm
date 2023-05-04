@@ -732,12 +732,17 @@ export class MysqlDriver implements Driver {
             return "tinyint"
         } else if (column.type === "uuid" && !this.uuidColumnTypeSuported) {
             return "varchar"
-        } else if (column.type === "json" && this.options.type === "mariadb") {
+        } else if (
+            column.type === "json" &&
+            this.options.type === "mariadb" &&
+            !VersionUtils.isGreaterOrEqual(this.version ?? "0.0.0", "10.4.3")
+        ) {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
              * and MariaDB's benchmarks indicate that performance is at least equivalent.
              *
              * @see https://mariadb.com/kb/en/json-data-type/
+             * if Version is 10.4.3 or greater, JSON is an alias for longtext and an automatic check_json(column) constraint is added
              */
             return "longtext"
         } else if (
@@ -999,7 +1004,7 @@ export class MysqlDriver implements Driver {
 
             const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
-                tableColumn.type !== this.normalizeType(columnMetadata) ||
+                this.isColumnDataTypeChanged(tableColumn, columnMetadata) ||
                 tableColumn.length !== this.getColumnLength(columnMetadata) ||
                 tableColumn.width !== columnMetadata.width ||
                 (columnMetadata.precision !== undefined &&
@@ -1357,5 +1362,23 @@ export class MysqlDriver implements Driver {
         comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
 
         return comment
+    }
+
+    /**
+     * A helper to check if column data types have changed
+     * This can be used to manage checking any types the
+     * database may alias
+     */
+    private isColumnDataTypeChanged(
+        tableColumn: TableColumn,
+        columnMetadata: ColumnMetadata,
+    ) {
+        // this is an exception for mariadb versions where json is an alias for longtext
+        if (
+            this.normalizeType(columnMetadata) === "json" &&
+            tableColumn.type.toLowerCase() === "longtext"
+        )
+            return false
+        return tableColumn.type !== this.normalizeType(columnMetadata)
     }
 }
