@@ -3023,9 +3023,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         sql += `) ENGINE=${table.engine || "InnoDB"}`
 
         if (table.comment) {
-            sql += ` comment=${table.comment}`
+            sql += ` COMMENT="${table.comment}"`
         }
-        
+
         return new Query(sql)
     }
 
