@@ -46,4 +46,9 @@ export interface EntityOptions {
      * @see https://www.sqlite.org/withoutrowid.html.
      */
     withoutRowid?: boolean
+
+    /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
 }
