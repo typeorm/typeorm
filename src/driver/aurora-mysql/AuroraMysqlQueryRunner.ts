@@ -2536,10 +2536,6 @@ export class AuroraMysqlQueryRunner
 
         sql += `) ENGINE=${table.engine || "InnoDB"}`
 
-        if (table.comment) {
-            sql += ` COMMENT="${table.comment}"`
-        }
-
         return new Query(sql)
     }
 
