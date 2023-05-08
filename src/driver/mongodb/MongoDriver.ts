@@ -528,7 +528,9 @@ export class MongoDriver implements Driver {
         const schemaUrlPart = options.type.toLowerCase()
         const credentialsUrlPart =
             options.username && options.password
-                ? `${options.username}:${options.password}@`
+                ? `${encodeURIComponent(options.username)}:${encodeURIComponent(
+                      options.password,
+                  )}@`
                 : ""
 
         const portUrlPart =
