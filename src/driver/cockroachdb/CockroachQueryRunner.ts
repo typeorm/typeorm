@@ -300,17 +300,24 @@ export class CockroachQueryRunner
                     (this.driver.options.maxTransactionRetries || 5)
             ) {
                 this.transactionRetries += 1
+                this.storeQueries = false
                 await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
                 const sleepTime =
-                    2 ** this.transactionRetries * 0.1 * (Math.random() + 0.5)
-                await new Promise((resolve) =>
-                    setTimeout(resolve, sleepTime * 1000),
-                )
-                const result = await this.query(
-                    query,
-                    parameters,
-                    useStructuredResult,
-                )
+                    2 ** this.transactionRetries *
+                    0.1 *
+                    (Math.random() + 0.5) *
+                    1000
+                await new Promise((resolve) => setTimeout(resolve, sleepTime))
+
+                let result = undefined
+                for (const q of this.queries) {
+                    this.driver.connection.logger.logQuery(
+                        `Retrying transaction for query "${q.query}"`,
+                        q.parameters,
+                        this,
+                    )
+                    result = await this.query(q.query, q.parameters)
+                }
                 this.transactionRetries = 0
 
                 return result
