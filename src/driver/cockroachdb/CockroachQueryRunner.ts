@@ -319,6 +319,7 @@ export class CockroachQueryRunner
                     result = await this.query(q.query, q.parameters)
                 }
                 this.transactionRetries = 0
+                this.storeQueries = true
 
                 return result
             } else {
