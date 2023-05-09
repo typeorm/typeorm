@@ -19,7 +19,7 @@ describe("github issues > #9944 Alias Issue With Nested Entity And Relations", (
                 schemaCreate: true,
                 dropSchema: true,
                 relationLoadStrategy: "query",
-                enabledDrivers: ["mysql"],
+                enabledDrivers: ["mysql", "postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
