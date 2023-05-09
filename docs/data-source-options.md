@@ -182,15 +182,17 @@ Different RDBMS-es have their own specific options.
 
 -   `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
+-   `maxTransactionRetries` - A maximum number of transaction retries in case of 40001 error. Defaults to 5.
+
 -   `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
 -   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
 -   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
 
--   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript integers.  
-    By default int8 (bigint) values are returned as strings to avoid overflows.  
-    JavaScript doesn't have support for 64-bit integers, the maximum safe integer in js is: Number.MAX_SAFE_INTEGER (`+2^53`). Be careful when enabling `parseInt8`.  
+-   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript integers.
+    By default int8 (bigint) values are returned as strings to avoid overflows.
+    JavaScript doesn't have support for 64-bit integers, the maximum safe integer in js is: Number.MAX_SAFE_INTEGER (`+2^53`). Be careful when enabling `parseInt8`.
     Note: This option is ignored if the undelying driver does not support it.
 
 ## `sqlite` data source options

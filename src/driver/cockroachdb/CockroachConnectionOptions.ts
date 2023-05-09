@@ -56,9 +56,14 @@ export interface CockroachConnectionOptions
      */
     readonly applicationName?: string
 
-    /*
+    /**
      * Function handling errors thrown by drivers pool.
      * Defaults to logging error with `warn` level.
      */
     readonly poolErrorHandler?: (err: any) => any
+
+    /**
+     * Max number of transaction retries in case of 40001 error.
+     */
+    readonly maxTransactionRetries?: number
 }

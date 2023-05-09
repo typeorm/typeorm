@@ -296,10 +296,16 @@ export class CockroachQueryRunner
             if (
                 err.code === "40001" &&
                 this.isTransactionActive &&
-                this.transactionRetries < 3
+                this.transactionRetries <
+                    (this.driver.options.maxTransactionRetries || 5)
             ) {
                 this.transactionRetries += 1
                 await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
+                const sleepTime =
+                    2 ** this.transactionRetries * 0.1 * (Math.random() + 0.5)
+                await new Promise((resolve) =>
+                    setTimeout(resolve, sleepTime * 1000),
+                )
                 const result = await this.query(
                     query,
                     parameters,
