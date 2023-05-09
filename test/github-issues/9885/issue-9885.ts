@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import { DataSource } from "../../../src"
 import { createTestingConnections } from "../../utils/test-utils"
+import { closeTestingConnections } from "../../test/utils/test-utils.js"
 
 describe("github issues > #9885", () => {
     let dataSources: DataSource[]
@@ -11,12 +12,11 @@ describe("github issues > #9885", () => {
             enabledDrivers: ["mongodb"],
         })
     })
+    after(() => closeTestingConnections(dataSources))
 
-    it("should be connected", async () => {
-        await Promise.all(
-            dataSources.map(async (dataSource) => {
-                expect(dataSource.isInitialized).true
-            }),
-        )
+    it("should be connected", () => {
+        dataSources.forEach((dataSource) => {
+            expect(dataSource.isInitialized).true
+        })
     })
 })
