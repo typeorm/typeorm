@@ -377,7 +377,9 @@ export const Routes = [{
      * Gets contents of the user controller file (used when express is enabled).
      */
     protected static getControllerTemplate(isEsm: boolean): string {
-        return `import { AppDataSource } from "../data-source${isEsm ? ".js" : ""}"
+        return `import { AppDataSource } from "../data-source${
+            isEsm ? ".js" : ""
+        }"
 import { NextFunction, Request, Response } from "express"
 import { User } from "../entity/User${isEsm ? ".js" : ""}"
 
