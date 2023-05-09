@@ -576,7 +576,7 @@ export class SqlServerDriver implements Driver {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
         } else if (columnMetadata.type === Number) {
             // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
+            value = !isNaN(+value) ? parseFloat(value) : value
         }
 
         if (columnMetadata.transformer)

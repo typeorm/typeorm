@@ -647,7 +647,7 @@ export class MysqlDriver implements Driver {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === Number) {
             // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
+            value = !isNaN(+value) ? parseFloat(value) : value
         }
 
         return value
@@ -699,7 +699,7 @@ export class MysqlDriver implements Driver {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === Number) {
             // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
+            value = !isNaN(+value) ? parseFloat(value) : value
         }
 
         if (columnMetadata.transformer)

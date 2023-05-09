@@ -555,7 +555,7 @@ export class OracleDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === Number) {
             // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
+            value = !isNaN(+value) ? parseFloat(value) : value
         }
 
         if (columnMetadata.transformer)

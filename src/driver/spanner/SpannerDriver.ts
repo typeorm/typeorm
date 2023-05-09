@@ -442,7 +442,7 @@ export class SpannerDriver implements Driver {
             value = typeof value === "string" ? JSON.parse(value) : value
         } else if (columnMetadata.type === Number) {
             // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
+            value = !isNaN(+value) ? parseFloat(value) : value
         }
 
         if (columnMetadata.transformer)
