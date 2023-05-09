@@ -3,8 +3,8 @@ import { spawnSync } from "child_process"
 
 if ((process.env["NODE_OPTIONS"] || "").includes("--loader ts-node"))
     require("./cli")
-else
-    spawnSync(process.argv[0], process.argv.slice(1), {
+else {
+    const childProcess = spawnSync(process.argv[0], process.argv.slice(1), {
         stdio: "inherit",
         env: {
             ...process.env,
@@ -18,3 +18,6 @@ else
         },
         windowsHide: true,
     })
+
+    process.exit(childProcess.status || 0)
+}
