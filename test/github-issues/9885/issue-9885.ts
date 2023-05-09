@@ -1,7 +1,9 @@
 import { expect } from "chai"
 import { DataSource } from "../../../src"
-import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils"
-
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
 
 describe("github issues > #9885", () => {
     let dataSources: DataSource[]
