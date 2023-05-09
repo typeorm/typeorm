@@ -4327,11 +4327,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             where[key].type === "moreThanOrEqual" ||
                             where[key].type === "lessThanOrEqual"
                         ) {
-                            const sqlOperator =
-                                (where[key].type.startsWith("moreThan")
-                                    ? ">"
-                                    : "<") +
-                                (where[key].type.endsWith("OrEqual") ? "=" : "")
+                            let sqlOperator = ""
+                            if (where[key].type === "moreThan") {
+                                sqlOperator = ">"
+                            } else if (where[key].type === "lessThan") {
+                                sqlOperator = "<"
+                            } else if (where[key].type === "moreThanOrEqual") {
+                                sqlOperator = ">="
+                            } else if (where[key].type === "lessThanOrEqual") {
+                                sqlOperator = "<="
+                            }
                             // basically relation count functionality
                             const qb: QueryBuilder<any> = this.subQuery()
                             if (relation.isManyToManyOwner) {
