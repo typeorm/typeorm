@@ -128,7 +128,7 @@ export interface BaseDataSourceOptions {
     /**
      * Extra connection options to be passed to the underlying driver.
      *
-     * todo: deprecate this and move all database-specific types into hts own connection options object.
+     * todo: deprecate this and move all database-specific types into its own connection options object.
      */
     readonly extra?: any
 
