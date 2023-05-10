@@ -1,14 +1,19 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "../../../../src";
-import { Todo } from "./todo";
+import {
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { Todo } from "./todo"
 
-@Entity({ name: 'person' })
+@Entity({ name: "person" })
 export class Person {
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
+    @PrimaryGeneratedColumn("uuid")
+    id: string
 
-  @Column("varchar")
-  name: string;
+    @Column("varchar")
+    name: string
 
-  @OneToMany(() => Todo, (o) => o.owner)
-  todos: Todo[];
+    @OneToMany(() => Todo, (o) => o.owner)
+    todos: Todo[]
 }
