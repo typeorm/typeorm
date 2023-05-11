@@ -132,11 +132,6 @@ export class DriverUtils {
 
         let newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
 
-        const hasNestedRelations = newAlias.includes(".")
-        if (hasNestedRelations) {
-            newAlias = newAlias.replace(/\./g, joiner)
-        }
-
         if (
             maxAliasLength &&
             maxAliasLength > 0 &&
