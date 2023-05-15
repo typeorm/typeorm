@@ -55,7 +55,7 @@ Different RDBMS-es have their own specific options.
     You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
     Learn more about [Logging](logging.md).
 
--   `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "simple-console" and "file".
+-   `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "formatted-console", "simple-console" and "file".
     Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
     Learn more about [Logging](logging.md).
 

@@ -76,6 +76,7 @@ export interface BaseDataSourceOptions {
      */
     readonly logger?:
         | "advanced-console"
+        | "formatted-console"
         | "simple-console"
         | "file"
         | "debug"

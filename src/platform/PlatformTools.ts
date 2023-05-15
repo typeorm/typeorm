@@ -3,7 +3,7 @@ import * as fs from "fs"
 import dotenv from "dotenv"
 import chalk from "chalk"
 import { highlight, Theme } from "cli-highlight"
-import { format as sqlFormat } from 'sql-formatter';
+import { format as sqlFormat } from "sql-formatter"
 
 export { ReadStream } from "fs"
 export { EventEmitter } from "events"
@@ -220,7 +220,7 @@ export class PlatformTools {
     }
 
     /**
-     * Pretty-print sql string to be print in the console. 
+     * Pretty-print sql string to be print in the console.
      */
     static formatSql(sql: string) {
         return sqlFormat(sql)

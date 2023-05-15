@@ -14,7 +14,7 @@ export abstract class AbstractLogger implements Logger {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected options?: LoggerOptions) { }
+    constructor(protected options?: LoggerOptions) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -315,7 +315,7 @@ export abstract class AbstractLogger implements Logger {
             if (message.format === "sql") {
                 let sql = String(message.message)
 
-                console.log('')
+                console.log("")
                 if (options.formatSql) {
                     sql = PlatformTools.formatSql(sql)
                 }
