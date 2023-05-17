@@ -711,6 +711,55 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Change table comment.
+     */
+    async changeTableComment(
+        oldTableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        if (comment === undefined) {
+            return
+        }
+
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const oldTable = InstanceChecker.isTable(oldTableOrName)
+            ? oldTableOrName
+            : await this.getCachedTable(oldTableOrName)
+
+        const oldComment = oldTable.comment
+        if (!comment && !oldComment) {
+            return
+        }
+
+        const newTable = oldTable.clone()
+
+        if (comment !== oldComment) {
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        newTable,
+                    )} COMMENT ${this.escapeComment(comment)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        oldTable,
+                    )} COMMENT ${this.escapeComment(oldComment)}`,
+                ),
+            )
+        }
+
+        await this.executeQueries(upQueries, downQueries)
+
+        // rename old table and replace it in cached tabled;
+        oldTable.comment = newTable.comment
+        this.replaceCachedTable(oldTable, newTable)
+    }
+
+    /**
      * Creates a new column from the column in the table.
      */
     async addColumn(

@@ -272,6 +272,14 @@ export interface QueryRunner {
     ): Promise<void>
 
     /**
+     * Change table comment. Only supports MySQL and MariaDB
+     */
+    changeTableComment(
+        oldTableOrName: Table | string,
+        comment?: string,
+    ): Promise<void>
+
+    /**
      * Adds a new column.
      */
     addColumn(table: Table | string, column: TableColumn): Promise<void>
