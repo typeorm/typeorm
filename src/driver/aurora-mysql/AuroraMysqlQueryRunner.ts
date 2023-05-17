@@ -2819,4 +2819,16 @@ export class AuroraMysqlQueryRunner
 
         return false
     }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        oldTableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `aurora-mysql driver does not support change table comment.`,
+        )
+    }
 }

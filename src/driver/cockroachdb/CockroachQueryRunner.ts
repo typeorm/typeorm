@@ -4145,4 +4145,15 @@ export class CockroachQueryRunner
 
         return c
     }
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        oldTableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `cockroachdb driver does not support change table comment.`,
+        )
+    }
 }
