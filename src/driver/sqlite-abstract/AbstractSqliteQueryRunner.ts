@@ -2249,4 +2249,14 @@ export abstract class AbstractSqliteQueryRunner
             .map((i) => (disableEscape ? i : `"${i}"`))
             .join(".")
     }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        oldTableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(`sqlit driver does not support change comment.`)
+    }
 }

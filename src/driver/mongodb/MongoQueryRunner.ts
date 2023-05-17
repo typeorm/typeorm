@@ -1263,4 +1263,16 @@ export class MongoQueryRunner implements QueryRunner {
             .db(this.connection.driver.database!)
             .collection(collectionName)
     }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        oldTableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `mongodb driver does not support change table comment.`,
+        )
+    }
 }
