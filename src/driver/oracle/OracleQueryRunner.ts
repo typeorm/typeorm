@@ -3102,4 +3102,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         return `"${tableName}"`
     }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        oldTableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `oracle driver does not support change table comment.`,
+        )
+    }
 }
