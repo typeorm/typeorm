@@ -717,10 +717,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         newComment?: string,
     ): Promise<void> {
-        if (newComment === undefined) {
-            return
-        }
-
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
@@ -729,28 +725,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         const comment = table.comment
-        if (!newComment && !comment) {
+        if (newComment === comment) {
             return
         }
 
         const newTable = table.clone()
 
-        if (newComment !== comment) {
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        newTable,
-                    )} COMMENT ${this.escapeComment(newComment)}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} COMMENT ${this.escapeComment(comment)}`,
-                ),
-            )
-        }
+        upQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    newTable,
+                )} COMMENT ${this.escapeComment(newComment)}`,
+            ),
+        )
+        downQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} COMMENT ${this.escapeComment(comment)}`,
+            ),
+        )
 
         await this.executeQueries(upQueries, downQueries)
 
