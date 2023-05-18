@@ -4668,7 +4668,7 @@ export class PostgresQueryRunner
      * Change table comment.
      */
     changeTableComment(
-        oldTableOrName: Table | string,
+        tableOrName: Table | string,
         comment?: string,
     ): Promise<void> {
         throw new TypeORMError(
