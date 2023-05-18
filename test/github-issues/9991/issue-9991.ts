@@ -24,16 +24,15 @@ describe("github issues > #9991", () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const sql =
-                    'SELECT table_comment FROM information_schema.tables WHERE table_name = "example"'
-                const rst = await dataSource.manager.query(sql)
-                expect(rst[0] && rst[0].TABLE_COMMENT).to.be.eq(
-                    "this is table comment",
-                )
+                    'SELECT `TABLE_COMMENT` FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_NAME = "example"'
+
+                const result = await dataSource.manager.query(sql)
+                expect(result).to.be.eql([{ TABLE_COMMENT: "table comment" }])
             }),
         )
     })
 
-    it("should correctly change table comment", async () => {
+    it("should correctly change table comment and change", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
@@ -41,16 +40,21 @@ describe("github issues > #9991", () => {
 
                 await queryRunner.changeTableComment(
                     table!,
-                    "this is new table comment",
+                    "new table comment",
                 )
-
                 const sql =
-                    'SELECT table_comment FROM information_schema.tables WHERE table_name = "example"'
-                let rst = await dataSource.manager.query(sql)
+                    'SELECT `TABLE_COMMENT` FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_NAME = "example"'
 
-                expect(rst[0] && rst[0].TABLE_COMMENT).to.be.eq(
-                    "this is new table comment",
-                )
+                let result = await dataSource.manager.query(sql)
+                expect(result).to.be.eql([
+                    { TABLE_COMMENT: "new table comment" },
+                ])
+
+                // revert changes
+                await queryRunner.executeMemoryDownSql()
+
+                result = await dataSource.manager.query(sql)
+                expect(result).to.be.eql([{ TABLE_COMMENT: "table comment" }])
 
                 await queryRunner.release()
             }),
@@ -68,12 +72,12 @@ describe("github issues > #9991", () => {
                 await dataSource.synchronize()
 
                 const sql =
-                    'SELECT table_comment FROM information_schema.tables WHERE table_name = "example"'
-                let rst = await dataSource.manager.query(sql)
+                    'SELECT `TABLE_COMMENT` FROM `INFORMATION_SCHEMA`.`TABLES` WHERE TABLE_NAME = "example"'
 
-                expect(rst[0] && rst[0].TABLE_COMMENT).to.be.eq(
-                    "change table comment",
-                )
+                const result = await dataSource.manager.query(sql)
+                expect(result).to.be.eql([
+                    { TABLE_COMMENT: "change table comment" },
+                ])
 
                 await queryRunner.release()
             }),
