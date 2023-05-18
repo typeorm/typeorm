@@ -714,49 +714,49 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Change table comment.
      */
     async changeTableComment(
-        oldTableOrName: Table | string,
-        comment?: string,
+        tableOrName: Table | string,
+        newComment?: string,
     ): Promise<void> {
-        if (comment === undefined) {
+        if (newComment === undefined) {
             return
         }
 
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
-        const oldTable = InstanceChecker.isTable(oldTableOrName)
-            ? oldTableOrName
-            : await this.getCachedTable(oldTableOrName)
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
 
-        const oldComment = oldTable.comment
-        if (!comment && !oldComment) {
+        const comment = table.comment
+        if (!newComment && !comment) {
             return
         }
 
-        const newTable = oldTable.clone()
+        const newTable = table.clone()
 
-        if (comment !== oldComment) {
+        if (newComment !== comment) {
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
                         newTable,
-                    )} COMMENT ${this.escapeComment(comment)}`,
+                    )} COMMENT ${this.escapeComment(newComment)}`,
                 ),
             )
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
-                        oldTable,
-                    )} COMMENT ${this.escapeComment(oldComment)}`,
+                        table,
+                    )} COMMENT ${this.escapeComment(comment)}`,
                 ),
             )
         }
 
         await this.executeQueries(upQueries, downQueries)
 
-        // rename old table and replace it in cached tabled;
-        oldTable.comment = newTable.comment
-        this.replaceCachedTable(oldTable, newTable)
+        // change table comment and replace it in cached tabled;
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
     }
 
     /**

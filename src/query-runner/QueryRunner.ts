@@ -275,7 +275,7 @@ export interface QueryRunner {
      * Change table comment. Only supports MySQL and MariaDB
      */
     changeTableComment(
-        oldTableOrName: Table | string,
+        tableOrName: Table | string,
         comment?: string,
     ): Promise<void>
 

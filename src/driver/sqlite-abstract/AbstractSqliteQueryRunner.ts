@@ -2254,7 +2254,7 @@ export abstract class AbstractSqliteQueryRunner
      * Change table comment.
      */
     changeTableComment(
-        oldTableOrName: Table | string,
+        tableOrName: Table | string,
         comment?: string,
     ): Promise<void> {
         throw new TypeORMError(`sqlit driver does not support change comment.`)
