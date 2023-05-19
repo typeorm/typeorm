@@ -8,7 +8,7 @@
 * [`@JoinTable` options](#jointable-options)
 
 ## What are relations
-
+##please 
 Relations helps you to work with related entities easily.
 There are several types of relations:
 
