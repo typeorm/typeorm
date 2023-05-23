@@ -20,6 +20,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { CteCapabilities } from "../types/CteCapabilities"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with Spanner DBMS.
@@ -99,7 +100,7 @@ export class SpannerDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = undefined
+    supportedUpsertTypes: UpsertType[] = []
 
     /**
      * Gets list of spatial column data types.
@@ -439,6 +440,9 @@ export class SpannerDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)

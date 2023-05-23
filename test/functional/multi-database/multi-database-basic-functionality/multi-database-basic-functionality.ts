@@ -91,9 +91,7 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            return new Promise((resolve) =>
-                rimraf(`${tempPath}/**/*.attach.db`, {}, () => resolve()),
-            )
+            await rimraf(`${tempPath}/**/*.attach.db`)
         })
 
         it("should correctly attach and create database files", () =>

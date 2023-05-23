@@ -9,7 +9,7 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     primary?: boolean
 
     /**
-     * Indicates if this column is of type ObjectID
+     * Indicates if this column is of type ObjectId
      */
     objectId?: boolean
 
@@ -203,4 +203,9 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer | ValueTransformer[]
+
+    /**
+     * Name of the primary key constraint.
+     */
+    primaryKeyConstraintName?: string
 }

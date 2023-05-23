@@ -67,7 +67,9 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
      */
     async commitTransaction(): Promise<void> {
         await super.commitTransaction()
-        await this.flush()
+        if (!this.isTransactionActive) {
+            await this.flush()
+        }
     }
 
     /**

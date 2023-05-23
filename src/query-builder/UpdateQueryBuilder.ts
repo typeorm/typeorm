@@ -53,7 +53,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         sql += this.createUpdateExpression()
         sql += this.createOrderByExpression()
         sql += this.createLimitExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**
@@ -518,6 +518,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
+                            !(value instanceof Date) &&
                             value !== null &&
                             !Buffer.isBuffer(value)
                         ) {
@@ -584,8 +585,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     expression = `${geomFromText}(${paramName})`
                                 }
                             } else if (
-                                this.connection.driver.options.type ===
-                                    "postgres" &&
+                                DriverUtils.isPostgresFamily(
+                                    this.connection.driver,
+                                ) &&
                                 this.connection.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1

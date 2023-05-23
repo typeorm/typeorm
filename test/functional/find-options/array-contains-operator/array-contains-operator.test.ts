@@ -14,8 +14,8 @@ describe("find options > find operators > ArrayContains", () => {
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
-                enabledDrivers: ["postgres"],
-                logging: true,
+                enabledDrivers: ["postgres", "cockroachdb"],
+                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

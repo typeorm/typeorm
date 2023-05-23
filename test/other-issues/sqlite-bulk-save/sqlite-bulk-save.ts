@@ -27,7 +27,7 @@ describe("other issues > bulk save in sqlite", () => {
                 for (let i = 1; i <= 10000; i++) {
                     posts.push(new Post(i, "Post #" + i))
                 }
-                console.log(`saving...`)
+                // console.log(`saving...`)
                 await connection.manager.save(posts)
             }),
         ))

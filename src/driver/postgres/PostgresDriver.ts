@@ -27,6 +27,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -70,6 +71,11 @@ export class PostgresDriver implements Driver {
      * Connection options.
      */
     options: PostgresConnectionOptions
+
+    /**
+     * Version of Postgres. Requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
 
     /**
      * Database name used to perform all write queries.
@@ -183,7 +189,7 @@ export class PostgresDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-conflict-do-update"
+    supportedUpsertTypes: UpsertType[] = ["on-conflict-do-update"]
 
     /**
      * Gets list of spatial column data types.
@@ -375,13 +381,17 @@ export class PostgresDriver implements Driver {
 
         const results = (await this.executeQuery(
             connection,
-            "SHOW server_version;",
+            "SELECT version();",
         )) as {
             rows: {
-                server_version: string
+                version: string
             }[]
         }
-        const versionString = results.rows[0].server_version
+        const versionString = results.rows[0].version.replace(
+            /^PostgreSQL ([\d\.]+) .*$/,
+            "$1",
+        )
+        this.version = versionString
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
             versionString,
             "12.0",
@@ -476,7 +486,7 @@ export class PostgresDriver implements Driver {
             } catch (_) {
                 logger.log(
                     "warn",
-                    "At least one of the entities has a cube column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
+                    "At least one of the entities has a ltree column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
         if (hasExclusionConstraints)
@@ -792,6 +802,9 @@ export class PostgresDriver implements Driver {
                         ? parseInt(value)
                         : value
             }
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -1437,6 +1450,7 @@ export class PostgresDriver implements Driver {
         options: PostgresConnectionOptions,
         credentials: PostgresConnectionCredentialsOptions,
     ): Promise<any> {
+        const { logger } = this.connection
         credentials = Object.assign({}, credentials)
 
         // build connection options for the driver
@@ -1453,13 +1467,30 @@ export class PostgresDriver implements Driver {
                 ssl: credentials.ssl,
                 connectionTimeoutMillis: options.connectTimeoutMS,
                 application_name: options.applicationName,
+                max: options.poolSize,
             },
             options.extra || {},
         )
 
+        if (options.parseInt8 !== undefined) {
+            if (
+                this.postgres.defaults &&
+                Object.getOwnPropertyDescriptor(
+                    this.postgres.defaults,
+                    "parseInt8",
+                )?.set
+            ) {
+                this.postgres.defaults.parseInt8 = options.parseInt8
+            } else {
+                logger.log(
+                    "warn",
+                    "Attempted to set parseInt8 option, but the postgres driver does not support setting defaults.parseInt8. This option will be ignored.",
+                )
+            }
+        }
+
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
-        const { logger } = this.connection
 
         const poolErrorHandler =
             options.poolErrorHandler ||

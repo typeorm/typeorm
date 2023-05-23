@@ -83,13 +83,6 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection
 
-        parameters = parameters || []
-        for (let i = 0; i < parameters.length; i++) {
-            // in "where" clauses the parameters are not escaped by the driver
-            if (typeof parameters[i] === "boolean")
-                parameters[i] = +parameters[i]
-        }
-
         this.driver.connection.logger.logQuery(query, parameters, this)
         const queryStartTime = +new Date()
 

@@ -37,7 +37,7 @@ describe("github issues > #1720 Listener not invoked when relation loaded throug
                 await connection.manager.save(post1)
 
                 const [loadedPost] = await connection.manager.find(Post, {
-                    relations: ["categories"],
+                    relations: { categories: true },
                 })
                 loadedPost!.categories[0].loaded.should.be.equal(true)
                 loadedPost!.categories[1].loaded.should.be.equal(true)

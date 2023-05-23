@@ -3,7 +3,6 @@ import { NativescriptConnectionOptions } from "./NativescriptConnectionOptions"
 import { NativescriptQueryRunner } from "./NativescriptQueryRunner"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { ColumnType } from "../types/ColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
@@ -39,11 +38,6 @@ export class NativescriptDriver extends AbstractSqliteDriver {
         this.options = connection.options as NativescriptConnectionOptions
         this.database = this.options.database
         this.driver = this.options.driver
-
-        // validate options to make sure everything is set
-        if (!this.options.database) {
-            throw new DriverOptionNotSetError("database")
-        }
 
         // load sqlite package
         this.loadDependencies()

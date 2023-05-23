@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { Post } from "./entity/Post"
+import { Post, PostWithDeleted } from "./entity/Post"
 import { MongoRepository } from "../../../../../src/repository/MongoRepository"
 
 describe("mongodb > MongoRepository", () => {
@@ -14,7 +14,7 @@ describe("mongodb > MongoRepository", () => {
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [Post],
+                entities: [Post, PostWithDeleted],
                 enabledDrivers: ["mongodb"],
             })),
     )
@@ -104,7 +104,7 @@ describe("mongodb > MongoRepository", () => {
             }),
         ))
 
-    it("should be able to use findByIds with both objectId and strings", () =>
+    it("should be able to use findByIds with both ObjectId and strings", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
@@ -186,4 +186,100 @@ describe("mongodb > MongoRepository", () => {
                 expect(loadedPosts[0]).to.not.have.property("unreal")
             }),
         ))
+
+    // Github issue #9250
+    describe("with DeletedDataColumn", () => {
+        it("with $or query", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository =
+                        connection.getMongoRepository(PostWithDeleted)
+                    await seedPosts(postRepository)
+                    const loadedPosts = await postRepository.find({
+                        where: {
+                            $or: [{ deletedAt: { $ne: null } }],
+                        },
+                    })
+                    expect(loadedPosts).to.have.length(3)
+                }),
+            ))
+
+        it("filter delete data", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository =
+                        connection.getMongoRepository(PostWithDeleted)
+                    await seedPosts(postRepository)
+
+                    const loadedPosts = await postRepository.find()
+                    const filteredPost = loadedPosts.find(
+                        (post) => post.title === "deleted",
+                    )
+
+                    expect(filteredPost).to.be.undefined
+                    expect(loadedPosts).to.have.length(2)
+                }),
+            ))
+
+        describe("findOne filtered data properly", () => {
+            it("findOne()", () =>
+                Promise.all(
+                    connections.map(async (connection) => {
+                        const postRepository =
+                            connection.getMongoRepository(PostWithDeleted)
+                        await seedPosts(postRepository)
+
+                        const loadedPost = await postRepository.findOne({
+                            where: { title: "notDeleted" },
+                        })
+                        const loadedPostWithDeleted =
+                            await postRepository.findOne({
+                                where: { title: "deleted" },
+                                withDeleted: true,
+                            })
+
+                        expect(loadedPost?.title).to.eql("notDeleted")
+                        expect(loadedPostWithDeleted?.title).to.eql("deleted")
+                    }),
+                ))
+
+            it("findOneBy()", () =>
+                Promise.all(
+                    connections.map(async (connection) => {
+                        const postRepository =
+                            connection.getMongoRepository(PostWithDeleted)
+                        await seedPosts(postRepository)
+
+                        const loadedPost = await postRepository.findOneBy({
+                            where: { title: "notDeleted" },
+                        })
+                        const loadedPostWithDeleted =
+                            await postRepository.findOne({
+                                where: { title: "deleted" },
+                                withDeleted: true,
+                            })
+
+                        expect(loadedPost?.title).to.eql("notDeleted")
+                        expect(loadedPostWithDeleted?.title).to.eql("deleted")
+                    }),
+                ))
+        })
+    })
 })
+
+async function seedPosts(postRepository: MongoRepository<PostWithDeleted>) {
+    await postRepository.save({
+        title: "withoutDeleted",
+        text: "withoutDeleted",
+    })
+    await postRepository.save({
+        title: "notDeleted",
+        text: "notDeleted",
+        deletedAt: null,
+    })
+    await postRepository.save({
+        title: "deleted",
+        text: "deleted",
+        deletedAt: new Date(),
+    })
+}

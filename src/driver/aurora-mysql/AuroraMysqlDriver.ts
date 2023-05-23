@@ -23,6 +23,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -152,7 +153,7 @@ export class AuroraMysqlDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-duplicate-key-update"
+    supportedUpsertTypes: UpsertType[] = ["on-duplicate-key-update"]
 
     /**
      * Gets list of spatial column data types.
@@ -633,6 +634,9 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             // convert to number if that exists in possible enum options
             value = parseInt(value)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)

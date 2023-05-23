@@ -46,7 +46,7 @@ git clone git@github.com:<github username>/typeorm.git
 # Go to the TypeORM directory:
 cd typeorm
 
-# Add the main TyepORM repository as an upstream remote to your repository:
+# Add the main TypeORM repository as an upstream remote to your repository:
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
 ## Installing NPM Modules
@@ -57,8 +57,8 @@ Install all TypeORM dependencies by running this command:
 npm install
 ```
 
-During installation you may have some problems with some dependencies.
-For example to proper install oracle driver you need to follow all instructions from
+During installation, you may have some problems with some dependencies.
+For example to properly install oracle driver you need to follow all instructions from
  [node-oracle documentation](https://github.com/oracle/node-oracledb).
 
 ## ORM config

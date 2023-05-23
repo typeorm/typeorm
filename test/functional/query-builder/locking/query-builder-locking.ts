@@ -820,20 +820,6 @@ describe("query builder > locking", () => {
                         ])
                     })
 
-                if (connection.driver.options.type === "cockroachdb")
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_read")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne()
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-                        ])
-                    })
-
                 return
             }),
         ))
@@ -868,7 +854,7 @@ describe("query builder > locking", () => {
     it("should throw error if for key share locking not supported by given driver", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) {
+                if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return connection.manager.transaction((entityManager) => {
                         return Promise.all([
                             entityManager
@@ -1082,6 +1068,155 @@ describe("query builder > locking", () => {
                             .getOne(),
                     ])
                 })
+            }),
+        ))
+
+    it("pessimistic_partial_write and skip_locked works", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type === "postgres" ||
+                    DriverUtils.isMySQLFamily(connection.driver)
+                ) {
+                    const sql = connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("pessimistic_partial_write")
+                        .setOnLocked("skip_locked")
+                        .where("post.id = :id", { id: 1 })
+                        .getSql()
+
+                    expect(sql.endsWith("FOR UPDATE SKIP LOCKED")).to.be.true
+                }
+            }),
+        ))
+
+    it("pessimistic_write_or_fail and skip_locked ignores skip_locked", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type === "postgres" ||
+                    DriverUtils.isMySQLFamily(connection.driver)
+                ) {
+                    const sql = connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("pessimistic_write_or_fail")
+                        .setOnLocked("skip_locked")
+                        .where("post.id = :id", { id: 1 })
+                        .getSql()
+
+                    expect(sql.endsWith("FOR UPDATE NOWAIT")).to.be.true
+                }
+            }),
+        ))
+
+    it('skip_locked with "pessimistic_read"', () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type === "postgres" ||
+                    (connection.driver.options.type === "mysql" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0.0",
+                        ))
+                ) {
+                    const sql = connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("pessimistic_read")
+                        .setOnLocked("skip_locked")
+                        .where("post.id = :id", { id: 1 })
+                        .getSql()
+
+                    expect(sql.endsWith("FOR SHARE SKIP LOCKED")).to.be.true
+                }
+            }),
+        ))
+
+    it('nowait with "pessimistic_read"', () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type === "postgres" ||
+                    (connection.driver.options.type === "mysql" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0.0",
+                        ))
+                ) {
+                    const sql = connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("pessimistic_read")
+                        .setOnLocked("nowait")
+                        .where("post.id = :id", { id: 1 })
+                        .getSql()
+
+                    expect(sql.endsWith("FOR SHARE NOWAIT")).to.be.true
+                }
+            }),
+        ))
+
+    it('skip_locked with "pessimistic_read" check getOne', () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type === "postgres" ||
+                    (connection.driver.options.type === "mysql" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0.0",
+                        ))
+                ) {
+                    return connection.manager.transaction((entityManager) => {
+                        return Promise.resolve(
+                            entityManager
+                                .createQueryBuilder(PostWithVersion, "post")
+                                .setLock("pessimistic_read")
+                                .setOnLocked("skip_locked")
+                                .where("post.id = :id", { id: 1 })
+                                .getOne().should.not.be.rejected,
+                        )
+                    })
+                }
+            }),
+        ))
+
+    it('skip_locked with "for_key_share" check getOne', () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type === "postgres") {
+                    return connection.manager.transaction((entityManager) => {
+                        return Promise.resolve(
+                            entityManager
+                                .createQueryBuilder(PostWithVersion, "post")
+                                .setLock("for_key_share")
+                                .setOnLocked("skip_locked")
+                                .where("post.id = :id", { id: 1 })
+                                .getOne().should.not.be.rejected,
+                        )
+                    })
+                }
+            }),
+        ))
+
+    it('skip_locked with "pessimistic_read" fails on early versions of MySQL', () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type === "mysql" &&
+                    !DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "8.0.0",
+                    )
+                ) {
+                    const sql = connection
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("pessimistic_read")
+                        .setOnLocked("nowait")
+                        .where("post.id = :id", { id: 1 })
+                        .getSql()
+
+                    expect(sql.endsWith("LOCK IN SHARE MODE")).to.be.true
+                }
             }),
         ))
 })

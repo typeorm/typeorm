@@ -626,13 +626,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(this.insertViewDefinitionSql(view))
+        if (syncWithMetadata) upQueries.push(this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -2141,12 +2145,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(index)
@@ -2184,6 +2183,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(index)
         const down = this.createIndexSql(table, index)
@@ -2273,17 +2274,25 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const currentDatabase = await this.getCurrentDatabase()
         const currentSchema = await this.getCurrentSchema()
 
-        const viewNamesString = viewNames
-            .map((name) => "'" + name + "'")
-            .join(", ")
+        const viewsCondition = viewNames
+            .map((viewName) => this.driver.parseTableName(viewName))
+            .map(({ schema, tableName }) => {
+                if (!schema) {
+                    schema = this.driver.options.schema || currentSchema
+                }
+
+                return `("T"."schema" = '${schema}' AND "T"."name" = '${tableName}')`
+            })
+            .join(" OR ")
+
         let query =
             `SELECT "T".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
             )} "T" ` +
             `INNER JOIN "USER_OBJECTS" "O" ON "O"."OBJECT_NAME" = "T"."name" AND "O"."OBJECT_TYPE" IN ( 'MATERIALIZED VIEW', 'VIEW' ) ` +
-            `WHERE "T"."type" IN ( '${MetadataTableType.MATERIALIZED_VIEW}', '${MetadataTableType.VIEW}' )`
-        if (viewNamesString.length > 0)
-            query += ` AND "T"."name" IN (${viewNamesString})`
+            `WHERE "T"."type" IN ('${MetadataTableType.MATERIALIZED_VIEW}', '${MetadataTableType.VIEW}')`
+        if (viewsCondition.length > 0) query += ` AND ${viewsCondition}`
+
         const dbViews = await this.query(query)
         return dbViews.map((dbView: any) => {
             const parsedName = this.driver.parseTableName(dbView["name"])
@@ -2808,10 +2817,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(
                         this.getTablePath(fk),
                     )} (${referencedColumnNames})`
-                    if (fk.onDelete && fk.onDelete !== "NO ACTION")
+                    if (fk.onDelete && fk.onDelete !== "NO ACTION") {
                         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
                         constraint += ` ON DELETE ${fk.onDelete}`
-
+                    }
                     return constraint
                 })
                 .join(", ")
@@ -2879,9 +2888,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
             : MetadataTableType.VIEW
+        const { schema, tableName } = this.driver.parseTableName(view)
         return this.insertTypeormMetadataSql({
             type: type,
-            name: view.name,
+            name: tableName,
+            schema: schema,
             value: expression,
         })
     }
@@ -3059,9 +3070,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.getTablePath(foreignKey),
             )} (${referencedColumnNames})`
         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
-        if (foreignKey.onDelete && foreignKey.onDelete !== "NO ACTION")
+        if (foreignKey.onDelete && foreignKey.onDelete !== "NO ACTION") {
             sql += ` ON DELETE ${foreignKey.onDelete}`
-
+        }
         return new Query(sql)
     }
 

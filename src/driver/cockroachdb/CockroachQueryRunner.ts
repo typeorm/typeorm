@@ -26,6 +26,7 @@ import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { VersionUtils } from "../../util/VersionUtils"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -66,6 +67,11 @@ export class CockroachQueryRunner
      * Indicates if running queries must be stored
      */
     protected storeQueries: boolean = false
+
+    /**
+     * Current number of transaction retries in case of 40001 error.
+     */
+    protected transactionRetries: number = 0
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -123,6 +129,10 @@ export class CockroachQueryRunner
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
+        if (this.isReleased) {
+            return Promise.resolve()
+        }
+
         this.isReleased = true
         if (this.releaseCallback) this.releaseCallback()
 
@@ -137,6 +147,7 @@ export class CockroachQueryRunner
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         this.isTransactionActive = true
+        this.transactionRetries = 0
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
@@ -178,21 +189,12 @@ export class CockroachQueryRunner
             this.transactionDepth -= 1
         } else {
             this.storeQueries = false
-            try {
-                await this.query("RELEASE SAVEPOINT cockroach_restart")
-                await this.query("COMMIT")
-                this.queries = []
-                this.isTransactionActive = false
-                this.transactionDepth -= 1
-            } catch (e) {
-                if (e.code === "40001") {
-                    await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
-                    for (const q of this.queries) {
-                        await this.query(q.query, q.parameters)
-                    }
-                    await this.commitTransaction()
-                }
-            }
+            await this.query("RELEASE SAVEPOINT cockroach_restart")
+            await this.query("COMMIT")
+            this.queries = []
+            this.isTransactionActive = false
+            this.transactionRetries = 0
+            this.transactionDepth -= 1
         }
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -216,6 +218,7 @@ export class CockroachQueryRunner
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
+            this.transactionRetries = 0
         }
         this.transactionDepth -= 1
 
@@ -310,13 +313,43 @@ export class CockroachQueryRunner
                 return result.raw
             }
         } catch (err) {
-            if (err.code !== "40001") {
+            if (
+                err.code === "40001" &&
+                this.isTransactionActive &&
+                this.transactionRetries <
+                    (this.driver.options.maxTransactionRetries || 5)
+            ) {
+                this.transactionRetries += 1
+                this.storeQueries = false
+                await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
+                const sleepTime =
+                    2 ** this.transactionRetries *
+                    0.1 *
+                    (Math.random() + 0.5) *
+                    1000
+                await new Promise((resolve) => setTimeout(resolve, sleepTime))
+
+                let result = undefined
+                for (const q of this.queries) {
+                    this.driver.connection.logger.logQuery(
+                        `Retrying transaction for query "${q.query}"`,
+                        q.parameters,
+                        this,
+                    )
+                    result = await this.query(q.query, q.parameters)
+                }
+                this.transactionRetries = 0
+                this.storeQueries = true
+
+                return result
+            } else {
                 this.driver.connection.logger.logQueryError(
                     err,
                     query,
                     parameters,
                     this,
                 )
+
             }
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
@@ -332,6 +365,10 @@ export class CockroachQueryRunner
         } finally {
             if (broadcasterResult.promises.length > 0)
                 await Promise.all(broadcasterResult.promises)
+
+
+                throw new QueryFailedError(query, parameters, err)
+            }
         }
     }
 
@@ -528,6 +565,24 @@ export class CockroachQueryRunner
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
+        // if table have column with ENUM type, we must create this type in postgres.
+        const enumColumns = table.columns.filter(
+            (column) => column.type === "enum" || column.type === "simple-enum",
+        )
+        const createdEnumTypes: string[] = []
+        for (const column of enumColumns) {
+            // TODO: Should also check if values of existing type matches expected ones
+            const hasEnum = await this.hasEnumType(table, column)
+            const enumName = this.buildEnumName(table, column)
+
+            // if enum with the same "enumName" is defined more then once, me must prevent double creation
+            if (!hasEnum && createdEnumTypes.indexOf(enumName) === -1) {
+                createdEnumTypes.push(enumName)
+                upQueries.push(this.createEnumTypeSql(table, column, enumName))
+                downQueries.push(this.dropEnumTypeSql(table, column, enumName))
+            }
+        }
+
         table.columns
             .filter(
                 (column) =>
@@ -710,13 +765,18 @@ export class CockroachQueryRunner
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -927,6 +987,39 @@ export class CockroachQueryRunner
             foreignKey.name = newForeignKeyName
         })
 
+        // rename ENUM types
+        const enumColumns = newTable.columns.filter(
+            (column) => column.type === "enum" || column.type === "simple-enum",
+        )
+        for (let column of enumColumns) {
+            // skip renaming for user-defined enum name
+            if (column.enumName) continue
+
+            const oldEnumType = await this.getUserDefinedTypeName(
+                oldTable,
+                column,
+            )
+            upQueries.push(
+                new Query(
+                    `ALTER TYPE "${oldEnumType.schema}"."${
+                        oldEnumType.name
+                    }" RENAME TO ${this.buildEnumName(
+                        newTable,
+                        column,
+                        false,
+                    )}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TYPE ${this.buildEnumName(
+                        newTable,
+                        column,
+                    )} RENAME TO "${oldEnumType.name}"`,
+                ),
+            )
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -948,6 +1041,14 @@ export class CockroachQueryRunner
             throw new TypeORMError(
                 `Adding sequential generated columns into existing table is not supported`,
             )
+        }
+
+        if (column.type === "enum" || column.type === "simple-enum") {
+            const hasEnum = await this.hasEnumType(table, column)
+            if (!hasEnum) {
+                upQueries.push(this.createEnumTypeSql(table, column))
+                downQueries.push(this.dropEnumTypeSql(table, column))
+            }
         }
 
         upQueries.push(
@@ -1170,6 +1271,7 @@ export class CockroachQueryRunner
         let clonedTable = table.clone()
         const upQueries: Query[] = []
         const downQueries: Query[] = []
+        let defaultValueChanged = false
 
         const oldColumn = InstanceChecker.isTableColumn(oldTableColumnOrName)
             ? oldTableColumnOrName
@@ -1184,6 +1286,7 @@ export class CockroachQueryRunner
         if (
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
+            newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1210,6 +1313,36 @@ export class CockroachQueryRunner
                         }" TO "${oldColumn.name}"`,
                     ),
                 )
+
+                // rename ENUM type
+                if (
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+                ) {
+                    const oldEnumType = await this.getUserDefinedTypeName(
+                        table,
+                        oldColumn,
+                    )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TYPE "${oldEnumType.schema}"."${
+                                oldEnumType.name
+                            }" RENAME TO ${this.buildEnumName(
+                                table,
+                                newColumn,
+                                false,
+                            )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${this.buildEnumName(
+                                table,
+                                newColumn,
+                            )} RENAME TO "${oldEnumType.name}"`,
+                        ),
+                    )
+                }
 
                 // rename column primary key constraint
                 if (
@@ -1631,6 +1764,158 @@ export class CockroachQueryRunner
             }
 
             if (
+                (newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum") &&
+                (oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum") &&
+                (!OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!) ||
+                    newColumn.enumName !== oldColumn.enumName)
+            ) {
+                const arraySuffix = newColumn.isArray ? "[]" : ""
+
+                // "public"."new_enum"
+                const newEnumName = this.buildEnumName(table, newColumn)
+
+                // "public"."old_enum"
+                const oldEnumName = this.buildEnumName(table, oldColumn)
+
+                // "old_enum"
+                const oldEnumNameWithoutSchema = this.buildEnumName(
+                    table,
+                    oldColumn,
+                    false,
+                )
+
+                //"public"."old_enum_old"
+                const oldEnumNameWithSchema_old = this.buildEnumName(
+                    table,
+                    oldColumn,
+                    true,
+                    false,
+                    true,
+                )
+
+                //"old_enum_old"
+                const oldEnumNameWithoutSchema_old = this.buildEnumName(
+                    table,
+                    oldColumn,
+                    false,
+                    false,
+                    true,
+                )
+
+                // rename old ENUM
+                upQueries.push(
+                    new Query(
+                        `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                    ),
+                )
+
+                // create new ENUM
+                upQueries.push(
+                    this.createEnumTypeSql(table, newColumn, newEnumName),
+                )
+                downQueries.push(
+                    this.dropEnumTypeSql(table, newColumn, newEnumName),
+                )
+
+                // if column have default value, we must drop it to avoid issues with type casting
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    // mark default as changed to prevent double update
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${
+                                oldColumn.default
+                            }`,
+                        ),
+                    )
+                }
+
+                // build column types
+                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
+                const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${upType}`,
+                    ),
+                )
+
+                // we add a delay here since for some reason cockroachdb fails with
+                // "cannot drop type because other objects still depend on it" error
+                // if we are trying to drop type right after we altered it.
+                upQueries.push(new Query(`SELECT pg_sleep(0.1)`))
+                downQueries.push(new Query(`SELECT pg_sleep(0.1)`))
+
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${downType}`,
+                    ),
+                )
+
+                // restore column default or create new one
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${
+                                newColumn.default
+                            }`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                }
+
+                // remove old ENUM
+                upQueries.push(
+                    this.dropEnumTypeSql(
+                        table,
+                        oldColumn,
+                        oldEnumNameWithSchema_old,
+                    ),
+                )
+                downQueries.push(
+                    this.createEnumTypeSql(
+                        table,
+                        oldColumn,
+                        oldEnumNameWithSchema_old,
+                    ),
+                )
+            }
+
+            if (
                 oldColumn.isGenerated !== newColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid"
             ) {
@@ -1679,7 +1964,10 @@ export class CockroachQueryRunner
                 }
             }
 
-            if (newColumn.default !== oldColumn.default) {
+            if (
+                newColumn.default !== oldColumn.default &&
+                !defaultValueChanged
+            ) {
                 if (
                     newColumn.default !== null &&
                     newColumn.default !== undefined
@@ -1740,6 +2028,27 @@ export class CockroachQueryRunner
                     )
                 }
             }
+        }
+
+        if (
+            (newColumn.spatialFeatureType || "").toLowerCase() !==
+                (oldColumn.spatialFeatureType || "").toLowerCase() ||
+            newColumn.srid !== oldColumn.srid
+        ) {
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1947,6 +2256,24 @@ export class CockroachQueryRunner
 
             upQueries.push(deleteQuery)
             downQueries.push(insertQuery)
+        }
+
+        // drop enum type
+        if (column.type === "enum" || column.type === "simple-enum") {
+            const hasEnum = await this.hasEnumType(table, column)
+            if (hasEnum) {
+                const enumType = await this.getUserDefinedTypeName(
+                    table,
+                    column,
+                )
+                const escapedEnumName = `"${enumType.schema}"."${enumType.name}"`
+                upQueries.push(
+                    this.dropEnumTypeSql(table, column, escapedEnumName),
+                )
+                downQueries.push(
+                    this.createEnumTypeSql(table, column, escapedEnumName),
+                )
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -2380,12 +2707,7 @@ export class CockroachQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         // CockroachDB stores unique indices and UNIQUE constraints
         if (index.isUnique) {
@@ -2437,6 +2759,9 @@ export class CockroachQueryRunner
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
 
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
+
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
         await this.executeQueries(up, down)
@@ -2486,6 +2811,7 @@ export class CockroachQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
+            const version = await this.getVersion()
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
@@ -2509,6 +2835,11 @@ export class CockroachQueryRunner
             await Promise.all(
                 sequenceDropQueries.map((q) => this.query(q["query"])),
             )
+
+            // drop enum types. Supported starting from v20.2.19.
+            if (VersionUtils.isGreaterOrEqual(version, "20.2.19")) {
+                await this.dropEnumTypes(schemaNamesString)
+            }
 
             if (!isAnotherTransactionActive) await this.commitTransaction()
         } catch (error) {
@@ -2588,7 +2919,6 @@ export class CockroachQueryRunner
 
         if (!tableNames) {
             const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables"`
-
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
@@ -2675,16 +3005,30 @@ export class CockroachQueryRunner
             `INNER JOIN "pg_class" "cl" ON "cl"."oid" = "con"."confrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "cl"."relnamespace" = "ns"."oid" ` +
             `INNER JOIN "pg_attribute" "att2" ON "att2"."attrelid" = "con"."conrelid" AND "att2"."attnum" = "con"."parent"`
+
+        const tableSchemas = dbTables
+            .map((dbTable) => `'${dbTable.table_schema}'`)
+            .join(", ")
+        const enumsSql =
+            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|') AS "value" ` +
+            `FROM "pg_enum" "e" ` +
+            `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+            `WHERE "n"."nspname" IN (${tableSchemas}) ` +
+            `GROUP BY "t"."typname"`
+
         const [
             dbColumns,
             dbConstraints,
             dbIndices,
             dbForeignKeys,
+            dbEnums,
         ]: ObjectLiteral[][] = await Promise.all([
             this.query(columnsSql),
             this.query(constraintsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
+            this.query(enumsSql),
         ])
 
         // create tables for loaded tables
@@ -2814,17 +3158,50 @@ export class CockroachQueryRunner
                                 }
                             }
 
+                            // docs: https://www.postgresql.org/docs/current/xtypes.html
+                            // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
+                            // The array type typically has the same name as the base type with the underscore character (_) prepended.
+                            // ----
+                            // so, we must remove this underscore character from enum type name
+                            let udtName = dbColumn["udt_name"]
+                            if (udtName.indexOf("_") === 0) {
+                                udtName = udtName.substr(1, udtName.length)
+                            }
+
+                            const enumType = dbEnums.find((dbEnum) => {
+                                return dbEnum["name"] === udtName
+                            })
+                            if (enumType) {
+                                // check if `enumName` is specified by user
+                                const builtEnumName = this.buildEnumName(
+                                    table,
+                                    tableColumn,
+                                    false,
+                                    true,
+                                )
+                                const enumName =
+                                    builtEnumName !== enumType["name"]
+                                        ? enumType["name"]
+                                        : undefined
+
+                                tableColumn.type = "enum"
+                                tableColumn.enum = enumType["value"].split("|")
+                                tableColumn.enumName = enumName
+                            }
+
                             if (
                                 dbColumn["data_type"].toLowerCase() === "array"
                             ) {
                                 tableColumn.isArray = true
-                                const type = dbColumn["crdb_sql_type"]
-                                    .replace("[]", "")
-                                    .toLowerCase()
-                                tableColumn.type =
-                                    this.connection.driver.normalizeType({
-                                        type: type,
-                                    })
+                                if (!enumType) {
+                                    const type = dbColumn["crdb_sql_type"]
+                                        .replace("[]", "")
+                                        .toLowerCase()
+                                    tableColumn.type =
+                                        this.connection.driver.normalizeType({
+                                            type: type,
+                                        })
+                                }
                             }
 
                             // check only columns that have length property
@@ -2949,6 +3326,14 @@ export class CockroachQueryRunner
                                             /^(-?[\d\.]+)$/,
                                             "($1)",
                                         )
+
+                                    if (enumType) {
+                                        tableColumn.default =
+                                            tableColumn.default.replace(
+                                                `.${enumType["name"]}`,
+                                                "",
+                                            )
+                                    }
                                 }
                             }
 
@@ -2987,6 +3372,32 @@ export class CockroachQueryRunner
                             if (dbColumn["character_set_name"])
                                 tableColumn.charset =
                                     dbColumn["character_set_name"]
+
+                            if (
+                                tableColumn.type === "geometry" ||
+                                tableColumn.type === "geography"
+                            ) {
+                                const sql =
+                                    `SELECT * FROM (` +
+                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `FROM "${tableColumn.type}_columns"` +
+                                    `) AS _ ` +
+                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                    `"table_name" = '${dbColumn["table_name"]}'`
+
+                                const results: ObjectLiteral[] =
+                                    await this.query(sql)
+
+                                if (results.length > 0) {
+                                    tableColumn.spatialFeatureType =
+                                        results[0].type
+                                    tableColumn.srid = results[0].srid
+                                        ? parseInt(results[0].srid)
+                                        : undefined
+                                }
+                            }
 
                             return tableColumn
                         }),
@@ -3299,6 +3710,17 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Loads Cockroachdb version.
+     */
+    protected async getVersion(): Promise<string> {
+        const result = await this.query(`SELECT version()`)
+        return result[0]["version"].replace(
+            /^CockroachDB CCL v([\d\.]+) .*$/,
+            "$1",
+        )
+    }
+
+    /**
      * Builds drop table sql.
      */
     protected dropTableSql(tableOrPath: Table | string): Query {
@@ -3367,6 +3789,68 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Drops ENUM type from given schemas.
+     */
+    protected async dropEnumTypes(schemaNames: string): Promise<void> {
+        const selectDropsQuery =
+            `SELECT 'DROP TYPE IF EXISTS "' || n.nspname || '"."' || t.typname || '";' as "query" FROM "pg_type" "t" ` +
+            `INNER JOIN "pg_enum" "e" ON "e"."enumtypid" = "t"."oid" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+            `WHERE "n"."nspname" IN (${schemaNames}) GROUP BY "n"."nspname", "t"."typname"`
+        const dropQueries: ObjectLiteral[] = await this.query(selectDropsQuery)
+        await Promise.all(dropQueries.map((q) => this.query(q["query"])))
+    }
+
+    /**
+     * Checks if enum with the given name exist in the database.
+     */
+    protected async hasEnumType(
+        table: Table,
+        column: TableColumn,
+    ): Promise<boolean> {
+        let { schema } = this.driver.parseTableName(table)
+
+        if (!schema) {
+            schema = await this.getCurrentSchema()
+        }
+
+        const enumName = this.buildEnumName(table, column, false, true)
+        const sql =
+            `SELECT "n"."nspname", "t"."typname" FROM "pg_type" "t" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+            `WHERE "n"."nspname" = '${schema}' AND "t"."typname" = '${enumName}'`
+        const result = await this.query(sql)
+        return result.length ? true : false
+    }
+
+    /**
+     * Builds create ENUM type sql.
+     */
+    protected createEnumTypeSql(
+        table: Table,
+        column: TableColumn,
+        enumName?: string,
+    ): Query {
+        if (!enumName) enumName = this.buildEnumName(table, column)
+        const enumValues = column
+            .enum!.map((value) => `'${value.replace("'", "''")}'`)
+            .join(", ")
+        return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
+    }
+
+    /**
+     * Builds create ENUM type sql.
+     */
+    protected dropEnumTypeSql(
+        table: Table,
+        column: TableColumn,
+        enumName?: string,
+    ): Query {
+        if (!enumName) enumName = this.buildEnumName(table, column)
+        return new Query(`DROP TYPE ${enumName}`)
+    }
+
+    /**
      * Builds create index sql.
      * UNIQUE indices creates as UNIQUE constraints.
      */
@@ -3375,9 +3859,11 @@ export class CockroachQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE INDEX "${index.name}" ON ${this.escapePath(
-                table,
-            )} (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(table)} ${
+                index.isSpatial ? "USING GiST " : ""
+            }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -3576,6 +4062,57 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Builds ENUM type name from given table and column.
+     */
+    protected buildEnumName(
+        table: Table,
+        column: TableColumn,
+        withSchema: boolean = true,
+        disableEscape?: boolean,
+        toOld?: boolean,
+    ): string {
+        const { schema, tableName } = this.driver.parseTableName(table)
+        let enumName = column.enumName
+            ? column.enumName
+            : `${tableName}_${column.name.toLowerCase()}_enum`
+        if (schema && withSchema) enumName = `${schema}.${enumName}`
+        if (toOld) enumName = enumName + "_old"
+        return enumName
+            .split(".")
+            .map((i) => {
+                return disableEscape ? i : `"${i}"`
+            })
+            .join(".")
+    }
+
+    protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
+        let { schema, tableName: name } = this.driver.parseTableName(table)
+
+        if (!schema) {
+            schema = await this.getCurrentSchema()
+        }
+
+        const result = await this.query(
+            `SELECT "udt_schema", "udt_name" ` +
+                `FROM "information_schema"."columns" WHERE "table_schema" = '${schema}' AND "table_name" = '${name}' AND "column_name"='${column.name}'`,
+        )
+
+        // docs: https://www.postgresql.org/docs/current/xtypes.html
+        // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
+        // The array type typically has the same name as the base type with the underscore character (_) prepended.
+        // ----
+        // so, we must remove this underscore character from enum type name
+        let udtName = result[0]["udt_name"]
+        if (udtName.indexOf("_") === 0) {
+            udtName = udtName.substr(1, udtName.length)
+        }
+        return {
+            schema: result[0]["udt_schema"],
+            name: udtName,
+        }
+    }
+
+    /**
      * Escapes a given comment so it's safe to include in a query.
      */
     protected escapeComment(comment?: string) {
@@ -3619,8 +4156,12 @@ export class CockroachQueryRunner
             }
         }
 
-        if (!column.isGenerated)
+        if (column.type === "enum" || column.type === "simple-enum") {
+            c += " " + this.buildEnumName(table, column)
+            if (column.isArray) c += " array"
+        } else if (!column.isGenerated) {
             c += " " + this.connection.driver.createFullType(column)
+        }
 
         if (column.asExpression) {
             c += ` AS (${column.asExpression}) ${

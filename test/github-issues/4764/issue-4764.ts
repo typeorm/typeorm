@@ -33,7 +33,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
     // -------------------------------------------------------------------------
     // Specifications
     // -------------------------------------------------------------------------
-    it("should not have Lock clause", async () => {
+    it("should not have Lock clause", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
@@ -44,15 +44,14 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).not.to.equal(true)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
-    it("should have WITH (NOLOCK) clause", async () => {
+    it("should have WITH (NOLOCK) clause", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
@@ -64,15 +63,14 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).to.equal(true)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
-    it("should have two WITH (NOLOCK) clause", async () => {
+    it("should have two WITH (NOLOCK) clause", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
@@ -85,15 +83,14 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(2)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
-    it("should have three WITH (NOLOCK) clause", async () => {
+    it("should have three WITH (NOLOCK) clause", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
@@ -107,15 +104,14 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(3)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
-    it("should have three WITH (NOLOCK) clause (without relation)", async () => {
+    it("should have three WITH (NOLOCK) clause (without relation)", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
@@ -133,15 +129,14 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("cart.ID=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(3)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
-    it("should have WITH (HOLDLOCK, ROWLOCK) clause", async () => {
+    it("should have WITH (HOLDLOCK, ROWLOCK) clause", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (HOLDLOCK, ROWLOCK)"
@@ -153,15 +148,14 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).to.equal(true)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
-    it("should have WITH (UPLOCK, ROWLOCK) clause", async () => {
+    it("should have WITH (UPLOCK, ROWLOCK) clause", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (UPDLOCK, ROWLOCK)"
@@ -173,15 +167,14 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(selectQuery.includes(lock)).to.equal(true)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
-    it("should have two WITH (UPDLOCK, ROWLOCK) clause", async () => {
+    it("should have two WITH (UPDLOCK, ROWLOCK) clause", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const lock = " WITH (UPDLOCK, ROWLOCK)"
@@ -194,13 +187,12 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
                     .where("1=1")
                     .getQuery()
 
-                console.log(selectQuery)
+                // console.log(selectQuery)
                 expect(countInstances(selectQuery, lock)).to.equal(2)
 
                 await connection.query(selectQuery)
             }),
-        )
-    })
+        ))
 
     function countInstances(str: string, word: string) {
         return str.split(word).length - 1

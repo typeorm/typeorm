@@ -67,4 +67,13 @@ export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
      * Relative or absolute path to the native addon (better_sqlite3.node).
      */
     readonly nativeBinding?: string
+
+    readonly poolSize?: never
+
+    /**
+     * Enables WAL mode. By default its disabled.
+     *
+     * @see https://www.sqlite.org/wal.html
+     */
+    readonly enableWAL?: boolean
 }

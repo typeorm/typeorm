@@ -61,7 +61,7 @@ export interface TestingOptions {
     /**
      * Migrations needs to be included in connection for the given test suite.
      */
-    migrations?: string[]
+    migrations?: (string | Function)[]
 
     /**
      * Subscribers needs to be included in the connection for the given test suite.
@@ -482,7 +482,7 @@ export function closeTestingConnections(connections: DataSource[]) {
     return Promise.all(
         connections.map((connection) =>
             connection && connection.isInitialized
-                ? connection.close()
+                ? connection.destroy()
                 : undefined,
         ),
     )

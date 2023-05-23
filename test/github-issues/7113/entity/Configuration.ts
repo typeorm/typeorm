@@ -1,14 +1,14 @@
 import {
     DeleteDateColumn,
     Entity,
-    ObjectID,
+    ObjectId,
     ObjectIdColumn,
 } from "../../../../src"
 
 @Entity()
 export class Configuration {
     @ObjectIdColumn()
-    _id: ObjectID
+    _id: ObjectId
 
     @DeleteDateColumn()
     deletedAt?: Date

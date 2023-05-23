@@ -217,6 +217,7 @@ export class Broadcaster {
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
     ): void {
         if (entity && metadata.beforeRemoveListeners.length) {
             metadata.beforeRemoveListeners.forEach((listener) => {
@@ -242,7 +243,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -265,6 +268,7 @@ export class Broadcaster {
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
     ): void {
         if (entity && metadata.beforeSoftRemoveListeners.length) {
             metadata.beforeSoftRemoveListeners.forEach((listener) => {
@@ -290,7 +294,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -313,6 +319,7 @@ export class Broadcaster {
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
     ): void {
         if (entity && metadata.beforeRecoverListeners.length) {
             metadata.beforeRecoverListeners.forEach((listener) => {
@@ -338,7 +345,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -640,6 +649,7 @@ export class Broadcaster {
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
     ): void {
         if (entity && metadata.afterRemoveListeners.length) {
             metadata.afterRemoveListeners.forEach((listener) => {
@@ -665,7 +675,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -688,6 +700,7 @@ export class Broadcaster {
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
     ): void {
         if (entity && metadata.afterSoftRemoveListeners.length) {
             metadata.afterSoftRemoveListeners.forEach((listener) => {
@@ -713,7 +726,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -736,6 +751,7 @@ export class Broadcaster {
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
     ): void {
         if (entity && metadata.afterRecoverListeners.length) {
             metadata.afterRecoverListeners.forEach((listener) => {
@@ -761,7 +777,9 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(databaseEntity),
+                        entityId: metadata.getEntityIdMixedMap(
+                            databaseEntity ?? identifier,
+                        ),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)

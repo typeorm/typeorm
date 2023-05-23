@@ -230,10 +230,116 @@ export const UserEntitySchema = new EntitySchema<User>({
 
 Be sure to add the `extended` columns also to the `Category` interface (e.g., via `export interface Category extend BaseEntity`).
 
+### Single Table Inheritance
+
+In order to use [Single Table Inheritance](entity-inheritance.md#single-table-inheritance):
+
+1. Add the `inheritance` option to the **parent** class schema, specifying the inheritance pattern ("STI") and the
+   **discriminator** column, which will store the name of the *child* class on each row
+2. Set the `type: "entity-child"` option for all **children** classes' schemas, while extending the *parent* class
+   columns using the spread operator syntax described above
+
+```ts
+// entity.ts
+
+export abstract class Base {
+    id!: number
+    type!: string
+    createdAt!: Date
+    updatedAt!: Date
+}
+
+export class A extends Base {
+    constructor(public a: boolean) {
+        super()
+    }
+}
+
+export class B extends Base {
+    constructor(public b: number) {
+        super()
+    }
+}
+
+export class C extends Base {
+    constructor(public c: string) {
+        super()
+    }
+}
+```
+
+```ts
+// schema.ts
+
+const BaseSchema = new EntitySchema<Base>({
+    target: Base,
+    name: "Base",
+    columns: {
+        id: {
+            type: Number,
+            primary: true,
+            generated: "increment",
+        },
+        type: {
+            type: String,
+        },
+        createdAt: {
+            type: Date,
+            createDate: true,
+        },
+        updatedAt: {
+            type: Date,
+            updateDate: true,
+        },
+    },
+    // NEW: Inheritance options
+    inheritance: {
+        pattern: "STI",
+        column: "type",
+    },
+})
+
+const ASchema = new EntitySchema<A>({
+    target: A,
+    name: "A",
+    type: "entity-child",
+    columns: {
+        ...BaseSchema.options.columns,
+        a: {
+            type: Boolean,
+        },
+    },
+})
+
+const BSchema = new EntitySchema<B>({
+    target: B,
+    name: "B",
+    type: "entity-child",
+    columns: {
+        ...BaseSchema.options.columns,
+        b: {
+            type: Number,
+        },
+    },
+})
+
+const CSchema = new EntitySchema<C>({
+    target: C,
+    name: "C",
+    type: "entity-child",
+    columns: {
+        ...BaseSchema.options.columns,
+        c: {
+            type: String,
+        },
+    },
+})
+```
+
 ## Using Schemas to Query / Insert Data
 
 Of course, you can use the defined schemas in your repositories or entity manager as you would use the decorators.
-Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema in order to get
+Consider the previously defined `Category` example (with its `Interface` and `CategoryEntity` schema) in order to get
 some data or manipulate the database.
 
 ```ts

@@ -16,6 +16,7 @@ import { ExclusionMetadataArgs } from "../metadata-args/ExclusionMetadataArgs"
 import { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
 import { EntitySchemaOptions } from "./EntitySchemaOptions"
 import { EntitySchemaEmbeddedError } from "./EntitySchemaEmbeddedError"
+import { InheritanceMetadataArgs } from "../metadata-args/InheritanceMetadataArgs"
 import { RelationIdMetadataArgs } from "../metadata-args/RelationIdMetadataArgs"
 
 /**
@@ -50,6 +51,20 @@ export class EntitySchemaTransformer {
             }
             metadataArgsStorage.tables.push(tableMetadata)
 
+            const { inheritance } = options
+
+            if (inheritance) {
+                metadataArgsStorage.inheritances.push({
+                    target: options.target,
+                    pattern: inheritance.pattern ?? "STI",
+                    column: inheritance.column
+                        ? typeof inheritance.column === "string"
+                            ? { name: inheritance.column }
+                            : inheritance.column
+                        : undefined,
+                } as InheritanceMetadataArgs)
+            }
+
             this.transformColumnsRecursive(options, metadataArgsStorage)
         })
 
@@ -81,6 +96,8 @@ export class EntitySchemaTransformer {
                 options: {
                     type: regularColumn.type,
                     name: regularColumn.objectId ? "_id" : regularColumn.name,
+                    primaryKeyConstraintName:
+                        regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
                     width: regularColumn.width,
                     nullable: regularColumn.nullable,

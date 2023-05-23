@@ -1,6 +1,15 @@
-import { Entity } from "../../../../../../src"
-import { PrimaryColumn } from "../../../../../../src"
-import { Column } from "../../../../../../src"
+import {
+    Column,
+    Entity,
+    GeometryCollection,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+    PrimaryColumn,
+} from "../../../../../../src"
 
 @Entity()
 export class Post {
@@ -141,6 +150,56 @@ export class Post {
 
     @Column("inet")
     inet: string
+
+    // -------------------------------------------------------------------------
+    // Geometry Type
+    // -------------------------------------------------------------------------
+
+    @Column("geometry")
+    point: Point
+
+    @Column("geometry")
+    polygon: Polygon
+
+    @Column("geometry")
+    multipoint: MultiPoint
+
+    @Column("geometry")
+    linestring: LineString
+
+    @Column("geometry")
+    multilinestring: MultiLineString
+
+    @Column("geometry")
+    multipolygon: MultiPolygon
+
+    @Column("geometry")
+    geometrycollection: GeometryCollection
+
+    // -------------------------------------------------------------------------
+    // Geography Type
+    // -------------------------------------------------------------------------
+
+    @Column("geography")
+    point_geography: Point
+
+    @Column("geography")
+    polygon_geography: Polygon
+
+    @Column("geography")
+    multipoint_geography: MultiPoint
+
+    @Column("geography")
+    linestring_geography: LineString
+
+    @Column("geography")
+    multilinestring_geography: MultiLineString
+
+    @Column("geography")
+    multipolygon_geography: MultiPolygon
+
+    @Column("geography")
+    geometrycollection_geography: GeometryCollection
 
     // -------------------------------------------------------------------------
     // UUID Type

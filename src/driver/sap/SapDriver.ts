@@ -25,6 +25,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { DriverUtils } from "../DriverUtils"
 import { View } from "../../schema-builder/view/View"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -130,6 +131,11 @@ export class SapDriver implements Driver {
     ]
 
     /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = []
+
+    /**
      * Gets list of spatial column data types.
      */
     spatialTypes: ColumnType[] = ["st_geometry", "st_point"]
@@ -208,6 +214,8 @@ export class SapDriver implements Driver {
     cteCapabilities: CteCapabilities = {
         enabled: true,
     }
+
+    dummyTableName = `SYS.DUMMY`
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -527,6 +535,9 @@ export class SapDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)

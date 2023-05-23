@@ -35,3 +35,69 @@ await dataSource
 ```
 
 This syntax doesn't escape your values, you need to handle escape on your own.
+
+### Update values ON CONFLICT
+
+If the values you are trying to insert conflict due to existing data the `orUpdate` function can be used to update specific values on the conflicted target.
+
+```typescript
+await datasource
+    .createQueryBuilder()
+    .insert()
+    .into(User)
+    .values({
+        firstName: "Timber",
+        lastName: "Saw",
+        externalId: "abc123",
+    })
+    .orUpdate(
+        ["firstName", "lastName"],
+        ["externalId"],
+    )
+    .execute()
+```
+
+### Skip data update if values have not changed (Postgres)
+
+```typescript
+await datasource
+    .createQueryBuilder()
+    .insert()
+    .into(User)
+    .values({
+        firstName: "Timber",
+        lastName: "Saw",
+        externalId: "abc123",
+    })
+    .orUpdate(
+        ["firstName", "lastName"],
+        ["externalId"],
+        {
+            skipUpdateIfNoValuesChanged: true,
+        }
+    )
+    .execute()
+```
+
+### Use partial index (Postgres)
+
+```typescript
+await datasource
+    .createQueryBuilder()
+    .insert()
+    .into(User)
+    .values({
+        firstName: "Timber",
+        lastName: "Saw",
+        externalId: "abc123",
+    })
+    .orUpdate(
+        ["firstName", "lastName"],
+        ["externalId"],
+        {
+            skipUpdateIfNoValuesChanged: true,
+            indexPredicate: "date > 2020-01-01"
+        }
+    )
+    .execute()
+```

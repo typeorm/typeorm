@@ -193,7 +193,7 @@ Example:
 ```typescript
 @Entity()
 export class Post {
-    @AfterSoftRemove()
+    @AfterRecover()
     updateStatus() {
         this.status = "recovered"
     }
@@ -307,7 +307,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
     }
 
     /**
-     * Called before entity removal.
+     * Called before entity recovery.
      */
     beforeRecover(event: RecoverEvent<any>) {
         console.log(
@@ -317,7 +317,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
     }
 
     /**
-     * Called after entity removal.
+     * Called after entity recovery.
      */
     afterRecover(event: RecoverEvent<any>) {
         console.log(

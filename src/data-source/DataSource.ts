@@ -10,6 +10,7 @@ import {
     CannotExecuteNotConnectedError,
     EntityMetadataNotFoundError,
     QueryRunnerProviderAlreadyReleasedError,
+    TypeORMError,
 } from "../error"
 import { TreeRepository } from "../repository/TreeRepository"
 import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
@@ -35,7 +36,6 @@ import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
-import { TypeORMError } from "../error"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -112,6 +112,12 @@ export class DataSource {
      * All entity metadatas that are registered for this connection.
      */
     readonly entityMetadatas: EntityMetadata[] = []
+
+    /**
+     * All entity metadatas that are registered for this connection.
+     * This is a copy of #.entityMetadatas property -> used for more performant searches.
+     */
+    readonly entityMetadatasMap = new Map<EntityTarget<any>, EntityMetadata>()
 
     /**
      * Used to work with query result cache.
@@ -215,6 +221,17 @@ export class DataSource {
             this.queryResultCache = new QueryResultCacheFactory(this).create()
         }
 
+        // todo: we must update the database in the driver as well, if it was set by setOptions method
+        //  in the future we need to refactor the code and remove "database" from the driver, and instead
+        //  use database (and options) from a single place - data source.
+        if (options.database) {
+            this.driver.database = DriverUtils.buildDriverOptions(
+                this.options,
+            ).database
+        }
+
+        // todo: need to take a look if we need to update schema and other "poor" properties
+
         return this
     }
 
@@ -257,7 +274,7 @@ export class DataSource {
         } catch (error) {
             // if for some reason build metadata fail (for example validation error during entity metadata check)
             // connection needs to be closed
-            await this.close()
+            await this.destroy()
             throw error
         }
 
@@ -366,6 +383,7 @@ export class DataSource {
      */
     async runMigrations(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<Migration[]> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -373,6 +391,7 @@ export class DataSource {
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
             (options && options.transaction) || "all"
+        migrationExecutor.fake = (options && options.fake) || false
 
         const successMigrations =
             await migrationExecutor.executePendingMigrations()
@@ -385,6 +404,7 @@ export class DataSource {
      */
     async undoLastMigration(options?: {
         transaction?: "all" | "none" | "each"
+        fake?: boolean
     }): Promise<void> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -392,6 +412,7 @@ export class DataSource {
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
             (options && options.transaction) || "all"
+        migrationExecutor.fake = (options && options.fake) || false
 
         await migrationExecutor.undoLastMigration()
     }
@@ -494,11 +515,11 @@ export class DataSource {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(
+    async query<T = any>(
         query: string,
         parameters?: any[],
         queryRunner?: QueryRunner,
-    ): Promise<any> {
+    ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
 
@@ -517,7 +538,7 @@ export class DataSource {
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         alias: string,
         queryRunner?: QueryRunner,
@@ -531,7 +552,7 @@ export class DataSource {
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
-    createQueryBuilder<Entity>(
+    createQueryBuilder<Entity extends ObjectLiteral>(
         entityOrRunner?: EntityTarget<Entity> | QueryRunner,
         alias?: string,
         queryRunner?: QueryRunner,
@@ -540,7 +561,7 @@ export class DataSource {
             throw new TypeORMError(`Query Builder is not supported by MongoDB.`)
 
         if (alias) {
-            alias = DriverUtils.buildAlias(this.driver, alias)
+            alias = DriverUtils.buildAlias(this.driver, undefined, alias)
             const metadata = this.getMetadata(
                 entityOrRunner as EntityTarget<Entity>,
             )
@@ -613,37 +634,50 @@ export class DataSource {
     protected findMetadata(
         target: EntityTarget<any>,
     ): EntityMetadata | undefined {
-        return this.entityMetadatas.find((metadata) => {
-            if (metadata.target === target) return true
-            if (InstanceChecker.isEntitySchema(target)) {
-                return metadata.name === target.options.name
+        const metadataFromMap = this.entityMetadatasMap.get(target)
+        if (metadataFromMap) return metadataFromMap
+
+        for (let [_, metadata] of this.entityMetadatasMap) {
+            if (
+                InstanceChecker.isEntitySchema(target) &&
+                metadata.name === target.options.name
+            ) {
+                return metadata
             }
             if (typeof target === "string") {
                 if (target.indexOf(".") !== -1) {
-                    return metadata.tablePath === target
+                    if (metadata.tablePath === target) {
+                        return metadata
+                    }
                 } else {
-                    return (
+                    if (
                         metadata.name === target ||
                         metadata.tableName === target
-                    )
+                    ) {
+                        return metadata
+                    }
                 }
             }
             if (
-                ObjectUtils.isObject(target) &&
+                ObjectUtils.isObjectWithName(target) &&
                 typeof target.name === "string"
             ) {
                 if (target.name.indexOf(".") !== -1) {
-                    return metadata.tablePath === target.name
+                    if (metadata.tablePath === target.name) {
+                        return metadata
+                    }
                 } else {
-                    return (
+                    if (
                         metadata.name === target.name ||
                         metadata.tableName === target.name
-                    )
+                    ) {
+                        return metadata
+                    }
                 }
             }
+        }
 
-            return false
-        })
+        return undefined
     }
 
     /**
@@ -670,7 +704,12 @@ export class DataSource {
             await connectionMetadataBuilder.buildEntityMetadatas(
                 flattenedEntities,
             )
-        ObjectUtils.assign(this, { entityMetadatas: entityMetadatas })
+        ObjectUtils.assign(this, {
+            entityMetadatas: entityMetadatas,
+            entityMetadatasMap: new Map(
+                entityMetadatas.map((metadata) => [metadata.target, metadata]),
+            ),
+        })
 
         // create migration instances
         const flattenedMigrations = ObjectUtils.mixedListToArray(

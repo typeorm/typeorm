@@ -47,7 +47,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
                 })
                 await manager.save(child)
 
-                console.log("loadedParent", loadedParent)
+                // console.log("loadedParent", loadedParent)
 
                 const foundChild = await manager.findOne(Child, {
                     where: {
