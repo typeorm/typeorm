@@ -3554,7 +3554,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 rawRelationCountResults,
                 this.queryRunner,
             )
-            entities = transformer.transform(
+            entities = await transformer.transform(
                 rawResults,
                 this.expressionMap.mainAlias!,
             )

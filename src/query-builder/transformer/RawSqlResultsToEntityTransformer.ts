@@ -11,6 +11,7 @@ import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { QueryRunner } from "../.."
 import { DriverUtils } from "../../driver/DriverUtils"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { JoinAttribute } from "../../query-builder/JoinAttribute"
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -43,17 +44,17 @@ export class RawSqlResultsToEntityTransformer {
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
      */
-    transform(rawResults: any[], alias: Alias): any[] {
+    async transform(rawResults: any[], alias: Alias): Promise<any[]> {
         const group = this.group(rawResults, alias)
         const entities: any[] = []
-        group.forEach((results) => {
-            const entity = this.transformRawResultsGroup(results, alias)
+        for await (const [_, results] of group) {
+            const entity = await this.transformRawResultsGroup(results, alias)
             if (
                 entity !== undefined &&
                 !Object.values(entity).every((value) => value === null)
             )
                 entities.push(entity)
-        })
+        }
         return entities
     }
 
@@ -120,10 +121,10 @@ export class RawSqlResultsToEntityTransformer {
     /**
      * Transforms set of data results into single entity.
      */
-    protected transformRawResultsGroup(
+    protected async transformRawResultsGroup(
         rawResults: any[],
         alias: Alias,
-    ): ObjectLiteral | undefined {
+    ): Promise<ObjectLiteral | undefined> {
         // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
         let metadata = alias.metadata
 
@@ -158,13 +159,13 @@ export class RawSqlResultsToEntityTransformer {
         })
 
         // get value from columns selections and put them into newly created entity
-        const hasColumns = this.transformColumns(
+        const hasColumns = await this.transformColumns(
             rawResults,
             alias,
             entity,
             metadata,
         )
-        const hasRelations = this.transformJoins(
+        const hasRelations = await this.transformJoins(
             rawResults,
             entity,
             alias,
@@ -203,14 +204,14 @@ export class RawSqlResultsToEntityTransformer {
     }
 
     // get value from columns selections and put them into object
-    protected transformColumns(
+    protected async transformColumns(
         rawResults: any[],
         alias: Alias,
         entity: ObjectLiteral,
         metadata: EntityMetadata,
-    ): boolean {
+    ): Promise<boolean> {
         let hasData = false
-        metadata.columns.forEach((column) => {
+        const handleColumn = (column: ColumnMetadata) => {
             // if table inheritance is used make sure this column is not child's column
             if (
                 metadata.childEntityMetadatas.length > 0 &&
@@ -250,14 +251,19 @@ export class RawSqlResultsToEntityTransformer {
             if (value !== null)
                 // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
                 hasData = true
-        })
+        }
+
+        // This could be written synchronously, but an async iterator is deliberately used to prevent long-term occupation of the CPU
+        for await (const column of metadata.columns) {
+            handleColumn(column)
+        }
         return hasData
     }
 
     /**
      * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity
      */
-    protected transformJoins(
+    protected async transformJoins(
         rawResults: any[],
         entity: ObjectLiteral,
         alias: Alias,
@@ -269,7 +275,7 @@ export class RawSqlResultsToEntityTransformer {
         // if (metadata.discriminatorColumn)
         //     discriminatorValue = rawResults[0][DriverUtils.buildAlias(this.connection.driver, alias.name, alias.metadata.discriminatorColumn!.databaseName)];
 
-        this.expressionMap.joinAttributes.forEach((join) => {
+        const handleJoin = async (join: JoinAttribute) => {
             // todo: we have problem here - when inner joins are used without selects it still create empty array
 
             // skip joins without metadata
@@ -301,7 +307,7 @@ export class RawSqlResultsToEntityTransformer {
             }
 
             // transform joined data into entities
-            let result: any = this.transform(rawResults, join.alias)
+            let result: any = await this.transform(rawResults, join.alias)
             result = !join.isMany ? result[0] : result
             result = !join.isMany && result === undefined ? null : result // this is needed to make relations to return null when its joined but nothing was found in the database
             if (result === undefined)
@@ -317,7 +323,12 @@ export class RawSqlResultsToEntityTransformer {
             }
 
             hasData = true
-        })
+        }
+
+        // This could be written synchronously, but an async iterator is deliberately used to prevent long-term occupation of the CPU
+        for await (const join of this.expressionMap.joinAttributes) {
+            handleJoin(join)
+        }
         return hasData
     }
 
