@@ -8,6 +8,14 @@ import {
 } from "./FindOptionsRelations"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 
+type TruthyKeys<T> = {
+    [K in keyof T]: true extends T[K] ? K : T[K] extends object ? K : never
+}[keyof T]
+
+type ExtractNil<T> = Exclude<T, Exclude<T, undefined | null>>
+
+type ArrayType<I, E> = Array<I> | ExtractNil<E>
+
 export type FindReturnType<
     Entity extends ObjectLiteral,
     Select extends
@@ -24,13 +32,7 @@ export type FindReturnType<
         : Entity & {
               [R in Relation extends FindOptionsRelationByString
                   ? never
-                  : {
-                        [K in keyof Relation]: true extends Relation[K]
-                            ? K
-                            : Relation[K] extends object
-                            ? K
-                            : never
-                    }[keyof Relation]]: Relation extends FindOptionsRelations<Entity>
+                  : TruthyKeys<Relation>]: Relation extends FindOptionsRelations<Entity>
                   ? Relation[R] extends FindOptionsRelations<Entity[R]>
                       ? FindReturnType<Entity[R], undefined, Relation[R]>
                       : Entity[R]
@@ -39,36 +41,18 @@ export type FindReturnType<
     : {
           [R in Select extends FindOptionsSelectByString<Entity>
               ? never
-              : {
-                    [K in keyof Select]: true extends Select[K]
-                        ? K
-                        : Select[K] extends object
-                        ? K
-                        : never
-                }[keyof Select]]: Exclude<
+              : TruthyKeys<Select>]: Exclude<
               Entity[R],
               undefined | null
           > extends Array<infer U>
               ? U extends object
                   ? Select[R] extends FindOptionsSelect<U>
-                      ?
-                            | FindReturnType<U, Select[R], undefined>[]
-                            | Exclude<
-                                  Entity[R],
-                                  Exclude<Entity[R], undefined | null>
-                              >
-                      :
-                            | Array<U>
-                            | Exclude<
-                                  Entity[R],
-                                  Exclude<Entity[R], undefined | null>
-                              >
-                  :
-                        | Array<U>
-                        | Exclude<
-                              Entity[R],
-                              Exclude<Entity[R], undefined | null>
-                          >
+                      ? ArrayType<
+                            FindReturnType<U, Select[R], undefined>,
+                            Entity[R]
+                        >
+                      : ArrayType<U, Entity[R]>
+                  : ArrayType<U, Entity[R]>
               : Entity[R] extends object
               ? Select[R] extends FindOptionsSelect<Entity[R]>
                   ? FindReturnType<Entity[R], Select[R], undefined>
@@ -77,36 +61,18 @@ export type FindReturnType<
       } & {
           [R in Relation extends FindOptionsRelationByString
               ? never
-              : {
-                    [K in keyof Relation]: true extends Relation[K]
-                        ? K
-                        : Relation[K] extends object
-                        ? K
-                        : never
-                }[keyof Relation]]: Exclude<
+              : TruthyKeys<Relation>]: Exclude<
               Entity[R],
               undefined | null
           > extends Array<infer U>
               ? U extends object
                   ? Relation[R] extends FindOptionsRelations<U>
-                      ?
-                            | FindReturnType<U, undefined, Relation[R]>[]
-                            | Exclude<
-                                  Entity[R],
-                                  Exclude<Entity[R], undefined | null>
-                              >
-                      :
-                            | Array<U>
-                            | Exclude<
-                                  Entity[R],
-                                  Exclude<Entity[R], undefined | null>
-                              >
-                  :
-                        | Array<U>
-                        | Exclude<
-                              Entity[R],
-                              Exclude<Entity[R], undefined | null>
-                          >
+                      ? ArrayType<
+                            FindReturnType<U, undefined, Relation[R]>,
+                            Entity[R]
+                        >
+                      : ArrayType<U, Entity[R]>
+                  : ArrayType<U, Entity[R]>
               : Entity[R] extends object
               ? Relation[R] extends FindOptionsRelations<Entity[R]>
                   ? FindReturnType<Entity[R], undefined, Relation[R]>
