@@ -733,7 +733,7 @@ export class MigrationExecutor {
             this.queryRunner || this.connection.createQueryRunner()
 
         try {
-            return callback(queryRunner)
+            return await callback(queryRunner)
         } finally {
             if (!this.queryRunner) {
                 await queryRunner.release()
