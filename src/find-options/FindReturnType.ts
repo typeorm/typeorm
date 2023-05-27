@@ -59,8 +59,8 @@ export type FindReturnType<
             ? U extends object
                 ? Relation[R] extends FindOptionsRelations<U>
                     ? FindReturnType<U, undefined, Relation[R]>[] | Exclude<Entity[R], Exclude<Entity[R], undefined | null>>
-                    : U[] | Exclude<Entity[R], Exclude<Entity[R], undefined | null>>
-                : U[] | Exclude<Entity[R], Exclude<Entity[R], undefined | null>>
+                    : Array<U> | Exclude<Entity[R], Exclude<Entity[R], undefined | null>>
+                : Array<U> | Exclude<Entity[R], Exclude<Entity[R], undefined | null>>
             : Entity[R] extends object
                 ? Relation[R] extends FindOptionsRelations<Entity[R]>
                     ? FindReturnType<Entity[R], undefined, Relation[R]>
