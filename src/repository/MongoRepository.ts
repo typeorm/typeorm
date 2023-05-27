@@ -6,7 +6,6 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TypeORMError } from "../error/TypeORMError"
 import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import { FindOneOptions } from "../find-options/FindOneOptions"
 
 import {
     CreateIndexesOptions,
@@ -45,6 +44,7 @@ import {
     UpdateResult,
 } from "../driver/mongodb/typings"
 import { FindManyOptions } from "../find-options/FindManyOptions"
+import { FindReturnType } from "../find-options/FindReturnType"
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -87,12 +87,13 @@ export class MongoRepository<
     /**
      * Finds entities that match given find options or conditions.
      */
-    find(
-        options?:
-            | FindManyOptions<Entity>
+    find<
+        Options extends FindManyOptions<Entity>
             | Partial<Entity>
-            | FilterOperators<Entity>,
-    ): Promise<Entity[]> {
+            | FilterOperators<Entity>
+    >(
+        options?: Options,
+    ): Promise<FindReturnType<Entity, Options['select'], Options['relations']>[]> {
         return this.manager.find(this.metadata.target, options)
     }
 
@@ -108,9 +109,9 @@ export class MongoRepository<
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount(
-        options?: MongoFindManyOptions<Entity>,
-    ): Promise<[Entity[], number]> {
+    findAndCount<Options extends MongoFindManyOptions<Entity>>(
+        options?: Options,
+    ): Promise<[FindReturnType<Entity, Options['select'], Options['relations']>[], number]> {
         return this.manager.findAndCount(this.metadata.target, options)
     }
 
@@ -140,9 +141,9 @@ export class MongoRepository<
     /**
      * Finds first entity that matches given find options.
      */
-    async findOne(
-        options: MongoFindOneOptions<Entity>,
-    ): Promise<Entity | null> {
+    async findOne<Options extends MongoFindOneOptions<Entity>>(
+        options: Options,
+    ): Promise<FindReturnType<Entity, Options['select'], Options['relations']> | null> {
         return this.manager.findOne(this.metadata.target, options)
     }
 
@@ -172,7 +173,7 @@ export class MongoRepository<
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
      */
-    async findOneOrFail(options: FindOneOptions<Entity>): Promise<Entity> {
+    async findOneOrFail<Options extends MongoFindOneOptions<Entity>>(options: Options): Promise<FindReturnType<Entity, Options['select'], Options['relations']>> {
         return this.manager.findOneOrFail(this.metadata.target, options)
     }
 

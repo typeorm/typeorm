@@ -16,6 +16,7 @@ import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { UpsertOptions } from "./UpsertOptions"
 import { EntityTarget } from "../common/EntityTarget"
 import { PickKeysByType } from "../common/PickKeysByType"
+import {FindReturnType} from "../find-options/FindReturnType";
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -520,7 +521,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities that match given find options.
      */
-    async find(options?: FindManyOptions<Entity>): Promise<Entity[]> {
+    async find<Options extends FindManyOptions<Entity>>(options?: Options): Promise<FindReturnType<Entity, Options['select'], Options['relations']>[]> {
         return this.manager.find(this.metadata.target, options)
     }
 
@@ -538,9 +539,9 @@ export class Repository<Entity extends ObjectLiteral> {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount(
-        options?: FindManyOptions<Entity>,
-    ): Promise<[Entity[], number]> {
+    findAndCount<Options extends FindManyOptions<Entity>>(
+        options?: Options,
+    ): Promise<[FindReturnType<Entity, Options['select'], Options['relations']>[], number]> {
         return this.manager.findAndCount(this.metadata.target, options)
     }
 
@@ -573,7 +574,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      */
-    async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
+    async findOne<Options extends FindOneOptions<Entity>>(options: Options): Promise<FindReturnType<Entity, Options['select'], Options['relations']> | null> {
         return this.manager.findOne(this.metadata.target, options)
     }
 
@@ -607,7 +608,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
      */
-    async findOneOrFail(options: FindOneOptions<Entity>): Promise<Entity> {
+    async findOneOrFail<Options extends FindOneOptions<Entity>>(options: Options): Promise<FindReturnType<Entity, Options['select'], Options['relations']>> {
         return this.manager.findOneOrFail(this.metadata.target, options)
     }
 
