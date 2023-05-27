@@ -1078,7 +1078,7 @@ export class EntityManager {
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-            metadata.name,
+                metadata.name,
         )
             .setFindOptions(options || {})
             .getMany() as Promise<FindReturnType<Entity, Options['select'], Options['relations']>[]>

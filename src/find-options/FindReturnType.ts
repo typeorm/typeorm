@@ -24,8 +24,8 @@ export type FindReturnType<
                 }[keyof Relation])]: Relation extends FindOptionsRelations<Entity>
                 ? Relation[R] extends FindOptionsRelations<Entity[R]>
                     ? FindReturnType<Entity[R], undefined, Relation[R]>
-                    : Exclude<Entity[R], undefined>
-                : Exclude<Entity[R], undefined>
+                    : Entity[R]
+                : Entity[R]
         }
         : {
         [R in Select extends FindOptionsSelectByString<Entity>
