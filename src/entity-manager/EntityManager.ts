@@ -38,7 +38,7 @@ import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
-import { FindReturnType } from "../find-options/FindReturnType";
+import { FindReturnType } from "../find-options/FindReturnType"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -70,7 +70,10 @@ export class EntityManager {
      * Once created and then reused by repositories.
      * Created as a future replacement for the #repositories to provide a bit more perf optimization.
      */
-    protected repositories = new Map<EntityTarget<any>, Repository<any> | MongoRepository<any>>()
+    protected repositories = new Map<
+        EntityTarget<any>,
+        Repository<any> | MongoRepository<any>
+    >()
 
     /**
      * Once created and then reused by repositories.
@@ -1070,10 +1073,15 @@ export class EntityManager {
     /**
      * Finds entities that match given find options.
      */
-    async find<Entity extends ObjectLiteral, Options extends FindManyOptions<Entity>>(
+    async find<
+        Entity extends ObjectLiteral,
+        Options extends FindManyOptions<Entity>,
+    >(
         entityClass: EntityTarget<Entity>,
         options?: Options,
-    ): Promise<FindReturnType<Entity, Options['select'], Options['relations']>[]> {
+    ): Promise<
+        FindReturnType<Entity, Options["select"], Options["relations"]>[]
+    > {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
@@ -1081,7 +1089,9 @@ export class EntityManager {
                 metadata.name,
         )
             .setFindOptions(options || {})
-            .getMany() as Promise<FindReturnType<Entity, Options['select'], Options['relations']>[]>
+            .getMany() as Promise<
+            FindReturnType<Entity, Options["select"], Options["relations"]>[]
+        >
     }
 
     /**
@@ -1105,10 +1115,18 @@ export class EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity extends ObjectLiteral, Options extends FindManyOptions<Entity>>(
+    findAndCount<
+        Entity extends ObjectLiteral,
+        Options extends FindManyOptions<Entity>,
+    >(
         entityClass: EntityTarget<Entity>,
         options?: Options,
-    ): Promise<[FindReturnType<Entity, Options['select'], Options['relations']>[], number]> {
+    ): Promise<
+        [
+            FindReturnType<Entity, Options["select"], Options["relations"]>[],
+            number,
+        ]
+    > {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
@@ -1116,7 +1134,16 @@ export class EntityManager {
                 metadata.name,
         )
             .setFindOptions(options || {})
-            .getManyAndCount() as Promise<[FindReturnType<Entity, Options['select'], Options['relations']>[], number]>
+            .getManyAndCount() as Promise<
+            [
+                FindReturnType<
+                    Entity,
+                    Options["select"],
+                    Options["relations"]
+                >[],
+                number,
+            ]
+        >
     }
 
     /**
@@ -1167,10 +1194,17 @@ export class EntityManager {
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      */
-    async findOne<Entity extends ObjectLiteral, Options extends FindOneOptions<Entity>>(
+    async findOne<
+        Entity extends ObjectLiteral,
+        Options extends FindOneOptions<Entity>,
+    >(
         entityClass: EntityTarget<Entity>,
         options: Options,
-    ): Promise<FindReturnType<Entity, Options['select'], Options['relations']> | null> {
+    ): Promise<FindReturnType<
+        Entity,
+        Options["select"],
+        Options["relations"]
+    > | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
         // prepare alias for built query
@@ -1191,7 +1225,9 @@ export class EntityManager {
                 ...options,
                 take: 1,
             })
-            .getOne() as Promise<FindReturnType<Entity, Options['select'], Options['relations']>>
+            .getOne() as Promise<
+            FindReturnType<Entity, Options["select"], Options["relations"]>
+        >
     }
 
     /**
@@ -1242,10 +1278,15 @@ export class EntityManager {
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
      */
-    async findOneOrFail<Entity extends ObjectLiteral, Options extends FindOneOptions<Entity>>(
+    async findOneOrFail<
+        Entity extends ObjectLiteral,
+        Options extends FindOneOptions<Entity>,
+    >(
         entityClass: EntityTarget<Entity>,
         options: Options,
-    ): Promise<FindReturnType<Entity, Options['select'], Options['relations']>> {
+    ): Promise<
+        FindReturnType<Entity, Options["select"], Options["relations"]>
+    > {
         return this.findOne<Entity, Options>(entityClass as any, options).then(
             (value) => {
                 if (value === null) {
