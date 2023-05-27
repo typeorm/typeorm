@@ -12,9 +12,9 @@ type TruthyKeys<T> = {
     [K in keyof T]: true extends T[K] ? K : T[K] extends object ? K : never
 }[keyof T]
 
-type ExtractNil<T> = Exclude<T, Exclude<T, undefined | null>>
+type ExtractUndefined<T> = Exclude<T, Exclude<T, undefined>>
 
-type ArrayType<I, E> = Array<I> | ExtractNil<E>
+type ArrayType<I, E> = Array<I> | ExtractUndefined<E>
 
 export type FindReturnType<
     Entity extends ObjectLiteral,
@@ -59,6 +59,10 @@ export type FindReturnType<
                   : Entity[R]
               : Entity[R]
       } & {
+          [R in Select extends FindOptionsSelectByString<Entity>
+              ? Select[number]
+              : never]: Entity[R]
+      } & {
           [R in Relation extends FindOptionsRelationByString
               ? never
               : TruthyKeys<Relation>]: Exclude<
@@ -78,8 +82,4 @@ export type FindReturnType<
                   ? FindReturnType<Entity[R], undefined, Relation[R]>
                   : Entity[R]
               : Entity[R]
-      } & {
-          [R in Select extends FindOptionsSelectByString<Entity>
-              ? Select[number]
-              : never]: Entity[R]
       }
