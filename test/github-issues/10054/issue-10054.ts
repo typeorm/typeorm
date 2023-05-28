@@ -1,11 +1,11 @@
-import { OR, DataSource,  ILike, Equal } from "../../../src";
+import { OR, DataSource, ILike, Equal } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils";
-import { Person } from "./entity/Person";
-import { expect } from "chai";
+} from "../../utils/test-utils"
+import { Person } from "./entity/Person"
+import { expect } from "chai"
 
 describe("github issues > #10054 Nested 'OR' Condition/Operation Support in Repository Where condition", () => {
     let dataSources: DataSource[]
@@ -25,7 +25,7 @@ describe("github issues > #10054 Nested 'OR' Condition/Operation Support in Repo
     it("should find person where name starts with foo or equal to jane", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                debugger;
+                debugger
                 const foo = new Person()
                 foo.name = "Foo"
                 foo.age = null
@@ -45,10 +45,10 @@ describe("github issues > #10054 Nested 'OR' Condition/Operation Support in Repo
                 await dataSource.manager.save([foo, john, dave, foobar])
                 const persons = await dataSource.manager.find(Person, {
                     where: {
-                        name: OR( ILike('foo%'), Equal('Jane')),
+                        name: OR(ILike("foo%"), Equal("Jane")),
                     },
                 })
-                
+
                 expect(persons).to.have.length(3)
 
                 expect(persons.find((user) => user.name === "Foo")).to.be.not
@@ -56,7 +56,7 @@ describe("github issues > #10054 Nested 'OR' Condition/Operation Support in Repo
 
                 expect(persons.find((user) => user.name === "Jane")).to.be.not
                     .undefined
-                
+
                 expect(persons.find((user) => user.name === "FooBar")).to.be.not
                     .undefined
             }),

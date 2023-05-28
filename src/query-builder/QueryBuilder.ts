@@ -1563,7 +1563,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         ),
                     ),
                 }
-            }  else {
+            } else {
                 return {
                     operator: parameterValue.type,
                     parameters: [aliasPath, ...parameters],
