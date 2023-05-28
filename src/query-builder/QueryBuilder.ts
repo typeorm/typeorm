@@ -1121,6 +1121,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 )}`
             case "and":
                 return condition.parameters.join(" AND ")
+            case "or":
+                return condition.parameters.join(" OR ")
         }
 
         throw new TypeError(
@@ -1547,7 +1549,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         ),
                     ),
                 }
-            } else {
+            } else if (parameterValue.type === "or") {
+                const values: FindOperator<any>[] = parameterValue.value
+
+                return {
+                    operator: parameterValue.type,
+                    parameters: values.map((operator) =>
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                operator,
+                            ),
+                        ),
+                    ),
+                }
+            }  else {
                 return {
                     operator: parameterValue.type,
                     parameters: [aliasPath, ...parameters],
