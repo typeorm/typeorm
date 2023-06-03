@@ -1,4 +1,4 @@
-import { OR, DataSource, ILike, Equal } from "../../../src"
+import { Or, DataSource, ILike, Equal } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -7,7 +7,7 @@ import {
 import { Person } from "./entity/Person"
 import { expect } from "chai"
 
-describe("github issues > #10054 Nested 'OR' Condition/Operation Support in Repository Where condition", () => {
+describe("github issues > #10054 Nested 'Or' Condition/Operation Support in Repository Where condition", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -45,7 +45,7 @@ describe("github issues > #10054 Nested 'OR' Condition/Operation Support in Repo
                 await dataSource.manager.save([foo, john, dave, foobar])
                 const persons = await dataSource.manager.find(Person, {
                     where: {
-                        name: OR(ILike("foo%"), Equal("Jane")),
+                        name: Or(ILike("foo%"), Equal("Jane")),
                     },
                 })
 
