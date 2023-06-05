@@ -38,6 +38,7 @@ import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
+import { SqlTagUtils } from "../util/SqlTagUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -172,6 +173,22 @@ export class EntityManager {
      */
     async query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.connection.query(query, parameters, this.queryRunner)
+    }
+
+    /**
+     * A tagged template that executes raw SQL query and returns raw database results
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, variables } = SqlTagUtils.buildSqlTag({
+            databaseType: this.connection.options.type,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, variables)
     }
 
     /**
