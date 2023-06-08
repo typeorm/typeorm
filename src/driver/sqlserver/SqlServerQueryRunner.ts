@@ -232,7 +232,15 @@ export class SqlServerQueryRunner
                             request.input(parameterName, parameter.value)
                         }
                     } else {
-                        request.input(parameterName, parameter)
+                        if (parameter instanceof Date) {
+                            request.input(
+                                parameterName,
+                                this.driver.mssql.DateTime2(),
+                                parameter,
+                            )
+                        } else {
+                            request.input(parameterName, parameter)
+                        }
                     }
                 })
             }
