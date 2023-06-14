@@ -4,7 +4,7 @@ import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptio
 import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { TypeORMError } from '../error'
+import { TypeORMError } from "../error"
 import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
 import { FindOneOptions } from "../find-options/FindOneOptions"
 

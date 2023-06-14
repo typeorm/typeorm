@@ -3,8 +3,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../utils/test-utils"
-import { Repository } from "../../../../src/repository/Repository"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { Repository } from "../../../../src"
+import { DataSource } from "../../../../src"
 import { Post } from "./entity/Post"
 import { LessThan } from "../../../../src"
 import { expect } from "chai"
