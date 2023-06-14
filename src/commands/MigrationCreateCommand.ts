@@ -14,6 +14,11 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     builder(args: yargs.Argv) {
         return args
+            .positional("path", {
+                type: "string",
+                describe: "Path of the migration file",
+                demandOption: true,
+            })
             .option("o", {
                 alias: "outputJs",
                 type: "boolean",

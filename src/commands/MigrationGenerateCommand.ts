@@ -18,6 +18,11 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     builder(args: yargs.Argv) {
         return args
+            .positional("path", {
+                type: "string",
+                describe: "Path of the migration file",
+                demandOption: true,
+            })
             .option("dataSource", {
                 alias: "d",
                 type: "string",
