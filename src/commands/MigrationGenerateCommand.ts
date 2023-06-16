@@ -65,12 +65,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             })
     }
 
-    async handler(args: yargs.Arguments) {
+    async handler(args: yargs.Arguments<any & { path: string }>) {
         const timestamp = CommandUtils.getTimestamp(args.timestamp)
         const extension = args.outputJs ? ".js" : ".ts"
-        const fullPath = (args.path as string).startsWith("/")
-            ? (args.path as string)
-            : path.resolve(process.cwd(), args.path as string)
+        const fullPath = args.path.startsWith("/")
+            ? args.path
+            : path.resolve(process.cwd(), args.path)
         const filename = timestamp + "-" + path.basename(fullPath) + extension
 
         let dataSource: DataSource | undefined = undefined
