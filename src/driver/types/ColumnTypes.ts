@@ -75,6 +75,7 @@ export type WithLengthColumnType =
     | "binary" // mssql
     | "varbinary" // mssql, sap
     | "string" // cockroachdb, spanner
+    | "vector" // postgres pgvector
 
 export type WithWidthColumnType =
     | "tinyint" // mysql
