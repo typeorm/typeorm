@@ -374,7 +374,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = value ? true : false
         } else if (
             columnMetadata.type === "datetime" ||
-            columnMetadata.type === Date
+            columnMetadata.type === Date ||
+            columnMetadata.type === 'timestamp'
         ) {
             /**
              * Fix date conversion issue
@@ -634,6 +635,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             return "text"
         } else if (column.type === "simple-enum") {
             return "varchar"
+        } else if (column.type === 'timestamp') {
+            return 'bigint'
         } else {
             return (column.type as string) || ""
         }
