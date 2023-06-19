@@ -1,15 +1,15 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class Photo {
     @PrimaryGeneratedColumn({
-        type: 'int',
+        type: "int",
     })
     id: number
 
-    @Column('varchar')
-    name: string;
+    @Column("varchar")
+    name: string
 
-    @Column('timestamp')
+    @Column("timestamp")
     publishedAt: Date
 }
