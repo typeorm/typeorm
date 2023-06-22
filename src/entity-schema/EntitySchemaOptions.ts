@@ -124,4 +124,6 @@ export class EntitySchemaOptions<T> {
      * Inheritance options.
      */
     inheritance?: EntitySchemaInheritanceOptions
+
+    versioning?: boolean
 }

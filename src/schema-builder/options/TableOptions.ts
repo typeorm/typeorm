@@ -74,4 +74,6 @@ export interface TableOptions {
      * Table engine.
      */
     engine?: string
+
+    versioning?: boolean
 }

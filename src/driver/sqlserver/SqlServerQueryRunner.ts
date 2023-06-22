@@ -2690,12 +2690,28 @@ export class SqlServerQueryRunner
 
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
+                        if (
+                            tablesResult["TABLE_NAME"].startsWith("#") ||
+                            tablesResult["TABLE_NAME"].endsWith("_history")
+                        ) {
+                            return
+                        }
+
+                        const dropTableSql = `ALTER TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}" SET (SYSTEM_VERSIONING = OFF)`
+
+                        return this.query(dropTableSql)
+                    }),
+                )
+
+                await Promise.all(
+                    allTablesResults.map((tablesResult) => {
                         if (tablesResult["TABLE_NAME"].startsWith("#")) {
                             // don't try to drop temporary tables
                             return
                         }
 
                         const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`
+
                         return this.query(dropTableSql)
                     }),
                 )
@@ -3606,7 +3622,24 @@ export class SqlServerQueryRunner
             sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`
         }
 
-        sql += `)`
+        // console.log(table)
+
+        table.versioning = true
+
+        if (table.versioning) {
+            const { schema, tableName } = this.driver.parseTableName(table)
+            const historyTableName = `"${schema}"."${tableName}_history"`
+            // const historyTableName = `${this.escapePath(table)}_history`
+
+            sql += `, validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL
+                    , validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL
+                    , PERIOD FOR SYSTEM_TIME (validFrom, validTo)
+                ) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTableName}))`
+        } else {
+            sql += `)`
+        }
+
+        // console.log(sql)
 
         return new Query(sql)
     }
@@ -3614,14 +3647,24 @@ export class SqlServerQueryRunner
     /**
      * Builds drop table sql.
      */
-    protected dropTableSql(
-        tableOrName: Table | string,
-        ifExist?: boolean,
-    ): Query {
-        const query = ifExist
-            ? `DROP TABLE IF EXISTS ${this.escapePath(tableOrName)}`
-            : `DROP TABLE ${this.escapePath(tableOrName)}`
-        return new Query(query)
+    protected dropTableSql(tableOrName: Table, ifExist?: boolean): Query {
+        const query = []
+        const tableName = this.escapePath(tableOrName)
+
+        tableOrName.versioning = true
+
+        if (tableOrName.versioning) {
+            query.push(`ALTER TABLE ${tableName} SET (SYSTEM_VERSIONING = OFF)`)
+            query.push(
+                `DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tableName}_history`,
+            )
+        }
+
+        query.push(`DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tableName}`)
+
+        console.log("dropTableSql", query.join(";"))
+
+        return new Query(query.join(";"))
     }
 
     protected createViewSql(view: View): Query {
@@ -3881,17 +3924,17 @@ export class SqlServerQueryRunner
 
         if (database && database !== this.driver.database) {
             if (schema && schema !== this.driver.searchSchema) {
-                return `"${database}"."${schema}"."${tableName}"`
+                return `${database}.${schema}.${tableName}`
             }
 
-            return `"${database}".."${tableName}"`
+            return `${database}..${tableName}`
         }
 
         if (schema && schema !== this.driver.searchSchema) {
-            return `"${schema}"."${tableName}"`
+            return `${schema}.${tableName}`
         }
 
-        return `"${tableName}"`
+        return `${tableName}`
     }
 
     /**

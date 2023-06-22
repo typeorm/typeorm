@@ -516,6 +516,8 @@ export class EntityMetadata {
      */
     propertiesMap: ObjectLiteral
 
+    versioning: boolean
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------

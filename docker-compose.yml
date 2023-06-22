@@ -3,6 +3,7 @@ services:
   # mysql
   mysql:
     image: "mysql:5.7.37"
+    platform: linux/amd64
     container_name: "typeorm-mysql"
     ports:
       - "3306:3306"
@@ -53,7 +54,7 @@ services:
 
   # mssql
   mssql:
-    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    image: "mcr.microsoft.com/azure-sql-edge"
     container_name: "typeorm-mssql"
     ports:
       - "1433:1433"

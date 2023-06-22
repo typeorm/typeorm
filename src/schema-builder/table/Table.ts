@@ -83,6 +83,8 @@ export class Table {
      */
     engine?: string
 
+    versioning?: boolean
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -411,6 +413,7 @@ export class Table {
             exclusions: entityMetadata.exclusions.map((exclusion) =>
                 TableExclusion.create(exclusion),
             ),
+            versioning: true, // entityMetadata.versioning,
         }
 
         return new Table(options)
