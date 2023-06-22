@@ -80,10 +80,7 @@ export class MigrationExecutor {
                 await schemaBuilder.createMetadataTableIfNecessary(queryRunner)
             }
 
-            await queryRunner.beforeMigration()
-            await (migration.instance as any).up(queryRunner)
-            await queryRunner.afterMigration()
-            await this.insertExecutedMigration(queryRunner, migration)
+            await this.executeMigrationWithQueryRunner(queryRunner, migration)
 
             return migration
         })
@@ -333,36 +330,22 @@ export class MigrationExecutor {
                     transactionStartedByUs = true
                 }
 
-                await migration
-                    .instance!.up(queryRunner)
-                    .catch((error) => {
-                        // informative log about migration failure
-                        this.connection.logger.logMigration(
-                            `Migration "${migration.name}" failed, error: ${error?.message}`,
-                        )
-                        throw error
-                    })
-                    .then(async () => {
-                        // now when migration is executed we need to insert record about it into the database
-                        await this.insertExecutedMigration(
-                            queryRunner,
-                            migration,
-                        )
-                        // commit transaction if we started it
-                        if (migration.transaction && transactionStartedByUs) {
-                            await queryRunner.commitTransaction()
-                            await queryRunner.afterMigration()
-                        }
-                    })
-                    .then(() => {
-                        // informative log about migration success
-                        successMigrations.push(migration)
-                        this.connection.logger.logSchemaBuild(
-                            `Migration ${migration.name} has been ${
-                                this.fake ? "(fake)" : ""
-                            } executed successfully.`,
-                        )
-                    })
+                await this.executeMigrationWithQueryRunner(
+                    queryRunner,
+                    migration,
+                )
+
+                // commit transaction if we started it
+                if (migration.transaction && transactionStartedByUs)
+                    await queryRunner.commitTransaction()
+
+                // informative log about migration success
+                successMigrations.push(migration)
+                this.connection.logger.logSchemaBuild(
+                    `Migration ${migration.name} has been ${
+                        this.fake ? "(fake)" : ""
+                    } executed successfully.`,
+                )
             }
 
             // commit transaction if we started it
@@ -739,5 +722,22 @@ export class MigrationExecutor {
                 await queryRunner.release()
             }
         }
+    }
+
+    private async executeMigrationWithQueryRunner(
+        queryRunner: QueryRunner,
+        migration: Migration,
+    ): Promise<void> {
+        try {
+            await migration.instance!.up(queryRunner)
+        } catch (error) {
+            this.connection.logger.logMigration(
+                `Migration "${migration.name}" failed, error: ${error?.message}`,
+            )
+            throw error
+        }
+
+        // now when migration is executed we need to insert record about it into the database
+        await this.insertExecutedMigration(queryRunner, migration)
     }
 }
