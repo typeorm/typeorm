@@ -336,8 +336,10 @@ export class MigrationExecutor {
                 )
 
                 // commit transaction if we started it
-                if (migration.transaction && transactionStartedByUs)
+                if (migration.transaction && transactionStartedByUs) {
                     await queryRunner.commitTransaction()
+                    await queryRunner.afterMigration()
+                }
 
                 // informative log about migration success
                 successMigrations.push(migration)
@@ -349,10 +351,8 @@ export class MigrationExecutor {
             }
 
             // commit transaction if we started it
-            if (this.transaction === "all" && transactionStartedByUs) {
+            if (this.transaction === "all" && transactionStartedByUs)
                 await queryRunner.commitTransaction()
-                await queryRunner.afterMigration()
-            }
         } catch (err) {
             // rollback transaction if we started it
             if (transactionStartedByUs) {
@@ -441,7 +441,6 @@ export class MigrationExecutor {
             if (!this.fake) {
                 await queryRunner.beforeMigration()
                 await migrationToRevert.instance!.down(queryRunner)
-                await queryRunner.afterMigration()
             }
 
             await this.deleteExecutedMigration(queryRunner, migrationToRevert)
@@ -464,6 +463,7 @@ export class MigrationExecutor {
 
             throw err
         } finally {
+            if (!this.fake) await queryRunner.afterMigration()
             // if query runner was created by us then release it
             if (!this.queryRunner) await queryRunner.release()
         }
