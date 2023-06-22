@@ -80,13 +80,7 @@ export class MigrationExecutor {
                 await schemaBuilder.createMetadataTableIfNecessary(queryRunner)
             }
 
-            await queryRunner.beforeMigration()
-            try {
-                await (migration.instance as any).up(queryRunner)
-            } finally {
-                await queryRunner.afterMigration()
-            }
-            await this.insertExecutedMigration(queryRunner, migration)
+            await this.executeMigrationWithQueryRunner(queryRunner, migration)
 
             return migration
         })
@@ -334,21 +328,10 @@ export class MigrationExecutor {
                     transactionStartedByUs = true
                 }
 
-                await queryRunner.beforeMigration()
-                try {
-                    await migration.instance!.up(queryRunner)
-                } catch (error) {
-                    // informative log about migration failure
-                    this.connection.logger.logMigration(
-                        `Migration "${migration.name}" failed, error: ${error?.message}`,
-                    )
-                    throw error
-                } finally {
-                    await queryRunner.afterMigration()
-                }
-
-                // now when migration is executed we need to insert record about it into the database
-                await this.insertExecutedMigration(queryRunner, migration)
+                await this.executeMigrationWithQueryRunner(
+                    queryRunner,
+                    migration,
+                )
 
                 // commit transaction if we started it
                 if (migration.transaction && transactionStartedByUs)
@@ -740,5 +723,26 @@ export class MigrationExecutor {
                 await queryRunner.release()
             }
         }
+    }
+
+    private async executeMigrationWithQueryRunner(
+        queryRunner: QueryRunner,
+        migration: Migration,
+    ): Promise<void> {
+        await queryRunner.beforeMigration()
+        try {
+            await migration.instance!.up(queryRunner)
+        } catch (error) {
+            // informative log about migration failure
+            this.connection.logger.logMigration(
+                `Migration "${migration.name}" failed, error: ${error?.message}`,
+            )
+            throw error
+        } finally {
+            await queryRunner.afterMigration()
+        }
+
+        // now when migration is executed we need to insert record about it into the database
+        await this.insertExecutedMigration(queryRunner, migration)
     }
 }
