@@ -334,6 +334,7 @@ export class MigrationExecutor {
                     transactionStartedByUs = true
                 }
 
+                await queryRunner.beforeMigration()
                 try {
                     await migration.instance!.up(queryRunner)
                 } catch (error) {
@@ -342,6 +343,8 @@ export class MigrationExecutor {
                         `Migration "${migration.name}" failed, error: ${error?.message}`,
                     )
                     throw error
+                } finally {
+                    await queryRunner.afterMigration()
                 }
 
                 // now when migration is executed we need to insert record about it into the database
