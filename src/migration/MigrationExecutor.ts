@@ -334,34 +334,30 @@ export class MigrationExecutor {
                     transactionStartedByUs = true
                 }
 
-                await migration
-                    .instance!.up(queryRunner)
-                    .catch((error) => {
-                        // informative log about migration failure
-                        this.connection.logger.logMigration(
-                            `Migration "${migration.name}" failed, error: ${error?.message}`,
-                        )
-                        throw error
-                    })
-                    .then(async () => {
-                        // now when migration is executed we need to insert record about it into the database
-                        await this.insertExecutedMigration(
-                            queryRunner,
-                            migration,
-                        )
-                        // commit transaction if we started it
-                        if (migration.transaction && transactionStartedByUs)
-                            await queryRunner.commitTransaction()
-                    })
-                    .then(() => {
-                        // informative log about migration success
-                        successMigrations.push(migration)
-                        this.connection.logger.logSchemaBuild(
-                            `Migration ${migration.name} has been ${
-                                this.fake ? "(fake)" : ""
-                            } executed successfully.`,
-                        )
-                    })
+                try {
+                    await migration.instance!.up(queryRunner)
+                } catch (error) {
+                    // informative log about migration failure
+                    this.connection.logger.logMigration(
+                        `Migration "${migration.name}" failed, error: ${error?.message}`,
+                    )
+                    throw error
+                }
+
+                // now when migration is executed we need to insert record about it into the database
+                await this.insertExecutedMigration(queryRunner, migration)
+
+                // commit transaction if we started it
+                if (migration.transaction && transactionStartedByUs)
+                    await queryRunner.commitTransaction()
+
+                // informative log about migration success
+                successMigrations.push(migration)
+                this.connection.logger.logSchemaBuild(
+                    `Migration ${migration.name} has been ${
+                        this.fake ? "(fake)" : ""
+                    } executed successfully.`,
+                )
             }
 
             // commit transaction if we started it
