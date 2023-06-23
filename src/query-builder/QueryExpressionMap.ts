@@ -337,6 +337,8 @@ export class QueryExpressionMap {
      */
     comment?: string
 
+    versioning?: boolean
+
     /**
      * Items from an entity that have been locally generated & are recorded here for later use.
      * Examples include the UUID generation when the database does not natively support it.
