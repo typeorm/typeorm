@@ -66,6 +66,9 @@ export class PlatformTools {
                 case "mysql2":
                     return require("mysql2")
 
+                case "mariadb":
+                    return require("mariadb/callback")
+
                 /**
                  * oracle
                  */
