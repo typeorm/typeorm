@@ -27,6 +27,18 @@ import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 
+const LITTERAL_ESCAPE: { [index: string]: string } = {
+    "\u0000": "\\0",
+    "'": "\\'",
+    '"': '\\"',
+    "\b": "\\b",
+    "\n": "\\n",
+    "\r": "\\r",
+    "\t": "\\t",
+    "\u001A": "\\Z",
+    "\\": "\\\\",
+}
+
 /**
  * Runs queries on a single mysql database connection.
  */
@@ -196,20 +208,21 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     parameters,
                     (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
-                        const maxQueryExecutionTime =
-                            this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = +new Date()
-                        const queryExecutionTime = queryEndTime - queryStartTime
-                        if (
-                            maxQueryExecutionTime &&
-                            queryExecutionTime > maxQueryExecutionTime
-                        )
-                            this.driver.connection.logger.logQuerySlow(
-                                queryExecutionTime,
-                                query,
-                                parameters,
-                                this,
+                        if (this.driver.options.maxQueryExecutionTime) {
+                            const queryEndTime = +new Date()
+                            const queryExecutionTime =
+                                queryEndTime - queryStartTime
+                            if (
+                                queryExecutionTime >
+                                this.driver.options.maxQueryExecutionTime
                             )
+                                this.driver.connection.logger.logQuerySlow(
+                                    queryExecutionTime,
+                                    query,
+                                    parameters,
+                                    this,
+                                )
+                        }
 
                         if (err) {
                             this.driver.connection.logger.logQueryError(
@@ -290,7 +303,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * If database parameter specified, returns schemas of that database.
      */
     async getSchemas(database?: string): Promise<string[]> {
-        throw new TypeORMError(`MySql driver does not support table schemas`)
+        throw new TypeORMError("MySql driver does not support table schemas")
     }
 
     /**
@@ -298,7 +311,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
-            `SELECT * FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\` WHERE \`SCHEMA_NAME\` = '${database}'`,
+            "SELECT * FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = " +
+                this.escapeString(database),
         )
         return result.length ? true : false
     }
@@ -307,7 +321,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Loads currently using database
      */
     async getCurrentDatabase(): Promise<string> {
-        const query = await this.query(`SELECT DATABASE() AS \`db_name\``)
+        const query = await this.query("SELECT DATABASE() AS db_name")
         return query[0]["db_name"]
     }
 
@@ -315,14 +329,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Checks if schema with the given name exist.
      */
     async hasSchema(schema: string): Promise<boolean> {
-        throw new TypeORMError(`MySql driver does not support table schemas`)
+        throw new TypeORMError("MySql driver does not support table schemas")
     }
 
     /**
      * Loads currently using database schema
      */
     async getCurrentSchema(): Promise<string> {
-        const query = await this.query(`SELECT SCHEMA() AS \`schema_name\``)
+        const query = await this.query("SELECT SCHEMA() AS schema_name")
         return query[0]["schema_name"]
     }
 
@@ -331,8 +345,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
+        const sql =
+            "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?"
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+        ])
         return result.length ? true : false
     }
 
@@ -347,8 +365,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnName = InstanceChecker.isTableColumn(column)
             ? column.name
             : column
-        const sql = `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` WHERE \`TABLE_SCHEMA\` = '${parsedTableName.database}' AND \`TABLE_NAME\` = '${parsedTableName.tableName}' AND \`COLUMN_NAME\` = '${columnName}'`
-        const result = await this.query(sql)
+        const sql =
+            "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?"
+        const result = await this.query(sql, [
+            parsedTableName.database,
+            parsedTableName.tableName,
+            columnName,
+        ])
         return result.length ? true : false
     }
 
@@ -360,9 +383,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         ifNotExist?: boolean,
     ): Promise<void> {
         const up = ifNotExist
-            ? `CREATE DATABASE IF NOT EXISTS \`${database}\``
-            : `CREATE DATABASE \`${database}\``
-        const down = `DROP DATABASE \`${database}\``
+            ? "CREATE DATABASE IF NOT EXISTS " + this.escapeIdentifier(database)
+            : "CREATE DATABASE " + this.escapeIdentifier(database)
+        const down = "DROP DATABASE " + this.escapeIdentifier(database)
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -371,9 +394,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
         const up = ifExist
-            ? `DROP DATABASE IF EXISTS \`${database}\``
-            : `DROP DATABASE \`${database}\``
-        const down = `CREATE DATABASE \`${database}\``
+            ? "DROP DATABASE IF EXISTS " + this.escapeIdentifier(database)
+            : "DROP DATABASE " + this.escapeIdentifier(database)
+        const down = "CREATE DATABASE " + this.escapeIdentifier(database)
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -385,7 +408,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         ifNotExist?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
-            `Schema create queries are not supported by MySql driver.`,
+            "Schema create queries are not supported by MySql driver.",
         )
     }
 
@@ -394,7 +417,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
         throw new TypeORMError(
-            `Schema drop queries are not supported by MySql driver.`,
+            "Schema drop queries are not supported by MySql driver.",
         )
     }
 
@@ -416,7 +439,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(this.createTableSql(table, createForeignKeys))
         downQueries.push(this.dropTableSql(table))
 
-        // we must first drop indices, than drop foreign keys, because drop queries runs in reversed order
+        // we must first drop indices, then drop foreign keys, because drop queries runs in reversed order
         // and foreign keys will be dropped first as indices. This order is very important, because we can't drop index
         // if it related to the foreign key.
 
@@ -2192,21 +2215,25 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
+            const selectViewDropsQuery =
+                "SELECT concat('DROP VIEW IF EXISTS `', REPLACE(table_schema, '`', '``'), '`.`', REPLACE(table_name, '`', '``'), '`') AS query FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = ?"
             const dropViewQueries: ObjectLiteral[] = await this.query(
                 selectViewDropsQuery,
+                [dbName],
             )
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
-            const disableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 0;`
-            const dropTablesQuery = `SELECT concat('DROP TABLE IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
+            const disableForeignKeysCheckQuery = "SET FOREIGN_KEY_CHECKS = 0;"
+            const dropTablesQuery =
+                "SELECT concat('DROP TABLE IF EXISTS `', REPLACE(table_schema, '`', '``'), '`.`', REPLACE(table_name, '`', '``'), '`') AS query FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?"
+            const enableForeignKeysCheckQuery = "SET FOREIGN_KEY_CHECKS = 1;"
 
             await this.query(disableForeignKeysCheckQuery)
             const dropQueries: ObjectLiteral[] = await this.query(
                 dropTablesQuery,
+                [dbName],
             )
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
@@ -2248,15 +2275,21 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     database = currentDatabase
                 }
 
-                return `(\`t\`.\`schema\` = '${database}' AND \`t\`.\`name\` = '${name}')`
+                return (
+                    "(t.schema = " +
+                    this.escapeString(database) +
+                    " AND t.name = " +
+                    this.escapeString(name) +
+                    ")"
+                )
             })
             .join(" OR ")
 
         const query =
-            `SELECT \`t\`.*, \`v\`.\`check_option\` FROM ${this.escapePath(
+            `SELECT t.*, v.check_option FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
-            )} \`t\` ` +
-            `INNER JOIN \`information_schema\`.\`views\` \`v\` ON \`v\`.\`table_schema\` = \`t\`.\`schema\` AND \`v\`.\`table_name\` = \`t\`.\`name\` WHERE \`t\`.\`type\` = '${
+            )} t ` +
+            `INNER JOIN information_schema.views v ON v.table_schema = t.schema AND v.table_name = t.name WHERE t.type = '${
                 MetadataTableType.VIEW
             }' ${viewsCondition ? `AND (${viewsCondition})` : ""}`
         const dbViews = await this.query(query)
@@ -2314,7 +2347,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (!tableNames) {
             // Since we don't have any of this data we have to do a scan
-            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
+            const tablesSql =
+                "SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES"
 
             dbTables.push(...(await this.query(tablesSql)))
         } else {
@@ -2331,7 +2365,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         database = currentDatabase
                     }
 
-                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
+                    return (
+                        "SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = " +
+                        this.escapeString(database) +
+                        " AND TABLE_NAME = " +
+                        this.escapeString(name)
+                    )
                 })
                 .join(" UNION ")
 
@@ -2346,15 +2385,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // Full columns: CARDINALITY & INDEX_TYPE - everything else is FRM only
         const statsSubquerySql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\`
-                WHERE
-                    \`TABLE_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`TABLE_NAME\` = '${TABLE_NAME}'
-            `
+                return (
+                    "SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = " +
+                    this.escapeString(TABLE_SCHEMA) +
+                    " AND TABLE_NAME = " +
+                    this.escapeString(TABLE_NAME)
+                )
             })
             .join(" UNION ")
 
@@ -2363,15 +2399,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // All columns will hit the full table.
         const kcuSubquerySql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\`
-                WHERE
-                    \`kcu\`.\`TABLE_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`kcu\`.\`TABLE_NAME\` = '${TABLE_NAME}'
-            `
+                return (
+                    "SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu WHERE kcu.TABLE_SCHEMA = " +
+                    this.escapeString(TABLE_SCHEMA) +
+                    " AND kcu.TABLE_NAME = " +
+                    this.escapeString(TABLE_NAME)
+                )
             })
             .join(" UNION ")
 
@@ -2380,15 +2413,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // All columns will hit the full table.
         const rcSubquerySql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\`
-                WHERE
-                    \`CONSTRAINT_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`TABLE_NAME\` = '${TABLE_NAME}'
-            `
+                return (
+                    "SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = " +
+                    this.escapeString(TABLE_SCHEMA) +
+                    " AND TABLE_NAME = " +
+                    this.escapeString(TABLE_NAME)
+                )
             })
             .join(" UNION ")
 
@@ -2397,68 +2427,61 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // OPEN_FRM_ONLY applies to all columns
         const columnsSql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM
-                    \`INFORMATION_SCHEMA\`.\`COLUMNS\`
-                WHERE
-                    \`TABLE_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`TABLE_NAME\` = '${TABLE_NAME}'
-                `
+                return (
+                    "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = " +
+                    this.escapeString(TABLE_SCHEMA) +
+                    " AND TABLE_NAME = " +
+                    this.escapeString(TABLE_NAME)
+                )
             })
             .join(" UNION ")
 
         // No Optimizations are available for COLLATIONS
-        const collationsSql = `
-            SELECT
-                \`SCHEMA_NAME\`,
-                \`DEFAULT_CHARACTER_SET_NAME\` as \`CHARSET\`,
-                \`DEFAULT_COLLATION_NAME\` AS \`COLLATION\`
-            FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\`
-            `
+        const collationsSql =
+            "SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME as CHARSET, " +
+            "DEFAULT_COLLATION_NAME AS COLLATION FROM INFORMATION_SCHEMA.SCHEMATA"
 
         // Key Column Usage but only for PKs
-        const primaryKeySql = `SELECT * FROM (${kcuSubquerySql}) \`kcu\` WHERE \`CONSTRAINT_NAME\` = 'PRIMARY'`
+        const primaryKeySql =
+            "SELECT * FROM (" +
+            kcuSubquerySql +
+            ") kcu WHERE CONSTRAINT_NAME = 'PRIMARY'"
 
         // Combine stats & referential constraints
         const indicesSql = `
             SELECT
-                \`s\`.*
-            FROM (${statsSubquerySql}) \`s\`
-            LEFT JOIN (${rcSubquerySql}) \`rc\`
+                s.*
+            FROM (${statsSubquerySql}) s
+            LEFT JOIN (${rcSubquerySql}) rc
                 ON
-                    \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\`
+                    s.INDEX_NAME = rc.CONSTRAINT_NAME
                     AND
-                    \`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\`
+                    s.TABLE_SCHEMA = rc.CONSTRAINT_SCHEMA
             WHERE
-                \`s\`.\`INDEX_NAME\` != 'PRIMARY'
+                s.INDEX_NAME != 'PRIMARY'
                 AND
-                \`rc\`.\`CONSTRAINT_NAME\` IS NULL
-            `
+                rc.CONSTRAINT_NAME IS NULL`
 
         // Combine Key Column Usage & Referential Constraints
         const foreignKeysSql = `
             SELECT
-                \`kcu\`.\`TABLE_SCHEMA\`,
-                \`kcu\`.\`TABLE_NAME\`,
-                \`kcu\`.\`CONSTRAINT_NAME\`,
-                \`kcu\`.\`COLUMN_NAME\`,
-                \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`,
-                \`kcu\`.\`REFERENCED_TABLE_NAME\`,
-                \`kcu\`.\`REFERENCED_COLUMN_NAME\`,
-                \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`,
-                \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\`
-            FROM (${kcuSubquerySql}) \`kcu\`
-            INNER JOIN (${rcSubquerySql}) \`rc\`
+                kcu.TABLE_SCHEMA,
+                kcu.TABLE_NAME,
+                kcu.CONSTRAINT_NAME,
+                kcu.COLUMN_NAME,
+                kcu.REFERENCED_TABLE_SCHEMA,
+                kcu.REFERENCED_TABLE_NAME,
+                kcu.REFERENCED_COLUMN_NAME,
+                rc.DELETE_RULE ON_DELETE,
+                rc.UPDATE_RULE ON_UPDATE
+            FROM (${kcuSubquerySql}) kcu
+            INNER JOIN (${rcSubquerySql}) rc
                 ON
-                    \`rc\`.\`CONSTRAINT_SCHEMA\` = \`kcu\`.\`CONSTRAINT_SCHEMA\`
+                    rc.CONSTRAINT_SCHEMA = kcu.CONSTRAINT_SCHEMA
                     AND
-                    \`rc\`.\`TABLE_NAME\` = \`kcu\`.\`TABLE_NAME\`
+                    rc.TABLE_NAME = kcu.TABLE_NAME
                     AND
-                    \`rc\`.\`CONSTRAINT_NAME\` = \`kcu\`.\`CONSTRAINT_NAME\`
-            `
+                    rc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME`
 
         const [
             dbColumns,
@@ -2541,7 +2564,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                             return (
                                                 index.name ===
                                                     uniqueIndex["INDEX_NAME"] &&
-                                                index.synchronize === false
+                                                !index.synchronize
                                             )
                                         },
                                     )
@@ -3198,12 +3221,52 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return `''`
         }
 
-        comment = comment
-            .replace(/\\/g, "\\\\") // MySQL allows escaping characters via backslashes
-            .replace(/'/g, "''")
-            .replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        return (
+            "`" +
+            comment
+                .replace(/\\/g, "\\\\") // MySQL allows escaping characters via backslashes
+                .replace(/'/g, "''")
+                .replace(/\u0000/g, "") +
+            "`"
+        ) // Null bytes aren't allowed in comments
+    }
 
-        return `'${comment}'`
+    /**
+     * Escapes a given string parameter, so it's safe to include in a query.
+     */
+    protected escapeString(val?: string) {
+        if (!val) return "''"
+
+        const pattern = /[\u0000'"\b\n\r\t\u001A\\]/g
+
+        let offset = 0
+        let escaped = ""
+        let match
+        while ((match = pattern.exec(val))) {
+            escaped += val.substring(offset, match.index)
+            escaped += LITTERAL_ESCAPE[match[0]]
+            offset = pattern.lastIndex
+        }
+
+        if (offset === 0) {
+            return "'" + val + "'"
+        }
+
+        if (offset < val.length) {
+            escaped += val.substring(offset)
+        }
+
+        return "'" + escaped + "'"
+    }
+
+    /**
+     * Escapes a given identifier so it's safe to include in a query.
+     */
+    protected escapeIdentifier(identifier?: string) {
+        if (!identifier || identifier.length === 0) {
+            return "''"
+        }
+        return "`" + identifier.replace(/\u0000/g, "").replace(/`/g, "``") + "`"
     }
 
     /**
@@ -3213,10 +3276,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const { database, tableName } = this.driver.parseTableName(target)
 
         if (database && database !== this.driver.database) {
-            return `\`${database}\`.\`${tableName}\``
+            return (
+                "`" +
+                database.replace(/`/g, "``") +
+                "`.`" +
+                tableName.replace(/`/g, "``") +
+                "`"
+            )
         }
 
-        return `\`${tableName}\``
+        return "`" + tableName.replace(/`/g, "``") + "`"
     }
 
     /**
@@ -3236,13 +3305,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             )}`
         }
 
-        if (column.charset) c += ` CHARACTER SET "${column.charset}"`
-        if (column.collation) c += ` COLLATE "${column.collation}"`
+        if (column.charset) c += " CHARACTER SET " + column.charset
+        if (column.collation) c += " COLLATE " + column.collation
 
         if (column.asExpression)
-            c += ` AS (${column.asExpression}) ${
-                column.generatedType ? column.generatedType : "VIRTUAL"
-            }`
+            c +=
+                " AS (" +
+                column.asExpression +
+                ") " +
+                (column.generatedType ? column.generatedType : "VIRTUAL")
 
         // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to that column.
         if (column.zerofill) {
@@ -3281,7 +3352,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT VERSION() AS \`version\``)
+        const result = await this.query("SELECT VERSION() AS version")
         return result[0]["version"]
     }
 
