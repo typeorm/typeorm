@@ -14,9 +14,10 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
 
     before(async () => {
         connections = await createTestingConnections({
+            dropSchema: true,
+            enabledDrivers: ["mssql"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
-            dropSchema: true,
         })
     })
 
@@ -57,10 +58,6 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
     it("should get old dataset from the history", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.options.type !== "mssql") {
-                    return
-                }
-
                 const { manager } = connection
                 const repository = manager.getRepository(Post)
                 let post = repository.create({ name: "foo" })
@@ -85,10 +82,6 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
     it("should get deleted datasets from the history", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.options.type !== "mssql") {
-                    return
-                }
-
                 const { manager } = connection
                 const repository = manager.getRepository(Post)
                 const postOne = repository.create({ name: "foo" })

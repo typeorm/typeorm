@@ -193,6 +193,12 @@ export class EntityMetadataValidator {
                 )
         }
 
+        if (driver.options.type !== "mssql" && entityMetadata.versioning) {
+            throw new TypeORMError(
+                `This feature is implemented only for Sql Server.`,
+            )
+        }
+
         // Postgres supports only STORED generated columns.
         if (driver.options.type === "postgres") {
             const virtualColumn = entityMetadata.columns.find(
