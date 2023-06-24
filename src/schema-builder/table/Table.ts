@@ -83,6 +83,9 @@ export class Table {
      */
     engine?: string
 
+    /**
+     * Enable native system versioning of the database.
+     */
     versioning?: boolean
 
     // -------------------------------------------------------------------------

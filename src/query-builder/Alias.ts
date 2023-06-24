@@ -20,6 +20,9 @@ export class Alias {
      */
     subQuery?: string
 
+    /**
+     * Enable native system versioning of the database.
+     */
     versioning?: boolean
 
     constructor(alias?: Alias) {

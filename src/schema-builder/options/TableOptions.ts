@@ -75,5 +75,8 @@ export interface TableOptions {
      */
     engine?: string
 
+    /**
+     * Enable native system versioning of the database.
+     */
     versioning?: boolean
 }

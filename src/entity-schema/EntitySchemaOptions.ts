@@ -125,5 +125,8 @@ export class EntitySchemaOptions<T> {
      */
     inheritance?: EntitySchemaInheritanceOptions
 
+    /**
+     * Enable native system versioning of the database.
+     */
     versioning?: boolean
 }

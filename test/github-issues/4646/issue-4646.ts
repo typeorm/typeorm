@@ -54,7 +54,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should get updated dataset from the history", () =>
+    it("should get old dataset from the history", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (connection.options.type !== "mssql") {
@@ -65,13 +65,15 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 const repository = manager.getRepository(Post)
                 let post = repository.create({ name: "foo" })
                 await repository.save(post)
-                //   await repository.save(postTwo)
 
                 const datetime = new Date().toISOString()
                 let result = await repository.findOneBy({ id: 1 })
                 expect(result?.name).to.be.equal("foo")
 
                 await repository.update(1, { name: "bar" })
+
+                result = await repository.findOne({ where: { id: 1 } })
+                expect(result?.name).to.be.equal("bar")
 
                 result = await repository.findOneBy({ id: 1 }, datetime)
                 expect(result?.name).to.be.equal("foo")
@@ -89,8 +91,8 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
 
                 const { manager } = connection
                 const repository = manager.getRepository(Post)
-                const postOne = repository.create({ name: "1" })
-                const postTwo = repository.create({ name: "2" })
+                const postOne = repository.create({ name: "foo" })
+                const postTwo = repository.create({ name: "bar" })
 
                 await repository.save(postOne)
                 await repository.save(postTwo)
@@ -100,6 +102,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 expect(posts).to.have.length(2)
 
                 await repository.delete({ id: 2 })
+
                 posts = await repository.find()
                 expect(posts).to.have.length(1)
 
@@ -107,7 +110,6 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 expect(posts).to.have.length(2)
 
                 await repository.delete(1)
-                // await repository.delete(2)
             }),
         ))
 })

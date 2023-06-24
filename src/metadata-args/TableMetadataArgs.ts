@@ -71,5 +71,8 @@ export interface TableMetadataArgs {
      */
     withoutRowid?: boolean
 
+    /**
+     * Enable native system versioning of the database.
+     */
     versioning?: boolean
 }

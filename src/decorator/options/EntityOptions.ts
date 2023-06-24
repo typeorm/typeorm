@@ -47,5 +47,8 @@ export interface EntityOptions {
      */
     withoutRowid?: boolean
 
+    /**
+     * Enable native system versioning of the database.
+     */
     versioning?: boolean
 }
