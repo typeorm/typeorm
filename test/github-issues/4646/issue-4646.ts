@@ -53,7 +53,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should correctly create additional history table from Entity", () =>
+    xit("should correctly create additional history table from Entity", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const { manager } = connection

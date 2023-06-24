@@ -2687,7 +2687,7 @@ export class SqlServerQueryRunner
                         },
                     ),
                 )
-
+                /*
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
                         if (
@@ -2702,7 +2702,7 @@ export class SqlServerQueryRunner
                         return this.query(dropTableSql)
                     }),
                 )
-
+*/
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
                         if (tablesResult["TABLE_NAME"].startsWith("#")) {
@@ -3623,8 +3623,7 @@ export class SqlServerQueryRunner
         }
 
         // console.log(table)
-
-        table.versioning = true
+        // table.versioning = true
 
         if (table.versioning) {
             const { schema, tableName } = this.driver.parseTableName(table)
@@ -3651,7 +3650,7 @@ export class SqlServerQueryRunner
         const query = []
         const tableName = this.escapePath(tableOrName)
 
-        tableOrName.versioning = true
+        // tableOrName.versioning = true
 
         if (tableOrName.versioning) {
             query.push(`ALTER TABLE ${tableName} SET (SYSTEM_VERSIONING = OFF)`)
@@ -3662,7 +3661,7 @@ export class SqlServerQueryRunner
 
         query.push(`DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tableName}`)
 
-        console.log("dropTableSql", query.join(";"))
+        // console.log("dropTableSql", query.join(";"))
 
         return new Query(query.join(";"))
     }
