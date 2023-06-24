@@ -67,14 +67,14 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 await repository.save(post)
                 //   await repository.save(postTwo)
 
-                // const datetime = new Date().toISOString()
+                const datetime = new Date().toISOString()
                 let result = await repository.findOneBy({ id: 1 })
                 expect(result?.name).to.be.equal("foo")
 
                 await repository.update(1, { name: "bar" })
 
-                result = await repository.findOneBy({ id: 1 })
-                expect(result?.name).to.be.equal("bar")
+                result = await repository.findOneBy({ id: 1 }, datetime)
+                expect(result?.name).to.be.equal("foo")
 
                 await repository.delete(1)
             }),

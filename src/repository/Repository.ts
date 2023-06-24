@@ -583,8 +583,9 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async findOneBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        datetime?: string,
     ): Promise<Entity | null> {
-        return this.manager.findOneBy(this.metadata.target, where)
+        return this.manager.findOneBy(this.metadata.target, where, datetime)
     }
 
     /**

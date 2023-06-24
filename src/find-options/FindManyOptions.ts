@@ -13,6 +13,4 @@ export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
      * Limit (paginated) - max number of entities should be taken.
      */
     take?: number
-
-    datetime?: string
 }

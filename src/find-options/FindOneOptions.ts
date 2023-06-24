@@ -111,4 +111,6 @@ export interface FindOneOptions<Entity = any> {
      * If this is set to true, SELECT query in a `find` method will be executed in a transaction.
      */
     transaction?: boolean
+
+    datetime?: string
 }

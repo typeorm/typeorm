@@ -1200,6 +1200,7 @@ export class EntityManager {
     async findOneBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        datetime?: string,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1208,6 +1209,7 @@ export class EntityManager {
             .setFindOptions({
                 where,
                 take: 1,
+                datetime,
             })
             .getOne()
     }
