@@ -2697,7 +2697,9 @@ export class SqlServerQueryRunner
                             return
                         }
 
-                        const alterTableSql = `ALTER TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}" SET (SYSTEM_VERSIONING = OFF)`
+                        const tablePath = `"${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`
+                        const alterTableSql = `IF OBJECTPROPERTY(OBJECT_ID('${tablesResult["TABLE_NAME"]}'), 'TableTemporalType') = 2
+                                               ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`
 
                         return this.query(alterTableSql)
                     }),
