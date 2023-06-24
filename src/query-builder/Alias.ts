@@ -20,6 +20,8 @@ export class Alias {
      */
     subQuery?: string
 
+    versioning?: boolean
+
     constructor(alias?: Alias) {
         ObjectUtils.assign(this, alias || {})
     }

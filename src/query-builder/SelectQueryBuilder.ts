@@ -2185,11 +2185,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const datetime =
                     this.findOptions.datetime || "9999-12-31 23:59:59.9999998"
 
-                const { versioning } = alias.metadata
+                // console.log("createSelectExpression", alias.versioning)
 
                 return (
                     this.getTableName(alias.tablePath!) +
-                    (versioning
+                    (alias.versioning
                         ? ` FOR SYSTEM_TIME AS OF '${datetime}' `
                         : " ") +
                     this.escape(alias.name)
