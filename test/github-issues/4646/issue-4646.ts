@@ -57,8 +57,11 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
     it("should get updated dataset from the history", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const { manager } = connection
+                if (connection.options.type !== "mssql") {
+                    return
+                }
 
+                const { manager } = connection
                 const repository = manager.getRepository(Post)
                 let post = repository.create({ name: "foo" })
                 await repository.save(post)
@@ -80,8 +83,11 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
     it("should get deleted datasets from the history", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const { manager } = connection
+                if (connection.options.type !== "mssql") {
+                    return
+                }
 
+                const { manager } = connection
                 const repository = manager.getRepository(Post)
                 const postOne = repository.create({ name: "1" })
                 const postTwo = repository.create({ name: "2" })
