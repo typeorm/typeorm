@@ -3640,13 +3640,14 @@ export class SqlServerQueryRunner
     /**
      * Builds drop table sql.
      */
-    protected dropTableSql(tableOrName: Table, ifExist?: boolean): Query {
+    protected dropTableSql(
+        tableOrName: Table | string,
+        ifExist?: boolean,
+    ): Query {
         const query = []
         const tableName = this.escapePath(tableOrName)
 
-        // tableOrName.versioning = true
-
-        if (tableOrName.versioning) {
+        if ((tableOrName as Table).versioning) {
             query.push(`ALTER TABLE ${tableName} SET (SYSTEM_VERSIONING = OFF)`)
             query.push(
                 `DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tableName}_history`,
@@ -3917,17 +3918,17 @@ export class SqlServerQueryRunner
 
         if (database && database !== this.driver.database) {
             if (schema && schema !== this.driver.searchSchema) {
-                return `${database}.${schema}.${tableName}`
+                return `"${database}"."${schema}"."${tableName}"`
             }
 
-            return `${database}..${tableName}`
+            return `"${database}".."${tableName}"`
         }
 
         if (schema && schema !== this.driver.searchSchema) {
-            return `${schema}.${tableName}`
+            return `"${schema}"."${tableName}"`
         }
 
-        return `${tableName}`
+        return `"${tableName}"`
     }
 
     /**
