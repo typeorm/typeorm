@@ -2688,7 +2688,6 @@ export class SqlServerQueryRunner
                     ),
                 )
 
-                /*
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
                         if (
@@ -2698,12 +2697,12 @@ export class SqlServerQueryRunner
                             return
                         }
 
-                        const dropTableSql = `ALTER TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}" SET (SYSTEM_VERSIONING = OFF)`
+                        const alterTableSql = `ALTER TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}" SET (SYSTEM_VERSIONING = OFF)`
 
-                        return this.query(dropTableSql)
+                        return this.query(alterTableSql)
                     }),
                 )
-*/
+
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
                         if (tablesResult["TABLE_NAME"].startsWith("#")) {
@@ -3623,12 +3622,9 @@ export class SqlServerQueryRunner
             sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`
         }
 
-        // console.log("createTableSql", table.versioning)
-
         if (table.versioning) {
             const { schema, tableName } = this.driver.parseTableName(table)
             const historyTableName = `"${schema}"."${tableName}_history"`
-            // const historyTableName = `${this.escapePath(table)}_history`
 
             sql += `, validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL
                     , validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL
@@ -3637,8 +3633,6 @@ export class SqlServerQueryRunner
         } else {
             sql += `)`
         }
-
-        // console.log(sql)
 
         return new Query(sql)
     }

@@ -11,6 +11,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #4646 Add support for temporal (system-versioned) table", () => {
     let connections: DataSource[]
+
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -27,7 +28,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 const queryRunner = connection.createQueryRunner()
                 const metadata = connection.getMetadata(Post)
 
-                console.log("metadata", metadata)
+                // console.log("metadata", metadata)
 
                 const newTable = Table.create(metadata, connection.driver)
                 await queryRunner.createTable(newTable)
@@ -53,17 +54,36 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
             }),
         ))
 
-    xit("should correctly create additional history table from Entity", () =>
+    it("should get updated dataset from the history", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const { manager } = connection
 
                 const repository = manager.getRepository(Post)
-                const categoryOne = repository.create({ name: "1" })
-                const categoryTwo = repository.create({ name: "2" })
+                let post = repository.create({ name: "foo" })
+                await repository.save(post)
+                //   await repository.save(postTwo)
 
-                await repository.save(categoryOne)
-                await repository.save(categoryTwo)
+                // const datetime = new Date().toISOString()
+                const result = await repository.findOneBy({ id: 1 })
+                expect(result?.name).to.be.equal("foo")
+
+                await repository.update(1, { name: "bar" })
+                await repository.delete(1)
+            }),
+        ))
+
+    it("should get deleted datasets from the history", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const { manager } = connection
+
+                const repository = manager.getRepository(Post)
+                const postOne = repository.create({ name: "1" })
+                const postTwo = repository.create({ name: "2" })
+
+                await repository.save(postOne)
+                await repository.save(postTwo)
 
                 const datetime = new Date().toISOString()
                 let posts = await repository.find()
@@ -73,9 +93,11 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 posts = await repository.find()
                 expect(posts).to.have.length(1)
 
-                // get datasets from the past
                 posts = await repository.find({ datetime })
                 expect(posts).to.have.length(2)
+
+                await repository.delete(1)
+                // await repository.delete(2)
             }),
         ))
 })
