@@ -27,7 +27,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 const queryRunner = connection.createQueryRunner()
                 const metadata = connection.getMetadata(Post)
 
-                //console.log(metadata)
+                console.log("metadata", metadata)
 
                 const newTable = Table.create(metadata, connection.driver)
                 await queryRunner.createTable(newTable)

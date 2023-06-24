@@ -48,6 +48,7 @@ export class EntitySchemaTransformer {
                 synchronize: options.synchronize,
                 withoutRowid: !!options.withoutRowid,
                 expression: options.expression,
+                versioning: !!options.versioning,
             }
             metadataArgsStorage.tables.push(tableMetadata)
 

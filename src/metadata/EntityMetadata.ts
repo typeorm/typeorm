@@ -1063,6 +1063,8 @@ export class EntityMetadata {
             this.tableMetadataArgs.type === "junction"
         this.isClosureJunction =
             this.tableMetadataArgs.type === "closure-junction"
+
+        this.versioning = Boolean(this.tableMetadataArgs.versioning)
     }
 
     /**

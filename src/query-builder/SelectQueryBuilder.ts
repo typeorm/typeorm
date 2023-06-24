@@ -2185,8 +2185,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const datetime =
                     this.findOptions.datetime || "9999-12-31 23:59:59.9999998"
 
-                // const { versioning } = alias.metadata.tableMetadataArgs
-                const versioning = false
+                const { versioning } = alias.metadata
 
                 return (
                     this.getTableName(alias.tablePath!) +

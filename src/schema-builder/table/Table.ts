@@ -139,6 +139,7 @@ export class Table {
             if (options.withoutRowid) this.withoutRowid = options.withoutRowid
 
             this.engine = options.engine
+            this.versioning = options.versioning
         }
     }
 
@@ -413,7 +414,7 @@ export class Table {
             exclusions: entityMetadata.exclusions.map((exclusion) =>
                 TableExclusion.create(exclusion),
             ),
-            versioning: true, // entityMetadata.versioning,
+            versioning: entityMetadata.versioning,
         }
 
         return new Table(options)

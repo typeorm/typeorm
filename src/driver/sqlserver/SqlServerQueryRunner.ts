@@ -2687,6 +2687,7 @@ export class SqlServerQueryRunner
                         },
                     ),
                 )
+
                 /*
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
@@ -3622,8 +3623,7 @@ export class SqlServerQueryRunner
             sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`
         }
 
-        // console.log(table)
-        // table.versioning = true
+        // console.log("createTableSql", table.versioning)
 
         if (table.versioning) {
             const { schema, tableName } = this.driver.parseTableName(table)
