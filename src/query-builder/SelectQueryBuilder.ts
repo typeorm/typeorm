@@ -2183,7 +2183,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return alias.subQuery + " " + this.escape(alias.name)
 
                 const datetime = (
-                    this.findOptions.datetime || new Date("9999-12-31")
+                    this.findOptions.datetime ||
+                    // if datetime is not set use infinitely date to get current datasets
+                    new Date("9999-12-31")
                 ).toISOString()
 
                 return (

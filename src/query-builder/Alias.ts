@@ -21,7 +21,7 @@ export class Alias {
     subQuery?: string
 
     /**
-     * Enable native system versioning of the database.
+     * If set to 'true' the TypeORM will create additional temporal tables for each entity.
      */
     versioning?: boolean
 

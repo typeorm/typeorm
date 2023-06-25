@@ -74,7 +74,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should correctly create additional history table from Entity", () =>
+    it("should correctly create additional temporal table", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
@@ -84,13 +84,24 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 await queryRunner.createTable(newTable, true)
 
                 const table = await queryRunner.getTable("user")
-
-                const idColumn = table!.findColumnByName("id")
-                const nameColumn = table!.findColumnByName("name")
-                const validFromColumn = table!.findColumnByName("validFrom")!
-                const validToColumn = table!.findColumnByName("validTo")!
+                let idColumn = table!.findColumnByName("id")
+                let nameColumn = table!.findColumnByName("name")
+                let validFromColumn = table!.findColumnByName("validFrom")!
+                let validToColumn = table!.findColumnByName("validTo")!
 
                 expect(table).to.exist
+                expect(idColumn).to.exist
+                expect(nameColumn).to.exist
+                expect(validFromColumn).to.exist
+                expect(validToColumn).to.exist
+
+                const historyTable = await queryRunner.getTable("user_history")
+                idColumn = historyTable!.findColumnByName("id")
+                nameColumn = historyTable!.findColumnByName("name")
+                validFromColumn = historyTable!.findColumnByName("validFrom")!
+                validToColumn = historyTable!.findColumnByName("validTo")!
+
+                expect(historyTable).to.exist
                 expect(idColumn).to.exist
                 expect(nameColumn).to.exist
                 expect(validFromColumn).to.exist
