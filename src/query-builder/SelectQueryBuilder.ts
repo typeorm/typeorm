@@ -45,6 +45,7 @@ import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { DateUtils } from "../util/DateUtils"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -2182,11 +2183,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name)
 
-                const datetime = (
-                    this.findOptions.datetime ||
-                    // if datetime is not set use infinitely date to get current datasets
-                    new Date("9999-12-31")
-                ).toISOString()
+                const now = new Date()
+                const dateInFuture = new Date(now.getUTCFullYear() + 1, 0, 1)
+
+                const datetime =
+                    // if datetime is not set use a date in the future to get current datasets
+                    DateUtils.mixedDateToUtcDatetimeString(
+                        this.findOptions.datetime || dateInFuture,
+                    )
 
                 return (
                     this.getTableName(alias.tablePath!) +

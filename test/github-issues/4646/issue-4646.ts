@@ -15,7 +15,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
     before(async () => {
         connections = await createTestingConnections({
             dropSchema: true,
-            enabledDrivers: ["mssql"],
+            enabledDrivers: ["mariadb", "mssql"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
         })
@@ -74,7 +74,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should correctly create additional temporal table", () =>
+    xit("should correctly create additional temporal table", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()

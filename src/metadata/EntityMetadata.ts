@@ -516,7 +516,10 @@ export class EntityMetadata {
      */
     propertiesMap: ObjectLiteral
 
-    versioning: boolean
+    /**
+     * If set to 'true' the database creates additional temporal tables for each entity.
+     */
+    versioning?: boolean
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -1064,7 +1067,7 @@ export class EntityMetadata {
         this.isClosureJunction =
             this.tableMetadataArgs.type === "closure-junction"
 
-        this.versioning = Boolean(this.tableMetadataArgs.versioning)
+        this.versioning = this.tableMetadataArgs.versioning
     }
 
     /**

@@ -193,7 +193,10 @@ export class EntityMetadataValidator {
                 )
         }
 
-        if (driver.options.type !== "mssql" && entityMetadata.versioning) {
+        if (
+            entityMetadata.versioning &&
+            !["mariadb", "mssql"].includes(driver.options.type)
+        ) {
             throw new TypeORMError(
                 `This feature is implemented only for Sql Server.`,
             )
