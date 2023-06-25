@@ -7,7 +7,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Table } from "../../../src/schema-builder/table/Table"
-import { Post } from "./entity/Post"
+import { User } from "./entity/User"
 
 describe("github issues > #4646 Add support for temporal (system-versioned) table", () => {
     let connections: DataSource[]
@@ -27,9 +27,9 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
         Promise.all(
             connections.map(async (connection) => {
                 const { manager } = connection
-                const repository = manager.getRepository(Post)
-                let post = repository.create({ name: "foo" })
-                await repository.save(post)
+                const repository = manager.getRepository(User)
+                let user = repository.create({ name: "foo" })
+                await repository.save(user)
 
                 const datetime = new Date()
                 let result = await repository.findOneBy({ id: 1 })
@@ -51,24 +51,24 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
         Promise.all(
             connections.map(async (connection) => {
                 const { manager } = connection
-                const repository = manager.getRepository(Post)
-                const postOne = repository.create({ name: "foo" })
-                const postTwo = repository.create({ name: "bar" })
+                const repository = manager.getRepository(User)
+                const userOne = repository.create({ name: "foo" })
+                const userTwo = repository.create({ name: "bar" })
 
-                await repository.save(postOne)
-                await repository.save(postTwo)
+                await repository.save(userOne)
+                await repository.save(userTwo)
 
                 const datetime = new Date()
-                let posts = await repository.find()
-                expect(posts).to.have.length(2)
+                let results = await repository.find()
+                expect(results).to.have.length(2)
 
                 await repository.delete({ id: 2 })
 
-                posts = await repository.find()
-                expect(posts).to.have.length(1)
+                results = await repository.find()
+                expect(results).to.have.length(1)
 
-                posts = await repository.find({ datetime })
-                expect(posts).to.have.length(2)
+                results = await repository.find({ datetime })
+                expect(results).to.have.length(2)
 
                 await repository.delete(1)
             }),
@@ -78,12 +78,12 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata(User)
 
                 const newTable = Table.create(metadata, connection.driver)
                 await queryRunner.createTable(newTable, true)
 
-                const table = await queryRunner.getTable("post")
+                const table = await queryRunner.getTable("user")
 
                 const idColumn = table!.findColumnByName("id")
                 const nameColumn = table!.findColumnByName("name")
@@ -97,7 +97,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 expect(validToColumn).to.exist
 
                 await queryRunner.dropTable(table!)
-
+                await queryRunner.clearDatabase()
                 await queryRunner.release()
             }),
         ))

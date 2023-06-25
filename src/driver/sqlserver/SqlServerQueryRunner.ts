@@ -2690,15 +2690,12 @@ export class SqlServerQueryRunner
 
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
-                        if (
-                            tablesResult["TABLE_NAME"].startsWith("#") ||
-                            tablesResult["TABLE_NAME"].endsWith("_history")
-                        ) {
+                        if (tablesResult["TABLE_NAME"].startsWith("#")) {
                             return
                         }
 
                         const tablePath = `"${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`
-                        const alterTableSql = `IF OBJECTPROPERTY(OBJECT_ID('${tablesResult["TABLE_NAME"]}'), 'TableTemporalType') = 2
+                        const alterTableSql = `IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2
                                                ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`
 
                         return this.query(alterTableSql)
@@ -3625,13 +3622,12 @@ export class SqlServerQueryRunner
         }
 
         if (table.versioning) {
-            const { schema, tableName } = this.driver.parseTableName(table)
-            const historyTableName = `"${schema}"."${tableName}_history"`
+            const historyTablePath = this.getHistoryTablePath(table)
 
             sql += `, validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL
                     , validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL
                     , PERIOD FOR SYSTEM_TIME (validFrom, validTo)
-                ) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTableName}, DATA_CONSISTENCY_CHECK = ON))`
+                ) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTablePath}, DATA_CONSISTENCY_CHECK = ON))`
         } else {
             sql += `)`
         }
@@ -3647,21 +3643,14 @@ export class SqlServerQueryRunner
         ifExist?: boolean,
     ): Query {
         const query = []
-        const { database, schema, tableName } =
-            this.driver.parseTableName(tableOrName)
+        const tablePath = this.escapePath(tableOrName)
+        const historyTablePath = this.getHistoryTablePath(tableOrName)
 
-        query.push(`IF OBJECTPROPERTY(OBJECT_ID('${tableName}'), 'TableTemporalType') = 2
-                    ALTER TABLE "${schema}"."${tableName}" SET (SYSTEM_VERSIONING = OFF)`)
+        query.push(`IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2
+                    ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`)
 
-        query.push(
-            `DROP TABLE IF EXISTS "${database}"."${schema}"."${tableName}_history"`,
-        )
-
-        query.push(
-            `DROP TABLE ${
-                ifExist ? "IF EXISTS" : ""
-            } "${database}"."${schema}"."${tableName}"`,
-        )
+        query.push(`DROP TABLE IF EXISTS ${historyTablePath}`)
+        query.push(`DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tablePath}`)
 
         return new Query(query.join(";"))
     }
@@ -3934,6 +3923,16 @@ export class SqlServerQueryRunner
         }
 
         return `"${tableName}"`
+    }
+
+    /**
+     * History table path has to be in two-part name format.
+     */
+    protected getHistoryTablePath(target: Table | View | string): string {
+        const { schema, tableName } = this.driver.parseTableName(target)
+        const tableSuffix = "_history"
+
+        return `"${schema}"."${tableName}${tableSuffix}"`
     }
 
     /**
