@@ -3631,7 +3631,7 @@ export class SqlServerQueryRunner
             sql += `, validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL
                     , validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL
                     , PERIOD FOR SYSTEM_TIME (validFrom, validTo)
-                ) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTableName}))`
+                ) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTableName}, DATA_CONSISTENCY_CHECK = ON))`
         } else {
             sql += `)`
         }
@@ -3647,18 +3647,18 @@ export class SqlServerQueryRunner
         ifExist?: boolean,
     ): Query {
         const query = []
-        const tableName = this.escapePath(tableOrName)
+        const { schema, tableName } = this.driver.parseTableName(tableOrName)
 
-        if ((tableOrName as Table).versioning) {
-            query.push(`ALTER TABLE ${tableName} SET (SYSTEM_VERSIONING = OFF)`)
-            query.push(
-                `DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tableName}_history`,
-            )
-        }
+        query.push(`IF OBJECTPROPERTY(OBJECT_ID('${tableName}'), 'TableTemporalType') = 2
+                        ALTER TABLE "${schema}"."${tableName}" SET (SYSTEM_VERSIONING = OFF)`)
 
-        query.push(`DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tableName}`)
+        query.push(`DROP TABLE IF EXISTS "${schema}"."${tableName}_history"`)
 
-        // console.log("dropTableSql", query.join(";"))
+        query.push(
+            `DROP TABLE ${
+                ifExist ? "IF EXISTS" : ""
+            } "${schema}"."${tableName}"`,
+        )
 
         return new Query(query.join(";"))
     }

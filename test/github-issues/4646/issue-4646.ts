@@ -23,39 +23,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
 
     after(() => closeTestingConnections(connections))
 
-    xit("should correctly create additional history table from Entity", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                const metadata = connection.getMetadata(Post)
-
-                // console.log("metadata", metadata)
-
-                const newTable = Table.create(metadata, connection.driver)
-                await queryRunner.createTable(newTable)
-
-                const table = await queryRunner.getTable("post")
-
-                const idColumn = table!.findColumnByName("id")
-                const versionColumn = table!.findColumnByName("version")
-                const nameColumn = table!.findColumnByName("name")
-                const validFromColumn = table!.findColumnByName("validFrom")!
-                const validToColumn = table!.findColumnByName("validTo")!
-
-                expect(table).to.exist
-                expect(idColumn).to.exist
-                expect(versionColumn).to.exist
-                expect(nameColumn).to.exist
-                expect(validFromColumn).to.exist
-                expect(validToColumn).to.exist
-
-                await queryRunner.dropTable(table!)
-
-                await queryRunner.release()
-            }),
-        ))
-
-    it("should get old dataset from the history", () =>
+    it("should get dataset before and after update", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const { manager } = connection
@@ -63,7 +31,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 let post = repository.create({ name: "foo" })
                 await repository.save(post)
 
-                const datetime = new Date().toISOString()
+                const datetime = new Date()
                 let result = await repository.findOneBy({ id: 1 })
                 expect(result?.name).to.be.equal("foo")
 
@@ -79,7 +47,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should get deleted datasets from the history", () =>
+    it("should get deleted datasets", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const { manager } = connection
@@ -90,7 +58,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 await repository.save(postOne)
                 await repository.save(postTwo)
 
-                const datetime = new Date().toISOString()
+                const datetime = new Date()
                 let posts = await repository.find()
                 expect(posts).to.have.length(2)
 
@@ -103,6 +71,34 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 expect(posts).to.have.length(2)
 
                 await repository.delete(1)
+            }),
+        ))
+
+    it("should correctly create additional history table from Entity", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const queryRunner = connection.createQueryRunner()
+                const metadata = connection.getMetadata(Post)
+
+                const newTable = Table.create(metadata, connection.driver)
+                await queryRunner.createTable(newTable, true)
+
+                const table = await queryRunner.getTable("post")
+
+                const idColumn = table!.findColumnByName("id")
+                const nameColumn = table!.findColumnByName("name")
+                const validFromColumn = table!.findColumnByName("validFrom")!
+                const validToColumn = table!.findColumnByName("validTo")!
+
+                expect(table).to.exist
+                expect(idColumn).to.exist
+                expect(nameColumn).to.exist
+                expect(validFromColumn).to.exist
+                expect(validToColumn).to.exist
+
+                await queryRunner.dropTable(table!)
+
+                await queryRunner.release()
             }),
         ))
 })

@@ -1169,7 +1169,7 @@ export class EntityManager {
     async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
-        datetime?: string,
+        datetime?: Date,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1202,7 +1202,7 @@ export class EntityManager {
     async findOneBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
-        datetime?: string,
+        datetime?: Date,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 

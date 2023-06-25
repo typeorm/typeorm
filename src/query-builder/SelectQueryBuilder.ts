@@ -2182,10 +2182,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name)
 
-                const datetime =
-                    this.findOptions.datetime || "9999-12-31 23:59:59.9999998"
-
-                // console.log("createSelectExpression", alias.versioning)
+                const datetime = (
+                    this.findOptions.datetime || new Date("9999-12-31")
+                ).toISOString()
 
                 return (
                     this.getTableName(alias.tablePath!) +

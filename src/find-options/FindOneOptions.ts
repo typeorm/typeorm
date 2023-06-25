@@ -112,5 +112,5 @@ export interface FindOneOptions<Entity = any> {
      */
     transaction?: boolean
 
-    datetime?: string
+    datetime?: Date
 }
