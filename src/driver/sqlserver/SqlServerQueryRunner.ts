@@ -3510,11 +3510,22 @@ export class SqlServerQueryRunner
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
-            .map((column) =>
-                this.buildCreateColumnSql(table, column, false, true),
+        const columns = table.columns.map((column) =>
+            this.buildCreateColumnSql(table, column, false, true),
+        )
+
+        if (table.versioning) {
+            columns.push(
+                `validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
             )
-            .join(", ")
+            columns.push(
+                `validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
+            )
+            columns.push(`PERIOD FOR SYSTEM_TIME (validFrom, validTo)`)
+        }
+
+        const columnDefinitions = columns.join(", ")
+
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
         table.columns
@@ -3621,15 +3632,11 @@ export class SqlServerQueryRunner
             sql += `, CONSTRAINT "${primaryKeyName}" PRIMARY KEY (${columnNames})`
         }
 
+        sql += `)`
+
         if (table.versioning) {
             const historyTablePath = this.getHistoryTablePath(table)
-
-            sql += `, validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL
-                    , validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL
-                    , PERIOD FOR SYSTEM_TIME (validFrom, validTo)
-                ) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTablePath}, DATA_CONSISTENCY_CHECK = ON))`
-        } else {
-            sql += `)`
+            sql += ` WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTablePath}, DATA_CONSISTENCY_CHECK = ON))`
         }
 
         return new Query(sql)

@@ -530,8 +530,9 @@ export class BaseEntity {
     static findOneBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
+        datetime?: Date,
     ): Promise<T | null> {
-        return this.getRepository<T>().findOneBy(where)
+        return this.getRepository<T>().findOneBy(where, datetime)
     }
 
     /**

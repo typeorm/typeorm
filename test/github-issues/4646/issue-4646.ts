@@ -15,6 +15,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
     before(async () => {
         connections = await createTestingConnections({
             dropSchema: true,
+            // enabledDrivers: ["postgres"],
             enabledDrivers: ["mariadb", "mssql"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -23,12 +24,13 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
 
     after(() => closeTestingConnections(connections))
 
-    it("should get dataset before and after update", () =>
+    it("should get correct dataset before and after update", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const { manager } = connection
+            connections.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
-                let user = repository.create({ name: "foo" })
+
+                const user = new User()
+                user.name = "foo"
                 await repository.save(user)
 
                 const datetime = new Date()
@@ -49,26 +51,30 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
 
     it("should get deleted datasets", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                const { manager } = connection
+            connections.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
-                const userOne = repository.create({ name: "foo" })
-                const userTwo = repository.create({ name: "bar" })
 
-                await repository.save(userOne)
-                await repository.save(userTwo)
+                const postOne = new User()
+                postOne.name = "foo"
+                await repository.save(postOne)
+
+                const postTwo = new User()
+                postTwo.name = "bar"
+                await repository.save(postTwo)
 
                 const datetime = new Date()
-                let results = await repository.find()
-                expect(results).to.have.length(2)
+                let posts = await repository.find()
 
-                await repository.delete({ id: 2 })
+                console.log(posts)
+                expect(posts).to.have.length(2)
 
-                results = await repository.find()
-                expect(results).to.have.length(1)
+                await repository.delete(2)
 
-                results = await repository.find({ datetime })
-                expect(results).to.have.length(2)
+                posts = await repository.find()
+                expect(posts).to.have.length(1)
+
+                posts = await repository.find({ datetime })
+                expect(posts).to.have.length(2)
 
                 await repository.delete(1)
             }),
