@@ -3647,17 +3647,20 @@ export class SqlServerQueryRunner
         ifExist?: boolean,
     ): Query {
         const query = []
-        const { schema, tableName } = this.driver.parseTableName(tableOrName)
+        const { database, schema, tableName } =
+            this.driver.parseTableName(tableOrName)
 
         query.push(`IF OBJECTPROPERTY(OBJECT_ID('${tableName}'), 'TableTemporalType') = 2
-                        ALTER TABLE "${schema}"."${tableName}" SET (SYSTEM_VERSIONING = OFF)`)
+                    ALTER TABLE "${schema}"."${tableName}" SET (SYSTEM_VERSIONING = OFF)`)
 
-        query.push(`DROP TABLE IF EXISTS "${schema}"."${tableName}_history"`)
+        query.push(
+            `DROP TABLE IF EXISTS "${database}"."${schema}"."${tableName}_history"`,
+        )
 
         query.push(
             `DROP TABLE ${
                 ifExist ? "IF EXISTS" : ""
-            } "${schema}"."${tableName}"`,
+            } "${database}"."${schema}"."${tableName}"`,
         )
 
         return new Query(query.join(";"))
