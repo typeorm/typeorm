@@ -52,27 +52,25 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
             connections.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
 
-                const postOne = new User()
-                postOne.name = "foo"
-                await repository.save(postOne)
+                const userOne = new User()
+                userOne.name = "foo"
+                await repository.save(userOne)
 
-                const postTwo = new User()
-                postTwo.name = "bar"
-                await repository.save(postTwo)
+                const userTwo = new User()
+                userTwo.name = "bar"
+                await repository.save(userTwo)
 
                 const datetime = new Date()
-                let posts = await repository.find()
-
-                console.log(posts)
-                expect(posts).to.have.length(2)
+                let results = await repository.find()
+                expect(results).to.have.length(2)
 
                 await repository.delete(2)
 
-                posts = await repository.find()
-                expect(posts).to.have.length(1)
+                results = await repository.find()
+                expect(results).to.have.length(1)
 
-                posts = await repository.find({ datetime })
-                expect(posts).to.have.length(2)
+                results = await repository.find({ datetime })
+                expect(results).to.have.length(2)
 
                 await repository.delete(1)
             }),
