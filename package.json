@@ -123,7 +123,6 @@
     "gulpclass": "^0.2.0",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
-    "mocha-suppress-logs": "^0.3.1",
     "mongodb": "^5.2.0",
     "mssql": "^9.1.1",
     "mysql": "^2.18.1",
@@ -234,7 +233,6 @@
   },
   "scripts": {
     "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
-    "test-4646": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test/github-issues/4646",
     "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
     "watch": "./node_modules/.bin/tsc -w",

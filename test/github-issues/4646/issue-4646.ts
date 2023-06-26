@@ -6,7 +6,6 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { Table } from "../../../src/schema-builder/table/Table"
 import { User } from "./entity/User"
 
 describe("github issues > #4646 Add support for temporal (system-versioned) table", () => {
@@ -15,7 +14,6 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
     before(async () => {
         connections = await createTestingConnections({
             dropSchema: true,
-            // enabledDrivers: ["postgres"],
             enabledDrivers: ["mariadb", "mssql"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -77,45 +75,6 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 expect(posts).to.have.length(2)
 
                 await repository.delete(1)
-            }),
-        ))
-
-    xit("should correctly create additional temporal table", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                const metadata = connection.getMetadata(User)
-
-                const newTable = Table.create(metadata, connection.driver)
-                await queryRunner.createTable(newTable, true)
-
-                const table = await queryRunner.getTable("user")
-                let idColumn = table!.findColumnByName("id")
-                let nameColumn = table!.findColumnByName("name")
-                let validFromColumn = table!.findColumnByName("validFrom")!
-                let validToColumn = table!.findColumnByName("validTo")!
-
-                expect(table).to.exist
-                expect(idColumn).to.exist
-                expect(nameColumn).to.exist
-                expect(validFromColumn).to.exist
-                expect(validToColumn).to.exist
-
-                const historyTable = await queryRunner.getTable("user_history")
-                idColumn = historyTable!.findColumnByName("id")
-                nameColumn = historyTable!.findColumnByName("name")
-                validFromColumn = historyTable!.findColumnByName("validFrom")!
-                validToColumn = historyTable!.findColumnByName("validTo")!
-
-                expect(historyTable).to.exist
-                expect(idColumn).to.exist
-                expect(nameColumn).to.exist
-                expect(validFromColumn).to.exist
-                expect(validToColumn).to.exist
-
-                await queryRunner.dropTable(table!)
-                await queryRunner.clearDatabase()
-                await queryRunner.release()
             }),
         ))
 })

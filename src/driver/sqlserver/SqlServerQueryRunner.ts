@@ -3635,8 +3635,7 @@ export class SqlServerQueryRunner
         sql += `)`
 
         if (table.versioning) {
-            const historyTablePath = this.getHistoryTablePath(table)
-            sql += ` WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ${historyTablePath}, DATA_CONSISTENCY_CHECK = ON))`
+            sql += ` WITH (SYSTEM_VERSIONING = ON (DATA_CONSISTENCY_CHECK = ON))`
         }
 
         return new Query(sql)
@@ -3651,12 +3650,10 @@ export class SqlServerQueryRunner
     ): Query {
         const query = []
         const tablePath = this.escapePath(tableOrName)
-        const historyTablePath = this.getHistoryTablePath(tableOrName)
 
         query.push(`IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2
                     ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`)
 
-        query.push(`DROP TABLE IF EXISTS ${historyTablePath}`)
         query.push(`DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tablePath}`)
 
         return new Query(query.join(";"))
@@ -3930,16 +3927,6 @@ export class SqlServerQueryRunner
         }
 
         return `"${tableName}"`
-    }
-
-    /**
-     * History table path has to be in two-part name format.
-     */
-    protected getHistoryTablePath(target: Table | View | string): string {
-        const { schema, tableName } = this.driver.parseTableName(target)
-        const tableSuffix = "_history"
-
-        return `"${schema}"."${tableName}${tableSuffix}"`
     }
 
     /**
