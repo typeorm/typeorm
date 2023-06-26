@@ -3650,12 +3650,13 @@ export class SqlServerQueryRunner
         const query = []
         const tablePath = this.escapePath(tableOrName)
 
-        query.push(`IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2
-                    ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`)
+        query.push(
+            `IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2 ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`,
+        )
 
         query.push(`DROP TABLE ${ifExist ? "IF EXISTS " : ""}${tablePath}`)
 
-        return new Query(query.join(";"))
+        return new Query(query.join("; "))
     }
 
     protected createViewSql(view: View): Query {
