@@ -2909,6 +2909,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         const columnDefinitions = columns.join(", ")
+
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
         // we create unique indexes instead of unique constraints, because MySql does not have unique constraints.

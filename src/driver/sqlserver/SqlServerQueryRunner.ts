@@ -2710,7 +2710,6 @@ export class SqlServerQueryRunner
                         }
 
                         const dropTableSql = `DROP TABLE "${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`
-
                         return this.query(dropTableSql)
                     }),
                 )
@@ -3654,7 +3653,7 @@ export class SqlServerQueryRunner
         query.push(`IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2
                     ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`)
 
-        query.push(`DROP TABLE ${ifExist ? "IF EXISTS" : ""} ${tablePath}`)
+        query.push(`DROP TABLE ${ifExist ? "IF EXISTS " : ""}${tablePath}`)
 
         return new Query(query.join(";"))
     }

@@ -112,5 +112,8 @@ export interface FindOneOptions<Entity = any> {
      */
     transaction?: boolean
 
+    /**
+     * Used for system versioning to get datasets at a specific timestamp.
+     */
     datetime?: Date
 }
