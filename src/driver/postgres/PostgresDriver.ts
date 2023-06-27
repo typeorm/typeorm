@@ -640,7 +640,8 @@ export class PostgresDriver implements Driver {
                 columnMetadata.type,
             ) >= 0
         ) {
-            return JSON.stringify(value)
+            return value
+            //return JSON.stringify(value)
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
