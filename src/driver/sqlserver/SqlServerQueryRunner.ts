@@ -2899,7 +2899,8 @@ export class SqlServerQueryRunner
                 const condition = tables
                     .map(
                         ({ TABLE_SCHEMA, TABLE_NAME }) =>
-                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}')`,
+                            // ignore internal columns (used for temporal tables)
+                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND "column_name" NOT IN('_validFrom', '_validTo'))`,
                     )
                     .join("OR")
 
@@ -3515,12 +3516,12 @@ export class SqlServerQueryRunner
 
         if (table.versioning) {
             columns.push(
-                `validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
+                `_validFrom DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
             )
             columns.push(
-                `validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
+                `_validTo DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
             )
-            columns.push(`PERIOD FOR SYSTEM_TIME (validFrom, validTo)`)
+            columns.push(`PERIOD FOR SYSTEM_TIME (_validFrom, _validTo)`)
         }
 
         const columnDefinitions = columns.join(", ")

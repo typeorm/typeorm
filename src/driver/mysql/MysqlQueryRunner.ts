@@ -2898,17 +2898,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds create table sql
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columns = table.columns.map((column) =>
-            this.buildCreateColumnSql(column, true),
-        )
-
-        if (table.versioning) {
-            columns.push(`validFrom TIMESTAMP(6) GENERATED ALWAYS AS ROW START`)
-            columns.push(`validTo TIMESTAMP(6) GENERATED ALWAYS AS ROW END`)
-            columns.push(`PERIOD FOR SYSTEM_TIME(validFrom, validTo)`)
-        }
-
-        const columnDefinitions = columns.join(", ")
+        const columnDefinitions = table.columns
+            .map((column) => this.buildCreateColumnSql(column, true))
+            .join(", ")
 
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 

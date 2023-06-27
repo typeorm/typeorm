@@ -9,10 +9,10 @@ import {
 import { User } from "./entity/User"
 
 describe("github issues > #4646 Add support for temporal (system-versioned) table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             dropSchema: true,
             enabledDrivers: ["mariadb", "mssql"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,11 +20,11 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
         })
     })
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should get correct dataset before and after update", () =>
         Promise.all(
-            connections.map(async ({ manager }) => {
+            dataSources.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
 
                 const user = new User()
@@ -49,7 +49,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
 
     it("should get deleted datasets", () =>
         Promise.all(
-            connections.map(async ({ manager }) => {
+            dataSources.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
 
                 const userOne = new User()
