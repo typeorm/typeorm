@@ -1,5 +1,3 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-
 /**
  * Make all properties in T optional
  */
@@ -11,7 +9,7 @@ export type QueryPartialEntity<T> = {
  * Make all properties in T optional. Deep version.
  */
 export type QueryDeepPartialEntity<T> = _QueryDeepPartialEntity<
-    ObjectLiteral extends T ? unknown : T
+    T extends "toString" ? T : unknown
 >
 
 type _QueryDeepPartialEntity<T> = {
