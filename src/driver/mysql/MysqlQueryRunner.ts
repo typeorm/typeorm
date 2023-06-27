@@ -2901,7 +2901,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnDefinitions = table.columns
             .map((column) => this.buildCreateColumnSql(column, true))
             .join(", ")
-
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
         // we create unique indexes instead of unique constraints, because MySql does not have unique constraints.
