@@ -33,7 +33,7 @@ user.name = "foo"
 await user.save()
 
 // store the current date
-const datetime = new Date()
+const timestamp = new Date()
 let result = await User.findOneBy({ id: 1 })
 // user name is "foo"
 
@@ -44,7 +44,7 @@ result = await User.findOneBy({ id: 1 })
 // user name is "bar"
 
 // get dataset before update (from history)
-result = await User.findOneBy({ id: 1 }, datetime)
+result = await User.findOneBy({ id: 1 }, timestamp)
 // user name is "foo"
 ```
 
@@ -60,7 +60,7 @@ userTwo.name = "bar"
 await userTwo.save()
 
 // store the current date
-const datetime = new Date()
+const timestamp = new Date()
 let results = await User.find()
 // [ User { id: 1, name: 'foo' }, User { id: 2, name: 'bar' } ]
 
@@ -70,6 +70,6 @@ results = await User.find()
 // [ User { id: 1, name: 'foo' } ]
 
 // get datasets before deleting (from history)
-results = await User.find({ datetime })
+results = await User.find({ timestamp })
 // [ User { id: 1, name: 'foo' }, User { id: 2, name: 'bar' } ]
 ```
