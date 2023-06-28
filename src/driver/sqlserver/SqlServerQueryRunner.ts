@@ -2899,7 +2899,7 @@ export class SqlServerQueryRunner
                 const condition = tables
                     .map(
                         ({ TABLE_SCHEMA, TABLE_NAME }) =>
-                            // ignore internal columns (used for temporal tables)
+                            // ignore internal columns which are used for temporal tables
                             `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND "column_name" NOT IN('_validFrom', '_validTo'))`,
                     )
                     .join("OR")

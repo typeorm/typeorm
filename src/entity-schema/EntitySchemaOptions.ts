@@ -126,7 +126,7 @@ export class EntitySchemaOptions<T> {
     inheritance?: EntitySchemaInheritanceOptions
 
     /**
-     * If set to 'true' the database creates additional temporal tables for each entity.
+     * If set to 'true' the database creates additional temporal tables for this entity.
      */
     versioning?: boolean
 }

@@ -75,4 +75,18 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 await repository.delete(1)
             }),
         ))
+
+    it("should ignore internal columns which are used for temporal tables", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
+
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+
+                expect(sqlInMemory.upQueries).to.have.length(0)
+                expect(sqlInMemory.downQueries).to.have.length(0)
+            }),
+        ))
 })
