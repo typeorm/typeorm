@@ -206,14 +206,6 @@ export class EntityManager {
         queryRunner?: QueryRunner | Date,
     ): SelectQueryBuilder<Entity> {
         if (alias) {
-            /*         if (queryRunner instanceof Date) {
-                return this.connection.createQueryBuilder(
-                    entityClass as EntityTarget<Entity>,
-                    alias,
-                    queryRunner,
-                )
-            } */
-
             return this.connection.createQueryBuilder(
                 entityClass as EntityTarget<Entity>,
                 alias,
