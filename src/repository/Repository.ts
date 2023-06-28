@@ -520,17 +520,44 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities that match given find options.
      */
-    async find(options?: FindManyOptions<Entity>): Promise<Entity[]> {
-        return this.manager.find(this.metadata.target, options)
+    find(timestamp: Date): Promise<Entity[]>
+
+    /**
+     * Finds entities that match given find options.
+     */
+    find(options?: FindManyOptions<Entity>): Promise<Entity[]>
+
+    /**
+     * Finds entities that match given find options.
+     */
+    find(options: FindManyOptions<Entity>, timestamp: Date): Promise<Entity[]>
+
+    /**
+     * Finds entities that match given find options.
+     */
+    find(
+        options?: FindManyOptions<Entity> | Date,
+        timestamp?: Date,
+    ): Promise<Entity[]> {
+        /*    if (optionsOrTimestamp instanceof Date) {
+            return this.manager.find(
+                this.metadata.target,
+                undefined,
+                optionsOrTimestamp,
+            )
+        }
+*/
+        return this.manager.find(this.metadata.target, options, timestamp)
     }
 
     /**
      * Finds entities that match given find options.
      */
-    async findBy(
+    findBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        timestamp?: Date,
     ): Promise<Entity[]> {
-        return this.manager.findBy(this.metadata.target, where)
+        return this.manager.findBy(this.metadata.target, where, timestamp)
     }
 
     /**
@@ -573,8 +600,11 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      */
-    async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
-        return this.manager.findOne(this.metadata.target, options)
+    async findOne(
+        options: FindOneOptions<Entity>,
+        timestamp?: Date,
+    ): Promise<Entity | null> {
+        return this.manager.findOne(this.metadata.target, options, timestamp)
     }
 
     /**
@@ -583,9 +613,9 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     async findOneBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
-        datetime?: Date,
+        timestamp?: Date,
     ): Promise<Entity | null> {
-        return this.manager.findOneBy(this.metadata.target, where, datetime)
+        return this.manager.findOneBy(this.metadata.target, where, timestamp)
     }
 
     /**
@@ -608,8 +638,15 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
      */
-    async findOneOrFail(options: FindOneOptions<Entity>): Promise<Entity> {
-        return this.manager.findOneOrFail(this.metadata.target, options)
+    async findOneOrFail(
+        options: FindOneOptions<Entity>,
+        timestamp?: Date,
+    ): Promise<Entity> {
+        return this.manager.findOneOrFail(
+            this.metadata.target,
+            options,
+            timestamp,
+        )
     }
 
     /**

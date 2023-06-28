@@ -186,6 +186,15 @@ export class EntityManager {
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
+    createQueryBuilder<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        alias: string,
+        timestamp?: Date,
+    ): SelectQueryBuilder<Entity>
+
+    /**
+     * Creates a new query builder that can be used to build a SQL query.
+     */
     createQueryBuilder(queryRunner?: QueryRunner): SelectQueryBuilder<any>
 
     /**
@@ -194,18 +203,26 @@ export class EntityManager {
     createQueryBuilder<Entity extends ObjectLiteral>(
         entityClass?: EntityTarget<Entity> | QueryRunner,
         alias?: string,
-        queryRunner?: QueryRunner,
+        queryRunner?: QueryRunner | Date,
     ): SelectQueryBuilder<Entity> {
         if (alias) {
+            /*         if (queryRunner instanceof Date) {
+                return this.connection.createQueryBuilder(
+                    entityClass as EntityTarget<Entity>,
+                    alias,
+                    queryRunner,
+                )
+            } */
+
             return this.connection.createQueryBuilder(
                 entityClass as EntityTarget<Entity>,
                 alias,
-                queryRunner || this.queryRunner,
+                (queryRunner as QueryRunner) || this.queryRunner,
             )
         } else {
             return this.connection.createQueryBuilder(
                 (entityClass as QueryRunner | undefined) ||
-                    queryRunner ||
+                    (queryRunner as QueryRunner) ||
                     this.queryRunner,
             )
         }
@@ -1071,13 +1088,26 @@ export class EntityManager {
      */
     async find<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        options?: FindManyOptions<Entity>,
+        options?: FindManyOptions<Entity> | Date,
+        timestamp?: Date,
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
+
+        if (options instanceof Date) {
+            return this.createQueryBuilder<Entity>(
+                entityClass as any,
+                metadata.name,
+                options,
+            )
+                .setFindOptions({})
+                .getMany()
+        }
+
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             FindOptionsUtils.extractFindManyOptionsAlias(options) ||
                 metadata.name,
+            timestamp,
         )
             .setFindOptions(options || {})
             .getMany()
@@ -1089,13 +1119,15 @@ export class EntityManager {
     async findBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        timestamp?: Date,
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             metadata.name,
+            timestamp,
         )
-            .setFindOptions({ where: where })
+            .setFindOptions({ where })
             .getMany()
     }
 
@@ -1186,11 +1218,10 @@ export class EntityManager {
         }
 
         // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, alias)
+        return this.createQueryBuilder<Entity>(entityClass, alias, timestamp)
             .setFindOptions({
                 ...options,
                 take: 1,
-                timestamp,
             })
             .getOne()
     }
@@ -1207,11 +1238,14 @@ export class EntityManager {
         const metadata = this.connection.getMetadata(entityClass)
 
         // create query builder and apply find options
-        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
+        return this.createQueryBuilder<Entity>(
+            entityClass,
+            metadata.name,
+            timestamp,
+        )
             .setFindOptions({
                 where,
                 take: 1,
-                timestamp,
             })
             .getOne()
     }
@@ -1248,17 +1282,20 @@ export class EntityManager {
     async findOneOrFail<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
+        timestamp?: Date,
     ): Promise<Entity> {
-        return this.findOne<Entity>(entityClass as any, options).then(
-            (value) => {
-                if (value === null) {
-                    return Promise.reject(
-                        new EntityNotFoundError(entityClass, options),
-                    )
-                }
-                return Promise.resolve(value)
-            },
-        )
+        return this.findOne<Entity>(
+            entityClass as any,
+            options,
+            timestamp,
+        ).then((value) => {
+            if (value === null) {
+                return Promise.reject(
+                    new EntityNotFoundError(entityClass, options),
+                )
+            }
+            return Promise.resolve(value)
+        })
     }
 
     /**

@@ -1,4 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
+import {
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { Photo } from "./Photo"
 
 @Entity({ versioning: true })
 export class User {
@@ -7,4 +13,7 @@ export class User {
 
     @Column()
     name: string
+
+    @OneToMany(() => Photo, (photo) => photo.user)
+    photos: Photo[]
 }

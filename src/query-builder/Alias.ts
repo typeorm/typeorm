@@ -25,6 +25,11 @@ export class Alias {
      */
     versioning?: boolean
 
+    /**
+     * Used for system versioning to get datasets at a specific timestamp.
+     */
+    timestamp?: Date
+
     constructor(alias?: Alias) {
         ObjectUtils.assign(this, alias || {})
     }

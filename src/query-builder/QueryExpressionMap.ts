@@ -417,6 +417,7 @@ export class QueryExpressionMap {
         subQuery?: string
         metadata?: EntityMetadata
         versioning?: boolean
+        timestamp?: Date
     }): Alias {
         let aliasName = options.name
         if (!aliasName && options.tablePath) aliasName = options.tablePath
@@ -434,6 +435,7 @@ export class QueryExpressionMap {
         if (options.tablePath) alias.tablePath = options.tablePath
         if (options.subQuery) alias.subQuery = options.subQuery
         alias.versioning = options.versioning
+        alias.timestamp = options.timestamp
 
         this.aliases.push(alias)
         return alias

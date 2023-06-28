@@ -268,6 +268,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     from<T extends ObjectLiteral>(
         entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>,
         aliasName: string,
+        timestamp?: Date,
     ): SelectQueryBuilder<T>
 
     /**
@@ -278,6 +279,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     from<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
         aliasName: string,
+        timestamp?: Date,
     ): SelectQueryBuilder<T>
 
     /**
@@ -290,8 +292,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | EntityTarget<T>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
+        timestamp?: Date,
     ): SelectQueryBuilder<T> {
-        const mainAlias = this.createFromAlias(entityTarget, aliasName)
+        const mainAlias = this.createFromAlias(
+            entityTarget,
+            aliasName,
+            timestamp,
+        )
         this.expressionMap.setMainAlias(mainAlias)
         return this as any as SelectQueryBuilder<T>
     }
@@ -2183,12 +2190,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name)
 
-                const now = new Date()
-
                 const timestamp =
                     // if timestamp is not set get latest datasets from the database
                     DateUtils.mixedDateToUtcDatetimeString(
-                        this.findOptions.timestamp || now,
+                        alias.timestamp || new Date(),
                     )
 
                 return (

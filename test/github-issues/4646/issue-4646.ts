@@ -8,7 +8,7 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 
-describe("github issues > #4646 Add support for temporal (system-versioned) table", () => {
+describe("github issues > #4646 add support for temporal (system-versioned) table", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -40,7 +40,26 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 result = await repository.findOne({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("bar")
 
+                // check user name from the history
+                let users = await repository.find(timestamp)
+                expect(users).to.be.eql([{ id: 1, name: "foo" }])
+
+                users = await repository.findBy({ id: 1 }, timestamp)
+                expect(users).to.be.eql([{ id: 1, name: "foo" }])
+
                 result = await repository.findOneBy({ id: 1 }, timestamp)
+                expect(result?.name).to.be.equal("foo")
+
+                result = await repository.findOne(
+                    { where: { id: 1 } },
+                    timestamp,
+                )
+                expect(result?.name).to.be.equal("foo")
+
+                result = await repository.findOneOrFail(
+                    { where: { id: 1 } },
+                    timestamp,
+                )
                 expect(result?.name).to.be.equal("foo")
 
                 await repository.delete(1)
@@ -69,10 +88,42 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 results = await repository.find()
                 expect(results).to.have.length(1)
 
-                results = await repository.find({ timestamp })
+                results = await repository.find(timestamp)
                 expect(results).to.have.length(2)
 
                 await repository.delete(1)
+            }),
+        ))
+
+    it("should return FROM clause including system time expression (QueryBuilder support)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const timestamp = new Date("2050-01-01T00:00:00.000Z")
+                const sql = dataSource
+                    .createQueryBuilder()
+                    .from(User, "user", timestamp)
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT * FROM user FOR SYSTEM_TIME AS OF '2050-01-01 00:00:00.000' user",
+                )
+            }),
+        ))
+
+    it("should return FROM clause including system time expression (QueryBuilder support)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const timestamp = new Date("2050-01-01T00:00:00.000Z")
+                const sql = dataSource
+                    .createQueryBuilder(User, "user", timestamp)
+                    .select("*")
+                    .disableEscaping()
+                    .getSql()
+
+                expect(sql).to.equal(
+                    "SELECT * FROM user FOR SYSTEM_TIME AS OF '2050-01-01 00:00:00.000' user",
+                )
             }),
         ))
 

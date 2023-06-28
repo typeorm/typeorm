@@ -111,9 +111,4 @@ export interface FindOneOptions<Entity = any> {
      * If this is set to true, SELECT query in a `find` method will be executed in a transaction.
      */
     transaction?: boolean
-
-    /**
-     * Used for system versioning to get datasets at a specific timestamp.
-     */
-    timestamp?: Date
 }
