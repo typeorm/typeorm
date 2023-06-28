@@ -1169,7 +1169,7 @@ export class EntityManager {
     async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
-        datetime?: Date,
+        timestamp?: Date,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1189,8 +1189,8 @@ export class EntityManager {
         return this.createQueryBuilder<Entity>(entityClass, alias)
             .setFindOptions({
                 ...options,
-                datetime,
                 take: 1,
+                timestamp,
             })
             .getOne()
     }
@@ -1202,7 +1202,7 @@ export class EntityManager {
     async findOneBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
-        datetime?: Date,
+        timestamp?: Date,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1211,7 +1211,7 @@ export class EntityManager {
             .setFindOptions({
                 where,
                 take: 1,
-                datetime,
+                timestamp,
             })
             .getOne()
     }

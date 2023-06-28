@@ -115,5 +115,5 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Used for system versioning to get datasets at a specific timestamp.
      */
-    datetime?: Date
+    timestamp?: Date
 }

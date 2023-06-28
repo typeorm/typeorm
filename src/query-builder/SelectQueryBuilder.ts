@@ -2184,18 +2184,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return alias.subQuery + " " + this.escape(alias.name)
 
                 const now = new Date()
-                const dateInFuture = new Date(now.getUTCFullYear() + 1, 0, 1)
 
-                const datetime =
-                    // if datetime is not set use a date in the future to get current datasets
+                const timestamp =
+                    // if timestamp is not set get latest datasets from the database
                     DateUtils.mixedDateToUtcDatetimeString(
-                        this.findOptions.datetime || dateInFuture,
+                        this.findOptions.timestamp || now,
                     )
 
                 return (
                     this.getTableName(alias.tablePath!) +
                     (alias.versioning
-                        ? ` FOR SYSTEM_TIME AS OF '${datetime}' `
+                        ? ` FOR SYSTEM_TIME AS OF '${timestamp}' `
                         : " ") +
                     this.escape(alias.name)
                 )

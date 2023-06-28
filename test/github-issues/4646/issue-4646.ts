@@ -22,7 +22,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
 
     after(() => closeTestingConnections(dataSources))
 
-    it("should get correct dataset before and after update", () =>
+    it("should get correct dataset at a specific timestamp", () =>
         Promise.all(
             dataSources.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
@@ -31,7 +31,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 user.name = "foo"
                 await repository.save(user)
 
-                const datetime = new Date()
+                const timestamp = new Date()
                 let result = await repository.findOneBy({ id: 1 })
                 expect(result?.name).to.be.equal("foo")
 
@@ -40,7 +40,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 result = await repository.findOne({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("bar")
 
-                result = await repository.findOneBy({ id: 1 }, datetime)
+                result = await repository.findOneBy({ id: 1 }, timestamp)
                 expect(result?.name).to.be.equal("foo")
 
                 await repository.delete(1)
@@ -60,7 +60,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 userTwo.name = "bar"
                 await repository.save(userTwo)
 
-                const datetime = new Date()
+                const timestamp = new Date()
                 let results = await repository.find()
                 expect(results).to.have.length(2)
 
@@ -69,7 +69,7 @@ describe("github issues > #4646 Add support for temporal (system-versioned) tabl
                 results = await repository.find()
                 expect(results).to.have.length(1)
 
-                results = await repository.find({ datetime })
+                results = await repository.find({ timestamp })
                 expect(results).to.have.length(2)
 
                 await repository.delete(1)
