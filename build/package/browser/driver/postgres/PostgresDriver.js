@@ -1,4 +1,4 @@
-import { __awaiter, __generator, __read, __spreadArray } from "tslib";
+import { __awaiter } from "tslib";
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { PostgresQueryRunner } from "./PostgresQueryRunner";
@@ -10,11 +10,11 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers";
 /**
  * Organizes communication with PostgreSQL DBMS.
  */
-var PostgresDriver = /** @class */ (function () {
+export class PostgresDriver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function PostgresDriver(connection) {
+    constructor(connection) {
         /**
          * Pool for slave databases.
          * Used in replication.
@@ -220,261 +220,163 @@ var PostgresDriver = /** @class */ (function () {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    PostgresDriver.prototype.connect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, _b, _c;
-            var _this = this;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
-                    case 0:
-                        if (!this.options.replication) return [3 /*break*/, 3];
-                        _a = this;
-                        return [4 /*yield*/, Promise.all(this.options.replication.slaves.map(function (slave) {
-                                return _this.createPool(_this.options, slave);
-                            }))];
-                    case 1:
-                        _a.slaves = _d.sent();
-                        _b = this;
-                        return [4 /*yield*/, this.createPool(this.options, this.options.replication.master)];
-                    case 2:
-                        _b.master = _d.sent();
-                        this.database = this.options.replication.master.database;
-                        return [3 /*break*/, 5];
-                    case 3:
-                        _c = this;
-                        return [4 /*yield*/, this.createPool(this.options, this.options)];
-                    case 4:
-                        _c.master = _d.sent();
-                        this.database = this.options.database;
-                        _d.label = 5;
-                    case 5: return [2 /*return*/];
-                }
-            });
+    connect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.options.replication) {
+                this.slaves = yield Promise.all(this.options.replication.slaves.map(slave => {
+                    return this.createPool(this.options, slave);
+                }));
+                this.master = yield this.createPool(this.options, this.options.replication.master);
+                this.database = this.options.replication.master.database;
+            }
+            else {
+                this.master = yield this.createPool(this.options, this.options);
+                this.database = this.options.database;
+            }
         });
-    };
+    }
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    PostgresDriver.prototype.afterConnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var extensionsMetadata;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.checkMetadataForExtensions()];
-                    case 1:
-                        extensionsMetadata = _a.sent();
-                        if (!extensionsMetadata.hasExtensions) return [3 /*break*/, 3];
-                        return [4 /*yield*/, Promise.all(__spreadArray([this.master], __read(this.slaves)).map(function (pool) {
-                                return new Promise(function (ok, fail) {
-                                    pool.connect(function (err, connection, release) { return __awaiter(_this, void 0, void 0, function () {
-                                        return __generator(this, function (_a) {
-                                            switch (_a.label) {
-                                                case 0: return [4 /*yield*/, this.enableExtensions(extensionsMetadata, connection)];
-                                                case 1:
-                                                    _a.sent();
-                                                    if (err)
-                                                        return [2 /*return*/, fail(err)];
-                                                    release();
-                                                    ok();
-                                                    return [2 /*return*/];
-                                            }
-                                        });
-                                    }); });
-                                });
-                            }))];
-                    case 2:
-                        _a.sent();
-                        _a.label = 3;
-                    case 3: return [2 /*return*/, Promise.resolve()];
+    afterConnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const extensionsMetadata = yield this.checkMetadataForExtensions();
+            if (extensionsMetadata.hasExtensions) {
+                yield Promise.all([this.master, ...this.slaves].map(pool => {
+                    return new Promise((ok, fail) => {
+                        pool.connect((err, connection, release) => __awaiter(this, void 0, void 0, function* () {
+                            yield this.enableExtensions(extensionsMetadata, connection);
+                            if (err)
+                                return fail(err);
+                            release();
+                            ok();
+                        }));
+                    });
+                }));
+            }
+            return Promise.resolve();
+        });
+    }
+    enableExtensions(extensionsMetadata, connection) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { logger } = this.connection;
+            const { hasUuidColumns, hasCitextColumns, hasHstoreColumns, hasCubeColumns, hasGeometryColumns, hasLtreeColumns, hasExclusionConstraints, } = extensionsMetadata;
+            if (hasUuidColumns)
+                try {
+                    yield this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "${this.options.uuidExtension || "uuid-ossp"}"`);
                 }
-            });
-        });
-    };
-    PostgresDriver.prototype.enableExtensions = function (extensionsMetadata, connection) {
-        return __awaiter(this, void 0, void 0, function () {
-            var logger, hasUuidColumns, hasCitextColumns, hasHstoreColumns, hasCubeColumns, hasGeometryColumns, hasLtreeColumns, hasExclusionConstraints, _1, _2, _3, _4, _5, _6, _7;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        logger = this.connection.logger;
-                        hasUuidColumns = extensionsMetadata.hasUuidColumns, hasCitextColumns = extensionsMetadata.hasCitextColumns, hasHstoreColumns = extensionsMetadata.hasHstoreColumns, hasCubeColumns = extensionsMetadata.hasCubeColumns, hasGeometryColumns = extensionsMetadata.hasGeometryColumns, hasLtreeColumns = extensionsMetadata.hasLtreeColumns, hasExclusionConstraints = extensionsMetadata.hasExclusionConstraints;
-                        if (!hasUuidColumns) return [3 /*break*/, 4];
-                        _a.label = 1;
-                    case 1:
-                        _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, this.executeQuery(connection, "CREATE EXTENSION IF NOT EXISTS \"" + (this.options.uuidExtension || "uuid-ossp") + "\"")];
-                    case 2:
-                        _a.sent();
-                        return [3 /*break*/, 4];
-                    case 3:
-                        _1 = _a.sent();
-                        logger.log("warn", "At least one of the entities has uuid column, but the '" + (this.options.uuidExtension || "uuid-ossp") + "' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.");
-                        return [3 /*break*/, 4];
-                    case 4:
-                        if (!hasCitextColumns) return [3 /*break*/, 8];
-                        _a.label = 5;
-                    case 5:
-                        _a.trys.push([5, 7, , 8]);
-                        return [4 /*yield*/, this.executeQuery(connection, "CREATE EXTENSION IF NOT EXISTS \"citext\"")];
-                    case 6:
-                        _a.sent();
-                        return [3 /*break*/, 8];
-                    case 7:
-                        _2 = _a.sent();
-                        logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
-                        return [3 /*break*/, 8];
-                    case 8:
-                        if (!hasHstoreColumns) return [3 /*break*/, 12];
-                        _a.label = 9;
-                    case 9:
-                        _a.trys.push([9, 11, , 12]);
-                        return [4 /*yield*/, this.executeQuery(connection, "CREATE EXTENSION IF NOT EXISTS \"hstore\"")];
-                    case 10:
-                        _a.sent();
-                        return [3 /*break*/, 12];
-                    case 11:
-                        _3 = _a.sent();
-                        logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
-                        return [3 /*break*/, 12];
-                    case 12:
-                        if (!hasGeometryColumns) return [3 /*break*/, 16];
-                        _a.label = 13;
-                    case 13:
-                        _a.trys.push([13, 15, , 16]);
-                        return [4 /*yield*/, this.executeQuery(connection, "CREATE EXTENSION IF NOT EXISTS \"postgis\"")];
-                    case 14:
-                        _a.sent();
-                        return [3 /*break*/, 16];
-                    case 15:
-                        _4 = _a.sent();
-                        logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
-                        return [3 /*break*/, 16];
-                    case 16:
-                        if (!hasCubeColumns) return [3 /*break*/, 20];
-                        _a.label = 17;
-                    case 17:
-                        _a.trys.push([17, 19, , 20]);
-                        return [4 /*yield*/, this.executeQuery(connection, "CREATE EXTENSION IF NOT EXISTS \"cube\"")];
-                    case 18:
-                        _a.sent();
-                        return [3 /*break*/, 20];
-                    case 19:
-                        _5 = _a.sent();
-                        logger.log("warn", "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights");
-                        return [3 /*break*/, 20];
-                    case 20:
-                        if (!hasLtreeColumns) return [3 /*break*/, 24];
-                        _a.label = 21;
-                    case 21:
-                        _a.trys.push([21, 23, , 24]);
-                        return [4 /*yield*/, this.executeQuery(connection, "CREATE EXTENSION IF NOT EXISTS \"ltree\"")];
-                    case 22:
-                        _a.sent();
-                        return [3 /*break*/, 24];
-                    case 23:
-                        _6 = _a.sent();
-                        logger.log("warn", "At least one of the entities has a cube column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights");
-                        return [3 /*break*/, 24];
-                    case 24:
-                        if (!hasExclusionConstraints) return [3 /*break*/, 28];
-                        _a.label = 25;
-                    case 25:
-                        _a.trys.push([25, 27, , 28]);
-                        // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
-                        return [4 /*yield*/, this.executeQuery(connection, "CREATE EXTENSION IF NOT EXISTS \"btree_gist\"")];
-                    case 26:
-                        // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
-                        _a.sent();
-                        return [3 /*break*/, 28];
-                    case 27:
-                        _7 = _a.sent();
-                        logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
-                        return [3 /*break*/, 28];
-                    case 28: return [2 /*return*/];
+                catch (_) {
+                    logger.log("warn", `At least one of the entities has uuid column, but the '${this.options.uuidExtension || "uuid-ossp"}' extension cannot be installed automatically. Please install it manually using superuser rights, or select another uuid extension.`);
                 }
-            });
+            if (hasCitextColumns)
+                try {
+                    yield this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "citext"`);
+                }
+                catch (_) {
+                    logger.log("warn", "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            if (hasHstoreColumns)
+                try {
+                    yield this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "hstore"`);
+                }
+                catch (_) {
+                    logger.log("warn", "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            if (hasGeometryColumns)
+                try {
+                    yield this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "postgis"`);
+                }
+                catch (_) {
+                    logger.log("warn", "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            if (hasCubeColumns)
+                try {
+                    yield this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "cube"`);
+                }
+                catch (_) {
+                    logger.log("warn", "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            if (hasLtreeColumns)
+                try {
+                    yield this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "ltree"`);
+                }
+                catch (_) {
+                    logger.log("warn", "At least one of the entities has a cube column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
+            if (hasExclusionConstraints)
+                try {
+                    // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
+                    yield this.executeQuery(connection, `CREATE EXTENSION IF NOT EXISTS "btree_gist"`);
+                }
+                catch (_) {
+                    logger.log("warn", "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights");
+                }
         });
-    };
-    PostgresDriver.prototype.checkMetadataForExtensions = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var hasUuidColumns, hasCitextColumns, hasHstoreColumns, hasCubeColumns, hasGeometryColumns, hasLtreeColumns, hasExclusionConstraints;
-            var _this = this;
-            return __generator(this, function (_a) {
-                hasUuidColumns = this.connection.entityMetadatas.some(function (metadata) {
-                    return metadata.generatedColumns.filter(function (column) { return column.generationStrategy === "uuid"; }).length > 0;
-                });
-                hasCitextColumns = this.connection.entityMetadatas.some(function (metadata) {
-                    return metadata.columns.filter(function (column) { return column.type === "citext"; }).length > 0;
-                });
-                hasHstoreColumns = this.connection.entityMetadatas.some(function (metadata) {
-                    return metadata.columns.filter(function (column) { return column.type === "hstore"; }).length > 0;
-                });
-                hasCubeColumns = this.connection.entityMetadatas.some(function (metadata) {
-                    return metadata.columns.filter(function (column) { return column.type === "cube"; }).length > 0;
-                });
-                hasGeometryColumns = this.connection.entityMetadatas.some(function (metadata) {
-                    return metadata.columns.filter(function (column) { return _this.spatialTypes.indexOf(column.type) >= 0; }).length > 0;
-                });
-                hasLtreeColumns = this.connection.entityMetadatas.some(function (metadata) {
-                    return metadata.columns.filter(function (column) { return column.type === "ltree"; }).length > 0;
-                });
-                hasExclusionConstraints = this.connection.entityMetadatas.some(function (metadata) {
-                    return metadata.exclusions.length > 0;
-                });
-                return [2 /*return*/, {
-                        hasUuidColumns: hasUuidColumns,
-                        hasCitextColumns: hasCitextColumns,
-                        hasHstoreColumns: hasHstoreColumns,
-                        hasCubeColumns: hasCubeColumns,
-                        hasGeometryColumns: hasGeometryColumns,
-                        hasLtreeColumns: hasLtreeColumns,
-                        hasExclusionConstraints: hasExclusionConstraints,
-                        hasExtensions: hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasLtreeColumns || hasExclusionConstraints,
-                    }];
+    }
+    checkMetadataForExtensions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const hasUuidColumns = this.connection.entityMetadatas.some(metadata => {
+                return metadata.generatedColumns.filter(column => column.generationStrategy === "uuid").length > 0;
             });
+            const hasCitextColumns = this.connection.entityMetadatas.some(metadata => {
+                return metadata.columns.filter(column => column.type === "citext").length > 0;
+            });
+            const hasHstoreColumns = this.connection.entityMetadatas.some(metadata => {
+                return metadata.columns.filter(column => column.type === "hstore").length > 0;
+            });
+            const hasCubeColumns = this.connection.entityMetadatas.some(metadata => {
+                return metadata.columns.filter(column => column.type === "cube").length > 0;
+            });
+            const hasGeometryColumns = this.connection.entityMetadatas.some(metadata => {
+                return metadata.columns.filter(column => this.spatialTypes.indexOf(column.type) >= 0).length > 0;
+            });
+            const hasLtreeColumns = this.connection.entityMetadatas.some(metadata => {
+                return metadata.columns.filter(column => column.type === "ltree").length > 0;
+            });
+            const hasExclusionConstraints = this.connection.entityMetadatas.some(metadata => {
+                return metadata.exclusions.length > 0;
+            });
+            return {
+                hasUuidColumns,
+                hasCitextColumns,
+                hasHstoreColumns,
+                hasCubeColumns,
+                hasGeometryColumns,
+                hasLtreeColumns,
+                hasExclusionConstraints,
+                hasExtensions: hasUuidColumns || hasCitextColumns || hasHstoreColumns || hasGeometryColumns || hasCubeColumns || hasLtreeColumns || hasExclusionConstraints,
+            };
         });
-    };
+    }
     /**
      * Closes connection with database.
      */
-    PostgresDriver.prototype.disconnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!this.master)
-                            return [2 /*return*/, Promise.reject(new ConnectionIsNotSetError("postgres"))];
-                        return [4 /*yield*/, this.closePool(this.master)];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, Promise.all(this.slaves.map(function (slave) { return _this.closePool(slave); }))];
-                    case 2:
-                        _a.sent();
-                        this.master = undefined;
-                        this.slaves = [];
-                        return [2 /*return*/];
-                }
-            });
+    disconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.master)
+                return Promise.reject(new ConnectionIsNotSetError("postgres"));
+            yield this.closePool(this.master);
+            yield Promise.all(this.slaves.map(slave => this.closePool(slave)));
+            this.master = undefined;
+            this.slaves = [];
         });
-    };
+    }
     /**
      * Creates a schema builder used to build and sync a schema.
      */
-    PostgresDriver.prototype.createSchemaBuilder = function () {
+    createSchemaBuilder() {
         return new RdbmsSchemaBuilder(this.connection);
-    };
+    }
     /**
      * Creates a query runner used to execute database queries.
      */
-    PostgresDriver.prototype.createQueryRunner = function (mode) {
+    createQueryRunner(mode) {
         return new PostgresQueryRunner(this, mode);
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    PostgresDriver.prototype.preparePersistentValue = function (value, columnMetadata) {
+    preparePersistentValue(value, columnMetadata) {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         if (value === null || value === undefined)
@@ -499,7 +401,7 @@ var PostgresDriver = /** @class */ (function () {
             */
             return DateUtils.mixedDateToDate(value);
         }
-        else if (__spreadArray(["json", "jsonb"], __read(this.spatialTypes)).indexOf(columnMetadata.type) >= 0) {
+        else if (["json", "jsonb", ...this.spatialTypes].indexOf(columnMetadata.type) >= 0) {
             return JSON.stringify(value);
         }
         else if (columnMetadata.type === "hstore") {
@@ -508,7 +410,7 @@ var PostgresDriver = /** @class */ (function () {
             }
             else {
                 // https://www.postgresql.org/docs/9.0/hstore.html
-                var quoteString_1 = function (value) {
+                const quoteString = (value) => {
                     // If a string to be quoted is `null` or `undefined`, we return a literal unquoted NULL.
                     // This way, NULL values can be stored in the hstore object.
                     if (value === null || typeof value === "undefined") {
@@ -516,9 +418,9 @@ var PostgresDriver = /** @class */ (function () {
                     }
                     // Convert non-null values to string since HStore only stores strings anyway.
                     // To include a double quote or a backslash in a key or value, escape it with a backslash.
-                    return "\"" + ("" + value).replace(/(?=["\\])/g, "\\") + "\"";
+                    return `"${`${value}`.replace(/(?=["\\])/g, "\\")}"`;
                 };
-                return Object.keys(value).map(function (key) { return quoteString_1(key) + "=>" + quoteString_1(value[key]); }).join(",");
+                return Object.keys(value).map(key => quoteString(key) + "=>" + quoteString(value[key])).join(",");
             }
         }
         else if (columnMetadata.type === "simple-array") {
@@ -529,9 +431,9 @@ var PostgresDriver = /** @class */ (function () {
         }
         else if (columnMetadata.type === "cube") {
             if (columnMetadata.isArray) {
-                return "{" + value.map(function (cube) { return "\"(" + cube.join(",") + ")\""; }).join(",") + "}";
+                return `{${value.map((cube) => `"(${cube.join(",")})"`).join(",")}}`;
             }
-            return "(" + value.join(",") + ")";
+            return `(${value.join(",")})`;
         }
         else if (columnMetadata.type === "ltree") {
             return value.split(".").filter(Boolean).join(".").replace(/[\s]+/g, "_");
@@ -542,11 +444,11 @@ var PostgresDriver = /** @class */ (function () {
             return "" + value;
         }
         return value;
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    PostgresDriver.prototype.prepareHydratedValue = function (value, columnMetadata) {
+    prepareHydratedValue(value, columnMetadata) {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
         if (columnMetadata.type === Boolean) {
@@ -567,14 +469,14 @@ var PostgresDriver = /** @class */ (function () {
         }
         else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
-                var unescapeString_1 = function (str) { return str.replace(/\\./g, function (m) { return m[1]; }); };
-                var regexp = /"([^"\\]*(?:\\.[^"\\]*)*)"=>(?:(NULL)|"([^"\\]*(?:\\.[^"\\]*)*)")(?:,|$)/g;
-                var object_1 = {};
-                ("" + value).replace(regexp, function (_, key, nullValue, stringValue) {
-                    object_1[unescapeString_1(key)] = nullValue ? null : unescapeString_1(stringValue);
+                const unescapeString = (str) => str.replace(/\\./g, (m) => m[1]);
+                const regexp = /"([^"\\]*(?:\\.[^"\\]*)*)"=>(?:(NULL)|"([^"\\]*(?:\\.[^"\\]*)*)")(?:,|$)/g;
+                const object = {};
+                `${value}`.replace(regexp, (_, key, nullValue, stringValue) => {
+                    object[unescapeString(key)] = nullValue ? null : unescapeString(stringValue);
                     return "";
                 });
-                return object_1;
+                return object;
             }
             else {
                 return value;
@@ -595,10 +497,10 @@ var PostgresDriver = /** @class */ (function () {
                  * 2. ["", undefined]         <- cube of arity 0
                  * 3. [undefined, "NULL"]     <- NULL
                  */
-                var regexp = /(?:\"((?:[\d\s\.,])*)\")|(?:(NULL))/g;
-                var unparsedArrayString = value;
+                const regexp = /(?:\"((?:[\d\s\.,])*)\")|(?:(NULL))/g;
+                const unparsedArrayString = value;
                 value = [];
-                var cube = null;
+                let cube = null;
                 // Iterate through all regexp matches for cubes/null in array
                 while ((cube = regexp.exec(unparsedArrayString)) !== null) {
                     if (cube[1] !== undefined) {
@@ -618,9 +520,9 @@ var PostgresDriver = /** @class */ (function () {
                 if (value === "{}")
                     return [];
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-                value = value.substr(1, value.length - 2).split(",").map(function (val) {
+                value = value.substr(1, value.length - 2).split(",").map(val => {
                     // replace double quotes from the beginning and from the end
-                    if (val.startsWith("\"") && val.endsWith("\""))
+                    if (val.startsWith(`"`) && val.endsWith(`"`))
                         val = val.slice(1, -1);
                     // replace double escaped backslash to single escaped e.g. \\\\ -> \\
                     val = val.replace(/(\\\\)/g, "\\");
@@ -628,7 +530,7 @@ var PostgresDriver = /** @class */ (function () {
                     return val.replace(/(\\")/g, '"');
                 });
                 // convert to number if that exists in possible enum options
-                value = value.map(function (val) {
+                value = value.map((val) => {
                     return !isNaN(+val) && columnMetadata.enum.indexOf(parseInt(val)) >= 0 ? parseInt(val) : val;
                 });
             }
@@ -640,19 +542,19 @@ var PostgresDriver = /** @class */ (function () {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
-    };
+    }
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    PostgresDriver.prototype.escapeQueryWithParameters = function (sql, parameters, nativeParameters) {
-        var builtParameters = Object.keys(nativeParameters).map(function (key) { return nativeParameters[key]; });
+    escapeQueryWithParameters(sql, parameters, nativeParameters) {
+        const builtParameters = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
             return [sql, builtParameters];
-        var keys = Object.keys(parameters).map(function (parameter) { return "(:(\\.\\.\\.)?" + parameter + "\\b)"; }).join("|");
-        sql = sql.replace(new RegExp(keys, "g"), function (key) {
-            var value;
-            var isArray = false;
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key) => {
+            let value;
+            let isArray = false;
             if (key.substr(0, 4) === ":...") {
                 isArray = true;
                 value = parameters[key.substr(4)];
@@ -661,7 +563,7 @@ var PostgresDriver = /** @class */ (function () {
                 value = parameters[key.substr(1)];
             }
             if (isArray) {
-                return value.map(function (v) {
+                return value.map((v) => {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
                 }).join(", ");
@@ -675,24 +577,24 @@ var PostgresDriver = /** @class */ (function () {
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
-    };
+    }
     /**
      * Escapes a column name.
      */
-    PostgresDriver.prototype.escape = function (columnName) {
+    escape(columnName) {
         return "\"" + columnName + "\"";
-    };
+    }
     /**
      * Build full table name with schema name and table name.
      * E.g. "mySchema"."myTable"
      */
-    PostgresDriver.prototype.buildTableName = function (tableName, schema) {
-        return schema ? schema + "." + tableName : tableName;
-    };
+    buildTableName(tableName, schema) {
+        return schema ? `${schema}.${tableName}` : tableName;
+    }
     /**
      * Creates a database type from a given column metadata.
      */
-    PostgresDriver.prototype.normalizeType = function (column) {
+    normalizeType(column) {
         if (column.type === Number || column.type === "int" || column.type === "int4") {
             return "integer";
         }
@@ -747,24 +649,24 @@ var PostgresDriver = /** @class */ (function () {
         else {
             return column.type || "";
         }
-    };
+    }
     /**
      * Normalizes "default" value of the column.
      */
-    PostgresDriver.prototype.normalizeDefault = function (columnMetadata) {
-        var defaultValue = columnMetadata.default;
+    normalizeDefault(columnMetadata) {
+        const defaultValue = columnMetadata.default;
         if (defaultValue === null) {
             return undefined;
         }
         else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-            return "'{" + defaultValue.map(function (val) { return "" + val; }).join(",") + "}'";
+            return `'{${defaultValue.map((val) => `${val}`).join(",")}}'`;
         }
         else if ((columnMetadata.type === "enum"
             || columnMetadata.type === "simple-enum"
             || typeof defaultValue === "number"
             || typeof defaultValue === "string")
             && defaultValue !== undefined) {
-            return "'" + defaultValue + "'";
+            return `'${defaultValue}'`;
         }
         else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "true" : "false";
@@ -773,29 +675,29 @@ var PostgresDriver = /** @class */ (function () {
             return defaultValue();
         }
         else if (typeof defaultValue === "object") {
-            return "'" + JSON.stringify(defaultValue) + "'";
+            return `'${JSON.stringify(defaultValue)}'`;
         }
         else {
             return defaultValue;
         }
-    };
+    }
     /**
      * Normalizes "isUnique" value of the column.
      */
-    PostgresDriver.prototype.normalizeIsUnique = function (column) {
-        return column.entityMetadata.uniques.some(function (uq) { return uq.columns.length === 1 && uq.columns[0] === column; });
-    };
+    normalizeIsUnique(column) {
+        return column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
+    }
     /**
      * Returns default column lengths, which is required on column creation.
      */
-    PostgresDriver.prototype.getColumnLength = function (column) {
+    getColumnLength(column) {
         return column.length ? column.length.toString() : "";
-    };
+    }
     /**
      * Creates column type definition including length, precision and scale
      */
-    PostgresDriver.prototype.createFullType = function (column) {
-        var type = column.type;
+    createFullType(column) {
+        let type = column.type;
         if (column.length) {
             type += "(" + column.length + ")";
         }
@@ -819,10 +721,10 @@ var PostgresDriver = /** @class */ (function () {
         }
         else if (this.spatialTypes.indexOf(column.type) >= 0) {
             if (column.spatialFeatureType != null && column.srid != null) {
-                type = column.type + "(" + column.spatialFeatureType + "," + column.srid + ")";
+                type = `${column.type}(${column.spatialFeatureType},${column.srid})`;
             }
             else if (column.spatialFeatureType != null) {
-                type = column.type + "(" + column.spatialFeatureType + ")";
+                type = `${column.type}(${column.spatialFeatureType})`;
             }
             else {
                 type = column.type;
@@ -831,76 +733,73 @@ var PostgresDriver = /** @class */ (function () {
         if (column.isArray)
             type += " array";
         return type;
-    };
+    }
     /**
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    PostgresDriver.prototype.obtainMasterConnection = function () {
-        var _this = this;
-        return new Promise(function (ok, fail) {
-            _this.master.connect(function (err, connection, release) {
+    obtainMasterConnection() {
+        return new Promise((ok, fail) => {
+            this.master.connect((err, connection, release) => {
                 err ? fail(err) : ok([connection, release]);
             });
         });
-    };
+    }
     /**
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    PostgresDriver.prototype.obtainSlaveConnection = function () {
-        var _this = this;
+    obtainSlaveConnection() {
         if (!this.slaves.length)
             return this.obtainMasterConnection();
-        return new Promise(function (ok, fail) {
-            var random = Math.floor(Math.random() * _this.slaves.length);
-            _this.slaves[random].connect(function (err, connection, release) {
+        return new Promise((ok, fail) => {
+            const random = Math.floor(Math.random() * this.slaves.length);
+            this.slaves[random].connect((err, connection, release) => {
                 err ? fail(err) : ok([connection, release]);
             });
         });
-    };
+    }
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
      */
-    PostgresDriver.prototype.createGeneratedMap = function (metadata, insertResult) {
+    createGeneratedMap(metadata, insertResult) {
         if (!insertResult)
             return undefined;
-        return Object.keys(insertResult).reduce(function (map, key) {
-            var column = metadata.findColumnWithDatabaseName(key);
+        return Object.keys(insertResult).reduce((map, key) => {
+            const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
                 OrmUtils.mergeDeep(map, column.createValueMap(insertResult[key]));
                 // OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column))); // TODO: probably should be like there, but fails on enums, fix later
             }
             return map;
         }, {});
-    };
+    }
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    PostgresDriver.prototype.findChangedColumns = function (tableColumns, columnMetadatas) {
-        var _this = this;
-        return columnMetadatas.filter(function (columnMetadata) {
-            var tableColumn = tableColumns.find(function (c) { return c.name === columnMetadata.databaseName; });
+    findChangedColumns(tableColumns, columnMetadatas) {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
-            var isColumnChanged = tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== _this.normalizeType(columnMetadata)
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.isArray !== columnMetadata.isArray
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 || tableColumn.comment !== columnMetadata.comment
-                || (!tableColumn.isGenerated && _this.lowerDefaultValueIfNecessary(_this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== _this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || tableColumn.enumName !== columnMetadata.enumName
-                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(function (val) { return val + ""; }))) // enums in postgres are always strings
+                || (tableColumn.enum && columnMetadata.enum && !OrmUtils.isArraysEqual(tableColumn.enum, columnMetadata.enum.map(val => val + ""))) // enums in postgres are always strings
                 || tableColumn.isGenerated !== columnMetadata.isGenerated
                 || (tableColumn.spatialFeatureType || "").toLowerCase() !== (columnMetadata.spatialFeatureType || "").toLowerCase()
                 || tableColumn.srid !== columnMetadata.srid;
@@ -928,72 +827,68 @@ var PostgresDriver = /** @class */ (function () {
             // }
             return isColumnChanged;
         });
-    };
-    PostgresDriver.prototype.lowerDefaultValueIfNecessary = function (value) {
+    }
+    lowerDefaultValueIfNecessary(value) {
         // Postgres saves function calls in default value as lowercase #2733
         if (!value) {
             return value;
         }
-        return value.split("'").map(function (v, i) {
+        return value.split(`'`).map((v, i) => {
             return i % 2 === 1 ? v : v.toLowerCase();
-        }).join("'");
-    };
+        }).join(`'`);
+    }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    PostgresDriver.prototype.isReturningSqlSupported = function () {
+    isReturningSqlSupported() {
         return true;
-    };
+    }
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
-    PostgresDriver.prototype.isUUIDGenerationSupported = function () {
+    isUUIDGenerationSupported() {
         return true;
-    };
+    }
     /**
      * Returns true if driver supports fulltext indices.
      */
-    PostgresDriver.prototype.isFullTextColumnTypeSupported = function () {
+    isFullTextColumnTypeSupported() {
         return false;
-    };
-    Object.defineProperty(PostgresDriver.prototype, "uuidGenerator", {
-        get: function () {
-            return this.options.uuidExtension === "pgcrypto" ? "gen_random_uuid()" : "uuid_generate_v4()";
-        },
-        enumerable: false,
-        configurable: true
-    });
+    }
+    get uuidGenerator() {
+        return this.options.uuidExtension === "pgcrypto" ? "gen_random_uuid()" : "uuid_generate_v4()";
+    }
     /**
      * Creates an escaped parameter.
      */
-    PostgresDriver.prototype.createParameter = function (parameterName, index) {
+    createParameter(parameterName, index) {
         return "$" + (index + 1);
-    };
+    }
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
     /**
      * Loads postgres query stream package.
      */
-    PostgresDriver.prototype.loadStreamDependency = function () {
+    loadStreamDependency() {
         try {
             return PlatformTools.load("pg-query-stream");
         }
         catch (e) { // todo: better error for browser env
-            throw new Error("To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.");
+            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
         }
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
-    PostgresDriver.prototype.loadDependencies = function () {
+    loadDependencies() {
         try {
             this.postgres = PlatformTools.load("pg");
             try {
-                var pgNative = PlatformTools.load("pg-native");
+                const pgNative = PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native;
             }
@@ -1002,84 +897,75 @@ var PostgresDriver = /** @class */ (function () {
         catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg");
         }
-    };
+    }
     /**
      * Creates a new connection pool for a given database credentials.
      */
-    PostgresDriver.prototype.createPool = function (options, credentials) {
-        return __awaiter(this, void 0, void 0, function () {
-            var connectionOptions, pool, logger, poolErrorHandler;
-            var _this = this;
-            return __generator(this, function (_a) {
-                credentials = Object.assign({}, credentials);
-                connectionOptions = Object.assign({}, {
-                    connectionString: credentials.url,
-                    host: credentials.host,
-                    user: credentials.username,
-                    password: credentials.password,
-                    database: credentials.database,
-                    port: credentials.port,
-                    ssl: credentials.ssl,
-                    connectionTimeoutMillis: options.connectTimeoutMS
-                }, options.extra || {});
-                pool = new this.postgres.Pool(connectionOptions);
-                logger = this.connection.logger;
-                poolErrorHandler = options.poolErrorHandler || (function (error) { return logger.log("warn", "Postgres pool raised an error. " + error); });
-                /*
-                  Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
-                  cause the hosting app to crash.
-                 */
-                pool.on("error", poolErrorHandler);
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        pool.connect(function (err, connection, release) {
-                            if (err)
-                                return fail(err);
-                            if (options.logNotifications) {
-                                connection.on("notice", function (msg) {
-                                    msg && _this.connection.logger.log("info", msg.message);
-                                });
-                                connection.on("notification", function (msg) {
-                                    msg && _this.connection.logger.log("info", "Received NOTIFY on channel " + msg.channel + ": " + msg.payload + ".");
-                                });
-                            }
-                            release();
-                            ok(pool);
+    createPool(options, credentials) {
+        return __awaiter(this, void 0, void 0, function* () {
+            credentials = Object.assign({}, credentials);
+            // build connection options for the driver
+            // See: https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#create
+            const connectionOptions = Object.assign({}, {
+                connectionString: credentials.url,
+                host: credentials.host,
+                user: credentials.username,
+                password: credentials.password,
+                database: credentials.database,
+                port: credentials.port,
+                ssl: credentials.ssl,
+                connectionTimeoutMillis: options.connectTimeoutMS
+            }, options.extra || {});
+            // create a connection pool
+            const pool = new this.postgres.Pool(connectionOptions);
+            const { logger } = this.connection;
+            const poolErrorHandler = options.poolErrorHandler || ((error) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+            /*
+              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+              cause the hosting app to crash.
+             */
+            pool.on("error", poolErrorHandler);
+            return new Promise((ok, fail) => {
+                pool.connect((err, connection, release) => {
+                    if (err)
+                        return fail(err);
+                    if (options.logNotifications) {
+                        connection.on("notice", (msg) => {
+                            msg && this.connection.logger.log("info", msg.message);
                         });
-                    })];
+                        connection.on("notification", (msg) => {
+                            msg && this.connection.logger.log("info", `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`);
+                        });
+                    }
+                    release();
+                    ok(pool);
+                });
             });
         });
-    };
+    }
     /**
      * Closes connection pool.
      */
-    PostgresDriver.prototype.closePool = function (pool) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, Promise.all(this.connectedQueryRunners.map(function (queryRunner) { return queryRunner.release(); }))];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/, new Promise(function (ok, fail) {
-                                pool.end(function (err) { return err ? fail(err) : ok(); });
-                            })];
-                }
+    closePool(pool) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+            return new Promise((ok, fail) => {
+                pool.end((err) => err ? fail(err) : ok());
             });
         });
-    };
+    }
     /**
      * Executes given query.
      */
-    PostgresDriver.prototype.executeQuery = function (connection, query) {
-        return new Promise(function (ok, fail) {
-            connection.query(query, function (err, result) {
+    executeQuery(connection, query) {
+        return new Promise((ok, fail) => {
+            connection.query(query, (err, result) => {
                 if (err)
                     return fail(err);
                 ok(result);
             });
         });
-    };
-    return PostgresDriver;
-}());
-export { PostgresDriver };
+    }
+}
 
 //# sourceMappingURL=PostgresDriver.js.map

@@ -1,14 +1,12 @@
-import { __extends } from "tslib";
 import { EntitySchema } from "../index";
 /**
  */
-var EntityMetadataNotFoundError = /** @class */ (function (_super) {
-    __extends(EntityMetadataNotFoundError, _super);
-    function EntityMetadataNotFoundError(target) {
-        var _this = _super.call(this) || this;
-        _this.name = "EntityMetadataNotFound";
-        Object.setPrototypeOf(_this, EntityMetadataNotFoundError.prototype);
-        var targetName;
+export class EntityMetadataNotFoundError extends Error {
+    constructor(target) {
+        super();
+        this.name = "EntityMetadataNotFound";
+        Object.setPrototypeOf(this, EntityMetadataNotFoundError.prototype);
+        let targetName;
         if (target instanceof EntitySchema) {
             targetName = target.options.name;
         }
@@ -21,11 +19,8 @@ var EntityMetadataNotFoundError = /** @class */ (function (_super) {
         else {
             targetName = target;
         }
-        _this.message = "No metadata for \"" + targetName + "\" was found.";
-        return _this;
+        this.message = `No metadata for "${targetName}" was found.`;
     }
-    return EntityMetadataNotFoundError;
-}(Error));
-export { EntityMetadataNotFoundError };
+}
 
 //# sourceMappingURL=EntityMetadataNotFoundError.js.map

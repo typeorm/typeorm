@@ -3,7 +3,7 @@ import { ColumnOptions, ColumnType } from "../../";
  * Describes all primary key column's options.
  * If specified, the nullable field must be set to false.
  */
-export declare type PrimaryColumnOptions = ColumnOptions & {
+export type PrimaryColumnOptions = ColumnOptions & {
     nullable?: false;
 };
 /**

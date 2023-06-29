@@ -1,4 +1,4 @@
-import { __awaiter, __generator } from "tslib";
+import { __awaiter } from "tslib";
 import { SqlInMemory } from "../driver/SqlInMemory";
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -14,11 +14,11 @@ import { SqlInMemory } from "../driver/SqlInMemory";
  * 8. create foreign keys which does not exist in the table yet
  * 9. create indices which are missing in db yet, and drops indices which exist in the db, but does not exist in the metadata anymore
  */
-var MongoSchemaBuilder = /** @class */ (function () {
+export class MongoSchemaBuilder {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function MongoSchemaBuilder(connection) {
+    constructor(connection) {
         this.connection = connection;
     }
     // -------------------------------------------------------------------------
@@ -27,50 +27,39 @@ var MongoSchemaBuilder = /** @class */ (function () {
     /**
      * Creates complete schemas for the given entity metadatas.
      */
-    MongoSchemaBuilder.prototype.build = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var queryRunner, promises;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        queryRunner = this.connection.createQueryRunner();
-                        promises = [];
-                        this.connection.entityMetadatas.forEach(function (metadata) {
-                            metadata.indices.forEach(function (index) {
-                                var options = Object.assign({}, {
-                                    name: index.name,
-                                    unique: index.isUnique,
-                                    sparse: index.isSparse,
-                                    background: index.isBackground
-                                }, index.expireAfterSeconds === undefined
-                                    ? {}
-                                    : { expireAfterSeconds: index.expireAfterSeconds });
-                                promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
-                            });
-                            metadata.uniques.forEach(function (unique) {
-                                var options = {
-                                    name: unique.name,
-                                    unique: true,
-                                };
-                                promises.push(queryRunner.createCollectionIndex(metadata.tableName, unique.columnNamesWithOrderingMap, options));
-                            });
-                        });
-                        return [4 /*yield*/, Promise.all(promises)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
+    build() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryRunner = this.connection.createQueryRunner();
+            const promises = [];
+            this.connection.entityMetadatas.forEach(metadata => {
+                metadata.indices.forEach(index => {
+                    const options = Object.assign({}, {
+                        name: index.name,
+                        unique: index.isUnique,
+                        sparse: index.isSparse,
+                        background: index.isBackground
+                    }, index.expireAfterSeconds === undefined
+                        ? {}
+                        : { expireAfterSeconds: index.expireAfterSeconds });
+                    promises.push(queryRunner.createCollectionIndex(metadata.tableName, index.columnNamesWithOrderingMap, options));
+                });
+                metadata.uniques.forEach(unique => {
+                    const options = {
+                        name: unique.name,
+                        unique: true,
+                    };
+                    promises.push(queryRunner.createCollectionIndex(metadata.tableName, unique.columnNamesWithOrderingMap, options));
+                });
             });
+            yield Promise.all(promises);
         });
-    };
+    }
     /**
      * Returns query to be executed by schema builder.
      */
-    MongoSchemaBuilder.prototype.log = function () {
+    log() {
         return Promise.resolve(new SqlInMemory());
-    };
-    return MongoSchemaBuilder;
-}());
-export { MongoSchemaBuilder };
+    }
+}
 
 //# sourceMappingURL=MongoSchemaBuilder.js.map

@@ -1,11 +1,11 @@
 /**
  * Exclusion metadata contains all information about table's exclusion constraints.
  */
-var ExclusionMetadata = /** @class */ (function () {
+export class ExclusionMetadata {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function ExclusionMetadata(options) {
+    constructor(options) {
         this.entityMetadata = options.entityMetadata;
         if (options.args) {
             this.target = options.args.target;
@@ -20,12 +20,10 @@ var ExclusionMetadata = /** @class */ (function () {
      * Builds some depend exclusion constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
      */
-    ExclusionMetadata.prototype.build = function (namingStrategy) {
+    build(namingStrategy) {
         this.name = this.givenName ? this.givenName : namingStrategy.exclusionConstraintName(this.entityMetadata.tablePath, this.expression);
         return this;
-    };
-    return ExclusionMetadata;
-}());
-export { ExclusionMetadata };
+    }
+}
 
 //# sourceMappingURL=ExclusionMetadata.js.map

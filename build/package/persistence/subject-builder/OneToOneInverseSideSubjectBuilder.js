@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OneToOneInverseSideSubjectBuilder = void 0;
-var Subject_1 = require("../Subject");
-var OrmUtils_1 = require("../../util/OrmUtils");
+const Subject_1 = require("../Subject");
+const OrmUtils_1 = require("../../util/OrmUtils");
 /**
  * Builds operations needs to be executed for one-to-one non-owner relations of the given subjects.
  *
@@ -14,11 +14,11 @@ var OrmUtils_1 = require("../../util/OrmUtils");
  * note: this class shares lot of things with OneToManyUpdateBuilder, so when you change this class
  *       make sure to reflect changes there as well.
  */
-var OneToOneInverseSideSubjectBuilder = /** @class */ (function () {
+class OneToOneInverseSideSubjectBuilder {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function OneToOneInverseSideSubjectBuilder(subjects) {
+    constructor(subjects) {
         this.subjects = subjects;
     }
     // ---------------------------------------------------------------------
@@ -27,18 +27,17 @@ var OneToOneInverseSideSubjectBuilder = /** @class */ (function () {
     /**
      * Builds all required operations.
      */
-    OneToOneInverseSideSubjectBuilder.prototype.build = function () {
-        var _this = this;
-        this.subjects.forEach(function (subject) {
-            subject.metadata.oneToOneRelations.forEach(function (relation) {
+    build() {
+        this.subjects.forEach(subject => {
+            subject.metadata.oneToOneRelations.forEach(relation => {
                 // we don't need owning relations, this operation is only for inverse side of one-to-one relations
                 // skip relations for which persistence is disabled
                 if (relation.isOwning || relation.persistenceEnabled === false)
                     return;
-                _this.buildForSubjectRelation(subject, relation);
+                this.buildForSubjectRelation(subject, relation);
             });
         });
-    };
+    }
     // ---------------------------------------------------------------------
     // Protected Methods
     // ---------------------------------------------------------------------
@@ -47,17 +46,17 @@ var OneToOneInverseSideSubjectBuilder = /** @class */ (function () {
      *
      * by example: subject is "post" entity we are saving here and relation is "category" inside it here.
      */
-    OneToOneInverseSideSubjectBuilder.prototype.buildForSubjectRelation = function (subject, relation) {
+    buildForSubjectRelation(subject, relation) {
         // prepare objects (relation id map) for the database entity
         // note: subject.databaseEntity contains relation with loaded relation id only (id map)
         // by example: since subject is a post, we are expecting to get post's category saved in the database here,
         //             particularly its relation id, e.g. category id stored in the database
-        var relatedEntityDatabaseRelationId = undefined;
+        let relatedEntityDatabaseRelationId = undefined;
         if (subject.databaseEntity) // related entity in the database can exist only if this entity (post) is saved
             relatedEntityDatabaseRelationId = relation.getEntityValue(subject.databaseEntity);
         // get related entities of persisted entity
         // by example: get category from the passed to persist post entity
-        var relatedEntity = relation.getEntityValue(subject.entity); // by example: relatedEntity is a category here
+        let relatedEntity = relation.getEntityValue(subject.entity); // by example: relatedEntity is a category here
         if (relatedEntity === undefined) // if relation is undefined then nothing to update
             return;
         // if related entity is null then we need to check if there a bind in the database and unset it
@@ -69,7 +68,7 @@ var OneToOneInverseSideSubjectBuilder = /** @class */ (function () {
                 // todo: probably we can improve this in the future by finding entity with column those values,
                 // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
                 // we create a new subject which operations will be executed in subject operation executor
-                var removedRelatedEntitySubject = new Subject_1.Subject({
+                const removedRelatedEntitySubject = new Subject_1.Subject({
                     metadata: relation.inverseEntityMetadata,
                     parentSubject: subject,
                     canBeUpdated: true,
@@ -85,9 +84,9 @@ var OneToOneInverseSideSubjectBuilder = /** @class */ (function () {
         } // else means entity is bind in the database
         // extract only relation id from the related entities, since we only need it for comparision
         // by example: extract from category only relation id (category id, or let's say category title, depend on join column options)
-        var relationIdMap = relation.inverseEntityMetadata.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
+        let relationIdMap = relation.inverseEntityMetadata.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
         // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
-        var relatedEntitySubject = this.subjects.find(function (operateSubject) {
+        let relatedEntitySubject = this.subjects.find(operateSubject => {
             return !!operateSubject.entity && operateSubject.entity === relatedEntity;
         });
         // if subject with entity was found take subject identifier as relation id map since it may contain extra properties resolved
@@ -120,7 +119,7 @@ var OneToOneInverseSideSubjectBuilder = /** @class */ (function () {
         }
         // check if this binding really exist in the database
         // by example: find our post if its already bind to category in the database and its not equal to what user tries to set
-        var areRelatedIdEqualWithDatabase = relatedEntityDatabaseRelationId && OrmUtils_1.OrmUtils.compareIds(relationIdMap, relatedEntityDatabaseRelationId);
+        const areRelatedIdEqualWithDatabase = relatedEntityDatabaseRelationId && OrmUtils_1.OrmUtils.compareIds(relationIdMap, relatedEntityDatabaseRelationId);
         // if they aren't equal it means its a new relation and we need to "bind" them
         // by example: this will tell category to insert into its post relation our post we are working with
         //             relatedEntitySubject is newly inserted CategorySubject
@@ -143,9 +142,8 @@ var OneToOneInverseSideSubjectBuilder = /** @class */ (function () {
                 value: subject
             });
         }
-    };
-    return OneToOneInverseSideSubjectBuilder;
-}());
+    }
+}
 exports.OneToOneInverseSideSubjectBuilder = OneToOneInverseSideSubjectBuilder;
 
 //# sourceMappingURL=OneToOneInverseSideSubjectBuilder.js.map

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IsNull = void 0;
-var FindOperator_1 = require("../FindOperator");
+const FindOperator_1 = require("../FindOperator");
 /**
  * Find Options Operator.
  * Example: { someField: IsNull() }

@@ -11,7 +11,7 @@ export interface UseContainerOptions {
      */
     fallbackOnErrors?: boolean;
 }
-export declare type ContainedType<T> = {
+export type ContainedType<T> = {
     new (...args: any[]): T;
 } | Function;
 export interface ContainerInterface {

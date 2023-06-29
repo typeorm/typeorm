@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrimaryGeneratedColumn = void 0;
-var __1 = require("../../");
+const __1 = require("../../");
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
@@ -9,8 +9,8 @@ var __1 = require("../../");
  */
 function PrimaryGeneratedColumn(strategyOrOptions, maybeOptions) {
     // normalize parameters
-    var options = {};
-    var strategy;
+    const options = {};
+    let strategy;
     if (strategyOrOptions) {
         if (typeof strategyOrOptions === "string")
             strategy = strategyOrOptions;
@@ -40,14 +40,14 @@ function PrimaryGeneratedColumn(strategyOrOptions, maybeOptions) {
         // explicitly set a primary and generated to column options
         options.primary = true;
         // register column metadata args
-        __1.getMetadataArgsStorage().columns.push({
+        (0, __1.getMetadataArgsStorage)().columns.push({
             target: object.constructor,
             propertyName: propertyName,
             mode: "regular",
             options: options
         });
         // register generated metadata args
-        __1.getMetadataArgsStorage().generations.push({
+        (0, __1.getMetadataArgsStorage)().generations.push({
             target: object.constructor,
             propertyName: propertyName,
             strategy: strategy

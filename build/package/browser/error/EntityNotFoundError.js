@@ -1,15 +1,13 @@
-import { __extends } from "tslib";
 import { EntitySchema } from "../index";
 /**
  * Thrown when no result could be found in methods which are not allowed to return undefined or an empty set.
  */
-var EntityNotFoundError = /** @class */ (function (_super) {
-    __extends(EntityNotFoundError, _super);
-    function EntityNotFoundError(entityClass, criteria) {
-        var _this = _super.call(this) || this;
-        _this.name = "EntityNotFound";
-        Object.setPrototypeOf(_this, EntityNotFoundError.prototype);
-        var targetName;
+export class EntityNotFoundError extends Error {
+    constructor(entityClass, criteria) {
+        super();
+        this.name = "EntityNotFound";
+        Object.setPrototypeOf(this, EntityNotFoundError.prototype);
+        let targetName;
         if (entityClass instanceof EntitySchema) {
             targetName = entityClass.options.name;
         }
@@ -22,19 +20,16 @@ var EntityNotFoundError = /** @class */ (function (_super) {
         else {
             targetName = entityClass;
         }
-        var criteriaString = _this.stringifyCriteria(criteria);
-        _this.message = "Could not find any entity of type \"" + targetName + "\" matching: " + criteriaString;
-        return _this;
+        const criteriaString = this.stringifyCriteria(criteria);
+        this.message = `Could not find any entity of type "${targetName}" matching: ${criteriaString}`;
     }
-    EntityNotFoundError.prototype.stringifyCriteria = function (criteria) {
+    stringifyCriteria(criteria) {
         try {
             return JSON.stringify(criteria, null, 4);
         }
         catch (e) { }
         return "" + criteria;
-    };
-    return EntityNotFoundError;
-}(Error));
-export { EntityNotFoundError };
+    }
+}
 
 //# sourceMappingURL=EntityNotFoundError.js.map

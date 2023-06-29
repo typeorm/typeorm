@@ -7,7 +7,7 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export declare class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
+export declare class InsertQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> {
     /**
      * Gets generated sql query without parameters being replaced.
      */
@@ -19,7 +19,7 @@ export declare class InsertQueryBuilder<Entity> extends QueryBuilder<Entity> {
     /**
      * Specifies INTO which entity's table insertion will be executed.
      */
-    into<T>(entityTarget: EntityTarget<T>, columns?: string[]): InsertQueryBuilder<T>;
+    into<T extends ObjectLiteral>(entityTarget: EntityTarget<T>, columns?: string[]): InsertQueryBuilder<T>;
     /**
      * Values needs to be inserted into table.
      */

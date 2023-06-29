@@ -11,7 +11,7 @@ export class PlainObjectToNewEntityTransformer {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    transform<T>(newEntity: T, object: ObjectLiteral, metadata: EntityMetadata, getLazyRelationsPromiseValue: boolean = false): T {
+    transform<T extends ObjectLiteral>(newEntity: T, object: ObjectLiteral, metadata: EntityMetadata, getLazyRelationsPromiseValue: boolean = false): T {
         // console.log("groupAndTransform entity:", newEntity);
         // console.log("groupAndTransform object:", object);
         this.groupAndTransform(newEntity, object, metadata, getLazyRelationsPromiseValue);

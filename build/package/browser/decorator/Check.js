@@ -5,10 +5,10 @@ import { getMetadataArgsStorage } from "../";
  * Can create checks with composite columns when used on entity.
  */
 export function Check(nameOrExpression, maybeExpression) {
-    var name = maybeExpression ? nameOrExpression : undefined;
-    var expression = maybeExpression ? maybeExpression : nameOrExpression;
+    const name = maybeExpression ? nameOrExpression : undefined;
+    const expression = maybeExpression ? maybeExpression : nameOrExpression;
     if (!expression)
-        throw new Error("Check expression is required");
+        throw new Error(`Check expression is required`);
     return function (clsOrObject, propertyName) {
         getMetadataArgsStorage().checks.push({
             target: propertyName ? clsOrObject.constructor : clsOrObject,

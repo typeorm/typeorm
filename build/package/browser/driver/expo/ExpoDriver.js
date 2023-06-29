@@ -1,23 +1,21 @@
-import { __awaiter, __extends, __generator } from "tslib";
+import { __awaiter } from "tslib";
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver";
 import { ExpoQueryRunner } from "./ExpoQueryRunner";
 import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError";
-var ExpoDriver = /** @class */ (function (_super) {
-    __extends(ExpoDriver, _super);
+export class ExpoDriver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function ExpoDriver(connection) {
-        var _this = _super.call(this, connection) || this;
-        _this.database = _this.options.database;
+    constructor(connection) {
+        super(connection);
+        this.database = this.options.database;
         // validate options to make sure everything is set
-        if (!_this.options.database)
+        if (!this.options.database)
             throw new DriverOptionNotSetError("database");
-        if (!_this.options.driver)
+        if (!this.options.driver)
             throw new DriverOptionNotSetError("driver");
         // load sqlite package
-        _this.sqlite = _this.options.driver;
-        return _this;
+        this.sqlite = this.options.driver;
     }
     // -------------------------------------------------------------------------
     // Public Methods
@@ -25,54 +23,50 @@ var ExpoDriver = /** @class */ (function (_super) {
     /**
      * Closes connection with database.
      */
-    ExpoDriver.prototype.disconnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        try {
-                            _this.queryRunner = undefined;
-                            _this.databaseConnection._db.close();
-                            _this.databaseConnection = undefined;
-                            ok();
-                        }
-                        catch (error) {
-                            fail(error);
-                        }
-                    })];
+    disconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((ok, fail) => {
+                try {
+                    this.queryRunner = undefined;
+                    this.databaseConnection._db.close();
+                    this.databaseConnection = undefined;
+                    ok();
+                }
+                catch (error) {
+                    fail(error);
+                }
             });
         });
-    };
+    }
     /**
      * Creates a query runner used to execute database queries.
      */
-    ExpoDriver.prototype.createQueryRunner = function (mode) {
+    createQueryRunner(mode) {
         if (!this.queryRunner)
             this.queryRunner = new ExpoQueryRunner(this);
         return this.queryRunner;
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * Creates connection with the database.
      */
-    ExpoDriver.prototype.createDatabaseConnection = function () {
-        var _this = this;
-        return new Promise(function (ok, fail) {
+    createDatabaseConnection() {
+        return new Promise((ok, fail) => {
             try {
-                var databaseConnection_1 = _this.sqlite.openDatabase(_this.options.database);
+                const databaseConnection = this.sqlite.openDatabase(this.options.database);
                 /*
                 // we need to enable foreign keys in sqlite to make sure all foreign key related features
                 // working properly. this also makes onDelete work with sqlite.
                 */
-                databaseConnection_1.transaction(function (tsx) {
-                    tsx.executeSql("PRAGMA foreign_keys = ON;", [], function (t, result) {
-                        ok(databaseConnection_1);
-                    }, function (t, err) {
+                databaseConnection.transaction((tsx) => {
+                    tsx.executeSql(`PRAGMA foreign_keys = ON;`, [], (t, result) => {
+                        ok(databaseConnection);
+                    }, (t, err) => {
                         fail({ transaction: t, error: err });
                     });
-                }, function (err) {
+                }, (err) => {
                     fail(err);
                 });
             }
@@ -80,9 +74,7 @@ var ExpoDriver = /** @class */ (function (_super) {
                 fail(error);
             }
         });
-    };
-    return ExpoDriver;
-}(AbstractSqliteDriver));
-export { ExpoDriver };
+    }
+}
 
 //# sourceMappingURL=ExpoDriver.js.map

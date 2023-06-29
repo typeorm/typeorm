@@ -6,7 +6,7 @@ import { getMetadataArgsStorage } from "../../";
  */
 export function ManyToMany(typeFunctionOrTarget, inverseSideOrOptions, options) {
     // normalize parameters
-    var inverseSideProperty;
+    let inverseSideProperty;
     if (typeof inverseSideOrOptions === "object") {
         options = inverseSideOrOptions;
     }
@@ -17,9 +17,9 @@ export function ManyToMany(typeFunctionOrTarget, inverseSideOrOptions, options) 
         if (!options)
             options = {};
         // now try to determine it its lazy relation
-        var isLazy = options.lazy === true;
+        let isLazy = options.lazy === true;
         if (!isLazy && Reflect && Reflect.getMetadata) { // automatic determination
-            var reflectedType = Reflect.getMetadata("design:type", object, propertyName);
+            const reflectedType = Reflect.getMetadata("design:type", object, propertyName);
             if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
                 isLazy = true;
         }

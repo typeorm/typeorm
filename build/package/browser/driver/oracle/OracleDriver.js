@@ -1,4 +1,4 @@
-import { __awaiter, __generator } from "tslib";
+import { __awaiter } from "tslib";
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { OracleQueryRunner } from "./OracleQueryRunner";
@@ -11,11 +11,11 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers";
 /**
  * Organizes communication with Oracle RDBMS.
  */
-var OracleDriver = /** @class */ (function () {
+export class OracleDriver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function OracleDriver(connection) {
+    constructor(connection) {
         /**
          * Pool for slave databases.
          * Used in replication.
@@ -182,98 +182,70 @@ var OracleDriver = /** @class */ (function () {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    OracleDriver.prototype.connect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, _b, _c;
-            var _this = this;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
-                    case 0:
-                        this.oracle.fetchAsString = [this.oracle.CLOB];
-                        this.oracle.fetchAsBuffer = [this.oracle.BLOB];
-                        if (!this.options.replication) return [3 /*break*/, 3];
-                        _a = this;
-                        return [4 /*yield*/, Promise.all(this.options.replication.slaves.map(function (slave) {
-                                return _this.createPool(_this.options, slave);
-                            }))];
-                    case 1:
-                        _a.slaves = _d.sent();
-                        _b = this;
-                        return [4 /*yield*/, this.createPool(this.options, this.options.replication.master)];
-                    case 2:
-                        _b.master = _d.sent();
-                        this.database = this.options.replication.master.database;
-                        return [3 /*break*/, 5];
-                    case 3:
-                        _c = this;
-                        return [4 /*yield*/, this.createPool(this.options, this.options)];
-                    case 4:
-                        _c.master = _d.sent();
-                        this.database = this.options.database;
-                        _d.label = 5;
-                    case 5: return [2 /*return*/];
-                }
-            });
+    connect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.oracle.fetchAsString = [this.oracle.CLOB];
+            this.oracle.fetchAsBuffer = [this.oracle.BLOB];
+            if (this.options.replication) {
+                this.slaves = yield Promise.all(this.options.replication.slaves.map(slave => {
+                    return this.createPool(this.options, slave);
+                }));
+                this.master = yield this.createPool(this.options, this.options.replication.master);
+                this.database = this.options.replication.master.database;
+            }
+            else {
+                this.master = yield this.createPool(this.options, this.options);
+                this.database = this.options.database;
+            }
         });
-    };
+    }
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    OracleDriver.prototype.afterConnect = function () {
+    afterConnect() {
         return Promise.resolve();
-    };
+    }
     /**
      * Closes connection with the database.
      */
-    OracleDriver.prototype.disconnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!this.master)
-                            return [2 /*return*/, Promise.reject(new ConnectionIsNotSetError("oracle"))];
-                        return [4 /*yield*/, this.closePool(this.master)];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, Promise.all(this.slaves.map(function (slave) { return _this.closePool(slave); }))];
-                    case 2:
-                        _a.sent();
-                        this.master = undefined;
-                        this.slaves = [];
-                        return [2 /*return*/];
-                }
-            });
+    disconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.master)
+                return Promise.reject(new ConnectionIsNotSetError("oracle"));
+            yield this.closePool(this.master);
+            yield Promise.all(this.slaves.map(slave => this.closePool(slave)));
+            this.master = undefined;
+            this.slaves = [];
         });
-    };
+    }
     /**
      * Creates a schema builder used to build and sync a schema.
      */
-    OracleDriver.prototype.createSchemaBuilder = function () {
+    createSchemaBuilder() {
         return new RdbmsSchemaBuilder(this.connection);
-    };
+    }
     /**
      * Creates a query runner used to execute database queries.
      */
-    OracleDriver.prototype.createQueryRunner = function (mode) {
+    createQueryRunner(mode) {
         return new OracleQueryRunner(this, mode);
-    };
+    }
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    OracleDriver.prototype.escapeQueryWithParameters = function (sql, parameters, nativeParameters) {
-        var escapedParameters = Object.keys(nativeParameters).map(function (key) {
+    escapeQueryWithParameters(sql, parameters, nativeParameters) {
+        const escapedParameters = Object.keys(nativeParameters).map(key => {
             if (typeof nativeParameters[key] === "boolean")
                 return nativeParameters[key] ? 1 : 0;
             return nativeParameters[key];
         });
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters];
-        var keys = Object.keys(parameters).map(function (parameter) { return "(:(\\.\\.\\.)?" + parameter + "\\b)"; }).join("|");
-        sql = sql.replace(new RegExp(keys, "g"), function (key) {
-            var value;
-            var isArray = false;
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key) => {
+            let value;
+            let isArray = false;
             if (key.substr(0, 4) === ":...") {
                 isArray = true;
                 value = parameters[key.substr(4)];
@@ -282,9 +254,9 @@ var OracleDriver = /** @class */ (function () {
                 value = parameters[key.substr(1)];
             }
             if (isArray) {
-                return value.map(function (v, index) {
+                return value.map((v, index) => {
                     escapedParameters.push(v);
-                    return ":" + key.substr(4) + index;
+                    return `:${key.substr(4)}${index}`;
                 }).join(", ");
             }
             else if (value instanceof Function) {
@@ -299,24 +271,24 @@ var OracleDriver = /** @class */ (function () {
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
-    };
+    }
     /**
      * Escapes a column name.
      */
-    OracleDriver.prototype.escape = function (columnName) {
-        return "\"" + columnName + "\"";
-    };
+    escape(columnName) {
+        return `"${columnName}"`;
+    }
     /**
      * Build full table name with database name, schema name and table name.
      * Oracle does not support table schemas. One user can have only one schema.
      */
-    OracleDriver.prototype.buildTableName = function (tableName, schema, database) {
+    buildTableName(tableName, schema, database) {
         return tableName;
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    OracleDriver.prototype.preparePersistentValue = function (value, columnMetadata) {
+    preparePersistentValue(value, columnMetadata) {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         if (value === null || value === undefined)
@@ -327,7 +299,7 @@ var OracleDriver = /** @class */ (function () {
         else if (columnMetadata.type === "date") {
             if (typeof value === "string")
                 value = value.replace(/[^0-9-]/g, "");
-            return function () { return "TO_DATE('" + DateUtils.mixedDateToDateString(value) + "', 'YYYY-MM-DD')"; };
+            return () => `TO_DATE('${DateUtils.mixedDateToDateString(value)}', 'YYYY-MM-DD')`;
         }
         else if (columnMetadata.type === Date
             || columnMetadata.type === "timestamp"
@@ -342,11 +314,11 @@ var OracleDriver = /** @class */ (function () {
             return DateUtils.simpleJsonToString(value);
         }
         return value;
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    OracleDriver.prototype.prepareHydratedValue = function (value, columnMetadata) {
+    prepareHydratedValue(value, columnMetadata) {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
         if (columnMetadata.type === Boolean) {
@@ -376,11 +348,11 @@ var OracleDriver = /** @class */ (function () {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
-    };
+    }
     /**
      * Creates a database type from a given column metadata.
      */
-    OracleDriver.prototype.normalizeType = function (column) {
+    normalizeType(column) {
         if (column.type === Number || column.type === Boolean || column.type === "numeric"
             || column.type === "dec" || column.type === "decimal" || column.type === "int"
             || column.type === "integer" || column.type === "smallint") {
@@ -410,12 +382,12 @@ var OracleDriver = /** @class */ (function () {
         else {
             return column.type || "";
         }
-    };
+    }
     /**
      * Normalizes "default" value of the column.
      */
-    OracleDriver.prototype.normalizeDefault = function (columnMetadata) {
-        var defaultValue = columnMetadata.default;
+    normalizeDefault(columnMetadata) {
+        const defaultValue = columnMetadata.default;
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
         }
@@ -426,7 +398,7 @@ var OracleDriver = /** @class */ (function () {
             return defaultValue();
         }
         else if (typeof defaultValue === "string") {
-            return "'" + defaultValue + "'";
+            return `'${defaultValue}'`;
         }
         else if (defaultValue === null) {
             return undefined;
@@ -434,17 +406,17 @@ var OracleDriver = /** @class */ (function () {
         else {
             return defaultValue;
         }
-    };
+    }
     /**
      * Normalizes "isUnique" value of the column.
      */
-    OracleDriver.prototype.normalizeIsUnique = function (column) {
-        return column.entityMetadata.uniques.some(function (uq) { return uq.columns.length === 1 && uq.columns[0] === column; });
-    };
+    normalizeIsUnique(column) {
+        return column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
+    }
     /**
      * Calculates column length taking into account the default length values.
      */
-    OracleDriver.prototype.getColumnLength = function (column) {
+    getColumnLength(column) {
         if (column.length)
             return column.length.toString();
         switch (column.type) {
@@ -460,12 +432,12 @@ var OracleDriver = /** @class */ (function () {
             default:
                 return "";
         }
-    };
-    OracleDriver.prototype.createFullType = function (column) {
-        var type = column.type;
+    }
+    createFullType(column) {
+        let type = column.type;
         // used 'getColumnLength()' method, because in Oracle column length is required for some data types.
         if (this.getColumnLength(column)) {
-            type += "(" + this.getColumnLength(column) + ")";
+            type += `(${this.getColumnLength(column)})`;
         }
         else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
             type += "(" + column.precision + "," + column.scale + ")";
@@ -482,75 +454,71 @@ var OracleDriver = /** @class */ (function () {
         if (column.isArray)
             type += " array";
         return type;
-    };
+    }
     /**
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    OracleDriver.prototype.obtainMasterConnection = function () {
-        var _this = this;
-        return new Promise(function (ok, fail) {
-            _this.master.getConnection(function (err, connection, release) {
+    obtainMasterConnection() {
+        return new Promise((ok, fail) => {
+            this.master.getConnection((err, connection, release) => {
                 if (err)
                     return fail(err);
                 ok(connection);
             });
         });
-    };
+    }
     /**
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    OracleDriver.prototype.obtainSlaveConnection = function () {
-        var _this = this;
+    obtainSlaveConnection() {
         if (!this.slaves.length)
             return this.obtainMasterConnection();
-        return new Promise(function (ok, fail) {
-            var random = Math.floor(Math.random() * _this.slaves.length);
-            _this.slaves[random].getConnection(function (err, connection) {
+        return new Promise((ok, fail) => {
+            const random = Math.floor(Math.random() * this.slaves.length);
+            this.slaves[random].getConnection((err, connection) => {
                 if (err)
                     return fail(err);
                 ok(connection);
             });
         });
-    };
+    }
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    OracleDriver.prototype.createGeneratedMap = function (metadata, insertResult) {
-        var _this = this;
+    createGeneratedMap(metadata, insertResult) {
         if (!insertResult)
             return undefined;
-        return Object.keys(insertResult).reduce(function (map, key) {
-            var column = metadata.findColumnWithDatabaseName(key);
+        return Object.keys(insertResult).reduce((map, key) => {
+            const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(_this.prepareHydratedValue(insertResult[key], column)));
+                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
             }
             return map;
         }, {});
-    };
+    }
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    OracleDriver.prototype.findChangedColumns = function (tableColumns, columnMetadatas) {
-        var _this = this;
-        return columnMetadatas.filter(function (columnMetadata) {
-            var tableColumn = tableColumns.find(function (c) { return c.name === columnMetadata.databaseName; });
+    findChangedColumns(tableColumns, columnMetadatas) {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
-            var isColumnChanged = tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== _this.normalizeType(columnMetadata)
+            const isColumnChanged = tableColumn.name !== columnMetadata.databaseName
+                || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment
-                || tableColumn.default !== _this.normalizeDefault(columnMetadata)
+                || tableColumn.default !== this.normalizeDefault(columnMetadata)
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== _this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -572,35 +540,35 @@ var OracleDriver = /** @class */ (function () {
             // }
             return isColumnChanged;
         });
-    };
+    }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    OracleDriver.prototype.isReturningSqlSupported = function () {
+    isReturningSqlSupported() {
         return true;
-    };
+    }
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
-    OracleDriver.prototype.isUUIDGenerationSupported = function () {
+    isUUIDGenerationSupported() {
         return false;
-    };
+    }
     /**
      * Returns true if driver supports fulltext indices.
      */
-    OracleDriver.prototype.isFullTextColumnTypeSupported = function () {
+    isFullTextColumnTypeSupported() {
         return false;
-    };
+    }
     /**
      * Creates an escaped parameter.
      */
-    OracleDriver.prototype.createParameter = function (parameterName, index) {
+    createParameter(parameterName, index) {
         return ":" + (index + 1);
-    };
+    }
     /**
      * Converts column type in to native oracle type.
      */
-    OracleDriver.prototype.columnTypeToNativeParameter = function (type) {
+    columnTypeToNativeParameter(type) {
         switch (this.normalizeType({ type: type })) {
             case "number":
             case "numeric":
@@ -625,62 +593,55 @@ var OracleDriver = /** @class */ (function () {
             case "timestamp with local time zone":
                 return this.oracle.DATE;
         }
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * Loads all driver dependencies.
      */
-    OracleDriver.prototype.loadDependencies = function () {
+    loadDependencies() {
         try {
             this.oracle = PlatformTools.load("oracledb");
         }
         catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb");
         }
-    };
+    }
     /**
      * Creates a new connection pool for a given database credentials.
      */
-    OracleDriver.prototype.createPool = function (options, credentials) {
-        return __awaiter(this, void 0, void 0, function () {
-            var connectionOptions;
-            var _this = this;
-            return __generator(this, function (_a) {
-                credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
-                connectionOptions = Object.assign({}, {
-                    user: credentials.username,
-                    password: credentials.password,
-                    connectString: credentials.connectString ? credentials.connectString : credentials.host + ":" + credentials.port + "/" + credentials.sid,
-                }, options.extra || {});
-                // pooling is enabled either when its set explicitly to true,
-                // either when its not defined at all (e.g. enabled by default)
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        _this.oracle.createPool(connectionOptions, function (err, pool) {
-                            if (err)
-                                return fail(err);
-                            ok(pool);
-                        });
-                    })];
+    createPool(options, credentials) {
+        return __awaiter(this, void 0, void 0, function* () {
+            credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+            // build connection options for the driver
+            const connectionOptions = Object.assign({}, {
+                user: credentials.username,
+                password: credentials.password,
+                connectString: credentials.connectString ? credentials.connectString : credentials.host + ":" + credentials.port + "/" + credentials.sid,
+            }, options.extra || {});
+            // pooling is enabled either when its set explicitly to true,
+            // either when its not defined at all (e.g. enabled by default)
+            return new Promise((ok, fail) => {
+                this.oracle.createPool(connectionOptions, (err, pool) => {
+                    if (err)
+                        return fail(err);
+                    ok(pool);
+                });
             });
         });
-    };
+    }
     /**
      * Closes connection pool.
      */
-    OracleDriver.prototype.closePool = function (pool) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        pool.close(function (err) { return err ? fail(err) : ok(); });
-                        pool = undefined;
-                    })];
+    closePool(pool) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((ok, fail) => {
+                pool.close((err) => err ? fail(err) : ok());
+                pool = undefined;
             });
         });
-    };
-    return OracleDriver;
-}());
-export { OracleDriver };
+    }
+}
 
 //# sourceMappingURL=OracleDriver.js.map

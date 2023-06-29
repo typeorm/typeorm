@@ -420,7 +420,7 @@ export class AuroraDataApiDriver implements Driver {
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
 
         if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
-            return this.client.preparePersistentValue(value, columnMetadata)
+            return this.client.preparePersistentValue(value, columnMetadata);
         }
 
         if (value === null || value === undefined)
@@ -462,7 +462,7 @@ export class AuroraDataApiDriver implements Driver {
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
 
         if (!this.options.formatOptions || this.options.formatOptions.castParameters !== false) {
-            return this.client.prepareHydratedValue(value, columnMetadata)
+            return this.client.prepareHydratedValue(value, columnMetadata);
         }
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool" || columnMetadata.type === "boolean") {
@@ -555,7 +555,7 @@ export class AuroraDataApiDriver implements Driver {
         const defaultValue = columnMetadata.default;
 
         if (defaultValue === null) {
-            return undefined
+            return undefined;
         }
 
         if ((columnMetadata.type === "enum" || columnMetadata.type === "simple-enum") && defaultValue !== undefined) {

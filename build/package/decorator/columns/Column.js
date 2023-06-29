@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Column = void 0;
-var __1 = require("../../");
-var ColumnTypeUndefinedError_1 = require("../../error/ColumnTypeUndefinedError");
+const __1 = require("../../");
+const ColumnTypeUndefinedError_1 = require("../../error/ColumnTypeUndefinedError");
 /**
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
@@ -10,7 +10,7 @@ var ColumnTypeUndefinedError_1 = require("../../error/ColumnTypeUndefinedError")
 function Column(typeOrOptions, options) {
     return function (object, propertyName) {
         // normalize parameters
-        var type;
+        let type;
         if (typeof typeOrOptions === "string" || typeOrOptions instanceof Function) {
             type = typeOrOptions;
         }
@@ -21,7 +21,7 @@ function Column(typeOrOptions, options) {
         if (!options)
             options = {};
         // if type is not given explicitly then try to guess it
-        var reflectMetadataType = Reflect && Reflect.getMetadata ? Reflect.getMetadata("design:type", object, propertyName) : undefined;
+        const reflectMetadataType = Reflect && Reflect.getMetadata ? Reflect.getMetadata("design:type", object, propertyName) : undefined;
         if (!type && reflectMetadataType) // if type is not given explicitly then try to guess it
             type = reflectMetadataType;
         // check if there is no type in column options then set type from first function argument, or guessed one
@@ -31,7 +31,7 @@ function Column(typeOrOptions, options) {
         if (options.type === "hstore" && !options.hstoreType)
             options.hstoreType = reflectMetadataType === Object ? "object" : "string";
         if (typeOrOptions instanceof Function) { // register an embedded
-            __1.getMetadataArgsStorage().embeddeds.push({
+            (0, __1.getMetadataArgsStorage)().embeddeds.push({
                 target: object.constructor,
                 propertyName: propertyName,
                 isArray: reflectMetadataType === Array || options.array === true,
@@ -45,15 +45,15 @@ function Column(typeOrOptions, options) {
                 throw new ColumnTypeUndefinedError_1.ColumnTypeUndefinedError(object, propertyName);
             // create unique
             if (options.unique === true)
-                __1.getMetadataArgsStorage().uniques.push({ target: object.constructor, columns: [propertyName] });
-            __1.getMetadataArgsStorage().columns.push({
+                (0, __1.getMetadataArgsStorage)().uniques.push({ target: object.constructor, columns: [propertyName] });
+            (0, __1.getMetadataArgsStorage)().columns.push({
                 target: object.constructor,
                 propertyName: propertyName,
                 mode: "regular",
                 options: options
             });
             if (options.generated) {
-                __1.getMetadataArgsStorage().generations.push({
+                (0, __1.getMetadataArgsStorage)().generations.push({
                     target: object.constructor,
                     propertyName: propertyName,
                     strategy: typeof options.generated === "string" ? options.generated : "increment"

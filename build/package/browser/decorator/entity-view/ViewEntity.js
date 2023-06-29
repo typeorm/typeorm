@@ -4,8 +4,8 @@ import { getMetadataArgsStorage } from "../../";
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
  */
 export function ViewEntity(nameOrOptions, maybeOptions) {
-    var options = (typeof nameOrOptions === "object" ? nameOrOptions : maybeOptions) || {};
-    var name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
+    const options = (typeof nameOrOptions === "object" ? nameOrOptions : maybeOptions) || {};
+    const name = typeof nameOrOptions === "string" ? nameOrOptions : options.name;
     return function (target) {
         getMetadataArgsStorage().tables.push({
             target: target,

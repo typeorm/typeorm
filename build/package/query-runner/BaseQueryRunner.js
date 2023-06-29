@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseQueryRunner = void 0;
-var tslib_1 = require("tslib");
-var Query_1 = require("../driver/Query");
-var SqlInMemory_1 = require("../driver/SqlInMemory");
-var BaseQueryRunner = /** @class */ (function () {
-    function BaseQueryRunner() {
+const tslib_1 = require("tslib");
+const Query_1 = require("../driver/Query");
+const SqlInMemory_1 = require("../driver/SqlInMemory");
+class BaseQueryRunner {
+    constructor() {
         // -------------------------------------------------------------------------
         // Public Properties
         // -------------------------------------------------------------------------
@@ -46,246 +46,134 @@ var BaseQueryRunner = /** @class */ (function () {
     /**
      * Loads given table's data from the database.
      */
-    BaseQueryRunner.prototype.getTable = function (tablePath) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a;
-            return tslib_1.__generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = this;
-                        return [4 /*yield*/, this.loadTables([tablePath])];
-                    case 1:
-                        _a.loadedTables = _b.sent();
-                        return [2 /*return*/, this.loadedTables.length > 0 ? this.loadedTables[0] : undefined];
-                }
-            });
+    getTable(tablePath) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            this.loadedTables = yield this.loadTables([tablePath]);
+            return this.loadedTables.length > 0 ? this.loadedTables[0] : undefined;
         });
-    };
+    }
     /**
      * Loads all tables (with given names) from the database.
      */
-    BaseQueryRunner.prototype.getTables = function (tableNames) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a;
-            return tslib_1.__generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = this;
-                        return [4 /*yield*/, this.loadTables(tableNames)];
-                    case 1:
-                        _a.loadedTables = _b.sent();
-                        return [2 /*return*/, this.loadedTables];
-                }
-            });
+    getTables(tableNames) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            this.loadedTables = yield this.loadTables(tableNames);
+            return this.loadedTables;
         });
-    };
+    }
     /**
      * Loads given view's data from the database.
      */
-    BaseQueryRunner.prototype.getView = function (viewPath) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a;
-            return tslib_1.__generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = this;
-                        return [4 /*yield*/, this.loadViews([viewPath])];
-                    case 1:
-                        _a.loadedViews = _b.sent();
-                        return [2 /*return*/, this.loadedViews.length > 0 ? this.loadedViews[0] : undefined];
-                }
-            });
+    getView(viewPath) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            this.loadedViews = yield this.loadViews([viewPath]);
+            return this.loadedViews.length > 0 ? this.loadedViews[0] : undefined;
         });
-    };
+    }
     /**
      * Loads given view's data from the database.
      */
-    BaseQueryRunner.prototype.getViews = function (viewPaths) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a;
-            return tslib_1.__generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = this;
-                        return [4 /*yield*/, this.loadViews(viewPaths)];
-                    case 1:
-                        _a.loadedViews = _b.sent();
-                        return [2 /*return*/, this.loadedViews];
-                }
-            });
+    getViews(viewPaths) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            this.loadedViews = yield this.loadViews(viewPaths);
+            return this.loadedViews;
         });
-    };
+    }
     /**
      * Enables special query runner mode in which sql queries won't be executed,
      * instead they will be memorized into a special variable inside query runner.
      * You can get memorized sql using getMemorySql() method.
      */
-    BaseQueryRunner.prototype.enableSqlMemory = function () {
+    enableSqlMemory() {
         this.sqlInMemory = new SqlInMemory_1.SqlInMemory();
         this.sqlMemoryMode = true;
-    };
+    }
     /**
      * Disables special query runner mode in which sql queries won't be executed
      * started by calling enableSqlMemory() method.
      *
      * Previously memorized sql will be flushed.
      */
-    BaseQueryRunner.prototype.disableSqlMemory = function () {
+    disableSqlMemory() {
         this.sqlInMemory = new SqlInMemory_1.SqlInMemory();
         this.sqlMemoryMode = false;
-    };
+    }
     /**
      * Flushes all memorized sqls.
      */
-    BaseQueryRunner.prototype.clearSqlMemory = function () {
+    clearSqlMemory() {
         this.sqlInMemory = new SqlInMemory_1.SqlInMemory();
-    };
+    }
     /**
      * Gets sql stored in the memory. Parameters in the sql are already replaced.
      */
-    BaseQueryRunner.prototype.getMemorySql = function () {
+    getMemorySql() {
         return this.sqlInMemory;
-    };
+    }
     /**
      * Executes up sql queries.
      */
-    BaseQueryRunner.prototype.executeMemoryUpSql = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a, _b, _c, query, parameters, e_1_1;
-            var e_1, _d;
-            return tslib_1.__generator(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        _e.trys.push([0, 5, 6, 7]);
-                        _a = tslib_1.__values(this.sqlInMemory.upQueries), _b = _a.next();
-                        _e.label = 1;
-                    case 1:
-                        if (!!_b.done) return [3 /*break*/, 4];
-                        _c = _b.value, query = _c.query, parameters = _c.parameters;
-                        return [4 /*yield*/, this.query(query, parameters)];
-                    case 2:
-                        _e.sent();
-                        _e.label = 3;
-                    case 3:
-                        _b = _a.next();
-                        return [3 /*break*/, 1];
-                    case 4: return [3 /*break*/, 7];
-                    case 5:
-                        e_1_1 = _e.sent();
-                        e_1 = { error: e_1_1 };
-                        return [3 /*break*/, 7];
-                    case 6:
-                        try {
-                            if (_b && !_b.done && (_d = _a.return)) _d.call(_a);
-                        }
-                        finally { if (e_1) throw e_1.error; }
-                        return [7 /*endfinally*/];
-                    case 7: return [2 /*return*/];
-                }
-            });
+    executeMemoryUpSql() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            for (const { query, parameters } of this.sqlInMemory.upQueries) {
+                yield this.query(query, parameters);
+            }
         });
-    };
+    }
     /**
      * Executes down sql queries.
      */
-    BaseQueryRunner.prototype.executeMemoryDownSql = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a, _b, _c, query, parameters, e_2_1;
-            var e_2, _d;
-            return tslib_1.__generator(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        _e.trys.push([0, 5, 6, 7]);
-                        _a = tslib_1.__values(this.sqlInMemory.downQueries.reverse()), _b = _a.next();
-                        _e.label = 1;
-                    case 1:
-                        if (!!_b.done) return [3 /*break*/, 4];
-                        _c = _b.value, query = _c.query, parameters = _c.parameters;
-                        return [4 /*yield*/, this.query(query, parameters)];
-                    case 2:
-                        _e.sent();
-                        _e.label = 3;
-                    case 3:
-                        _b = _a.next();
-                        return [3 /*break*/, 1];
-                    case 4: return [3 /*break*/, 7];
-                    case 5:
-                        e_2_1 = _e.sent();
-                        e_2 = { error: e_2_1 };
-                        return [3 /*break*/, 7];
-                    case 6:
-                        try {
-                            if (_b && !_b.done && (_d = _a.return)) _d.call(_a);
-                        }
-                        finally { if (e_2) throw e_2.error; }
-                        return [7 /*endfinally*/];
-                    case 7: return [2 /*return*/];
-                }
-            });
+    executeMemoryDownSql() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            for (const { query, parameters } of this.sqlInMemory.downQueries.reverse()) {
+                yield this.query(query, parameters);
+            }
         });
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * Gets view from previously loaded views, otherwise loads it from database.
      */
-    BaseQueryRunner.prototype.getCachedView = function (viewName) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var view, foundViews;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        view = this.loadedViews.find(function (view) { return view.name === viewName; });
-                        if (view)
-                            return [2 /*return*/, view];
-                        return [4 /*yield*/, this.loadViews([viewName])];
-                    case 1:
-                        foundViews = _a.sent();
-                        if (foundViews.length > 0) {
-                            this.loadedViews.push(foundViews[0]);
-                            return [2 /*return*/, foundViews[0]];
-                        }
-                        else {
-                            throw new Error("View \"" + viewName + "\" does not exist.");
-                        }
-                        return [2 /*return*/];
-                }
-            });
+    getCachedView(viewName) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            const view = this.loadedViews.find(view => view.name === viewName);
+            if (view)
+                return view;
+            const foundViews = yield this.loadViews([viewName]);
+            if (foundViews.length > 0) {
+                this.loadedViews.push(foundViews[0]);
+                return foundViews[0];
+            }
+            else {
+                throw new Error(`View "${viewName}" does not exist.`);
+            }
         });
-    };
+    }
     /**
      * Gets table from previously loaded tables, otherwise loads it from database.
      */
-    BaseQueryRunner.prototype.getCachedTable = function (tableName) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var table, foundTables;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        table = this.loadedTables.find(function (table) { return table.name === tableName; });
-                        if (table)
-                            return [2 /*return*/, table];
-                        return [4 /*yield*/, this.loadTables([tableName])];
-                    case 1:
-                        foundTables = _a.sent();
-                        if (foundTables.length > 0) {
-                            this.loadedTables.push(foundTables[0]);
-                            return [2 /*return*/, foundTables[0]];
-                        }
-                        else {
-                            throw new Error("Table \"" + tableName + "\" does not exist.");
-                        }
-                        return [2 /*return*/];
-                }
-            });
+    getCachedTable(tableName) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            const table = this.loadedTables.find(table => table.name === tableName);
+            if (table)
+                return table;
+            const foundTables = yield this.loadTables([tableName]);
+            if (foundTables.length > 0) {
+                this.loadedTables.push(foundTables[0]);
+                return foundTables[0];
+            }
+            else {
+                throw new Error(`Table "${tableName}" does not exist.`);
+            }
         });
-    };
+    }
     /**
      * Replaces loaded table with given changed table.
      */
-    BaseQueryRunner.prototype.replaceCachedTable = function (table, changedTable) {
-        var foundTable = this.loadedTables.find(function (loadedTable) { return loadedTable.name === table.name; });
+    replaceCachedTable(table, changedTable) {
+        const foundTable = this.loadedTables.find(loadedTable => loadedTable.name === table.name);
         if (foundTable) {
             foundTable.name = changedTable.name;
             foundTable.columns = changedTable.columns;
@@ -296,16 +184,16 @@ var BaseQueryRunner = /** @class */ (function () {
             foundTable.justCreated = changedTable.justCreated;
             foundTable.engine = changedTable.engine;
         }
-    };
-    BaseQueryRunner.prototype.getTypeormMetadataTableName = function () {
-        var options = this.connection.driver.options;
+    }
+    getTypeormMetadataTableName() {
+        const options = this.connection.driver.options;
         return this.connection.driver.buildTableName("typeorm_metadata", options.schema, options.database);
-    };
+    }
     /**
      * Checks if at least one of column properties was changed.
      * Does not checks column type, length and autoincrement, because these properties changes separately.
      */
-    BaseQueryRunner.prototype.isColumnChanged = function (oldColumn, newColumn, checkDefault, checkComment) {
+    isColumnChanged(oldColumn, newColumn, checkDefault, checkComment) {
         // this logs need to debug issues in column change detection. Do not delete it!
         // console.log("charset ---------------");
         // console.log(oldColumn.charset !== newColumn.charset);
@@ -344,15 +232,15 @@ var BaseQueryRunner = /** @class */ (function () {
             || oldColumn.isNullable !== newColumn.isNullable
             || (checkComment && oldColumn.comment !== newColumn.comment)
             || oldColumn.enum !== newColumn.enum;
-    };
+    }
     /**
      * Checks if column length is by default.
      */
-    BaseQueryRunner.prototype.isDefaultColumnLength = function (table, column, length) {
+    isDefaultColumnLength(table, column, length) {
         // if table have metadata, we check if length is specified in column metadata
         if (this.connection.hasMetadata(table.name)) {
-            var metadata = this.connection.getMetadata(table.name);
-            var columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
             if (columnMetadata && columnMetadata.length)
                 return false;
         }
@@ -362,15 +250,15 @@ var BaseQueryRunner = /** @class */ (function () {
             return this.connection.driver.dataTypeDefaults[column.type].length.toString() === length.toString();
         }
         return false;
-    };
+    }
     /**
      * Checks if column precision is by default.
      */
-    BaseQueryRunner.prototype.isDefaultColumnPrecision = function (table, column, precision) {
+    isDefaultColumnPrecision(table, column, precision) {
         // if table have metadata, we check if length is specified in column metadata
         if (this.connection.hasMetadata(table.name)) {
-            var metadata = this.connection.getMetadata(table.name);
-            var columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
             if (columnMetadata && columnMetadata.precision !== null && columnMetadata.precision !== undefined)
                 return false;
         }
@@ -380,15 +268,15 @@ var BaseQueryRunner = /** @class */ (function () {
             && this.connection.driver.dataTypeDefaults[column.type].precision !== undefined)
             return this.connection.driver.dataTypeDefaults[column.type].precision === precision;
         return false;
-    };
+    }
     /**
      * Checks if column scale is by default.
      */
-    BaseQueryRunner.prototype.isDefaultColumnScale = function (table, column, scale) {
+    isDefaultColumnScale(table, column, scale) {
         // if table have metadata, we check if length is specified in column metadata
         if (this.connection.hasMetadata(table.name)) {
-            var metadata = this.connection.getMetadata(table.name);
-            var columnMetadata = metadata.findColumnWithDatabaseName(column.name);
+            const metadata = this.connection.getMetadata(table.name);
+            const columnMetadata = metadata.findColumnWithDatabaseName(column.name);
             if (columnMetadata && columnMetadata.scale !== null && columnMetadata.scale !== undefined)
                 return false;
         }
@@ -398,59 +286,27 @@ var BaseQueryRunner = /** @class */ (function () {
             && this.connection.driver.dataTypeDefaults[column.type].scale !== undefined)
             return this.connection.driver.dataTypeDefaults[column.type].scale === scale;
         return false;
-    };
+    }
     /**
      * Executes sql used special for schema build.
      */
-    BaseQueryRunner.prototype.executeQueries = function (upQueries, downQueries) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var upQueries_1, upQueries_1_1, _a, query, parameters, e_3_1;
-            var _b, _c, e_3, _d;
-            return tslib_1.__generator(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        if (upQueries instanceof Query_1.Query)
-                            upQueries = [upQueries];
-                        if (downQueries instanceof Query_1.Query)
-                            downQueries = [downQueries];
-                        (_b = this.sqlInMemory.upQueries).push.apply(_b, tslib_1.__spreadArray([], tslib_1.__read(upQueries)));
-                        (_c = this.sqlInMemory.downQueries).push.apply(_c, tslib_1.__spreadArray([], tslib_1.__read(downQueries)));
-                        // if sql-in-memory mode is enabled then simply store sql in memory and return
-                        if (this.sqlMemoryMode === true)
-                            return [2 /*return*/, Promise.resolve()];
-                        _e.label = 1;
-                    case 1:
-                        _e.trys.push([1, 6, 7, 8]);
-                        upQueries_1 = tslib_1.__values(upQueries), upQueries_1_1 = upQueries_1.next();
-                        _e.label = 2;
-                    case 2:
-                        if (!!upQueries_1_1.done) return [3 /*break*/, 5];
-                        _a = upQueries_1_1.value, query = _a.query, parameters = _a.parameters;
-                        return [4 /*yield*/, this.query(query, parameters)];
-                    case 3:
-                        _e.sent();
-                        _e.label = 4;
-                    case 4:
-                        upQueries_1_1 = upQueries_1.next();
-                        return [3 /*break*/, 2];
-                    case 5: return [3 /*break*/, 8];
-                    case 6:
-                        e_3_1 = _e.sent();
-                        e_3 = { error: e_3_1 };
-                        return [3 /*break*/, 8];
-                    case 7:
-                        try {
-                            if (upQueries_1_1 && !upQueries_1_1.done && (_d = upQueries_1.return)) _d.call(upQueries_1);
-                        }
-                        finally { if (e_3) throw e_3.error; }
-                        return [7 /*endfinally*/];
-                    case 8: return [2 /*return*/];
-                }
-            });
+    executeQueries(upQueries, downQueries) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            if (upQueries instanceof Query_1.Query)
+                upQueries = [upQueries];
+            if (downQueries instanceof Query_1.Query)
+                downQueries = [downQueries];
+            this.sqlInMemory.upQueries.push(...upQueries);
+            this.sqlInMemory.downQueries.push(...downQueries);
+            // if sql-in-memory mode is enabled then simply store sql in memory and return
+            if (this.sqlMemoryMode === true)
+                return Promise.resolve();
+            for (const { query, parameters } of upQueries) {
+                yield this.query(query, parameters);
+            }
         });
-    };
-    return BaseQueryRunner;
-}());
+    }
+}
 exports.BaseQueryRunner = BaseQueryRunner;
 
 //# sourceMappingURL=BaseQueryRunner.js.map

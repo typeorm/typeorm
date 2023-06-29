@@ -1,23 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueryBuilderUtils = void 0;
-var tslib_1 = require("tslib");
 /**
  * Helper utility functions for QueryBuilder.
  */
-var QueryBuilderUtils = /** @class */ (function () {
-    function QueryBuilderUtils() {
-    }
+class QueryBuilderUtils {
     /**
      * Checks if given value is a string representation of alias property,
      * e.g. "post.category" or "post.id".
      */
-    QueryBuilderUtils.isAliasProperty = function (str) {
+    static isAliasProperty(str) {
         // alias property must be a string and must have a dot separator
         if (typeof str !== "string" || str.indexOf(".") === -1)
             return false;
         // extra alias and its property relation
-        var _a = tslib_1.__read(str.split("."), 2), aliasName = _a[0], propertyName = _a[1]; // todo: what about relations in embedded?
+        const [aliasName, propertyName] = str.split("."); // todo: what about relations in embedded?
         if (!aliasName || !propertyName)
             return false;
         // alias and property must be represented in a special format
@@ -28,9 +25,8 @@ var QueryBuilderUtils = /** @class */ (function () {
         if (str.indexOf("(") !== -1 || str.indexOf(")") !== -1)
             return false;
         return true;
-    };
-    return QueryBuilderUtils;
-}());
+    }
+}
 exports.QueryBuilderUtils = QueryBuilderUtils;
 
 //# sourceMappingURL=QueryBuilderUtils.js.map

@@ -4,11 +4,11 @@ exports.RelationIdMetadata = void 0;
 /**
  * Contains all information about entity's relation count.
  */
-var RelationIdMetadata = /** @class */ (function () {
+class RelationIdMetadata {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function RelationIdMetadata(options) {
+    constructor(options) {
         this.entityMetadata = options.entityMetadata;
         this.target = options.args.target;
         this.propertyName = options.args.propertyName;
@@ -24,20 +24,19 @@ var RelationIdMetadata = /** @class */ (function () {
      *
      * todo: make it to work in embeds as well.
      */
-    RelationIdMetadata.prototype.setValue = function (entity) {
-        var _this = this;
-        var inverseEntity = this.relation.getEntityValue(entity);
+    setValue(entity) {
+        const inverseEntity = this.relation.getEntityValue(entity);
         if (Array.isArray(inverseEntity)) {
-            entity[this.propertyName] = inverseEntity.map(function (item) {
-                return _this.relation.inverseEntityMetadata.getEntityIdMixedMap(item);
-            }).filter(function (item) { return item !== null && item !== undefined; });
+            entity[this.propertyName] = inverseEntity.map(item => {
+                return this.relation.inverseEntityMetadata.getEntityIdMixedMap(item);
+            }).filter(item => item !== null && item !== undefined);
         }
         else {
-            var value = this.relation.inverseEntityMetadata.getEntityIdMixedMap(inverseEntity);
+            const value = this.relation.inverseEntityMetadata.getEntityIdMixedMap(inverseEntity);
             if (value !== undefined)
                 entity[this.propertyName] = value;
         }
-    };
+    }
     // ---------------------------------------------------------------------
     // Public Builder Methods
     // ---------------------------------------------------------------------
@@ -45,15 +44,14 @@ var RelationIdMetadata = /** @class */ (function () {
      * Builds some depend relation id properties.
      * This builder method should be used only after entity metadata, its properties map and all relations are build.
      */
-    RelationIdMetadata.prototype.build = function () {
-        var propertyPath = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
-        var relation = this.entityMetadata.findRelationWithPropertyPath(propertyPath);
+    build() {
+        const propertyPath = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
+        const relation = this.entityMetadata.findRelationWithPropertyPath(propertyPath);
         if (!relation)
-            throw new Error("Cannot find relation " + propertyPath + ". Wrong relation specified for @RelationId decorator.");
+            throw new Error(`Cannot find relation ${propertyPath}. Wrong relation specified for @RelationId decorator.`);
         this.relation = relation;
-    };
-    return RelationIdMetadata;
-}());
+    }
+}
 exports.RelationIdMetadata = RelationIdMetadata;
 
 //# sourceMappingURL=RelationIdMetadata.js.map

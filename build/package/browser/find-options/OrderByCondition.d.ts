@@ -7,7 +7,7 @@
  *  "id": "DESC"
  * }
  */
-export declare type OrderByCondition = {
+export type OrderByCondition = {
     [columnName: string]: ("ASC" | "DESC") | {
         order: "ASC" | "DESC";
         nulls?: "NULLS FIRST" | "NULLS LAST";

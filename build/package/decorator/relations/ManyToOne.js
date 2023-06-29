@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ManyToOne = void 0;
-var __1 = require("../../");
+const __1 = require("../../");
 /**
  * A many-to-one relation allows creating the type of relation where Entity1 can have a single instance of Entity2, but
  * Entity2 can have multiple instances of Entity1. Entity1 is the owner of the relationship, and stores the id of
@@ -9,7 +9,7 @@ var __1 = require("../../");
  */
 function ManyToOne(typeFunctionOrTarget, inverseSideOrOptions, options) {
     // Normalize parameters.
-    var inverseSideProperty;
+    let inverseSideProperty;
     if (typeof inverseSideOrOptions === "object") {
         options = inverseSideOrOptions;
     }
@@ -20,13 +20,13 @@ function ManyToOne(typeFunctionOrTarget, inverseSideOrOptions, options) {
         if (!options)
             options = {};
         // Now try to determine if it is a lazy relation.
-        var isLazy = options && options.lazy === true ? true : false;
+        let isLazy = options && options.lazy === true ? true : false;
         if (!isLazy && Reflect && Reflect.getMetadata) { // automatic determination
-            var reflectedType = Reflect.getMetadata("design:type", object, propertyName);
+            const reflectedType = Reflect.getMetadata("design:type", object, propertyName);
             if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
                 isLazy = true;
         }
-        __1.getMetadataArgsStorage().relations.push({
+        (0, __1.getMetadataArgsStorage)().relations.push({
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,

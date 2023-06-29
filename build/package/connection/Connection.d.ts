@@ -19,6 +19,7 @@ import { QueryResultCache } from "../cache/QueryResultCache";
 import { SqljsEntityManager } from "../entity-manager/SqljsEntityManager";
 import { RelationLoader } from "../query-builder/RelationLoader";
 import { RelationIdLoader } from "../query-builder/RelationIdLoader";
+import { ObjectLiteral } from "../";
 import { IsolationLevel } from "../driver/types/IsolationLevel";
 import { ReplicationMode } from "../driver/types/ReplicationMode";
 /**
@@ -148,17 +149,17 @@ export declare class Connection {
     /**
      * Gets repository for the given entity.
      */
-    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity>;
+    getRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): Repository<Entity>;
     /**
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
      */
-    getTreeRepository<Entity>(target: EntityTarget<Entity>): TreeRepository<Entity>;
+    getTreeRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): TreeRepository<Entity>;
     /**
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
      */
-    getMongoRepository<Entity>(target: EntityTarget<Entity>): MongoRepository<Entity>;
+    getMongoRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): MongoRepository<Entity>;
     /**
      * Gets custom entity repository marked with @EntityRepository decorator.
      */
@@ -176,7 +177,7 @@ export declare class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
+    createQueryBuilder<Entity extends ObjectLiteral>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
     /**
      * Creates a new query builder that can be used to build a sql query.
      */

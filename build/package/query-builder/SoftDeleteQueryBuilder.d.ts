@@ -10,7 +10,7 @@ import { OrderByCondition } from "../find-options/OrderByCondition";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export declare class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export declare class SoftDeleteQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> implements WhereExpression {
     constructor(connectionOrQueryBuilder: Connection | QueryBuilder<any>, queryRunner?: QueryRunner);
     /**
      * Gets generated sql query without parameters being replaced.
@@ -24,7 +24,7 @@ export declare class SoftDeleteQueryBuilder<Entity> extends QueryBuilder<Entity>
      * Specifies FROM which entity's table select/update/delete/soft-delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(entityTarget: EntityTarget<T>, aliasName?: string): SoftDeleteQueryBuilder<T>;
+    from<T extends ObjectLiteral>(entityTarget: EntityTarget<T>, aliasName?: string): SoftDeleteQueryBuilder<T>;
     /**
      * Sets WHERE condition in the query builder.
      * If you had previously WHERE expression defined,

@@ -1,4 +1,6 @@
 
+
+
 import { EventEmitter, Readable, Writable } from "../../platform/PlatformTools";
 /**
  * Creates a new MongoClient instance.
@@ -3125,7 +3127,7 @@ export interface Collection<T> {
 /**
  * Condition.
  */
-export declare type Condition<T, P extends keyof T> = {
+export type Condition<T, P extends keyof T> = {
     $eq?: T[P];
     $gt?: T[P];
     $gte?: T[P];
@@ -3164,7 +3166,7 @@ export declare type Condition<T, P extends keyof T> = {
 /**
  * @see https://docs.mongodb.com/manual/reference/operator/update
  */
-export declare type UpdateQuery<T> = {
+export type UpdateQuery<T> = {
     $inc?: {
         [P in keyof T]?: number;
     } | {
@@ -3236,7 +3238,7 @@ export declare type UpdateQuery<T> = {
         [key: string]: any;
     };
 };
-export declare type FilterQuery<T> = {
+export type FilterQuery<T> = {
     [P in keyof T]?: T[P] | Condition<T, P>;
 } | {
     [key: string]: any;
@@ -4282,7 +4284,7 @@ export interface WriteOpResult {
  * WriteOpResult.
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html#~resultCallback
  */
-export declare type CursorResult = any | void | boolean;
+export type CursorResult = any | void | boolean;
 /**
  * Creates a new Cursor instance (INTERNAL TYPE, do not instantiate directly).
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/Cursor.html
@@ -4805,7 +4807,7 @@ export interface MongoClientCommonOption {
 /**
  * @see http://mongodb.github.io/node-mongodb-native/3.1/api/global.html#ReadConcern
  */
-export declare type ReadConcernLevel = "local" | "available" | "majority" | "linearizable" | "snapshot";
+export type ReadConcernLevel = "local" | "available" | "majority" | "linearizable" | "snapshot";
 /**
  * The MongoDB ReadConcern, which allows for control of the consistency and isolation properties
  * of the data read from replica sets and replica set shards.
@@ -4854,7 +4856,7 @@ export interface EndCallback {
 /**
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html#~resultCallback
  */
-export declare type AggregationCursorResult = any | void;
+export type AggregationCursorResult = any | void;
 /**
  * Creates a new Aggregation Cursor instance (INTERNAL TYPE, do not instantiate directly),
  * @see http://mongodb.github.io/node-mongodb-native/2.1/api/AggregationCursor.html

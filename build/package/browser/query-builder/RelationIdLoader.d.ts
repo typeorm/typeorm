@@ -19,7 +19,7 @@ export declare class RelationIdLoader {
      *
      * todo: extract this method?
      */
-    loadManyToManyRelationIdsAndGroup<E1, E2>(relation: RelationMetadata, entitiesOrEntities: E1 | E1[], relatedEntityOrEntities?: E2 | E2[]): Promise<{
+    loadManyToManyRelationIdsAndGroup<E1 extends ObjectLiteral, E2 extends ObjectLiteral>(relation: RelationMetadata, entitiesOrEntities: E1 | E1[], relatedEntityOrEntities?: E2 | E2[]): Promise<{
         entity: E1;
         related?: E2 | E2[];
     }[]>;

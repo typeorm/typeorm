@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Generated = void 0;
-var __1 = require("../");
+const __1 = require("../");
 /**
  * Marks a column to generate a value on entity insertion.
  * There are three types of generation strategy - increment, uuid and rowid (cockroachdb only).
@@ -11,10 +11,9 @@ var __1 = require("../");
  *
  * Note, some databases do not support non-primary generation columns.
  */
-function Generated(strategy) {
-    if (strategy === void 0) { strategy = "increment"; }
+function Generated(strategy = "increment") {
     return function (object, propertyName) {
-        __1.getMetadataArgsStorage().generations.push({
+        (0, __1.getMetadataArgsStorage)().generations.push({
             target: object.constructor,
             propertyName: propertyName,
             strategy: strategy

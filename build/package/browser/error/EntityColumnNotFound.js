@@ -1,18 +1,13 @@
-import { __extends } from "tslib";
 /**
  *
  */
-var EntityColumnNotFound = /** @class */ (function (_super) {
-    __extends(EntityColumnNotFound, _super);
-    function EntityColumnNotFound(propertyPath) {
-        var _this = _super.call(this) || this;
-        _this.name = "EntityColumnNotFound";
-        Object.setPrototypeOf(_this, EntityColumnNotFound.prototype);
-        _this.message = "No entity column \"" + propertyPath + "\" was found.";
-        return _this;
+export class EntityColumnNotFound extends Error {
+    constructor(propertyPath) {
+        super();
+        this.name = "EntityColumnNotFound";
+        Object.setPrototypeOf(this, EntityColumnNotFound.prototype);
+        this.message = `No entity column "${propertyPath}" was found.`;
     }
-    return EntityColumnNotFound;
-}(Error));
-export { EntityColumnNotFound };
+}
 
 //# sourceMappingURL=EntityColumnNotFound.js.map

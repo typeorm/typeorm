@@ -37,3 +37,13 @@ Addeded timestamptz3 type support
 
 npm run compile
 npm run package
+
+
+
+July 29, 2023
+
+Upgraded Typescript to 5+
+
+Changes based on:
+
+https://github.com/typeorm/typeorm/pull/9357/files

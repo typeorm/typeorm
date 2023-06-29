@@ -1,11 +1,11 @@
 /**
  * Contains all information about entity's relation count.
  */
-var RelationCountMetadata = /** @class */ (function () {
+export class RelationCountMetadata {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function RelationCountMetadata(options) {
+    constructor(options) {
         this.entityMetadata = options.entityMetadata;
         this.target = options.args.target;
         this.propertyName = options.args.propertyName;
@@ -20,15 +20,13 @@ var RelationCountMetadata = /** @class */ (function () {
      * Builds some depend relation count metadata properties.
      * This builder method should be used only after entity metadata, its properties map and all relations are build.
      */
-    RelationCountMetadata.prototype.build = function () {
-        var propertyPath = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
-        var relation = this.entityMetadata.findRelationWithPropertyPath(propertyPath);
+    build() {
+        const propertyPath = this.relationNameOrFactory instanceof Function ? this.relationNameOrFactory(this.entityMetadata.propertiesMap) : this.relationNameOrFactory;
+        const relation = this.entityMetadata.findRelationWithPropertyPath(propertyPath);
         if (!relation)
-            throw new Error("Cannot find relation " + propertyPath + ". Wrong relation specified for @RelationCount decorator.");
+            throw new Error(`Cannot find relation ${propertyPath}. Wrong relation specified for @RelationCount decorator.`);
         this.relation = relation;
-    };
-    return RelationCountMetadata;
-}());
-export { RelationCountMetadata };
+    }
+}
 
 //# sourceMappingURL=RelationCountMetadata.js.map

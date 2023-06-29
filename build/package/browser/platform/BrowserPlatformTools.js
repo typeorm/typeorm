@@ -5,13 +5,11 @@
  * For node.js environment this class is not getting packaged.
  * Don't use methods of this class in the code, use PlatformTools methods instead.
  */
-var PlatformTools = /** @class */ (function () {
-    function PlatformTools() {
-    }
+export class PlatformTools {
     /**
      * Gets global variable where global stuff can be stored.
      */
-    PlatformTools.getGlobalVariable = function () {
+    static getGlobalVariable() {
         if (typeof window !== "undefined") {
             return window;
         }
@@ -19,133 +17,119 @@ var PlatformTools = /** @class */ (function () {
             // NativeScript uses global, not window
             return global;
         }
-    };
+    }
     /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */
-    PlatformTools.load = function (name) {
+    static load(name) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: require(\"" + name + "\").");
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: require("${name}").`);
         return "";
-    };
+    }
     /**
      * Normalizes given path. Does "path.normalize".
      */
-    PlatformTools.pathNormalize = function (pathStr) {
+    static pathNormalize(pathStr) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: path.normalize(\"" + pathStr + "\").");
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.normalize("${pathStr}").`);
         return "";
-    };
+    }
     /**
      * Gets file extension. Does "path.extname".
      */
-    PlatformTools.pathExtname = function (pathStr) {
+    static pathExtname(pathStr) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: path.extname(\"" + pathStr + "\").");
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.extname("${pathStr}").`);
         return "";
-    };
+    }
     /**
      * Resolved given path. Does "path.resolve".
      */
-    PlatformTools.pathResolve = function (pathStr) {
+    static pathResolve(pathStr) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: path.resolve(\"" + pathStr + "\").");
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.resolve("${pathStr}").`);
         return "";
-    };
+    }
     /**
      * Synchronously checks if file exist. Does "fs.existsSync".
      */
-    PlatformTools.fileExist = function (pathStr) {
+    static fileExist(pathStr) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: fs.existsSync(\"" + pathStr + "\").");
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.existsSync("${pathStr}").`);
         return false;
-    };
-    PlatformTools.dotenv = function (pathStr) {
+    }
+    static dotenv(pathStr) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: dotenv.config({ path: \"" + pathStr + "\" }).");
-    };
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: dotenv.config({ path: "${pathStr}" }).`);
+    }
     /**
      * Gets environment variable.
      */
-    PlatformTools.getEnvVariable = function (name) {
+    static getEnvVariable(name) {
         // if (this.type === "browser")
         //     throw new Error(`This option/function is not supported in the browser environment. Failed operation: process.env["${name}"].`);
         return undefined;
-    };
-    PlatformTools.readFileSync = function (filename) {
+    }
+    static readFileSync(filename) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: fs.readFileSync(\"" + filename + "\").");
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.readFileSync("${filename}").`);
         return null;
-    };
-    PlatformTools.appendFileSync = function (filename, data) {
+    }
+    static appendFileSync(filename, data) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: fs.appendFileSync(\"" + filename + "\").");
-    };
-    PlatformTools.writeFile = function (path, data) {
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.appendFileSync("${filename}").`);
+    }
+    static writeFile(path, data) {
         if (this.type === "browser")
-            throw new Error("This option/function is not supported in the browser environment. Failed operation: fs.writeFile(\"" + path + "\").");
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.writeFile("${path}").`);
         return Promise.reject(null);
-    };
+    }
     /**
      * Highlights sql string to be print in the console.
      */
-    PlatformTools.highlightSql = function (sql) {
+    static highlightSql(sql) {
         return sql;
-    };
+    }
     /**
      * Highlights json string to be print in the console.
      */
-    PlatformTools.highlightJson = function (json) {
+    static highlightJson(json) {
         return json;
-    };
+    }
     /**
      * Logging functions needed by AdvancedConsoleLogger (but here without chalk)
      */
-    PlatformTools.logInfo = function (prefix, info) {
+    static logInfo(prefix, info) {
         console.info(prefix + " ", info);
-    };
-    PlatformTools.logError = function (prefix, error) {
+    }
+    static logError(prefix, error) {
         console.error(prefix + " ", error);
-    };
-    PlatformTools.logWarn = function (prefix, warning) {
+    }
+    static logWarn(prefix, warning) {
         console.warn(prefix + " ", warning);
-    };
-    PlatformTools.log = function (message) {
+    }
+    static log(message) {
         console.log(message);
-    };
-    PlatformTools.warn = function (message) {
+    }
+    static warn(message) {
         return message;
-    };
-    /**
-     * Type of the currently running platform.
-     */
-    PlatformTools.type = "browser";
-    return PlatformTools;
-}());
-export { PlatformTools };
+    }
+}
+/**
+ * Type of the currently running platform.
+ */
+PlatformTools.type = "browser";
 /**
  * These classes are needed for stream operations or
  * in the mongodb driver. Both aren't supported in the browser.
  */
-var EventEmitter = /** @class */ (function () {
-    function EventEmitter() {
-    }
-    return EventEmitter;
-}());
-export { EventEmitter };
-var Readable = /** @class */ (function () {
-    function Readable() {
-    }
-    return Readable;
-}());
-export { Readable };
-var Writable = /** @class */ (function () {
-    function Writable() {
-    }
-    return Writable;
-}());
-export { Writable };
+export class EventEmitter {
+}
+export class Readable {
+}
+export class Writable {
+}
 if (typeof window !== "undefined") {
     window.Buffer = require("buffer/").Buffer;
 }

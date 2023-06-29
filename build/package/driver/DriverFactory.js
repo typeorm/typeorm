@@ -1,34 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DriverFactory = void 0;
-var MissingDriverError_1 = require("../error/MissingDriverError");
-var CockroachDriver_1 = require("./cockroachdb/CockroachDriver");
-var MongoDriver_1 = require("./mongodb/MongoDriver");
-var SqlServerDriver_1 = require("./sqlserver/SqlServerDriver");
-var OracleDriver_1 = require("./oracle/OracleDriver");
-var SqliteDriver_1 = require("./sqlite/SqliteDriver");
-var CordovaDriver_1 = require("./cordova/CordovaDriver");
-var ReactNativeDriver_1 = require("./react-native/ReactNativeDriver");
-var NativescriptDriver_1 = require("./nativescript/NativescriptDriver");
-var SqljsDriver_1 = require("./sqljs/SqljsDriver");
-var MysqlDriver_1 = require("./mysql/MysqlDriver");
-var PostgresDriver_1 = require("./postgres/PostgresDriver");
-var ExpoDriver_1 = require("./expo/ExpoDriver");
-var AuroraDataApiDriver_1 = require("./aurora-data-api/AuroraDataApiDriver");
-var AuroraDataApiPostgresDriver_1 = require("./aurora-data-api-pg/AuroraDataApiPostgresDriver");
-var SapDriver_1 = require("./sap/SapDriver");
-var BetterSqlite3Driver_1 = require("./better-sqlite3/BetterSqlite3Driver");
+const MissingDriverError_1 = require("../error/MissingDriverError");
+const CockroachDriver_1 = require("./cockroachdb/CockroachDriver");
+const MongoDriver_1 = require("./mongodb/MongoDriver");
+const SqlServerDriver_1 = require("./sqlserver/SqlServerDriver");
+const OracleDriver_1 = require("./oracle/OracleDriver");
+const SqliteDriver_1 = require("./sqlite/SqliteDriver");
+const CordovaDriver_1 = require("./cordova/CordovaDriver");
+const ReactNativeDriver_1 = require("./react-native/ReactNativeDriver");
+const NativescriptDriver_1 = require("./nativescript/NativescriptDriver");
+const SqljsDriver_1 = require("./sqljs/SqljsDriver");
+const MysqlDriver_1 = require("./mysql/MysqlDriver");
+const PostgresDriver_1 = require("./postgres/PostgresDriver");
+const ExpoDriver_1 = require("./expo/ExpoDriver");
+const AuroraDataApiDriver_1 = require("./aurora-data-api/AuroraDataApiDriver");
+const AuroraDataApiPostgresDriver_1 = require("./aurora-data-api-pg/AuroraDataApiPostgresDriver");
+const SapDriver_1 = require("./sap/SapDriver");
+const BetterSqlite3Driver_1 = require("./better-sqlite3/BetterSqlite3Driver");
 /**
  * Helps to create drivers.
  */
-var DriverFactory = /** @class */ (function () {
-    function DriverFactory() {
-    }
+class DriverFactory {
     /**
      * Creates a new driver depend on a given connection's driver type.
      */
-    DriverFactory.prototype.create = function (connection) {
-        var type = connection.options.type;
+    create(connection) {
+        const { type } = connection.options;
         switch (type) {
             case "mysql":
                 return new MysqlDriver_1.MysqlDriver(connection);
@@ -67,9 +65,8 @@ var DriverFactory = /** @class */ (function () {
             default:
                 throw new MissingDriverError_1.MissingDriverError(type);
         }
-    };
-    return DriverFactory;
-}());
+    }
+}
 exports.DriverFactory = DriverFactory;
 
 //# sourceMappingURL=DriverFactory.js.map

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Raw = void 0;
-var FindOperator_1 = require("../FindOperator");
+const FindOperator_1 = require("../FindOperator");
 function Raw(valueOrSqlGenerator, sqlGeneratorParameters) {
     if (typeof valueOrSqlGenerator !== 'function') {
         return new FindOperator_1.FindOperator("raw", valueOrSqlGenerator, false);

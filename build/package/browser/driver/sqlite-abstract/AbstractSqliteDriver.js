@@ -1,4 +1,4 @@
-import { __awaiter, __generator } from "tslib";
+import { __awaiter } from "tslib";
 import { DateUtils } from "../../util/DateUtils";
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
 import { OrmUtils } from "../../util/OrmUtils";
@@ -6,11 +6,11 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers";
 /**
  * Organizes communication with sqlite DBMS.
  */
-var AbstractSqliteDriver = /** @class */ (function () {
+export class AbstractSqliteDriver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function AbstractSqliteDriver(connection) {
+    constructor(connection) {
         /**
          * Indicates if replication is enabled.
          */
@@ -141,51 +141,38 @@ var AbstractSqliteDriver = /** @class */ (function () {
     /**
      * Performs connection to the database.
      */
-    AbstractSqliteDriver.prototype.connect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = this;
-                        return [4 /*yield*/, this.createDatabaseConnection()];
-                    case 1:
-                        _a.databaseConnection = _b.sent();
-                        return [2 /*return*/];
-                }
-            });
+    connect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.databaseConnection = yield this.createDatabaseConnection();
         });
-    };
+    }
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    AbstractSqliteDriver.prototype.afterConnect = function () {
+    afterConnect() {
         return Promise.resolve();
-    };
+    }
     /**
      * Closes connection with database.
      */
-    AbstractSqliteDriver.prototype.disconnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        _this.queryRunner = undefined;
-                        _this.databaseConnection.close(function (err) { return err ? fail(err) : ok(); });
-                    })];
+    disconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((ok, fail) => {
+                this.queryRunner = undefined;
+                this.databaseConnection.close((err) => err ? fail(err) : ok());
             });
         });
-    };
+    }
     /**
      * Creates a schema builder used to build and sync a schema.
      */
-    AbstractSqliteDriver.prototype.createSchemaBuilder = function () {
+    createSchemaBuilder() {
         return new RdbmsSchemaBuilder(this.connection);
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    AbstractSqliteDriver.prototype.preparePersistentValue = function (value, columnMetadata) {
+    preparePersistentValue(value, columnMetadata) {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         if (value === null || value === undefined)
@@ -214,11 +201,11 @@ var AbstractSqliteDriver = /** @class */ (function () {
             return DateUtils.simpleEnumToString(value);
         }
         return value;
-    };
+    }
     /**
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
      */
-    AbstractSqliteDriver.prototype.prepareHydratedValue = function (value, columnMetadata) {
+    prepareHydratedValue(value, columnMetadata) {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
         if (columnMetadata.type === Boolean || columnMetadata.type === "boolean") {
@@ -267,13 +254,13 @@ var AbstractSqliteDriver = /** @class */ (function () {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
-    };
+    }
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    AbstractSqliteDriver.prototype.escapeQueryWithParameters = function (sql, parameters, nativeParameters) {
-        var builtParameters = Object.keys(nativeParameters).map(function (key) {
+    escapeQueryWithParameters(sql, parameters, nativeParameters) {
+        const builtParameters = Object.keys(nativeParameters).map(key => {
             // Mapping boolean values to their numeric representation
             if (typeof nativeParameters[key] === "boolean") {
                 return nativeParameters[key] === true ? 1 : 0;
@@ -282,10 +269,10 @@ var AbstractSqliteDriver = /** @class */ (function () {
         });
         if (!parameters || !Object.keys(parameters).length)
             return [sql, builtParameters];
-        var keys = Object.keys(parameters).map(function (parameter) { return "(:(\\.\\.\\.)?" + parameter + "\\b)"; }).join("|");
-        sql = sql.replace(new RegExp(keys, "g"), function (key) {
-            var value;
-            var isArray = false;
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key) => {
+            let value;
+            let isArray = false;
             if (key.substr(0, 4) === ":...") {
                 isArray = true;
                 value = parameters[key.substr(4)];
@@ -294,7 +281,7 @@ var AbstractSqliteDriver = /** @class */ (function () {
                 value = parameters[key.substr(1)];
             }
             if (isArray) {
-                return value.map(function (v) {
+                return value.map((v) => {
                     builtParameters.push(v);
                     return "?";
                     // return "$" + builtParameters.length;
@@ -310,26 +297,26 @@ var AbstractSqliteDriver = /** @class */ (function () {
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
-    };
+    }
     /**
      * Escapes a column name.
      */
-    AbstractSqliteDriver.prototype.escape = function (columnName) {
+    escape(columnName) {
         return "\"" + columnName + "\"";
-    };
+    }
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. "myDB"."mySchema"."myTable"
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
      */
-    AbstractSqliteDriver.prototype.buildTableName = function (tableName, schema, database) {
+    buildTableName(tableName, schema, database) {
         return tableName;
-    };
+    }
     /**
      * Creates a database type from a given column metadata.
      */
-    AbstractSqliteDriver.prototype.normalizeType = function (column) {
+    normalizeType(column) {
         if (column.type === Number || column.type === "int") {
             return "integer";
         }
@@ -357,12 +344,12 @@ var AbstractSqliteDriver = /** @class */ (function () {
         else {
             return column.type || "";
         }
-    };
+    }
     /**
      * Normalizes "default" value of the column.
      */
-    AbstractSqliteDriver.prototype.normalizeDefault = function (columnMetadata) {
-        var defaultValue = columnMetadata.default;
+    normalizeDefault(columnMetadata) {
+        const defaultValue = columnMetadata.default;
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
         }
@@ -373,7 +360,7 @@ var AbstractSqliteDriver = /** @class */ (function () {
             return defaultValue();
         }
         else if (typeof defaultValue === "string") {
-            return "'" + defaultValue + "'";
+            return `'${defaultValue}'`;
         }
         else if (defaultValue === null) {
             return undefined;
@@ -381,24 +368,24 @@ var AbstractSqliteDriver = /** @class */ (function () {
         else {
             return defaultValue;
         }
-    };
+    }
     /**
      * Normalizes "isUnique" value of the column.
      */
-    AbstractSqliteDriver.prototype.normalizeIsUnique = function (column) {
-        return column.entityMetadata.uniques.some(function (uq) { return uq.columns.length === 1 && uq.columns[0] === column; });
-    };
+    normalizeIsUnique(column) {
+        return column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
+    }
     /**
      * Calculates column length taking into account the default length values.
      */
-    AbstractSqliteDriver.prototype.getColumnLength = function (column) {
+    getColumnLength(column) {
         return column.length ? column.length.toString() : "";
-    };
+    }
     /**
      * Normalizes "default" value of the column.
      */
-    AbstractSqliteDriver.prototype.createFullType = function (column) {
-        var type = column.type;
+    createFullType(column) {
+        let type = column.type;
         if (column.enum) {
             return "varchar";
         }
@@ -414,29 +401,29 @@ var AbstractSqliteDriver = /** @class */ (function () {
         if (column.isArray)
             type += " array";
         return type;
-    };
+    }
     /**
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    AbstractSqliteDriver.prototype.obtainMasterConnection = function () {
+    obtainMasterConnection() {
         return Promise.resolve();
-    };
+    }
     /**
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    AbstractSqliteDriver.prototype.obtainSlaveConnection = function () {
+    obtainSlaveConnection() {
         return Promise.resolve();
-    };
+    }
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    AbstractSqliteDriver.prototype.createGeneratedMap = function (metadata, insertResult, entityIndex, entityNum) {
-        var generatedMap = metadata.generatedColumns.reduce(function (map, generatedColumn) {
-            var value;
+    createGeneratedMap(metadata, insertResult, entityIndex, entityNum) {
+        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+            let value;
             if (generatedColumn.generationStrategy === "increment" && insertResult) {
                 // NOTE: When INSERT statement is successfully completed, the last inserted row ID is returned.
                 // see also: SqliteQueryRunner.query()
@@ -449,15 +436,14 @@ var AbstractSqliteDriver = /** @class */ (function () {
             return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
         }, {});
         return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
-    };
+    }
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    AbstractSqliteDriver.prototype.findChangedColumns = function (tableColumns, columnMetadatas) {
-        var _this = this;
-        return columnMetadatas.filter(function (columnMetadata) {
-            var tableColumn = tableColumns.find(function (c) { return c.name === columnMetadata.databaseName; });
+    findChangedColumns(tableColumns, columnMetadatas) {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
             // console.log("table:", columnMetadata.entityMetadata.tableName);
@@ -474,61 +460,59 @@ var AbstractSqliteDriver = /** @class */ (function () {
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
             // console.log("==========================================");
             return tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== _this.normalizeType(columnMetadata)
+                || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 //  || tableColumn.comment !== columnMetadata.comment || // todo
-                || _this.normalizeDefault(columnMetadata) !== tableColumn.default
+                || this.normalizeDefault(columnMetadata) !== tableColumn.default
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== _this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
-    };
+    }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    AbstractSqliteDriver.prototype.isReturningSqlSupported = function () {
+    isReturningSqlSupported() {
         return false;
-    };
+    }
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
-    AbstractSqliteDriver.prototype.isUUIDGenerationSupported = function () {
+    isUUIDGenerationSupported() {
         return false;
-    };
+    }
     /**
      * Returns true if driver supports fulltext indices.
      */
-    AbstractSqliteDriver.prototype.isFullTextColumnTypeSupported = function () {
+    isFullTextColumnTypeSupported() {
         return false;
-    };
+    }
     /**
      * Creates an escaped parameter.
      */
-    AbstractSqliteDriver.prototype.createParameter = function (parameterName, index) {
+    createParameter(parameterName, index) {
         // return "$" + (index + 1);
         return "?";
         // return "$" + parameterName;
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * Creates connection with the database.
      */
-    AbstractSqliteDriver.prototype.createDatabaseConnection = function () {
+    createDatabaseConnection() {
         throw new Error("Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers");
-    };
+    }
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
-    AbstractSqliteDriver.prototype.loadDependencies = function () {
+    loadDependencies() {
         // dependencies have to be loaded in the specific driver
-    };
-    return AbstractSqliteDriver;
-}());
-export { AbstractSqliteDriver };
+    }
+}
 
 //# sourceMappingURL=AbstractSqliteDriver.js.map

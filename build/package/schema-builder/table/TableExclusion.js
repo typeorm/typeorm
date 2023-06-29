@@ -4,11 +4,11 @@ exports.TableExclusion = void 0;
 /**
  * Database's table exclusion constraint stored in this class.
  */
-var TableExclusion = /** @class */ (function () {
+class TableExclusion {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function TableExclusion(options) {
+    constructor(options) {
         this.name = options.name;
         this.expression = options.expression;
     }
@@ -18,26 +18,25 @@ var TableExclusion = /** @class */ (function () {
     /**
      * Creates a new copy of this constraint with exactly same properties.
      */
-    TableExclusion.prototype.clone = function () {
+    clone() {
         return new TableExclusion({
             name: this.name,
             expression: this.expression,
         });
-    };
+    }
     // -------------------------------------------------------------------------
     // Static Methods
     // -------------------------------------------------------------------------
     /**
      * Creates exclusions from the exclusion metadata object.
      */
-    TableExclusion.create = function (exclusionMetadata) {
+    static create(exclusionMetadata) {
         return new TableExclusion({
             name: exclusionMetadata.name,
             expression: exclusionMetadata.expression
         });
-    };
-    return TableExclusion;
-}());
+    }
+}
 exports.TableExclusion = TableExclusion;
 
 //# sourceMappingURL=TableExclusion.js.map

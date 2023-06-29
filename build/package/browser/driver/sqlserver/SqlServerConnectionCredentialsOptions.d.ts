@@ -5,7 +5,7 @@ import { AzureActiveDirectoryMsiVmAuthentication } from "./authentication/AzureA
 import { AzureActiveDirectoryPasswordAuthentication } from "./authentication/AzureActiveDirectoryPasswordAuthentication";
 import { AzureActiveDirectoryServicePrincipalSecret } from "./authentication/AzureActiveDirectoryServicePrincipalSecret";
 import { NtlmAuthentication } from "./authentication/NtlmAuthentication";
-export declare type SqlServerConnectionCredentialsAuthenticationOptions = DefaultAuthentication | NtlmAuthentication | AzureActiveDirectoryAccessTokenAuthentication | AzureActiveDirectoryMsiAppServiceAuthentication | AzureActiveDirectoryMsiVmAuthentication | AzureActiveDirectoryPasswordAuthentication | AzureActiveDirectoryServicePrincipalSecret;
+export type SqlServerConnectionCredentialsAuthenticationOptions = DefaultAuthentication | NtlmAuthentication | AzureActiveDirectoryAccessTokenAuthentication | AzureActiveDirectoryMsiAppServiceAuthentication | AzureActiveDirectoryMsiVmAuthentication | AzureActiveDirectoryPasswordAuthentication | AzureActiveDirectoryServicePrincipalSecret;
 /**
  * SqlServer specific connection credential options.
  */

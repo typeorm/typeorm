@@ -5,13 +5,11 @@ import { DebugLogger } from "./DebugLogger";
 /**
  * Helps to create logger instances.
  */
-var LoggerFactory = /** @class */ (function () {
-    function LoggerFactory() {
-    }
+export class LoggerFactory {
     /**
      * Creates a new logger depend on a given connection's driver.
      */
-    LoggerFactory.prototype.create = function (logger, options) {
+    create(logger, options) {
         if (logger instanceof Object)
             return logger;
         if (logger) {
@@ -27,9 +25,7 @@ var LoggerFactory = /** @class */ (function () {
             }
         }
         return new AdvancedConsoleLogger(options);
-    };
-    return LoggerFactory;
-}());
-export { LoggerFactory };
+    }
+}
 
 //# sourceMappingURL=LoggerFactory.js.map

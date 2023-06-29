@@ -4,9 +4,9 @@ import { CannotReflectMethodParameterTypeError } from "../../error/CannotReflect
  * Injects transaction's repository into the method wrapped with @Transaction decorator.
  */
 export function TransactionRepository(entityType) {
-    return function (object, methodName, index) {
+    return (object, methodName, index) => {
         // get repository type
-        var repositoryType;
+        let repositoryType;
         try {
             repositoryType = Reflect.getOwnMetadata("design:paramtypes", object, methodName)[index];
         }
@@ -15,10 +15,10 @@ export function TransactionRepository(entityType) {
         }
         getMetadataArgsStorage().transactionRepositories.push({
             target: object.constructor,
-            methodName: methodName,
-            index: index,
-            repositoryType: repositoryType,
-            entityType: entityType,
+            methodName,
+            index,
+            repositoryType,
+            entityType,
         });
     };
 }

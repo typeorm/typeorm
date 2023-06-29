@@ -1,2 +1,2 @@
 import { ObjectID } from "../driver/mongodb/typings";
-export declare type EntityId = string | number | Date | ObjectID;
+export type EntityId = string | number | Date | ObjectID;

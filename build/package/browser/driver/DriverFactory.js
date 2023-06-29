@@ -18,14 +18,12 @@ import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver";
 /**
  * Helps to create drivers.
  */
-var DriverFactory = /** @class */ (function () {
-    function DriverFactory() {
-    }
+export class DriverFactory {
     /**
      * Creates a new driver depend on a given connection's driver type.
      */
-    DriverFactory.prototype.create = function (connection) {
-        var type = connection.options.type;
+    create(connection) {
+        const { type } = connection.options;
         switch (type) {
             case "mysql":
                 return new MysqlDriver(connection);
@@ -64,9 +62,7 @@ var DriverFactory = /** @class */ (function () {
             default:
                 throw new MissingDriverError(type);
         }
-    };
-    return DriverFactory;
-}());
-export { DriverFactory };
+    }
+}
 
 //# sourceMappingURL=DriverFactory.js.map

@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TreeLevelColumn = void 0;
-var __1 = require("../../");
+const __1 = require("../../");
 /**
  * Creates a "level"/"length" column to the table that holds a closure table.
  */
 function TreeLevelColumn() {
     return function (object, propertyName) {
-        __1.getMetadataArgsStorage().columns.push({
+        (0, __1.getMetadataArgsStorage)().columns.push({
             target: object.constructor,
             propertyName: propertyName,
             mode: "treeLevel",

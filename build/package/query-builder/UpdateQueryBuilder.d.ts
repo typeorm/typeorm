@@ -10,7 +10,7 @@ import { QueryDeepPartialEntity } from "./QueryPartialEntity";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export declare class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export declare class UpdateQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> implements WhereExpression {
     constructor(connectionOrQueryBuilder: Connection | QueryBuilder<any>, queryRunner?: QueryRunner);
     /**
      * Gets generated sql query without parameters being replaced.

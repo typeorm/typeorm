@@ -1,8 +1,8 @@
 /**
  * Result object returned by UpdateQueryBuilder execution.
  */
-var UpdateResult = /** @class */ (function () {
-    function UpdateResult() {
+export class UpdateResult {
+    constructor() {
         /**
          * Contains inserted entity id.
          * Has entity-like structure (not just column database name and values).
@@ -14,8 +14,6 @@ var UpdateResult = /** @class */ (function () {
          */
         this.generatedMaps = [];
     }
-    return UpdateResult;
-}());
-export { UpdateResult };
+}
 
 //# sourceMappingURL=UpdateResult.js.map

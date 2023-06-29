@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileLogger = void 0;
-var tslib_1 = require("tslib");
-var app_root_path_1 = tslib_1.__importDefault(require("app-root-path"));
-var PlatformTools_1 = require("../platform/PlatformTools");
+const tslib_1 = require("tslib");
+const app_root_path_1 = tslib_1.__importDefault(require("app-root-path"));
+const PlatformTools_1 = require("../platform/PlatformTools");
 /**
  * Performs logging of the events in TypeORM.
  * This version of logger logs everything into ormlogs.log file.
  */
-var FileLogger = /** @class */ (function () {
+class FileLogger {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function FileLogger(options, fileLoggerOptions) {
+    constructor(options, fileLoggerOptions) {
         this.options = options;
         this.fileLoggerOptions = fileLoggerOptions;
     }
@@ -22,50 +22,50 @@ var FileLogger = /** @class */ (function () {
     /**
      * Logs query and parameters used in it.
      */
-    FileLogger.prototype.logQuery = function (query, parameters, queryRunner) {
+    logQuery(query, parameters, queryRunner) {
         if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("query") !== -1)) {
-            var sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write("[QUERY]: " + sql);
         }
-    };
+    }
     /**
      * Logs query that is failed.
      */
-    FileLogger.prototype.logQueryError = function (error, query, parameters, queryRunner) {
+    logQueryError(error, query, parameters, queryRunner) {
         if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("error") !== -1)) {
-            var sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             this.write([
-                "[FAILED QUERY]: " + sql,
-                "[QUERY ERROR]: " + error
+                `[FAILED QUERY]: ${sql}`,
+                `[QUERY ERROR]: ${error}`
             ]);
         }
-    };
+    }
     /**
      * Logs query that is slow.
      */
-    FileLogger.prototype.logQuerySlow = function (time, query, parameters, queryRunner) {
-        var sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-        this.write("[SLOW QUERY: " + time + " ms]: " + sql);
-    };
+    logQuerySlow(time, query, parameters, queryRunner) {
+        const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+        this.write(`[SLOW QUERY: ${time} ms]: ` + sql);
+    }
     /**
      * Logs events from the schema build process.
      */
-    FileLogger.prototype.logSchemaBuild = function (message, queryRunner) {
+    logSchemaBuild(message, queryRunner) {
         if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("schema") !== -1)) {
             this.write(message);
         }
-    };
+    }
     /**
      * Logs events from the migrations run process.
      */
-    FileLogger.prototype.logMigration = function (message, queryRunner) {
+    logMigration(message, queryRunner) {
         this.write(message);
-    };
+    }
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    FileLogger.prototype.log = function (level, message, queryRunner) {
+    log(level, message, queryRunner) {
         switch (level) {
             case "log":
                 if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("log") !== -1))
@@ -80,37 +80,36 @@ var FileLogger = /** @class */ (function () {
                     this.write("[WARN]: " + message);
                 break;
         }
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * Writes given strings into the log file.
      */
-    FileLogger.prototype.write = function (strings) {
+    write(strings) {
         strings = Array.isArray(strings) ? strings : [strings];
-        var basePath = app_root_path_1.default.path + "/";
-        var logPath = "ormlogs.log";
+        const basePath = app_root_path_1.default.path + "/";
+        let logPath = "ormlogs.log";
         if (this.fileLoggerOptions && this.fileLoggerOptions.logPath) {
             logPath = PlatformTools_1.PlatformTools.pathNormalize(this.fileLoggerOptions.logPath);
         }
-        strings = strings.map(function (str) { return "[" + new Date().toISOString() + "]" + str; });
+        strings = strings.map(str => "[" + new Date().toISOString() + "]" + str);
         PlatformTools_1.PlatformTools.appendFileSync(basePath + logPath, strings.join("\r\n") + "\r\n"); // todo: use async or implement promises?
-    };
+    }
     /**
      * Converts parameters to a string.
      * Sometimes parameters can have circular objects and therefor we are handle this case too.
      */
-    FileLogger.prototype.stringifyParams = function (parameters) {
+    stringifyParams(parameters) {
         try {
             return JSON.stringify(parameters);
         }
         catch (error) { // most probably circular objects in parameters
             return parameters;
         }
-    };
-    return FileLogger;
-}());
+    }
+}
 exports.FileLogger = FileLogger;
 
 //# sourceMappingURL=FileLogger.js.map

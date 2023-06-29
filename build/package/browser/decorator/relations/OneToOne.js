@@ -5,7 +5,7 @@ import { getMetadataArgsStorage } from "../../";
  */
 export function OneToOne(typeFunctionOrTarget, inverseSideOrOptions, options) {
     // normalize parameters
-    var inverseSideProperty;
+    let inverseSideProperty;
     if (typeof inverseSideOrOptions === "object") {
         options = inverseSideOrOptions;
     }
@@ -16,9 +16,9 @@ export function OneToOne(typeFunctionOrTarget, inverseSideOrOptions, options) {
         if (!options)
             options = {};
         // now try to determine it its lazy relation
-        var isLazy = options && options.lazy === true ? true : false;
+        let isLazy = options && options.lazy === true ? true : false;
         if (!isLazy && Reflect && Reflect.getMetadata) { // automatic determination
-            var reflectedType = Reflect.getMetadata("design:type", object, propertyName);
+            const reflectedType = Reflect.getMetadata("design:type", object, propertyName);
             if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
                 isLazy = true;
         }

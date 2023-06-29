@@ -1,13 +1,12 @@
-import { __read, __spreadArray } from "tslib";
 import { MongoDriver } from "../driver/mongodb/MongoDriver";
 /**
  * Contains all information about entity's embedded property.
  */
-var EmbeddedMetadata = /** @class */ (function () {
+export class EmbeddedMetadata {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function EmbeddedMetadata(options) {
+    constructor(options) {
         /**
          * Columns inside this embed.
          */
@@ -108,14 +107,14 @@ var EmbeddedMetadata = /** @class */ (function () {
     /**
      * Creates a new embedded object.
      */
-    EmbeddedMetadata.prototype.create = function () {
+    create() {
         return new this.type;
-    };
+    }
     // ---------------------------------------------------------------------
     // Builder Methods
     // ---------------------------------------------------------------------
-    EmbeddedMetadata.prototype.build = function (connection) {
-        this.embeddeds.forEach(function (embedded) { return embedded.build(connection); });
+    build(connection) {
+        this.embeddeds.forEach(embedded => embedded.build(connection));
         this.prefix = this.buildPrefix(connection);
         this.parentPropertyNames = this.buildParentPropertyNames();
         this.parentPrefixes = this.buildParentPrefixes();
@@ -129,11 +128,11 @@ var EmbeddedMetadata = /** @class */ (function () {
         this.relationIdsFromTree = this.buildRelationIdsFromTree();
         this.relationCountsFromTree = this.buildRelationCountsFromTree();
         return this;
-    };
+    }
     // ---------------------------------------------------------------------
     // Protected Methods
     // ---------------------------------------------------------------------
-    EmbeddedMetadata.prototype.buildPartialPrefix = function () {
+    buildPartialPrefix() {
         // if prefix option was not set or explicitly set to true - default prefix
         if (this.customPrefix === undefined || this.customPrefix === true) {
             return [this.propertyName];
@@ -146,49 +145,47 @@ var EmbeddedMetadata = /** @class */ (function () {
         if (typeof this.customPrefix === "string") {
             return [this.customPrefix];
         }
-        throw new Error("Invalid prefix option given for " + this.entityMetadata.targetName + "#" + this.propertyName);
-    };
-    EmbeddedMetadata.prototype.buildPrefix = function (connection) {
+        throw new Error(`Invalid prefix option given for ${this.entityMetadata.targetName}#${this.propertyName}`);
+    }
+    buildPrefix(connection) {
         if (connection.driver instanceof MongoDriver)
             return this.propertyName;
-        var prefixes = [];
+        let prefixes = [];
         if (this.parentEmbeddedMetadata)
             prefixes.push(this.parentEmbeddedMetadata.buildPrefix(connection));
-        prefixes.push.apply(prefixes, __spreadArray([], __read(this.buildPartialPrefix())));
+        prefixes.push(...this.buildPartialPrefix());
         return prefixes.join("_"); // todo: use naming strategy instead of "_"  !!!
-    };
-    EmbeddedMetadata.prototype.buildParentPropertyNames = function () {
+    }
+    buildParentPropertyNames() {
         return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPropertyNames().concat(this.propertyName) : [this.propertyName];
-    };
-    EmbeddedMetadata.prototype.buildParentPrefixes = function () {
+    }
+    buildParentPrefixes() {
         return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildParentPrefixes().concat(this.buildPartialPrefix()) : this.buildPartialPrefix();
-    };
-    EmbeddedMetadata.prototype.buildEmbeddedMetadataTree = function () {
+    }
+    buildEmbeddedMetadataTree() {
         return this.parentEmbeddedMetadata ? this.parentEmbeddedMetadata.buildEmbeddedMetadataTree().concat(this) : [this];
-    };
-    EmbeddedMetadata.prototype.buildColumnsFromTree = function () {
-        return this.embeddeds.reduce(function (columns, embedded) { return columns.concat(embedded.buildColumnsFromTree()); }, this.columns);
-    };
-    EmbeddedMetadata.prototype.buildRelationsFromTree = function () {
-        return this.embeddeds.reduce(function (relations, embedded) { return relations.concat(embedded.buildRelationsFromTree()); }, this.relations);
-    };
-    EmbeddedMetadata.prototype.buildListenersFromTree = function () {
-        return this.embeddeds.reduce(function (relations, embedded) { return relations.concat(embedded.buildListenersFromTree()); }, this.listeners);
-    };
-    EmbeddedMetadata.prototype.buildIndicesFromTree = function () {
-        return this.embeddeds.reduce(function (relations, embedded) { return relations.concat(embedded.buildIndicesFromTree()); }, this.indices);
-    };
-    EmbeddedMetadata.prototype.buildUniquesFromTree = function () {
-        return this.embeddeds.reduce(function (relations, embedded) { return relations.concat(embedded.buildUniquesFromTree()); }, this.uniques);
-    };
-    EmbeddedMetadata.prototype.buildRelationIdsFromTree = function () {
-        return this.embeddeds.reduce(function (relations, embedded) { return relations.concat(embedded.buildRelationIdsFromTree()); }, this.relationIds);
-    };
-    EmbeddedMetadata.prototype.buildRelationCountsFromTree = function () {
-        return this.embeddeds.reduce(function (relations, embedded) { return relations.concat(embedded.buildRelationCountsFromTree()); }, this.relationCounts);
-    };
-    return EmbeddedMetadata;
-}());
-export { EmbeddedMetadata };
+    }
+    buildColumnsFromTree() {
+        return this.embeddeds.reduce((columns, embedded) => columns.concat(embedded.buildColumnsFromTree()), this.columns);
+    }
+    buildRelationsFromTree() {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationsFromTree()), this.relations);
+    }
+    buildListenersFromTree() {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildListenersFromTree()), this.listeners);
+    }
+    buildIndicesFromTree() {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildIndicesFromTree()), this.indices);
+    }
+    buildUniquesFromTree() {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildUniquesFromTree()), this.uniques);
+    }
+    buildRelationIdsFromTree() {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationIdsFromTree()), this.relationIds);
+    }
+    buildRelationCountsFromTree() {
+        return this.embeddeds.reduce((relations, embedded) => relations.concat(embedded.buildRelationCountsFromTree()), this.relationCounts);
+    }
+}
 
 //# sourceMappingURL=EmbeddedMetadata.js.map

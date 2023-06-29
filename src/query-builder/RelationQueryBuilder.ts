@@ -1,13 +1,14 @@
 import {QueryBuilder} from "./QueryBuilder";
 import {RelationUpdater} from "./RelationUpdater";
 import {RelationRemover} from "./RelationRemover";
+import { ObjectLiteral } from "../common/ObjectLiteral";
 
 /**
  * Allows to work with entity relations and perform specific operations with those relations.
  *
  * todo: add transactions everywhere
  */
-export class RelationQueryBuilder<Entity> extends QueryBuilder<Entity> {
+export class RelationQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> {
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods

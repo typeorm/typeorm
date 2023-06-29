@@ -6,8 +6,8 @@ import { getMetadataArgsStorage } from "../../";
  */
 export function JoinColumn(optionsOrOptionsArray) {
     return function (object, propertyName) {
-        var options = Array.isArray(optionsOrOptionsArray) ? optionsOrOptionsArray : [optionsOrOptionsArray || {}];
-        options.forEach(function (options) {
+        const options = Array.isArray(optionsOrOptionsArray) ? optionsOrOptionsArray : [optionsOrOptionsArray || {}];
+        options.forEach(options => {
             getMetadataArgsStorage().joinColumns.push({
                 target: object.constructor,
                 propertyName: propertyName,

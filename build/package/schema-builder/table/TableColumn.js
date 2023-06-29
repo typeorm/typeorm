@@ -4,11 +4,11 @@ exports.TableColumn = void 0;
 /**
  * Table's columns in the database represented in this class.
  */
-var TableColumn = /** @class */ (function () {
+class TableColumn {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function TableColumn(options) {
+    constructor(options) {
         /**
          * Indicates if column is NULL, or is NOT NULL in the database.
          */
@@ -77,7 +77,7 @@ var TableColumn = /** @class */ (function () {
     /**
      * Clones this column to a new column with exact same properties as this column has.
      */
-    TableColumn.prototype.clone = function () {
+    clone() {
         return new TableColumn({
             name: this.name,
             type: this.type,
@@ -105,9 +105,8 @@ var TableColumn = /** @class */ (function () {
             spatialFeatureType: this.spatialFeatureType,
             srid: this.srid
         });
-    };
-    return TableColumn;
-}());
+    }
+}
 exports.TableColumn = TableColumn;
 
 //# sourceMappingURL=TableColumn.js.map

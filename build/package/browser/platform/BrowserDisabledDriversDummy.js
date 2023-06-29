@@ -10,141 +10,85 @@
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var MongoDriver = /** @class */ (function () {
-    function MongoDriver() {
-    }
-    return MongoDriver;
-}());
-export { MongoDriver };
+export class MongoDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var MongoQueryRunner = /** @class */ (function () {
-    function MongoQueryRunner() {
-    }
-    return MongoQueryRunner;
-}());
-export { MongoQueryRunner };
+export class MongoQueryRunner {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var MongoEntityManager = /** @class */ (function () {
-    function MongoEntityManager() {
-    }
-    return MongoEntityManager;
-}());
-export { MongoEntityManager };
+export class MongoEntityManager {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var MongoRepository = /** @class */ (function () {
-    function MongoRepository() {
-    }
-    return MongoRepository;
-}());
-export { MongoRepository };
+export class MongoRepository {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var PostgresDriver = /** @class */ (function () {
-    function PostgresDriver() {
-    }
-    return PostgresDriver;
-}());
-export { PostgresDriver };
+export class PostgresDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var AuroraDataApiDriver = /** @class */ (function () {
-    function AuroraDataApiDriver() {
-    }
-    return AuroraDataApiDriver;
-}());
-export { AuroraDataApiDriver };
+export class AuroraDataApiDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var CockroachDriver = /** @class */ (function () {
-    function CockroachDriver() {
-    }
-    return CockroachDriver;
-}());
-export { CockroachDriver };
+export class CockroachDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var AuroraDataApiPostgresDriver = /** @class */ (function () {
-    function AuroraDataApiPostgresDriver() {
-    }
-    return AuroraDataApiPostgresDriver;
-}());
-export { AuroraDataApiPostgresDriver };
+export class AuroraDataApiPostgresDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var SqlServerDriver = /** @class */ (function () {
-    function SqlServerDriver() {
-    }
-    return SqlServerDriver;
-}());
-export { SqlServerDriver };
+export class SqlServerDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var SapDriver = /** @class */ (function () {
-    function SapDriver() {
-    }
-    return SapDriver;
-}());
-export { SapDriver };
+export class SapDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var MysqlDriver = /** @class */ (function () {
-    function MysqlDriver() {
-    }
-    return MysqlDriver;
-}());
-export { MysqlDriver };
+export class MysqlDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var OracleDriver = /** @class */ (function () {
-    function OracleDriver() {
-    }
-    return OracleDriver;
-}());
-export { OracleDriver };
+export class OracleDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var SqliteDriver = /** @class */ (function () {
-    function SqliteDriver() {
-    }
-    return SqliteDriver;
-}());
-export { SqliteDriver };
+export class SqliteDriver {
+}
 /**
  * DO NOT IMPORT THIS CLASS -
  * This is a dummy class for replacement via `package.json` in browser builds
  */
-var BetterSqlite3Driver = /** @class */ (function () {
-    function BetterSqlite3Driver() {
-    }
-    return BetterSqlite3Driver;
-}());
-export { BetterSqlite3Driver };
+export class BetterSqlite3Driver {
+}
 
 //# sourceMappingURL=BrowserDisabledDriversDummy.js.map

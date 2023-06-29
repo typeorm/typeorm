@@ -1,6 +1,4 @@
-var RandomGenerator = /** @class */ (function () {
-    function RandomGenerator() {
-    }
+export class RandomGenerator {
     /**
      *  discuss at: http://locutus.io/php/sha1/
      * original by: Webtoolkit.info (http://www.webtoolkit.info/)
@@ -13,35 +11,35 @@ var RandomGenerator = /** @class */ (function () {
      *   example 1: sha1('Kevin van Zonneveld')
      *   returns 1: '54916d2e62f65b3afa6e192e6a601cdbe5cb5897'
      */
-    RandomGenerator.sha1 = function (str) {
-        var _rotLeft = function (n, s) {
-            var t4 = (n << s) | (n >>> (32 - s));
+    static sha1(str) {
+        let _rotLeft = function (n, s) {
+            let t4 = (n << s) | (n >>> (32 - s));
             return t4;
         };
-        var _cvtHex = function (val) {
-            var str = "";
-            var i;
-            var v;
+        let _cvtHex = function (val) {
+            let str = "";
+            let i;
+            let v;
             for (i = 7; i >= 0; i--) {
                 v = (val >>> (i * 4)) & 0x0f;
                 str += v.toString(16);
             }
             return str;
         };
-        var blockstart;
-        var i, j;
-        var W = new Array(80);
-        var H0 = 0x67452301;
-        var H1 = 0xEFCDAB89;
-        var H2 = 0x98BADCFE;
-        var H3 = 0x10325476;
-        var H4 = 0xC3D2E1F0;
-        var A, B, C, D, E;
-        var temp;
+        let blockstart;
+        let i, j;
+        let W = new Array(80);
+        let H0 = 0x67452301;
+        let H1 = 0xEFCDAB89;
+        let H2 = 0x98BADCFE;
+        let H3 = 0x10325476;
+        let H4 = 0xC3D2E1F0;
+        let A, B, C, D, E;
+        let temp;
         // utf8_encode
         str = /*unescape*/ (encodeURIComponent(str));
-        var strLen = str.length;
-        var wordArray = [];
+        let strLen = str.length;
+        let wordArray = [];
         for (i = 0; i < strLen - 3; i += 4) {
             j = str.charCodeAt(i) << 24 |
                 str.charCodeAt(i + 1) << 16 |
@@ -124,18 +122,16 @@ var RandomGenerator = /** @class */ (function () {
         }
         temp = _cvtHex(H0) + _cvtHex(H1) + _cvtHex(H2) + _cvtHex(H3) + _cvtHex(H4);
         return temp.toLowerCase();
-    };
+    }
     /**
      * RFC4122 compliant UUID v4 generator.
      */
-    RandomGenerator.uuid4 = function () {
-        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
+    static uuid4() {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
-    };
-    return RandomGenerator;
-}());
-export { RandomGenerator };
+    }
+}
 
 //# sourceMappingURL=RandomGenerator.js.map
