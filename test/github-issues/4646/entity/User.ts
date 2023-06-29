@@ -1,4 +1,5 @@
 import {
+    BaseEntity,
     Column,
     Entity,
     OneToMany,
@@ -7,7 +8,7 @@ import {
 import { Photo } from "./Photo"
 
 @Entity({ versioning: true })
-export class User {
+export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number
 

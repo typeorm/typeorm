@@ -459,8 +459,25 @@ export class BaseEntity {
     static find<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         options?: FindManyOptions<T>,
+    ): Promise<T[]>
+
+    /**
+     * Finds entities that match given options.
+     */
+    static find<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        timestamp: Date,
+    ): Promise<T[]>
+
+    /**
+     * Finds entities that match given options.
+     */
+    static find<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        options?: FindManyOptions<T> | Date,
+        timestamp?: Date,
     ): Promise<T[]> {
-        return this.getRepository<T>().find(options)
+        return this.getRepository<T>().find(options, timestamp)
     }
 
     /**
@@ -469,8 +486,9 @@ export class BaseEntity {
     static findBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
+        timestamp?: Date,
     ): Promise<T[]> {
-        return this.getRepository<T>().findBy(where)
+        return this.getRepository<T>().findBy(where, timestamp)
     }
 
     /**
@@ -520,8 +538,9 @@ export class BaseEntity {
     static findOne<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         options: FindOneOptions<T>,
+        timestamp?: Date,
     ): Promise<T | null> {
-        return this.getRepository<T>().findOne(options)
+        return this.getRepository<T>().findOne(options, timestamp)
     }
 
     /**
@@ -530,9 +549,9 @@ export class BaseEntity {
     static findOneBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
-        datetime?: Date,
+        timestamp?: Date,
     ): Promise<T | null> {
-        return this.getRepository<T>().findOneBy(where, datetime)
+        return this.getRepository<T>().findOneBy(where, timestamp)
     }
 
     /**

@@ -530,7 +530,10 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities that match given find options.
      */
-    find(options: FindManyOptions<Entity>, timestamp: Date): Promise<Entity[]>
+    find(
+        options?: FindManyOptions<Entity> | Date,
+        timestamp?: Date,
+    ): Promise<Entity[]>
 
     /**
      * Finds entities that match given find options.
@@ -539,14 +542,6 @@ export class Repository<Entity extends ObjectLiteral> {
         options?: FindManyOptions<Entity> | Date,
         timestamp?: Date,
     ): Promise<Entity[]> {
-        /*    if (optionsOrTimestamp instanceof Date) {
-            return this.manager.find(
-                this.metadata.target,
-                undefined,
-                optionsOrTimestamp,
-            )
-        }
-*/
         return this.manager.find(this.metadata.target, options, timestamp)
     }
 
