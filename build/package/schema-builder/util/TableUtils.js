@@ -1,10 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TableUtils = void 0;
-var TableUtils = /** @class */ (function () {
-    function TableUtils() {
-    }
-    TableUtils.createTableColumnOptions = function (columnMetadata, driver) {
+class TableUtils {
+    static createTableColumnOptions(columnMetadata, driver) {
         return {
             name: columnMetadata.databaseName,
             length: columnMetadata.length,
@@ -27,14 +25,13 @@ var TableUtils = /** @class */ (function () {
             isPrimary: columnMetadata.isPrimary,
             isUnique: driver.normalizeIsUnique(columnMetadata),
             isArray: columnMetadata.isArray || false,
-            enum: columnMetadata.enum ? columnMetadata.enum.map(function (val) { return val + ""; }) : columnMetadata.enum,
+            enum: columnMetadata.enum ? columnMetadata.enum.map(val => val + "") : columnMetadata.enum,
             enumName: columnMetadata.enumName,
             spatialFeatureType: columnMetadata.spatialFeatureType,
             srid: columnMetadata.srid
         };
-    };
-    return TableUtils;
-}());
+    }
+}
 exports.TableUtils = TableUtils;
 
 //# sourceMappingURL=TableUtils.js.map

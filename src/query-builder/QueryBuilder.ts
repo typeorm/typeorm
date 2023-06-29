@@ -44,7 +44,7 @@ import { PlatformTools } from "../platform/PlatformTools";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export abstract class QueryBuilder<Entity> {
+export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -191,7 +191,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
-    update<Entity>(entity: EntityTarget<Entity>, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
+    update<Entity extends ObjectLiteral>(entity: EntityTarget<Entity>, updateSet?: QueryDeepPartialEntity<Entity>): UpdateQueryBuilder<Entity>;
 
     /**
      * Creates UPDATE query for the given table name and applies given update values.
@@ -265,7 +265,7 @@ export abstract class QueryBuilder<Entity> {
     /**
      * Sets entity's relation with which this query builder gonna work.
      */
-    relation<T>(entityTarget: EntityTarget<T>, propertyPath: string): RelationQueryBuilder<T>;
+    relation<T extends ObjectLiteral>(entityTarget: EntityTarget<T>, propertyPath: string): RelationQueryBuilder<T>;
 
     /**
      * Sets entity's relation with which this query builder gonna work.

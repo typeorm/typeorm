@@ -1,3 +1,5 @@
+import { ObjectLiteral } from "../../../src";
+
 /**
  * Returns available values of an enum
  *
@@ -15,7 +17,7 @@
  * @param enumObj
  * @returns The values of the enum
  */
-export function getEnumValues<T>(enumObj: T): Array<T[keyof T]> {
+export function getEnumValues<T extends ObjectLiteral>(enumObj: T): Array<T[keyof T]> {
   return Object.keys(enumObj)
       .filter(key => isNaN(parseInt(key, 10)))
       .map(key => (enumObj as any)[key]);

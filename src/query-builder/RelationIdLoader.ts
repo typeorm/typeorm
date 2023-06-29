@@ -67,7 +67,7 @@ export class RelationIdLoader {
      *
      * todo: extract this method?
      */
-    async loadManyToManyRelationIdsAndGroup<E1, E2>(
+    async loadManyToManyRelationIdsAndGroup<E1 extends ObjectLiteral, E2 extends ObjectLiteral>(
         relation: RelationMetadata,
         entitiesOrEntities: E1|E1[],
         relatedEntityOrEntities?: E2|E2[]

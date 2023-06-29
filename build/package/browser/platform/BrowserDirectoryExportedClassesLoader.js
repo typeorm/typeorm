@@ -7,15 +7,13 @@
 /**
  * Loads all exported classes from the given directory.
  */
-export function importClassesFromDirectories(logger, directories, formats) {
-    if (formats === void 0) { formats = [".js", ".cjs", ".ts"]; }
+export function importClassesFromDirectories(logger, directories, formats = [".js", ".cjs", ".ts"]) {
     return [];
 }
 /**
  * Loads all json files from the given directory.
  */
-export function importJsonsFromDirectories(directories, format) {
-    if (format === void 0) { format = ".json"; }
+export function importJsonsFromDirectories(directories, format = ".json") {
     return [];
 }
 

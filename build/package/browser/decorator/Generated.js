@@ -8,8 +8,7 @@ import { getMetadataArgsStorage } from "../";
  *
  * Note, some databases do not support non-primary generation columns.
  */
-export function Generated(strategy) {
-    if (strategy === void 0) { strategy = "increment"; }
+export function Generated(strategy = "increment") {
     return function (object, propertyName) {
         getMetadataArgsStorage().generations.push({
             target: object.constructor,

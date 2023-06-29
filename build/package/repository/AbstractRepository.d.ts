@@ -34,15 +34,15 @@ export declare class AbstractRepository<Entity extends ObjectLiteral> {
     /**
      * Creates a new query builder for the given entity that can be used to build a sql query.
      */
-    protected createQueryBuilderFor<T>(entity: ObjectType<T>, alias: string): SelectQueryBuilder<T>;
+    protected createQueryBuilderFor<T extends ObjectLiteral>(entity: ObjectType<T>, alias: string): SelectQueryBuilder<T>;
     /**
      * Gets the original ORM repository for the given entity class.
      */
-    protected getRepositoryFor<T>(entity: ObjectType<T>): Repository<T>;
+    protected getRepositoryFor<T extends ObjectLiteral>(entity: ObjectType<T>): Repository<T>;
     /**
      * Gets the original ORM tree repository for the given entity class.
      */
-    protected getTreeRepositoryFor<T>(entity: ObjectType<T>): TreeRepository<T>;
+    protected getTreeRepositoryFor<T extends ObjectLiteral>(entity: ObjectType<T>): TreeRepository<T>;
     /**
      * Gets custom repository's managed entity.
      * If given custom repository does not manage any entity then undefined will be returned.

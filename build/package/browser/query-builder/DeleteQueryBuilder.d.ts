@@ -9,7 +9,7 @@ import { DeleteResult } from "./result/DeleteResult";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export declare class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export declare class DeleteQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> implements WhereExpression {
     constructor(connectionOrQueryBuilder: Connection | QueryBuilder<any>, queryRunner?: QueryRunner);
     /**
      * Gets generated sql query without parameters being replaced.
@@ -23,7 +23,7 @@ export declare class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> imp
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(entityTarget: EntityTarget<T>, aliasName?: string): DeleteQueryBuilder<T>;
+    from<T extends ObjectLiteral>(entityTarget: EntityTarget<T>, aliasName?: string): DeleteQueryBuilder<T>;
     /**
      * Sets WHERE condition in the query builder.
      * If you had previously WHERE expression defined,

@@ -14,7 +14,7 @@ import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export declare class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export declare class SelectQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> implements WhereExpression {
     /**
      * Gets generated sql query without parameters being replaced.
      */
@@ -68,23 +68,23 @@ export declare class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> imp
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
+    from<T extends ObjectLiteral>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      * Removes all previously set from-s.
      */
-    from<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
+    from<T extends ObjectLiteral>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T extends ObjectLiteral>(entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>, aliasName: string): SelectQueryBuilder<T>;
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    addFrom<T>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
+    addFrom<T extends ObjectLiteral>(entityTarget: EntityTarget<T>, aliasName: string): SelectQueryBuilder<T>;
     /**
      * INNER JOINs (without selection) given subquery.
      * You also need to specify an alias of the joined data.

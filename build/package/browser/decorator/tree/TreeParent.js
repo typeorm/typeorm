@@ -6,15 +6,15 @@ import { getMetadataArgsStorage } from "../../";
 export function TreeParent() {
     return function (object, propertyName) {
         // now try to determine it its lazy relation
-        var reflectedType = Reflect && Reflect.getMetadata ? Reflect.getMetadata("design:type", object, propertyName) : undefined;
-        var isLazy = (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise") || false;
+        const reflectedType = Reflect && Reflect.getMetadata ? Reflect.getMetadata("design:type", object, propertyName) : undefined;
+        const isLazy = (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise") || false;
         getMetadataArgsStorage().relations.push({
             isTreeParent: true,
             target: object.constructor,
             propertyName: propertyName,
             isLazy: isLazy,
             relationType: "many-to-one",
-            type: function () { return object.constructor; },
+            type: () => object.constructor,
             options: {}
         });
     };

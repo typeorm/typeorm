@@ -1,31 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrmUtils = void 0;
-var tslib_1 = require("tslib");
-var OrmUtils = /** @class */ (function () {
-    function OrmUtils() {
-    }
+class OrmUtils {
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
     /**
      * Chunks array into peaces.
      */
-    OrmUtils.chunk = function (array, size) {
-        return Array.from(Array(Math.ceil(array.length / size)), function (_, i) {
+    static chunk(array, size) {
+        return Array.from(Array(Math.ceil(array.length / size)), (_, i) => {
             return array.slice(i * size, i * size + size);
         });
-    };
-    OrmUtils.splitClassesAndStrings = function (clsesAndStrings) {
+    }
+    static splitClassesAndStrings(clsesAndStrings) {
         return [
-            (clsesAndStrings).filter(function (cls) { return typeof cls !== "string"; }),
-            (clsesAndStrings).filter(function (str) { return typeof str === "string"; }),
+            (clsesAndStrings).filter((cls) => typeof cls !== "string"),
+            (clsesAndStrings).filter((str) => typeof str === "string"),
         ];
-    };
-    OrmUtils.groupBy = function (array, propertyCallback) {
-        return array.reduce(function (groupedArray, value) {
-            var key = propertyCallback(value);
-            var grouped = groupedArray.find(function (i) { return i.id === key; });
+    }
+    static groupBy(array, propertyCallback) {
+        return array.reduce((groupedArray, value) => {
+            const key = propertyCallback(value);
+            let grouped = groupedArray.find(i => i.id === key);
             if (!grouped) {
                 grouped = { id: key, items: [] };
                 groupedArray.push(grouped);
@@ -33,16 +30,16 @@ var OrmUtils = /** @class */ (function () {
             grouped.items.push(value);
             return groupedArray;
         }, []);
-    };
-    OrmUtils.uniq = function (array, criteriaOrProperty) {
-        return array.reduce(function (uniqueArray, item) {
-            var found = false;
+    }
+    static uniq(array, criteriaOrProperty) {
+        return array.reduce((uniqueArray, item) => {
+            let found = false;
             if (criteriaOrProperty instanceof Function) {
-                var itemValue_1 = criteriaOrProperty(item);
-                found = !!uniqueArray.find(function (uniqueItem) { return criteriaOrProperty(uniqueItem) === itemValue_1; });
+                const itemValue = criteriaOrProperty(item);
+                found = !!uniqueArray.find(uniqueItem => criteriaOrProperty(uniqueItem) === itemValue);
             }
             else if (typeof criteriaOrProperty === "string") {
-                found = !!uniqueArray.find(function (uniqueItem) { return uniqueItem[criteriaOrProperty] === item[criteriaOrProperty]; });
+                found = !!uniqueArray.find(uniqueItem => uniqueItem[criteriaOrProperty] === item[criteriaOrProperty]);
             }
             else {
                 found = uniqueArray.indexOf(item) !== -1;
@@ -51,27 +48,22 @@ var OrmUtils = /** @class */ (function () {
                 uniqueArray.push(item);
             return uniqueArray;
         }, []);
-    };
-    OrmUtils.isObject = function (item) {
+    }
+    static isObject(item) {
         return (item && typeof item === "object" && !Array.isArray(item));
-    };
+    }
     /**
      * Deep Object.assign.
      *
      * @see http://stackoverflow.com/a/34749873
      */
-    OrmUtils.mergeDeep = function (target) {
-        var _a, _b;
-        var sources = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            sources[_i - 1] = arguments[_i];
-        }
+    static mergeDeep(target, ...sources) {
         if (!sources.length)
             return target;
-        var source = sources.shift();
+        const source = sources.shift();
         if (this.isObject(target) && this.isObject(source)) {
-            for (var key in source) {
-                var value = source[key];
+            for (const key in source) {
+                const value = source[key];
                 if (key === "__proto__" || value instanceof Promise)
                     continue;
                 if (this.isObject(value)
@@ -81,27 +73,23 @@ var OrmUtils = /** @class */ (function () {
                     && !(value instanceof Buffer)
                     && !(value instanceof RegExp)) {
                     if (!target[key])
-                        Object.assign(target, (_a = {}, _a[key] = Object.create(Object.getPrototypeOf(value)), _a));
+                        Object.assign(target, { [key]: Object.create(Object.getPrototypeOf(value)) });
                     this.mergeDeep(target[key], value);
                 }
                 else {
-                    Object.assign(target, (_b = {}, _b[key] = value, _b));
+                    Object.assign(target, { [key]: value });
                 }
             }
         }
-        return this.mergeDeep.apply(this, tslib_1.__spreadArray([target], tslib_1.__read(sources)));
-    };
+        return this.mergeDeep(target, ...sources);
+    }
     /**
      * Deep compare objects.
      *
      * @see http://stackoverflow.com/a/1144249
      */
-    OrmUtils.deepCompare = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        var i, l, leftChain, rightChain;
+    static deepCompare(...args) {
+        let i, l, leftChain, rightChain;
         if (arguments.length < 1) {
             return true; // Die silently? Don't know how to handle such case, please help...
             // throw "Need two or more arguments to compare";
@@ -114,11 +102,11 @@ var OrmUtils = /** @class */ (function () {
             }
         }
         return true;
-    };
+    }
     /**
      * Check if two entity-id-maps are the same
      */
-    OrmUtils.compareIds = function (firstId, secondId) {
+    static compareIds(firstId, secondId) {
         if (firstId === undefined || firstId === null || secondId === undefined || secondId === null)
             return false;
         // Optimized version for the common case
@@ -129,11 +117,11 @@ var OrmUtils = /** @class */ (function () {
             return firstId.id === secondId.id;
         }
         return OrmUtils.deepCompare(firstId, secondId);
-    };
+    }
     /**
      * Transforms given value into boolean value.
      */
-    OrmUtils.toBoolean = function (value) {
+    static toBoolean(value) {
         if (typeof value === "boolean")
             return value;
         if (typeof value === "string")
@@ -141,31 +129,31 @@ var OrmUtils = /** @class */ (function () {
         if (typeof value === "number")
             return value > 0;
         return false;
-    };
+    }
     /**
      * Composes an object from the given array of keys and values.
      */
-    OrmUtils.zipObject = function (keys, values) {
-        return keys.reduce(function (object, column, index) {
+    static zipObject(keys, values) {
+        return keys.reduce((object, column, index) => {
             object[column] = values[index];
             return object;
         }, {});
-    };
+    }
     /**
      * Compares two arrays.
      */
-    OrmUtils.isArraysEqual = function (arr1, arr2) {
+    static isArraysEqual(arr1, arr2) {
         if (arr1.length !== arr2.length)
             return false;
-        return arr1.every(function (element) {
+        return arr1.every(element => {
             return arr2.indexOf(element) !== -1;
         });
-    };
+    }
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------
-    OrmUtils.compare2Objects = function (leftChain, rightChain, x, y) {
-        var p;
+    static compare2Objects(leftChain, rightChain, x, y) {
+        let p;
         // remember that NaN === NaN returns false
         // and isNaN(undefined) returns true
         if (Number.isNaN(x) && Number.isNaN(y))
@@ -240,9 +228,8 @@ var OrmUtils = /** @class */ (function () {
             }
         }
         return true;
-    };
-    return OrmUtils;
-}());
+    }
+}
 exports.OrmUtils = OrmUtils;
 
 //# sourceMappingURL=OrmUtils.js.map

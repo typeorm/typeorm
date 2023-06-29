@@ -1,12 +1,11 @@
-import { __read, __spreadArray } from "tslib";
 /**
  * Database's table index stored in this class.
  */
-var TableIndex = /** @class */ (function () {
+export class TableIndex {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function TableIndex(options) {
+    constructor(options) {
         /**
          * Columns included in this index.
          */
@@ -25,36 +24,34 @@ var TableIndex = /** @class */ (function () {
     /**
      * Creates a new copy of this index with exactly same properties.
      */
-    TableIndex.prototype.clone = function () {
+    clone() {
         return new TableIndex({
             name: this.name,
-            columnNames: __spreadArray([], __read(this.columnNames)),
+            columnNames: [...this.columnNames],
             isUnique: this.isUnique,
             isSpatial: this.isSpatial,
             isFulltext: this.isFulltext,
             parser: this.parser,
             where: this.where
         });
-    };
+    }
     // -------------------------------------------------------------------------
     // Static Methods
     // -------------------------------------------------------------------------
     /**
      * Creates index from the index metadata object.
      */
-    TableIndex.create = function (indexMetadata) {
+    static create(indexMetadata) {
         return new TableIndex({
             name: indexMetadata.name,
-            columnNames: indexMetadata.columns.map(function (column) { return column.databaseName; }),
+            columnNames: indexMetadata.columns.map(column => column.databaseName),
             isUnique: indexMetadata.isUnique,
             isSpatial: indexMetadata.isSpatial,
             isFulltext: indexMetadata.isFulltext,
             parser: indexMetadata.parser,
             where: indexMetadata.where
         });
-    };
-    return TableIndex;
-}());
-export { TableIndex };
+    }
+}
 
 //# sourceMappingURL=TableIndex.js.map

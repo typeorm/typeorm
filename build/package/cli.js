@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = require("tslib");
+const tslib_1 = require("tslib");
 require("reflect-metadata");
-var yargs_1 = tslib_1.__importDefault(require("yargs"));
-var SchemaSyncCommand_1 = require("./commands/SchemaSyncCommand");
-var SchemaDropCommand_1 = require("./commands/SchemaDropCommand");
-var QueryCommand_1 = require("./commands/QueryCommand");
-var EntityCreateCommand_1 = require("./commands/EntityCreateCommand");
-var MigrationCreateCommand_1 = require("./commands/MigrationCreateCommand");
-var MigrationRunCommand_1 = require("./commands/MigrationRunCommand");
-var MigrationRevertCommand_1 = require("./commands/MigrationRevertCommand");
-var MigrationShowCommand_1 = require("./commands/MigrationShowCommand");
-var SubscriberCreateCommand_1 = require("./commands/SubscriberCreateCommand");
-var SchemaLogCommand_1 = require("./commands/SchemaLogCommand");
-var MigrationGenerateCommand_1 = require("./commands/MigrationGenerateCommand");
-var VersionCommand_1 = require("./commands/VersionCommand");
-var InitCommand_1 = require("./commands/InitCommand");
-var CacheClearCommand_1 = require("./commands/CacheClearCommand");
+const yargs_1 = tslib_1.__importDefault(require("yargs"));
+const SchemaSyncCommand_1 = require("./commands/SchemaSyncCommand");
+const SchemaDropCommand_1 = require("./commands/SchemaDropCommand");
+const QueryCommand_1 = require("./commands/QueryCommand");
+const EntityCreateCommand_1 = require("./commands/EntityCreateCommand");
+const MigrationCreateCommand_1 = require("./commands/MigrationCreateCommand");
+const MigrationRunCommand_1 = require("./commands/MigrationRunCommand");
+const MigrationRevertCommand_1 = require("./commands/MigrationRevertCommand");
+const MigrationShowCommand_1 = require("./commands/MigrationShowCommand");
+const SubscriberCreateCommand_1 = require("./commands/SubscriberCreateCommand");
+const SchemaLogCommand_1 = require("./commands/SchemaLogCommand");
+const MigrationGenerateCommand_1 = require("./commands/MigrationGenerateCommand");
+const VersionCommand_1 = require("./commands/VersionCommand");
+const InitCommand_1 = require("./commands/InitCommand");
+const CacheClearCommand_1 = require("./commands/CacheClearCommand");
 yargs_1.default
     .usage("Usage: $0 <command> [options]")
     .command(new SchemaSyncCommand_1.SchemaSyncCommand())

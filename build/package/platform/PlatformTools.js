@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlatformTools = exports.Writable = exports.Readable = exports.EventEmitter = exports.ReadStream = void 0;
-var tslib_1 = require("tslib");
-var path = tslib_1.__importStar(require("path"));
-var fs = tslib_1.__importStar(require("fs"));
-var dotenv_1 = tslib_1.__importDefault(require("dotenv"));
-var chalk_1 = tslib_1.__importDefault(require("chalk"));
-var cli_highlight_1 = require("cli-highlight");
+const tslib_1 = require("tslib");
+const path = tslib_1.__importStar(require("path"));
+const fs = tslib_1.__importStar(require("fs"));
+const dotenv_1 = tslib_1.__importDefault(require("dotenv"));
+const chalk_1 = tslib_1.__importDefault(require("chalk"));
+const cli_highlight_1 = require("cli-highlight");
 var fs_1 = require("fs");
 Object.defineProperty(exports, "ReadStream", { enumerable: true, get: function () { return fs_1.ReadStream; } });
 var events_1 = require("events");
@@ -17,20 +17,18 @@ Object.defineProperty(exports, "Writable", { enumerable: true, get: function () 
 /**
  * Platform-specific tools.
  */
-var PlatformTools = /** @class */ (function () {
-    function PlatformTools() {
-    }
+class PlatformTools {
     /**
      * Gets global variable where global stuff can be stored.
      */
-    PlatformTools.getGlobalVariable = function () {
+    static getGlobalVariable() {
         return global;
-    };
+    }
     /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */
-    PlatformTools.load = function (name) {
+    static load(name) {
         // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
         // this is useful when we are using typeorm package globally installed and it accesses drivers
         // that are not installed globally
@@ -113,70 +111,68 @@ var PlatformTools = /** @class */ (function () {
         // and is an Invalid Package.  To make it explicit that this is NOT the intended use case for
         // PlatformTools.load - it's not just a way to replace `require` all willy-nilly - let's throw
         // an error.
-        throw new TypeError("Invalid Package for PlatformTools.load: " + name);
-    };
+        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`);
+    }
     /**
      * Normalizes given path. Does "path.normalize".
      */
-    PlatformTools.pathNormalize = function (pathStr) {
+    static pathNormalize(pathStr) {
         return path.normalize(pathStr);
-    };
+    }
     /**
      * Gets file extension. Does "path.extname".
      */
-    PlatformTools.pathExtname = function (pathStr) {
+    static pathExtname(pathStr) {
         return path.extname(pathStr);
-    };
+    }
     /**
      * Resolved given path. Does "path.resolve".
      */
-    PlatformTools.pathResolve = function (pathStr) {
+    static pathResolve(pathStr) {
         return path.resolve(pathStr);
-    };
+    }
     /**
      * Synchronously checks if file exist. Does "fs.existsSync".
      */
-    PlatformTools.fileExist = function (pathStr) {
+    static fileExist(pathStr) {
         return fs.existsSync(pathStr);
-    };
-    PlatformTools.readFileSync = function (filename) {
+    }
+    static readFileSync(filename) {
         return fs.readFileSync(filename);
-    };
-    PlatformTools.appendFileSync = function (filename, data) {
+    }
+    static appendFileSync(filename, data) {
         fs.appendFileSync(filename, data);
-    };
-    PlatformTools.writeFile = function (path, data) {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            return tslib_1.__generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        fs.writeFile(path, data, function (err) {
-                            if (err)
-                                fail(err);
-                            ok();
-                        });
-                    })];
+    }
+    static writeFile(path, data) {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            return new Promise((ok, fail) => {
+                fs.writeFile(path, data, (err) => {
+                    if (err)
+                        fail(err);
+                    ok();
+                });
             });
         });
-    };
+    }
     /**
      * Loads a dotenv file into the environment variables.
      *
      * @param path The file to load as a dotenv configuration
      */
-    PlatformTools.dotenv = function (pathStr) {
+    static dotenv(pathStr) {
         dotenv_1.default.config({ path: pathStr });
-    };
+    }
     /**
      * Gets environment variable.
      */
-    PlatformTools.getEnvVariable = function (name) {
+    static getEnvVariable(name) {
         return process.env[name];
-    };
+    }
     /**
      * Highlights sql string to be print in the console.
      */
-    PlatformTools.highlightSql = function (sql) {
-        var theme = {
+    static highlightSql(sql) {
+        const theme = {
             "keyword": chalk_1.default.blueBright,
             "literal": chalk_1.default.blueBright,
             "string": chalk_1.default.white,
@@ -184,38 +180,37 @@ var PlatformTools = /** @class */ (function () {
             "built_in": chalk_1.default.magentaBright,
             "comment": chalk_1.default.gray,
         };
-        return cli_highlight_1.highlight(sql, { theme: theme, language: "sql" });
-    };
+        return (0, cli_highlight_1.highlight)(sql, { theme: theme, language: "sql" });
+    }
     /**
      * Highlights json string to be print in the console.
      */
-    PlatformTools.highlightJson = function (json) {
-        return cli_highlight_1.highlight(json, { language: "json" });
-    };
+    static highlightJson(json) {
+        return (0, cli_highlight_1.highlight)(json, { language: "json" });
+    }
     /**
      * Logging functions needed by AdvancedConsoleLogger
      */
-    PlatformTools.logInfo = function (prefix, info) {
+    static logInfo(prefix, info) {
         console.log(chalk_1.default.gray.underline(prefix), info);
-    };
-    PlatformTools.logError = function (prefix, error) {
+    }
+    static logError(prefix, error) {
         console.log(chalk_1.default.underline.red(prefix), error);
-    };
-    PlatformTools.logWarn = function (prefix, warning) {
+    }
+    static logWarn(prefix, warning) {
         console.log(chalk_1.default.underline.yellow(prefix), warning);
-    };
-    PlatformTools.log = function (message) {
+    }
+    static log(message) {
         console.log(chalk_1.default.underline(message));
-    };
-    PlatformTools.warn = function (message) {
+    }
+    static warn(message) {
         return chalk_1.default.yellow(message);
-    };
-    /**
-     * Type of the currently running platform.
-     */
-    PlatformTools.type = "node";
-    return PlatformTools;
-}());
+    }
+}
 exports.PlatformTools = PlatformTools;
+/**
+ * Type of the currently running platform.
+ */
+PlatformTools.type = "node";
 
 //# sourceMappingURL=PlatformTools.js.map

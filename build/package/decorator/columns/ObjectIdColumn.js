@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ObjectIdColumn = void 0;
-var __1 = require("../../");
+const __1 = require("../../");
 /**
  * Special type of column that is available only for MongoDB database.
  * Marks your entity's column to be an object id.
@@ -15,7 +15,7 @@ function ObjectIdColumn(options) {
         if (!options.name)
             options.name = "_id";
         // create and register a new column metadata
-        __1.getMetadataArgsStorage().columns.push({
+        (0, __1.getMetadataArgsStorage)().columns.push({
             target: object.constructor,
             propertyName: propertyName,
             mode: "objectId",

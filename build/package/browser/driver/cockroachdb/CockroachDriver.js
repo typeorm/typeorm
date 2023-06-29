@@ -1,4 +1,4 @@
-import { __awaiter, __generator, __read, __spreadArray } from "tslib";
+import { __awaiter } from "tslib";
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError";
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { DriverUtils } from "../DriverUtils";
@@ -11,11 +11,11 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers";
 /**
  * Organizes communication with Cockroach DBMS.
  */
-var CockroachDriver = /** @class */ (function () {
+export class CockroachDriver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function CockroachDriver(connection) {
+    constructor(connection) {
         /**
          * Pool for slave databases.
          * Used in replication.
@@ -171,88 +171,58 @@ var CockroachDriver = /** @class */ (function () {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    CockroachDriver.prototype.connect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, _b, _c;
-            var _this = this;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
-                    case 0:
-                        if (!this.options.replication) return [3 /*break*/, 3];
-                        _a = this;
-                        return [4 /*yield*/, Promise.all(this.options.replication.slaves.map(function (slave) {
-                                return _this.createPool(_this.options, slave);
-                            }))];
-                    case 1:
-                        _a.slaves = _d.sent();
-                        _b = this;
-                        return [4 /*yield*/, this.createPool(this.options, this.options.replication.master)];
-                    case 2:
-                        _b.master = _d.sent();
-                        this.database = this.options.replication.master.database;
-                        return [3 /*break*/, 5];
-                    case 3:
-                        _c = this;
-                        return [4 /*yield*/, this.createPool(this.options, this.options)];
-                    case 4:
-                        _c.master = _d.sent();
-                        this.database = this.options.database;
-                        _d.label = 5;
-                    case 5: return [2 /*return*/];
-                }
-            });
+    connect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.options.replication) {
+                this.slaves = yield Promise.all(this.options.replication.slaves.map(slave => {
+                    return this.createPool(this.options, slave);
+                }));
+                this.master = yield this.createPool(this.options, this.options.replication.master);
+                this.database = this.options.replication.master.database;
+            }
+            else {
+                this.master = yield this.createPool(this.options, this.options);
+                this.database = this.options.database;
+            }
         });
-    };
+    }
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    CockroachDriver.prototype.afterConnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, Promise.resolve()];
-            });
+    afterConnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Promise.resolve();
         });
-    };
+    }
     /**
      * Closes connection with database.
      */
-    CockroachDriver.prototype.disconnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!this.master)
-                            return [2 /*return*/, Promise.reject(new ConnectionIsNotSetError("cockroachdb"))];
-                        return [4 /*yield*/, this.closePool(this.master)];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, Promise.all(this.slaves.map(function (slave) { return _this.closePool(slave); }))];
-                    case 2:
-                        _a.sent();
-                        this.master = undefined;
-                        this.slaves = [];
-                        return [2 /*return*/];
-                }
-            });
+    disconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.master)
+                return Promise.reject(new ConnectionIsNotSetError("cockroachdb"));
+            yield this.closePool(this.master);
+            yield Promise.all(this.slaves.map(slave => this.closePool(slave)));
+            this.master = undefined;
+            this.slaves = [];
         });
-    };
+    }
     /**
      * Creates a schema builder used to build and sync a schema.
      */
-    CockroachDriver.prototype.createSchemaBuilder = function () {
+    createSchemaBuilder() {
         return new RdbmsSchemaBuilder(this.connection);
-    };
+    }
     /**
      * Creates a query runner used to execute database queries.
      */
-    CockroachDriver.prototype.createQueryRunner = function (mode) {
+    createQueryRunner(mode) {
         return new CockroachQueryRunner(this, mode);
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    CockroachDriver.prototype.preparePersistentValue = function (value, columnMetadata) {
+    preparePersistentValue(value, columnMetadata) {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         if (value === null || value === undefined)
@@ -274,7 +244,7 @@ var CockroachDriver = /** @class */ (function () {
             || columnMetadata.type === "timestamp without time zone") {
             return DateUtils.mixedDateToDate(value);
         }
-        else if (__spreadArray(["json", "jsonb"], __read(this.spatialTypes)).indexOf(columnMetadata.type) >= 0) {
+        else if (["json", "jsonb", ...this.spatialTypes].indexOf(columnMetadata.type) >= 0) {
             return JSON.stringify(value);
         }
         else if (columnMetadata.type === "simple-array") {
@@ -284,15 +254,15 @@ var CockroachDriver = /** @class */ (function () {
             return DateUtils.simpleJsonToString(value);
         }
         return value;
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    CockroachDriver.prototype.prepareHydratedValue = function (value, columnMetadata) {
+    prepareHydratedValue(value, columnMetadata) {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
         // unique_rowid() generates bigint value and should not be converted to number
-        if (([Number, "int4", "smallint", "int2"].some(function (v) { return v === columnMetadata.type; })
+        if (([Number, "int4", "smallint", "int2"].some(v => v === columnMetadata.type)
             && !columnMetadata.isArray) || columnMetadata.generationStrategy === "increment") {
             value = parseInt(value);
         }
@@ -322,19 +292,19 @@ var CockroachDriver = /** @class */ (function () {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
-    };
+    }
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    CockroachDriver.prototype.escapeQueryWithParameters = function (sql, parameters, nativeParameters) {
-        var builtParameters = Object.keys(nativeParameters).map(function (key) { return nativeParameters[key]; });
+    escapeQueryWithParameters(sql, parameters, nativeParameters) {
+        const builtParameters = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
             return [sql, builtParameters];
-        var keys = Object.keys(parameters).map(function (parameter) { return "(:(\\.\\.\\.)?" + parameter + "\\b)"; }).join("|");
-        sql = sql.replace(new RegExp(keys, "g"), function (key) {
-            var value;
-            var isArray = false;
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key) => {
+            let value;
+            let isArray = false;
             if (key.substr(0, 4) === ":...") {
                 isArray = true;
                 value = parameters[key.substr(4)];
@@ -343,7 +313,7 @@ var CockroachDriver = /** @class */ (function () {
                 value = parameters[key.substr(1)];
             }
             if (isArray) {
-                return value.map(function (v) {
+                return value.map((v) => {
                     builtParameters.push(v);
                     return "$" + builtParameters.length;
                 }).join(", ");
@@ -357,24 +327,24 @@ var CockroachDriver = /** @class */ (function () {
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
-    };
+    }
     /**
      * Escapes a column name.
      */
-    CockroachDriver.prototype.escape = function (columnName) {
+    escape(columnName) {
         return "\"" + columnName + "\"";
-    };
+    }
     /**
      * Build full table name with schema name and table name.
      * E.g. "mySchema"."myTable"
      */
-    CockroachDriver.prototype.buildTableName = function (tableName, schema) {
-        return schema ? schema + "." + tableName : tableName;
-    };
+    buildTableName(tableName, schema) {
+        return schema ? `${schema}.${tableName}` : tableName;
+    }
     /**
      * Creates a database type from a given column metadata.
      */
-    CockroachDriver.prototype.normalizeType = function (column) {
+    normalizeType(column) {
         if (column.type === Number || column.type === "integer" || column.type === "int" || column.type === "bigint" || column.type === "int64") {
             return "int8";
         }
@@ -420,15 +390,15 @@ var CockroachDriver = /** @class */ (function () {
         else {
             return column.type || "";
         }
-    };
+    }
     /**
      * Normalizes "default" value of the column.
      */
-    CockroachDriver.prototype.normalizeDefault = function (columnMetadata) {
-        var defaultValue = columnMetadata.default;
-        var arrayCast = columnMetadata.isArray ? "::" + columnMetadata.type + "[]" : "";
+    normalizeDefault(columnMetadata) {
+        const defaultValue = columnMetadata.default;
+        const arrayCast = columnMetadata.isArray ? `::${columnMetadata.type}[]` : "";
         if (typeof defaultValue === "number") {
-            return "(" + defaultValue + ")";
+            return `(${defaultValue})`;
         }
         else if (typeof defaultValue === "boolean") {
             return defaultValue === true ? "true" : "false";
@@ -437,32 +407,32 @@ var CockroachDriver = /** @class */ (function () {
             return defaultValue();
         }
         else if (typeof defaultValue === "string") {
-            return "'" + defaultValue + "'" + arrayCast;
+            return `'${defaultValue}'${arrayCast}`;
         }
         else if (typeof defaultValue === "object" && defaultValue !== null) {
-            return "'" + JSON.stringify(defaultValue) + "'";
+            return `'${JSON.stringify(defaultValue)}'`;
         }
         else {
             return defaultValue;
         }
-    };
+    }
     /**
      * Normalizes "isUnique" value of the column.
      */
-    CockroachDriver.prototype.normalizeIsUnique = function (column) {
-        return column.entityMetadata.uniques.some(function (uq) { return uq.columns.length === 1 && uq.columns[0] === column; });
-    };
+    normalizeIsUnique(column) {
+        return column.entityMetadata.uniques.some(uq => uq.columns.length === 1 && uq.columns[0] === column);
+    }
     /**
      * Returns default column lengths, which is required on column creation.
      */
-    CockroachDriver.prototype.getColumnLength = function (column) {
+    getColumnLength(column) {
         return column.length ? column.length.toString() : "";
-    };
+    }
     /**
      * Creates column type definition including length, precision and scale
      */
-    CockroachDriver.prototype.createFullType = function (column) {
-        var type = column.type;
+    createFullType(column) {
+        let type = column.type;
         if (column.length) {
             type += "(" + column.length + ")";
         }
@@ -475,61 +445,57 @@ var CockroachDriver = /** @class */ (function () {
         if (column.isArray)
             type += " array";
         return type;
-    };
+    }
     /**
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    CockroachDriver.prototype.obtainMasterConnection = function () {
-        var _this = this;
-        return new Promise(function (ok, fail) {
-            _this.master.connect(function (err, connection, release) {
+    obtainMasterConnection() {
+        return new Promise((ok, fail) => {
+            this.master.connect((err, connection, release) => {
                 err ? fail(err) : ok([connection, release]);
             });
         });
-    };
+    }
     /**
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    CockroachDriver.prototype.obtainSlaveConnection = function () {
-        var _this = this;
+    obtainSlaveConnection() {
         if (!this.slaves.length)
             return this.obtainMasterConnection();
-        return new Promise(function (ok, fail) {
-            var random = Math.floor(Math.random() * _this.slaves.length);
-            _this.slaves[random].connect(function (err, connection, release) {
+        return new Promise((ok, fail) => {
+            const random = Math.floor(Math.random() * this.slaves.length);
+            this.slaves[random].connect((err, connection, release) => {
                 err ? fail(err) : ok([connection, release]);
             });
         });
-    };
+    }
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
      */
-    CockroachDriver.prototype.createGeneratedMap = function (metadata, insertResult) {
-        var _this = this;
+    createGeneratedMap(metadata, insertResult) {
         if (!insertResult)
             return undefined;
-        return Object.keys(insertResult).reduce(function (map, key) {
-            var column = metadata.findColumnWithDatabaseName(key);
+        return Object.keys(insertResult).reduce((map, key) => {
+            const column = metadata.findColumnWithDatabaseName(key);
             if (column) {
-                OrmUtils.mergeDeep(map, column.createValueMap(_this.prepareHydratedValue(insertResult[key], column)));
+                OrmUtils.mergeDeep(map, column.createValueMap(this.prepareHydratedValue(insertResult[key], column)));
             }
             return map;
         }, {});
-    };
+    }
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    CockroachDriver.prototype.findChangedColumns = function (tableColumns, columnMetadatas) {
-        var _this = this;
-        return columnMetadatas.filter(function (columnMetadata) {
-            var tableColumn = tableColumns.find(function (c) { return c.name === columnMetadata.databaseName; });
+    findChangedColumns(tableColumns, columnMetadatas) {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
             // console.log("table:", columnMetadata.entityMetadata.tableName);
@@ -548,75 +514,75 @@ var CockroachDriver = /** @class */ (function () {
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
             // console.log("==========================================");
             return tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== _this.normalizeType(columnMetadata)
+                || tableColumn.type !== this.normalizeType(columnMetadata)
                 || tableColumn.length !== columnMetadata.length
                 || tableColumn.precision !== columnMetadata.precision
                 || (columnMetadata.scale !== undefined && tableColumn.scale !== columnMetadata.scale)
                 || tableColumn.comment !== columnMetadata.comment
-                || (!tableColumn.isGenerated && _this.lowerDefaultValueIfNecessary(_this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
+                || (!tableColumn.isGenerated && this.lowerDefaultValueIfNecessary(this.normalizeDefault(columnMetadata)) !== tableColumn.default) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== _this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || tableColumn.isGenerated !== columnMetadata.isGenerated;
         });
-    };
-    CockroachDriver.prototype.lowerDefaultValueIfNecessary = function (value) {
+    }
+    lowerDefaultValueIfNecessary(value) {
         if (!value) {
             return value;
         }
-        return value.split("'").map(function (v, i) {
+        return value.split(`'`).map((v, i) => {
             return i % 2 === 1 ? v : v.toLowerCase();
-        }).join("'");
-    };
+        }).join(`'`);
+    }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    CockroachDriver.prototype.isReturningSqlSupported = function () {
+    isReturningSqlSupported() {
         return true;
-    };
+    }
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
-    CockroachDriver.prototype.isUUIDGenerationSupported = function () {
+    isUUIDGenerationSupported() {
         return true;
-    };
+    }
     /**
      * Returns true if driver supports fulltext indices.
      */
-    CockroachDriver.prototype.isFullTextColumnTypeSupported = function () {
+    isFullTextColumnTypeSupported() {
         return false;
-    };
+    }
     /**
      * Creates an escaped parameter.
      */
-    CockroachDriver.prototype.createParameter = function (parameterName, index) {
+    createParameter(parameterName, index) {
         return "$" + (index + 1);
-    };
+    }
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
     /**
      * Loads postgres query stream package.
      */
-    CockroachDriver.prototype.loadStreamDependency = function () {
+    loadStreamDependency() {
         try {
             return PlatformTools.load("pg-query-stream");
         }
         catch (e) { // todo: better error for browser env
-            throw new Error("To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.");
+            throw new Error(`To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`);
         }
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
-    CockroachDriver.prototype.loadDependencies = function () {
+    loadDependencies() {
         try {
             this.postgres = PlatformTools.load("pg");
             try {
-                var pgNative = PlatformTools.load("pg-native");
+                const pgNative = PlatformTools.load("pg-native");
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native;
             }
@@ -625,61 +591,52 @@ var CockroachDriver = /** @class */ (function () {
         catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg");
         }
-    };
+    }
     /**
      * Creates a new connection pool for a given database credentials.
      */
-    CockroachDriver.prototype.createPool = function (options, credentials) {
-        return __awaiter(this, void 0, void 0, function () {
-            var connectionOptions, pool, logger, poolErrorHandler;
-            return __generator(this, function (_a) {
-                credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
-                connectionOptions = Object.assign({}, {
-                    host: credentials.host,
-                    user: credentials.username,
-                    password: credentials.password,
-                    database: credentials.database,
-                    port: credentials.port,
-                    ssl: credentials.ssl
-                }, options.extra || {});
-                pool = new this.postgres.Pool(connectionOptions);
-                logger = this.connection.logger;
-                poolErrorHandler = options.poolErrorHandler || (function (error) { return logger.log("warn", "Postgres pool raised an error. " + error); });
-                /*
-                  Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
-                  cause the hosting app to crash.
-                 */
-                pool.on("error", poolErrorHandler);
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        pool.connect(function (err, connection, release) {
-                            if (err)
-                                return fail(err);
-                            release();
-                            ok(pool);
-                        });
-                    })];
+    createPool(options, credentials) {
+        return __awaiter(this, void 0, void 0, function* () {
+            credentials = Object.assign({}, credentials, DriverUtils.buildDriverOptions(credentials)); // todo: do it better way
+            // build connection options for the driver
+            const connectionOptions = Object.assign({}, {
+                host: credentials.host,
+                user: credentials.username,
+                password: credentials.password,
+                database: credentials.database,
+                port: credentials.port,
+                ssl: credentials.ssl
+            }, options.extra || {});
+            // create a connection pool
+            const pool = new this.postgres.Pool(connectionOptions);
+            const { logger } = this.connection;
+            const poolErrorHandler = options.poolErrorHandler || ((error) => logger.log("warn", `Postgres pool raised an error. ${error}`));
+            /*
+              Attaching an error handler to pool errors is essential, as, otherwise, errors raised will go unhandled and
+              cause the hosting app to crash.
+             */
+            pool.on("error", poolErrorHandler);
+            return new Promise((ok, fail) => {
+                pool.connect((err, connection, release) => {
+                    if (err)
+                        return fail(err);
+                    release();
+                    ok(pool);
+                });
             });
         });
-    };
+    }
     /**
      * Closes connection pool.
      */
-    CockroachDriver.prototype.closePool = function (pool) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, Promise.all(this.connectedQueryRunners.map(function (queryRunner) { return queryRunner.release(); }))];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/, new Promise(function (ok, fail) {
-                                pool.end(function (err) { return err ? fail(err) : ok(); });
-                            })];
-                }
+    closePool(pool) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(this.connectedQueryRunners.map(queryRunner => queryRunner.release()));
+            return new Promise((ok, fail) => {
+                pool.end((err) => err ? fail(err) : ok());
             });
         });
-    };
-    return CockroachDriver;
-}());
-export { CockroachDriver };
+    }
+}
 
 //# sourceMappingURL=CockroachDriver.js.map

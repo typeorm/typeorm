@@ -1,4 +1,3 @@
-import { __read, __spreadArray } from "tslib";
 import { OrmUtils } from "../util/OrmUtils";
 /**
  * Subject is a subject of persistence.
@@ -10,12 +9,11 @@ import { OrmUtils } from "../util/OrmUtils";
  *
  * Having this collection of subjects we can perform database queries.
  */
-var Subject = /** @class */ (function () {
+export class Subject {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function Subject(options) {
-        var _a;
+    constructor(options) {
         /**
          * Subject identifier.
          * This identifier is not limited to table entity primary columns.
@@ -89,68 +87,52 @@ var Subject = /** @class */ (function () {
         if (options.identifier !== undefined)
             this.identifier = options.identifier;
         if (options.changeMaps !== undefined)
-            (_a = this.changeMaps).push.apply(_a, __spreadArray([], __read(options.changeMaps)));
+            this.changeMaps.push(...options.changeMaps);
         this.recompute();
     }
-    Object.defineProperty(Subject.prototype, "mustBeInserted", {
-        // -------------------------------------------------------------------------
-        // Accessors
-        // -------------------------------------------------------------------------
-        /**
-         * Checks if this subject must be inserted into the database.
-         * Subject can be inserted into the database if it is allowed to be inserted (explicitly persisted or by cascades)
-         * and if it does not have database entity set.
-         */
-        get: function () {
-            return this.canBeInserted && !this.databaseEntity;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Subject.prototype, "mustBeUpdated", {
-        /**
-         * Checks if this subject must be updated into the database.
-         * Subject can be updated in the database if it is allowed to be updated (explicitly persisted or by cascades)
-         * and if it does have differentiated columns or relations.
-         */
-        get: function () {
-            return this.canBeUpdated &&
-                this.identifier &&
-                (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity)) &&
-                // ((this.entity && this.databaseEntity) || (!this.entity && !this.databaseEntity)) &&
-                this.changeMaps.length > 0;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Subject.prototype, "mustBeSoftRemoved", {
-        /**
-         * Checks if this subject must be soft-removed into the database.
-         * Subject can be updated in the database if it is allowed to be soft-removed (explicitly persisted or by cascades)
-         * and if it does have differentiated columns or relations.
-         */
-        get: function () {
-            return this.canBeSoftRemoved &&
-                this.identifier &&
-                (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Subject.prototype, "mustBeRecovered", {
-        /**
-         * Checks if this subject must be recovered into the database.
-         * Subject can be updated in the database if it is allowed to be recovered (explicitly persisted or by cascades)
-         * and if it does have differentiated columns or relations.
-         */
-        get: function () {
-            return this.canBeRecovered &&
-                this.identifier &&
-                (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity));
-        },
-        enumerable: false,
-        configurable: true
-    });
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+    /**
+     * Checks if this subject must be inserted into the database.
+     * Subject can be inserted into the database if it is allowed to be inserted (explicitly persisted or by cascades)
+     * and if it does not have database entity set.
+     */
+    get mustBeInserted() {
+        return this.canBeInserted && !this.databaseEntity;
+    }
+    /**
+     * Checks if this subject must be updated into the database.
+     * Subject can be updated in the database if it is allowed to be updated (explicitly persisted or by cascades)
+     * and if it does have differentiated columns or relations.
+     */
+    get mustBeUpdated() {
+        return this.canBeUpdated &&
+            this.identifier &&
+            (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity)) &&
+            // ((this.entity && this.databaseEntity) || (!this.entity && !this.databaseEntity)) &&
+            this.changeMaps.length > 0;
+    }
+    /**
+     * Checks if this subject must be soft-removed into the database.
+     * Subject can be updated in the database if it is allowed to be soft-removed (explicitly persisted or by cascades)
+     * and if it does have differentiated columns or relations.
+     */
+    get mustBeSoftRemoved() {
+        return this.canBeSoftRemoved &&
+            this.identifier &&
+            (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity));
+    }
+    /**
+     * Checks if this subject must be recovered into the database.
+     * Subject can be updated in the database if it is allowed to be recovered (explicitly persisted or by cascades)
+     * and if it does have differentiated columns or relations.
+     */
+    get mustBeRecovered() {
+        return this.canBeRecovered &&
+            this.identifier &&
+            (this.databaseEntityLoaded === false || (this.databaseEntityLoaded && this.databaseEntity));
+    }
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -159,11 +141,10 @@ var Subject = /** @class */ (function () {
      * Value set is based on the entity and change maps of the subject.
      * Important note: this method pops data from this subject's change maps.
      */
-    Subject.prototype.createValueSetAndPopChangeMap = function () {
-        var _this = this;
-        var changeMapsWithoutValues = [];
-        var changeSet = this.changeMaps.reduce(function (updateMap, changeMap) {
-            var value = changeMap.value;
+    createValueSetAndPopChangeMap() {
+        const changeMapsWithoutValues = [];
+        const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
+            let value = changeMap.value;
             if (value instanceof Subject) {
                 // referenced columns can refer on values both which were just inserted and which were present in the model
                 // if entity was just inserted valueSets must contain all values from the entity and values just inserted in the database
@@ -172,8 +153,8 @@ var Subject = /** @class */ (function () {
                 value = value.insertedValueSet ? value.insertedValueSet : value.entity;
             }
             // value = changeMap.valueFactory ? changeMap.valueFactory(value) : changeMap.column.createValueMap(value);
-            var valueMap;
-            if (_this.metadata.isJunction && changeMap.column) {
+            let valueMap;
+            if (this.metadata.isJunction && changeMap.column) {
                 valueMap = changeMap.column.createValueMap(changeMap.column.referencedColumn.getEntityValue(value));
             }
             else if (changeMap.column) {
@@ -187,22 +168,22 @@ var Subject = /** @class */ (function () {
                 if (value instanceof Object) {
                     // get relation id, e.g. referenced column name and its value,
                     // for example: { id: 1 } which then will be set to relation, e.g. post.category = { id: 1 }
-                    var relationId = changeMap.relation.getRelationIdMap(value);
+                    const relationId = changeMap.relation.getRelationIdMap(value);
                     // but relation id can be empty, for example in the case when you insert a new post with category
                     // and both post and category are newly inserted objects (by cascades) and in this case category will not have id
                     // this means we need to insert post without question id and update post's questionId once question be inserted
                     // that's why we create a new changeMap operation for future updation of the post entity
                     if (relationId === undefined) {
                         changeMapsWithoutValues.push(changeMap);
-                        _this.canBeUpdated = true;
+                        this.canBeUpdated = true;
                         return updateMap;
                     }
                     valueMap = changeMap.relation.createValueMap(relationId);
-                    _this.updatedRelationMaps.push({ relation: changeMap.relation, value: relationId });
+                    this.updatedRelationMaps.push({ relation: changeMap.relation, value: relationId });
                 }
                 else { // value can be "null" or direct relation id here
                     valueMap = changeMap.relation.createValueMap(value);
-                    _this.updatedRelationMaps.push({ relation: changeMap.relation, value: value });
+                    this.updatedRelationMaps.push({ relation: changeMap.relation, value: value });
                 }
             }
             OrmUtils.mergeDeep(updateMap, valueMap);
@@ -210,19 +191,18 @@ var Subject = /** @class */ (function () {
         }, {});
         this.changeMaps = changeMapsWithoutValues;
         return changeSet;
-    };
+    }
     /**
      * Recomputes entityWithFulfilledIds and identifier when entity changes.
      */
-    Subject.prototype.recompute = function () {
-        var _this = this;
+    recompute() {
         if (this.entity) {
             this.entityWithFulfilledIds = Object.assign({}, this.entity);
             if (this.parentSubject) {
-                this.metadata.primaryColumns.forEach(function (primaryColumn) {
-                    if (primaryColumn.relationMetadata && primaryColumn.relationMetadata.inverseEntityMetadata === _this.parentSubject.metadata) {
-                        var value = primaryColumn.referencedColumn.getEntityValue(_this.parentSubject.entity);
-                        primaryColumn.setEntityValue(_this.entityWithFulfilledIds, value);
+                this.metadata.primaryColumns.forEach(primaryColumn => {
+                    if (primaryColumn.relationMetadata && primaryColumn.relationMetadata.inverseEntityMetadata === this.parentSubject.metadata) {
+                        const value = primaryColumn.referencedColumn.getEntityValue(this.parentSubject.entity);
+                        primaryColumn.setEntityValue(this.entityWithFulfilledIds, value);
                     }
                 });
             }
@@ -231,9 +211,7 @@ var Subject = /** @class */ (function () {
         else if (this.databaseEntity) {
             this.identifier = this.metadata.getEntityIdMap(this.databaseEntity);
         }
-    };
-    return Subject;
-}());
-export { Subject };
+    }
+}
 
 //# sourceMappingURL=Subject.js.map

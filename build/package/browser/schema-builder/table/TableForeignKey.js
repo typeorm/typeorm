@@ -1,12 +1,11 @@
-import { __read, __spreadArray } from "tslib";
 /**
  * Foreign key from the database stored in this class.
  */
-var TableForeignKey = /** @class */ (function () {
+export class TableForeignKey {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function TableForeignKey(options) {
+    constructor(options) {
         /**
          * Column names which included by this foreign key.
          */
@@ -29,24 +28,24 @@ var TableForeignKey = /** @class */ (function () {
     /**
      * Creates a new copy of this foreign key with exactly same properties.
      */
-    TableForeignKey.prototype.clone = function () {
+    clone() {
         return new TableForeignKey({
             name: this.name,
-            columnNames: __spreadArray([], __read(this.columnNames)),
-            referencedColumnNames: __spreadArray([], __read(this.referencedColumnNames)),
+            columnNames: [...this.columnNames],
+            referencedColumnNames: [...this.referencedColumnNames],
             referencedTableName: this.referencedTableName,
             onDelete: this.onDelete,
             onUpdate: this.onUpdate,
             deferrable: this.deferrable,
         });
-    };
+    }
     // -------------------------------------------------------------------------
     // Static Methods
     // -------------------------------------------------------------------------
     /**
      * Creates a new table foreign key from the given foreign key metadata.
      */
-    TableForeignKey.create = function (metadata) {
+    static create(metadata) {
         return new TableForeignKey({
             name: metadata.name,
             columnNames: metadata.columnNames,
@@ -56,9 +55,7 @@ var TableForeignKey = /** @class */ (function () {
             onUpdate: metadata.onUpdate,
             deferrable: metadata.deferrable,
         });
-    };
-    return TableForeignKey;
-}());
-export { TableForeignKey };
+    }
+}
 
 //# sourceMappingURL=TableForeignKey.js.map

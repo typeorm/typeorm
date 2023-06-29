@@ -1,18 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RepositoryNotTreeError = void 0;
-var tslib_1 = require("tslib");
-var index_1 = require("../index");
+const index_1 = require("../index");
 /**
  * Thrown when repository for the given class is not found.
  */
-var RepositoryNotTreeError = /** @class */ (function (_super) {
-    tslib_1.__extends(RepositoryNotTreeError, _super);
-    function RepositoryNotTreeError(entityClass) {
-        var _this = _super.call(this) || this;
-        _this.name = "RepositoryNotTreeError";
-        Object.setPrototypeOf(_this, RepositoryNotTreeError.prototype);
-        var targetName;
+class RepositoryNotTreeError extends Error {
+    constructor(entityClass) {
+        super();
+        this.name = "RepositoryNotTreeError";
+        Object.setPrototypeOf(this, RepositoryNotTreeError.prototype);
+        let targetName;
         if (entityClass instanceof index_1.EntitySchema) {
             targetName = entityClass.options.name;
         }
@@ -25,11 +23,9 @@ var RepositoryNotTreeError = /** @class */ (function (_super) {
         else {
             targetName = entityClass;
         }
-        _this.message = "Repository of the \"" + targetName + "\" class is not a TreeRepository. Try to apply @Tree decorator on your entity.";
-        return _this;
+        this.message = `Repository of the "${targetName}" class is not a TreeRepository. Try to apply @Tree decorator on your entity.`;
     }
-    return RepositoryNotTreeError;
-}(Error));
+}
 exports.RepositoryNotTreeError = RepositoryNotTreeError;
 
 //# sourceMappingURL=RepositoryNotTreeError.js.map

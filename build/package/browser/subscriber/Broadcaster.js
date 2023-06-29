@@ -1,11 +1,11 @@
 /**
  * Broadcaster provides a helper methods to broadcast events to the subscribers.
  */
-var Broadcaster = /** @class */ (function () {
+export class Broadcaster {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function Broadcaster(queryRunner) {
+    constructor(queryRunner) {
         this.queryRunner = queryRunner;
     }
     // -------------------------------------------------------------------------
@@ -19,12 +19,11 @@ var Broadcaster = /** @class */ (function () {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    Broadcaster.prototype.broadcastBeforeInsertEvent = function (result, metadata, entity) {
-        var _this = this;
+    broadcastBeforeInsertEvent(result, metadata, entity) {
         if (entity && metadata.beforeInsertListeners.length) {
-            metadata.beforeInsertListeners.forEach(function (listener) {
+            metadata.beforeInsertListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    var executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -32,12 +31,12 @@ var Broadcaster = /** @class */ (function () {
             });
         }
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
-                if (_this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert) {
-                    var executionResult = subscriber.beforeInsert({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeInsert) {
+                    const executionResult = subscriber.beforeInsert({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata
                     });
@@ -47,7 +46,7 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "BEFORE_UPDATE" event.
      * Before update event is executed before entity is being updated in the database.
@@ -56,12 +55,11 @@ var Broadcaster = /** @class */ (function () {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    Broadcaster.prototype.broadcastBeforeUpdateEvent = function (result, metadata, entity, databaseEntity, updatedColumns, updatedRelations) {
-        var _this = this;
+    broadcastBeforeUpdateEvent(result, metadata, entity, databaseEntity, updatedColumns, updatedRelations) {
         if (entity && metadata.beforeUpdateListeners.length) {
-            metadata.beforeUpdateListeners.forEach(function (listener) {
+            metadata.beforeUpdateListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    var executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -69,12 +67,12 @@ var Broadcaster = /** @class */ (function () {
             });
         }
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
-                if (_this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate) {
-                    var executionResult = subscriber.beforeUpdate({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeUpdate) {
+                    const executionResult = subscriber.beforeUpdate({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
@@ -87,7 +85,7 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "BEFORE_REMOVE" event.
      * Before remove event is executed before entity is being removed from the database.
@@ -96,12 +94,11 @@ var Broadcaster = /** @class */ (function () {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    Broadcaster.prototype.broadcastBeforeRemoveEvent = function (result, metadata, entity, databaseEntity) {
-        var _this = this;
+    broadcastBeforeRemoveEvent(result, metadata, entity, databaseEntity) {
         if (entity && metadata.beforeRemoveListeners.length) {
-            metadata.beforeRemoveListeners.forEach(function (listener) {
+            metadata.beforeRemoveListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    var executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -109,12 +106,12 @@ var Broadcaster = /** @class */ (function () {
             });
         }
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
-                if (_this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove) {
-                    var executionResult = subscriber.beforeRemove({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.beforeRemove) {
+                    const executionResult = subscriber.beforeRemove({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
@@ -126,7 +123,7 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "AFTER_INSERT" event.
      * After insert event is executed after entity is being persisted to the database for the first time.
@@ -135,12 +132,11 @@ var Broadcaster = /** @class */ (function () {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    Broadcaster.prototype.broadcastAfterInsertEvent = function (result, metadata, entity) {
-        var _this = this;
+    broadcastAfterInsertEvent(result, metadata, entity) {
         if (entity && metadata.afterInsertListeners.length) {
-            metadata.afterInsertListeners.forEach(function (listener) {
+            metadata.afterInsertListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    var executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -148,12 +144,12 @@ var Broadcaster = /** @class */ (function () {
             });
         }
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
-                if (_this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert) {
-                    var executionResult = subscriber.afterInsert({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterInsert) {
+                    const executionResult = subscriber.afterInsert({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata
                     });
@@ -163,19 +159,18 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "BEFORE_TRANSACTION_START" event.
      */
-    Broadcaster.prototype.broadcastBeforeTransactionStartEvent = function (result) {
-        var _this = this;
+    broadcastBeforeTransactionStartEvent(result) {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (subscriber.beforeTransactionStart) {
-                    var executionResult = subscriber.beforeTransactionStart({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+                    const executionResult = subscriber.beforeTransactionStart({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -183,19 +178,18 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "AFTER_TRANSACTION_START" event.
      */
-    Broadcaster.prototype.broadcastAfterTransactionStartEvent = function (result) {
-        var _this = this;
+    broadcastAfterTransactionStartEvent(result) {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (subscriber.afterTransactionStart) {
-                    var executionResult = subscriber.afterTransactionStart({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+                    const executionResult = subscriber.afterTransactionStart({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -203,19 +197,18 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "BEFORE_TRANSACTION_COMMIT" event.
      */
-    Broadcaster.prototype.broadcastBeforeTransactionCommitEvent = function (result) {
-        var _this = this;
+    broadcastBeforeTransactionCommitEvent(result) {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (subscriber.beforeTransactionCommit) {
-                    var executionResult = subscriber.beforeTransactionCommit({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+                    const executionResult = subscriber.beforeTransactionCommit({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -223,19 +216,18 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "AFTER_TRANSACTION_COMMIT" event.
      */
-    Broadcaster.prototype.broadcastAfterTransactionCommitEvent = function (result) {
-        var _this = this;
+    broadcastAfterTransactionCommitEvent(result) {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (subscriber.afterTransactionCommit) {
-                    var executionResult = subscriber.afterTransactionCommit({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+                    const executionResult = subscriber.afterTransactionCommit({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -243,19 +235,18 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "BEFORE_TRANSACTION_ROLLBACK" event.
      */
-    Broadcaster.prototype.broadcastBeforeTransactionRollbackEvent = function (result) {
-        var _this = this;
+    broadcastBeforeTransactionRollbackEvent(result) {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (subscriber.beforeTransactionRollback) {
-                    var executionResult = subscriber.beforeTransactionRollback({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+                    const executionResult = subscriber.beforeTransactionRollback({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -263,19 +254,18 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "AFTER_TRANSACTION_ROLLBACK" event.
      */
-    Broadcaster.prototype.broadcastAfterTransactionRollbackEvent = function (result) {
-        var _this = this;
+    broadcastAfterTransactionRollbackEvent(result) {
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
                 if (subscriber.afterTransactionRollback) {
-                    var executionResult = subscriber.afterTransactionRollback({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+                    const executionResult = subscriber.afterTransactionRollback({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                     });
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
@@ -283,7 +273,7 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "AFTER_UPDATE" event.
      * After update event is executed after entity is being updated in the database.
@@ -292,12 +282,11 @@ var Broadcaster = /** @class */ (function () {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    Broadcaster.prototype.broadcastAfterUpdateEvent = function (result, metadata, entity, databaseEntity, updatedColumns, updatedRelations) {
-        var _this = this;
+    broadcastAfterUpdateEvent(result, metadata, entity, databaseEntity, updatedColumns, updatedRelations) {
         if (entity && metadata.afterUpdateListeners.length) {
-            metadata.afterUpdateListeners.forEach(function (listener) {
+            metadata.afterUpdateListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    var executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -305,12 +294,12 @@ var Broadcaster = /** @class */ (function () {
             });
         }
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
-                if (_this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate) {
-                    var executionResult = subscriber.afterUpdate({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterUpdate) {
+                    const executionResult = subscriber.afterUpdate({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
@@ -323,7 +312,7 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "AFTER_REMOVE" event.
      * After remove event is executed after entity is being removed from the database.
@@ -332,12 +321,11 @@ var Broadcaster = /** @class */ (function () {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    Broadcaster.prototype.broadcastAfterRemoveEvent = function (result, metadata, entity, databaseEntity) {
-        var _this = this;
+    broadcastAfterRemoveEvent(result, metadata, entity, databaseEntity) {
         if (entity && metadata.afterRemoveListeners.length) {
-            metadata.afterRemoveListeners.forEach(function (listener) {
+            metadata.afterRemoveListeners.forEach(listener => {
                 if (listener.isAllowed(entity)) {
-                    var executionResult = listener.execute(entity);
+                    const executionResult = listener.execute(entity);
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult);
                     result.count++;
@@ -345,12 +333,12 @@ var Broadcaster = /** @class */ (function () {
             });
         }
         if (this.queryRunner.connection.subscribers.length) {
-            this.queryRunner.connection.subscribers.forEach(function (subscriber) {
-                if (_this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove) {
-                    var executionResult = subscriber.afterRemove({
-                        connection: _this.queryRunner.connection,
-                        queryRunner: _this.queryRunner,
-                        manager: _this.queryRunner.manager,
+            this.queryRunner.connection.subscribers.forEach(subscriber => {
+                if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterRemove) {
+                    const executionResult = subscriber.afterRemove({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
@@ -362,7 +350,7 @@ var Broadcaster = /** @class */ (function () {
                 }
             });
         }
-    };
+    }
     /**
      * Broadcasts "AFTER_LOAD" event for all given entities, and their sub-entities.
      * After load event is executed after entity has been loaded from the database.
@@ -371,39 +359,38 @@ var Broadcaster = /** @class */ (function () {
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
      */
-    Broadcaster.prototype.broadcastLoadEventsForAll = function (result, metadata, entities) {
-        var _this = this;
-        entities.forEach(function (entity) {
+    broadcastLoadEventsForAll(result, metadata, entities) {
+        entities.forEach(entity => {
             if (entity instanceof Promise) // todo: check why need this?
                 return;
             // collect load events for all children entities that were loaded with the main entity
             if (metadata.relations.length) {
-                metadata.relations.forEach(function (relation) {
+                metadata.relations.forEach(relation => {
                     // in lazy relations we cannot simply access to entity property because it will cause a getter and a database query
                     if (relation.isLazy && !entity.hasOwnProperty(relation.propertyName))
                         return;
-                    var value = relation.getEntityValue(entity);
+                    const value = relation.getEntityValue(entity);
                     if (value instanceof Object)
-                        _this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
+                        this.broadcastLoadEventsForAll(result, relation.inverseEntityMetadata, Array.isArray(value) ? value : [value]);
                 });
             }
             if (metadata.afterLoadListeners.length) {
-                metadata.afterLoadListeners.forEach(function (listener) {
+                metadata.afterLoadListeners.forEach(listener => {
                     if (listener.isAllowed(entity)) {
-                        var executionResult = listener.execute(entity);
+                        const executionResult = listener.execute(entity);
                         if (executionResult instanceof Promise)
                             result.promises.push(executionResult);
                         result.count++;
                     }
                 });
             }
-            if (_this.queryRunner.connection.subscribers.length) {
-                _this.queryRunner.connection.subscribers.forEach(function (subscriber) {
-                    if (_this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad) {
-                        var executionResult = subscriber.afterLoad(entity, {
-                            connection: _this.queryRunner.connection,
-                            queryRunner: _this.queryRunner,
-                            manager: _this.queryRunner.manager,
+            if (this.queryRunner.connection.subscribers.length) {
+                this.queryRunner.connection.subscribers.forEach(subscriber => {
+                    if (this.isAllowedSubscriber(subscriber, metadata.target) && subscriber.afterLoad) {
+                        const executionResult = subscriber.afterLoad(entity, {
+                            connection: this.queryRunner.connection,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
                             entity: entity,
                             metadata: metadata
                         });
@@ -414,7 +401,7 @@ var Broadcaster = /** @class */ (function () {
                 });
             }
         });
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -422,15 +409,13 @@ var Broadcaster = /** @class */ (function () {
      * Checks if subscriber's methods can be executed by checking if its don't listen to the particular entity,
      * or listens our entity.
      */
-    Broadcaster.prototype.isAllowedSubscriber = function (subscriber, target) {
+    isAllowedSubscriber(subscriber, target) {
         return !subscriber.listenTo ||
             !subscriber.listenTo() ||
             subscriber.listenTo() === Object ||
             subscriber.listenTo() === target ||
             subscriber.listenTo().isPrototypeOf(target);
-    };
-    return Broadcaster;
-}());
-export { Broadcaster };
+    }
+}
 
 //# sourceMappingURL=Broadcaster.js.map

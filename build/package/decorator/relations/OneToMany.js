@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OneToMany = void 0;
-var __1 = require("../../");
+const __1 = require("../../");
 /**
  * A one-to-many relation allows creating the type of relation where Entity1 can have multiple instances of Entity2,
  * but Entity2 has only one Entity1. Entity2 is the owner of the relationship, and stores the id of Entity1 on its
@@ -12,13 +12,13 @@ function OneToMany(typeFunctionOrTarget, inverseSide, options) {
         if (!options)
             options = {};
         // Now try to determine if it is a lazy relation.
-        var isLazy = options && options.lazy === true ? true : false;
+        let isLazy = options && options.lazy === true ? true : false;
         if (!isLazy && Reflect && Reflect.getMetadata) { // automatic determination
-            var reflectedType = Reflect.getMetadata("design:type", object, propertyName);
+            const reflectedType = Reflect.getMetadata("design:type", object, propertyName);
             if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
                 isLazy = true;
         }
-        __1.getMetadataArgsStorage().relations.push({
+        (0, __1.getMetadataArgsStorage)().relations.push({
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,

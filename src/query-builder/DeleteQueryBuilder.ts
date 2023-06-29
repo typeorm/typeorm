@@ -21,7 +21,7 @@ import {BetterSqlite3Driver} from "../driver/better-sqlite3/BetterSqlite3Driver"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export class DeleteQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> implements WhereExpression {
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -138,7 +138,7 @@ export class DeleteQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
      */
-    from<T>(entityTarget: EntityTarget<T>, aliasName?: string): DeleteQueryBuilder<T> {
+    from<T extends ObjectLiteral>(entityTarget: EntityTarget<T>, aliasName?: string): DeleteQueryBuilder<T> {
         entityTarget = entityTarget instanceof EntitySchema ? entityTarget.options.name : entityTarget;
         const mainAlias = this.createFromAlias(entityTarget, aliasName);
         this.expressionMap.setMainAlias(mainAlias);

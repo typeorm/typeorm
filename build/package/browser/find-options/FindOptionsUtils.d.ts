@@ -2,6 +2,7 @@ import { FindManyOptions } from "./FindManyOptions";
 import { FindOneOptions } from "./FindOneOptions";
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
 import { EntityMetadata } from "../metadata/EntityMetadata";
+import { ObjectLiteral } from "../common/ObjectLiteral";
 /**
  * Utilities to work with FindOptions.
  */
@@ -21,11 +22,11 @@ export declare class FindOptionsUtils {
     /**
      * Applies give find many options to the given query builder.
      */
-    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T> | Partial<T> | undefined): SelectQueryBuilder<T>;
+    static applyFindManyOptionsOrConditionsToQueryBuilder<T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T> | Partial<T> | undefined): SelectQueryBuilder<T>;
     /**
      * Applies give find options to the given query builder.
      */
-    static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T> | FindManyOptions<T> | undefined): SelectQueryBuilder<T>;
+    static applyOptionsToQueryBuilder<T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T> | FindManyOptions<T> | undefined): SelectQueryBuilder<T>;
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
      */

@@ -4,6 +4,7 @@ import {SelectQueryBuilder} from "../query-builder/SelectQueryBuilder";
 import {FindRelationsNotFoundError} from "../error/FindRelationsNotFoundError";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {shorten} from "../util/StringUtils";
+import { ObjectLiteral } from "../common/ObjectLiteral";
 
 /**
  * Utilities to work with FindOptions.
@@ -66,7 +67,7 @@ export class FindOptionsUtils {
     /**
      * Applies give find many options to the given query builder.
      */
-    static applyFindManyOptionsOrConditionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
+    static applyFindManyOptionsOrConditionsToQueryBuilder<T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, options: FindManyOptions<T>|Partial<T>|undefined): SelectQueryBuilder<T> {
         if (this.isFindManyOptions(options))
             return this.applyOptionsToQueryBuilder(qb, options);
 
@@ -79,7 +80,7 @@ export class FindOptionsUtils {
     /**
      * Applies give find options to the given query builder.
      */
-    static applyOptionsToQueryBuilder<T>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): SelectQueryBuilder<T> {
+    static applyOptionsToQueryBuilder<T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, options: FindOneOptions<T>|FindManyOptions<T>|undefined): SelectQueryBuilder<T> {
 
         // if options are not set then simply return query builder. This is made for simplicity of usage.
         if (!options || (!this.isFindOneOptions(options) && !this.isFindManyOptions(options)))
@@ -99,9 +100,9 @@ export class FindOptionsUtils {
             qb.select([]);
             options.select.forEach(select => {
                 if (!metadata.findColumnWithPropertyPath(String(select)))
-                    throw new Error(`${select} column was not found in the ${metadata.name} entity.`);
+                    throw new Error(`${String(select)} column was not found in the ${metadata.name} entity.`);
 
-                qb.addSelect(qb.alias + "." + select);
+                qb.addSelect(qb.alias + "." + String(select));
             });
         }
 

@@ -1,4 +1,4 @@
-import { __awaiter, __generator } from "tslib";
+import { __awaiter } from "tslib";
 import * as path from "path";
 import * as fs from "fs";
 import dotenv from "dotenv";
@@ -10,20 +10,18 @@ export { Readable, Writable } from "stream";
 /**
  * Platform-specific tools.
  */
-var PlatformTools = /** @class */ (function () {
-    function PlatformTools() {
-    }
+export class PlatformTools {
     /**
      * Gets global variable where global stuff can be stored.
      */
-    PlatformTools.getGlobalVariable = function () {
+    static getGlobalVariable() {
         return global;
-    };
+    }
     /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */
-    PlatformTools.load = function (name) {
+    static load(name) {
         // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
         // this is useful when we are using typeorm package globally installed and it accesses drivers
         // that are not installed globally
@@ -106,70 +104,68 @@ var PlatformTools = /** @class */ (function () {
         // and is an Invalid Package.  To make it explicit that this is NOT the intended use case for
         // PlatformTools.load - it's not just a way to replace `require` all willy-nilly - let's throw
         // an error.
-        throw new TypeError("Invalid Package for PlatformTools.load: " + name);
-    };
+        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`);
+    }
     /**
      * Normalizes given path. Does "path.normalize".
      */
-    PlatformTools.pathNormalize = function (pathStr) {
+    static pathNormalize(pathStr) {
         return path.normalize(pathStr);
-    };
+    }
     /**
      * Gets file extension. Does "path.extname".
      */
-    PlatformTools.pathExtname = function (pathStr) {
+    static pathExtname(pathStr) {
         return path.extname(pathStr);
-    };
+    }
     /**
      * Resolved given path. Does "path.resolve".
      */
-    PlatformTools.pathResolve = function (pathStr) {
+    static pathResolve(pathStr) {
         return path.resolve(pathStr);
-    };
+    }
     /**
      * Synchronously checks if file exist. Does "fs.existsSync".
      */
-    PlatformTools.fileExist = function (pathStr) {
+    static fileExist(pathStr) {
         return fs.existsSync(pathStr);
-    };
-    PlatformTools.readFileSync = function (filename) {
+    }
+    static readFileSync(filename) {
         return fs.readFileSync(filename);
-    };
-    PlatformTools.appendFileSync = function (filename, data) {
+    }
+    static appendFileSync(filename, data) {
         fs.appendFileSync(filename, data);
-    };
-    PlatformTools.writeFile = function (path, data) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (ok, fail) {
-                        fs.writeFile(path, data, function (err) {
-                            if (err)
-                                fail(err);
-                            ok();
-                        });
-                    })];
+    }
+    static writeFile(path, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((ok, fail) => {
+                fs.writeFile(path, data, (err) => {
+                    if (err)
+                        fail(err);
+                    ok();
+                });
             });
         });
-    };
+    }
     /**
      * Loads a dotenv file into the environment variables.
      *
      * @param path The file to load as a dotenv configuration
      */
-    PlatformTools.dotenv = function (pathStr) {
+    static dotenv(pathStr) {
         dotenv.config({ path: pathStr });
-    };
+    }
     /**
      * Gets environment variable.
      */
-    PlatformTools.getEnvVariable = function (name) {
+    static getEnvVariable(name) {
         return process.env[name];
-    };
+    }
     /**
      * Highlights sql string to be print in the console.
      */
-    PlatformTools.highlightSql = function (sql) {
-        var theme = {
+    static highlightSql(sql) {
+        const theme = {
             "keyword": chalk.blueBright,
             "literal": chalk.blueBright,
             "string": chalk.white,
@@ -178,37 +174,35 @@ var PlatformTools = /** @class */ (function () {
             "comment": chalk.gray,
         };
         return highlight(sql, { theme: theme, language: "sql" });
-    };
+    }
     /**
      * Highlights json string to be print in the console.
      */
-    PlatformTools.highlightJson = function (json) {
+    static highlightJson(json) {
         return highlight(json, { language: "json" });
-    };
+    }
     /**
      * Logging functions needed by AdvancedConsoleLogger
      */
-    PlatformTools.logInfo = function (prefix, info) {
+    static logInfo(prefix, info) {
         console.log(chalk.gray.underline(prefix), info);
-    };
-    PlatformTools.logError = function (prefix, error) {
+    }
+    static logError(prefix, error) {
         console.log(chalk.underline.red(prefix), error);
-    };
-    PlatformTools.logWarn = function (prefix, warning) {
+    }
+    static logWarn(prefix, warning) {
         console.log(chalk.underline.yellow(prefix), warning);
-    };
-    PlatformTools.log = function (message) {
+    }
+    static log(message) {
         console.log(chalk.underline(message));
-    };
-    PlatformTools.warn = function (message) {
+    }
+    static warn(message) {
         return chalk.yellow(message);
-    };
-    /**
-     * Type of the currently running platform.
-     */
-    PlatformTools.type = "node";
-    return PlatformTools;
-}());
-export { PlatformTools };
+    }
+}
+/**
+ * Type of the currently running platform.
+ */
+PlatformTools.type = "node";
 
 //# sourceMappingURL=PlatformTools.js.map

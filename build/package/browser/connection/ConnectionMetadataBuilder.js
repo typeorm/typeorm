@@ -1,4 +1,3 @@
-import { __read, __spreadArray } from "tslib";
 import { importClassesFromDirectories } from "../util/DirectoryExportedClassesLoader";
 import { OrmUtils } from "../util/OrmUtils";
 import { getFromContainer } from "../container";
@@ -9,11 +8,11 @@ import { EntitySchema } from "../entity-schema/EntitySchema";
 /**
  * Builds migration instances, subscriber instances and entity metadatas for the given classes.
  */
-var ConnectionMetadataBuilder = /** @class */ (function () {
+export class ConnectionMetadataBuilder {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function ConnectionMetadataBuilder(connection) {
+    constructor(connection) {
         this.connection = connection;
     }
     // -------------------------------------------------------------------------
@@ -22,43 +21,41 @@ var ConnectionMetadataBuilder = /** @class */ (function () {
     /**
      * Builds migration instances for the given classes or directories.
      */
-    ConnectionMetadataBuilder.prototype.buildMigrations = function (migrations) {
-        var _a = __read(OrmUtils.splitClassesAndStrings(migrations), 2), migrationClasses = _a[0], migrationDirectories = _a[1];
-        var allMigrationClasses = __spreadArray(__spreadArray([], __read(migrationClasses)), __read(importClassesFromDirectories(this.connection.logger, migrationDirectories)));
-        return allMigrationClasses.map(function (migrationClass) { return getFromContainer(migrationClass); });
-    };
+    buildMigrations(migrations) {
+        const [migrationClasses, migrationDirectories] = OrmUtils.splitClassesAndStrings(migrations);
+        const allMigrationClasses = [...migrationClasses, ...importClassesFromDirectories(this.connection.logger, migrationDirectories)];
+        return allMigrationClasses.map(migrationClass => getFromContainer(migrationClass));
+    }
     /**
      * Builds subscriber instances for the given classes or directories.
      */
-    ConnectionMetadataBuilder.prototype.buildSubscribers = function (subscribers) {
-        var _a = __read(OrmUtils.splitClassesAndStrings(subscribers || []), 2), subscriberClasses = _a[0], subscriberDirectories = _a[1];
-        var allSubscriberClasses = __spreadArray(__spreadArray([], __read(subscriberClasses)), __read(importClassesFromDirectories(this.connection.logger, subscriberDirectories)));
+    buildSubscribers(subscribers) {
+        const [subscriberClasses, subscriberDirectories] = OrmUtils.splitClassesAndStrings(subscribers || []);
+        const allSubscriberClasses = [...subscriberClasses, ...importClassesFromDirectories(this.connection.logger, subscriberDirectories)];
         return getMetadataArgsStorage()
             .filterSubscribers(allSubscriberClasses)
-            .map(function (metadata) { return getFromContainer(metadata.target); });
-    };
+            .map(metadata => getFromContainer(metadata.target));
+    }
     /**
      * Builds entity metadatas for the given classes or directories.
      */
-    ConnectionMetadataBuilder.prototype.buildEntityMetadatas = function (entities) {
+    buildEntityMetadatas(entities) {
         // todo: instead we need to merge multiple metadata args storages
-        var _a = __read(OrmUtils.splitClassesAndStrings(entities || []), 2), entityClassesOrSchemas = _a[0], entityDirectories = _a[1];
-        var entityClasses = entityClassesOrSchemas.filter(function (entityClass) { return (entityClass instanceof EntitySchema) === false; });
-        var entitySchemas = entityClassesOrSchemas.filter(function (entityClass) { return entityClass instanceof EntitySchema; });
-        var allEntityClasses = __spreadArray(__spreadArray([], __read(entityClasses)), __read(importClassesFromDirectories(this.connection.logger, entityDirectories)));
-        allEntityClasses.forEach(function (entityClass) {
+        const [entityClassesOrSchemas, entityDirectories] = OrmUtils.splitClassesAndStrings(entities || []);
+        const entityClasses = entityClassesOrSchemas.filter(entityClass => (entityClass instanceof EntitySchema) === false);
+        const entitySchemas = entityClassesOrSchemas.filter(entityClass => entityClass instanceof EntitySchema);
+        const allEntityClasses = [...entityClasses, ...importClassesFromDirectories(this.connection.logger, entityDirectories)];
+        allEntityClasses.forEach(entityClass => {
             if (entityClass instanceof EntitySchema) {
                 entitySchemas.push(entityClass);
                 allEntityClasses.slice(allEntityClasses.indexOf(entityClass), 1);
             }
         });
-        var decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);
-        var metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(entitySchemas);
-        var schemaEntityMetadatas = new EntityMetadataBuilder(this.connection, metadataArgsStorageFromSchema).build();
-        return __spreadArray(__spreadArray([], __read(decoratorEntityMetadatas)), __read(schemaEntityMetadatas));
-    };
-    return ConnectionMetadataBuilder;
-}());
-export { ConnectionMetadataBuilder };
+        const decoratorEntityMetadatas = new EntityMetadataBuilder(this.connection, getMetadataArgsStorage()).build(allEntityClasses);
+        const metadataArgsStorageFromSchema = new EntitySchemaTransformer().transform(entitySchemas);
+        const schemaEntityMetadatas = new EntityMetadataBuilder(this.connection, metadataArgsStorageFromSchema).build();
+        return [...decoratorEntityMetadatas, ...schemaEntityMetadatas];
+    }
+}
 
 //# sourceMappingURL=ConnectionMetadataBuilder.js.map

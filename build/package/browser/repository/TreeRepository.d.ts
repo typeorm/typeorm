@@ -1,11 +1,12 @@
 import { Repository } from "./Repository";
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder";
+import { ObjectLiteral } from "../common/ObjectLiteral";
 /**
  * Repository with additional functions to work with trees.
  *
  * @see Repository
  */
-export declare class TreeRepository<Entity> extends Repository<Entity> {
+export declare class TreeRepository<Entity extends ObjectLiteral> extends Repository<Entity> {
     /**
      * Gets complete trees for all roots in the table.
      */

@@ -1,13 +1,11 @@
 /**
  * This class stores up and down queries needed for migrations functionality.
  */
-var SqlInMemory = /** @class */ (function () {
-    function SqlInMemory() {
+export class SqlInMemory {
+    constructor() {
         this.upQueries = [];
         this.downQueries = [];
     }
-    return SqlInMemory;
-}());
-export { SqlInMemory };
+}
 
 //# sourceMappingURL=SqlInMemory.js.map

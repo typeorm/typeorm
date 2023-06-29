@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ManyToMany = void 0;
-var __1 = require("../../");
+const __1 = require("../../");
 /**
  * Many-to-many is a type of relationship when Entity1 can have multiple instances of Entity2, and Entity2 can have
  * multiple instances of Entity1. To achieve it, this type of relation creates a junction table, where it storage
@@ -9,7 +9,7 @@ var __1 = require("../../");
  */
 function ManyToMany(typeFunctionOrTarget, inverseSideOrOptions, options) {
     // normalize parameters
-    var inverseSideProperty;
+    let inverseSideProperty;
     if (typeof inverseSideOrOptions === "object") {
         options = inverseSideOrOptions;
     }
@@ -20,13 +20,13 @@ function ManyToMany(typeFunctionOrTarget, inverseSideOrOptions, options) {
         if (!options)
             options = {};
         // now try to determine it its lazy relation
-        var isLazy = options.lazy === true;
+        let isLazy = options.lazy === true;
         if (!isLazy && Reflect && Reflect.getMetadata) { // automatic determination
-            var reflectedType = Reflect.getMetadata("design:type", object, propertyName);
+            const reflectedType = Reflect.getMetadata("design:type", object, propertyName);
             if (reflectedType && typeof reflectedType.name === "string" && reflectedType.name.toLowerCase() === "promise")
                 isLazy = true;
         }
-        __1.getMetadataArgsStorage().relations.push({
+        (0, __1.getMetadataArgsStorage)().relations.push({
             target: object.constructor,
             propertyName: propertyName,
             // propertyType: reflectedType,

@@ -1,24 +1,21 @@
-import { __values } from "tslib";
 import { MetadataArgsStorage } from "../metadata-args/MetadataArgsStorage";
 /**
  * Transforms entity schema into metadata args storage.
  * The result will be just like entities read from decorators.
  */
-var EntitySchemaTransformer = /** @class */ (function () {
-    function EntitySchemaTransformer() {
-    }
+export class EntitySchemaTransformer {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
     /**
      * Transforms entity schema into new metadata args storage object.
      */
-    EntitySchemaTransformer.prototype.transform = function (schemas) {
-        var metadataArgsStorage = new MetadataArgsStorage();
-        schemas.forEach(function (entitySchema) {
-            var options = entitySchema.options;
+    transform(schemas) {
+        const metadataArgsStorage = new MetadataArgsStorage();
+        schemas.forEach(entitySchema => {
+            const options = entitySchema.options;
             // add table metadata args from the schema
-            var tableMetadata = {
+            const tableMetadata = {
                 target: options.target || options.name,
                 name: options.tableName,
                 database: options.database,
@@ -30,9 +27,9 @@ var EntitySchemaTransformer = /** @class */ (function () {
             };
             metadataArgsStorage.tables.push(tableMetadata);
             // add columns metadata args from the schema
-            Object.keys(options.columns).forEach(function (columnName) {
-                var column = options.columns[columnName];
-                var mode = "regular";
+            Object.keys(options.columns).forEach(columnName => {
+                const column = options.columns[columnName];
+                let mode = "regular";
                 if (column.createDate)
                     mode = "createDate";
                 if (column.updateDate)
@@ -47,7 +44,7 @@ var EntitySchemaTransformer = /** @class */ (function () {
                     mode = "treeLevel";
                 if (column.objectId)
                     mode = "objectId";
-                var columnAgrs = {
+                const columnAgrs = {
                     target: options.target || options.name,
                     mode: mode,
                     propertyName: columnName,
@@ -84,7 +81,7 @@ var EntitySchemaTransformer = /** @class */ (function () {
                 };
                 metadataArgsStorage.columns.push(columnAgrs);
                 if (column.generated) {
-                    var generationArgs = {
+                    const generationArgs = {
                         target: options.target || options.name,
                         propertyName: columnName,
                         strategy: typeof column.generated === "string" ? column.generated : "increment"
@@ -96,10 +93,9 @@ var EntitySchemaTransformer = /** @class */ (function () {
             });
             // add relation metadata args from the schema
             if (options.relations) {
-                Object.keys(options.relations).forEach(function (relationName) {
-                    var e_1, _a;
-                    var relationSchema = options.relations[relationName];
-                    var relation = {
+                Object.keys(options.relations).forEach(relationName => {
+                    const relationSchema = options.relations[relationName];
+                    const relation = {
                         target: options.target || options.name,
                         propertyName: relationName,
                         relationType: relationSchema.type,
@@ -123,46 +119,36 @@ var EntitySchemaTransformer = /** @class */ (function () {
                     // add join column
                     if (relationSchema.joinColumn) {
                         if (typeof relationSchema.joinColumn === "boolean") {
-                            var joinColumn = {
+                            const joinColumn = {
                                 target: options.target || options.name,
                                 propertyName: relationName
                             };
                             metadataArgsStorage.joinColumns.push(joinColumn);
                         }
                         else {
-                            var joinColumnsOptions = Array.isArray(relationSchema.joinColumn) ? relationSchema.joinColumn : [relationSchema.joinColumn];
-                            try {
-                                for (var joinColumnsOptions_1 = __values(joinColumnsOptions), joinColumnsOptions_1_1 = joinColumnsOptions_1.next(); !joinColumnsOptions_1_1.done; joinColumnsOptions_1_1 = joinColumnsOptions_1.next()) {
-                                    var joinColumnOption = joinColumnsOptions_1_1.value;
-                                    var joinColumn = {
-                                        target: options.target || options.name,
-                                        propertyName: relationName,
-                                        name: joinColumnOption.name,
-                                        referencedColumnName: joinColumnOption.referencedColumnName
-                                    };
-                                    metadataArgsStorage.joinColumns.push(joinColumn);
-                                }
-                            }
-                            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-                            finally {
-                                try {
-                                    if (joinColumnsOptions_1_1 && !joinColumnsOptions_1_1.done && (_a = joinColumnsOptions_1.return)) _a.call(joinColumnsOptions_1);
-                                }
-                                finally { if (e_1) throw e_1.error; }
+                            const joinColumnsOptions = Array.isArray(relationSchema.joinColumn) ? relationSchema.joinColumn : [relationSchema.joinColumn];
+                            for (const joinColumnOption of joinColumnsOptions) {
+                                const joinColumn = {
+                                    target: options.target || options.name,
+                                    propertyName: relationName,
+                                    name: joinColumnOption.name,
+                                    referencedColumnName: joinColumnOption.referencedColumnName
+                                };
+                                metadataArgsStorage.joinColumns.push(joinColumn);
                             }
                         }
                     }
                     // add join table
                     if (relationSchema.joinTable) {
                         if (typeof relationSchema.joinTable === "boolean") {
-                            var joinTable = {
+                            const joinTable = {
                                 target: options.target || options.name,
                                 propertyName: relationName
                             };
                             metadataArgsStorage.joinTables.push(joinTable);
                         }
                         else {
-                            var joinTable = {
+                            const joinTable = {
                                 target: options.target || options.name,
                                 propertyName: relationName,
                                 name: relationSchema.joinTable.name,
@@ -178,8 +164,8 @@ var EntitySchemaTransformer = /** @class */ (function () {
             }
             // add index metadata args from the schema
             if (options.indices) {
-                options.indices.forEach(function (index) {
-                    var indexAgrs = {
+                options.indices.forEach(index => {
+                    const indexAgrs = {
                         target: options.target || options.name,
                         name: index.name,
                         unique: index.unique === true ? true : false,
@@ -196,8 +182,8 @@ var EntitySchemaTransformer = /** @class */ (function () {
             }
             // add unique metadata args from the schema
             if (options.uniques) {
-                options.uniques.forEach(function (unique) {
-                    var uniqueAgrs = {
+                options.uniques.forEach(unique => {
+                    const uniqueAgrs = {
                         target: options.target || options.name,
                         name: unique.name,
                         columns: unique.columns
@@ -207,8 +193,8 @@ var EntitySchemaTransformer = /** @class */ (function () {
             }
             // add check metadata args from the schema
             if (options.checks) {
-                options.checks.forEach(function (check) {
-                    var checkAgrs = {
+                options.checks.forEach(check => {
+                    const checkAgrs = {
                         target: options.target || options.name,
                         name: check.name,
                         expression: check.expression
@@ -218,8 +204,8 @@ var EntitySchemaTransformer = /** @class */ (function () {
             }
             // add exclusion metadata args from the schema
             if (options.exclusions) {
-                options.exclusions.forEach(function (exclusion) {
-                    var exclusionArgs = {
+                options.exclusions.forEach(exclusion => {
+                    const exclusionArgs = {
                         target: options.target || options.name,
                         name: exclusion.name,
                         expression: exclusion.expression
@@ -229,9 +215,7 @@ var EntitySchemaTransformer = /** @class */ (function () {
             }
         });
         return metadataArgsStorage;
-    };
-    return EntitySchemaTransformer;
-}());
-export { EntitySchemaTransformer };
+    }
+}
 
 //# sourceMappingURL=EntitySchemaTransformer.js.map

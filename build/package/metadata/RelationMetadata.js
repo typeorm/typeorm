@@ -1,16 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RelationMetadata = void 0;
-var tslib_1 = require("tslib");
-var EntityMetadata_1 = require("./EntityMetadata");
+const EntityMetadata_1 = require("./EntityMetadata");
 /**
  * Contains all information about some entity's relation.
  */
-var RelationMetadata = /** @class */ (function () {
+class RelationMetadata {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function RelationMetadata(options) {
+    constructor(options) {
         /**
          * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
          */
@@ -134,7 +133,7 @@ var RelationMetadata = /** @class */ (function () {
         this.inverseJoinColumns = [];
         this.entityMetadata = options.entityMetadata;
         this.embeddedMetadata = options.embeddedMetadata;
-        var args = options.args;
+        const args = options.args;
         this.target = args.target;
         this.propertyName = args.propertyName;
         this.relationType = args.relationType;
@@ -176,34 +175,33 @@ var RelationMetadata = /** @class */ (function () {
     /**
      * Creates join column ids map from the given related entity ids array.
      */
-    RelationMetadata.prototype.getRelationIdMap = function (entity) {
-        var joinColumns = this.isOwning ? this.joinColumns : this.inverseRelation.joinColumns;
-        var referencedColumns = joinColumns.map(function (joinColumn) { return joinColumn.referencedColumn; });
+    getRelationIdMap(entity) {
+        const joinColumns = this.isOwning ? this.joinColumns : this.inverseRelation.joinColumns;
+        const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn);
         // console.log("entity", entity);
         // console.log("referencedColumns", referencedColumns);
         return EntityMetadata_1.EntityMetadata.getValueMap(entity, referencedColumns);
-    };
+    }
     /**
      * Ensures that given object is an entity id map.
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
      */
-    RelationMetadata.prototype.ensureRelationIdMap = function (id) {
+    ensureRelationIdMap(id) {
         if (id instanceof Object)
             return id;
-        var joinColumns = this.isOwning ? this.joinColumns : this.inverseRelation.joinColumns;
-        var referencedColumns = joinColumns.map(function (joinColumn) { return joinColumn.referencedColumn; });
+        const joinColumns = this.isOwning ? this.joinColumns : this.inverseRelation.joinColumns;
+        const referencedColumns = joinColumns.map(joinColumn => joinColumn.referencedColumn);
         if (referencedColumns.length > 1)
-            throw new Error("Cannot create relation id map for a single value because relation contains multiple referenced columns.");
+            throw new Error(`Cannot create relation id map for a single value because relation contains multiple referenced columns.`);
         return referencedColumns[0].createValueMap(id);
-    };
+    }
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
-    RelationMetadata.prototype.getEntityValue = function (entity, getLazyRelationsPromiseValue) {
-        if (getLazyRelationsPromiseValue === void 0) { getLazyRelationsPromiseValue = false; }
+    getEntityValue(entity, getLazyRelationsPromiseValue = false) {
         if (entity === null || entity === undefined)
             return undefined;
         // extract column value from embeddeds of entity if column is in embedded
@@ -211,21 +209,21 @@ var RelationMetadata = /** @class */ (function () {
             // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
             // we need to get value of "id" column from the post real entity object
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            var propertyNames = tslib_1.__spreadArray([], tslib_1.__read(this.embeddedMetadata.parentPropertyNames));
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
             // next we need to access post[data][information][counters][this.propertyName] to get column value from the counters
             // this recursive function takes array of generated property names and gets the post[data][information][counters] embed
-            var extractEmbeddedColumnValue_1 = function (propertyNames, value) {
-                var propertyName = propertyNames.shift();
+            const extractEmbeddedColumnValue = (propertyNames, value) => {
+                const propertyName = propertyNames.shift();
                 if (propertyName) {
                     if (value[propertyName]) {
-                        return extractEmbeddedColumnValue_1(propertyNames, value[propertyName]);
+                        return extractEmbeddedColumnValue(propertyNames, value[propertyName]);
                     }
                     return undefined;
                 }
                 return value;
             };
             // once we get nested embed object we get its column, e.g. post[data][information][counters][this.propertyName]
-            var embeddedObject = extractEmbeddedColumnValue_1(propertyNames, entity);
+            const embeddedObject = extractEmbeddedColumnValue(propertyNames, entity);
             if (this.isLazy) {
                 if (embeddedObject["__" + this.propertyName + "__"] !== undefined)
                     return embeddedObject["__" + this.propertyName + "__"];
@@ -245,70 +243,68 @@ var RelationMetadata = /** @class */ (function () {
             }
             return entity[this.propertyName];
         }
-    };
+    }
     /**
      * Sets given entity's relation's value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      *
      * If merge is set to true, it merges given value into currently
      */
-    RelationMetadata.prototype.setEntityValue = function (entity, value) {
-        var propertyName = this.isLazy ? "__" + this.propertyName + "__" : this.propertyName;
+    setEntityValue(entity, value) {
+        const propertyName = this.isLazy ? "__" + this.propertyName + "__" : this.propertyName;
         if (this.embeddedMetadata) {
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            var extractEmbeddedColumnValue_2 = function (embeddedMetadatas, map) {
+            const extractEmbeddedColumnValue = (embeddedMetadatas, map) => {
                 // if (!object[embeddedMetadata.propertyName])
                 //     object[embeddedMetadata.propertyName] = embeddedMetadata.create();
-                var embeddedMetadata = embeddedMetadatas.shift();
+                const embeddedMetadata = embeddedMetadatas.shift();
                 if (embeddedMetadata) {
                     if (!map[embeddedMetadata.propertyName])
                         map[embeddedMetadata.propertyName] = embeddedMetadata.create();
-                    extractEmbeddedColumnValue_2(embeddedMetadatas, map[embeddedMetadata.propertyName]);
+                    extractEmbeddedColumnValue(embeddedMetadatas, map[embeddedMetadata.propertyName]);
                     return map;
                 }
                 map[propertyName] = value;
                 return map;
             };
-            return extractEmbeddedColumnValue_2(tslib_1.__spreadArray([], tslib_1.__read(this.embeddedMetadata.embeddedMetadataTree)), entity);
+            return extractEmbeddedColumnValue([...this.embeddedMetadata.embeddedMetadataTree], entity);
         }
         else {
             entity[propertyName] = value;
         }
-    };
+    }
     /**
      * Creates entity id map from the given entity ids array.
      */
-    RelationMetadata.prototype.createValueMap = function (value) {
-        var _a;
-        var _this = this;
+    createValueMap(value) {
         // extract column value from embeds of entity if column is in embedded
         if (this.embeddedMetadata) {
             // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
             // we need to get value of "id" column from the post real entity object and return it in a
             // { data: { information: { counters: { id: ... } } } } format
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            var propertyNames = tslib_1.__spreadArray([], tslib_1.__read(this.embeddedMetadata.parentPropertyNames));
+            const propertyNames = [...this.embeddedMetadata.parentPropertyNames];
             // now need to access post[data][information][counters] to get column value from the counters
             // and on each step we need to create complex literal object, e.g. first { data },
             // then { data: { information } }, then { data: { information: { counters } } },
             // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
             // this recursive function helps doing that
-            var extractEmbeddedColumnValue_3 = function (propertyNames, map) {
-                var propertyName = propertyNames.shift();
+            const extractEmbeddedColumnValue = (propertyNames, map) => {
+                const propertyName = propertyNames.shift();
                 if (propertyName) {
                     map[propertyName] = {};
-                    extractEmbeddedColumnValue_3(propertyNames, map[propertyName]);
+                    extractEmbeddedColumnValue(propertyNames, map[propertyName]);
                     return map;
                 }
-                map[_this.propertyName] = value;
+                map[this.propertyName] = value;
                 return map;
             };
-            return extractEmbeddedColumnValue_3(propertyNames, {});
+            return extractEmbeddedColumnValue(propertyNames, {});
         }
         else { // no embeds - no problems. Simply return column property name and its value of the entity
-            return _a = {}, _a[this.propertyName] = value, _a;
+            return { [this.propertyName]: value };
         }
-    };
+    }
     // ---------------------------------------------------------------------
     // Builder Methods
     // ---------------------------------------------------------------------
@@ -316,28 +312,21 @@ var RelationMetadata = /** @class */ (function () {
      * Builds some depend relation metadata properties.
      * This builder method should be used only after embedded metadata tree was build.
      */
-    RelationMetadata.prototype.build = function () {
+    build() {
         this.propertyPath = this.buildPropertyPath();
-    };
+    }
     /**
      * Registers given foreign keys in the relation.
      * This builder method should be used to register foreign key in the relation.
      */
-    RelationMetadata.prototype.registerForeignKeys = function () {
-        var _a;
-        var foreignKeys = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            foreignKeys[_i] = arguments[_i];
-        }
-        (_a = this.foreignKeys).push.apply(_a, tslib_1.__spreadArray([], tslib_1.__read(foreignKeys)));
-    };
+    registerForeignKeys(...foreignKeys) {
+        this.foreignKeys.push(...foreignKeys);
+    }
     /**
      * Registers given join columns in the relation.
      * This builder method should be used to register join column in the relation.
      */
-    RelationMetadata.prototype.registerJoinColumns = function (joinColumns, inverseJoinColumns) {
-        if (joinColumns === void 0) { joinColumns = []; }
-        if (inverseJoinColumns === void 0) { inverseJoinColumns = []; }
+    registerJoinColumns(joinColumns = [], inverseJoinColumns = []) {
         this.joinColumns = joinColumns;
         this.inverseJoinColumns = inverseJoinColumns;
         this.isOwning = this.isManyToOne || ((this.isManyToMany || this.isOneToOne) && this.joinColumns.length > 0);
@@ -346,26 +335,26 @@ var RelationMetadata = /** @class */ (function () {
         this.isManyToManyOwner = this.isManyToMany && this.isOwning;
         this.isManyToManyNotOwner = this.isManyToMany && !this.isOwning;
         this.isWithJoinColumn = this.isManyToOne || this.isOneToOneOwner;
-    };
+    }
     /**
      * Registers a given junction entity metadata.
      * This builder method can be called after junction entity metadata for the many-to-many relation was created.
      */
-    RelationMetadata.prototype.registerJunctionEntityMetadata = function (junctionEntityMetadata) {
+    registerJunctionEntityMetadata(junctionEntityMetadata) {
         this.junctionEntityMetadata = junctionEntityMetadata;
         this.joinTableName = junctionEntityMetadata.tableName;
         if (this.inverseRelation) {
             this.inverseRelation.junctionEntityMetadata = junctionEntityMetadata;
             this.joinTableName = junctionEntityMetadata.tableName;
         }
-    };
+    }
     /**
      * Builds inverse side property path based on given inverse side property factory.
      * This builder method should be used only after properties map of the inverse entity metadata was build.
      */
-    RelationMetadata.prototype.buildInverseSidePropertyPath = function () {
+    buildInverseSidePropertyPath() {
         if (this.givenInverseSidePropertyFactory) {
-            var ownerEntityPropertiesMap = this.inverseEntityMetadata.propertiesMap;
+            const ownerEntityPropertiesMap = this.inverseEntityMetadata.propertiesMap;
             if (typeof this.givenInverseSidePropertyFactory === "function")
                 return this.givenInverseSidePropertyFactory(ownerEntityPropertiesMap);
             if (typeof this.givenInverseSidePropertyFactory === "string")
@@ -378,17 +367,16 @@ var RelationMetadata = /** @class */ (function () {
             return this.entityMetadata.treeParentRelation.propertyName;
         }
         return "";
-    };
+    }
     /**
      * Builds relation's property path based on its embedded tree.
      */
-    RelationMetadata.prototype.buildPropertyPath = function () {
+    buildPropertyPath() {
         if (!this.embeddedMetadata || !this.embeddedMetadata.parentPropertyNames.length)
             return this.propertyName;
         return this.embeddedMetadata.parentPropertyNames.join(".") + "." + this.propertyName;
-    };
-    return RelationMetadata;
-}());
+    }
+}
 exports.RelationMetadata = RelationMetadata;
 
 //# sourceMappingURL=RelationMetadata.js.map

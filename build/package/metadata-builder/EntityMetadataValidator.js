@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EntityMetadataValidator = void 0;
-var MissingPrimaryColumnError_1 = require("../error/MissingPrimaryColumnError");
-var CircularRelationsError_1 = require("../error/CircularRelationsError");
-var DepGraph_1 = require("../util/DepGraph");
-var DataTypeNotSupportedError_1 = require("../error/DataTypeNotSupportedError");
-var MongoDriver_1 = require("../driver/mongodb/MongoDriver");
-var SqlServerDriver_1 = require("../driver/sqlserver/SqlServerDriver");
-var MysqlDriver_1 = require("../driver/mysql/MysqlDriver");
-var NoConnectionOptionError_1 = require("../error/NoConnectionOptionError");
-var InitializedRelationError_1 = require("../error/InitializedRelationError");
-var AuroraDataApiDriver_1 = require("../driver/aurora-data-api/AuroraDataApiDriver");
+const MissingPrimaryColumnError_1 = require("../error/MissingPrimaryColumnError");
+const CircularRelationsError_1 = require("../error/CircularRelationsError");
+const DepGraph_1 = require("../util/DepGraph");
+const DataTypeNotSupportedError_1 = require("../error/DataTypeNotSupportedError");
+const MongoDriver_1 = require("../driver/mongodb/MongoDriver");
+const SqlServerDriver_1 = require("../driver/sqlserver/SqlServerDriver");
+const MysqlDriver_1 = require("../driver/mysql/MysqlDriver");
+const NoConnectionOptionError_1 = require("../error/NoConnectionOptionError");
+const InitializedRelationError_1 = require("../error/InitializedRelationError");
+const AuroraDataApiDriver_1 = require("../driver/aurora-data-api/AuroraDataApiDriver");
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
 // todo: type in function validation, inverse side function validation
@@ -29,25 +29,22 @@ var AuroraDataApiDriver_1 = require("../driver/aurora-data-api/AuroraDataApiDriv
 /**
  * Validates built entity metadatas.
  */
-var EntityMetadataValidator = /** @class */ (function () {
-    function EntityMetadataValidator() {
-    }
+class EntityMetadataValidator {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
     /**
      * Validates all given entity metadatas.
      */
-    EntityMetadataValidator.prototype.validateMany = function (entityMetadatas, driver) {
-        var _this = this;
-        entityMetadatas.forEach(function (entityMetadata) { return _this.validate(entityMetadata, entityMetadatas, driver); });
+    validateMany(entityMetadatas, driver) {
+        entityMetadatas.forEach(entityMetadata => this.validate(entityMetadata, entityMetadatas, driver));
         this.validateDependencies(entityMetadatas);
         this.validateEagerRelations(entityMetadatas);
-    };
+    }
     /**
      * Validates given entity metadata.
      */
-    EntityMetadataValidator.prototype.validate = function (entityMetadata, allEntityMetadatas, driver) {
+    validate(entityMetadata, allEntityMetadatas, driver) {
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError_1.MissingPrimaryColumnError(entityMetadata);
@@ -55,66 +52,66 @@ var EntityMetadataValidator = /** @class */ (function () {
         // also validate if discriminator values are not empty and not repeated
         if (entityMetadata.inheritancePattern === "STI" || entityMetadata.tableType === "entity-child") {
             if (!entityMetadata.discriminatorColumn)
-                throw new Error("Entity " + entityMetadata.name + " using single-table inheritance, it should also have a discriminator column. Did you forget to put discriminator column options?");
+                throw new Error(`Entity ${entityMetadata.name} using single-table inheritance, it should also have a discriminator column. Did you forget to put discriminator column options?`);
             if (typeof entityMetadata.discriminatorValue === "undefined")
-                throw new Error("Entity " + entityMetadata.name + " has an undefined discriminator value. Discriminator value should be defined.");
-            var sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(function (metadata) {
+                throw new Error(`Entity ${entityMetadata.name} has an undefined discriminator value. Discriminator value should be defined.`);
+            const sameDiscriminatorValueEntityMetadata = allEntityMetadatas.find(metadata => {
                 return metadata !== entityMetadata
                     && (metadata.inheritancePattern === "STI" || metadata.tableType === "entity-child")
                     && metadata.discriminatorValue === entityMetadata.discriminatorValue
-                    && metadata.inheritanceTree.some(function (parent) { return entityMetadata.inheritanceTree.indexOf(parent) !== -1; });
+                    && metadata.inheritanceTree.some(parent => entityMetadata.inheritanceTree.indexOf(parent) !== -1);
             });
             if (sameDiscriminatorValueEntityMetadata)
-                throw new Error("Entities " + entityMetadata.name + " and " + sameDiscriminatorValueEntityMetadata.name + " have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.");
+                throw new Error(`Entities ${entityMetadata.name} and ${sameDiscriminatorValueEntityMetadata.name} have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`);
         }
-        entityMetadata.relationCounts.forEach(function (relationCount) {
+        entityMetadata.relationCounts.forEach(relationCount => {
             if (relationCount.relation.isManyToOne || relationCount.relation.isOneToOne)
-                throw new Error("Relation count can not be implemented on ManyToOne or OneToOne relations.");
+                throw new Error(`Relation count can not be implemented on ManyToOne or OneToOne relations.`);
         });
         if (!(driver instanceof MongoDriver_1.MongoDriver)) {
-            entityMetadata.columns.forEach(function (column) {
-                var normalizedColumn = driver.normalizeType(column);
+            entityMetadata.columns.forEach(column => {
+                const normalizedColumn = driver.normalizeType(column);
                 if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
                     throw new DataTypeNotSupportedError_1.DataTypeNotSupportedError(column, normalizedColumn, driver.options.type);
                 if (column.length && driver.withLengthColumnTypes.indexOf(normalizedColumn) === -1)
-                    throw new Error("Column " + column.propertyName + " of Entity " + entityMetadata.name + " does not support length property.");
+                    throw new Error(`Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`);
                 if (column.type === "enum" && !column.enum && !column.enumName)
-                    throw new Error("Column \"" + column.propertyName + "\" of Entity \"" + entityMetadata.name + "\" is defined as enum, but missing \"enum\" or \"enumName\" properties.");
+                    throw new Error(`Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`);
             });
         }
         if (driver instanceof MysqlDriver_1.MysqlDriver || driver instanceof AuroraDataApiDriver_1.AuroraDataApiDriver) {
-            var generatedColumns = entityMetadata.columns.filter(function (column) { return column.isGenerated && column.generationStrategy !== "uuid"; });
+            const generatedColumns = entityMetadata.columns.filter(column => column.isGenerated && column.generationStrategy !== "uuid");
             if (generatedColumns.length > 1)
-                throw new Error("Error in " + entityMetadata.name + " entity. There can be only one auto-increment column in MySql table.");
+                throw new Error(`Error in ${entityMetadata.name} entity. There can be only one auto-increment column in MySql table.`);
         }
         // for mysql we are able to not define a default selected database, instead all entities can have their database
         // defined in their decorators. To make everything work either all entities must have database define and we
         // can live without database set in the connection options, either database in the connection options must be set
         if (driver instanceof MysqlDriver_1.MysqlDriver) {
-            var metadatasWithDatabase = allEntityMetadatas.filter(function (metadata) { return metadata.database; });
+            const metadatasWithDatabase = allEntityMetadatas.filter(metadata => metadata.database);
             if (metadatasWithDatabase.length === 0 && !driver.database)
                 throw new NoConnectionOptionError_1.NoConnectionOptionError("database");
         }
         if (driver instanceof SqlServerDriver_1.SqlServerDriver) {
-            var charsetColumns = entityMetadata.columns.filter(function (column) { return column.charset; });
+            const charsetColumns = entityMetadata.columns.filter(column => column.charset);
             if (charsetColumns.length > 1)
-                throw new Error("Character set specifying is not supported in Sql Server");
+                throw new Error(`Character set specifying is not supported in Sql Server`);
         }
         // check if relations are all without initialized properties
-        var entityInstance = entityMetadata.create();
-        entityMetadata.relations.forEach(function (relation) {
+        const entityInstance = entityMetadata.create();
+        entityMetadata.relations.forEach(relation => {
             if (relation.isManyToMany || relation.isOneToMany) {
                 // we skip relations for which persistence is disabled since initialization in them cannot harm somehow
                 if (relation.persistenceEnabled === false)
                     return;
                 // get entity relation value and check if its an array
-                var relationInitializedValue = relation.getEntityValue(entityInstance);
+                const relationInitializedValue = relation.getEntityValue(entityInstance);
                 if (Array.isArray(relationInitializedValue))
                     throw new InitializedRelationError_1.InitializedRelationError(relation);
             }
         });
         // validate relations
-        entityMetadata.relations.forEach(function (relation) {
+        entityMetadata.relations.forEach(relation => {
             // check join tables:
             // using JoinTable is possible only on one side of the many-to-many relation
             // todo(dima): fix
@@ -167,27 +164,27 @@ var EntityMetadataValidator = /** @class */ (function () {
             // todo: check if entity with duplicate names, some decorators exist
         });
         // make sure cascade remove is not set for both sides of relationships (can be set in OneToOne decorators)
-        entityMetadata.relations.forEach(function (relation) {
-            var isCircularCascadeRemove = relation.isCascadeRemove && relation.inverseRelation && relation.inverseRelation.isCascadeRemove;
+        entityMetadata.relations.forEach(relation => {
+            const isCircularCascadeRemove = relation.isCascadeRemove && relation.inverseRelation && relation.inverseRelation.isCascadeRemove;
             if (isCircularCascadeRemove)
-                throw new Error("Relation " + entityMetadata.name + "#" + relation.propertyName + " and " + relation.inverseRelation.entityMetadata.name + "#" + relation.inverseRelation.propertyName + " both has cascade remove set. " +
-                    "This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.");
+                throw new Error(`Relation ${entityMetadata.name}#${relation.propertyName} and ${relation.inverseRelation.entityMetadata.name}#${relation.inverseRelation.propertyName} both has cascade remove set. ` +
+                    `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`);
         }); // todo: maybe better just deny removal from one to one relation without join column?
-        entityMetadata.eagerRelations.forEach(function (relation) {
+        entityMetadata.eagerRelations.forEach(relation => {
         });
-    };
+    }
     /**
      * Validates dependencies of the entity metadatas.
      */
-    EntityMetadataValidator.prototype.validateDependencies = function (entityMetadatas) {
-        var graph = new DepGraph_1.DepGraph();
-        entityMetadatas.forEach(function (entityMetadata) {
+    validateDependencies(entityMetadatas) {
+        const graph = new DepGraph_1.DepGraph();
+        entityMetadatas.forEach(entityMetadata => {
             graph.addNode(entityMetadata.name);
         });
-        entityMetadatas.forEach(function (entityMetadata) {
+        entityMetadatas.forEach(entityMetadata => {
             entityMetadata.relationsWithJoinColumns
-                .filter(function (relation) { return !relation.isNullable; })
-                .forEach(function (relation) {
+                .filter(relation => !relation.isNullable)
+                .forEach(relation => {
                 graph.addDependency(entityMetadata.name, relation.inverseEntityMetadata.name);
             });
         });
@@ -197,23 +194,22 @@ var EntityMetadataValidator = /** @class */ (function () {
         catch (err) {
             throw new CircularRelationsError_1.CircularRelationsError(err.toString().replace("Error: Dependency Cycle Found: ", ""));
         }
-    };
+    }
     /**
      * Validates eager relations to prevent circular dependency in them.
      */
-    EntityMetadataValidator.prototype.validateEagerRelations = function (entityMetadatas) {
-        entityMetadatas.forEach(function (entityMetadata) {
-            entityMetadata.eagerRelations.forEach(function (relation) {
+    validateEagerRelations(entityMetadatas) {
+        entityMetadatas.forEach(entityMetadata => {
+            entityMetadata.eagerRelations.forEach(relation => {
                 if (relation.inverseRelation && relation.inverseRelation.isEager)
-                    throw new Error("Circular eager relations are disallowed. " +
-                        (entityMetadata.targetName + "#" + relation.propertyPath + " contains \"eager: true\", and its inverse side ") +
-                        (relation.inverseEntityMetadata.targetName + "#" + relation.inverseRelation.propertyPath + " contains \"eager: true\" as well.") +
-                        " Remove \"eager: true\" from one side of the relation.");
+                    throw new Error(`Circular eager relations are disallowed. ` +
+                        `${entityMetadata.targetName}#${relation.propertyPath} contains "eager: true", and its inverse side ` +
+                        `${relation.inverseEntityMetadata.targetName}#${relation.inverseRelation.propertyPath} contains "eager: true" as well.` +
+                        ` Remove "eager: true" from one side of the relation.`);
             });
         });
-    };
-    return EntityMetadataValidator;
-}());
+    }
+}
 exports.EntityMetadataValidator = EntityMetadataValidator;
 
 //# sourceMappingURL=EntityMetadataValidator.js.map

@@ -1,14 +1,13 @@
-import { __read } from "tslib";
 import { Subject } from "../Subject";
 /**
  * Finds all cascade operations of the given subject and cascade operations of the found cascaded subjects,
  * e.g. builds a cascade tree and creates a subjects for them.
  */
-var CascadesSubjectBuilder = /** @class */ (function () {
+export class CascadesSubjectBuilder {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function CascadesSubjectBuilder(allSubjects) {
+    constructor(allSubjects) {
         this.allSubjects = allSubjects;
     }
     // ---------------------------------------------------------------------
@@ -17,12 +16,10 @@ var CascadesSubjectBuilder = /** @class */ (function () {
     /**
      * Builds a cascade subjects tree and pushes them in into the given array of subjects.
      */
-    CascadesSubjectBuilder.prototype.build = function (subject, operationType) {
-        var _this = this;
+    build(subject, operationType) {
         subject.metadata
             .extractRelationValuesFromEntity(subject.entity, subject.metadata.relations) // todo: we can create EntityMetadata.cascadeRelations
-            .forEach(function (_a) {
-            var _b = __read(_a, 3), relation = _b[0], relationEntity = _b[1], relationEntityMetadata = _b[2];
+            .forEach(([relation, relationEntity, relationEntityMetadata]) => {
             // we need only defined values and insert, update, soft-remove or recover cascades of the relation should be set
             if (relationEntity === undefined ||
                 relationEntity === null ||
@@ -33,7 +30,7 @@ var CascadesSubjectBuilder = /** @class */ (function () {
             if (!(relationEntity instanceof Object))
                 return;
             // if we already has this entity in list of operated subjects then skip it to avoid recursion
-            var alreadyExistRelationEntitySubject = _this.findByPersistEntityLike(relationEntityMetadata.target, relationEntity);
+            const alreadyExistRelationEntitySubject = this.findByPersistEntityLike(relationEntityMetadata.target, relationEntity);
             if (alreadyExistRelationEntitySubject) {
                 if (alreadyExistRelationEntitySubject.canBeInserted === false) // if its not marked for insertion yet
                     alreadyExistRelationEntitySubject.canBeInserted = relation.isCascadeInsert === true && operationType === "save";
@@ -47,7 +44,7 @@ var CascadesSubjectBuilder = /** @class */ (function () {
             }
             // mark subject with what we can do with it
             // and add to the array of subjects to load only if there is no same entity there already
-            var relationEntitySubject = new Subject({
+            const relationEntitySubject = new Subject({
                 metadata: relationEntityMetadata,
                 parentSubject: subject,
                 entity: relationEntity,
@@ -56,11 +53,11 @@ var CascadesSubjectBuilder = /** @class */ (function () {
                 canBeSoftRemoved: relation.isCascadeSoftRemove === true && operationType === "soft-remove",
                 canBeRecovered: relation.isCascadeRecover === true && operationType === "recover"
             });
-            _this.allSubjects.push(relationEntitySubject);
+            this.allSubjects.push(relationEntitySubject);
             // go recursively and find other entities we need to insert/update
-            _this.build(relationEntitySubject, operationType);
+            this.build(relationEntitySubject, operationType);
         });
-    };
+    }
     // ---------------------------------------------------------------------
     // Protected Methods
     // ---------------------------------------------------------------------
@@ -68,17 +65,15 @@ var CascadesSubjectBuilder = /** @class */ (function () {
      * Finds subject where entity like given subject's entity.
      * Comparision made by entity id.
      */
-    CascadesSubjectBuilder.prototype.findByPersistEntityLike = function (entityTarget, entity) {
-        return this.allSubjects.find(function (subject) {
+    findByPersistEntityLike(entityTarget, entity) {
+        return this.allSubjects.find(subject => {
             if (!subject.entity)
                 return false;
             if (subject.entity === entity)
                 return true;
             return subject.metadata.target === entityTarget && subject.metadata.compareEntities(subject.entityWithFulfilledIds, entity);
         });
-    };
-    return CascadesSubjectBuilder;
-}());
-export { CascadesSubjectBuilder };
+    }
+}
 
 //# sourceMappingURL=CascadesSubjectBuilder.js.map

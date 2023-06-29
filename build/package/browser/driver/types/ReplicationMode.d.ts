@@ -1,1 +1,1 @@
-export declare type ReplicationMode = "master" | "slave";
+export type ReplicationMode = "master" | "slave";

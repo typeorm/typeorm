@@ -3,8 +3,8 @@ import { PlatformTools } from "../platform/PlatformTools";
 /**
  * Performs logging of the events in TypeORM via debug library.
  */
-var DebugLogger = /** @class */ (function () {
-    function DebugLogger() {
+export class DebugLogger {
+    constructor() {
         this.debugQueryLog = debug("typeorm:query:log");
         this.debugQueryError = debug("typeorm:query:error");
         this.debugQuerySlow = debug("typeorm:query:slow");
@@ -17,18 +17,18 @@ var DebugLogger = /** @class */ (function () {
     /**
      * Logs query and parameters used in it.
      */
-    DebugLogger.prototype.logQuery = function (query, parameters, queryRunner) {
+    logQuery(query, parameters, queryRunner) {
         if (this.debugQueryLog.enabled) {
             this.debugQueryLog(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
                 this.debugQueryLog("parameters:", parameters);
             }
         }
-    };
+    }
     /**
      * Logs query that failed.
      */
-    DebugLogger.prototype.logQueryError = function (error, query, parameters, queryRunner) {
+    logQueryError(error, query, parameters, queryRunner) {
         if (this.debugQueryError.enabled) {
             this.debugQueryError(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
@@ -36,11 +36,11 @@ var DebugLogger = /** @class */ (function () {
             }
             this.debugQueryError("error: ", error);
         }
-    };
+    }
     /**
      * Logs query that is slow.
      */
-    DebugLogger.prototype.logQuerySlow = function (time, query, parameters, queryRunner) {
+    logQuerySlow(time, query, parameters, queryRunner) {
         if (this.debugQuerySlow.enabled) {
             this.debugQuerySlow(PlatformTools.highlightSql(query) + ";");
             if (parameters && parameters.length) {
@@ -48,28 +48,28 @@ var DebugLogger = /** @class */ (function () {
             }
             this.debugQuerySlow("execution time:", time);
         }
-    };
+    }
     /**
      * Logs events from the schema build process.
      */
-    DebugLogger.prototype.logSchemaBuild = function (message, queryRunner) {
+    logSchemaBuild(message, queryRunner) {
         if (this.debugSchemaBuild.enabled) {
             this.debugSchemaBuild(message);
         }
-    };
+    }
     /**
      * Logs events from the migration run process.
      */
-    DebugLogger.prototype.logMigration = function (message, queryRunner) {
+    logMigration(message, queryRunner) {
         if (this.debugMigration.enabled) {
             this.debugMigration(message);
         }
-    };
+    }
     /**
      * Perform logging using given logger.
      * Log has its own level and message.
      */
-    DebugLogger.prototype.log = function (level, message, queryRunner) {
+    log(level, message, queryRunner) {
         switch (level) {
             case "log":
                 if (this.debugLog.enabled) {
@@ -87,9 +87,7 @@ var DebugLogger = /** @class */ (function () {
                 }
                 break;
         }
-    };
-    return DebugLogger;
-}());
-export { DebugLogger };
+    }
+}
 
 //# sourceMappingURL=DebugLogger.js.map

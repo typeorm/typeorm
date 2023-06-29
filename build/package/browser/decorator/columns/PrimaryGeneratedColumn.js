@@ -6,8 +6,8 @@ import { getMetadataArgsStorage } from "../../";
  */
 export function PrimaryGeneratedColumn(strategyOrOptions, maybeOptions) {
     // normalize parameters
-    var options = {};
-    var strategy;
+    const options = {};
+    let strategy;
     if (strategyOrOptions) {
         if (typeof strategyOrOptions === "string")
             strategy = strategyOrOptions;

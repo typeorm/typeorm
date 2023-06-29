@@ -8,7 +8,7 @@ import {AbstractSqliteDriver} from "../driver/sqlite-abstract/AbstractSqliteDriv
  *
  * @see Repository
  */
-export class TreeRepository<Entity> extends Repository<Entity> {
+export class TreeRepository<Entity extends ObjectLiteral> extends Repository<Entity> {
 
     // todo: implement moving
     // todo: implement removing

@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OneToManySubjectBuilder = void 0;
-var Subject_1 = require("../Subject");
-var OrmUtils_1 = require("../../util/OrmUtils");
-var EntityMetadata_1 = require("../../metadata/EntityMetadata");
+const Subject_1 = require("../Subject");
+const OrmUtils_1 = require("../../util/OrmUtils");
+const EntityMetadata_1 = require("../../metadata/EntityMetadata");
 /**
  * Builds operations needs to be executed for one-to-many relations of the given subjects.
  *
@@ -15,11 +15,11 @@ var EntityMetadata_1 = require("../../metadata/EntityMetadata");
  * note: this class shares lot of things with OneToOneInverseSideOperationBuilder, so when you change this class
  *       make sure to reflect changes there as well.
  */
-var OneToManySubjectBuilder = /** @class */ (function () {
+class OneToManySubjectBuilder {
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
-    function OneToManySubjectBuilder(subjects) {
+    constructor(subjects) {
         this.subjects = subjects;
     }
     // ---------------------------------------------------------------------
@@ -28,17 +28,16 @@ var OneToManySubjectBuilder = /** @class */ (function () {
     /**
      * Builds all required operations.
      */
-    OneToManySubjectBuilder.prototype.build = function () {
-        var _this = this;
-        this.subjects.forEach(function (subject) {
-            subject.metadata.oneToManyRelations.forEach(function (relation) {
+    build() {
+        this.subjects.forEach(subject => {
+            subject.metadata.oneToManyRelations.forEach(relation => {
                 // skip relations for which persistence is disabled
                 if (relation.persistenceEnabled === false)
                     return;
-                _this.buildForSubjectRelation(subject, relation);
+                this.buildForSubjectRelation(subject, relation);
             });
         });
-    };
+    }
     // ---------------------------------------------------------------------
     // Protected Methods
     // ---------------------------------------------------------------------
@@ -47,30 +46,29 @@ var OneToManySubjectBuilder = /** @class */ (function () {
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
      */
-    OneToManySubjectBuilder.prototype.buildForSubjectRelation = function (subject, relation) {
-        var _this = this;
+    buildForSubjectRelation(subject, relation) {
         // prepare objects (relation id maps) for the database entity
         // note: subject.databaseEntity contains relations with loaded relation ids only
         // by example: since subject is a post, we are expecting to get all post's categories saved in the database here,
         //             particularly their relation ids, e.g. category ids stored in the database
-        var relatedEntityDatabaseRelationIds = [];
+        let relatedEntityDatabaseRelationIds = [];
         if (subject.databaseEntity) { // related entities in the database can exist only if this entity (post) is saved
             relatedEntityDatabaseRelationIds = relation.getEntityValue(subject.databaseEntity);
         }
         // get related entities of persisted entity
         // by example: get categories from the passed to persist post entity
-        var relatedEntities = relation.getEntityValue(subject.entity);
+        let relatedEntities = relation.getEntityValue(subject.entity);
         if (relatedEntities === null) // we treat relations set to null as removed, so we don't skip it
             relatedEntities = [];
         if (relatedEntities === undefined) // if relation is undefined then nothing to update
             return;
         // extract only relation ids from the related entities, since we only need them for comparision
         // by example: extract from categories only relation ids (category id, or let's say category title, depend on join column options)
-        var relatedPersistedEntityRelationIds = [];
-        relatedEntities.forEach(function (relatedEntity) {
-            var relationIdMap = relation.inverseEntityMetadata.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
+        const relatedPersistedEntityRelationIds = [];
+        relatedEntities.forEach(relatedEntity => {
+            let relationIdMap = relation.inverseEntityMetadata.getEntityIdMap(relatedEntity); // by example: relationIdMap is category.id map here, e.g. { id: ... }
             // try to find a subject of this related entity, maybe it was loaded or was marked for persistence
-            var relatedEntitySubject = _this.subjects.find(function (subject) {
+            let relatedEntitySubject = this.subjects.find(subject => {
                 return subject.entity === relatedEntity;
             });
             // if subject with entity was found take subject identifier as relation id map since it may contain extra properties resolved
@@ -101,7 +99,7 @@ var OneToManySubjectBuilder = /** @class */ (function () {
             }
             // check if this binding really exist in the database
             // by example: find our category if its already bind in the database
-            var relationIdInDatabaseSubjectRelation = relatedEntityDatabaseRelationIds.find(function (relatedDatabaseEntityRelationId) {
+            const relationIdInDatabaseSubjectRelation = relatedEntityDatabaseRelationIds.find(relatedDatabaseEntityRelationId => {
                 return OrmUtils_1.OrmUtils.compareIds(relationIdMap, relatedDatabaseEntityRelationId);
             });
             // if relationIdMap DOES NOT exist in the subject's relation in the database it means its a new relation and we need to "bind" them
@@ -120,7 +118,7 @@ var OneToManySubjectBuilder = /** @class */ (function () {
                         canBeUpdated: true,
                         identifier: relationIdMap
                     });
-                    _this.subjects.push(relatedEntitySubject);
+                    this.subjects.push(relatedEntitySubject);
                 }
                 relatedEntitySubject.changeMaps.push({
                     relation: relation.inverseRelation,
@@ -137,11 +135,11 @@ var OneToManySubjectBuilder = /** @class */ (function () {
         // find what related entities were added and what were removed based on difference between what we save and what database has
         EntityMetadata_1.EntityMetadata
             .difference(relatedEntityDatabaseRelationIds, relatedPersistedEntityRelationIds)
-            .forEach(function (removedRelatedEntityRelationId) {
+            .forEach(removedRelatedEntityRelationId => {
             // todo: probably we can improve this in the future by finding entity with column those values,
             // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
             // we create a new subject which operations will be executed in subject operation executor
-            var removedRelatedEntitySubject = new Subject_1.Subject({
+            const removedRelatedEntitySubject = new Subject_1.Subject({
                 metadata: relation.inverseEntityMetadata,
                 parentSubject: subject,
                 identifier: removedRelatedEntityRelationId,
@@ -156,11 +154,10 @@ var OneToManySubjectBuilder = /** @class */ (function () {
             else if (relation.inverseRelation.orphanedRowAction === "delete") {
                 removedRelatedEntitySubject.mustBeRemoved = true;
             }
-            _this.subjects.push(removedRelatedEntitySubject);
+            this.subjects.push(removedRelatedEntitySubject);
         });
-    };
-    return OneToManySubjectBuilder;
-}());
+    }
+}
 exports.OneToManySubjectBuilder = OneToManySubjectBuilder;
 
 //# sourceMappingURL=OneToManySubjectBuilder.js.map

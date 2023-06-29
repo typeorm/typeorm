@@ -14,6 +14,7 @@ import { MongoEntityManager } from "./entity-manager/MongoEntityManager";
 import { SqljsEntityManager } from "./entity-manager/SqljsEntityManager";
 import { SelectQueryBuilder } from "./query-builder/SelectQueryBuilder";
 import { EntityTarget } from "./common/EntityTarget";
+import { ObjectLiteral } from "./common/ObjectLiteral";
 export * from "./container";
 export * from "./common/EntityTarget";
 export * from "./common/ObjectType";
@@ -207,11 +208,11 @@ export declare function getSqljsManager(connectionName?: string): SqljsEntityMan
 /**
  * Gets repository for the given entity class.
  */
-export declare function getRepository<Entity>(entityClass: EntityTarget<Entity>, connectionName?: string): Repository<Entity>;
+export declare function getRepository<Entity extends ObjectLiteral>(entityClass: EntityTarget<Entity>, connectionName?: string): Repository<Entity>;
 /**
  * Gets tree repository for the given entity class.
  */
-export declare function getTreeRepository<Entity>(entityClass: EntityTarget<Entity>, connectionName?: string): TreeRepository<Entity>;
+export declare function getTreeRepository<Entity extends ObjectLiteral>(entityClass: EntityTarget<Entity>, connectionName?: string): TreeRepository<Entity>;
 /**
  * Gets tree repository for the given entity class.
  */
@@ -219,8 +220,8 @@ export declare function getCustomRepository<T>(customRepository: ObjectType<T>, 
 /**
  * Gets mongodb repository for the given entity class or name.
  */
-export declare function getMongoRepository<Entity>(entityClass: EntityTarget<Entity>, connectionName?: string): MongoRepository<Entity>;
+export declare function getMongoRepository<Entity extends ObjectLiteral>(entityClass: EntityTarget<Entity>, connectionName?: string): MongoRepository<Entity>;
 /**
  * Creates a new query builder.
  */
-export declare function createQueryBuilder<Entity>(entityClass?: EntityTarget<Entity>, alias?: string, connectionName?: string): SelectQueryBuilder<Entity>;
+export declare function createQueryBuilder<Entity extends ObjectLiteral>(entityClass?: EntityTarget<Entity>, alias?: string, connectionName?: string): SelectQueryBuilder<Entity>;

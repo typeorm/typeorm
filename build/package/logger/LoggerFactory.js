@@ -1,20 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoggerFactory = void 0;
-var SimpleConsoleLogger_1 = require("./SimpleConsoleLogger");
-var AdvancedConsoleLogger_1 = require("./AdvancedConsoleLogger");
-var FileLogger_1 = require("./FileLogger");
-var DebugLogger_1 = require("./DebugLogger");
+const SimpleConsoleLogger_1 = require("./SimpleConsoleLogger");
+const AdvancedConsoleLogger_1 = require("./AdvancedConsoleLogger");
+const FileLogger_1 = require("./FileLogger");
+const DebugLogger_1 = require("./DebugLogger");
 /**
  * Helps to create logger instances.
  */
-var LoggerFactory = /** @class */ (function () {
-    function LoggerFactory() {
-    }
+class LoggerFactory {
     /**
      * Creates a new logger depend on a given connection's driver.
      */
-    LoggerFactory.prototype.create = function (logger, options) {
+    create(logger, options) {
         if (logger instanceof Object)
             return logger;
         if (logger) {
@@ -30,9 +28,8 @@ var LoggerFactory = /** @class */ (function () {
             }
         }
         return new AdvancedConsoleLogger_1.AdvancedConsoleLogger(options);
-    };
-    return LoggerFactory;
-}());
+    }
+}
 exports.LoggerFactory = LoggerFactory;
 
 //# sourceMappingURL=LoggerFactory.js.map

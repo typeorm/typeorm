@@ -31,7 +31,7 @@ import { PlatformTools } from "../platform/PlatformTools";
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements WhereExpression {
+export class UpdateQueryBuilder<Entity extends ObjectLiteral> extends QueryBuilder<Entity> implements WhereExpression {
 
     // -------------------------------------------------------------------------
     // Constructor

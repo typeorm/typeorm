@@ -2,20 +2,17 @@
  * Transforms plain old javascript object
  * Entity is constructed based on its entity metadata.
  */
-var PlainObjectToNewEntityTransformer = /** @class */ (function () {
-    function PlainObjectToNewEntityTransformer() {
-    }
+export class PlainObjectToNewEntityTransformer {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
-    PlainObjectToNewEntityTransformer.prototype.transform = function (newEntity, object, metadata, getLazyRelationsPromiseValue) {
-        if (getLazyRelationsPromiseValue === void 0) { getLazyRelationsPromiseValue = false; }
+    transform(newEntity, object, metadata, getLazyRelationsPromiseValue = false) {
         // console.log("groupAndTransform entity:", newEntity);
         // console.log("groupAndTransform object:", object);
         this.groupAndTransform(newEntity, object, metadata, getLazyRelationsPromiseValue);
         // console.log("result:", newEntity);
         return newEntity;
-    };
+    }
     // -------------------------------------------------------------------------
     // Private Methods
     // -------------------------------------------------------------------------
@@ -23,22 +20,20 @@ var PlainObjectToNewEntityTransformer = /** @class */ (function () {
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
      */
-    PlainObjectToNewEntityTransformer.prototype.groupAndTransform = function (entity, object, metadata, getLazyRelationsPromiseValue) {
+    groupAndTransform(entity, object, metadata, getLazyRelationsPromiseValue = false) {
         // console.log("groupAndTransform entity:", entity);
         // console.log("groupAndTransform object:", object);
-        var _this = this;
-        if (getLazyRelationsPromiseValue === void 0) { getLazyRelationsPromiseValue = false; }
         // copy regular column properties from the given object
-        metadata.nonVirtualColumns.forEach(function (column) {
-            var objectColumnValue = column.getEntityValue(object);
+        metadata.nonVirtualColumns.forEach(column => {
+            const objectColumnValue = column.getEntityValue(object);
             if (objectColumnValue !== undefined)
                 column.setEntityValue(entity, objectColumnValue);
         });
         // // copy relation properties from the given object
         if (metadata.relations.length) {
-            metadata.relations.forEach(function (relation) {
-                var entityRelatedValue = relation.getEntityValue(entity);
-                var objectRelatedValue = relation.getEntityValue(object, getLazyRelationsPromiseValue);
+            metadata.relations.forEach(relation => {
+                let entityRelatedValue = relation.getEntityValue(entity);
+                const objectRelatedValue = relation.getEntityValue(object, getLazyRelationsPromiseValue);
                 if (objectRelatedValue === undefined)
                     return;
                 if (relation.isOneToMany || relation.isManyToMany) {
@@ -48,9 +43,9 @@ var PlainObjectToNewEntityTransformer = /** @class */ (function () {
                         entityRelatedValue = [];
                         relation.setEntityValue(entity, entityRelatedValue);
                     }
-                    objectRelatedValue.forEach(function (objectRelatedValueItem) {
+                    objectRelatedValue.forEach(objectRelatedValueItem => {
                         // check if we have this item from the merging object in the original entity we merge into
-                        var objectRelatedValueEntity = entityRelatedValue.find(function (entityRelatedValueItem) {
+                        let objectRelatedValueEntity = entityRelatedValue.find(entityRelatedValueItem => {
                             return relation.inverseEntityMetadata.compareEntities(objectRelatedValueItem, entityRelatedValueItem);
                         });
                         // if such item already exist then merge new data into it, if its not we create a new entity and merge it into the array
@@ -58,7 +53,7 @@ var PlainObjectToNewEntityTransformer = /** @class */ (function () {
                             objectRelatedValueEntity = relation.inverseEntityMetadata.create();
                             entityRelatedValue.push(objectRelatedValueEntity);
                         }
-                        _this.groupAndTransform(objectRelatedValueEntity, objectRelatedValueItem, relation.inverseEntityMetadata, getLazyRelationsPromiseValue);
+                        this.groupAndTransform(objectRelatedValueEntity, objectRelatedValueItem, relation.inverseEntityMetadata, getLazyRelationsPromiseValue);
                     });
                 }
                 else {
@@ -75,13 +70,11 @@ var PlainObjectToNewEntityTransformer = /** @class */ (function () {
                         entityRelatedValue = relation.inverseEntityMetadata.create();
                         relation.setEntityValue(entity, entityRelatedValue);
                     }
-                    _this.groupAndTransform(entityRelatedValue, objectRelatedValue, relation.inverseEntityMetadata, getLazyRelationsPromiseValue);
+                    this.groupAndTransform(entityRelatedValue, objectRelatedValue, relation.inverseEntityMetadata, getLazyRelationsPromiseValue);
                 }
             });
         }
-    };
-    return PlainObjectToNewEntityTransformer;
-}());
-export { PlainObjectToNewEntityTransformer };
+    }
+}
 
 //# sourceMappingURL=PlainObjectToNewEntityTransformer.js.map

@@ -1,4 +1,4 @@
-import { __awaiter, __generator } from "tslib";
+import { __awaiter } from "tslib";
 /*!
  */
 import "reflect-metadata";
@@ -147,7 +147,7 @@ export function getMetadataArgsStorage() {
     // another reason is that when we run migrations typeorm is being called from a global package
     // and it may load entities which register decorators in typeorm of local package
     // this leads to impossibility of usage of entities in migrations and cli related operations
-    var globalScope = PlatformTools.getGlobalVariable();
+    const globalScope = PlatformTools.getGlobalVariable();
     if (!globalScope.typeormMetadataArgsStorage)
         globalScope.typeormMetadataArgsStorage = new MetadataArgsStorage();
     return globalScope.typeormMetadataArgsStorage;
@@ -155,12 +155,9 @@ export function getMetadataArgsStorage() {
 /**
  * Reads connection options stored in ormconfig configuration file.
  */
-export function getConnectionOptions(connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            return [2 /*return*/, new ConnectionOptionsReader().get(connectionName)];
-        });
+export function getConnectionOptions(connectionName = "default") {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new ConnectionOptionsReader().get(connectionName);
     });
 }
 /**
@@ -177,24 +174,10 @@ export function getConnectionManager() {
  * Only one connection from ormconfig will be created (name "default" or connection without name).
  */
 export function createConnection(optionsOrName) {
-    return __awaiter(this, void 0, void 0, function () {
-        var connectionName, options, _a;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    connectionName = typeof optionsOrName === "string" ? optionsOrName : "default";
-                    if (!(optionsOrName instanceof Object)) return [3 /*break*/, 1];
-                    _a = optionsOrName;
-                    return [3 /*break*/, 3];
-                case 1: return [4 /*yield*/, getConnectionOptions(connectionName)];
-                case 2:
-                    _a = _b.sent();
-                    _b.label = 3;
-                case 3:
-                    options = _a;
-                    return [2 /*return*/, getConnectionManager().create(options).connect()];
-            }
-        });
+    return __awaiter(this, void 0, void 0, function* () {
+        const connectionName = typeof optionsOrName === "string" ? optionsOrName : "default";
+        const options = optionsOrName instanceof Object ? optionsOrName : yield getConnectionOptions(connectionName);
+        return getConnectionManager().create(options).connect();
     });
 }
 /**
@@ -205,45 +188,32 @@ export function createConnection(optionsOrName) {
  * All connections from the ormconfig will be created.
  */
 export function createConnections(options) {
-    return __awaiter(this, void 0, void 0, function () {
-        var connections;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    if (!!options) return [3 /*break*/, 2];
-                    return [4 /*yield*/, new ConnectionOptionsReader().all()];
-                case 1:
-                    options = _a.sent();
-                    _a.label = 2;
-                case 2:
-                    connections = options.map(function (options) { return getConnectionManager().create(options); });
-                    return [2 /*return*/, Promise.all(connections.map(function (connection) { return connection.connect(); }))];
-            }
-        });
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!options)
+            options = yield new ConnectionOptionsReader().all();
+        const connections = options.map(options => getConnectionManager().create(options));
+        return Promise.all(connections.map(connection => connection.connect()));
     });
 }
 /**
  * Gets connection from the connection manager.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getConnection(connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getConnection(connectionName = "default") {
     return getConnectionManager().get(connectionName);
 }
 /**
  * Gets entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getManager(connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getManager(connectionName = "default") {
     return getConnectionManager().get(connectionName).manager;
 }
 /**
  * Gets MongoDB entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
  */
-export function getMongoManager(connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getMongoManager(connectionName = "default") {
     return getConnectionManager().get(connectionName).manager;
 }
 /**
@@ -251,43 +221,37 @@ export function getMongoManager(connectionName) {
  * "default" connection is used, when no name is specified.
  * Only works when Sqljs driver is used.
  */
-export function getSqljsManager(connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getSqljsManager(connectionName = "default") {
     return getConnectionManager().get(connectionName).manager;
 }
 /**
  * Gets repository for the given entity class.
  */
-export function getRepository(entityClass, connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getRepository(entityClass, connectionName = "default") {
     return getConnectionManager().get(connectionName).getRepository(entityClass);
 }
 /**
  * Gets tree repository for the given entity class.
  */
-export function getTreeRepository(entityClass, connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getTreeRepository(entityClass, connectionName = "default") {
     return getConnectionManager().get(connectionName).getTreeRepository(entityClass);
 }
 /**
  * Gets tree repository for the given entity class.
  */
-export function getCustomRepository(customRepository, connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getCustomRepository(customRepository, connectionName = "default") {
     return getConnectionManager().get(connectionName).getCustomRepository(customRepository);
 }
 /**
  * Gets mongodb repository for the given entity class or name.
  */
-export function getMongoRepository(entityClass, connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function getMongoRepository(entityClass, connectionName = "default") {
     return getConnectionManager().get(connectionName).getMongoRepository(entityClass);
 }
 /**
  * Creates a new query builder.
  */
-export function createQueryBuilder(entityClass, alias, connectionName) {
-    if (connectionName === void 0) { connectionName = "default"; }
+export function createQueryBuilder(entityClass, alias, connectionName = "default") {
     if (entityClass) {
         return getRepository(entityClass, connectionName).createQueryBuilder(alias);
     }

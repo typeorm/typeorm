@@ -5,20 +5,18 @@ import { MongoRepository } from "./MongoRepository";
 /**
  * Factory used to create different types of repositories.
  */
-var RepositoryFactory = /** @class */ (function () {
-    function RepositoryFactory() {
-    }
+export class RepositoryFactory {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
     /**
      * Creates a repository.
      */
-    RepositoryFactory.prototype.create = function (manager, metadata, queryRunner) {
+    create(manager, metadata, queryRunner) {
         if (metadata.treeType) {
             // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
             // however we need these properties for internal work of the class
-            var repository = new TreeRepository();
+            const repository = new TreeRepository();
             Object.assign(repository, {
                 manager: manager,
                 metadata: metadata,
@@ -29,7 +27,7 @@ var RepositoryFactory = /** @class */ (function () {
         else {
             // NOTE: dynamic access to protected properties. We need this to prevent unwanted properties in those classes to be exposed,
             // however we need these properties for internal work of the class
-            var repository = void 0;
+            let repository;
             if (manager.connection.driver instanceof MongoDriver) {
                 repository = new MongoRepository();
             }
@@ -43,9 +41,7 @@ var RepositoryFactory = /** @class */ (function () {
             });
             return repository;
         }
-    };
-    return RepositoryFactory;
-}());
-export { RepositoryFactory };
+    }
+}
 
 //# sourceMappingURL=RepositoryFactory.js.map

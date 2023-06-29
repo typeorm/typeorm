@@ -32,7 +32,7 @@ import {QueryResultCache} from "../cache/QueryResultCache";
 import {SqljsEntityManager} from "../entity-manager/SqljsEntityManager";
 import {RelationLoader} from "../query-builder/RelationLoader";
 import {RelationIdLoader} from "../query-builder/RelationIdLoader";
-import {EntitySchema} from "../";
+import {EntitySchema, ObjectLiteral} from "../";
 import {SqlServerDriver} from "../driver/sqlserver/SqlServerDriver";
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {ObjectUtils} from "../util/ObjectUtils";
@@ -342,7 +342,7 @@ export class Connection {
     /**
      * Gets repository for the given entity.
      */
-    getRepository<Entity>(target: EntityTarget<Entity>): Repository<Entity> {
+    getRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): Repository<Entity> {
         return this.manager.getRepository(target);
     }
 
@@ -350,7 +350,7 @@ export class Connection {
      * Gets tree repository for the given entity class or name.
      * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
      */
-    getTreeRepository<Entity>(target: EntityTarget<Entity>): TreeRepository<Entity> {
+    getTreeRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): TreeRepository<Entity> {
         return this.manager.getTreeRepository(target);
     }
 
@@ -358,7 +358,7 @@ export class Connection {
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
      */
-    getMongoRepository<Entity>(target: EntityTarget<Entity>): MongoRepository<Entity> {
+    getMongoRepository<Entity extends ObjectLiteral>(target: EntityTarget<Entity>): MongoRepository<Entity> {
         if (!(this.driver instanceof MongoDriver))
             throw new Error(`You can use getMongoRepository only for MongoDB connections.`);
 
@@ -412,7 +412,7 @@ export class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
+    createQueryBuilder<Entity extends ObjectLiteral>(entityClass: EntityTarget<Entity>, alias: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity>;
 
     /**
      * Creates a new query builder that can be used to build a sql query.
@@ -422,7 +422,7 @@ export class Connection {
     /**
      * Creates a new query builder that can be used to build a sql query.
      */
-    createQueryBuilder<Entity>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
+    createQueryBuilder<Entity extends ObjectLiteral>(entityOrRunner?: EntityTarget<Entity>|QueryRunner, alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<Entity> {
         if (this instanceof MongoEntityManager)
             throw new Error(`Query Builder is not supported by MongoDB.`);
 

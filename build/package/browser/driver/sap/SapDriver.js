@@ -1,4 +1,4 @@
-import { __assign, __awaiter, __generator } from "tslib";
+import { __awaiter } from "tslib";
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError";
 import { PlatformTools } from "../../platform/PlatformTools";
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
@@ -11,11 +11,11 @@ import { SapQueryRunner } from "./SapQueryRunner";
  *
  * todo: looks like there is no built in support for connection pooling, we need to figure out something
  */
-var SapDriver = /** @class */ (function () {
+export class SapDriver {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function SapDriver(connection) {
+    constructor(connection) {
         /**
          * Pool for slave databases.
          * Used in replication.
@@ -154,92 +154,87 @@ var SapDriver = /** @class */ (function () {
      * Based on pooling options, it can either create connection immediately,
      * either create a pool and create connection when needed.
      */
-    SapDriver.prototype.connect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var dbParams, options, logger, poolErrorHandler;
-            return __generator(this, function (_a) {
-                dbParams = __assign({ hostName: this.options.host, port: this.options.port, userName: this.options.username, password: this.options.password }, this.options.extra);
-                if (this.options.database)
-                    dbParams.databaseName = this.options.database;
-                if (this.options.encrypt)
-                    dbParams.encrypt = this.options.encrypt;
-                if (this.options.sslValidateCertificate)
-                    dbParams.validateCertificate = this.options.sslValidateCertificate;
-                if (this.options.key)
-                    dbParams.key = this.options.key;
-                if (this.options.cert)
-                    dbParams.cert = this.options.cert;
-                if (this.options.ca)
-                    dbParams.ca = this.options.ca;
-                options = {
-                    min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
-                    max: this.options.pool && this.options.pool.max ? this.options.pool.max : 10,
-                };
-                if (this.options.pool && this.options.pool.checkInterval)
-                    options.checkInterval = this.options.pool.checkInterval;
-                if (this.options.pool && this.options.pool.maxWaitingRequests)
-                    options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
-                if (this.options.pool && this.options.pool.requestTimeout)
-                    options.requestTimeout = this.options.pool.requestTimeout;
-                if (this.options.pool && this.options.pool.idleTimeout)
-                    options.idleTimeout = this.options.pool.idleTimeout;
-                logger = this.connection.logger;
-                poolErrorHandler = options.poolErrorHandler || (function (error) { return logger.log("warn", "SAP Hana pool raised an error. " + error); });
-                this.client.eventEmitter.on("poolError", poolErrorHandler);
-                // create the pool
-                this.master = this.client.createPool(dbParams, options);
-                this.database = this.options.database;
-                return [2 /*return*/];
-            });
+    connect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // HANA connection info
+            const dbParams = Object.assign({ hostName: this.options.host, port: this.options.port, userName: this.options.username, password: this.options.password }, this.options.extra);
+            if (this.options.database)
+                dbParams.databaseName = this.options.database;
+            if (this.options.encrypt)
+                dbParams.encrypt = this.options.encrypt;
+            if (this.options.sslValidateCertificate)
+                dbParams.validateCertificate = this.options.sslValidateCertificate;
+            if (this.options.key)
+                dbParams.key = this.options.key;
+            if (this.options.cert)
+                dbParams.cert = this.options.cert;
+            if (this.options.ca)
+                dbParams.ca = this.options.ca;
+            // pool options
+            const options = {
+                min: this.options.pool && this.options.pool.min ? this.options.pool.min : 1,
+                max: this.options.pool && this.options.pool.max ? this.options.pool.max : 10,
+            };
+            if (this.options.pool && this.options.pool.checkInterval)
+                options.checkInterval = this.options.pool.checkInterval;
+            if (this.options.pool && this.options.pool.maxWaitingRequests)
+                options.maxWaitingRequests = this.options.pool.maxWaitingRequests;
+            if (this.options.pool && this.options.pool.requestTimeout)
+                options.requestTimeout = this.options.pool.requestTimeout;
+            if (this.options.pool && this.options.pool.idleTimeout)
+                options.idleTimeout = this.options.pool.idleTimeout;
+            const { logger } = this.connection;
+            const poolErrorHandler = options.poolErrorHandler || ((error) => logger.log("warn", `SAP Hana pool raised an error. ${error}`));
+            this.client.eventEmitter.on("poolError", poolErrorHandler);
+            // create the pool
+            this.master = this.client.createPool(dbParams, options);
+            this.database = this.options.database;
         });
-    };
+    }
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    SapDriver.prototype.afterConnect = function () {
+    afterConnect() {
         return Promise.resolve();
-    };
+    }
     /**
      * Closes connection with the database.
      */
-    SapDriver.prototype.disconnect = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var promise;
-            return __generator(this, function (_a) {
-                promise = this.master.clear();
-                this.master = undefined;
-                return [2 /*return*/, promise];
-            });
+    disconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const promise = this.master.clear();
+            this.master = undefined;
+            return promise;
         });
-    };
+    }
     /**
      * Creates a schema builder used to build and sync a schema.
      */
-    SapDriver.prototype.createSchemaBuilder = function () {
+    createSchemaBuilder() {
         return new RdbmsSchemaBuilder(this.connection);
-    };
+    }
     /**
      * Creates a query runner used to execute database queries.
      */
-    SapDriver.prototype.createQueryRunner = function (mode) {
+    createQueryRunner(mode) {
         return new SapQueryRunner(this, mode);
-    };
+    }
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
      */
-    SapDriver.prototype.escapeQueryWithParameters = function (sql, parameters, nativeParameters) {
-        var builtParameters = Object.keys(nativeParameters).map(function (key) {
+    escapeQueryWithParameters(sql, parameters, nativeParameters) {
+        const builtParameters = Object.keys(nativeParameters).map(key => {
             if (nativeParameters[key] instanceof Date)
                 return DateUtils.mixedDateToDatetimeString(nativeParameters[key], true);
             return nativeParameters[key];
         });
         if (!parameters || !Object.keys(parameters).length)
             return [sql, builtParameters];
-        var keys = Object.keys(parameters).map(function (parameter) { return "(:(\\.\\.\\.)?" + parameter + "\\b)"; }).join("|");
-        sql = sql.replace(new RegExp(keys, "g"), function (key) {
-            var value;
-            var isArray = false;
+        const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
+        sql = sql.replace(new RegExp(keys, "g"), (key) => {
+            let value;
+            let isArray = false;
             if (key.substr(0, 4) === ":...") {
                 isArray = true;
                 value = parameters[key.substr(4)];
@@ -248,7 +243,7 @@ var SapDriver = /** @class */ (function () {
                 value = parameters[key.substr(1)];
             }
             if (isArray) {
-                return value.map(function (v) {
+                return value.map((v) => {
                     builtParameters.push(v);
                     return "?";
                     // return "$" + builtParameters.length;
@@ -267,24 +262,24 @@ var SapDriver = /** @class */ (function () {
             }
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, builtParameters];
-    };
+    }
     /**
      * Escapes a column name.
      */
-    SapDriver.prototype.escape = function (columnName) {
-        return "\"" + columnName + "\"";
-    };
+    escape(columnName) {
+        return `"${columnName}"`;
+    }
     /**
      * Build full table name with schema name and table name.
      * E.g. "mySchema"."myTable"
      */
-    SapDriver.prototype.buildTableName = function (tableName, schema) {
-        return schema ? schema + "." + tableName : tableName;
-    };
+    buildTableName(tableName, schema) {
+        return schema ? `${schema}.${tableName}` : tableName;
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
-    SapDriver.prototype.preparePersistentValue = function (value, columnMetadata) {
+    preparePersistentValue(value, columnMetadata) {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
         if (value === null || value === undefined)
@@ -315,14 +310,14 @@ var SapDriver = /** @class */ (function () {
             return DateUtils.simpleEnumToString(value);
         }
         else if (columnMetadata.isArray) {
-            return function () { return "ARRAY(" + value.map(function (it) { return "'" + it + "'"; }) + ")"; };
+            return () => `ARRAY(${value.map((it) => `'${it}'`)})`;
         }
         return value;
-    };
+    }
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
-    SapDriver.prototype.prepareHydratedValue = function (value, columnMetadata) {
+    prepareHydratedValue(value, columnMetadata) {
         if (value === null || value === undefined)
             return columnMetadata.transformer ? ApplyValueTransformers.transformFrom(columnMetadata.transformer, value) : value;
         if (columnMetadata.type === Boolean) {
@@ -351,11 +346,11 @@ var SapDriver = /** @class */ (function () {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformFrom(columnMetadata.transformer, value);
         return value;
-    };
+    }
     /**
      * Creates a database type from a given column metadata.
      */
-    SapDriver.prototype.normalizeType = function (column) {
+    normalizeType(column) {
         if (column.type === Number || column.type === "int") {
             return "integer";
         }
@@ -383,12 +378,12 @@ var SapDriver = /** @class */ (function () {
         else {
             return column.type || "";
         }
-    };
+    }
     /**
      * Normalizes "default" value of the column.
      */
-    SapDriver.prototype.normalizeDefault = function (columnMetadata) {
-        var defaultValue = columnMetadata.default;
+    normalizeDefault(columnMetadata) {
+        const defaultValue = columnMetadata.default;
         if (typeof defaultValue === "number") {
             return "" + defaultValue;
         }
@@ -399,22 +394,22 @@ var SapDriver = /** @class */ (function () {
             return defaultValue();
         }
         else if (typeof defaultValue === "string") {
-            return "'" + defaultValue + "'";
+            return `'${defaultValue}'`;
         }
         else {
             return defaultValue;
         }
-    };
+    }
     /**
      * Normalizes "isUnique" value of the column.
      */
-    SapDriver.prototype.normalizeIsUnique = function (column) {
-        return column.entityMetadata.indices.some(function (idx) { return idx.isUnique && idx.columns.length === 1 && idx.columns[0] === column; });
-    };
+    normalizeIsUnique(column) {
+        return column.entityMetadata.indices.some(idx => idx.isUnique && idx.columns.length === 1 && idx.columns[0] === column);
+    }
     /**
      * Returns default column lengths, which is required on column creation.
      */
-    SapDriver.prototype.getColumnLength = function (column) {
+    getColumnLength(column) {
         if (column.length)
             return column.length.toString();
         if (column.generationStrategy === "uuid")
@@ -431,48 +426,48 @@ var SapDriver = /** @class */ (function () {
                 return "255";
         }
         return "";
-    };
+    }
     /**
      * Creates column type definition including length, precision and scale
      */
-    SapDriver.prototype.createFullType = function (column) {
-        var type = column.type;
+    createFullType(column) {
+        let type = column.type;
         // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
         if (this.getColumnLength(column)) {
-            type += "(" + this.getColumnLength(column) + ")";
+            type += `(${this.getColumnLength(column)})`;
         }
         else if (column.precision !== null && column.precision !== undefined && column.scale !== null && column.scale !== undefined) {
-            type += "(" + column.precision + "," + column.scale + ")";
+            type += `(${column.precision},${column.scale})`;
         }
         else if (column.precision !== null && column.precision !== undefined) {
-            type += "(" + column.precision + ")";
+            type += `(${column.precision})`;
         }
         if (column.isArray)
             type += " array";
         return type;
-    };
+    }
     /**
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    SapDriver.prototype.obtainMasterConnection = function () {
+    obtainMasterConnection() {
         return this.master.getConnection();
-    };
+    }
     /**
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    SapDriver.prototype.obtainSlaveConnection = function () {
+    obtainSlaveConnection() {
         return this.obtainMasterConnection();
-    };
+    }
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    SapDriver.prototype.createGeneratedMap = function (metadata, insertResult) {
-        var generatedMap = metadata.generatedColumns.reduce(function (map, generatedColumn) {
-            var value;
+    createGeneratedMap(metadata, insertResult) {
+        const generatedMap = metadata.generatedColumns.reduce((map, generatedColumn) => {
+            let value;
             if (generatedColumn.generationStrategy === "increment" && insertResult) {
                 value = insertResult;
                 // } else if (generatedColumn.generationStrategy === "uuid") {
@@ -482,15 +477,14 @@ var SapDriver = /** @class */ (function () {
             return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
         }, {});
         return Object.keys(generatedMap).length > 0 ? generatedMap : undefined;
-    };
+    }
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
-    SapDriver.prototype.findChangedColumns = function (tableColumns, columnMetadatas) {
-        var _this = this;
-        return columnMetadatas.filter(function (columnMetadata) {
-            var tableColumn = tableColumns.find(function (c) { return c.name === columnMetadata.databaseName; });
+    findChangedColumns(tableColumns, columnMetadatas) {
+        return columnMetadatas.filter(columnMetadata => {
+            const tableColumn = tableColumns.find(c => c.name === columnMetadata.databaseName);
             if (!tableColumn)
                 return false; // we don't need new columns, we only need exist and changed
             // console.log("table:", columnMetadata.entityMetadata.tableName);
@@ -507,52 +501,52 @@ var SapDriver = /** @class */ (function () {
             // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
             // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
             // console.log("==========================================");
-            var normalizeDefault = _this.normalizeDefault(columnMetadata);
-            var hanaNullComapatibleDefault = normalizeDefault == null ? undefined : normalizeDefault;
+            const normalizeDefault = this.normalizeDefault(columnMetadata);
+            const hanaNullComapatibleDefault = normalizeDefault == null ? undefined : normalizeDefault;
             return tableColumn.name !== columnMetadata.databaseName
-                || tableColumn.type !== _this.normalizeType(columnMetadata)
-                || columnMetadata.length && tableColumn.length !== _this.getColumnLength(columnMetadata)
+                || tableColumn.type !== this.normalizeType(columnMetadata)
+                || columnMetadata.length && tableColumn.length !== this.getColumnLength(columnMetadata)
                 || tableColumn.precision !== columnMetadata.precision
                 || tableColumn.scale !== columnMetadata.scale
                 // || tableColumn.comment !== columnMetadata.comment || // todo
                 || (!tableColumn.isGenerated && (hanaNullComapatibleDefault !== tableColumn.default)) // we included check for generated here, because generated columns already can have default values
                 || tableColumn.isPrimary !== columnMetadata.isPrimary
                 || tableColumn.isNullable !== columnMetadata.isNullable
-                || tableColumn.isUnique !== _this.normalizeIsUnique(columnMetadata)
+                || tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
                 || (columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated);
         });
-    };
+    }
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    SapDriver.prototype.isReturningSqlSupported = function () {
+    isReturningSqlSupported() {
         return false;
-    };
+    }
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
-    SapDriver.prototype.isUUIDGenerationSupported = function () {
+    isUUIDGenerationSupported() {
         return false;
-    };
+    }
     /**
      * Returns true if driver supports fulltext indices.
      */
-    SapDriver.prototype.isFullTextColumnTypeSupported = function () {
+    isFullTextColumnTypeSupported() {
         return true;
-    };
+    }
     /**
      * Creates an escaped parameter.
      */
-    SapDriver.prototype.createParameter = function (parameterName, index) {
+    createParameter(parameterName, index) {
         return "?";
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
-    SapDriver.prototype.loadDependencies = function () {
+    loadDependencies() {
         try {
             this.client = PlatformTools.load("hdb-pool");
         }
@@ -565,9 +559,7 @@ var SapDriver = /** @class */ (function () {
         catch (e) { // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SAP Hana", "@sap/hana-client");
         }
-    };
-    return SapDriver;
-}());
-export { SapDriver };
+    }
+}
 
 //# sourceMappingURL=SapDriver.js.map

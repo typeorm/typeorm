@@ -3,11 +3,11 @@ import { PlatformTools } from "../platform/PlatformTools";
  * Performs logging of the events in TypeORM.
  * This version of logger uses console to log events and use syntax highlighting.
  */
-var AdvancedConsoleLogger = /** @class */ (function () {
+export class AdvancedConsoleLogger {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function AdvancedConsoleLogger(options) {
+    constructor(options) {
         this.options = options;
     }
     // -------------------------------------------------------------------------
@@ -16,49 +16,49 @@ var AdvancedConsoleLogger = /** @class */ (function () {
     /**
      * Logs query and parameters used in it.
      */
-    AdvancedConsoleLogger.prototype.logQuery = function (query, parameters, queryRunner) {
+    logQuery(query, parameters, queryRunner) {
         if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("query") !== -1)) {
-            var sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
             PlatformTools.logInfo("query:", PlatformTools.highlightSql(sql));
         }
-    };
+    }
     /**
      * Logs query that is failed.
      */
-    AdvancedConsoleLogger.prototype.logQueryError = function (error, query, parameters, queryRunner) {
+    logQueryError(error, query, parameters, queryRunner) {
         if (this.options === "all" || this.options === true || (Array.isArray(this.options) && this.options.indexOf("error") !== -1)) {
-            var sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-            PlatformTools.logError("query failed:", PlatformTools.highlightSql(sql));
-            PlatformTools.logError("error:", error);
+            const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+            PlatformTools.logError(`query failed:`, PlatformTools.highlightSql(sql));
+            PlatformTools.logError(`error:`, error);
         }
-    };
+    }
     /**
      * Logs query that is slow.
      */
-    AdvancedConsoleLogger.prototype.logQuerySlow = function (time, query, parameters, queryRunner) {
-        var sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
-        PlatformTools.logWarn("query is slow:", PlatformTools.highlightSql(sql));
-        PlatformTools.logWarn("execution time:", time);
-    };
+    logQuerySlow(time, query, parameters, queryRunner) {
+        const sql = query + (parameters && parameters.length ? " -- PARAMETERS: " + this.stringifyParams(parameters) : "");
+        PlatformTools.logWarn(`query is slow:`, PlatformTools.highlightSql(sql));
+        PlatformTools.logWarn(`execution time:`, time);
+    }
     /**
      * Logs events from the schema build process.
      */
-    AdvancedConsoleLogger.prototype.logSchemaBuild = function (message, queryRunner) {
+    logSchemaBuild(message, queryRunner) {
         if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("schema") !== -1)) {
             PlatformTools.log(message);
         }
-    };
+    }
     /**
      * Logs events from the migration run process.
      */
-    AdvancedConsoleLogger.prototype.logMigration = function (message, queryRunner) {
+    logMigration(message, queryRunner) {
         PlatformTools.log(message);
-    };
+    }
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
      */
-    AdvancedConsoleLogger.prototype.log = function (level, message, queryRunner) {
+    log(level, message, queryRunner) {
         switch (level) {
             case "log":
                 if (this.options === "all" || (Array.isArray(this.options) && this.options.indexOf("log") !== -1))
@@ -73,7 +73,7 @@ var AdvancedConsoleLogger = /** @class */ (function () {
                     console.warn(PlatformTools.warn(message));
                 break;
         }
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -81,16 +81,14 @@ var AdvancedConsoleLogger = /** @class */ (function () {
      * Converts parameters to a string.
      * Sometimes parameters can have circular objects and therefor we are handle this case too.
      */
-    AdvancedConsoleLogger.prototype.stringifyParams = function (parameters) {
+    stringifyParams(parameters) {
         try {
             return JSON.stringify(parameters);
         }
         catch (error) { // most probably circular objects in parameters
             return parameters;
         }
-    };
-    return AdvancedConsoleLogger;
-}());
-export { AdvancedConsoleLogger };
+    }
+}
 
 //# sourceMappingURL=AdvancedConsoleLogger.js.map

@@ -3,11 +3,11 @@ import { DbQueryResultCache } from "./DbQueryResultCache";
 /**
  * Caches query result into Redis database.
  */
-var QueryResultCacheFactory = /** @class */ (function () {
+export class QueryResultCacheFactory {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function QueryResultCacheFactory(connection) {
+    constructor(connection) {
         this.connection = connection;
     }
     // -------------------------------------------------------------------------
@@ -16,10 +16,10 @@ var QueryResultCacheFactory = /** @class */ (function () {
     /**
      * Creates a new query result cache based on connection options.
      */
-    QueryResultCacheFactory.prototype.create = function () {
+    create() {
         if (!this.connection.options.cache)
-            throw new Error("To use cache you need to enable it in connection options by setting cache: true or providing some caching options. Example: { host: ..., username: ..., cache: true }");
-        var cache = this.connection.options.cache;
+            throw new Error(`To use cache you need to enable it in connection options by setting cache: true or providing some caching options. Example: { host: ..., username: ..., cache: true }`);
+        const cache = this.connection.options.cache;
         if (cache.provider && typeof cache.provider === "function") {
             return cache.provider(this.connection);
         }
@@ -29,9 +29,7 @@ var QueryResultCacheFactory = /** @class */ (function () {
         else {
             return new DbQueryResultCache(this.connection);
         }
-    };
-    return QueryResultCacheFactory;
-}());
-export { QueryResultCacheFactory };
+    }
+}
 
 //# sourceMappingURL=QueryResultCacheFactory.js.map

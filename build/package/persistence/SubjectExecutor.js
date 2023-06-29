@@ -1,29 +1,29 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubjectExecutor = void 0;
-var tslib_1 = require("tslib");
-var SapDriver_1 = require("../driver/sap/SapDriver");
-var SubjectTopoligicalSorter_1 = require("./SubjectTopoligicalSorter");
-var SubjectChangedColumnsComputer_1 = require("./SubjectChangedColumnsComputer");
-var SubjectWithoutIdentifierError_1 = require("../error/SubjectWithoutIdentifierError");
-var SubjectRemovedAndUpdatedError_1 = require("../error/SubjectRemovedAndUpdatedError");
-var MongoQueryRunner_1 = require("../driver/mongodb/MongoQueryRunner");
-var MongoDriver_1 = require("../driver/mongodb/MongoDriver");
-var BroadcasterResult_1 = require("../subscriber/BroadcasterResult");
-var OracleDriver_1 = require("../driver/oracle/OracleDriver");
-var NestedSetSubjectExecutor_1 = require("./tree/NestedSetSubjectExecutor");
-var ClosureSubjectExecutor_1 = require("./tree/ClosureSubjectExecutor");
-var MaterializedPathSubjectExecutor_1 = require("./tree/MaterializedPathSubjectExecutor");
-var OrmUtils_1 = require("../util/OrmUtils");
+const tslib_1 = require("tslib");
+const SapDriver_1 = require("../driver/sap/SapDriver");
+const SubjectTopoligicalSorter_1 = require("./SubjectTopoligicalSorter");
+const SubjectChangedColumnsComputer_1 = require("./SubjectChangedColumnsComputer");
+const SubjectWithoutIdentifierError_1 = require("../error/SubjectWithoutIdentifierError");
+const SubjectRemovedAndUpdatedError_1 = require("../error/SubjectRemovedAndUpdatedError");
+const MongoQueryRunner_1 = require("../driver/mongodb/MongoQueryRunner");
+const MongoDriver_1 = require("../driver/mongodb/MongoDriver");
+const BroadcasterResult_1 = require("../subscriber/BroadcasterResult");
+const OracleDriver_1 = require("../driver/oracle/OracleDriver");
+const NestedSetSubjectExecutor_1 = require("./tree/NestedSetSubjectExecutor");
+const ClosureSubjectExecutor_1 = require("./tree/ClosureSubjectExecutor");
+const MaterializedPathSubjectExecutor_1 = require("./tree/MaterializedPathSubjectExecutor");
+const OrmUtils_1 = require("../util/OrmUtils");
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
  * with given persistence subjects.
  */
-var SubjectExecutor = /** @class */ (function () {
+class SubjectExecutor {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    function SubjectExecutor(queryRunner, subjects, options) {
+    constructor(queryRunner, subjects, options) {
         // -------------------------------------------------------------------------
         // Public Properties
         // -------------------------------------------------------------------------
@@ -64,663 +64,513 @@ var SubjectExecutor = /** @class */ (function () {
      * Executes all operations over given array of subjects.
      * Executes queries using given query runner.
      */
-    SubjectExecutor.prototype.execute = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var broadcasterResult;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        broadcasterResult = undefined;
-                        if (!(!this.options || this.options.listeners !== false)) return [3 /*break*/, 2];
-                        // console.time(".broadcastBeforeEventsForAll");
-                        broadcasterResult = this.broadcastBeforeEventsForAll();
-                        if (!(broadcasterResult.promises.length > 0)) return [3 /*break*/, 2];
-                        return [4 /*yield*/, Promise.all(broadcasterResult.promises)];
-                    case 1:
-                        _a.sent();
-                        _a.label = 2;
-                    case 2:
-                        // since event listeners and subscribers can call save methods and/or trigger entity changes we need to recompute operational subjects
-                        // recompute only in the case if any listener or subscriber was really executed
-                        if (broadcasterResult && broadcasterResult.count > 0) {
-                            // console.time(".recompute");
-                            this.insertSubjects.forEach(function (subject) { return subject.recompute(); });
-                            this.updateSubjects.forEach(function (subject) { return subject.recompute(); });
-                            this.removeSubjects.forEach(function (subject) { return subject.recompute(); });
-                            this.softRemoveSubjects.forEach(function (subject) { return subject.recompute(); });
-                            this.recoverSubjects.forEach(function (subject) { return subject.recompute(); });
-                            this.recompute();
-                            // console.timeEnd(".recompute");
-                        }
-                        // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
-                        // console.timeEnd("prepare");
-                        // execute all insert operations
-                        // console.time(".insertion");
-                        this.insertSubjects = new SubjectTopoligicalSorter_1.SubjectTopoligicalSorter(this.insertSubjects).sort("insert");
-                        return [4 /*yield*/, this.executeInsertOperations()];
-                    case 3:
-                        _a.sent();
-                        // console.timeEnd(".insertion");
-                        // recompute update operations since insertion can create updation operations for the
-                        // properties it wasn't able to handle on its own (referenced columns)
-                        this.updateSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeUpdated; });
-                        // execute update operations
-                        // console.time(".updation");
-                        return [4 /*yield*/, this.executeUpdateOperations()];
-                    case 4:
-                        // execute update operations
-                        // console.time(".updation");
-                        _a.sent();
-                        // console.timeEnd(".updation");
-                        // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
-                        // console.time(".removal");
-                        this.removeSubjects = new SubjectTopoligicalSorter_1.SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
-                        return [4 /*yield*/, this.executeRemoveOperations()];
-                    case 5:
-                        _a.sent();
-                        // console.timeEnd(".removal");
-                        // recompute soft-remove operations
-                        this.softRemoveSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeSoftRemoved; });
-                        // execute soft-remove operations
-                        return [4 /*yield*/, this.executeSoftRemoveOperations()];
-                    case 6:
-                        // execute soft-remove operations
-                        _a.sent();
-                        // recompute recover operations
-                        this.recoverSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeRecovered; });
-                        // execute recover operations
-                        return [4 /*yield*/, this.executeRecoverOperations()];
-                    case 7:
-                        // execute recover operations
-                        _a.sent();
-                        // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
-                        // console.time(".updateSpecialColumnsInPersistedEntities");
-                        return [4 /*yield*/, this.updateSpecialColumnsInPersistedEntities()];
-                    case 8:
-                        // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
-                        // console.time(".updateSpecialColumnsInPersistedEntities");
-                        _a.sent();
-                        if (!(!this.options || this.options.listeners !== false)) return [3 /*break*/, 10];
-                        // console.time(".broadcastAfterEventsForAll");
-                        broadcasterResult = this.broadcastAfterEventsForAll();
-                        if (!(broadcasterResult.promises.length > 0)) return [3 /*break*/, 10];
-                        return [4 /*yield*/, Promise.all(broadcasterResult.promises)];
-                    case 9:
-                        _a.sent();
-                        _a.label = 10;
-                    case 10: return [2 /*return*/];
-                }
-            });
+    execute() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            // console.time("SubjectExecutor.execute");
+            // broadcast "before" events before we start insert / update / remove operations
+            let broadcasterResult = undefined;
+            if (!this.options || this.options.listeners !== false) {
+                // console.time(".broadcastBeforeEventsForAll");
+                broadcasterResult = this.broadcastBeforeEventsForAll();
+                if (broadcasterResult.promises.length > 0)
+                    yield Promise.all(broadcasterResult.promises);
+                // console.timeEnd(".broadcastBeforeEventsForAll");
+            }
+            // since event listeners and subscribers can call save methods and/or trigger entity changes we need to recompute operational subjects
+            // recompute only in the case if any listener or subscriber was really executed
+            if (broadcasterResult && broadcasterResult.count > 0) {
+                // console.time(".recompute");
+                this.insertSubjects.forEach(subject => subject.recompute());
+                this.updateSubjects.forEach(subject => subject.recompute());
+                this.removeSubjects.forEach(subject => subject.recompute());
+                this.softRemoveSubjects.forEach(subject => subject.recompute());
+                this.recoverSubjects.forEach(subject => subject.recompute());
+                this.recompute();
+                // console.timeEnd(".recompute");
+            }
+            // make sure our insert subjects are sorted (using topological sorting) to make cascade inserts work properly
+            // console.timeEnd("prepare");
+            // execute all insert operations
+            // console.time(".insertion");
+            this.insertSubjects = new SubjectTopoligicalSorter_1.SubjectTopoligicalSorter(this.insertSubjects).sort("insert");
+            yield this.executeInsertOperations();
+            // console.timeEnd(".insertion");
+            // recompute update operations since insertion can create updation operations for the
+            // properties it wasn't able to handle on its own (referenced columns)
+            this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
+            // execute update operations
+            // console.time(".updation");
+            yield this.executeUpdateOperations();
+            // console.timeEnd(".updation");
+            // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
+            // console.time(".removal");
+            this.removeSubjects = new SubjectTopoligicalSorter_1.SubjectTopoligicalSorter(this.removeSubjects).sort("delete");
+            yield this.executeRemoveOperations();
+            // console.timeEnd(".removal");
+            // recompute soft-remove operations
+            this.softRemoveSubjects = this.allSubjects.filter(subject => subject.mustBeSoftRemoved);
+            // execute soft-remove operations
+            yield this.executeSoftRemoveOperations();
+            // recompute recover operations
+            this.recoverSubjects = this.allSubjects.filter(subject => subject.mustBeRecovered);
+            // execute recover operations
+            yield this.executeRecoverOperations();
+            // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
+            // console.time(".updateSpecialColumnsInPersistedEntities");
+            yield this.updateSpecialColumnsInPersistedEntities();
+            // console.timeEnd(".updateSpecialColumnsInPersistedEntities");
+            // finally broadcast "after" events after we finish insert / update / remove operations
+            if (!this.options || this.options.listeners !== false) {
+                // console.time(".broadcastAfterEventsForAll");
+                broadcasterResult = this.broadcastAfterEventsForAll();
+                if (broadcasterResult.promises.length > 0)
+                    yield Promise.all(broadcasterResult.promises);
+                // console.timeEnd(".broadcastAfterEventsForAll");
+            }
+            // console.timeEnd("SubjectExecutor.execute");
         });
-    };
+    }
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
     /**
      * Validates all given subjects.
      */
-    SubjectExecutor.prototype.validate = function () {
-        this.allSubjects.forEach(function (subject) {
+    validate() {
+        this.allSubjects.forEach(subject => {
             if (subject.mustBeUpdated && subject.mustBeRemoved)
                 throw new SubjectRemovedAndUpdatedError_1.SubjectRemovedAndUpdatedError(subject);
         });
-    };
+    }
     /**
      * Performs entity re-computations - finds changed columns, re-builds insert/update/remove subjects.
      */
-    SubjectExecutor.prototype.recompute = function () {
+    recompute() {
         new SubjectChangedColumnsComputer_1.SubjectChangedColumnsComputer().compute(this.allSubjects);
-        this.insertSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeInserted; });
-        this.updateSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeUpdated; });
-        this.removeSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeRemoved; });
-        this.softRemoveSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeSoftRemoved; });
-        this.recoverSubjects = this.allSubjects.filter(function (subject) { return subject.mustBeRecovered; });
+        this.insertSubjects = this.allSubjects.filter(subject => subject.mustBeInserted);
+        this.updateSubjects = this.allSubjects.filter(subject => subject.mustBeUpdated);
+        this.removeSubjects = this.allSubjects.filter(subject => subject.mustBeRemoved);
+        this.softRemoveSubjects = this.allSubjects.filter(subject => subject.mustBeSoftRemoved);
+        this.recoverSubjects = this.allSubjects.filter(subject => subject.mustBeRecovered);
         this.hasExecutableOperations = this.insertSubjects.length > 0 || this.updateSubjects.length > 0 || this.removeSubjects.length > 0 || this.softRemoveSubjects.length > 0 || this.recoverSubjects.length > 0;
-    };
+    }
     /**
      * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE" events for all given subjects.
      */
-    SubjectExecutor.prototype.broadcastBeforeEventsForAll = function () {
-        var _this = this;
-        var result = new BroadcasterResult_1.BroadcasterResult();
+    broadcastBeforeEventsForAll() {
+        const result = new BroadcasterResult_1.BroadcasterResult();
         if (this.insertSubjects.length)
-            this.insertSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastBeforeInsertEvent(result, subject.metadata, subject.entity); });
+            this.insertSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeInsertEvent(result, subject.metadata, subject.entity));
         if (this.updateSubjects.length)
-            this.updateSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations); });
+            this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.removeSubjects.length)
-            this.removeSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, subject.metadata, subject.entity, subject.databaseEntity); });
+            this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeRemoveEvent(result, subject.metadata, subject.entity, subject.databaseEntity));
         if (this.softRemoveSubjects.length)
-            this.softRemoveSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations); });
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.recoverSubjects.length)
-            this.recoverSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations); });
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastBeforeUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         return result;
-    };
+    }
     /**
      * Broadcasts "AFTER_INSERT", "AFTER_UPDATE", "AFTER_REMOVE" events for all given subjects.
      * Returns void if there wasn't any listener or subscriber executed.
      * Note: this method has a performance-optimized code organization.
      */
-    SubjectExecutor.prototype.broadcastAfterEventsForAll = function () {
-        var _this = this;
-        var result = new BroadcasterResult_1.BroadcasterResult();
+    broadcastAfterEventsForAll() {
+        const result = new BroadcasterResult_1.BroadcasterResult();
         if (this.insertSubjects.length)
-            this.insertSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastAfterInsertEvent(result, subject.metadata, subject.entity); });
+            this.insertSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterInsertEvent(result, subject.metadata, subject.entity));
         if (this.updateSubjects.length)
-            this.updateSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations); });
+            this.updateSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.removeSubjects.length)
-            this.removeSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, subject.metadata, subject.entity, subject.databaseEntity); });
+            this.removeSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterRemoveEvent(result, subject.metadata, subject.entity, subject.databaseEntity));
         if (this.softRemoveSubjects.length)
-            this.softRemoveSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations); });
+            this.softRemoveSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         if (this.recoverSubjects.length)
-            this.recoverSubjects.forEach(function (subject) { return _this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations); });
+            this.recoverSubjects.forEach(subject => this.queryRunner.broadcaster.broadcastAfterUpdateEvent(result, subject.metadata, subject.entity, subject.databaseEntity, subject.diffColumns, subject.diffRelations));
         return result;
-    };
+    }
     /**
      * Executes insert operations.
      */
-    SubjectExecutor.prototype.executeInsertOperations = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a, groupedInsertSubjects, groupedInsertSubjectKeys, _loop_1, this_1, groupedInsertSubjectKeys_1, groupedInsertSubjectKeys_1_1, groupName, e_1_1;
-            var e_1, _b;
-            var _this = this;
-            return tslib_1.__generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        _a = tslib_1.__read(this.groupBulkSubjects(this.insertSubjects, "insert"), 2), groupedInsertSubjects = _a[0], groupedInsertSubjectKeys = _a[1];
-                        _loop_1 = function (groupName) {
-                            var subjects, bulkInsertMaps, bulkInsertSubjects, singleInsertSubjects, manager, insertResult_1, insertResult_2, _loop_2, singleInsertSubjects_1, singleInsertSubjects_1_1, subject, e_2_1;
-                            var e_2, _d;
-                            return tslib_1.__generator(this, function (_e) {
-                                switch (_e.label) {
-                                    case 0:
-                                        subjects = groupedInsertSubjects[groupName];
-                                        bulkInsertMaps = [];
-                                        bulkInsertSubjects = [];
-                                        singleInsertSubjects = [];
-                                        if (this_1.queryRunner.connection.driver instanceof MongoDriver_1.MongoDriver) {
-                                            subjects.forEach(function (subject) {
-                                                if (subject.metadata.createDateColumn && subject.entity) {
-                                                    subject.entity[subject.metadata.createDateColumn.databaseName] = new Date();
-                                                }
-                                                if (subject.metadata.updateDateColumn && subject.entity) {
-                                                    subject.entity[subject.metadata.updateDateColumn.databaseName] = new Date();
-                                                }
-                                                subject.createValueSetAndPopChangeMap();
-                                                bulkInsertSubjects.push(subject);
-                                                bulkInsertMaps.push(subject.entity);
-                                            });
-                                        }
-                                        else if (this_1.queryRunner.connection.driver instanceof OracleDriver_1.OracleDriver) {
-                                            subjects.forEach(function (subject) {
-                                                singleInsertSubjects.push(subject);
-                                            });
-                                        }
-                                        else {
-                                            subjects.forEach(function (subject) {
-                                                // we do not insert in bulk in following cases:
-                                                // - when there is no values in insert (only defaults are inserted), since we cannot use DEFAULT VALUES expression for multiple inserted rows
-                                                // - when entity is a tree table, since tree tables require extra operation per each inserted row
-                                                // - when oracle is used, since oracle's bulk insertion is very bad
-                                                if (subject.changeMaps.length === 0 ||
-                                                    subject.metadata.treeType ||
-                                                    _this.queryRunner.connection.driver instanceof OracleDriver_1.OracleDriver ||
-                                                    _this.queryRunner.connection.driver instanceof SapDriver_1.SapDriver) {
-                                                    singleInsertSubjects.push(subject);
-                                                }
-                                                else {
-                                                    bulkInsertSubjects.push(subject);
-                                                    bulkInsertMaps.push(subject.createValueSetAndPopChangeMap());
-                                                }
-                                            });
-                                        }
-                                        if (!(this_1.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner)) return [3 /*break*/, 2];
-                                        manager = this_1.queryRunner.manager;
-                                        return [4 /*yield*/, manager.insert(subjects[0].metadata.target, bulkInsertMaps)];
-                                    case 1:
-                                        insertResult_1 = _e.sent();
-                                        subjects.forEach(function (subject, index) {
-                                            subject.identifier = insertResult_1.identifiers[index];
-                                            subject.generatedMap = insertResult_1.generatedMaps[index];
-                                            subject.insertedValueSet = bulkInsertMaps[index];
-                                        });
-                                        return [3 /*break*/, 12];
-                                    case 2:
-                                        if (!(bulkInsertMaps.length > 0)) return [3 /*break*/, 4];
-                                        return [4 /*yield*/, this_1.queryRunner
-                                                .manager
-                                                .createQueryBuilder()
-                                                .insert()
-                                                .into(subjects[0].metadata.target)
-                                                .values(bulkInsertMaps)
-                                                .updateEntity(this_1.options && this_1.options.reload === false ? false : true)
-                                                .callListeners(false)
-                                                .execute()];
-                                    case 3:
-                                        insertResult_2 = _e.sent();
-                                        bulkInsertSubjects.forEach(function (subject, index) {
-                                            subject.identifier = insertResult_2.identifiers[index];
-                                            subject.generatedMap = insertResult_2.generatedMaps[index];
-                                            subject.insertedValueSet = bulkInsertMaps[index];
-                                        });
-                                        _e.label = 4;
-                                    case 4:
-                                        if (!(singleInsertSubjects.length > 0)) return [3 /*break*/, 12];
-                                        _loop_2 = function (subject) {
-                                            return tslib_1.__generator(this, function (_f) {
-                                                switch (_f.label) {
-                                                    case 0:
-                                                        subject.insertedValueSet = subject.createValueSetAndPopChangeMap(); // important to have because query builder sets inserted values into it
-                                                        if (!(subject.metadata.treeType === "nested-set")) return [3 /*break*/, 2];
-                                                        return [4 /*yield*/, new NestedSetSubjectExecutor_1.NestedSetSubjectExecutor(this_1.queryRunner).insert(subject)];
-                                                    case 1:
-                                                        _f.sent();
-                                                        _f.label = 2;
-                                                    case 2: return [4 /*yield*/, this_1.queryRunner
-                                                            .manager
-                                                            .createQueryBuilder()
-                                                            .insert()
-                                                            .into(subject.metadata.target)
-                                                            .values(subject.insertedValueSet)
-                                                            .updateEntity(this_1.options && this_1.options.reload === false ? false : true)
-                                                            .callListeners(false)
-                                                            .execute()
-                                                            .then(function (insertResult) {
-                                                            subject.identifier = insertResult.identifiers[0];
-                                                            subject.generatedMap = insertResult.generatedMaps[0];
-                                                        })];
-                                                    case 3:
-                                                        _f.sent();
-                                                        if (!(subject.metadata.treeType === "closure-table")) return [3 /*break*/, 5];
-                                                        return [4 /*yield*/, new ClosureSubjectExecutor_1.ClosureSubjectExecutor(this_1.queryRunner).insert(subject)];
-                                                    case 4:
-                                                        _f.sent();
-                                                        return [3 /*break*/, 7];
-                                                    case 5:
-                                                        if (!(subject.metadata.treeType === "materialized-path")) return [3 /*break*/, 7];
-                                                        return [4 /*yield*/, new MaterializedPathSubjectExecutor_1.MaterializedPathSubjectExecutor(this_1.queryRunner).insert(subject)];
-                                                    case 6:
-                                                        _f.sent();
-                                                        _f.label = 7;
-                                                    case 7: return [2 /*return*/];
-                                                }
-                                            });
-                                        };
-                                        _e.label = 5;
-                                    case 5:
-                                        _e.trys.push([5, 10, 11, 12]);
-                                        singleInsertSubjects_1 = (e_2 = void 0, tslib_1.__values(singleInsertSubjects)), singleInsertSubjects_1_1 = singleInsertSubjects_1.next();
-                                        _e.label = 6;
-                                    case 6:
-                                        if (!!singleInsertSubjects_1_1.done) return [3 /*break*/, 9];
-                                        subject = singleInsertSubjects_1_1.value;
-                                        return [5 /*yield**/, _loop_2(subject)];
-                                    case 7:
-                                        _e.sent();
-                                        _e.label = 8;
-                                    case 8:
-                                        singleInsertSubjects_1_1 = singleInsertSubjects_1.next();
-                                        return [3 /*break*/, 6];
-                                    case 9: return [3 /*break*/, 12];
-                                    case 10:
-                                        e_2_1 = _e.sent();
-                                        e_2 = { error: e_2_1 };
-                                        return [3 /*break*/, 12];
-                                    case 11:
-                                        try {
-                                            if (singleInsertSubjects_1_1 && !singleInsertSubjects_1_1.done && (_d = singleInsertSubjects_1.return)) _d.call(singleInsertSubjects_1);
-                                        }
-                                        finally { if (e_2) throw e_2.error; }
-                                        return [7 /*endfinally*/];
-                                    case 12:
-                                        subjects.forEach(function (subject) {
-                                            if (subject.generatedMap) {
-                                                subject.metadata.columns.forEach(function (column) {
-                                                    var value = column.getEntityValue(subject.generatedMap);
-                                                    if (value !== undefined && value !== null) {
-                                                        var preparedValue = _this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                                                        column.setEntityValue(subject.generatedMap, preparedValue);
-                                                    }
-                                                });
-                                            }
-                                        });
-                                        return [2 /*return*/];
-                                }
-                            });
-                        };
-                        this_1 = this;
-                        _c.label = 1;
-                    case 1:
-                        _c.trys.push([1, 6, 7, 8]);
-                        groupedInsertSubjectKeys_1 = tslib_1.__values(groupedInsertSubjectKeys), groupedInsertSubjectKeys_1_1 = groupedInsertSubjectKeys_1.next();
-                        _c.label = 2;
-                    case 2:
-                        if (!!groupedInsertSubjectKeys_1_1.done) return [3 /*break*/, 5];
-                        groupName = groupedInsertSubjectKeys_1_1.value;
-                        return [5 /*yield**/, _loop_1(groupName)];
-                    case 3:
-                        _c.sent();
-                        _c.label = 4;
-                    case 4:
-                        groupedInsertSubjectKeys_1_1 = groupedInsertSubjectKeys_1.next();
-                        return [3 /*break*/, 2];
-                    case 5: return [3 /*break*/, 8];
-                    case 6:
-                        e_1_1 = _c.sent();
-                        e_1 = { error: e_1_1 };
-                        return [3 /*break*/, 8];
-                    case 7:
-                        try {
-                            if (groupedInsertSubjectKeys_1_1 && !groupedInsertSubjectKeys_1_1.done && (_b = groupedInsertSubjectKeys_1.return)) _b.call(groupedInsertSubjectKeys_1);
+    executeInsertOperations() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            // group insertion subjects to make bulk insertions
+            const [groupedInsertSubjects, groupedInsertSubjectKeys] = this.groupBulkSubjects(this.insertSubjects, "insert");
+            // then we run insertion in the sequential order which is important since we have an ordered subjects
+            for (const groupName of groupedInsertSubjectKeys) {
+                const subjects = groupedInsertSubjects[groupName];
+                // we must separately insert entities which does not have any values to insert
+                // because its not possible to insert multiple entities with only default values in bulk
+                const bulkInsertMaps = [];
+                const bulkInsertSubjects = [];
+                const singleInsertSubjects = [];
+                if (this.queryRunner.connection.driver instanceof MongoDriver_1.MongoDriver) {
+                    subjects.forEach(subject => {
+                        if (subject.metadata.createDateColumn && subject.entity) {
+                            subject.entity[subject.metadata.createDateColumn.databaseName] = new Date();
                         }
-                        finally { if (e_1) throw e_1.error; }
-                        return [7 /*endfinally*/];
-                    case 8: return [2 /*return*/];
+                        if (subject.metadata.updateDateColumn && subject.entity) {
+                            subject.entity[subject.metadata.updateDateColumn.databaseName] = new Date();
+                        }
+                        subject.createValueSetAndPopChangeMap();
+                        bulkInsertSubjects.push(subject);
+                        bulkInsertMaps.push(subject.entity);
+                    });
                 }
-            });
+                else if (this.queryRunner.connection.driver instanceof OracleDriver_1.OracleDriver) {
+                    subjects.forEach(subject => {
+                        singleInsertSubjects.push(subject);
+                    });
+                }
+                else {
+                    subjects.forEach(subject => {
+                        // we do not insert in bulk in following cases:
+                        // - when there is no values in insert (only defaults are inserted), since we cannot use DEFAULT VALUES expression for multiple inserted rows
+                        // - when entity is a tree table, since tree tables require extra operation per each inserted row
+                        // - when oracle is used, since oracle's bulk insertion is very bad
+                        if (subject.changeMaps.length === 0 ||
+                            subject.metadata.treeType ||
+                            this.queryRunner.connection.driver instanceof OracleDriver_1.OracleDriver ||
+                            this.queryRunner.connection.driver instanceof SapDriver_1.SapDriver) {
+                            singleInsertSubjects.push(subject);
+                        }
+                        else {
+                            bulkInsertSubjects.push(subject);
+                            bulkInsertMaps.push(subject.createValueSetAndPopChangeMap());
+                        }
+                    });
+                }
+                // for mongodb we have a bit different insertion logic
+                if (this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner) {
+                    const manager = this.queryRunner.manager;
+                    const insertResult = yield manager.insert(subjects[0].metadata.target, bulkInsertMaps);
+                    subjects.forEach((subject, index) => {
+                        subject.identifier = insertResult.identifiers[index];
+                        subject.generatedMap = insertResult.generatedMaps[index];
+                        subject.insertedValueSet = bulkInsertMaps[index];
+                    });
+                }
+                else {
+                    // here we execute our insertion query
+                    // we need to enable entity updation because we DO need to have updated insertedMap
+                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                    // also, we disable listeners because we call them on our own in persistence layer
+                    if (bulkInsertMaps.length > 0) {
+                        const insertResult = yield this.queryRunner
+                            .manager
+                            .createQueryBuilder()
+                            .insert()
+                            .into(subjects[0].metadata.target)
+                            .values(bulkInsertMaps)
+                            .updateEntity(this.options && this.options.reload === false ? false : true)
+                            .callListeners(false)
+                            .execute();
+                        bulkInsertSubjects.forEach((subject, index) => {
+                            subject.identifier = insertResult.identifiers[index];
+                            subject.generatedMap = insertResult.generatedMaps[index];
+                            subject.insertedValueSet = bulkInsertMaps[index];
+                        });
+                    }
+                    // insert subjects which must be inserted in separate requests (all default values)
+                    if (singleInsertSubjects.length > 0) {
+                        for (const subject of singleInsertSubjects) {
+                            subject.insertedValueSet = subject.createValueSetAndPopChangeMap(); // important to have because query builder sets inserted values into it
+                            // for nested set we execute additional queries
+                            if (subject.metadata.treeType === "nested-set")
+                                yield new NestedSetSubjectExecutor_1.NestedSetSubjectExecutor(this.queryRunner).insert(subject);
+                            yield this.queryRunner
+                                .manager
+                                .createQueryBuilder()
+                                .insert()
+                                .into(subject.metadata.target)
+                                .values(subject.insertedValueSet)
+                                .updateEntity(this.options && this.options.reload === false ? false : true)
+                                .callListeners(false)
+                                .execute()
+                                .then(insertResult => {
+                                subject.identifier = insertResult.identifiers[0];
+                                subject.generatedMap = insertResult.generatedMaps[0];
+                            });
+                            // for tree tables we execute additional queries
+                            if (subject.metadata.treeType === "closure-table") {
+                                yield new ClosureSubjectExecutor_1.ClosureSubjectExecutor(this.queryRunner).insert(subject);
+                            }
+                            else if (subject.metadata.treeType === "materialized-path") {
+                                yield new MaterializedPathSubjectExecutor_1.MaterializedPathSubjectExecutor(this.queryRunner).insert(subject);
+                            }
+                        }
+                    }
+                }
+                subjects.forEach(subject => {
+                    if (subject.generatedMap) {
+                        subject.metadata.columns.forEach(column => {
+                            const value = column.getEntityValue(subject.generatedMap);
+                            if (value !== undefined && value !== null) {
+                                const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                                column.setEntityValue(subject.generatedMap, preparedValue);
+                            }
+                        });
+                    }
+                });
+            }
         });
-    };
+    }
     /**
      * Updates all given subjects in the database.
      */
-    SubjectExecutor.prototype.executeUpdateOperations = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, Promise.all(this.updateSubjects.map(function (subject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                            var partialEntity, manager, updateMap, updateQueryBuilder, updateResult, updateGeneratedMap_1;
-                            var _this = this;
-                            return tslib_1.__generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        if (!subject.identifier)
-                                            throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
-                                        if (!(this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner)) return [3 /*break*/, 2];
-                                        partialEntity = OrmUtils_1.OrmUtils.mergeDeep({}, subject.entity);
-                                        if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
-                                            delete partialEntity[subject.metadata.objectIdColumn.propertyName];
-                                        }
-                                        if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
-                                            delete partialEntity[subject.metadata.createDateColumn.propertyName];
-                                        }
-                                        if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
-                                            partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
-                                        }
-                                        manager = this.queryRunner.manager;
-                                        return [4 /*yield*/, manager.update(subject.metadata.target, subject.identifier, partialEntity)];
-                                    case 1:
-                                        _a.sent();
-                                        return [3 /*break*/, 4];
-                                    case 2:
-                                        updateMap = subject.createValueSetAndPopChangeMap();
-                                        updateQueryBuilder = this.queryRunner
-                                            .manager
-                                            .createQueryBuilder()
-                                            .update(subject.metadata.target)
-                                            .set(updateMap)
-                                            .updateEntity(this.options && this.options.reload === false ? false : true)
-                                            .callListeners(false);
-                                        if (subject.entity) {
-                                            updateQueryBuilder.whereEntity(subject.identifier);
-                                        }
-                                        else { // in this case identifier is just conditions object to update by
-                                            updateQueryBuilder.where(subject.identifier);
-                                        }
-                                        return [4 /*yield*/, updateQueryBuilder.execute()];
-                                    case 3:
-                                        updateResult = _a.sent();
-                                        updateGeneratedMap_1 = updateResult.generatedMaps[0];
-                                        if (updateGeneratedMap_1) {
-                                            subject.metadata.columns.forEach(function (column) {
-                                                var value = column.getEntityValue(updateGeneratedMap_1);
-                                                if (value !== undefined && value !== null) {
-                                                    var preparedValue = _this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                                                    column.setEntityValue(updateGeneratedMap_1, preparedValue);
-                                                }
-                                            });
-                                            if (!subject.generatedMap) {
-                                                subject.generatedMap = {};
-                                            }
-                                            Object.assign(subject.generatedMap, updateGeneratedMap_1);
-                                        }
-                                        _a.label = 4;
-                                    case 4: return [2 /*return*/];
-                                }
-                            });
-                        }); }))];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
+    executeUpdateOperations() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(this.updateSubjects.map((subject) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+                if (!subject.identifier)
+                    throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
+                // for mongodb we have a bit different updation logic
+                if (this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner) {
+                    const partialEntity = OrmUtils_1.OrmUtils.mergeDeep({}, subject.entity);
+                    if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                        delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                    }
+                    if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
+                        delete partialEntity[subject.metadata.createDateColumn.propertyName];
+                    }
+                    if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
+                        partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
+                    }
+                    const manager = this.queryRunner.manager;
+                    yield manager.update(subject.metadata.target, subject.identifier, partialEntity);
                 }
-            });
+                else {
+                    const updateMap = subject.createValueSetAndPopChangeMap();
+                    // here we execute our updation query
+                    // we need to enable entity updation because we update a subject identifier
+                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                    // also, we disable listeners because we call them on our own in persistence layer
+                    const updateQueryBuilder = this.queryRunner
+                        .manager
+                        .createQueryBuilder()
+                        .update(subject.metadata.target)
+                        .set(updateMap)
+                        .updateEntity(this.options && this.options.reload === false ? false : true)
+                        .callListeners(false);
+                    if (subject.entity) {
+                        updateQueryBuilder.whereEntity(subject.identifier);
+                    }
+                    else { // in this case identifier is just conditions object to update by
+                        updateQueryBuilder.where(subject.identifier);
+                    }
+                    const updateResult = yield updateQueryBuilder.execute();
+                    let updateGeneratedMap = updateResult.generatedMaps[0];
+                    if (updateGeneratedMap) {
+                        subject.metadata.columns.forEach(column => {
+                            const value = column.getEntityValue(updateGeneratedMap);
+                            if (value !== undefined && value !== null) {
+                                const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                                column.setEntityValue(updateGeneratedMap, preparedValue);
+                            }
+                        });
+                        if (!subject.generatedMap) {
+                            subject.generatedMap = {};
+                        }
+                        Object.assign(subject.generatedMap, updateGeneratedMap);
+                    }
+                    // experiments, remove probably, need to implement tree tables children removal
+                    // if (subject.updatedRelationMaps.length > 0) {
+                    //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+                    //         if (!updatedRelation.relation.isTreeParent) return;
+                    //         if (!updatedRelation.value !== null) return;
+                    //
+                    //         if (subject.metadata.treeType === "closure-table") {
+                    //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+                    //         }
+                    //     }));
+                    // }
+                }
+            })));
         });
-    };
+    }
     /**
      * Removes all given subjects from the database.
      *
      * todo: we need to apply topological sort here as well
      */
-    SubjectExecutor.prototype.executeRemoveOperations = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _a, groupedRemoveSubjects, groupedRemoveSubjectKeys, groupedRemoveSubjectKeys_1, groupedRemoveSubjectKeys_1_1, groupName, subjects, deleteMaps, manager, e_3_1;
-            var e_3, _b;
-            return tslib_1.__generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        _a = tslib_1.__read(this.groupBulkSubjects(this.removeSubjects, "delete"), 2), groupedRemoveSubjects = _a[0], groupedRemoveSubjectKeys = _a[1];
-                        _c.label = 1;
-                    case 1:
-                        _c.trys.push([1, 8, 9, 10]);
-                        groupedRemoveSubjectKeys_1 = tslib_1.__values(groupedRemoveSubjectKeys), groupedRemoveSubjectKeys_1_1 = groupedRemoveSubjectKeys_1.next();
-                        _c.label = 2;
-                    case 2:
-                        if (!!groupedRemoveSubjectKeys_1_1.done) return [3 /*break*/, 7];
-                        groupName = groupedRemoveSubjectKeys_1_1.value;
-                        subjects = groupedRemoveSubjects[groupName];
-                        deleteMaps = subjects.map(function (subject) {
-                            if (!subject.identifier)
-                                throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
-                            return subject.identifier;
-                        });
-                        if (!(this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner)) return [3 /*break*/, 4];
-                        manager = this.queryRunner.manager;
-                        return [4 /*yield*/, manager.delete(subjects[0].metadata.target, deleteMaps)];
-                    case 3:
-                        _c.sent();
-                        return [3 /*break*/, 6];
-                    case 4: 
+    executeRemoveOperations() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            // group insertion subjects to make bulk insertions
+            const [groupedRemoveSubjects, groupedRemoveSubjectKeys] = this.groupBulkSubjects(this.removeSubjects, "delete");
+            for (const groupName of groupedRemoveSubjectKeys) {
+                const subjects = groupedRemoveSubjects[groupName];
+                const deleteMaps = subjects.map(subject => {
+                    if (!subject.identifier)
+                        throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
+                    return subject.identifier;
+                });
+                // for mongodb we have a bit different updation logic
+                if (this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner) {
+                    const manager = this.queryRunner.manager;
+                    yield manager.delete(subjects[0].metadata.target, deleteMaps);
+                }
+                else {
                     // here we execute our deletion query
                     // we don't need to specify entities and set update entity to true since the only thing query builder
                     // will do for use is a primary keys deletion which is handled by us later once persistence is finished
                     // also, we disable listeners because we call them on our own in persistence layer
-                    return [4 /*yield*/, this.queryRunner
-                            .manager
-                            .createQueryBuilder()
-                            .delete()
-                            .from(subjects[0].metadata.target)
-                            .where(deleteMaps)
-                            .callListeners(false)
-                            .execute()];
-                    case 5:
-                        // here we execute our deletion query
-                        // we don't need to specify entities and set update entity to true since the only thing query builder
-                        // will do for use is a primary keys deletion which is handled by us later once persistence is finished
-                        // also, we disable listeners because we call them on our own in persistence layer
-                        _c.sent();
-                        _c.label = 6;
-                    case 6:
-                        groupedRemoveSubjectKeys_1_1 = groupedRemoveSubjectKeys_1.next();
-                        return [3 /*break*/, 2];
-                    case 7: return [3 /*break*/, 10];
-                    case 8:
-                        e_3_1 = _c.sent();
-                        e_3 = { error: e_3_1 };
-                        return [3 /*break*/, 10];
-                    case 9:
-                        try {
-                            if (groupedRemoveSubjectKeys_1_1 && !groupedRemoveSubjectKeys_1_1.done && (_b = groupedRemoveSubjectKeys_1.return)) _b.call(groupedRemoveSubjectKeys_1);
-                        }
-                        finally { if (e_3) throw e_3.error; }
-                        return [7 /*endfinally*/];
-                    case 10: return [2 /*return*/];
+                    yield this.queryRunner
+                        .manager
+                        .createQueryBuilder()
+                        .delete()
+                        .from(subjects[0].metadata.target)
+                        .where(deleteMaps)
+                        .callListeners(false)
+                        .execute();
                 }
-            });
+            }
         });
-    };
+    }
     /**
      * Soft-removes all given subjects in the database.
      */
-    SubjectExecutor.prototype.executeSoftRemoveOperations = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, Promise.all(this.softRemoveSubjects.map(function (subject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                            var partialEntity, manager, softDeleteQueryBuilder, updateResult;
-                            var _this = this;
-                            return tslib_1.__generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        if (!subject.identifier)
-                                            throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
-                                        if (!(this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner)) return [3 /*break*/, 2];
-                                        partialEntity = OrmUtils_1.OrmUtils.mergeDeep({}, subject.entity);
-                                        if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
-                                            delete partialEntity[subject.metadata.objectIdColumn.propertyName];
-                                        }
-                                        if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
-                                            delete partialEntity[subject.metadata.createDateColumn.propertyName];
-                                        }
-                                        if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
-                                            partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
-                                        }
-                                        if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
-                                            partialEntity[subject.metadata.deleteDateColumn.propertyName] = new Date();
-                                        }
-                                        manager = this.queryRunner.manager;
-                                        return [4 /*yield*/, manager.update(subject.metadata.target, subject.identifier, partialEntity)];
-                                    case 1:
-                                        _a.sent();
-                                        return [3 /*break*/, 4];
-                                    case 2:
-                                        softDeleteQueryBuilder = this.queryRunner
-                                            .manager
-                                            .createQueryBuilder()
-                                            .softDelete()
-                                            .from(subject.metadata.target)
-                                            .updateEntity(this.options && this.options.reload === false ? false : true)
-                                            .callListeners(false);
-                                        if (subject.entity) {
-                                            softDeleteQueryBuilder.whereEntity(subject.identifier);
-                                        }
-                                        else { // in this case identifier is just conditions object to update by
-                                            softDeleteQueryBuilder.where(subject.identifier);
-                                        }
-                                        return [4 /*yield*/, softDeleteQueryBuilder.execute()];
-                                    case 3:
-                                        updateResult = _a.sent();
-                                        subject.generatedMap = updateResult.generatedMaps[0];
-                                        if (subject.generatedMap) {
-                                            subject.metadata.columns.forEach(function (column) {
-                                                var value = column.getEntityValue(subject.generatedMap);
-                                                if (value !== undefined && value !== null) {
-                                                    var preparedValue = _this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                                                    column.setEntityValue(subject.generatedMap, preparedValue);
-                                                }
-                                            });
-                                        }
-                                        _a.label = 4;
-                                    case 4: return [2 /*return*/];
-                                }
-                            });
-                        }); }))];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
+    executeSoftRemoveOperations() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(this.softRemoveSubjects.map((subject) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+                if (!subject.identifier)
+                    throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
+                // for mongodb we have a bit different updation logic
+                if (this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner) {
+                    const partialEntity = OrmUtils_1.OrmUtils.mergeDeep({}, subject.entity);
+                    if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                        delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                    }
+                    if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
+                        delete partialEntity[subject.metadata.createDateColumn.propertyName];
+                    }
+                    if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
+                        partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
+                    }
+                    if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
+                        partialEntity[subject.metadata.deleteDateColumn.propertyName] = new Date();
+                    }
+                    const manager = this.queryRunner.manager;
+                    yield manager.update(subject.metadata.target, subject.identifier, partialEntity);
                 }
-            });
+                else {
+                    // here we execute our soft-deletion query
+                    // we need to enable entity soft-deletion because we update a subject identifier
+                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                    // also, we disable listeners because we call them on our own in persistence layer
+                    const softDeleteQueryBuilder = this.queryRunner
+                        .manager
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(subject.metadata.target)
+                        .updateEntity(this.options && this.options.reload === false ? false : true)
+                        .callListeners(false);
+                    if (subject.entity) {
+                        softDeleteQueryBuilder.whereEntity(subject.identifier);
+                    }
+                    else { // in this case identifier is just conditions object to update by
+                        softDeleteQueryBuilder.where(subject.identifier);
+                    }
+                    const updateResult = yield softDeleteQueryBuilder.execute();
+                    subject.generatedMap = updateResult.generatedMaps[0];
+                    if (subject.generatedMap) {
+                        subject.metadata.columns.forEach(column => {
+                            const value = column.getEntityValue(subject.generatedMap);
+                            if (value !== undefined && value !== null) {
+                                const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                                column.setEntityValue(subject.generatedMap, preparedValue);
+                            }
+                        });
+                    }
+                    // experiments, remove probably, need to implement tree tables children removal
+                    // if (subject.updatedRelationMaps.length > 0) {
+                    //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+                    //         if (!updatedRelation.relation.isTreeParent) return;
+                    //         if (!updatedRelation.value !== null) return;
+                    //
+                    //         if (subject.metadata.treeType === "closure-table") {
+                    //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+                    //         }
+                    //     }));
+                    // }
+                }
+            })));
         });
-    };
+    }
     /**
      * Recovers all given subjects in the database.
      */
-    SubjectExecutor.prototype.executeRecoverOperations = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, Promise.all(this.recoverSubjects.map(function (subject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                            var partialEntity, manager, softDeleteQueryBuilder, updateResult;
-                            var _this = this;
-                            return tslib_1.__generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        if (!subject.identifier)
-                                            throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
-                                        if (!(this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner)) return [3 /*break*/, 2];
-                                        partialEntity = OrmUtils_1.OrmUtils.mergeDeep({}, subject.entity);
-                                        if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
-                                            delete partialEntity[subject.metadata.objectIdColumn.propertyName];
-                                        }
-                                        if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
-                                            delete partialEntity[subject.metadata.createDateColumn.propertyName];
-                                        }
-                                        if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
-                                            partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
-                                        }
-                                        if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
-                                            partialEntity[subject.metadata.deleteDateColumn.propertyName] = null;
-                                        }
-                                        manager = this.queryRunner.manager;
-                                        return [4 /*yield*/, manager.update(subject.metadata.target, subject.identifier, partialEntity)];
-                                    case 1:
-                                        _a.sent();
-                                        return [3 /*break*/, 4];
-                                    case 2:
-                                        softDeleteQueryBuilder = this.queryRunner
-                                            .manager
-                                            .createQueryBuilder()
-                                            .restore()
-                                            .from(subject.metadata.target)
-                                            .updateEntity(this.options && this.options.reload === false ? false : true)
-                                            .callListeners(false);
-                                        if (subject.entity) {
-                                            softDeleteQueryBuilder.whereEntity(subject.identifier);
-                                        }
-                                        else { // in this case identifier is just conditions object to update by
-                                            softDeleteQueryBuilder.where(subject.identifier);
-                                        }
-                                        return [4 /*yield*/, softDeleteQueryBuilder.execute()];
-                                    case 3:
-                                        updateResult = _a.sent();
-                                        subject.generatedMap = updateResult.generatedMaps[0];
-                                        if (subject.generatedMap) {
-                                            subject.metadata.columns.forEach(function (column) {
-                                                var value = column.getEntityValue(subject.generatedMap);
-                                                if (value !== undefined && value !== null) {
-                                                    var preparedValue = _this.queryRunner.connection.driver.prepareHydratedValue(value, column);
-                                                    column.setEntityValue(subject.generatedMap, preparedValue);
-                                                }
-                                            });
-                                        }
-                                        _a.label = 4;
-                                    case 4: return [2 /*return*/];
-                                }
-                            });
-                        }); }))];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
+    executeRecoverOperations() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(this.recoverSubjects.map((subject) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+                if (!subject.identifier)
+                    throw new SubjectWithoutIdentifierError_1.SubjectWithoutIdentifierError(subject);
+                // for mongodb we have a bit different updation logic
+                if (this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner) {
+                    const partialEntity = OrmUtils_1.OrmUtils.mergeDeep({}, subject.entity);
+                    if (subject.metadata.objectIdColumn && subject.metadata.objectIdColumn.propertyName) {
+                        delete partialEntity[subject.metadata.objectIdColumn.propertyName];
+                    }
+                    if (subject.metadata.createDateColumn && subject.metadata.createDateColumn.propertyName) {
+                        delete partialEntity[subject.metadata.createDateColumn.propertyName];
+                    }
+                    if (subject.metadata.updateDateColumn && subject.metadata.updateDateColumn.propertyName) {
+                        partialEntity[subject.metadata.updateDateColumn.propertyName] = new Date();
+                    }
+                    if (subject.metadata.deleteDateColumn && subject.metadata.deleteDateColumn.propertyName) {
+                        partialEntity[subject.metadata.deleteDateColumn.propertyName] = null;
+                    }
+                    const manager = this.queryRunner.manager;
+                    yield manager.update(subject.metadata.target, subject.identifier, partialEntity);
                 }
-            });
+                else {
+                    // here we execute our restory query
+                    // we need to enable entity restory because we update a subject identifier
+                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                    // also, we disable listeners because we call them on our own in persistence layer
+                    const softDeleteQueryBuilder = this.queryRunner
+                        .manager
+                        .createQueryBuilder()
+                        .restore()
+                        .from(subject.metadata.target)
+                        .updateEntity(this.options && this.options.reload === false ? false : true)
+                        .callListeners(false);
+                    if (subject.entity) {
+                        softDeleteQueryBuilder.whereEntity(subject.identifier);
+                    }
+                    else { // in this case identifier is just conditions object to update by
+                        softDeleteQueryBuilder.where(subject.identifier);
+                    }
+                    const updateResult = yield softDeleteQueryBuilder.execute();
+                    subject.generatedMap = updateResult.generatedMaps[0];
+                    if (subject.generatedMap) {
+                        subject.metadata.columns.forEach(column => {
+                            const value = column.getEntityValue(subject.generatedMap);
+                            if (value !== undefined && value !== null) {
+                                const preparedValue = this.queryRunner.connection.driver.prepareHydratedValue(value, column);
+                                column.setEntityValue(subject.generatedMap, preparedValue);
+                            }
+                        });
+                    }
+                    // experiments, remove probably, need to implement tree tables children removal
+                    // if (subject.updatedRelationMaps.length > 0) {
+                    //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+                    //         if (!updatedRelation.relation.isTreeParent) return;
+                    //         if (!updatedRelation.value !== null) return;
+                    //
+                    //         if (subject.metadata.treeType === "closure-table") {
+                    //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+                    //         }
+                    //     }));
+                    // }
+                }
+            })));
         });
-    };
+    }
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
      */
-    SubjectExecutor.prototype.updateSpecialColumnsInPersistedEntities = function () {
-        var _this = this;
+    updateSpecialColumnsInPersistedEntities() {
         // update inserted entity properties
         if (this.insertSubjects.length)
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.insertSubjects);
@@ -735,23 +585,23 @@ var SubjectExecutor = /** @class */ (function () {
             this.updateSpecialColumnsInInsertedAndUpdatedEntities(this.recoverSubjects);
         // remove ids from the entities that were removed
         if (this.removeSubjects.length) {
-            this.removeSubjects.forEach(function (subject) {
+            this.removeSubjects.forEach(subject => {
                 if (!subject.entity)
                     return;
-                subject.metadata.primaryColumns.forEach(function (primaryColumn) {
+                subject.metadata.primaryColumns.forEach(primaryColumn => {
                     primaryColumn.setEntityValue(subject.entity, undefined);
                 });
             });
         }
         // other post-persist updations
-        this.allSubjects.forEach(function (subject) {
+        this.allSubjects.forEach(subject => {
             if (!subject.entity)
                 return;
-            subject.metadata.relationIds.forEach(function (relationId) {
+            subject.metadata.relationIds.forEach(relationId => {
                 relationId.setValue(subject.entity);
             });
             // mongo _id remove
-            if (_this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner) {
+            if (this.queryRunner instanceof MongoQueryRunner_1.MongoQueryRunner) {
                 if (subject.metadata.objectIdColumn
                     && subject.metadata.objectIdColumn.databaseName
                     && subject.metadata.objectIdColumn.databaseName !== subject.metadata.objectIdColumn.propertyName) {
@@ -759,34 +609,33 @@ var SubjectExecutor = /** @class */ (function () {
                 }
             }
         });
-    };
+    }
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
      */
-    SubjectExecutor.prototype.updateSpecialColumnsInInsertedAndUpdatedEntities = function (subjects) {
-        var _this = this;
-        subjects.forEach(function (subject) {
+    updateSpecialColumnsInInsertedAndUpdatedEntities(subjects) {
+        subjects.forEach(subject => {
             if (!subject.entity)
                 return;
             // set values to "null" for nullable columns that did not have values
-            subject.metadata.columns.forEach(function (column) {
+            subject.metadata.columns.forEach(column => {
                 // if table inheritance is used make sure this column is not child's column
-                if (subject.metadata.childEntityMetadatas.length > 0 && subject.metadata.childEntityMetadatas.map(function (metadata) { return metadata.target; }).indexOf(column.target) !== -1)
+                if (subject.metadata.childEntityMetadatas.length > 0 && subject.metadata.childEntityMetadatas.map(metadata => metadata.target).indexOf(column.target) !== -1)
                     return;
                 // entities does not have virtual columns
                 if (column.isVirtual)
                     return;
                 // update nullable columns
                 if (column.isNullable) {
-                    var columnValue = column.getEntityValue(subject.entity);
+                    const columnValue = column.getEntityValue(subject.entity);
                     if (columnValue === undefined)
                         column.setEntityValue(subject.entity, null);
                 }
                 // update relational columns
                 if (subject.updatedRelationMaps.length > 0) {
-                    subject.updatedRelationMaps.forEach(function (updatedRelationMap) {
-                        updatedRelationMap.relation.joinColumns.forEach(function (column) {
+                    subject.updatedRelationMaps.forEach(updatedRelationMap => {
+                        updatedRelationMap.relation.joinColumns.forEach(column => {
                             if (column.isVirtual === true)
                                 return;
                             column.setEntityValue(subject.entity, updatedRelationMap.value instanceof Object ? column.referencedColumn.getEntityValue(updatedRelationMap.value) : updatedRelationMap.value);
@@ -796,9 +645,9 @@ var SubjectExecutor = /** @class */ (function () {
             });
             // merge into entity all generated values returned by a database
             if (subject.generatedMap)
-                _this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.generatedMap);
+                this.queryRunner.manager.merge(subject.metadata.target, subject.entity, subject.generatedMap);
         });
-    };
+    }
     /**
      * Groups subjects by metadata names (by tables) to make bulk insertions and deletions possible.
      * However there are some limitations with bulk insertions of data into tables with generated (increment) columns
@@ -810,12 +659,12 @@ var SubjectExecutor = /** @class */ (function () {
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
      */
-    SubjectExecutor.prototype.groupBulkSubjects = function (subjects, type) {
-        var group = {};
-        var keys = [];
-        var groupingAllowed = type === "delete" || this.queryRunner.connection.driver.isReturningSqlSupported();
-        subjects.forEach(function (subject, index) {
-            var key = groupingAllowed || subject.metadata.isJunction ? subject.metadata.name : subject.metadata.name + "_" + index;
+    groupBulkSubjects(subjects, type) {
+        const group = {};
+        const keys = [];
+        const groupingAllowed = type === "delete" || this.queryRunner.connection.driver.isReturningSqlSupported();
+        subjects.forEach((subject, index) => {
+            const key = groupingAllowed || subject.metadata.isJunction ? subject.metadata.name : subject.metadata.name + "_" + index;
             if (!group[key]) {
                 group[key] = [subject];
                 keys.push(key);
@@ -825,9 +674,8 @@ var SubjectExecutor = /** @class */ (function () {
             }
         });
         return [group, keys];
-    };
-    return SubjectExecutor;
-}());
+    }
+}
 exports.SubjectExecutor = SubjectExecutor;
 
 //# sourceMappingURL=SubjectExecutor.js.map
