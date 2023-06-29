@@ -2190,15 +2190,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name)
 
-                const timestamp =
-                    // if timestamp is not set get latest datasets from the database
-                    DateUtils.mixedDateToUtcDatetimeString(
-                        alias.timestamp || new Date(),
-                    )
+                const timestamp = DateUtils.mixedDateToUtcDatetimeString(
+                    alias.timestamp,
+                )
 
                 return (
                     this.getTableName(alias.tablePath!) +
-                    (alias.versioning
+                    (alias.versioning && alias.timestamp
                         ? ` FOR SYSTEM_TIME AS OF '${timestamp}' `
                         : " ") +
                     this.escape(alias.name)
