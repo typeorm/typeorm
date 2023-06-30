@@ -453,13 +453,6 @@ export class BaseEntity {
         return this.getRepository<T>().maximum(columnName, where)
     }
 
-    /* static at<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        timestamp: Date,
-    ): Repository<T> {
-        return this.getRepository<T>().at(timestamp)
-    } */
-
     /**
      * Finds entities that match given options.
      */

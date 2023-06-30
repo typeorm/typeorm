@@ -268,7 +268,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     from<T extends ObjectLiteral>(
         entityTarget: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>,
         aliasName: string,
-        timestamp?: Date,
     ): SelectQueryBuilder<T>
 
     /**
@@ -296,13 +295,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         this.expressionMap.setMainAlias(mainAlias)
         return this as any as SelectQueryBuilder<T>
     }
-
-    /*
-    at<T extends ObjectLiteral>(timestamp: Date): SelectQueryBuilder<T> {
-        // this.expressionMap.setMainAlias(mainAlias)
-        this.expressionMap.setTimestamp(timestamp)
-        return this as any as SelectQueryBuilder<T>
-    } */
 
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.

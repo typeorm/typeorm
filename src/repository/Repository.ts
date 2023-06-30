@@ -537,7 +537,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities that match given find options.
      */
-    findBy(
+    async findBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity[]> {
         return this.manager.findBy(this.metadata.target, where)
@@ -583,7 +583,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      */
-    findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
+    async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
         return this.manager.findOne(this.metadata.target, options)
     }
 
