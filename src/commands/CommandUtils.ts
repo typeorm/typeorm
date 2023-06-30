@@ -38,8 +38,9 @@ export class CommandUtils {
             const fileExport = dataSourceFileExports[fileExportKey]
             // It is necessary to await here in case of the exported async value (Promise<DataSource>).
             // e.g. the DataSource is instantiated with an async factory in the source file
-            const awaitedFileExport =
-                fileExport instanceof Promise ? await fileExport : fileExport
+            // It is safe to await regardless of the export being async or not due to `awaits` definition:
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await#return_value
+            const awaitedFileExport = await fileExport
             if (InstanceChecker.isDataSource(awaitedFileExport)) {
                 dataSourceExports.push(awaitedFileExport)
             }
