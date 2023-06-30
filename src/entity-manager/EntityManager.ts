@@ -1068,6 +1068,7 @@ export class EntityManager {
 
     /**
      * Finds entities that match given find options.
+     * @param timestamp get datasets from this timestamp (temporal tables)
      */
     async find<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1167,6 +1168,7 @@ export class EntityManager {
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
+     * @param timestamp get datasets from this timestamp (temporal tables)
      */
     async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
