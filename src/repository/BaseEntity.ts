@@ -453,31 +453,32 @@ export class BaseEntity {
         return this.getRepository<T>().maximum(columnName, where)
     }
 
+    /* static at<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        timestamp: Date,
+    ): Repository<T> {
+        return this.getRepository<T>().at(timestamp)
+    } */
+
     /**
      * Finds entities that match given options.
      */
     static find<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         options?: FindManyOptions<T>,
-    ): Promise<T[]>
+    ): Promise<T[]> {
+        return this.getRepository<T>().find(options)
+    }
 
     /**
-     * Finds entities that match given options.
+     * Finds entities that match given WHERE conditions.
      */
-    static find<T extends BaseEntity>(
+    static findAt<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         timestamp: Date,
-    ): Promise<T[]>
-
-    /**
-     * Finds entities that match given options.
-     */
-    static find<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        options?: FindManyOptions<T> | Date,
-        timestamp?: Date,
+        options?: FindManyOptions<T>,
     ): Promise<T[]> {
-        return this.getRepository<T>().find(options, timestamp)
+        return this.getRepository<T>().findAt(timestamp, options)
     }
 
     /**
@@ -486,9 +487,8 @@ export class BaseEntity {
     static findBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
-        timestamp?: Date,
     ): Promise<T[]> {
-        return this.getRepository<T>().findBy(where, timestamp)
+        return this.getRepository<T>().findBy(where)
     }
 
     /**
@@ -538,9 +538,19 @@ export class BaseEntity {
     static findOne<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         options: FindOneOptions<T>,
-        timestamp?: Date,
     ): Promise<T | null> {
-        return this.getRepository<T>().findOne(options, timestamp)
+        return this.getRepository<T>().findOne(options)
+    }
+
+    /**
+     * Finds first entity that matches given conditions.
+     */
+    static findOneAt<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        timestamp: Date,
+        options: FindOneOptions<T>,
+    ): Promise<T | null> {
+        return this.getRepository<T>().findOneAt(timestamp, options)
     }
 
     /**
@@ -549,9 +559,8 @@ export class BaseEntity {
     static findOneBy<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         where: FindOptionsWhere<T>,
-        timestamp?: Date,
     ): Promise<T | null> {
-        return this.getRepository<T>().findOneBy(where, timestamp)
+        return this.getRepository<T>().findOneBy(where)
     }
 
     /**

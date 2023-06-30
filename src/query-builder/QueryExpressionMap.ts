@@ -350,6 +350,8 @@ export class QueryExpressionMap {
         options: QueryBuilderCteOptions
     }[] = []
 
+    timestamp: Date
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -404,6 +406,11 @@ export class QueryExpressionMap {
         this.mainAlias = alias
 
         return alias
+    }
+
+    setTimestamp(timestamp: Date): Date {
+        this.timestamp = timestamp
+        return timestamp
     }
 
     /**

@@ -547,15 +547,6 @@ export class DataSource {
     /**
      * Creates a new query builder that can be used to build a SQL query.
      */
-    createQueryBuilder<Entity extends ObjectLiteral>(
-        entityClass: EntityTarget<Entity>,
-        alias?: string,
-        timestamp?: Date,
-    ): SelectQueryBuilder<Entity>
-
-    /**
-     * Creates a new query builder that can be used to build a SQL query.
-     */
     createQueryBuilder(queryRunner?: QueryRunner): SelectQueryBuilder<any>
 
     /**
@@ -564,7 +555,7 @@ export class DataSource {
     createQueryBuilder<Entity extends ObjectLiteral>(
         entityOrRunner?: EntityTarget<Entity> | QueryRunner,
         alias?: string,
-        queryRunner?: QueryRunner | Date,
+        queryRunner?: QueryRunner,
     ): SelectQueryBuilder<Entity> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Query Builder is not supported by MongoDB.`)
@@ -574,12 +565,6 @@ export class DataSource {
             const metadata = this.getMetadata(
                 entityOrRunner as EntityTarget<Entity>,
             )
-
-            if (queryRunner instanceof Date) {
-                return new SelectQueryBuilder(this)
-                    .select(alias)
-                    .from(metadata.target, alias, queryRunner)
-            }
 
             return new SelectQueryBuilder(this, queryRunner)
                 .select(alias)
