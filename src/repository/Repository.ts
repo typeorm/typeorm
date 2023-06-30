@@ -517,17 +517,10 @@ export class Repository<Entity extends ObjectLiteral> {
         return this.manager.maximum(this.metadata.target, columnName, where)
     }
 
-    // at(timestamp: Date): Repository<Entity> {
-    //   console.log("repo at", timestamp)
-    //       this.timestamp = timestamp
-    //   this.manager.at(this.timestamp)
-    //   return this
-    //}
-
     /**
      * Finds entities that match given find options.
      */
-    find(options?: FindManyOptions<Entity>): Promise<Entity[]> {
+    async find(options?: FindManyOptions<Entity>): Promise<Entity[]> {
         return this.manager.find(this.metadata.target, options)
     }
 

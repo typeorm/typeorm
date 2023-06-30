@@ -291,13 +291,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | EntityTarget<T>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
-        timestamp?: Date,
     ): SelectQueryBuilder<T> {
-        const mainAlias = this.createFromAlias(
-            entityTarget,
-            aliasName,
-            timestamp,
-        )
+        const mainAlias = this.createFromAlias(entityTarget, aliasName)
         this.expressionMap.setMainAlias(mainAlias)
         return this as any as SelectQueryBuilder<T>
     }

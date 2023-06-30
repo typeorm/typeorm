@@ -565,7 +565,6 @@ export class DataSource {
             const metadata = this.getMetadata(
                 entityOrRunner as EntityTarget<Entity>,
             )
-
             return new SelectQueryBuilder(this, queryRunner)
                 .select(alias)
                 .from(metadata.target, alias)

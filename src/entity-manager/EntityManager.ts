@@ -1066,16 +1066,10 @@ export class EntityManager {
         return result[fnName] === null ? null : parseFloat(result[fnName])
     }
 
-    /*  at(timestamp?: Date): EntityManager {
-        console.log("EntityManager", timestamp)
-        this.timestamp = timestamp
-        return this
-    } */
-
     /**
      * Finds entities that match given find options.
      */
-    async find<Entity extends ObjectLiteral>(
+    find<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
         timestamp?: Date,
@@ -1174,7 +1168,7 @@ export class EntityManager {
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      */
-    async findOne<Entity extends ObjectLiteral>(
+    findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
         timestamp?: Date,

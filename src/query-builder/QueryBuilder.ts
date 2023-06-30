@@ -657,7 +657,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             | EntityTarget<any>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName?: string,
-        timestamp?: Date,
     ): Alias {
         // if table has a metadata then find it to properly escape its properties
         // const metadata = this.connection.entityMetadatas.find(metadata => metadata.tableName === tableName);
@@ -670,7 +669,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 metadata,
                 tablePath: metadata.tablePath,
                 versioning: metadata.versioning,
-                timestamp,
             })
         } else {
             if (typeof entityTarget === "string") {
