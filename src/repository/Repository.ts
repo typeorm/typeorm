@@ -591,7 +591,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      */
-    findOneAt(
+    async findOneAt(
         timestamp: Date,
         options: FindOneOptions<Entity>,
     ): Promise<Entity | null> {
