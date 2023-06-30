@@ -1069,7 +1069,7 @@ export class EntityManager {
     /**
      * Finds entities that match given find options.
      */
-    find<Entity extends ObjectLiteral>(
+    async find<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
         timestamp?: Date,
@@ -1168,7 +1168,7 @@ export class EntityManager {
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
      */
-    findOne<Entity extends ObjectLiteral>(
+    async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
         timestamp?: Date,
