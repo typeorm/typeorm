@@ -97,10 +97,6 @@ Different RDBMS-es have their own specific options.
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
     Read more about caching [here](caching.md).
 
--   `cli.entitiesDir` - Directory where entities should be created by default by CLI.
-
--   `cli.subscribersDir` - Directory where subscribers should be created by default by CLI.
-
 ## `mysql` / `mariadb` data source options
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
@@ -186,11 +182,18 @@ Different RDBMS-es have their own specific options.
 
 -   `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
+-   `maxTransactionRetries` - A maximum number of transaction retries in case of 40001 error. Defaults to 5.
+
 -   `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
 -   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
 -   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
+
+-   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript integers.
+    By default int8 (bigint) values are returned as strings to avoid overflows.
+    JavaScript doesn't have support for 64-bit integers, the maximum safe integer in js is: Number.MAX_SAFE_INTEGER (`+2^53`). Be careful when enabling `parseInt8`.
+    Note: This option is ignored if the undelying driver does not support it.
 
 ## `sqlite` data source options
 
@@ -377,6 +380,8 @@ Different RDBMS-es have their own specific options.
 
 -   `options.appName` - Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server. (default: `node-mssql`)
 
+-   `options.trustServerCertificate` - A boolean, controlling whether encryption occurs if there is no verifiable server certificate. (default: `false`)
+
 -   `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
     details (default: `false`).
 
@@ -505,6 +510,8 @@ Different RDBMS-es have their own specific options.
 
 -   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
+-   `directConnection` - Specifies whether to force dispatch all operations to the specified host.
+
 ## `sql.js` data source options
 
 -   `database`: The raw UInt8Array database that should be imported.
@@ -548,11 +555,6 @@ Here is a small example of data source options for mysql:
     ],
     migrations: [
         "migration/*.js"
-    ],
-    cli: {
-        entitiesDir: "entity",
-        migrationsDir: "migration",
-        subscribersDir: "subscriber"
-    }
+    ]
 }
 ```

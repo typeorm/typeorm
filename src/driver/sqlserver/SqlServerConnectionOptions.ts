@@ -120,6 +120,11 @@ export interface SqlServerConnectionOptions
      */
     readonly options?: {
         /**
+         * The named instance to connect to
+         */
+        readonly instanceName?: string
+
+        /**
          * By default, if the database requestion by options.database cannot be accessed, the connection will fail with
          * an error. However, if options.fallbackToDefaultDb is set to true, then the user's default database will
          * be used instead (Default: false).
@@ -278,6 +283,12 @@ export interface SqlServerConnectionOptions
          * (default: node-mssql)
          */
         readonly appName?: string
+
+        /**
+         * A boolean, controlling whether encryption occurs if there is no verifiable server certificate.
+         * (default: false)
+         */
+        readonly trustServerCertificate?: boolean
     }
 
     /**

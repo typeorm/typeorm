@@ -26,6 +26,7 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -141,6 +142,11 @@ export class SqlServerDriver implements Driver {
         "geography",
         "rowversion",
     ]
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = []
 
     /**
      * Gets list of spatial column data types.
@@ -789,7 +795,14 @@ export class SqlServerDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                tableColumn.isUnique !==
+                    this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    ))
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -1029,7 +1042,10 @@ export class SqlServerDriver implements Driver {
         // of data type precedence to the expressions specified in the formula.
         if (columnMetadata.asExpression) return false
 
-        return tableColumn.length !== this.getColumnLength(columnMetadata)
+        return (
+            tableColumn.length.toUpperCase() !==
+            this.getColumnLength(columnMetadata).toUpperCase()
+        )
     }
 
     protected lowerDefaultValueIfNecessary(value: string | undefined) {

@@ -607,6 +607,23 @@ export class EntityMetadataBuilder {
             ) {
                 entityMetadata.ownColumns.push(discriminatorColumn)
             }
+            // also copy the inheritance pattern & tree metadata
+            // this comes in handy when inheritance and trees are used together
+            entityMetadata.inheritancePattern =
+                entityMetadata.parentEntityMetadata.inheritancePattern
+            if (
+                !entityMetadata.treeType &&
+                !!entityMetadata.parentEntityMetadata.treeType
+            ) {
+                entityMetadata.treeType =
+                    entityMetadata.parentEntityMetadata.treeType
+                entityMetadata.treeOptions =
+                    entityMetadata.parentEntityMetadata.treeOptions
+                entityMetadata.treeParentRelation =
+                    entityMetadata.parentEntityMetadata.treeParentRelation
+                entityMetadata.treeLevelColumn =
+                    entityMetadata.parentEntityMetadata.treeLevelColumn
+            }
         }
 
         const { namingStrategy } = this.connection

@@ -9,7 +9,7 @@
 
 ## What are many-to-many relations
 
-Many-to-many is a relation where A contains multiple instances of B, and B contain multiple instances of A.
+Many-to-many is a relation where A contains multiple instances of B, and B contains multiple instances of A.
 Let's take for example `Question` and `Category` entities.
 A question can have multiple categories, and each category can have multiple questions.
 
@@ -109,7 +109,12 @@ With [cascades](./relations.md#cascades) enabled, you can delete this relation w
 To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
 
 ```typescript
-const question = dataSource.getRepository(Question)
+const question = await dataSource.getRepository(Question).findOne({
+    relations: {
+        categories: true,
+    },
+    where: { id: 1 }
+})
 question.categories = question.categories.filter((category) => {
     return category.id !== categoryToRemove.id
 })
@@ -264,22 +269,22 @@ import { Category } from "./category"
 @Entity()
 export class PostToCategory {
     @PrimaryGeneratedColumn()
-    public postToCategoryId!: number
+    public postToCategoryId: number
 
     @Column()
-    public postId!: number
+    public postId: number
 
     @Column()
-    public categoryId!: number
+    public categoryId: number
 
     @Column()
-    public order!: number
+    public order: number
 
     @ManyToOne(() => Post, (post) => post.postToCategories)
-    public post!: Post
+    public post: Post
 
     @ManyToOne(() => Category, (category) => category.postToCategories)
-    public category!: Category
+    public category: Category
 }
 ```
 
@@ -289,10 +294,10 @@ Additionally you will have to add a relationship like the following to `Post` an
 // category.ts
 ...
 @OneToMany(() => PostToCategory, postToCategory => postToCategory.category)
-public postToCategories!: PostToCategory[];
+public postToCategories: PostToCategory[];
 
 // post.ts
 ...
 @OneToMany(() => PostToCategory, postToCategory => postToCategory.post)
-public postToCategories!: PostToCategory[];
+public postToCategories: PostToCategory[];
 ```

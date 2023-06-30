@@ -375,6 +375,8 @@
 
 - `authMechanism` - 设置MongoDB用于验证连接的身份验证机制。 
 
+- `directConnection` - 指定是否强制将所有操作分派到指定的主机。 
+
 > 注： 由于译者对MongoDB理解不够深入，故一些翻译直接使用了机翻，因此会有些词不达意，如有更好的翻译选项，请提交PR进行完善。
 
 ## `sql.js`
@@ -420,11 +422,6 @@
     ],
     migrations: [
         "migration/*.js"
-    ],
-    cli: {
-        entitiesDir: "entity",
-        migrationsDir: "migration",
-        subscribersDir: "subscriber"
-    }
+    ]
 }
 ```

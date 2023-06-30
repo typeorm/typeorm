@@ -6,7 +6,6 @@ import type { EqualOperator } from "../find-options/EqualOperator"
 import type { Query } from "../driver/Query"
 import type { RdbmsSchemaBuilder } from "../schema-builder/RdbmsSchemaBuilder"
 import type { Subject } from "../persistence/Subject"
-import type { QueryBuilder } from "../query-builder/QueryBuilder"
 import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import type { UpdateQueryBuilder } from "../query-builder/UpdateQueryBuilder"
 import type { DeleteQueryBuilder } from "../query-builder/DeleteQueryBuilder"
@@ -38,17 +37,6 @@ export class InstanceChecker {
     }
     static isColumnMetadata(obj: unknown): obj is ColumnMetadata {
         return this.check(obj, "ColumnMetadata")
-    }
-    static isQueryBuilder(obj: unknown): obj is QueryBuilder<any> {
-        return (
-            this.check(obj, "QueryBuilder") ||
-            this.check(obj, "SelectQueryBuilder") ||
-            this.check(obj, "InsertQueryBuilder") ||
-            this.check(obj, "DeleteQueryBuilder") ||
-            this.check(obj, "UpdateQueryBuilder") ||
-            this.check(obj, "SoftDeleteQueryBuilder") ||
-            this.check(obj, "RelationQueryBuilder")
-        )
     }
     static isSelectQueryBuilder(obj: unknown): obj is SelectQueryBuilder<any> {
         return this.check(obj, "SelectQueryBuilder")

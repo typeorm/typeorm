@@ -25,6 +25,9 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
+import { OnDeleteType } from "../../metadata/types/OnDeleteType"
+import { OnUpdateType } from "../../metadata/types/OnUpdateType"
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -128,6 +131,28 @@ export class OracleDriver implements Driver {
     ]
 
     /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = []
+
+    /**
+     * Returns list of supported onDelete types by driver.
+     * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/sql-language-reference.pdf
+     * Oracle does not support NO ACTION, but NO ACTION is set by default in EntityMetadata
+     */
+    supportedOnDeleteTypes: OnDeleteType[] = [
+        "CASCADE",
+        "SET NULL",
+        "NO ACTION",
+    ]
+
+    /**
+     * Returns list of supported onUpdate types by driver.
+     * Oracle does not have onUpdate option, but we allow NO ACTION since it is set by default in EntityMetadata
+     */
+    supportedOnUpdateTypes: OnUpdateType[] = ["NO ACTION"]
+
+    /**
      * Gets list of spatial column data types.
      */
     spatialTypes: ColumnType[] = []
@@ -224,6 +249,8 @@ export class OracleDriver implements Driver {
     cteCapabilities: CteCapabilities = {
         enabled: false, // TODO: enable
     }
+
+    dummyTableName = "DUAL"
 
     // -------------------------------------------------------------------------
     // Constructor

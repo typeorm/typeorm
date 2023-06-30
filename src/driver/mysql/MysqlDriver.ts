@@ -26,6 +26,7 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { VersionUtils } from "../../util/VersionUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -151,12 +152,16 @@ export class MysqlDriver implements Driver {
         "multilinestring",
         "multipolygon",
         "geometrycollection",
+        // additional data types for mariadb
+        "uuid",
+        "inet4",
+        "inet6",
     ]
 
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-duplicate-key-update"
+    supportedUpsertTypes: UpsertType[] = ["on-duplicate-key-update"]
 
     /**
      * Gets list of spatial column data types.
@@ -330,6 +335,9 @@ export class MysqlDriver implements Driver {
             update: false,
         }
 
+    /** MariaDB supports uuid type for version 10.7.0 and up */
+    private uuidColumnTypeSuported = false
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -419,6 +427,9 @@ export class MysqlDriver implements Driver {
             }
             if (VersionUtils.isGreaterOrEqual(dbVersion, "10.2.0")) {
                 this.cteCapabilities.enabled = true
+            }
+            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.7.0")) {
+                this.uuidColumnTypeSuported = true
             }
         } else if (this.options.type === "mysql") {
             if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
@@ -719,14 +730,19 @@ export class MysqlDriver implements Driver {
             return "blob"
         } else if (column.type === Boolean) {
             return "tinyint"
-        } else if (column.type === "uuid") {
+        } else if (column.type === "uuid" && !this.uuidColumnTypeSuported) {
             return "varchar"
-        } else if (column.type === "json" && this.options.type === "mariadb") {
+        } else if (
+            column.type === "json" &&
+            this.options.type === "mariadb" &&
+            !VersionUtils.isGreaterOrEqual(this.version ?? "0.0.0", "10.4.3")
+        ) {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
              * and MariaDB's benchmarks indicate that performance is at least equivalent.
              *
              * @see https://mariadb.com/kb/en/json-data-type/
+             * if Version is 10.4.3 or greater, JSON is an alias for longtext and an automatic check_json(column) constraint is added
              */
             return "longtext"
         } else if (
@@ -824,8 +840,13 @@ export class MysqlDriver implements Driver {
 
         /**
          * fix https://github.com/typeorm/typeorm/issues/1139
+         * note that if the db did support uuid column type it wouldn't have been defaulted to varchar
          */
-        if (column.generationStrategy === "uuid") return "36"
+        if (
+            column.generationStrategy === "uuid" &&
+            !this.uuidColumnTypeSuported
+        )
+            return "36"
 
         switch (column.type) {
             case String:
@@ -986,7 +1007,7 @@ export class MysqlDriver implements Driver {
 
             const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
-                tableColumn.type !== this.normalizeType(columnMetadata) ||
+                this.isColumnDataTypeChanged(tableColumn, columnMetadata) ||
                 tableColumn.length !== this.getColumnLength(columnMetadata) ||
                 tableColumn.width !== columnMetadata.width ||
                 (columnMetadata.precision !== undefined &&
@@ -1344,5 +1365,23 @@ export class MysqlDriver implements Driver {
         comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
 
         return comment
+    }
+
+    /**
+     * A helper to check if column data types have changed
+     * This can be used to manage checking any types the
+     * database may alias
+     */
+    private isColumnDataTypeChanged(
+        tableColumn: TableColumn,
+        columnMetadata: ColumnMetadata,
+    ) {
+        // this is an exception for mariadb versions where json is an alias for longtext
+        if (
+            this.normalizeType(columnMetadata) === "json" &&
+            tableColumn.type.toLowerCase() === "longtext"
+        )
+            return false
+        return tableColumn.type !== this.normalizeType(columnMetadata)
     }
 }

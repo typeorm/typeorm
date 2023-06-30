@@ -75,31 +75,38 @@ describe("github issues > #5684 eager relation skips children relations", () => 
                     }
                 }
 
-                const relations = [
-                    "company",
-                    "company.admin", // <-- can't be loaded without the fix.
-                    "company.staff", // <-- can't be loaded without the fix.
-                    "company.staff.company", // <-- can't be loaded without the fix.
-                    "company.staff.company.admin", // <-- can't be loaded without the fix.
-                ]
+                const relations = {
+                    company: {
+                        admin: true,
+                        staff: {
+                            company: {
+                                admin: true,
+                            },
+                        },
+                    },
+                    // "company.admin", // <-- can't be loaded without the fix.
+                    // "company.staff", // <-- can't be loaded without the fix.
+                    // "company.staff.company", // <-- can't be loaded without the fix.
+                    // "company.staff.company.admin", // <-- can't be loaded without the fix.
+                }
 
                 const user1 = await connection.getRepository(User).findOne({
                     where: { id: userAdmin.id },
-                    relations: [...relations],
+                    relations: relations,
                 })
                 assert(user1)
                 const user2 = await connection
                     .getRepository(User)
                     .findOneOrFail({
                         where: { id: userAdmin.id },
-                        relations: [...relations],
+                        relations: relations,
                     })
                 assert(user2)
                 const users3 = await connection.getRepository(User).find({
                     where: {
                         id: userAdmin.id,
                     },
-                    relations: [...relations],
+                    relations: relations,
                 })
                 assert(users3.pop())
                 const [users4] = await connection
@@ -108,14 +115,14 @@ describe("github issues > #5684 eager relation skips children relations", () => 
                         where: {
                             id: userAdmin.id,
                         },
-                        relations: [...relations],
+                        relations: relations,
                     })
                 assert(users4.pop())
                 const users5 = await connection.getRepository(User).find({
                     where: {
                         id: In([userAdmin.id]),
                     },
-                    relations: [...relations],
+                    relations: relations,
                 })
                 assert(users5.pop())
             }),

@@ -3,15 +3,12 @@ import path from "path"
 import { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { PlatformTools } from "../platform/PlatformTools"
 import { ConnectionOptionsEnvReader } from "./options-reader/ConnectionOptionsEnvReader"
-import { ConnectionOptionsYmlReader } from "./options-reader/ConnectionOptionsYmlReader"
-import { ConnectionOptionsXmlReader } from "./options-reader/ConnectionOptionsXmlReader"
 import { TypeORMError } from "../error"
 import { isAbsolute } from "../util/PathUtils"
 import { importOrRequireFile } from "../util/ImportUtils"
 
 /**
  * Reads connection options from the ormconfig.
- * Can read from multiple file extensions including env, json, js, xml and yml.
  */
 export class ConnectionOptionsReader {
     // -------------------------------------------------------------------------
@@ -106,9 +103,6 @@ export class ConnectionOptionsReader {
             "mts",
             "cts",
             "json",
-            "yml",
-            "yaml",
-            "xml",
         ]
 
         // Detect if baseFilePath contains file extension
@@ -168,18 +162,6 @@ export class ConnectionOptionsReader {
             }
         } else if (foundFileFormat === "json") {
             connectionOptions = require(configFile)
-        } else if (foundFileFormat === "yml") {
-            connectionOptions = await new ConnectionOptionsYmlReader().read(
-                configFile,
-            )
-        } else if (foundFileFormat === "yaml") {
-            connectionOptions = await new ConnectionOptionsYmlReader().read(
-                configFile,
-            )
-        } else if (foundFileFormat === "xml") {
-            connectionOptions = await new ConnectionOptionsXmlReader().read(
-                configFile,
-            )
         }
 
         // normalize and return connection options

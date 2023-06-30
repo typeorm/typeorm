@@ -12,14 +12,14 @@ commands:
     steps:
       - when:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
                 command: cp ormconfig.circleci-common.json ./ormconfig.json
       - unless:
           condition:
-            equal: [ << parameters.databases >>, "" ]
+            equal: [<< parameters.databases >>, ""]
           steps:
             - run:
                 name: "Enabling Databases in ORM config"
@@ -40,9 +40,10 @@ commands:
       - restore_cache:
           name: Restore node_modules cache
           key: node_modules-<< parameters.cache-key >>-{{ checksum "package-lock.json" }}
-      - run:
-          name: Verify `package.json` and `package-lock.json` are in sync
-          command: npx lock-verify
+      #      removed this item because lock-verify is deprecated
+      #      - run:
+      #          name: Verify `package.json` and `package-lock.json` are in sync
+      #          command: npx lock-verify
       - run:
           # This uses `npm install` instead of `npm ci`
           # because of https://github.com/npm/cli/issues/558
@@ -65,12 +66,13 @@ commands:
               unzip -qqo node_modules/oracledb/instantclient.zip -d node_modules/oracledb/
               rm node_modules/oracledb/instantclient.zip
 
-              DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
+              sudo apt-get update -qq && sudo apt-get -qq -y install libaio1
               (cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/ ||
                 cp /usr/lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/)
             fi
           environment:
             BLOB_URL: https://download.oracle.com/otn_software/linux/instantclient/19800/instantclient-basiclite-linux.x64-19.8.0.0.0dbru.zip
+            DEBIAN_FRONTEND: noninteractive
       - save_cache:
           name: Save node_modules cache
           key: node_modules-{{ checksum "package-lock.json" }}
@@ -81,21 +83,21 @@ jobs:
   lint:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:12
+      - image: cimg/node:16.20.0
     steps:
       - checkout
       - install-packages:
-          cache-key: node12
+          cache-key: node16
       - run: npm run lint
 
   build:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:12
+      - image: cimg/node:16.20.0
     steps:
       - checkout
       - install-packages:
-          cache-key: node12
+          cache-key: node16
       - run: npm run compile
       - persist_to_workspace:
           root: ~/typeorm
@@ -109,10 +111,10 @@ jobs:
         default: ""
       node-version:
         type: string
-        default: "12"
+        default: "16"
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:<< parameters.node-version >>
+      - image: cimg/node:<< parameters.node-version >>
     steps:
       - checkout
       - setup_remote_docker
@@ -138,7 +140,7 @@ jobs:
               --volume /typeorm \
               --name typeorm-code \
               --workdir /typeorm \
-              circleci/node:<< parameters.node-version >> \
+              cimg/node:<< parameters.node-version >> \
               /bin/bash -c "sudo chmod 777 /typeorm && sudo chown circleci /typeorm"
             docker cp ./ typeorm-code:/typeorm
       - run:
@@ -150,8 +152,9 @@ jobs:
                     map(select(.skip == false)
                       | select(.host)
                       | select(.port)
-                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up")
-                      | join(" && ")
+                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up"
+                    )
+                    | join(" && ")
                   '
             )
             echo "Running '$COMMANDS'"
@@ -161,6 +164,24 @@ jobs:
               --tty \
               ubuntu:trusty \
               timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+      - run:
+          name: "Wait for OracleDB to be Available"
+          command: |
+            COMMANDS=$(
+                cat ormconfig.json \
+                  | jq -r '
+                    map(select(.skip == false)
+                      | select(.name == "oracle")
+                      | "sleep 60"
+                    )
+                    | join(" && ")
+                  '
+            )
+            if [ ! -z "$COMMANDS" ]; then
+              echo "$COMMANDS seconds to wait for oracledb";
+              $COMMANDS
+            fi
+
       # Download and cache dependencies
       - run:
           name: "Run Tests with Coverage"
@@ -174,7 +195,7 @@ jobs:
               --tty \
               --workdir /typeorm \
               --name typeorm-testrunner \
-              circleci/node:<< parameters.node-version >> \
+              cimg/node:<< parameters.node-version >> \
               npx nyc npm run test-fast
 
             docker cp typeorm-testrunner:/typeorm/coverage/ ./
@@ -200,27 +221,26 @@ workflows:
           matrix:
             parameters:
               node-version:
-                - "12"
-                - "14"
-                - "16"
+                - "14.21.3"
+                - "16.20.0"
       - test:
-          name: test (cockroachdb) - Node v12
+          name: test (cockroachdb) - Node v16
           requires:
             - lint
             - build
           databases: "cockroachdb"
-          node-version: "12"
+          node-version: "16.20.0"
       - test:
-          name: test (oracle) - Node v12
+          name: test (oracle) - Node v16
           requires:
             - lint
             - build
           databases: "oracle"
-          node-version: "12"
+          node-version: "16.20.0"
       - test:
-          name: test (postgres 12) - Node v12
+          name: test (postgres 12) - Node v16
           requires:
             - lint
             - build
           databases: "postgres-12"
-          node-version: "12"
+          node-version: "16.20.0"

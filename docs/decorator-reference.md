@@ -206,8 +206,8 @@ export class User {
 -   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 -   `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[]).
 -   `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
--   `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL.
--   `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL.
+-   `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL and CockroachDB.
+-   `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL and CockroachDB.
 
 Learn more about [entity columns](entities.md#entity-columns).
 
@@ -287,16 +287,16 @@ Learn more about [entity columns](entities.md#entity-columns).
 
 #### `@ObjectIdColumn`
 
-Marks a property in your entity as ObjectID.
+Marks a property in your entity as ObjectId.
 This decorator is only used in MongoDB.
-Every entity in MongoDB must have a ObjectID column.
+Every entity in MongoDB must have a ObjectId column.
 Example:
 
 ```typescript
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 }
 ```
 
@@ -539,6 +539,7 @@ Used for `many-to-many` relations and describes join columns of the "junction" t
 Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
 You can change the name of the generated "junction" table, the column names inside the junction table, their referenced
 columns with the `joinColumn`- and `inverseJoinColumn` attributes, and the created foreign keys names.
+You can also set parameter `synchronize` to false to skip schema update(same way as in @Entity)
 
 Example:
 
@@ -558,6 +559,7 @@ export class Post {
             referencedColumnName: "id",
             foreignKeyConstraintName: "fk_question_categories_categoryId"
         },
+        synchronize: false,
     })
     categories: Category[]
 }

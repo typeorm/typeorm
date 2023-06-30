@@ -11,10 +11,11 @@ import { DeleteResult } from "../query-builder/result/DeleteResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { InsertResult } from "../query-builder/result/InsertResult"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { ObjectID } from "../driver/mongodb/typings"
+import { ObjectId } from "../driver/mongodb/typings"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { UpsertOptions } from "./UpsertOptions"
 import { EntityTarget } from "../common/EntityTarget"
+import { PickKeysByType } from "../common/PickKeysByType"
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -352,8 +353,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | FindOptionsWhere<Entity>,
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
@@ -396,8 +397,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | FindOptionsWhere<Entity>,
     ): Promise<DeleteResult> {
         return this.manager.delete(this.metadata.target as any, criteria as any)
@@ -417,8 +418,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | FindOptionsWhere<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.softDelete(
@@ -441,14 +442,21 @@ export class Repository<Entity extends ObjectLiteral> {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | FindOptionsWhere<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.restore(
             this.metadata.target as any,
             criteria as any,
         )
+    }
+
+    /**
+     * Checks whether any entity exists that match given options.
+     */
+    exist(options?: FindManyOptions<Entity>): Promise<boolean> {
+        return this.manager.exists(this.metadata.target, options)
     }
 
     /**
@@ -467,6 +475,46 @@ export class Repository<Entity extends ObjectLiteral> {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number> {
         return this.manager.countBy(this.metadata.target, where)
+    }
+
+    /**
+     * Return the SUM of a column
+     */
+    sum(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.sum(this.metadata.target, columnName, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    average(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.average(this.metadata.target, columnName, where)
+    }
+
+    /**
+     * Return the MIN of a column
+     */
+    minimum(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.minimum(this.metadata.target, columnName, where)
+    }
+
+    /**
+     * Return the MAX of a column
+     */
+    maximum(
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.manager.maximum(this.metadata.target, columnName, where)
     }
 
     /**
@@ -550,7 +598,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * })
      */
     async findOneById(
-        id: number | string | Date | ObjectID,
+        id: number | string | Date | ObjectId,
     ): Promise<Entity | null> {
         return this.manager.findOneById(this.metadata.target, id)
     }
@@ -627,9 +675,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Extends repository with provided functions.
      */
     extend<CustomRepository>(
-        custom: CustomRepository &
-            ThisType<Repository<Entity> & CustomRepository>,
-    ): Repository<Entity> & CustomRepository {
+        custom: CustomRepository & ThisType<this & CustomRepository>,
+    ): this & CustomRepository {
         // return {
         //     ...this,
         //     ...custom

@@ -2538,7 +2538,7 @@ export class PostgresQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = primaryColumns[0].primaryKeyConstraintName
+        const pkName = primaryColumns[0]?.primaryKeyConstraintName
             ? primaryColumns[0].primaryKeyConstraintName
             : this.connection.namingStrategy.primaryKeyName(
                   clonedTable,
@@ -2922,6 +2922,26 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Create a new view index.
+     */
+    async createViewIndex(
+        viewOrName: View | string,
+        index: TableIndex,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+
+        // new index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.createViewIndexSql(view, index)
+        const down = this.dropIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.addIndex(index)
+    }
+
+    /**
      * Creates a new indices
      */
     async createIndices(
@@ -2930,6 +2950,18 @@ export class PostgresQueryRunner
     ): Promise<void> {
         for (const index of indices) {
             await this.createIndex(tableOrName, index)
+        }
+    }
+
+    /**
+     * Creates new view indices
+     */
+    async createViewIndices(
+        viewOrName: View | string,
+        indices: TableIndex[],
+    ): Promise<void> {
+        for (const index of indices) {
+            await this.createViewIndex(viewOrName, index)
         }
     }
 
@@ -2957,6 +2989,32 @@ export class PostgresQueryRunner
         const down = this.createIndexSql(table, index)
         await this.executeQueries(up, down)
         table.removeIndex(index)
+    }
+
+    /**
+     * Drops an index from a view.
+     */
+    async dropViewIndex(
+        viewOrName: View | string,
+        indexOrName: TableIndex | string,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : view.indices.find((i) => i.name === indexOrName)
+        if (!index)
+            throw new TypeORMError(
+                `Supplied index ${indexOrName} was not found in view ${view.name}`,
+            )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.dropIndexSql(view, index)
+        const down = this.createViewIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.removeIndex(index)
     }
 
     /**
@@ -3087,6 +3145,34 @@ export class PostgresQueryRunner
                       })
                       .join(" OR ")
 
+        const constraintsCondition =
+            viewNames.length === 0
+                ? "1=1"
+                : viewNames
+                      .map((tableName) => this.driver.parseTableName(tableName))
+                      .map(({ schema, tableName }) => {
+                          if (!schema) {
+                              schema =
+                                  this.driver.options.schema || currentSchema
+                          }
+
+                          return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${tableName}')`
+                      })
+                      .join(" OR ")
+
+        const indicesSql =
+            `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `"types"."typname" AS "type_name" ` +
+            `FROM "pg_class" "t" ` +
+            `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
+            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
+            `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
+            `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
+            `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
+
         const query =
             `SELECT "t".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
@@ -3098,7 +3184,18 @@ export class PostgresQueryRunner
             }') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
 
         const dbViews = await this.query(query)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         return dbViews.map((dbView: any) => {
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter((dbIndex) => {
+                    return (
+                        dbIndex["table_name"] === dbView["name"] &&
+                        dbIndex["table_schema"] === dbView["schema"]
+                    )
+                }),
+                (dbIndex) => dbIndex["constraint_name"],
+            )
             const view = new View()
             const schema =
                 dbView["schema"] === currentSchema &&
@@ -3111,6 +3208,24 @@ export class PostgresQueryRunner
             view.expression = dbView["value"]
             view.materialized =
                 dbView["type"] === MetadataTableType.MATERIALIZED_VIEW
+            view.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["table_schema"] === constraint["table_schema"] &&
+                        index["table_name"] === constraint["table_name"] &&
+                        index["constraint_name"] ===
+                            constraint["constraint_name"]
+                    )
+                })
+                return new TableIndex(<TableIndexOptions>{
+                    view: view,
+                    name: constraint["constraint_name"],
+                    columnNames: indices.map((i) => i["column_name"]),
+                    isUnique: constraint["is_unique"] === "TRUE",
+                    where: constraint["condition"],
+                    isFulltext: false,
+                })
+            })
             return view
         })
     }
@@ -3422,48 +3537,22 @@ export class PostgresQueryRunner
                                 }
                             }
 
-                            if (tableColumn.type === "geometry") {
-                                const geometryColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geometry_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geometry_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
+                            if (
+                                tableColumn.type === "geometry" ||
+                                tableColumn.type === "geography"
+                            ) {
+                                const sql =
+                                    `SELECT * FROM (` +
+                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `FROM "${tableColumn.type}_columns"` +
+                                    `) AS _ ` +
+                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                    `"table_name" = '${dbColumn["table_name"]}'`
 
                                 const results: ObjectLiteral[] =
-                                    await this.query(geometryColumnSql)
-
-                                if (results.length > 0) {
-                                    tableColumn.spatialFeatureType =
-                                        results[0].type
-                                    tableColumn.srid = results[0].srid
-                                }
-                            }
-
-                            if (tableColumn.type === "geography") {
-                                const geographyColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geography_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geography_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
-
-                                const results: ObjectLiteral[] =
-                                    await this.query(geographyColumnSql)
+                                    await this.query(sql)
 
                                 if (results.length > 0) {
                                     tableColumn.spatialFeatureType =
@@ -3628,7 +3717,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::[\w\s\.\[\]\"]+/g, "")
+                                    ].replace(/::[\w\s.\[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
@@ -4164,10 +4253,26 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Builds create view index sql.
+     */
+    protected createViewIndexSql(view: View, index: TableIndex): Query {
+        const columns = index.columnNames
+            .map((columnName) => `"${columnName}"`)
+            .join(", ")
+        return new Query(
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(view)} (${columns}) ${
+                index.where ? "WHERE " + index.where : ""
+            }`,
+        )
+    }
+
+    /**
      * Builds drop index sql.
      */
     protected dropIndexSql(
-        table: Table,
+        table: Table | View,
         indexOrName: TableIndex | string,
     ): Query {
         let indexName = InstanceChecker.isTableIndex(indexOrName)

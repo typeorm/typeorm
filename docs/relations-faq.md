@@ -5,12 +5,13 @@
 -   [How to load relations in entities](#how-to-load-relations-in-entities)
 -   [Avoid relation property initializers](#avoid-relation-property-initializers)
 -   [Avoid foreign key constraint creation](#avoid-foreign-key-constraint-creation)
+-   [Avoid circular import errors](#avoid-circular-import-errors)
 
 ## How to create self referencing relation
 
-Self-referencing relations are relations which have a relation to themself.
+Self-referencing relations are relations which have a relation to themselves.
 This is useful when you are storing entities in a tree-like structures.
-Also "adjacency list" pattern is implemented using self-referenced relations.
+Also, "adjacency list" pattern is implemented using self-referenced relations.
 For example, you want to create categories tree in your application.
 Categories can nest categories, nested categories can nest other categories, etc.
 Self-referencing relations come handy here.
@@ -204,7 +205,7 @@ export class Question {
 }
 ```
 
-However in TypeORM entities it may cause problems.
+However, in TypeORM entities it may cause problems.
 To understand the problem, let's first try to load a Question entity WITHOUT the initializer set.
 When you load a question it will return an object like this:
 
@@ -260,5 +261,45 @@ export class ActionLog {
         createForeignKeyConstraints: false,
     })
     person: Person
+}
+```
+
+## Avoid circular import errors
+
+Here is an example if you want to define your entities, and you don't want those to cause errors in some environments.
+In this situation we have Action.ts and Person.ts importing each other for a many-to-many relationship.
+We use import type so that we can use the type information without any JavaScript code being generated.
+
+```typescript
+import { Entity, PrimaryColumn, Column, ManytoMany } from "typeorm"
+import type { Person } from "./Person"
+
+@Entity()
+export class ActionLog {
+    @PrimaryColumn()
+    id: number
+
+    @Column()
+    date: Date
+
+    @Column()
+    action: string
+
+    @ManyToMany("Person", (person: Person) => person.id)
+    person: Person
+}
+```
+
+```typescript
+import { Entity, PrimaryColumn, ManytoMany } from "typeorm"
+import type { ActionLog } from "./Action"
+
+@Entity()
+export class Person {
+    @PrimaryColumn()
+    id: number
+
+    @ManyToMany("ActionLog", (actionLog: ActionLog) => actionLog.id)
+    log: ActionLog
 }
 ```

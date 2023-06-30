@@ -315,7 +315,7 @@ temp/`
     protected static getUserEntityTemplate(database: string): string {
         return `import { Entity, ${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectID"
+                ? "ObjectIdColumn, ObjectId"
                 : "PrimaryGeneratedColumn"
         }, Column } from "typeorm"
 
@@ -327,7 +327,7 @@ export class User {
             ? "@ObjectIdColumn()"
             : "@PrimaryGeneratedColumn()"
     }
-    id: ${database === "mongodb" ? "ObjectID" : "number"}
+    id: ${database === "mongodb" ? "ObjectId" : "number"}
 
     @Column()
     firstName: string
@@ -377,29 +377,58 @@ export const Routes = [{
      * Gets contents of the user controller file (used when express is enabled).
      */
     protected static getControllerTemplate(isEsm: boolean): string {
-        return `import { getRepository } from "typeorm"
+        return `import { AppDataSource } from "../data-source${
+            isEsm ? ".js" : ""
+        }"
 import { NextFunction, Request, Response } from "express"
 import { User } from "../entity/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
-    private userRepository = getRepository(User)
+    private userRepository = AppDataSource.getRepository(User)
 
     async all(request: Request, response: Response, next: NextFunction) {
         return this.userRepository.find()
     }
 
     async one(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.findOne(request.params.id)
+        const id = parseInt(request.params.id)
+
+
+        const user = await this.userRepository.findOne({
+            where: { id }
+        })
+
+        if (!user) {
+            return "unregistered user"
+        }
+        return user
     }
 
     async save(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.save(request.body)
+        const { firstName, lastName, age } = request.body;
+
+        const user = Object.assign(new User(), {
+            firstName,
+            lastName,
+            age
+        })
+
+        return this.userRepository.save(user)
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        let userToRemove = await this.userRepository.findOneBy({ id: request.params.id })
+        const id = parseInt(request.params.id)
+
+        let userToRemove = await this.userRepository.findOneBy({ id })
+
+        if (!userToRemove) {
+            return "this user not exist"
+        }
+
         await this.userRepository.remove(userToRemove)
+
+        return "user has been removed"
     }
 
 }`
@@ -668,7 +697,10 @@ Steps to run this project:
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
         Object.assign(packageJson.dependencies, {
-            typeorm: require("../package.json").version,
+            typeorm:
+                require("../package.json").version !== "0.0.0"
+                    ? require("../package.json").version // install version from package.json if present
+                    : require("../package.json").installFrom, // else use custom source
             "reflect-metadata": "^0.1.13",
         })
 
@@ -691,10 +723,10 @@ Steps to run this project:
                 packageJson.dependencies["oracledb"] = "^5.1.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^7.3.0"
+                packageJson.dependencies["mssql"] = "^9.1.1"
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^3.0.8"
+                packageJson.dependencies["mongodb"] = "^5.2.0"
                 break
             case "spanner":
                 packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"

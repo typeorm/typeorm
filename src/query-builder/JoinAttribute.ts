@@ -46,6 +46,11 @@ export class JoinAttribute {
      */
     isMappingMany?: boolean
 
+    /**
+     * Useful when the joined expression is a custom query to support mapping.
+     */
+    mapAsEntity?: Function | string
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -55,7 +60,9 @@ export class JoinAttribute {
         private queryExpressionMap: QueryExpressionMap,
         joinAttribute?: JoinAttribute,
     ) {
-        ObjectUtils.assign(this, joinAttribute || {})
+        if (joinAttribute) {
+            ObjectUtils.assign(this, joinAttribute)
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -199,6 +206,11 @@ export class JoinAttribute {
         if (this.connection.hasMetadata(this.entityOrProperty))
             return this.connection.getMetadata(this.entityOrProperty)
 
+        // Overriden mapping entity provided for leftJoinAndMapOne with custom query builder
+        if (this.mapAsEntity && this.connection.hasMetadata(this.mapAsEntity)) {
+            return this.connection.getMetadata(this.mapAsEntity)
+        }
+
         return undefined
 
         /*if (typeof this.entityOrProperty === "string") { // entityOrProperty is a custom table
@@ -218,22 +230,33 @@ export class JoinAttribute {
      * Generates alias of junction table, whose ids we get.
      */
     get junctionAlias(): string {
-        if (!this.relation)
+        if (!this.relation) {
             throw new TypeORMError(
                 `Cannot get junction table for join without relation.`,
             )
+        }
+        if (typeof this.entityOrProperty !== "string") {
+            throw new TypeORMError(`Junction property is not defined.`)
+        }
+
+        const aliasProperty = this.entityOrProperty.substr(
+            0,
+            this.entityOrProperty.indexOf("."),
+        )
 
         if (this.relation.isOwning) {
             return DriverUtils.buildAlias(
                 this.connection.driver,
-                this.parentAlias!,
+                undefined,
+                aliasProperty,
                 this.alias.name,
             )
         } else {
             return DriverUtils.buildAlias(
                 this.connection.driver,
+                undefined,
                 this.alias.name,
-                this.parentAlias!,
+                aliasProperty,
             )
         }
     }

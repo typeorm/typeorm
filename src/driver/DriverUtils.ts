@@ -41,7 +41,9 @@ export class DriverUtils {
     }
 
     static isPostgresFamily(driver: Driver): boolean {
-        return ["postgres", "aurora-postgres"].includes(driver.options.type)
+        return ["postgres", "aurora-postgres", "cockroachdb"].includes(
+            driver.options.type,
+        )
     }
 
     /**
@@ -122,27 +124,23 @@ export class DriverUtils {
      */
     static buildAlias(
         { maxAliasLength }: Driver,
-        buildOptions: { shorten?: boolean; joiner?: string } | string,
+        buildOptions: { shorten?: boolean; joiner?: string } | undefined,
         ...alias: string[]
     ): string {
-        if (typeof buildOptions === "string") {
-            alias.unshift(buildOptions)
-            buildOptions = { shorten: false, joiner: "_" }
-        } else {
-            buildOptions = Object.assign(
-                { shorten: false, joiner: "_" },
-                buildOptions,
-            )
-        }
-
         const newAlias =
-            alias.length === 1 ? alias[0] : alias.join(buildOptions.joiner)
+            alias.length === 1
+                ? alias[0]
+                : alias.join(
+                      buildOptions && buildOptions.joiner
+                          ? buildOptions.joiner
+                          : "_",
+                  )
         if (
             maxAliasLength &&
             maxAliasLength > 0 &&
             newAlias.length > maxAliasLength
         ) {
-            if (buildOptions.shorten === true) {
+            if (buildOptions && buildOptions.shorten === true) {
                 const shortenedAlias = shorten(newAlias)
                 if (shortenedAlias.length < maxAliasLength) {
                     return shortenedAlias
@@ -163,6 +161,15 @@ export class DriverUtils {
         buildOptions: { shorten?: boolean; joiner?: string } | string,
         ...alias: string[]
     ) {
+        if (typeof buildOptions === "string") {
+            alias.unshift(buildOptions)
+            buildOptions = { shorten: false, joiner: "_" }
+        } else {
+            buildOptions = Object.assign(
+                { shorten: false, joiner: "_" },
+                buildOptions,
+            )
+        }
         return this.buildAlias(
             { maxAliasLength } as Driver,
             buildOptions,

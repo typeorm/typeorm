@@ -1,22 +1,22 @@
-import { QueryBuilder } from "./QueryBuilder"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { EntityTarget } from "../common/EntityTarget"
-import { QueryDeepPartialEntity } from "./QueryPartialEntity"
-import { MysqlDriver } from "../driver/mysql/MysqlDriver"
-import { InsertResult } from "./result/InsertResult"
-import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
-import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator"
-import { BroadcasterResult } from "../subscriber/BroadcasterResult"
-import { TypeORMError } from "../error"
 import { v4 as uuidv4 } from "uuid"
-import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
-import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import { EntityTarget } from "../common/EntityTarget"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { DriverUtils } from "../driver/DriverUtils"
-import { ObjectUtils } from "../util/ObjectUtils"
+import { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import { TypeORMError } from "../error"
+import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
+import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
+import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { ObjectUtils } from "../util/ObjectUtils"
+import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
+import { QueryBuilder } from "./QueryBuilder"
+import { QueryDeepPartialEntity } from "./QueryPartialEntity"
+import { InsertResult } from "./result/InsertResult"
+import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -37,7 +37,7 @@ export class InsertQueryBuilder<
         let sql = this.createComment()
         sql += this.createCteExpression()
         sql += this.createInsertExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**
@@ -381,6 +381,7 @@ export class InsertQueryBuilder<
                 overwrite: statementOrOverwrite?.overwrite,
                 skipUpdateIfNoValuesChanged:
                     orUpdateOptions?.skipUpdateIfNoValuesChanged,
+                upsertType: orUpdateOptions?.upsertType,
             }
             return this
         }
@@ -390,6 +391,8 @@ export class InsertQueryBuilder<
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
+            indexPredicate: orUpdateOptions?.indexPredicate,
+            upsertType: orUpdateOptions?.upsertType,
         }
         return this
     }
@@ -411,6 +414,10 @@ export class InsertQueryBuilder<
                 : this.createReturningExpression("insert") // oracle doesnt support returning with multi-row insert
         const columnsExpression = this.createColumnNamesExpression()
         let query = "INSERT "
+
+        if (this.expressionMap.onUpdate?.upsertType === "primary-key") {
+            query = "UPSERT "
+        }
 
         if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
@@ -470,101 +477,132 @@ export class InsertQueryBuilder<
                 query += ` DEFAULT VALUES`
             }
         }
-        if (
-            this.connection.driver.supportedUpsertType ===
-            "on-conflict-do-update"
-        ) {
-            if (this.expressionMap.onIgnore) {
-                query += " ON CONFLICT DO NOTHING "
-            } else if (this.expressionMap.onConflict) {
-                query += ` ON CONFLICT ${this.expressionMap.onConflict} `
-            } else if (this.expressionMap.onUpdate) {
-                const {
-                    overwrite,
-                    columns,
-                    conflict,
-                    skipUpdateIfNoValuesChanged,
-                } = this.expressionMap.onUpdate
-
-                let conflictTarget = "ON CONFLICT"
-
-                if (Array.isArray(conflict)) {
-                    conflictTarget += ` ( ${conflict
-                        .map((column) => this.escape(column))
-                        .join(", ")} )`
-                } else if (conflict) {
-                    conflictTarget += ` ON CONSTRAINT ${this.escape(conflict)}`
-                }
-
-                if (Array.isArray(overwrite)) {
-                    query += ` ${conflictTarget} DO UPDATE SET `
-                    query += overwrite
-                        ?.map(
-                            (column) =>
-                                `${this.escape(
-                                    column,
-                                )} = EXCLUDED.${this.escape(column)}`,
-                        )
-                        .join(", ")
-                    query += " "
-                } else if (columns) {
-                    query += ` ${conflictTarget} DO UPDATE SET `
-                    query += columns
-                        .map((column) => `${this.escape(column)} = :${column}`)
-                        .join(", ")
-                    query += " "
-                }
-
-                if (
-                    Array.isArray(overwrite) &&
-                    skipUpdateIfNoValuesChanged &&
-                    DriverUtils.isPostgresFamily(this.connection.driver)
-                ) {
-                    query += ` WHERE (`
-                    query += overwrite
-                        .map(
-                            (column) =>
-                                `${tableName}.${this.escape(
-                                    column,
-                                )} IS DISTINCT FROM EXCLUDED.${this.escape(
-                                    column,
-                                )}`,
-                        )
-                        .join(" OR ")
-                    query += ") "
-                }
-            }
-        } else if (
-            this.connection.driver.supportedUpsertType ===
-            "on-duplicate-key-update"
-        ) {
-            if (this.expressionMap.onUpdate) {
-                const { overwrite, columns } = this.expressionMap.onUpdate
-
-                if (Array.isArray(overwrite)) {
-                    query += " ON DUPLICATE KEY UPDATE "
-                    query += overwrite
-                        .map(
-                            (column) =>
-                                `${this.escape(column)} = VALUES(${this.escape(
-                                    column,
-                                )})`,
-                        )
-                        .join(", ")
-                    query += " "
-                } else if (Array.isArray(columns)) {
-                    query += " ON DUPLICATE KEY UPDATE "
-                    query += columns
-                        .map((column) => `${this.escape(column)} = :${column}`)
-                        .join(", ")
-                    query += " "
-                }
-            }
-        } else {
-            if (this.expressionMap.onUpdate) {
-                throw new TypeORMError(
-                    `onUpdate is not supported by the current database driver`,
+        if (this.expressionMap.onUpdate?.upsertType !== "primary-key") {
+            if (
+                this.connection.driver.supportedUpsertTypes.includes(
+                    "on-conflict-do-update",
                 )
+            ) {
+                if (this.expressionMap.onIgnore) {
+                    query += " ON CONFLICT DO NOTHING "
+                } else if (this.expressionMap.onConflict) {
+                    query += ` ON CONFLICT ${this.expressionMap.onConflict} `
+                } else if (this.expressionMap.onUpdate) {
+                    const {
+                        overwrite,
+                        columns,
+                        conflict,
+                        skipUpdateIfNoValuesChanged,
+                        indexPredicate,
+                    } = this.expressionMap.onUpdate
+
+                    let conflictTarget = "ON CONFLICT"
+
+                    if (Array.isArray(conflict)) {
+                        conflictTarget += ` ( ${conflict
+                            .map((column) => this.escape(column))
+                            .join(", ")} )`
+                        if (
+                            indexPredicate &&
+                            !DriverUtils.isPostgresFamily(
+                                this.connection.driver,
+                            )
+                        ) {
+                            throw new TypeORMError(
+                                `indexPredicate option is not supported by the current database driver`,
+                            )
+                        }
+                        if (
+                            indexPredicate &&
+                            DriverUtils.isPostgresFamily(this.connection.driver)
+                        ) {
+                            conflictTarget += ` WHERE ( ${this.escape(
+                                indexPredicate,
+                            )} )`
+                        }
+                    } else if (conflict) {
+                        conflictTarget += ` ON CONSTRAINT ${this.escape(
+                            conflict,
+                        )}`
+                    }
+
+                    if (Array.isArray(overwrite)) {
+                        query += ` ${conflictTarget} DO UPDATE SET `
+                        query += overwrite
+                            ?.map(
+                                (column) =>
+                                    `${this.escape(
+                                        column,
+                                    )} = EXCLUDED.${this.escape(column)}`,
+                            )
+                            .join(", ")
+                        query += " "
+                    } else if (columns) {
+                        query += ` ${conflictTarget} DO UPDATE SET `
+                        query += columns
+                            .map(
+                                (column) =>
+                                    `${this.escape(column)} = :${column}`,
+                            )
+                            .join(", ")
+                        query += " "
+                    }
+
+                    if (
+                        Array.isArray(overwrite) &&
+                        skipUpdateIfNoValuesChanged &&
+                        DriverUtils.isPostgresFamily(this.connection.driver)
+                    ) {
+                        query += ` WHERE (`
+                        query += overwrite
+                            .map(
+                                (column) =>
+                                    `${tableName}.${this.escape(
+                                        column,
+                                    )} IS DISTINCT FROM EXCLUDED.${this.escape(
+                                        column,
+                                    )}`,
+                            )
+                            .join(" OR ")
+                        query += ") "
+                    }
+                }
+            } else if (
+                this.connection.driver.supportedUpsertTypes.includes(
+                    "on-duplicate-key-update",
+                )
+            ) {
+                if (this.expressionMap.onUpdate) {
+                    const { overwrite, columns } = this.expressionMap.onUpdate
+
+                    if (Array.isArray(overwrite)) {
+                        query += " ON DUPLICATE KEY UPDATE "
+                        query += overwrite
+                            .map(
+                                (column) =>
+                                    `${this.escape(
+                                        column,
+                                    )} = VALUES(${this.escape(column)})`,
+                            )
+                            .join(", ")
+                        query += " "
+                    } else if (Array.isArray(columns)) {
+                        query += " ON DUPLICATE KEY UPDATE "
+                        query += columns
+                            .map(
+                                (column) =>
+                                    `${this.escape(column)} = :${column}`,
+                            )
+                            .join(", ")
+                        query += " "
+                    }
+                }
+            } else {
+                if (this.expressionMap.onUpdate) {
+                    throw new TypeORMError(
+                        `onUpdate is not supported by the current database driver`,
+                    )
+                }
             }
         }
 

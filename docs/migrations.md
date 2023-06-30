@@ -1,11 +1,15 @@
 # Migrations
 
--   [How migrations work](#how-migrations-work)
--   [Creating a new migration](#creating-a-new-migration)
--   [Running and reverting migrations](#running-and-reverting-migrations)
--   [Generating migrations](#generating-migrations)
--   [Connection option](#connection-option)
--   [Using migration API to write migrations](#using-migration-api-to-write-migrations)
+- [Migrations](#migrations)
+  - [How migrations work](#how-migrations-work)
+  - [Creating a new migration](#creating-a-new-migration)
+  - [Running and reverting migrations](#running-and-reverting-migrations)
+    - [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
+    - [Transaction modes](#transaction-modes)
+  - [Generating migrations](#generating-migrations)
+  - [DataSource option](#datasource-option)
+  - [Timestamp option](#timestamp-option)
+  - [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations work
 
@@ -82,6 +86,8 @@ typeorm migration:create ./path-to-migrations-dir/PostRefactoring
 
 ```
 
+
+
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
 After you run the command you can see a new file generated in the "migration" directory
 named `{TIMESTAMP}-PostRefactoring.ts` where `{TIMESTAMP}` is the current timestamp when the migration was generated.
@@ -133,7 +139,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 Once you have a migration to run on production, you can run them using a CLI command:
 
 ```
-typeorm migration:run
+typeorm migration:run -- -d path-to-datasource-config
 ```
 
 **`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
@@ -141,13 +147,13 @@ typeorm migration:run
 Example with `ts-node`:
 
 ```
-npx typeorm-ts-node-commonjs migration:run
+npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
 ```
 
 Example with `ts-node` in ESM projects:
 
 ```
-npx typeorm-ts-node-esm migration:run
+npx typeorm-ts-node-esm migration:run -- -d path-to-datasource-config
 ```
 
 ```
@@ -161,7 +167,7 @@ That's all! Now you have your database schema up-to-date.
 If for some reason you want to revert the changes, you can run:
 
 ```
-typeorm migration:revert
+typeorm migration:revert -- -d path-to-datasource-config
 ```
 
 This command will execute `down` in the latest executed migration.
@@ -184,6 +190,34 @@ This is also possible with rollbacks.
 typeorm migration:revert --fake
 ```
 
+### Transaction modes
+
+By default, TypeORM will run all your migrations within a single wrapping transaction.
+This corresponds to the `--transaction all` flag.
+If you require more fine grained transaction control, you can use the `--transaction each` flag to wrap every migration individually, or the `--transaction none` flag to opt out of wrapping the migrations in transactions altogether.
+
+In addition to these flags, you can also override the transaction behavior on a per-migration basis by setting the `transaction` property on the `MigrationInterface` to `true` or `false`. This only works in the `each` or `none` transaction mode.
+
+```typescript
+import { MigrationInterface, QueryRunner } from "typeorm"
+
+export class AddIndexTIMESTAMP implements MigrationInterface {
+    transaction = false
+
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `CREATE INDEX CONCURRENTLY post_names_idx ON post(name)`
+        )
+    }
+
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(
+            `DROP INDEX CONCURRENTLY post_names_idx`,
+        )
+    }
+}
+```
+
 ## Generating migrations
 
 TypeORM is able to automatically generate migration files with schema changes you made.
@@ -192,7 +226,13 @@ Let's say you have a `Post` entity with a `title` column, and you have changed t
 You can run following command:
 
 ```
-typeorm migration:generate -n PostRefactoring
+typeorm migration:generate PostRefactoring -d path-to-datasource-config
+```
+
+If you encounter any error, it require you have the path to migration name and data source. You can try this option
+
+```
+typeorm migration:generate -d <path/to/datasource> path/to/migrations/<migration-name>
 ```
 
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:

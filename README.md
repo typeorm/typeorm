@@ -66,7 +66,6 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Listeners and subscribers (hooks).
 -   Supports closure table pattern.
 -   Schema declaration in models or separate configuration files.
--   Connection configuration in json / xml / yml / env formats.
 -   Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
 -   Supports MongoDB NoSQL database.
 -   Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
@@ -251,7 +250,7 @@ await timber.remove()
 
     - for **MongoDB** (experimental)
 
-        `npm install mongodb@^3.6.0 --save`
+        `npm install mongodb@^5.2.0 --save`
 
     - for **NativeScript**, **react-native** and **Cordova**
 
@@ -1000,7 +999,7 @@ Let's change our photo's `@OneToOne` decorator a bit:
 
 ```typescript
 export class Photo {
-    /// ... other columns
+    // ... other columns
 
     @OneToOne(() => PhotoMetadata, (metadata) => metadata.photo, {
         cascade: true,
@@ -1155,7 +1154,7 @@ Now let's add the inverse side of our relation to the `Photo` class:
 
 ```typescript
 export class Photo {
-    /// ... other columns
+    // ... other columns
 
     @ManyToMany(() => Album, (album) => album.photos)
     albums: Album[]

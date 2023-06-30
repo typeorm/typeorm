@@ -13,6 +13,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Database driver used by connection.
      */
+    // @ts-ignore temporary, we need to fix the issue with the AbstractSqliteDriver and circular errors
     driver: ReactNativeDriver
 
     // -------------------------------------------------------------------------
@@ -76,11 +77,6 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
                     const result = new QueryResult()
 
-                    // return id of inserted row, if query was insert statement.
-                    if (query.substr(0, 11) === "INSERT INTO") {
-                        result.raw = raw.insertId
-                    }
-
                     if (raw?.hasOwnProperty("rowsAffected")) {
                         result.affected = raw.rowsAffected
                     }
@@ -93,6 +89,11 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
                         result.raw = records
                         result.records = records
+                    }
+
+                    // return id of inserted row, if query was insert statement.
+                    if (query.substr(0, 11) === "INSERT INTO") {
+                        result.raw = raw.insertId
                     }
 
                     if (useStructuredResult) {

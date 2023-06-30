@@ -45,5 +45,20 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
      */
     readonly enableWAL?: boolean
 
+    /**
+     * Specifies the open file flags. By default its undefined.
+     * @see https://www.sqlite.org/c3ref/c_open_autoproxy.html
+     * @see https://github.com/TryGhost/node-sqlite3/blob/master/test/open_close.test.js
+     */
+    readonly flags?: number
+
     readonly poolSize?: never
+
+    /**
+     * Query or change the setting of the busy timeout.
+     * Time in milliseconds.
+     *
+     * @see https://www.sqlite.org/pragma.html#pragma_busy_timeout
+     */
+    readonly busyTimeout?: number
 }
