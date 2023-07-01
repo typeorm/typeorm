@@ -45,6 +45,7 @@ import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { DateUtils } from "../util/DateUtils"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -3759,7 +3760,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         queryRunner: QueryRunner,
         timestamp = new Date(),
     ) {
-        this.setParameter("timestamp", timestamp.toISOString())
+        this.setParameter(
+            "timestamp",
+            DateUtils.mixedDateToUtcDatetimeString(timestamp),
+        )
 
         const [sql, parameters] = this.getQueryAndParameters()
         const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters)

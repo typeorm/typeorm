@@ -10,9 +10,10 @@ import {
 import { User } from "./entity/User"
 
 const getCurrentTimestampAndWait = async () => {
+    // give some time to simulate dataset modifications
+    await sleep(500)
     const timestamp = new Date()
-    // tolerance between runtime and databse system time
-    await sleep(1000)
+    await sleep(500)
     return timestamp
 }
 
@@ -30,7 +31,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
     after(() => closeTestingConnections(dataSources))
 
-    it("should handle the parameter timestamp correct in the BaseEntity", () =>
+    it("should check new find methods from the BaseEntity class", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 User.useDataSource(dataSource)
@@ -64,7 +65,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should handle the parameter timestamp correct in all find methods from the Repository", () =>
+    it("should check new find methods from the Repository class", () =>
         Promise.all(
             dataSources.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
@@ -100,7 +101,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should get deleted datasets from the history", () =>
+    it("should get deleted datasets from the temporal tables (history)", () =>
         Promise.all(
             dataSources.map(async ({ manager }) => {
                 const repository = manager.getRepository(User)
