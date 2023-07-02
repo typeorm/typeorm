@@ -86,7 +86,7 @@ export class Table {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning?: boolean
+    versioning: boolean
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -142,7 +142,7 @@ export class Table {
             if (options.withoutRowid) this.withoutRowid = options.withoutRowid
 
             this.engine = options.engine
-            this.versioning = options.versioning
+            this.versioning = Boolean(options.versioning)
         }
     }
 

@@ -133,7 +133,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             }),
         ))
 
-    it("should ignore internal columns which are used for temporal tables", () =>
+    it("should ignore internal columns (row_start, row_end) which are used for temporal tables", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await dataSource.runMigrations()

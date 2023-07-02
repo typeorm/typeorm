@@ -1098,7 +1098,7 @@ export class EntityManager {
             entityClass as any,
             metadata.name,
         )
-            .setFindOptions({ where })
+            .setFindOptions({ where: where })
             .getMany()
     }
 

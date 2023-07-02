@@ -198,7 +198,7 @@ export class EntityMetadataValidator {
             !["mariadb", "mssql"].includes(driver.options.type)
         ) {
             throw new TypeORMError(
-                `Right now this feature is implemented for MariaDB and Sql Server only.`,
+                `Temporal tables (system versioning) are only supported for MariaDB and Sql Server.`,
             )
         }
 

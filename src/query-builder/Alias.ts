@@ -23,7 +23,7 @@ export class Alias {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning?: boolean
+    versioning: boolean
 
     constructor(alias?: Alias) {
         ObjectUtils.assign(this, alias || {})

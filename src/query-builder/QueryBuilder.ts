@@ -666,9 +666,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             return this.expressionMap.createAlias({
                 type: "from",
                 name: aliasName,
-                metadata,
+                metadata: this.connection.getMetadata(entityTarget),
                 tablePath: metadata.tablePath,
-                versioning: metadata.versioning,
             })
         } else {
             if (typeof entityTarget === "string") {
