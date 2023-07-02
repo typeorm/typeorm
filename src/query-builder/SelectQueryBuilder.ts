@@ -46,6 +46,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { DateUtils } from "../util/DateUtils"
+import { addYears } from "date-fns"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -3754,11 +3755,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Loads raw results from the database.
-     * @param timestamp get datasets from this timestamp (temporal tables)
+     * @param timestamp get datasets at a specific timestamp (temporal tables)
+     * if undefined use date in the future to get the current datasets
      */
     protected async loadRawResults(
         queryRunner: QueryRunner,
-        timestamp = new Date(),
+        timestamp = addYears(new Date(), 10),
     ) {
         this.setParameter(
             "timestamp",
