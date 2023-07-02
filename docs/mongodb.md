@@ -400,3 +400,76 @@ Updates multiple documents within the collection based on the filter.
 #### `updateOne`
 
 Updates a single document within the collection based on the filter.
+
+
+Certainly! Here's an updated README with instructions for using MongoDB transactions with TypeORM:
+
+---
+
+# TypeORM MongoDB Transactions
+
+This guide provides instructions on how to enable and use transactions with MongoDB using TypeORM. Transactions allow you to perform a series of database operations as a single atomic unit, ensuring data consistency and integrity.
+
+## Prerequisites
+
+- Node.js and npm installed on your system
+- TypeORM and its dependencies installed in your project
+
+## Enabling Transactions
+
+To enable transactions for MongoDB in TypeORM, you need to set the `enableTransactions` option when creating your MongoDB data source. Here's an example:
+
+```typescript
+import { DataSource } from "typeorm";
+
+const myDataSource = new DataSource({
+  type: "mongodb",
+  // other connection parameters
+  enableTransactions: true,
+});
+```
+
+Make sure to replace `"mongodb"` with the appropriate `type` value based on your configuration.
+
+## Using Transactions
+
+Once you have enabled transactions for MongoDB, you can use the `startTransaction()`, `commitTransaction()`, and `rollbackTransaction()` methods provided by the query runner to perform transactional operations. Here's an example:
+
+```typescript
+import { DataSource } from "typeorm";
+
+const myDataSource = new DataSource({
+  type: "mongodb",
+  // other connection parameters
+  enableTransactions: true,
+});
+
+async function performTransaction() {
+  const queryRunner = myDataSource.createQueryRunner();
+  await queryRunner.startTransaction();
+  try {
+    // Perform your database operations within the transaction
+    // For example:
+    await queryRunner.manager.save(userEntity);
+    await queryRunner.manager.update(postEntity, { id: postId }, { likes: newLikeCount });
+    // ...
+
+    // If everything is successful, commit the transaction
+    await queryRunner.commitTransaction();
+  } catch (error) {
+    // If any error occurs, rollback the transaction
+    await queryRunner.rollbackTransaction();
+    throw error;
+  } finally {
+    // Release the query runner resources
+    await queryRunner.release();
+  }
+}
+```
+
+Inside the `performTransaction()` function, you can execute your database operations using the `queryRunner.manager` object, which provides access to the EntityManager for performing CRUD operations.
+
+If all operations within the transaction are successful, the `commitTransaction()` method is called to commit the changes to the database. If an error occurs during the transaction, the `rollbackTransaction()` method is called to undo any changes made within the transaction.
+
+Remember to release the query runner resources by calling `release()` to free up database connections and avoid resource leaks.
+

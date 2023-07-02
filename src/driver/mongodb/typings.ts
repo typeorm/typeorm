@@ -2743,6 +2743,11 @@ export declare interface CreateCollectionOptions
     changeStreamPreAndPostImages?: {
         enabled: boolean
     }
+
+    /**
+     * Specify ClientSession for this command
+     */
+    session?: ClientSession
 }
 
 /** @public */
@@ -2780,6 +2785,11 @@ export declare interface CreateIndexesOptions
     wildcardProjection?: Document
     /** Specifies that the index should exist on the target collection but should not be used by the query planner when executing operations. (MongoDB 4.4 or higher) */
     hidden?: boolean
+
+    /**
+     * Specify ClientSession for this command
+     */
+    session?: ClientSession
 }
 
 /** @public */
@@ -3465,6 +3475,10 @@ export declare interface FindOneAndDeleteOptions
     sort?: Sort
     /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
     let?: Document
+    /**
+     * Specify ClientSession for this command
+     */
+    session?: ClientSession
 }
 
 /** @public */
@@ -3484,6 +3498,10 @@ export declare interface FindOneAndReplaceOptions
     upsert?: boolean
     /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
     let?: Document
+    /**
+     * Specify ClientSession for this command
+     */
+    session?: ClientSession
 }
 
 /** @public */
@@ -3505,6 +3523,11 @@ export declare interface FindOneAndUpdateOptions
     upsert?: boolean
     /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
     let?: Document
+
+    /**
+     * Specify ClientSession for this command
+     */
+    session?: ClientSession
 }
 
 /**

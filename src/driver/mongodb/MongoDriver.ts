@@ -72,7 +72,7 @@ export class MongoDriver implements Driver {
     /**
      * Represent transaction support by this driver
      */
-    transactionSupport = "none" as const
+    transactionSupport = "simple" as const
 
     /**
      * Mongodb does not need to have column types because they are not used in schema sync.
