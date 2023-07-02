@@ -11,9 +11,9 @@ import { User } from "./entity/User"
 
 const getCurrentTimestampAndWait = async () => {
     // give some time to simulate dataset modifications
-    await sleep(500)
+    await sleep(1000)
     const timestamp = new Date()
-    await sleep(500)
+    await sleep(1000)
     return timestamp
 }
 
