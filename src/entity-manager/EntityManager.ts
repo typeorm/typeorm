@@ -69,7 +69,10 @@ export class EntityManager {
      * Once created and then reused by repositories.
      * Created as a future replacement for the #repositories to provide a bit more perf optimization.
      */
-    protected repositories = new Map<EntityTarget<any>, Repository<any>>()
+    protected repositories = new Map<
+        EntityTarget<any>,
+        Repository<any> | MongoRepository<any>
+    >()
 
     /**
      * Once created and then reused by repositories.
