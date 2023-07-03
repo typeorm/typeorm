@@ -488,6 +488,34 @@ describe("repository > find methods", () => {
     })
 
     describe("findOne", function () {
+        it("should throw an error when no criteria given", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const userRepository =
+                        connection.getRepository<User>("User")
+
+                    for (let i = 0; i < 100; i++) {
+                        const user: User = {
+                            id: i,
+                            firstName: "name #" + i,
+                            secondName: "Doe",
+                        }
+                        await userRepository.save(user)
+                    }
+
+                    return (
+                        userRepository
+                            // @ts-ignore
+                            .findOne({
+                                order: { id: "ASC" },
+                            })
+                            .should.be.rejectedWith(
+                                `You must provide selection conditions in order to find a single row.`,
+                            )
+                    )
+                }),
+            ))
+
         it("should return when criteria given", () =>
             Promise.all(
                 connections.map(async (connection) => {
