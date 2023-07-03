@@ -1,18 +1,17 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
-    constructor(title: string) {
-        this.title = title;
+    constructor(id: number, title: string) {
+        this.id = id
+        this.title = title
     }
-
 }

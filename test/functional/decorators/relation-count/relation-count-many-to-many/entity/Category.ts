@@ -1,41 +1,53 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../src/decorator/relations/JoinTable";
-import {RelationCount} from "../../../../../../src/decorator/relations/RelationCount";
-import {Post} from "./Post";
-import {Image} from "./Image";
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { ManyToMany } from "../../../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../../../src/decorator/relations/JoinTable"
+import { RelationCount } from "../../../../../../src/decorator/relations/RelationCount"
+import { Post } from "./Post"
+import { Image } from "./Image"
 
 @Entity()
 export class Category {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
-    name: string;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    isRemoved: boolean = false;
+    name: string
 
-    @ManyToMany(type => Post, post => post.categories)
-    posts: Post[];
+    @Column()
+    isRemoved: boolean = false
 
-    @ManyToMany(type => Image, image => image.categories)
+    @ManyToMany((type) => Post, (post) => post.categories)
+    posts: Post[]
+
+    @ManyToMany((type) => Image, (image) => image.categories)
     @JoinTable()
-    images: Image[];
+    images: Image[]
 
     @RelationCount((category: Category) => category.posts)
-    postCount: number;
+    postCount: number
 
-    @RelationCount((category: Category) => category.posts, "removedPosts", qb => qb.andWhere("removedPosts.isRemoved = :isRemoved", { isRemoved: true }))
-    removedPostCount: number;
+    @RelationCount(
+        (category: Category) => category.posts,
+        "removedPosts",
+        (qb) =>
+            qb.andWhere("removedPosts.isRemoved = :isRemoved", {
+                isRemoved: true,
+            }),
+    )
+    removedPostCount: number
 
     @RelationCount((category: Category) => category.images)
-    imageCount: number;
+    imageCount: number
 
-    @RelationCount((category: Category) => category.images, "removedImages", qb => qb.andWhere("removedImages.isRemoved = :isRemoved", { isRemoved: true }))
-    removedImageCount: number;
-
+    @RelationCount(
+        (category: Category) => category.images,
+        "removedImages",
+        (qb) =>
+            qb.andWhere("removedImages.isRemoved = :isRemoved", {
+                isRemoved: true,
+            }),
+    )
+    removedImageCount: number
 }

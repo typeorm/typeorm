@@ -1,10 +1,12 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src"
 
 @Entity()
 export class Photo {
+    @PrimaryColumn()
+    id: number
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
+    @Column({ default: "My photo" })
+    name: string
 }

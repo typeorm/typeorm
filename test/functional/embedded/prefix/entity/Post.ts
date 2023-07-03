@@ -1,21 +1,19 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Counters} from "./Counters";
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { Counters } from "./Counters"
 
 @Entity()
 export class Post {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
-    title: string;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    text: string;
+    title: string
+
+    @Column()
+    text: string
 
     @Column(() => Counters, { prefix: "cnt" })
-    counters: Counters;
-
+    counters: Counters
 }

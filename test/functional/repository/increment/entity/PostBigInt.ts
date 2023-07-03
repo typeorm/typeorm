@@ -1,19 +1,17 @@
-import { Entity } from "../../../../../src/decorator/entity/Entity";
-import { Column } from "../../../../../src/decorator/columns/Column";
-import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn";
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
 
 @Entity()
 export class PostBigInt {
-
-    @PrimaryColumn("int")
-    id: number;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column("bigint", {
-        unsigned: true
+        unsigned: true,
     })
-    counter: string;
-
+    counter: string
 }

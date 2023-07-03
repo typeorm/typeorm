@@ -1,8 +1,8 @@
-import "reflect-metadata";
-import {ConnectionOptions, createConnection} from "../../src/index";
-import {Category} from "./entity/Category";
+import "reflect-metadata"
+import { DataSource, DataSourceOptions } from "../../src/index"
+import { Category } from "./entity/Category"
 
-const options: ConnectionOptions = {
+const options: DataSourceOptions = {
     type: "mysql",
     host: "localhost",
     port: 3306,
@@ -10,25 +10,36 @@ const options: ConnectionOptions = {
     password: "admin",
     database: "test",
     synchronize: true,
-    entities: [__dirname + "/entity/*"]
-};
+    entities: [__dirname + "/entity/*"],
+}
 
-createConnection(options).then(connection => {
-    let categoryRepository = connection.getRepository(Category);
-    
-    let category1 = new Category();
-    category1.name = "category #1";
-    
-    let mainCategory = new Category();
-    mainCategory.name = "main category";
-    mainCategory.oneCategory = category1;
-    mainCategory.manyCategories.push(category1);
-    mainCategory.oneManyCategory = category1;
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    (dataSource) => {
+        let categoryRepository = dataSource.getRepository(Category)
 
-    categoryRepository.save(mainCategory)
-        .then(savedCategory => {
-            console.log("saved category: ", savedCategory);
-        })
-        .catch(error => console.log("Cannot save. Error: ", error.stack ? error.stack : error));
+        let category1 = new Category()
+        category1.name = "category #1"
 
-}, error => console.log("Cannot connect: ", error.stack ? error.stack : error));
+        let mainCategory = new Category()
+        mainCategory.manyCategories = []
+        mainCategory.name = "main category"
+        mainCategory.oneCategory = category1
+        mainCategory.manyCategories.push(category1)
+        mainCategory.oneManyCategory = category1
+
+        categoryRepository
+            .save(mainCategory)
+            .then((savedCategory) => {
+                console.log("saved category: ", savedCategory)
+            })
+            .catch((error) =>
+                console.log(
+                    "Cannot save. Error: ",
+                    error.stack ? error.stack : error,
+                ),
+            )
+    },
+    (error) =>
+        console.log("Cannot connect: ", error.stack ? error.stack : error),
+)

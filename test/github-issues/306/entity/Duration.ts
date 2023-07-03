@@ -1,14 +1,12 @@
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Column } from "../../../../src/decorator/columns/Column"
 
 export class Duration {
-
     @Column({ name: "duration_minutes" })
-    durationMinutes: number;
+    durationMinutes: number
 
     @Column({ name: "duration_hours" })
-    durationHours: number;
+    durationHours: number
 
     @Column({ name: "duration_days" })
-    durationDays: number;
-
+    durationDays: number
 }

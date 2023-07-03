@@ -1,36 +1,33 @@
-import { Entity } from "../../../../src/decorator/entity/Entity";
-import { Column } from "../../../../src/decorator/columns/Column";
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
 
-
-export type Role = "sa" | "user" | "admin" | "server";
+export type Role = "sa" | "user" | "admin" | "server"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
         length: 32,
-        unique: true
+        unique: true,
     })
-    username: string;
+    username: string
 
     @Column({
-        nullable: true
+        nullable: true,
     })
-    password: string;
+    password: string
 
     @Column({
-        nullable: true
+        nullable: true,
     })
-    phone: string;
+    phone: string
 
     @Column("json")
-    roles: Role[];
+    roles: Role[]
 
     @Column()
-    lastLoginAt: Date;
-
+    lastLoginAt: Date
 }

@@ -1,100 +1,94 @@
-import {Logger} from "./Logger";
-import {QueryRunner} from "../";
-import {PlatformTools} from "../platform/PlatformTools";
+import { AbstractLogger } from "./AbstractLogger"
+import { debug, Debugger } from "debug"
+import { LogLevel, LogMessage, LogMessageType } from "./Logger"
+import { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM via debug library.
  */
-export class DebugLogger implements Logger {
-    private debug = PlatformTools.load("debug");
+export class DebugLogger extends AbstractLogger {
+    /**
+     * Object with all debug logger.
+     */
+    private logger: Record<string, Debugger> = {
+        log: debug("typeorm:log"),
+        info: debug("typeorm:info"),
+        warn: debug("typeorm:warn"),
+        error: debug("typeorm:error"),
+        query: debug("typeorm:query:log"),
+        "query-error": debug("typeorm:query:error"),
+        "query-slow": debug("typeorm:query:slow"),
+        "schema-build": debug("typeorm:schema"),
+        migration: debug("typeorm:migration"),
+    }
 
-    private debugQueryLog = this.debug("typeorm:query:log");
-    private debugQueryError = this.debug("typeorm:query:error");
-    private debugQuerySlow = this.debug("typeorm:query:slow");
-    private debugSchemaBuild = this.debug("typeorm:schema");
-    private debugMigration = this.debug("typeorm:migration");
-    
-    private debugLog = this.debug("typeorm:log");
-    private debugInfo = this.debug("typeorm:info");
-    private debugWarn = this.debug("typeorm:warn");
-    
     /**
-     * Logs query and parameters used in it.
+     * Check is logging for level or message type is enabled.
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.debugQueryLog.enabled) {
-            this.debugQueryLog(PlatformTools.highlightSql(query) + ";");
-            if (parameters && parameters.length) {
-                this.debugQueryLog("parameters:", parameters);
-            }
-        }
-    }
-    
-    /**
-     * Logs query that failed.
-     */
-    logQueryError(error: string, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.debugQueryError.enabled) {
-            this.debugQueryError(PlatformTools.highlightSql(query) + ";");
-            if (parameters && parameters.length) {
-                this.debugQueryError("parameters:", parameters);
-            }
-            this.debugQueryError("error: ", error);
-        }
-    }
-    
-    /**
-     * Logs query that is slow.
-     */
-    logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.debugQuerySlow.enabled) {
-            this.debugQuerySlow(PlatformTools.highlightSql(query) + ";");
-            if (parameters && parameters.length) {
-                this.debugQuerySlow("parameters:", parameters);
-            }
-            this.debugQuerySlow("execution time:", time);
-        }
-    }
-    
-    /**
-     * Logs events from the schema build process.
-     */
-    logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.debugSchemaBuild.enabled) {
-            this.debugSchemaBuild(message);
-        }
-    }
-    
-    /**
-     * Logs events from the migration run process.
-     */
-    logMigration(message: string, queryRunner?: QueryRunner) {
-        if (this.debugMigration.enabled) {
-            this.debugMigration(message);
-        }
-    }
-    
-    /**
-     * Perform logging using given logger.
-     * Log has its own level and message.
-     */
-    log(level: "log" | "info" | "warn", message: any, queryRunner?: QueryRunner) {
-        switch (level) {
+    protected isLogEnabledFor(type?: LogLevel | LogMessageType) {
+        switch (type) {
+            case "query":
+                return this.logger["query"].enabled
+
+            case "query-error":
+                return this.logger["query-error"].enabled
+
+            case "query-slow":
+                return true
+
+            case "schema":
+            case "schema-build":
+                return this.logger["schema-build"].enabled
+
+            case "migration":
+                return this.logger["migration"].enabled
+
             case "log":
-                if (this.debugLog.enabled) {
-                    this.debugLog(message);
-                }
-                break;
+                return this.logger["log"].enabled
+
             case "info":
-                if (this.debugInfo.enabled) {
-                    this.debugInfo(message);
-                }
-                break;
+                return this.logger["info"].enabled
+
             case "warn":
-                if (this.debugWarn.enabled) {
-                    this.debugWarn(message);
+                return this.logger["warn"].enabled
+
+            default:
+                return false
+        }
+    }
+
+    /**
+     * Write log to specific output.
+     */
+    protected writeLog(
+        level: LogLevel,
+        logMessage: LogMessage | LogMessage[],
+        queryRunner?: QueryRunner,
+    ) {
+        const messages = this.prepareLogMessages(logMessage, {
+            appendParameterAsComment: false,
+        })
+
+        for (let message of messages) {
+            const messageTypeOrLevel = message.type ?? level
+
+            if (messageTypeOrLevel in this.logger) {
+                if (message.prefix) {
+                    this.logger[messageTypeOrLevel](
+                        message.prefix,
+                        message.message,
+                    )
+                } else {
+                    this.logger[messageTypeOrLevel](message.message)
                 }
-                break;
+
+                if (message.parameters && message.parameters.length) {
+                    this.logger[messageTypeOrLevel](
+                        "parameters:",
+                        message.parameters,
+                    )
+                }
+            }
         }
     }
 }

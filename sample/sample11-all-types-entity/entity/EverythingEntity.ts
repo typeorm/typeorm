@@ -1,74 +1,80 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
-import {CreateDateColumn} from "../../../src/decorator/columns/CreateDateColumn";
-import {UpdateDateColumn} from "../../../src/decorator/columns/UpdateDateColumn";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
+import { CreateDateColumn } from "../../../src/decorator/columns/CreateDateColumn"
+import { UpdateDateColumn } from "../../../src/decorator/columns/UpdateDateColumn"
+
+export enum SampleEnum {
+    ONE = "one",
+    TWO = "two",
+}
 
 @Entity("sample11_everything_entity")
 export class EverythingEntity {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column("text")
-    text: string;
+    text: string
 
     @Column({ length: "32" })
-    shortTextColumn: string;
+    shortTextColumn: string
 
     @Column()
-    numberColumn: number;
+    numberColumn: number
 
     @Column("integer")
-    integerColumn: number;
+    integerColumn: number
 
     @Column("int")
-    intColumn: number;
+    intColumn: number
 
     @Column("smallint")
-    smallintColumn: number;
+    smallintColumn: number
 
     @Column("bigint")
-    bigintColumn: number;
+    bigintColumn: number
 
     @Column("float")
-    floatColumn: number;
+    floatColumn: number
 
     @Column("double")
-    doubleColumn: number;
+    doubleColumn: number
 
     @Column("decimal")
-    decimalColumn: number;
+    decimalColumn: number
 
     @Column()
-    date: Date;
+    date: Date
 
     @Column("date")
-    dateColumn: Date;
+    dateColumn: Date
 
     @Column("time")
-    timeColumn: Date;
+    timeColumn: Date
 
     @Column("boolean")
-    isBooleanColumn: boolean;
+    isBooleanColumn: boolean
 
     @Column("boolean")
-    isSecondBooleanColumn: boolean;
+    isSecondBooleanColumn: boolean
 
     @Column("json")
-    jsonColumn: any;
+    jsonColumn: any
 
     @Column()
-    alsoJson: any;
+    alsoJson: any
 
     @Column("simple_array")
-    simpleArrayColumn: string[];
+    simpleArrayColumn: string[]
+
+    @Column("enum", { enum: SampleEnum })
+    enum: SampleEnum
 
     @CreateDateColumn()
-    createdDate: Date;
+    createdDate: Date
 
     @UpdateDateColumn()
-    updatedDate: Date;
-
+    updatedDate: Date
 }

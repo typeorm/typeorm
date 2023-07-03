@@ -1,16 +1,19 @@
-import {Column, Entity, ManyToMany, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Post } from "./Post"
 
 @Entity("sample4_post_image")
 export class PostImage {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    url: string;
+    url: string
 
-    @ManyToMany(type => Post, post => post.images)
-    posts: Post[];
-
+    @ManyToMany((type) => Post, (post) => post.images)
+    posts: Post[]
 }

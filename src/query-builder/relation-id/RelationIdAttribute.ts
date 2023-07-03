@@ -1,15 +1,15 @@
-import {RelationMetadata} from "../../metadata/RelationMetadata";
-import {QueryBuilderUtils} from "../QueryBuilderUtils";
-import {EntityMetadata} from "../../metadata/EntityMetadata";
-import {QueryExpressionMap} from "../QueryExpressionMap";
-import {SelectQueryBuilder} from "../SelectQueryBuilder";
-import {ObjectUtils} from "../../util/ObjectUtils";
+import { RelationMetadata } from "../../metadata/RelationMetadata"
+import { QueryBuilderUtils } from "../QueryBuilderUtils"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { QueryExpressionMap } from "../QueryExpressionMap"
+import { SelectQueryBuilder } from "../SelectQueryBuilder"
+import { ObjectUtils } from "../../util/ObjectUtils"
+import { TypeORMError } from "../../error/TypeORMError"
 
 /**
  * Stores all join relation id attributes which will be used to build a JOIN query.
  */
 export class RelationIdAttribute {
-
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -17,35 +17,39 @@ export class RelationIdAttribute {
     /**
      * Alias of the joined (destination) table.
      */
-    alias?: string;
+    alias?: string
 
     /**
      * Name of relation.
      */
-    relationName: string;
+    relationName: string
 
     /**
      * Property + alias of the object where to joined data should be mapped.
      */
-    mapToProperty: string;
+    mapToProperty: string
 
     /**
      * Extra condition applied to "ON" section of join.
      */
-    queryBuilderFactory?: (qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>;
+    queryBuilderFactory?: (
+        qb: SelectQueryBuilder<any>,
+    ) => SelectQueryBuilder<any>
 
     /**
      * Indicates if relation id should NOT be loaded as id map.
      */
-    disableMixedMap = false;
+    disableMixedMap = false
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private queryExpressionMap: QueryExpressionMap,
-                        relationIdAttribute?: Partial<RelationIdAttribute>) {
-        ObjectUtils.assign(this, relationIdAttribute || {});
+    constructor(
+        private queryExpressionMap: QueryExpressionMap,
+        relationIdAttribute?: Partial<RelationIdAttribute>,
+    ) {
+        ObjectUtils.assign(this, relationIdAttribute || {})
     }
 
     // -------------------------------------------------------------------------
@@ -53,7 +57,7 @@ export class RelationIdAttribute {
     // -------------------------------------------------------------------------
 
     get joinInverseSideMetadata(): EntityMetadata {
-        return this.relation.inverseEntityMetadata;
+        return this.relation.inverseEntityMetadata
     }
 
     /**
@@ -64,9 +68,11 @@ export class RelationIdAttribute {
      */
     get parentAlias(): string {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(
+                `Given value must be a string representation of alias property`,
+            )
 
-        return this.relationName.substr(0, this.relationName.indexOf("."));
+        return this.relationName.substr(0, this.relationName.indexOf("."))
     }
 
     /**
@@ -78,9 +84,11 @@ export class RelationIdAttribute {
      */
     get relationPropertyPath(): string {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(
+                `Given value must be a string representation of alias property`,
+            )
 
-        return this.relationName.substr(this.relationName.indexOf(".") + 1);
+        return this.relationName.substr(this.relationName.indexOf(".") + 1)
     }
 
     /**
@@ -90,21 +98,30 @@ export class RelationIdAttribute {
      */
     get relation(): RelationMetadata {
         if (!QueryBuilderUtils.isAliasProperty(this.relationName))
-            throw new Error(`Given value must be a string representation of alias property`);
+            throw new TypeORMError(
+                `Given value must be a string representation of alias property`,
+            )
 
-        const relationOwnerSelection = this.queryExpressionMap.findAliasByName(this.parentAlias!);
-        const relation = relationOwnerSelection.metadata.findRelationWithPropertyPath(this.relationPropertyPath!);
+        const relationOwnerSelection = this.queryExpressionMap.findAliasByName(
+            this.parentAlias!,
+        )
+        const relation =
+            relationOwnerSelection.metadata.findRelationWithPropertyPath(
+                this.relationPropertyPath!,
+            )
         if (!relation)
-            throw new Error(`Relation with property path ${this.relationPropertyPath} in entity was not found.`);
-        return relation;
+            throw new TypeORMError(
+                `Relation with property path ${this.relationPropertyPath} in entity was not found.`,
+            )
+        return relation
     }
 
     /**
      * Generates alias of junction table, whose ids we get.
      */
     get junctionAlias(): string {
-        const [parentAlias, relationProperty] = this.relationName.split(".");
-        return parentAlias + "_" + relationProperty + "_rid";
+        const [parentAlias, relationProperty] = this.relationName.split(".")
+        return parentAlias + "_" + relationProperty + "_rid"
     }
 
     /**
@@ -112,15 +129,14 @@ export class RelationIdAttribute {
      * If extra condition without entity was joined, then it will return undefined.
      */
     get junctionMetadata(): EntityMetadata {
-        return this.relation.junctionEntityMetadata!;
+        return this.relation.junctionEntityMetadata!
     }
 
     get mapToPropertyParentAlias(): string {
-        return this.mapToProperty.substr(0, this.mapToProperty.indexOf("."));
+        return this.mapToProperty.substr(0, this.mapToProperty.indexOf("."))
     }
 
     get mapToPropertyPropertyPath(): string {
-        return this.mapToProperty.substr(this.mapToProperty.indexOf(".") + 1);
+        return this.mapToProperty.substr(this.mapToProperty.indexOf(".") + 1)
     }
-
 }

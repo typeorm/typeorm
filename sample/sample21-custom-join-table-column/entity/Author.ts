@@ -1,19 +1,17 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
-import {OneToMany} from "../../../src/decorator/relations/OneToMany";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
+import { Post } from "./Post"
+import { OneToMany } from "../../../src/decorator/relations/OneToMany"
 
 @Entity("sample21_author")
 export class Author {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToMany(type => Post, post => post.author, {
-        cascade: true
+    @OneToMany((type) => Post, (post) => post.author, {
+        cascade: true,
     })
-    posts: Post[];
-
+    posts: Post[]
 }

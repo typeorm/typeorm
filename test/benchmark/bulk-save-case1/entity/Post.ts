@@ -1,26 +1,24 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column({ type: "text" })
-    text: string;
+    text: string
 
     @Column({ type: "int" })
-    likesCount: number;
+    likesCount: number
 
     @Column({ type: "int" })
-    commentsCount: number;
+    commentsCount: number
 
     @Column({ type: "int" })
-    watchesCount: number;
-
+    watchesCount: number
 }

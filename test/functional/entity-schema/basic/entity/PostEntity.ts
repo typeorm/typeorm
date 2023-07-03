@@ -1,5 +1,5 @@
-import {EntitySchema} from "../../../../../src";
-import {Post} from "../model/Post";
+import { EntitySchema } from "../../../../../src"
+import { Post } from "../model/Post"
 
 export const PostEntity = new EntitySchema<Post>({
     name: "post",
@@ -7,19 +7,19 @@ export const PostEntity = new EntitySchema<Post>({
         id: {
             type: Number,
             primary: true,
-            generated: true
         },
         title: {
-            type: String
+            type: String,
         },
         text: {
-            type: String
-        }
+            type: String,
+        },
     },
     relations: {
         categories: {
             type: "many-to-many",
-            target: "category" // CategoryEntity
-        }
-    }
-});
+            target: "category", // CategoryEntity
+            joinTable: true,
+        },
+    },
+})

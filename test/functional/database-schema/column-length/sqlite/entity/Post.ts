@@ -1,41 +1,39 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("character", {
-        length: 50
+        length: 50,
     })
-    character: string;
+    character: string
 
     @Column("varchar", {
-        length: 50
+        length: 50,
     })
-    varchar: string;
+    varchar: string
 
     @Column("varying character", {
-        length: 50
+        length: 50,
     })
-    varying_character: string;
+    varying_character: string
 
     @Column("nchar", {
-        length: 50
+        length: 50,
     })
-    nchar: string;
+    nchar: string
 
     @Column("native character", {
-        length: 50
+        length: 50,
     })
-    native_character: string;
+    native_character: string
 
     @Column("nvarchar", {
-        length: 50
+        length: 50,
     })
-    nvarchar: string;
-
+    nvarchar: string
 }

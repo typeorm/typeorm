@@ -1,18 +1,17 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class User {
-
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    constructor(name: string) {
-        this.name = name;
+    constructor(id: number, name: string) {
+        this.id = id
+        this.name = name
     }
-
 }

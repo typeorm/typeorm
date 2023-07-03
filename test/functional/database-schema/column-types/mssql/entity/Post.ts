@@ -1,141 +1,147 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { FruitEnum } from "../enum/FruitEnum"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("bit")
-    bit: boolean;
+    bit: boolean
 
     @Column("tinyint")
-    tinyint: number;
+    tinyint: number
 
     @Column("smallint")
-    smallint: number;
+    smallint: number
 
     @Column("int")
-    int: number;
+    int: number
 
     @Column("bigint")
-    bigint: string;
+    bigint: string
 
     @Column("decimal")
-    decimal: number;
+    decimal: number
 
     @Column("dec")
-    dec: number;
+    dec: number
 
     @Column("numeric")
-    numeric: number;
+    numeric: number
 
     @Column("float")
-    float: number;
+    float: number
 
     @Column("real")
-    real: number;
+    real: number
 
     @Column("smallmoney")
-    smallmoney: number;
+    smallmoney: number
 
     @Column("money")
-    money: number;
+    money: number
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("uniqueidentifier")
-    uniqueidentifier: string;
+    uniqueidentifier: string
 
     @Column("char")
-    char: string;
+    char: string
 
     @Column("varchar")
-    varchar: string;
+    varchar: string
 
     @Column("text")
-    text: string;
+    text: string
 
     @Column("nchar")
-    nchar: string;
+    nchar: string
 
     @Column("nvarchar")
-    nvarchar: string;
+    nvarchar: string
 
     @Column("ntext")
-    ntext: string;
+    ntext: string
 
     @Column("binary")
-    binary: Buffer;
+    binary: Buffer
 
     @Column("varbinary")
-    varbinary: Buffer;
+    varbinary: Buffer
 
     @Column("image")
-    image: Buffer;
+    image: Buffer
 
     @Column("rowversion")
-    rowversion: Buffer;
+    rowversion: Buffer
 
     // -------------------------------------------------------------------------
     // Date Types
     // -------------------------------------------------------------------------
 
     @Column("date")
-    dateObj: Date;
+    dateObj: Date
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("datetime")
-    datetime: Date;
+    datetime: Date
 
     @Column("datetime2")
-    datetime2: Date;
+    datetime2: Date
 
     @Column("smalldatetime")
-    smalldatetime: Date;
+    smalldatetime: Date
 
     @Column("time")
-    timeObj: Date;
+    timeObj: Date
 
     @Column("time")
-    time: string;
+    time: string
 
     @Column("datetimeoffset")
-    datetimeoffset: Date;
+    datetimeoffset: Date
 
     // -------------------------------------------------------------------------
     // Spatial Types
     // -------------------------------------------------------------------------
 
     @Column("geometry")
-    geometry1: string;
+    geometry1: string
 
     @Column("geometry")
-    geometry2: string;
+    geometry2: string
 
     @Column("geometry")
-    geometry3: string;
+    geometry3: string
 
     // -------------------------------------------------------------------------
     // TypeOrm Specific Types
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
-    simpleArray: string[];
+    simpleArray: string[]
 
     @Column("simple-json")
-    simpleJson: { param: string };
+    simpleJson: { param: string }
+
+    @Column("simple-enum", { enum: ["A", "B", "C"] })
+    simpleEnum: string
+
+    @Column("simple-enum", { enum: FruitEnum })
+    simpleClassEnum1: FruitEnum
 }

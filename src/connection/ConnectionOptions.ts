@@ -1,29 +1,10 @@
-import {MysqlConnectionOptions} from "../driver/mysql/MysqlConnectionOptions";
-import {PostgresConnectionOptions} from "../driver/postgres/PostgresConnectionOptions";
-import {SqliteConnectionOptions} from "../driver/sqlite/SqliteConnectionOptions";
-import {SqlServerConnectionOptions} from "../driver/sqlserver/SqlServerConnectionOptions";
-import {OracleConnectionOptions} from "../driver/oracle/OracleConnectionOptions";
-import {MongoConnectionOptions} from "../driver/mongodb/MongoConnectionOptions";
-import {CordovaConnectionOptions} from "../driver/cordova/CordovaConnectionOptions";
-import {SqljsConnectionOptions} from "../driver/sqljs/SqljsConnectionOptions";
-import {ReactNativeConnectionOptions} from "../driver/react-native/ReactNativeConnectionOptions";
-import {NativescriptConnectionOptions} from "../driver/nativescript/NativescriptConnectionOptions";
-import {ExpoConnectionOptions} from "../driver/expo/ExpoConnectionOptions";
+import { DataSourceOptions } from "../data-source/DataSourceOptions"
 
 /**
  * ConnectionOptions is an interface with settings and options for specific connection.
  * Options contain database and other connection-related settings.
  * Consumer must provide connection options for each of your connections.
+ *
+ * @deprecated use DataSourceOptions instead
  */
-export type ConnectionOptions =
-    MysqlConnectionOptions|
-    PostgresConnectionOptions|
-    SqliteConnectionOptions|
-    SqlServerConnectionOptions|
-    OracleConnectionOptions|
-    CordovaConnectionOptions|
-    NativescriptConnectionOptions|
-    ReactNativeConnectionOptions|
-    SqljsConnectionOptions|
-    MongoConnectionOptions|
-    ExpoConnectionOptions;
+export type ConnectionOptions = DataSourceOptions

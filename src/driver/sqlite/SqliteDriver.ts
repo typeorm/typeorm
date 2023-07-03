@@ -1,18 +1,20 @@
-import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError";
-import {SqliteQueryRunner} from "./SqliteQueryRunner";
-import {DriverOptionNotSetError} from "../../error/DriverOptionNotSetError";
-import {PlatformTools} from "../../platform/PlatformTools";
-import {Connection} from "../../connection/Connection";
-import {SqliteConnectionOptions} from "./SqliteConnectionOptions";
-import {ColumnType} from "../types/ColumnTypes";
-import {QueryRunner} from "../../query-runner/QueryRunner";
-import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver";
+import mkdirp from "mkdirp"
+import path from "path"
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { SqliteQueryRunner } from "./SqliteQueryRunner"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { DataSource } from "../../data-source/DataSource"
+import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
+import { ColumnType } from "../types/ColumnTypes"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { filepathToName, isAbsolute } from "../../util/PathUtils"
 
 /**
  * Organizes communication with sqlite DBMS.
  */
 export class SqliteDriver extends AbstractSqliteDriver {
-
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -20,30 +22,26 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Connection options.
      */
-    options: SqliteConnectionOptions;
+    options: SqliteConnectionOptions
 
     /**
      * SQLite underlying library.
      */
-    sqlite: any;
+    sqlite: any
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: Connection) {
-        super(connection);
+    constructor(connection: DataSource) {
+        super(connection)
 
-        this.connection = connection;
-        this.options = connection.options as SqliteConnectionOptions;
-        this.database = this.options.database;
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database");
+        this.connection = connection
+        this.options = connection.options as SqliteConnectionOptions
+        this.database = this.options.database
 
         // load sqlite package
-        this.loadDependencies();
+        this.loadDependencies()
     }
 
     // -------------------------------------------------------------------------
@@ -55,27 +53,69 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     async disconnect(): Promise<void> {
         return new Promise<void>((ok, fail) => {
-            this.queryRunner = undefined;
-            this.databaseConnection.close((err: any) => err ? fail(err) : ok());
-        });
+            this.queryRunner = undefined
+            this.databaseConnection.close((err: any) =>
+                err ? fail(err) : ok(),
+            )
+        })
     }
 
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: "master"|"slave" = "master"): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new SqliteQueryRunner(this);
+    createQueryRunner(mode: ReplicationMode): QueryRunner {
+        if (!this.queryRunner) this.queryRunner = new SqliteQueryRunner(this)
 
-        return this.queryRunner;
+        return this.queryRunner
     }
 
-    normalizeType(column: { type?: ColumnType, length?: number | string, precision?: number|null, scale?: number }): string {
+    normalizeType(column: {
+        type?: ColumnType
+        length?: number | string
+        precision?: number | null
+        scale?: number
+    }): string {
         if ((column.type as any) === Buffer) {
-            return "blob";
+            return "blob"
         }
 
-        return super.normalizeType(column);
+        return super.normalizeType(column)
+    }
+
+    async afterConnect(): Promise<void> {
+        return this.attachDatabases()
+    }
+
+    /**
+     * For SQLite, the database may be added in the decorator metadata. It will be a filepath to a database file.
+     */
+    buildTableName(
+        tableName: string,
+        _schema?: string,
+        database?: string,
+    ): string {
+        if (!database) return tableName
+        if (this.getAttachedDatabaseHandleByRelativePath(database))
+            return `${this.getAttachedDatabaseHandleByRelativePath(
+                database,
+            )}.${tableName}`
+
+        if (database === this.options.database) return tableName
+
+        // we use the decorated name as supplied when deriving attach handle (ideally without non-portable absolute path)
+        const identifierHash = filepathToName(database)
+        // decorated name will be assumed relative to main database file when non absolute. Paths supplied as absolute won't be portable
+        const absFilepath = isAbsolute(database)
+            ? database
+            : path.join(this.getMainDatabasePath(), database)
+
+        this.attachedDatabases[database] = {
+            attachFilepathAbsolute: absFilepath,
+            attachFilepathRelative: database,
+            attachHandle: identifierHash,
+        }
+
+        return `${identifierHash}.${tableName}`
     }
 
     // -------------------------------------------------------------------------
@@ -85,28 +125,67 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with the database.
      */
-    protected createDatabaseConnection() {
-        return new Promise<void>(async (ok, fail) => {
-            await this.createDatabaseDirectory(this.options.database);
-            const databaseConnection = new this.sqlite.Database(this.options.database, (err: any) => {
-                if (err) return fail(err);
+    protected async createDatabaseConnection() {
+        if (
+            this.options.flags === undefined ||
+            !(this.options.flags & this.sqlite.OPEN_URI)
+        ) {
+            await this.createDatabaseDirectory(this.options.database)
+        }
 
-                // we need to enable foreign keys in sqlite to make sure all foreign key related features
-                // working properly. this also makes onDelete to work with sqlite.
-                databaseConnection.run(`PRAGMA foreign_keys = ON;`, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(databaseConnection);
-                });
+        const databaseConnection: any = await new Promise((ok, fail) => {
+            if (this.options.flags === undefined) {
+                const connection = new this.sqlite.Database(
+                    this.options.database,
+                    (err: any) => {
+                        if (err) return fail(err)
+                        ok(connection)
+                    },
+                )
+            } else {
+                const connection = new this.sqlite.Database(
+                    this.options.database,
+                    this.options.flags,
+                    (err: any) => {
+                        if (err) return fail(err)
+                        ok(connection)
+                    },
+                )
+            }
+        })
 
-                // in the options, if encryption key for for SQLCipher is setted.
-                if (this.options.key) {
-                  databaseConnection.run(`PRAGMA key = ${this.options.key};`, (err: any, result: any) => {
-                    if (err) return fail(err);
-                    ok(databaseConnection);
-                  });
-                }
-            });
-        });
+        // Internal function to run a command on the connection and fail if an error occured.
+        function run(line: string): Promise<void> {
+            return new Promise((ok, fail) => {
+                databaseConnection.run(line, (err: any) => {
+                    if (err) return fail(err)
+                    ok()
+                })
+            })
+        }
+        // in the options, if encryption key for SQLCipher is setted.
+        // Must invoke key pragma before trying to do any other interaction with the database.
+        if (this.options.key) {
+            await run(`PRAGMA key = ${JSON.stringify(this.options.key)}`)
+        }
+
+        if (this.options.enableWAL) {
+            await run(`PRAGMA journal_mode = WAL`)
+        }
+
+        if (
+            this.options.busyTimeout &&
+            typeof this.options.busyTimeout === "number" &&
+            this.options.busyTimeout > 0
+        ) {
+            await run(`PRAGMA busy_timeout = ${this.options.busyTimeout}`)
+        }
+
+        // we need to enable foreign keys in sqlite to make sure all foreign key related features
+        // working properly. this also makes onDelete to work with sqlite.
+        await run(`PRAGMA foreign_keys = ON`)
+
+        return databaseConnection
     }
 
     /**
@@ -114,22 +193,45 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     protected loadDependencies(): void {
         try {
-            this.sqlite = PlatformTools.load("sqlite3").verbose();
-
+            const sqlite = this.options.driver || PlatformTools.load("sqlite3")
+            this.sqlite = sqlite.verbose()
         } catch (e) {
-            throw new DriverPackageNotInstalledError("SQLite", "sqlite3");
+            throw new DriverPackageNotInstalledError("SQLite", "sqlite3")
         }
     }
 
     /**
      * Auto creates database directory if it does not exist.
      */
-    protected createDatabaseDirectory(fullPath: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const mkdirp = PlatformTools.load("mkdirp");
-            const path = PlatformTools.load("path");
-            mkdirp(path.dirname(fullPath), (err: any) => err ? reject(err) : resolve());
-        });
+    protected async createDatabaseDirectory(fullPath: string): Promise<void> {
+        await mkdirp(path.dirname(fullPath))
     }
 
+    /**
+     * Performs the attaching of the database files. The attachedDatabase should have been populated during calls to #buildTableName
+     * during EntityMetadata production (see EntityMetadata#buildTablePath)
+     *
+     * https://sqlite.org/lang_attach.html
+     */
+    protected async attachDatabases() {
+        // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
+        for await (const {
+            attachHandle,
+            attachFilepathAbsolute,
+        } of Object.values(this.attachedDatabases)) {
+            await this.createDatabaseDirectory(attachFilepathAbsolute)
+            await this.connection.query(
+                `ATTACH "${attachFilepathAbsolute}" AS "${attachHandle}"`,
+            )
+        }
+    }
+
+    protected getMainDatabasePath(): string {
+        const optionsDb = this.options.database
+        return path.dirname(
+            isAbsolute(optionsDb)
+                ? optionsDb
+                : path.join(process.cwd(), optionsDb),
+        )
+    }
 }

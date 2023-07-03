@@ -1,18 +1,21 @@
-import {Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "../../../src/index";
-import {Author} from "./Author";
+import {
+    Column,
+    Entity,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Author } from "./Author"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
-    @ManyToOne(type => Author, {
-        cascade: ["insert"]
+    @ManyToOne((type) => Author, {
+        cascade: ["insert"],
     })
-    author: Author;
-
+    author: Author
 }

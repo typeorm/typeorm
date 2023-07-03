@@ -1,24 +1,22 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
-import {PrimaryGeneratedColumn} from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {User} from "./User";
+import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { ManyToMany } from "../../../../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../../../../src/decorator/relations/JoinTable"
+import { PrimaryGeneratedColumn } from "../../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { User } from "./User"
 
 export class Subcounters {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    version: number;
+    version: number
 
     @Column()
-    watches: number;
+    watches: number
 
-    @ManyToMany(type => User)
+    @ManyToMany((type) => User)
     @JoinTable({ name: "subcnt_users" })
-    watchedUsers: User[];
+    watchedUsers: User[]
 
-    watchedUserIds: number[];
-
+    watchedUserIds: number[]
 }

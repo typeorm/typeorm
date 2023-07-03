@@ -1,13 +1,10 @@
+import { TypeORMError } from "./TypeORMError"
+
 /**
  * Thrown when an optimistic lock cannot be used in query builder.
  */
-export class OptimisticLockCanNotBeUsedError extends Error {
-    name = "OptimisticLockCanNotBeUsedError";
-
+export class OptimisticLockCanNotBeUsedError extends TypeORMError {
     constructor() {
-        super();
-        Object.setPrototypeOf(this, OptimisticLockCanNotBeUsedError.prototype);
-        this.message = `The optimistic lock can be used only with getOne() method.`;
+        super(`The optimistic lock can be used only with getOne() method.`)
     }
-
 }

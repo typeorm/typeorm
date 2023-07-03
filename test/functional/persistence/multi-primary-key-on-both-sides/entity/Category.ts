@@ -1,20 +1,17 @@
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {Post} from "./Post";
-import {OneToMany} from "../../../../../src/decorator/relations/OneToMany";
-
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { Post } from "./Post"
+import { OneToMany } from "../../../../../src/decorator/relations/OneToMany"
 
 @Entity()
 export class Category {
-
-    @PrimaryColumn("int")
-    categoryId: number;
+    @PrimaryColumn()
+    categoryId: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToMany(type => Post, post => post.category)
-    posts: Post[];
-
+    @OneToMany((type) => Post, (post) => post.category)
+    posts: Post[]
 }

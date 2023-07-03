@@ -1,32 +1,37 @@
-import {ObjectType} from "../common/ObjectType";
-import {EntitySchema} from "../index";
+import { EntityTarget } from "../common/EntityTarget"
+import { TypeORMError } from "./TypeORMError"
+import { ObjectUtils } from "../util/ObjectUtils"
+import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
  * Thrown when no result could be found in methods which are not allowed to return undefined or an empty set.
  */
-export class EntityNotFoundError extends Error {
-    name = "EntityNotFound";
+export class EntityNotFoundError extends TypeORMError {
+    constructor(entityClass: EntityTarget<any>, criteria: any) {
+        super()
 
-    constructor(entityClass: ObjectType<any>|EntitySchema<any>|string, criteria: any) {
-        super();
-        Object.setPrototypeOf(this, EntityNotFoundError.prototype);
-        let targetName: string;
-        if (entityClass instanceof EntitySchema) {
-            targetName = entityClass.options.name;
-        } else if (typeof entityClass === "function") {
-            targetName = entityClass.name;
+        this.message =
+            `Could not find any entity of type "${this.stringifyTarget(
+                entityClass,
+            )}" ` + `matching: ${this.stringifyCriteria(criteria)}`
+    }
+
+    private stringifyTarget(target: EntityTarget<any>): string {
+        if (InstanceChecker.isEntitySchema(target)) {
+            return target.options.name
+        } else if (typeof target === "function") {
+            return target.name
+        } else if (ObjectUtils.isObject(target) && "name" in (target as any)) {
+            return (target as any).name
         } else {
-            targetName = entityClass;
+            return target as any
         }
-        const criteriaString = this.stringifyCriteria(criteria);
-        this.message = `Could not find any entity of type "${targetName}" matching: ${criteriaString}`;
     }
 
     private stringifyCriteria(criteria: any): string {
         try {
-            return JSON.stringify(criteria, null, 4);
-        } catch (e) { }
-        return "" + criteria;
+            return JSON.stringify(criteria, null, 4)
+        } catch (e) {}
+        return "" + criteria
     }
-
 }

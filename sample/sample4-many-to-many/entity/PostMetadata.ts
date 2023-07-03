@@ -1,16 +1,19 @@
-import {Column, Entity, ManyToMany, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
+import {
+    Column,
+    Entity,
+    ManyToMany,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Post } from "./Post"
 
 @Entity("sample4_post_metadata")
 export class PostMetadata {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    description: string;
+    description: string
 
-    @ManyToMany(type => Post, post => post.metadatas)
-    posts: Post[];
-
+    @ManyToMany((type) => Post, (post) => post.metadatas)
+    posts: Post[]
 }

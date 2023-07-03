@@ -1,195 +1,200 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {FruitEnum} from "../enum/FruitEnum";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { FruitEnum } from "../enum/FruitEnum"
 
 @Entity()
 export class Post {
-
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column("bit")
-    bit: Buffer;
+    bit: Buffer
 
     @Column("int")
-    int: number;
+    int: number
 
     @Column("integer")
-    integer: number;
+    integer: number
 
     @Column("tinyint")
-    tinyint: number;
+    tinyint: number
 
     @Column("smallint")
-    smallint: number;
+    smallint: number
 
     @Column("mediumint")
-    mediumint: number;
+    mediumint: number
 
     @Column("bigint")
-    bigint: string;
+    bigint: string
 
     @Column("float")
-    float: number;
+    float: number
 
     @Column("double")
-    double: number;
+    double: number
 
     @Column("double precision")
-    doublePrecision: number;
+    doublePrecision: number
 
     @Column("real")
-    real: number;
+    real: number
 
     @Column("dec")
-    dec: string;
+    dec: string
 
     @Column("decimal")
-    decimal: string;
+    decimal: string
 
     @Column("numeric")
-    numeric: string;
+    numeric: string
 
     @Column("fixed")
-    fixed: string;
+    fixed: string
 
     // -------------------------------------------------------------------------
     // Boolean Type
     // -------------------------------------------------------------------------
 
     @Column("boolean")
-    boolean: boolean;
+    boolean: boolean
 
     @Column("bool")
-    bool: boolean;
+    bool: boolean
 
     // -------------------------------------------------------------------------
     // String Types
     // -------------------------------------------------------------------------
 
     @Column("char")
-    char: string;
+    char: string
 
     @Column("nchar")
-    nChar: string;
+    nChar: string
 
     @Column("national char")
-    nationalChar: string;
+    nationalChar: string
 
     @Column("varchar")
-    varchar: string;
+    varchar: string
 
     @Column("nvarchar")
-    nVarchar: string;
+    nVarchar: string
 
     @Column("national varchar")
-    nationalVarchar: string;
+    nationalVarchar: string
 
     @Column("text")
-    text: string;
+    text: string
 
     @Column("tinytext")
-    tinytext: string;
+    tinytext: string
 
     @Column("mediumtext")
-    mediumtext: string;
+    mediumtext: string
 
     @Column("longtext")
-    longtext: string;
+    longtext: string
 
     // -------------------------------------------------------------------------
     // Binary Types
     // -------------------------------------------------------------------------
     @Column("binary")
-    binary: Buffer;
+    binary: Buffer
 
     @Column("varbinary")
-    varbinary: Buffer;
+    varbinary: Buffer
 
     // -------------------------------------------------------------------------
     // LOB Types
     // -------------------------------------------------------------------------
 
     @Column("blob")
-    blob: Buffer;
+    blob: Buffer
 
     @Column("tinyblob")
-    tinyblob: Buffer;
+    tinyblob: Buffer
 
     @Column("mediumblob")
-    mediumblob: Buffer;
+    mediumblob: Buffer
 
     @Column("longblob")
-    longblob: Buffer;
+    longblob: Buffer
 
     // -------------------------------------------------------------------------
     // Date Types
     // -------------------------------------------------------------------------
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("datetime")
-    datetime: Date;
+    datetime: Date
 
     @Column("timestamp")
-    timestamp: Date;
+    timestamp: Date
 
     @Column("time")
-    time: string;
+    time: string
 
     @Column("year")
-    year: number;
+    year: number
 
     // -------------------------------------------------------------------------
     // Spatial Types
     // -------------------------------------------------------------------------
 
     @Column("geometry")
-    geometry: string;
+    geometry: string
 
     @Column("point")
-    point: string;
+    point: string
 
     @Column("linestring")
-    linestring: string;
+    linestring: string
 
     @Column("polygon")
-    polygon: string;
+    polygon: string
 
     @Column("multipoint")
-    multipoint: string;
+    multipoint: string
 
     @Column("multilinestring")
-    multilinestring: string;
+    multilinestring: string
 
     @Column("multipolygon")
-    multipolygon: string;
+    multipolygon: string
 
     @Column("geometrycollection")
-    geometrycollection: string;
+    geometrycollection: string
 
     // -------------------------------------------------------------------------
     // Other Types
     // -------------------------------------------------------------------------
 
     @Column("enum", { enum: ["A", "B", "C"] })
-    enum: string;
+    enum: string
 
     @Column("enum", { enum: FruitEnum })
-    classEnum1: FruitEnum;
+    classEnum1: FruitEnum
 
     @Column("json")
-    json: Object;
+    json: Object
 
     @Column("simple-array")
-    simpleArray: string[];
+    simpleArray: string[]
 
     @Column("simple-json")
-    simpleJson: { param: string };
+    simpleJson: { param: string }
+
+    @Column("simple-enum", { enum: ["A", "B", "C"] })
+    simpleEnum: string
+
+    @Column("simple-enum", { enum: FruitEnum })
+    simpleClassEnum1: FruitEnum
 }

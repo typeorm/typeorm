@@ -1,23 +1,19 @@
-import {Column, Entity} from "../../../src/index";
-import {PrimaryColumn} from "../../../src/decorator/columns/PrimaryColumn";
-import {Generated} from "../../../src/decorator/Generated";
+import { Column, Entity } from "../../../src/index"
+import { PrimaryColumn } from "../../../src/decorator/columns/PrimaryColumn"
+import { Generated } from "../../../src/decorator/Generated"
 
 @Entity("sample01_post")
 export class Post {
-
-    @PrimaryColumn("integer")
+    @PrimaryColumn()
     @Generated()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    text: string;
+    text: string
 
-    @Column("int", {
-        nullable: false
-    })
-    likesCount: number;
-
+    @Column({ nullable: false })
+    likesCount: number
 }

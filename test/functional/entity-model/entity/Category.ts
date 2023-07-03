@@ -1,15 +1,10 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {BaseEntity} from "../../../../src/repository/BaseEntity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Column} from "../../../../src/decorator/columns/Column";
+import { BaseEntity, Column, Entity, PrimaryColumn } from "../../../../src"
 
 @Entity()
-export class Category  extends BaseEntity {
-
-    @PrimaryGeneratedColumn()
-    id: number;
+export class Category extends BaseEntity {
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    name: string;
-
+    name: string
 }

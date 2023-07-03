@@ -1,19 +1,17 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {PrimaryGeneratedColumn} from "../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {Entity} from "../../../../../src/decorator/entity/Entity";
-import {Post} from "./Post";
-import {OneToOne} from "../../../../../src/decorator/relations/OneToOne";
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+import { Post } from "./Post"
+import { OneToOne } from "../../../../../src/decorator/relations/OneToOne"
 
 @Entity()
 export class User {
-
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryColumn()
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToOne(() => Post, post => post.counters.likedUser)
-    likedPost: Post;
-
+    @OneToOne(() => Post, (post) => post.counters.likedUser)
+    likedPost: Post
 }

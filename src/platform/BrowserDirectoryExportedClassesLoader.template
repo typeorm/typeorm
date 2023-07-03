@@ -1,0 +1,22 @@
+/**
+ * Dummy functions for replacement via `package.json` in browser builds.
+ *
+ * If we don't include these functions typeorm will throw an error on runtime
+ * as well as during webpack builds.
+ */
+
+import {Logger} from "../logger/Logger";
+
+/**
+ * Loads all exported classes from the given directory.
+ */
+export function importClassesFromDirectories(logger: Logger, directories: string[], formats = [".js", ".cjs", ".ts"]): Function[] {
+    return [];
+}
+
+/**
+ * Loads all json files from the given directory.
+ */
+export function importJsonsFromDirectories(directories: string[], format = ".json"): any[] {
+    return [];
+}

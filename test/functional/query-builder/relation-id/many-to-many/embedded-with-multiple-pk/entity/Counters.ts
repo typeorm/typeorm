@@ -1,31 +1,29 @@
-import {Column} from "../../../../../../../src/decorator/columns/Column";
-import {ManyToMany} from "../../../../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../../../../src/decorator/relations/JoinTable";
-import {PrimaryColumn} from "../../../../../../../src/decorator/columns/PrimaryColumn";
-import {Category} from "./Category";
-import {Subcounters} from "./Subcounters";
+import { Column } from "../../../../../../../src/decorator/columns/Column"
+import { ManyToMany } from "../../../../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../../../../src/decorator/relations/JoinTable"
+import { PrimaryColumn } from "../../../../../../../src/decorator/columns/PrimaryColumn"
+import { Category } from "./Category"
+import { Subcounters } from "./Subcounters"
 
 export class Counters {
-
     @PrimaryColumn()
-    code: number;
+    code: number
 
     @Column()
-    likes: number;
+    likes: number
 
     @Column()
-    comments: number;
+    comments: number
 
     @Column()
-    favorites: number;
+    favorites: number
 
-    @ManyToMany(type => Category, category => category.posts)
+    @ManyToMany((type) => Category, (category) => category.posts)
     @JoinTable({ name: "counter_categories" })
-    categories: Category[];
+    categories: Category[]
 
-    @Column(() => Subcounters)
-    subcntrs: Subcounters;
+    @Column(() => Subcounters, { prefix: "sub" })
+    subcntrs: Subcounters
 
-    categoryIds: number[];
-
+    categoryIds: number[]
 }

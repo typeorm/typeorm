@@ -1,5 +1,5 @@
-import {EntitySchema} from "../../../../../src";
-import {Category} from "../model/Category";
+import { EntitySchema } from "../../../../../src"
+import { Category } from "../model/Category"
 
 export const CategoryEntity = new EntitySchema<Category>({
     name: "category",
@@ -7,10 +7,9 @@ export const CategoryEntity = new EntitySchema<Category>({
         id: {
             type: Number,
             primary: true,
-            generated: true
         },
         name: {
-            type: String
-        }
-    }
-});
+            type: String,
+        },
+    },
+})

@@ -1,13 +1,13 @@
+import { TypeORMError } from "./TypeORMError"
+
 /**
  * Thrown when circular relations detected with nullable set to false.
  */
-export class CircularRelationsError extends Error {
-    name = "CircularRelationsError";
-
+export class CircularRelationsError extends TypeORMError {
     constructor(path: string) {
-        super();
-        Object.setPrototypeOf(this, CircularRelationsError.prototype);
-        this.message = `Circular relations detected: ${path}. To resolve this issue you need to set nullable: false somewhere in this dependency structure.`;
+        super(
+            `Circular relations detected: ${path}. To resolve this issue you need to ` +
+                `set nullable: true somewhere in this dependency structure.`,
+        )
     }
-
 }
