@@ -524,6 +524,9 @@ export class SubjectExecutor {
      * Updates all given subjects in the database.
      */
     protected async executeUpdateOperations(): Promise<void> {
+        const isSpanner =
+            this.queryRunner.connection.driver.options.type === "spanner"
+
         const updateSubject = async (subject: Subject) => {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject)
@@ -645,7 +648,7 @@ export class SubjectExecutor {
         const remainingSubjects: Subject[] = []
 
         for (const subject of this.updateSubjects) {
-            if (subject.metadata.treeType === "nested-set") {
+            if (subject.metadata.treeType === "nested-set" || isSpanner) {
                 nestedSetSubjects.push(subject)
             } else {
                 remainingSubjects.push(subject)
