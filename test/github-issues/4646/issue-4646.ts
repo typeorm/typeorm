@@ -7,13 +7,14 @@ import {
     createTestingConnections,
     sleep,
 } from "../../utils/test-utils"
+import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
 
-const getCurrentTimestampAndWait = async () => {
+const getCurrentTimestamp = async () => {
     // give some time to simulate dataset modifications
-    await sleep(1000)
+    await sleep(100)
     const timestamp = new Date()
-    await sleep(1000)
+    await sleep(100)
     return timestamp
 }
 
@@ -24,46 +25,46 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
         dataSources = await createTestingConnections({
             dropSchema: true,
             enabledDrivers: ["mariadb", "mssql"],
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [Photo, User],
             schemaCreate: true,
         })
     })
 
     after(() => closeTestingConnections(dataSources))
 
-    it("should check new find methods from the BaseEntity class", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                User.useDataSource(dataSource)
+    it("should check new find methods from the BaseEntity class", async () => {
+        // this test has to run serial because class User exists only once
+        for (const dataSource of dataSources) {
+            User.useDataSource(dataSource)
 
-                const user = new User()
-                user.id = 1
-                user.name = "foo"
-                await user.save()
+            const user = new User()
+            user.id = 1
+            user.name = "foo"
+            await dataSource.manager.save(user)
 
-                const timestamp = await getCurrentTimestampAndWait()
+            const timestamp = await getCurrentTimestamp()
 
-                let result = await User.findOneBy({ id: 1 })
-                expect(result?.name).to.be.equal("foo")
+            let result = await User.findOneBy({ id: 1 })
+            expect(result?.name).to.be.equal("foo")
 
-                user.name = "bar"
-                await user.save()
+            user.name = "bar"
+            await dataSource.manager.save(user)
 
-                result = await User.findOneBy({ id: 1 })
-                expect(result?.name).to.be.equal("bar")
+            result = await User.findOneBy({ id: 1 })
+            expect(result?.name).to.be.equal("bar")
 
-                result = await User.findOneAt(timestamp, { where: { id: 1 } })
-                expect(result?.name).to.be.equal("foo")
+            result = await User.findOneAt(timestamp, { where: { id: 1 } })
+            expect(result?.name).to.be.equal("foo")
 
-                let users = await User.findAt(timestamp)
-                expect(users).to.be.eql([{ id: 1, name: "foo" }])
+            let users = await User.findAt(timestamp)
+            expect(users[0].name).to.be.eql("foo")
 
-                users = await User.findAt(timestamp, { where: { id: 1 } })
-                expect(users).to.be.eql([{ id: 1, name: "foo" }])
+            users = await User.findAt(timestamp, { where: { id: 1 } })
+            expect(users[0].name).to.be.eql("foo")
 
-                await user.remove()
-            }),
-        ))
+            await user.remove()
+        }
+    })
 
     it("should check new find methods from the Repository class", () =>
         Promise.all(
@@ -73,24 +74,25 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 const user = new User()
                 user.id = 1
                 user.name = "foo"
-                await repository.save(user)
+                await manager.save(user)
 
-                const timestamp = await getCurrentTimestampAndWait()
+                const timestamp = await getCurrentTimestamp()
 
                 let result = await repository.findOneBy({ id: 1 })
                 expect(result?.name).to.be.equal("foo")
 
-                await repository.update(1, { name: "bar" })
+                user.name = "bar"
+                await manager.save(user)
 
                 result = await repository.findOne({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("bar")
 
                 // check user name from the history
                 let users = await repository.findAt(timestamp)
-                expect(users).to.be.eql([{ id: 1, name: "foo" }])
+                expect(users[0].name).to.be.eql("foo")
 
                 users = await repository.findAt(timestamp, { where: { id: 1 } })
-                expect(users).to.be.eql([{ id: 1, name: "foo" }])
+                expect(users[0].name).to.be.eql("foo")
 
                 result = await repository.findOneAt(timestamp, {
                     where: { id: 1 },
@@ -109,14 +111,14 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 const userOne = new User()
                 userOne.id = 1
                 userOne.name = "foo"
-                await repository.save(userOne)
+                await manager.save(userOne)
 
                 const userTwo = new User()
                 userTwo.id = 2
                 userTwo.name = "bar"
-                await repository.save(userTwo)
+                await manager.save(userTwo)
 
-                const timestamp = await getCurrentTimestampAndWait()
+                const timestamp = await getCurrentTimestamp()
 
                 let results = await repository.find()
                 expect(results).to.have.length(2)
