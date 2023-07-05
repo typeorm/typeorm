@@ -33,6 +33,10 @@ export class CommandUtils {
             )
         }
 
+        if (InstanceChecker.isDataSource(dataSourceFileExports)) {
+            return dataSourceFileExports
+        }
+
         const dataSourceExports = []
         for (const fileExportKey in dataSourceFileExports) {
             const fileExport = dataSourceFileExports[fileExportKey]
