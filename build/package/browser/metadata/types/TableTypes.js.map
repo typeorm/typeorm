@@ -1,1 +1,0 @@
-{"version":3,"sources":["../browser/src/metadata/types/TableTypes.ts"],"names":[],"mappings":"","file":"TableTypes.js","sourcesContent":["/**\n * Table type. Tables can be abstract, closure, junction, embedded, etc.\n */\nexport type TableType = \"regular\"|\"view\"|\"junction\"|\"closure\"|\"closure-junction\"|\"entity-child\";\n"],"sourceRoot":"../.."}
