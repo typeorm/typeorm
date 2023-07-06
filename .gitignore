@@ -3,7 +3,8 @@
 .vscode/
 .idea/
 build/browser/
-build/compiled/
+build/compiled/test/
+build/compiled/sample/
 coverage/
 node_modules/
 ormconfig.json
