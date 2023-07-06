@@ -40,10 +40,15 @@ npm run package
 
 
 
-July 29, 2023
+June 29, 2023
 
 Upgraded Typescript to 5+
 
 Changes based on:
 
 https://github.com/typeorm/typeorm/pull/9357/files
+
+July 6, 2023
+
+Realized since we are using this directly, don't use the packages directory,
+everything gets copied in there and makes life hell.
