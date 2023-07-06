@@ -1,0 +1,1 @@
+{"version":3,"file":"NoConnectionOptionError.js","sourceRoot":"","sources":["../../../../src/error/NoConnectionOptionError.ts"],"names":[],"mappings":";;;AAAA;;GAEG;AACH,MAAa,uBAAwB,SAAQ,KAAK;IAE9C,YAAY,UAAkB;QAC1B,KAAK,EAAE,CAAC;QACR,MAAM,CAAC,cAAc,CAAC,IAAI,EAAE,uBAAuB,CAAC,SAAS,CAAC,CAAC;QAC/D,IAAI,CAAC,OAAO,GAAG,WAAW,UAAU,2DAA2D,UAAU,uDAAuD,CAAC;IACrK,CAAC;CAEJ;AARD,0DAQC"}
