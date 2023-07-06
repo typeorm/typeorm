@@ -23,6 +23,7 @@ import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey"
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns"
 import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
 import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
+import { expect } from "chai"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)
@@ -268,6 +269,44 @@ describe("repository > basic methods", () => {
                 }),
             ))
 
+        it("should preload entity from the given object with only id within a transaction", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await connection.manager.transaction(
+                    async (em) => {
+                        const blogRepository = em.getRepository(Blog)
+                        const categoryRepository =
+                        em.getRepository(Category)
+        
+                        // save the category
+                        const category = new Category()
+                        category.name = "people"
+                        await categoryRepository.save(category)
+        
+                        // save the blog
+                        const blog = new Blog()
+                        blog.title = "About people"
+                        blog.text = "Blog about good people"
+                        blog.categories = [category]
+                        await blogRepository.save(blog)
+        
+                        // and preload it
+                        const plainBlogWithId = { id: 1 }
+                        const preloadedBlog = await blogRepository.preload(
+                            plainBlogWithId,
+                        )
+                        expect(preloadedBlog).to.exist
+                        preloadedBlog!.should.be.instanceOf(Blog)
+                        preloadedBlog!.id.should.be.equal(1)
+                        preloadedBlog!.title.should.be.equal("About people")
+                        preloadedBlog!.text.should.be.equal(
+                            "Blog about good people",
+                        )   
+                    }
+                )
+            }),
+        ))
+
         it("should preload entity and all relations given in the object", () =>
             Promise.all(
                 connections.map(async (connection) => {
@@ -302,6 +341,45 @@ describe("repository > basic methods", () => {
                     preloadedBlog!.categories[0].name.should.be.equal("people")
                 }),
             ))
+
+        it("should preload entity and all relations given in the object within a transaction", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                connection.manager.transaction(
+                    async (em) => {
+                        const blogRepository = em.getRepository(Blog)
+                        const categoryRepository =
+                        em.getRepository(Category)
+        
+                        // save the category
+                        const category = new Category()
+                        category.name = "people"
+                        await categoryRepository.save(category)
+        
+                        // save the blog
+                        const blog = new Blog()
+                        blog.title = "About people"
+                        blog.text = "Blog about good people"
+                        blog.categories = [category]
+                        await blogRepository.save(blog)
+        
+                        // and preload it
+                        const plainBlogWithId = { id: 1, categories: [{ id: 1 }] }
+                        const preloadedBlog = await blogRepository.preload(
+                            plainBlogWithId,
+                        )
+                        preloadedBlog!.should.be.instanceOf(Blog)
+                        preloadedBlog!.id.should.be.equal(1)
+                        preloadedBlog!.title.should.be.equal("About people")
+                        preloadedBlog!.text.should.be.equal(
+                            "Blog about good people",
+                        )
+                        preloadedBlog!.categories[0].id.should.be.equal(1)
+                        preloadedBlog!.categories[0].name.should.be.equal("people")
+                            }
+                )
+            }),
+        ))
     })
 
     describe("merge", function () {

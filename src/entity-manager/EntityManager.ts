@@ -330,7 +330,7 @@ export class EntityManager {
     ): Promise<Entity | undefined> {
         const metadata = this.connection.getMetadata(entityClass)
         const plainObjectToDatabaseEntityTransformer =
-            new PlainObjectToDatabaseEntityTransformer(this.connection.manager)
+            new PlainObjectToDatabaseEntityTransformer(this)
         const transformedEntity =
             await plainObjectToDatabaseEntityTransformer.transform(
                 entityLike,
