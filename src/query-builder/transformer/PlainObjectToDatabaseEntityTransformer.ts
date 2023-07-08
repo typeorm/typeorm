@@ -2,6 +2,7 @@ import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { EntityManager } from "../../entity-manager/EntityManager"
 import { RelationMetadata } from "../../metadata/RelationMetadata"
+import { In } from "../../find-options/operator/In"
 
 /**
  */
@@ -87,7 +88,7 @@ class LoadMap {
  * Entity is constructed based on its entity metadata.
  */
 export class PlainObjectToDatabaseEntityTransformer {
-    constructor(private manager: EntityManager) {}
+    constructor(private manager: EntityManager) { }
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -129,16 +130,12 @@ export class PlainObjectToDatabaseEntityTransformer {
         fillLoadMap(plainObject, metadata)
         // load all entities and store them in the load map
         await Promise.all(
-            loadMap.groupByTargetIds().map((targetWithIds) => {
-                // todo: fix type hinting
-                return this.manager
-                    .findByIds<ObjectLiteral>(
-                        targetWithIds.target as any,
-                        targetWithIds.ids,
-                    )
-                    .then((entities) =>
-                        loadMap.fillEntities(targetWithIds.target, entities),
-                    )
+            loadMap.groupByTargetIds().map(async (targetWithIds) => {
+                const foundEntities = await this.manager
+                    .findBy<ObjectLiteral>(targetWithIds.target, {
+                        id: In([...targetWithIds.ids])
+                    })
+                return loadMap.fillEntities(targetWithIds.target, foundEntities)
             }),
         )
 
@@ -158,7 +155,7 @@ export class PlainObjectToDatabaseEntityTransformer {
             ) {
                 if (
                     !loadMapItem.parentLoadMapItem.entity[
-                        loadMapItem.relation.propertyName
+                    loadMapItem.relation.propertyName
                     ]
                 )
                     loadMapItem.parentLoadMapItem.entity[
