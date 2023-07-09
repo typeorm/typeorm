@@ -88,7 +88,7 @@ class LoadMap {
  * Entity is constructed based on its entity metadata.
  */
 export class PlainObjectToDatabaseEntityTransformer {
-    constructor(private manager: EntityManager) { }
+    constructor(private manager: EntityManager) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -131,10 +131,12 @@ export class PlainObjectToDatabaseEntityTransformer {
         // load all entities and store them in the load map
         await Promise.all(
             loadMap.groupByTargetIds().map(async (targetWithIds) => {
-                const foundEntities = await this.manager
-                    .findBy<ObjectLiteral>(targetWithIds.target, {
-                        id: In([...targetWithIds.ids])
-                    })
+                const foundEntities = await this.manager.findBy<ObjectLiteral>(
+                    targetWithIds.target,
+                    {
+                        id: In([...targetWithIds.ids]),
+                    },
+                )
                 return loadMap.fillEntities(targetWithIds.target, foundEntities)
             }),
         )
@@ -155,7 +157,7 @@ export class PlainObjectToDatabaseEntityTransformer {
             ) {
                 if (
                     !loadMapItem.parentLoadMapItem.entity[
-                    loadMapItem.relation.propertyName
+                        loadMapItem.relation.propertyName
                     ]
                 )
                     loadMapItem.parentLoadMapItem.entity[
