@@ -23,7 +23,7 @@ export class EntityPersistExecutor {
     // -------------------------------------------------------------------------
 
     constructor(
-        protected connection: DataSource,
+        protected connection: Omit<DataSource, 'manager'>,
         protected queryRunner: QueryRunner | undefined,
         protected mode: "save" | "remove" | "soft-remove" | "recover",
         protected target: Function | string | undefined,
