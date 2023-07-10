@@ -23,7 +23,6 @@ import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey"
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns"
 import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
 import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
-import { expect } from "chai"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)
@@ -295,7 +294,7 @@ describe("repository > basic methods", () => {
                         const preloadedBlog = await blogRepository.preload(
                             plainBlogWithId,
                         )
-                        expect(preloadedBlog).to.exist
+                        chai.expect(preloadedBlog).to.exist
                         preloadedBlog!.should.be.instanceOf(Blog)
                         preloadedBlog!.id.should.be.equal(1)
                         preloadedBlog!.title.should.be.equal("About people")
@@ -368,6 +367,7 @@ describe("repository > basic methods", () => {
                         const preloadedBlog = await blogRepository.preload(
                             plainBlogWithId,
                         )
+                        chai.expect(preloadedBlog).to.exist
                         preloadedBlog!.should.be.instanceOf(Blog)
                         preloadedBlog!.id.should.be.equal(1)
                         preloadedBlog!.title.should.be.equal("About people")
