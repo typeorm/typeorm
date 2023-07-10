@@ -23,7 +23,6 @@ import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey"
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns"
 import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
 import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
-import { expect } from "chai"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)
