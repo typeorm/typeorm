@@ -202,15 +202,24 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const queryStartTime = +new Date()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
 
-            statement = databaseConnection.prepare(query)
+            if (parameters?.some(Array.isArray)) {
+                statement = await promisify(
+                    databaseConnection.prepare.bind(databaseConnection),
+                )(query)
+            }
 
-            const raw = await new Promise<any>((ok, fail) => {
-                statement.exec(parameters, (err: any, raw: any) =>
-                    err
-                        ? fail(new QueryFailedError(query, parameters, err))
-                        : ok(raw),
-                )
-            })
+            let raw: any
+            try {
+                raw = statement
+                    ? await promisify(statement.exec.bind(statement))(
+                          parameters,
+                      )
+                    : await promisify(
+                          databaseConnection.exec.bind(databaseConnection),
+                      )(query, parameters, {})
+            } catch (err) {
+                throw new QueryFailedError(query, parameters, err)
+            }
 
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
