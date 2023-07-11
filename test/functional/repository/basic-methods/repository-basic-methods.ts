@@ -290,7 +290,7 @@ describe("repository > basic methods", () => {
                         const preloadedBlog = await blogRepository.preload(
                             plainBlogWithId,
                         )
-                        expect(preloadedBlog).to.exist
+                        chai.expect(preloadedBlog).to.exist
                         preloadedBlog!.should.be.instanceOf(Blog)
                         preloadedBlog!.id.should.be.equal(1)
                         preloadedBlog!.title.should.be.equal("About people")
