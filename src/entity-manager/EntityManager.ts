@@ -53,7 +53,7 @@ export class EntityManager {
     /**
      * Connection used by this entity manager.
      */
-    readonly connection: Omit<DataSource, 'manager'>
+    readonly connection: Omit<DataSource, "manager">
 
     /**
      * Custom query runner to be used for operations in this entity manager.
