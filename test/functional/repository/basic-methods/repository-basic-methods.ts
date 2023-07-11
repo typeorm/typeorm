@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import { expect } from "chai"
 import "../../../utils/test-setup"
 import {
     closeTestingConnections,
@@ -290,7 +291,7 @@ describe("repository > basic methods", () => {
                         const preloadedBlog = await blogRepository.preload(
                             plainBlogWithId,
                         )
-                        chai.expect(preloadedBlog).to.exist
+                        expect(preloadedBlog).to.exist
                         preloadedBlog!.should.be.instanceOf(Blog)
                         preloadedBlog!.id.should.be.equal(1)
                         preloadedBlog!.title.should.be.equal("About people")
