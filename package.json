@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.2.47",
+  "version": "0.2.48",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -73,7 +73,7 @@
     "@types/sha.js": "^2.4.0",
     "@types/sinon": "^9.0.10",
     "@types/source-map-support": "^0.5.3",
-    "@types/xml2js": "^0.4.8",
+    "@types/xml2js": "^0.4.11",
     "@types/yargs": "^16.0.0",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
@@ -132,7 +132,7 @@
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
     "tslib": "^2.1.0",
-    "xml2js": "^0.4.23",
+    "xml2js": "^0.6.0",
     "yargonaut": "^1.1.4",
     "yargs": "^16.2.0",
     "zen-observable-ts": "^1.0.0"
