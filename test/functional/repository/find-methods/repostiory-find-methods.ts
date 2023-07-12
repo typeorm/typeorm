@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import { assert, expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -751,14 +751,20 @@ describe("repository > find methods", () => {
                     loadedUser!.firstName.should.be.equal("name #0")
                     loadedUser!.secondName.should.be.equal("Doe")
 
-                    await userRepository
-                        .findOneOrFail({
-                            where: {
-                                id: 1,
-                                secondName: "Dorian",
-                            },
-                        })
-                        .should.eventually.be.rejectedWith(EntityNotFoundError)
+                    const options = {
+                        where: {
+                            id: 1,
+                            secondName: "Dorian",
+                        },
+                    }
+                    try {
+                        await userRepository.findOneOrFail(options)
+                        assert.fail("Should have thrown an error.")
+                    } catch (err) {
+                        expect(err).to.be.an.instanceOf(EntityNotFoundError)
+                        expect(err).to.have.property("entityClass", "User")
+                        expect(err).to.have.property("criteria", options)
+                    }
                 }),
             ))
 
