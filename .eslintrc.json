@@ -1,0 +1,33 @@
+{
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "ignorePatterns": ["*.d.ts"],
+  "rules": {
+    "@typescript-eslint/ban-types": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-loss-of-precision": "off",
+    "@typescript-eslint/no-misused-new": "off",
+    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/no-this-alias": "off",
+    "@typescript-eslint/no-unnecessary-type-constraint": "off",
+    "@typescript-eslint/no-unsafe-declaration-merging": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/triple-slash-reference": "off",
+    "no-async-promise-executor": "off",
+    "no-control-regex": "off",
+    "no-debugger": "off",
+    "no-empty": "off",
+    "no-extra-boolean-cast": "off",
+    "no-extra-semi": "off",
+    "no-prototype-builtins": "off",
+    "no-regex-spaces": "off",
+    "no-useless-escape": "off",
+    "no-var": "off",
+    "prefer-const": "off",
+    "prefer-rest-params": "off",
+    "prefer-spread": "off"
+  }
+}
