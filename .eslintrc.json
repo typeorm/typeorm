@@ -25,7 +25,6 @@
     "no-prototype-builtins": "warn",
     "no-regex-spaces": "warn",
     "no-useless-escape": "warn",
-    "no-var": "warn",
     "prefer-const": "warn",
     "prefer-rest-params": "warn",
     "prefer-spread": "warn"
