@@ -97,6 +97,9 @@ Different RDBMS-es have their own specific options.
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
     Read more about caching [here](caching.md).
 
+-   `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
+    eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
+
 ## `mysql` / `mariadb` data source options
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.

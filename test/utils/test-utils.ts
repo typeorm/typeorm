@@ -159,6 +159,11 @@ export interface TestingOptions {
         | Logger
 
     relationLoadStrategy?: "join" | "query"
+
+    /**
+     * Allows automatic isolation of where clauses
+     */
+    isolateWhereStatements?: boolean
 }
 
 /**
@@ -295,6 +300,9 @@ export function setupTestingConnections(
                 newOptions.metadataTableName = options.metadataTableName
             if (options && options.relationLoadStrategy)
                 newOptions.relationLoadStrategy = options.relationLoadStrategy
+            if (options && options.isolateWhereStatements)
+                newOptions.isolateWhereStatements =
+                    options.isolateWhereStatements
 
             newOptions.baseDirectory = path.dirname(getOrmFilepath())
 

@@ -1024,9 +1024,31 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                 switch (clause.type) {
                     case "and":
-                        return (index > 0 ? "AND " : "") + expression
+                        return (
+                            (index > 0 ? "AND " : "") +
+                            `${
+                                this.connection.options.isolateWhereStatements
+                                    ? "("
+                                    : ""
+                            }${expression}${
+                                this.connection.options.isolateWhereStatements
+                                    ? ")"
+                                    : ""
+                            }`
+                        )
                     case "or":
-                        return (index > 0 ? "OR " : "") + expression
+                        return (
+                            (index > 0 ? "OR " : "") +
+                            `${
+                                this.connection.options.isolateWhereStatements
+                                    ? "("
+                                    : ""
+                            }${expression}${
+                                this.connection.options.isolateWhereStatements
+                                    ? ")"
+                                    : ""
+                            }`
+                        )
                 }
 
                 return expression
