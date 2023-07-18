@@ -26,7 +26,7 @@ describe("github issues > #10209", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should <put a detailed description of what it should do here>", () =>
+    it("should not fail to run multiple nested transactions in parallel", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.createEntityManager()
