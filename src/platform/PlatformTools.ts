@@ -2,11 +2,16 @@ import * as path from "path"
 import * as fs from "fs"
 import dotenv from "dotenv"
 import chalk from "chalk"
-import { highlight, Theme } from "cli-highlight"
+import { type Theme } from "cli-highlight"
 
 export { ReadStream } from "fs"
 export { EventEmitter } from "events"
 export { Readable, Writable } from "stream"
+
+const highlight =
+    process.env.DISABLE_CLI_HIGHLIGHT === "true"
+        ? (str: string) => str
+        : require("cli-highlight").highlight
 
 /**
  * Platform-specific tools.
