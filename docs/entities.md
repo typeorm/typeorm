@@ -383,7 +383,9 @@ or
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`, `ltree`, `vector`
+`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`, `ltree`
+
+> Note: `vector` is also available when the [pgvector](https://github.com/pgvector/pgvector) extension is installed.
 
 ### Column types for `cockroachdb`
 
