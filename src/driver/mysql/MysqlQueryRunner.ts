@@ -27,7 +27,7 @@ import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 
-const LITTERAL_ESCAPE: { [index: string]: string } = {
+const LITERAL_ESCAPE: ObjectLiteral = {
     "\u0000": "\\0",
     "'": "\\'",
     '"': '\\"',
