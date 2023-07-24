@@ -34,9 +34,9 @@ export class InsertQueryBuilder<
      * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createComment()
-        sql += this.createCteExpression()
+        let sql = this.createCteExpression()
         sql += this.createInsertExpression()
+        sql += this.createComment()
         return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 

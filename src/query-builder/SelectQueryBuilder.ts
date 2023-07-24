@@ -81,8 +81,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createComment()
-        sql += this.createCteExpression()
+        let sql = this.createCteExpression()
         sql += this.createSelectExpression()
         sql += this.createJoinExpression()
         sql += this.createWhereExpression()
@@ -91,6 +90,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         sql += this.createOrderByExpression()
         sql += this.createLimitOffsetExpression()
         sql += this.createLockExpression()
+        sql += this.createComment()
         sql = sql.trim()
         if (this.expressionMap.subQuery) sql = "(" + sql + ")"
         return this.replacePropertyNamesForTheWholeQuery(sql)

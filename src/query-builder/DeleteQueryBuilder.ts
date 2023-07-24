@@ -38,9 +38,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      * Gets generated SQL query without parameters being replaced.
      */
     getQuery(): string {
-        let sql = this.createComment()
-        sql += this.createCteExpression()
+        let sql = this.createCteExpression()
         sql += this.createDeleteExpression()
+        sql += this.createComment()
         return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
