@@ -8,6 +8,9 @@ import { RelationMetadata } from "../metadata/RelationMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 
 interface BroadcasterEvents {
+    BeforeQuery: () => void
+    AfterQuery: () => void
+
     BeforeTransactionCommit: () => void
     AfterTransactionCommit: () => void
     BeforeTransactionStart: () => void
@@ -390,6 +393,66 @@ export class Broadcaster {
                         manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
+                    })
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult)
+                    result.count++
+                }
+            })
+        }
+    }
+
+    /**
+     * Broadcasts "BEFORE_QUERY" event.
+     */
+    broadcastBeforeQueryEvent(
+        result: BroadcasterResult,
+        query: string,
+        parameters: undefined | any[],
+    ): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (subscriber.beforeQuery) {
+                    const executionResult = subscriber.beforeQuery({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                        query: query,
+                        parameters: parameters,
+                    })
+                    if (executionResult instanceof Promise)
+                        result.promises.push(executionResult)
+                    result.count++
+                }
+            })
+        }
+    }
+
+    /**
+     * Broadcasts "AFTER_QUERY" event.
+     */
+    broadcastAfterQueryEvent(
+        result: BroadcasterResult,
+        query: string,
+        parameters: undefined | any[],
+        success: boolean,
+        executionTime: undefined | number,
+        rawResults: undefined | any,
+        error: undefined | any,
+    ): void {
+        if (this.queryRunner.connection.subscribers.length) {
+            this.queryRunner.connection.subscribers.forEach((subscriber) => {
+                if (subscriber.afterQuery) {
+                    const executionResult = subscriber.afterQuery({
+                        connection: this.queryRunner.connection,
+                        queryRunner: this.queryRunner,
+                        manager: this.queryRunner.manager,
+                        query: query,
+                        parameters: parameters,
+                        success: success,
+                        executionTime: executionTime,
+                        rawResults: rawResults,
+                        error: error,
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)

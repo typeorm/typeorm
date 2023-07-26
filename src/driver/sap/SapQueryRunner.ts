@@ -27,6 +27,7 @@ import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { promisify } from "util"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -194,11 +195,18 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         let statement: any
         const result = new QueryResult()
+        const broadcasterResult = new BroadcasterResult()
 
         try {
             const databaseConnection = await this.connect()
 
             this.driver.connection.logger.logQuery(query, parameters, this)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
+
             const queryStartTime = +new Date()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
 
@@ -217,6 +225,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.driver.connection.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -261,19 +280,31 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"]
                 result.records = identityValueResult
             }
-        } catch (e) {
+        } catch (err) {
             this.driver.connection.logger.logQueryError(
-                e,
+                err,
                 query,
                 parameters,
                 this,
             )
-            throw e
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+            throw err
         } finally {
             // Never forget to drop the statement we reserved
             if (statement?.drop) {
                 await new Promise<void>((ok) => statement.drop(() => ok()))
             }
+
+            if (broadcasterResult.promises.length > 0)
+                await Promise.all(broadcasterResult.promises)
 
             // Always release the lock.
             release()

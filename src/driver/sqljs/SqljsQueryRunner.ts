@@ -4,6 +4,7 @@ import { SqljsDriver } from "./SqljsDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -84,7 +85,15 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         const command = query.trim().split(" ", 1)[0]
 
         const databaseConnection = this.driver.databaseConnection
+        const broadcasterResult = new BroadcasterResult()
+
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
+
         const queryStartTime = +new Date()
         let statement: any
         try {
@@ -102,6 +111,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 this.driver.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -118,6 +128,16 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             while (statement.step()) {
                 records.push(statement.getAsObject())
             }
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                records,
+                undefined,
+            )
 
             const result = new QueryResult()
 
@@ -136,18 +156,31 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             } else {
                 return result.raw
             }
-        } catch (e) {
+        } catch (err) {
             if (statement) {
                 statement.free()
             }
 
             this.driver.connection.logger.logQueryError(
-                e,
+                err,
                 query,
                 parameters,
                 this,
             )
-            throw new QueryFailedError(query, parameters, e)
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            if (broadcasterResult.promises.length > 0)
+                await Promise.all(broadcasterResult.promises)
         }
     }
 }

@@ -24,6 +24,7 @@ import { TypeORMError } from "../../error"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { SpannerDriver } from "./SpannerDriver"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -155,6 +156,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
+        const broadcasterResult = new BroadcasterResult()
+
         try {
             const queryStartTime = +new Date()
             await this.connect()
@@ -182,6 +185,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             try {
                 this.driver.connection.logger.logQuery(query, parameters, this)
+                this.broadcaster.broadcastBeforeQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                )
+
                 rawResult = await executor.run({
                     sql: query,
                     params: parameters
@@ -209,6 +218,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.driver.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                rawResult,
+                undefined,
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -240,8 +260,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
             throw new QueryFailedError(query, parameters, err)
         } finally {
+            if (broadcasterResult.promises.length > 0)
+                await Promise.all(broadcasterResult.promises)
         }
     }
 

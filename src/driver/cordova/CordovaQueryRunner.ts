@@ -6,6 +6,7 @@ import { CordovaDriver } from "./CordovaDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { TypeORMError } from "../../error"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -52,7 +53,15 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
+        const broadcasterResult = new BroadcasterResult()
+
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
+
         const queryStartTime = +new Date()
 
         try {
@@ -70,6 +79,17 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 this.driver.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -108,7 +128,20 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw new QueryFailedError(query, parameters, err)
+        } finally {
+            if (broadcasterResult.promises.length > 0)
+                await Promise.all(broadcasterResult.promises)
         }
     }
 

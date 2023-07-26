@@ -27,6 +27,7 @@ import { TypeORMError } from "../../error"
 import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -208,8 +209,16 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
+        const broadcasterResult = new BroadcasterResult()
+
         try {
             this.driver.connection.logger.logQuery(query, parameters, this)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
+
             const pool = await (this.mode === "slave"
                 ? this.driver.obtainSlaveConnection()
                 : this.driver.obtainMasterConnection())
@@ -245,6 +254,17 @@ export class SqlServerQueryRunner
                         this.driver.options.maxQueryExecutionTime
                     const queryEndTime = +new Date()
                     const queryExecutionTime = queryEndTime - queryStartTime
+
+                    this.broadcaster.broadcastAfterQueryEvent(
+                        broadcasterResult,
+                        query,
+                        parameters,
+                        true,
+                        queryExecutionTime,
+                        raw,
+                        undefined,
+                    )
+
                     if (
                         maxQueryExecutionTime &&
                         queryExecutionTime > maxQueryExecutionTime
@@ -297,8 +317,21 @@ export class SqlServerQueryRunner
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw err
         } finally {
+            if (broadcasterResult.promises.length > 0)
+                await Promise.all(broadcasterResult.promises)
+
             release()
         }
     }
