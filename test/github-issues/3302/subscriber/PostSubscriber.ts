@@ -13,8 +13,6 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     }
 
     beforeQuery(event: BeforeQueryEvent<Post>): void | Promise<any> {
-        console.log("beforeQuery", event.query)
-
         PlatformTools.appendFileSync(
             appRootPath.path + "/before-query.log",
             event.query,
@@ -22,12 +20,6 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     }
 
     afterQuery(event: AfterQueryEvent<Post>): void | Promise<any> {
-        console.log(
-            "afterQuery",
-            event.connection.driver.constructor.name,
-            event.query,
-        )
-
         PlatformTools.appendFileSync(
             appRootPath.path + "/after-query.log",
             event.query,

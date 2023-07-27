@@ -12,6 +12,7 @@ import { PlatformTools } from "../../../src/platform/PlatformTools"
 describe("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
     let connections: DataSource[]
     let stub: sinon.SinonStub
+    let sandbox: sinon.SinonSandbox
     const beforeQueryLogPath = appRootPath + "/before-query.log"
     const afterQueryLogPath = appRootPath + "/after-query.log"
 
@@ -20,11 +21,13 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
-        stub = sinon.stub(PlatformTools, "appendFileSync")
+        sandbox = sinon.createSandbox()
+        stub = sandbox.stub(PlatformTools, "appendFileSync")
     })
     beforeEach(() => reloadTestingDatabases(connections))
     afterEach(async () => {
         stub.resetHistory()
+        sandbox.restore()
         await closeTestingConnections(connections)
     })
 
@@ -36,8 +39,6 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
                 )}`
 
                 await connection.query(testQuery)
-
-                console.log("Driver:", connection.driver.constructor.name)
 
                 sinon.assert.calledWith(
                     stub,

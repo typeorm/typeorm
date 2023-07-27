@@ -9,7 +9,4 @@ export class Post {
 
     @Column()
     title: string
-
-    beforeQuery: boolean = false
-    afterQuery: boolean = false
 }
