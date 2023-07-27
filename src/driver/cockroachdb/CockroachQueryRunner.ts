@@ -296,6 +296,16 @@ export class CockroachQueryRunner
                     result.raw = raw.rows
             }
 
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (useStructuredResult) {
                 return result
             } else {
