@@ -202,6 +202,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                                 raw,
                                 undefined,
                             )
+                            await broadcasterResult.wait()
 
                             if (
                                 maxQueryExecutionTime &&
@@ -236,9 +237,6 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                                 result.raw = raw.insertId
                             }
 
-                            if (broadcasterResult.promises.length > 0)
-                                await Promise.all(broadcasterResult.promises)
-
                             if (useStructuredResult) {
                                 ok(result)
                             } else {
@@ -261,8 +259,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                                 undefined,
                                 err,
                             )
-                            if (broadcasterResult.promises.length > 0)
-                                await Promise.all(broadcasterResult.promises)
+                            await broadcasterResult.wait()
 
                             fail(new QueryFailedError(query, parameters, err))
                         },

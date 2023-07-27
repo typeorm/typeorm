@@ -329,8 +329,7 @@ export class SqlServerQueryRunner
 
             throw err
         } finally {
-            if (broadcasterResult.promises.length > 0)
-                await Promise.all(broadcasterResult.promises)
+            await broadcasterResult.wait()
 
             release()
         }

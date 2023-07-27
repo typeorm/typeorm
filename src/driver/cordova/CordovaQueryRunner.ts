@@ -140,8 +140,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
             throw new QueryFailedError(query, parameters, err)
         } finally {
-            if (broadcasterResult.promises.length > 0)
-                await Promise.all(broadcasterResult.promises)
+            await broadcasterResult.wait()
         }
     }
 

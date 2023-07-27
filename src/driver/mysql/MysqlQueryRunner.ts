@@ -188,9 +188,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         return new Promise(async (ok, fail) => {
+            const broadcasterResult = new BroadcasterResult()
+
             try {
                 const databaseConnection = await this.connect()
-                const broadcasterResult = new BroadcasterResult()
 
                 this.driver.connection.logger.logQuery(query, parameters, this)
                 this.broadcaster.broadcastBeforeQueryEvent(
@@ -237,25 +238,21 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 undefined,
                                 err,
                             )
-                            if (broadcasterResult.promises.length > 0)
-                                await Promise.all(broadcasterResult.promises)
 
                             return fail(
                                 new QueryFailedError(query, parameters, err),
                             )
-                        } else {
-                            this.broadcaster.broadcastAfterQueryEvent(
-                                broadcasterResult,
-                                query,
-                                parameters,
-                                true,
-                                queryExecutionTime,
-                                raw,
-                                undefined,
-                            )
-                            if (broadcasterResult.promises.length > 0)
-                                await Promise.all(broadcasterResult.promises)
                         }
+
+                        this.broadcaster.broadcastAfterQueryEvent(
+                            broadcasterResult,
+                            query,
+                            parameters,
+                            true,
+                            queryExecutionTime,
+                            raw,
+                            undefined,
+                        )
 
                         const result = new QueryResult()
 
@@ -280,6 +277,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )
             } catch (err) {
                 fail(err)
+            } finally {
+                await broadcasterResult.wait()
             }
         })
     }

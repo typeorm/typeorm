@@ -303,8 +303,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 await new Promise<void>((ok) => statement.drop(() => ok()))
             }
 
-            if (broadcasterResult.promises.length > 0)
-                await Promise.all(broadcasterResult.promises)
+            await broadcasterResult.wait()
 
             // Always release the lock.
             release()
