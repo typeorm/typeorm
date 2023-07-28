@@ -16,6 +16,7 @@ describe("github issues > #10140 timestamp type column doesn't work when using s
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: ["sqlite"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
