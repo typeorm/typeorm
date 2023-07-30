@@ -2320,7 +2320,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     joinAttr.direction +
                     " JOIN " +
                     this.getTableName(destinationTableName) +
-                    " " +
+                    `${
+                        joinAttr.metadata?.versioning
+                            ? " FOR SYSTEM_TIME AS OF :timestamp "
+                            : " "
+                    }` +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +

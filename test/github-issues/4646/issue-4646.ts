@@ -148,4 +148,44 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 expect(sqlInMemory.downQueries).to.have.length(0)
             }),
         ))
+
+    it("should also working with joins", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const { manager } = dataSource
+
+                const user = new User()
+                user.id = 1
+                user.name = "foo"
+                await manager.save(user)
+
+                const photo = new Photo()
+                photo.user = user
+                await manager.save(photo)
+
+                const timestamp = await getCurrentTimestamp()
+
+                await manager.update(User, 1, { name: "bar" })
+
+                const result1 = await dataSource
+                    .createQueryBuilder(Photo, "photo")
+                    .innerJoinAndSelect("photo.user", "user")
+                    .getOne()
+
+                const result2 = await dataSource
+                    .createQueryBuilder(Photo, "photo")
+                    .innerJoinAndSelect("photo.user", "user")
+                    .getOne(timestamp)
+
+                expect(result2).to.deep.equal({
+                    id: 1,
+                    user: { id: 1, name: "foo" },
+                })
+
+                expect(result1).to.deep.equal({
+                    id: 1,
+                    user: { id: 1, name: "bar" },
+                })
+            }),
+        ))
 })
