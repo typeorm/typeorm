@@ -682,13 +682,13 @@ export class Repository<Entity extends ObjectLiteral> {
         //     ...custom
         // };
         const thisRepo = this.constructor as new (...args: any[]) => typeof this
-        const { target, manager, queryRunner } = this
+        const { target, manager, queryRunner, ...restProps } = this
         const cls = new (class extends thisRepo {})(
             target,
             manager,
             queryRunner,
         )
-        Object.assign(cls, custom)
+        Object.assign(cls, restProps ,custom)
         return cls as any
     }
 }
