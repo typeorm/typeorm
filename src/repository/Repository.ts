@@ -688,7 +688,7 @@ export class Repository<Entity extends ObjectLiteral> {
             manager,
             queryRunner,
         )
-        Object.assign(cls, restProps ,custom)
+        Object.assign(cls, restProps, custom)
         return cls as any
     }
 }
