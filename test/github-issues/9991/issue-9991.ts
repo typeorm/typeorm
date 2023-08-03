@@ -13,7 +13,7 @@ describe("github issues > #9991", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
-            enabledDrivers: ["mysql"],
+            enabledDrivers: ["mysql", "mariadb"],
         })
     })
 

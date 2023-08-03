@@ -724,7 +724,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             ? tableOrName
             : await this.getCachedTable(tableOrName)
 
-        const comment = table.comment
+        newComment = this.escapeComment(newComment)
+        const comment = this.escapeComment(table.comment)
+
         if (newComment === comment) {
             return
         }
@@ -735,14 +737,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             new Query(
                 `ALTER TABLE ${this.escapePath(
                     newTable,
-                )} COMMENT ${this.escapeComment(newComment)}`,
+                )} COMMENT ${newComment}`,
             ),
         )
         downQueries.push(
             new Query(
-                `ALTER TABLE ${this.escapePath(
-                    table,
-                )} COMMENT ${this.escapeComment(comment)}`,
+                `ALTER TABLE ${this.escapePath(table)} COMMENT ${comment}`,
             ),
         )
 
