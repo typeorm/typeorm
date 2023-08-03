@@ -1,24 +1,5 @@
-import { MissingDriverError } from "../error/MissingDriverError"
-import { CockroachDriver } from "./cockroachdb/CockroachDriver"
-import { MongoDriver } from "./mongodb/MongoDriver"
-import { SqlServerDriver } from "./sqlserver/SqlServerDriver"
-import { OracleDriver } from "./oracle/OracleDriver"
-import { SqliteDriver } from "./sqlite/SqliteDriver"
-import { CordovaDriver } from "./cordova/CordovaDriver"
-import { ReactNativeDriver } from "./react-native/ReactNativeDriver"
-import { NativescriptDriver } from "./nativescript/NativescriptDriver"
-import { SqljsDriver } from "./sqljs/SqljsDriver"
-import { MysqlDriver } from "./mysql/MysqlDriver"
-import { PostgresDriver } from "./postgres/PostgresDriver"
-import { ExpoDriver } from "./expo/ExpoDriver"
-import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
-import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
-import { Driver } from "./Driver"
-import { DataSource } from "../data-source/DataSource"
-import { SapDriver } from "./sap/SapDriver"
-import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
-import { CapacitorDriver } from "./capacitor/CapacitorDriver"
-import { SpannerDriver } from "./spanner/SpannerDriver"
+import type { Driver, DriverConstructor } from "./Driver"
+import type { DataSource } from "../data-source/DataSource"
 
 /**
  * Helps to create drivers.
@@ -29,46 +10,57 @@ export class DriverFactory {
      */
     create(connection: DataSource): Driver {
         const { type } = connection.options
+        return new (this.getDriver(type))(connection)
+    }
+
+    private getDriver(type: DataSource["options"]["type"]): DriverConstructor {
         switch (type) {
             case "mysql":
-                return new MysqlDriver(connection)
-            case "postgres":
-                return new PostgresDriver(connection)
-            case "cockroachdb":
-                return new CockroachDriver(connection)
-            case "sap":
-                return new SapDriver(connection)
             case "mariadb":
-                return new MysqlDriver(connection)
+                return require("./mysql/MysqlDriver").MysqlDriver
+            case "postgres":
+                return require("./postgres/PostgresDriver").PostgresDriver
+            case "cockroachdb":
+                return require("./cockroachdb/CockroachDriver").CockroachDriver
+            case "sap":
+                return require("./sap/SapDriver").SapDriver
             case "sqlite":
-                return new SqliteDriver(connection)
+                return require("./sqlite/SqliteDriver").SqliteDriver
             case "better-sqlite3":
-                return new BetterSqlite3Driver(connection)
+                return require("./better-sqlite3/BetterSqlite3Driver")
+                    .BetterSqlite3Driver
             case "cordova":
-                return new CordovaDriver(connection)
+                return require("./cordova/CordovaDriver").CordovaDriver
             case "nativescript":
-                return new NativescriptDriver(connection)
+                return require("./nativescript/NativescriptDriver")
+                    .NativescriptDriver
             case "react-native":
-                return new ReactNativeDriver(connection)
+                return require("./react-native/ReactNativeDriver")
+                    .ReactNativeDriver
             case "sqljs":
-                return new SqljsDriver(connection)
+                return require("./sqljs/SqljsDriver").SqljsDriver
             case "oracle":
-                return new OracleDriver(connection)
+                return require("./oracle/OracleDriver").OracleDriver
             case "mssql":
-                return new SqlServerDriver(connection)
+                return require("./sqlserver/SqlServerDriver").SqlServerDriver
             case "mongodb":
-                return new MongoDriver(connection)
+                return require("./mongodb/MongoDriver").MongoDriver
             case "expo":
-                return new ExpoDriver(connection)
+                return require("./expo/ExpoDriver").ExpoDriver
             case "aurora-mysql":
-                return new AuroraMysqlDriver(connection)
+                return require("./aurora-mysql/AuroraMysqlDriver")
+                    .AuroraMysqlDriver
             case "aurora-postgres":
-                return new AuroraPostgresDriver(connection)
+                return require("./aurora-postgres/AuroraPostgresDriver")
+                    .AuroraPostgresDriver
             case "capacitor":
-                return new CapacitorDriver(connection)
+                return require("./capacitor/CapacitorDriver").CapacitorDriver
             case "spanner":
-                return new SpannerDriver(connection)
+                return require("./spanner/SpannerDriver").SpannerDriver
             default:
+                const {
+                    MissingDriverError,
+                } = require("../error/MissingDriverError")
                 throw new MissingDriverError(type, [
                     "aurora-mysql",
                     "aurora-postgres",
