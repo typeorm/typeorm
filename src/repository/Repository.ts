@@ -698,8 +698,6 @@ export class Repository<Entity extends ObjectLiteral> {
             ChildClass.prototype[key] = custom[key]
         }
         const cls = new ChildClass(target, manager, queryRunner)
-
-        Object.assign(cls, custom)
         return cls as any
     }
 }
