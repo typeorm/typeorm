@@ -683,17 +683,20 @@ export class Repository<Entity extends ObjectLiteral> {
         // };
         const thisRepo = this.constructor as new (...args: any[]) => typeof this
         const { target, manager, queryRunner } = this
-        const ChildClass = // @ts-ignore
-            class extends thisRepo {
-                constructor(target: EntityTarget<Entity>, manager: EntityManager, queryRunner?: QueryRunner) {
-                    super(target, manager, queryRunner);
-                }
+        const ChildClass = class extends thisRepo { // @ts-ignore
+            constructor(
+                target: EntityTarget<Entity>,
+                manager: EntityManager,
+                queryRunner?: QueryRunner,
+            ) {
+                super(target, manager, queryRunner)
             }
+        }
         for (const key in custom) {
             // @ts-ignore
-            ChildClass.prototype[key] = custom[key];
+            ChildClass.prototype[key] = custom[key]
         }
-        const cls = new ChildClass(target, manager, queryRunner);
+        const cls = new ChildClass(target, manager, queryRunner)
 
         Object.assign(cls, custom)
         return cls as any
