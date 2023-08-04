@@ -683,7 +683,8 @@ export class Repository<Entity extends ObjectLiteral> {
         // };
         const thisRepo = this.constructor as new (...args: any[]) => typeof this
         const { target, manager, queryRunner } = this
-        const ChildClass = class extends thisRepo { // @ts-ignore
+        // @ts-ignore
+        const ChildClass = class extends thisRepo {
             constructor(
                 target: EntityTarget<Entity>,
                 manager: EntityManager,
