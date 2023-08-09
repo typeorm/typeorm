@@ -675,15 +675,14 @@ export class Repository<Entity extends ObjectLiteral> {
      * Extends repository with provided functions.
      */
     extend<CustomRepository>(
-        custom: CustomRepository & ThisType<this & CustomRepository>,
+        customs: CustomRepository & ThisType<this & CustomRepository>,
     ): this & CustomRepository {
         // return {
         //     ...this,
         //     ...custom
         // };
-        const thisRepo = this.constructor as new (...args: any[]) => typeof this
+        const thisRepo: any = this.constructor
         const { target, manager, queryRunner } = this
-        // @ts-ignore
         const ChildClass = class extends thisRepo {
             constructor(
                 target: EntityTarget<Entity>,
@@ -693,11 +692,8 @@ export class Repository<Entity extends ObjectLiteral> {
                 super(target, manager, queryRunner)
             }
         }
-        for (const key in custom) {
-            // @ts-ignore
-            ChildClass.prototype[key] = custom[key]
-        }
-        const cls = new ChildClass(target, manager, queryRunner)
-        return cls as any
+        for (const custom in customs)
+            ChildClass.prototype[custom] = customs[custom]
+        return new ChildClass(target, manager, queryRunner) as any
     }
 }
