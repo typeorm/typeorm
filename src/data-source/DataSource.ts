@@ -50,6 +50,8 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
  * because `Connection` isn't the best name for what it's actually is.
  */
 export class DataSource {
+    static MetadataCache: Map<string, EntityMetadata[]> = new Map()
+
     readonly "@instanceof" = Symbol.for("DataSource")
 
     // -------------------------------------------------------------------------
@@ -680,6 +682,36 @@ export class DataSource {
         return undefined
     }
 
+    private async getEntityMetadatas(
+        connectionMetadataBuilder: ConnectionMetadataBuilder,
+    ) {
+        if (
+            this.options.metadataNamespace &&
+            DataSource.MetadataCache.has(this.options.metadataNamespace)
+        ) {
+            return DataSource.MetadataCache.get(this.options.metadataNamespace)!
+        }
+
+        const flattenedEntities = ObjectUtils.mixedListToArray(
+            this.options.entities || [],
+        )
+        const entityMetadatas =
+            await connectionMetadataBuilder.buildEntityMetadatas(
+                flattenedEntities,
+            )
+        if (
+            this.options.metadataNamespace &&
+            !DataSource.MetadataCache.has(this.options.metadataNamespace)
+        ) {
+            DataSource.MetadataCache.set(
+                this.options.metadataNamespace,
+                entityMetadatas,
+            )
+        }
+
+        return entityMetadatas
+    }
+
     /**
      * Builds metadatas for all registered classes inside this connection.
      */
@@ -697,13 +729,9 @@ export class DataSource {
         ObjectUtils.assign(this, { subscribers: subscribers })
 
         // build entity metadatas
-        const flattenedEntities = ObjectUtils.mixedListToArray(
-            this.options.entities || [],
+        const entityMetadatas = await this.getEntityMetadatas(
+            connectionMetadataBuilder,
         )
-        const entityMetadatas =
-            await connectionMetadataBuilder.buildEntityMetadatas(
-                flattenedEntities,
-            )
         ObjectUtils.assign(this, {
             entityMetadatas: entityMetadatas,
             entityMetadatasMap: new Map(

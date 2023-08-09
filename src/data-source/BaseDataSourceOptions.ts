@@ -143,6 +143,11 @@ export interface BaseDataSourceOptions {
     readonly relationLoadStrategy?: "join" | "query"
 
     /**
+     * Cache namespace to use for decorators metadata
+     */
+    readonly metadataNamespace?: string;
+
+    /**
      * Optionally applied "typename" to the model.
      * If set, then each hydrated model will have this property with the target model / entity name inside.
      *
