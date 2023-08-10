@@ -1,4 +1,5 @@
 import { Driver } from "../driver/Driver"
+import { registerQueryBuilders } from "../query-builder"
 import { Repository } from "../repository/Repository"
 import { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
 import { EntityTarget } from "../common/EntityTarget"
@@ -136,6 +137,7 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     constructor(options: DataSourceOptions) {
+        registerQueryBuilders()
         this.name = options.name || "default"
         this.options = options
         this.logger = new LoggerFactory().create(
