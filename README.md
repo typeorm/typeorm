@@ -55,7 +55,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Connection pooling.
 -   Replication.
 -   Using multiple database instances.
--   Working with multiple databases types.
+-   Working with multiple database types.
 -   Cross-database and cross-schema queries.
 -   Elegant-syntax, flexible and powerful QueryBuilder.
 -   Left and inner joins.
@@ -1302,7 +1302,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 
 ## Contributing
 
-Learn about contribution [here](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md) and how to setup your development environment [here](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md).
+Learn about contribution [here](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md) and how to set up your development environment [here](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md).
 
 This project exists thanks to all the people who contribute:
 
