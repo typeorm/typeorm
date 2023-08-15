@@ -190,6 +190,7 @@ jobs:
             docker run \
               --env npm_config_yes='true' \
               --env LD_LIBRARY_PATH='/typeorm/node_modules/oracledb/instantclient_19_8/:$LD_LIBRARY_PATH' \
+              --env SPANNER_EMULATOR_HOST='typeorm-spanner:9010' \
               --volumes-from typeorm-code \
               --network typeorm_default \
               --tty \
@@ -213,11 +214,11 @@ workflows:
       - lint
       - build
       - test:
-          name: test (mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs) - Node v<< matrix.node-version >>
+          name: test (mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs spanner) - Node v<< matrix.node-version >>
           requires:
             - lint
             - build
-          databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs"
+          databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs spanner"
           matrix:
             parameters:
               node-version:

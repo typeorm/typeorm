@@ -93,6 +93,7 @@
     "cloud-spanner-orm"
   ],
   "devDependencies": {
+    "@google-cloud/spanner": "^5.18.0",
     "@types/app-root-path": "^1.2.4",
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",

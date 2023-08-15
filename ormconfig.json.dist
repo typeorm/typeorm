@@ -135,5 +135,15 @@
       "maxRetries": 3
     },
     "logging": false
+  },
+  {
+    "skip": false,
+    "name": "spanner",
+    "type": "spanner",
+    "disabledIfNotEnabledImplicitly": true,
+    "projectId":"test-project",
+    "instanceId":"test-instance",
+    "databaseId":"test-db",
+    "logging": false
   }
 ]

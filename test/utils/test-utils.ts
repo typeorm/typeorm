@@ -349,7 +349,9 @@ getMetadataArgsStorage().entitySubscribers.push({
 
 export function createDataSource(options: DataSourceOptions): DataSource {
     if (options.type === "spanner") {
-        process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
+        if (!process.env.SPANNER_EMULATOR_HOST) {
+            process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
+        }
         // process.env.GOOGLE_APPLICATION_CREDENTIALS =
         //     "/Users/messer/Documents/google/typeorm-spanner-3b57e071cbf0.json"
         if (Array.isArray(options.subscribers)) {

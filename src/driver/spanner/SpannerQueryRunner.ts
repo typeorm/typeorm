@@ -1406,6 +1406,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Removes all tables from the currently connected database.
      */
     async clearDatabase(): Promise<void> {
+        // check database existence
+        const [exists]: [boolean] = await this.driver.instanceDatabase.exists()
+        if (!exists) {
+            return
+        }
+
         // drop index queries
         const selectIndexDropsQuery =
             `SELECT concat('DROP INDEX \`', INDEX_NAME, '\`') AS \`query\` ` +

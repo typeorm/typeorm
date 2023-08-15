@@ -7,6 +7,7 @@ import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import { ForbiddenTransactionModeOverrideError, TypeORMError } from "../error"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { TableColumnOptions } from "../schema-builder/options/TableColumnOptions"
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -502,6 +503,16 @@ export class MigrationExecutor {
         }
         const tableExist = await queryRunner.hasTable(this.migrationsTable) // todo: table name should be configurable
         if (!tableExist) {
+            const idColumnGenerationConfig: Partial<TableColumnOptions> =
+                this.connection.driver.options.type !== "spanner"
+                    ? {
+                          isGenerated: true,
+                          generationStrategy: "increment",
+                      }
+                    : {
+                          // Spanner doesn't support auto-increment column
+                      }
+
             await queryRunner.createTable(
                 new Table({
                     database: this.migrationsDatabase,
@@ -514,10 +525,9 @@ export class MigrationExecutor {
                                 type: this.connection.driver.mappedDataTypes
                                     .migrationId,
                             }),
-                            isGenerated: true,
-                            generationStrategy: "increment",
                             isPrimary: true,
                             isNullable: false,
+                            ...idColumnGenerationConfig,
                         },
                         {
                             name: "timestamp",
@@ -647,6 +657,11 @@ export class MigrationExecutor {
         migration: Migration,
     ): Promise<void> {
         const values: ObjectLiteral = {}
+        if (this.connection.driver.options.type === "spanner") {
+            // spanner doesn't support auto-increment column
+            values["id"] = Date.now() + "-" + migration.name
+        }
+
         if (this.connection.driver.options.type === "mssql") {
             values["timestamp"] = new MssqlParameter(
                 migration.timestamp,

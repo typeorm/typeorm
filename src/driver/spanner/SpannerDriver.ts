@@ -140,7 +140,7 @@ export class SpannerDriver implements Driver {
         deleteDateNullable: true,
         version: "int64",
         treeLevel: "int64",
-        migrationId: "int64",
+        migrationId: "string",
         migrationName: "string",
         migrationTimestamp: "int64",
         cacheId: "string",
