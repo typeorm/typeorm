@@ -975,6 +975,13 @@ export class OracleDriver implements Driver {
         } catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
         }
+        if (this.options.thickDriver) {
+            typeof this.options.thickDriver === "string"
+                ? this.oracle.initOracleClient({
+                      libDir: this.options.thickDriver,
+                  })
+                : this.oracle.initOracleClient()
+        }
     }
 
     /**
