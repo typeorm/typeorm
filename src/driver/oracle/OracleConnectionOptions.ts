@@ -24,11 +24,12 @@ export interface OracleConnectionOptions
     readonly driver?: any
 
     /**
-     * Utilize the thick driver. Starting from oracledb version 6, it's necessary to set this to true when opting for the thick client usage.
-     * Another option is to configure the libDir to the Oracle Instant Client. For additional information, refer to the details provided in the following link:
+     * This specifies the directory containing the Oracle Client libraries.
+     * If libDir is not specified, the default library search mechanism is used.
+     * For additional information, refer to the details provided in the following link:
      * (https://node-oracledb.readthedocs.io/en/latest/api_manual/oracledb.html#oracledb.initOracleClient)
      */
-    readonly thickDriver?: boolean | string
+    readonly thickDriverLibDir?: string
 
     /**
      * A boolean determining whether to pass time values in UTC or local time. (default: false).
