@@ -252,15 +252,19 @@ export class RawSqlResultsToEntityTransformer {
                 hasData = true
         })
         // Set all embedded column values to null if all their child columns are null
-        metadata.embeddeds.forEach((embedded) => {
-            if (
-                Object.values(entity[embedded.propertyName]).every(
-                    (value) => value == null,
-                )
-            ) {
-                entity[embedded.propertyName] = null
-            }
-        })
+        if (entity) {
+            metadata.embeddeds.forEach((embedded) => {
+                if (
+                    embedded.propertyName in entity &&
+                    typeof entity[embedded.propertyName] === "object" &&
+                    Object.values(entity[embedded.propertyName]).every(
+                        (value) => value == null,
+                    )
+                ) {
+                    entity[embedded.propertyName] = null
+                }
+            })
+        }
         return hasData
     }
 
