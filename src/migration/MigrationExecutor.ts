@@ -659,7 +659,7 @@ export class MigrationExecutor {
         const values: ObjectLiteral = {}
         if (this.connection.driver.options.type === "spanner") {
             // spanner doesn't support auto-increment column
-            values["id"] = Date.now() + "-" + migration.name
+            values["id"] = Date.now().toString() + "-" + migration.name
         }
 
         if (this.connection.driver.options.type === "mssql") {
