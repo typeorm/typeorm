@@ -757,6 +757,10 @@ export class EntityMetadata {
         const relation = this.findRelationWithPropertyPath(propertyPath)
         if (relation && relation.joinColumns) return relation.joinColumns
 
+        // try to find a relation with a property path being an embedded entity
+        const embedded = this.findEmbeddedWithPropertyPath(propertyPath)
+        if (embedded) return embedded.columns
+
         return []
     }
 

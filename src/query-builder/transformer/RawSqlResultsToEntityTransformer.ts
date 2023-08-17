@@ -251,6 +251,16 @@ export class RawSqlResultsToEntityTransformer {
                 // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
                 hasData = true
         })
+        // Set all embedded column values to null if all their child columns are null
+        metadata.embeddeds.forEach((embedded) => {
+            if (
+                Object.values(entity[embedded.propertyName]).every(
+                    (value) => value == null,
+                )
+            ) {
+                entity[embedded.propertyName] = null
+            }
+        })
         return hasData
     }
 
