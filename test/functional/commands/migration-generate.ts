@@ -1,9 +1,5 @@
 import sinon from "sinon"
-import {
-    ConnectionOptionsReader,
-    DatabaseType,
-    DataSourceOptions,
-} from "../../../src"
+import { DatabaseType, DataSource, DataSourceOptions } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -14,27 +10,28 @@ import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-generate"
+import path from "path"
 
-// TODO: broken after 0.3.0 changes, fix later
-describe.skip("commands - migration generate", () => {
+describe("commands - migration generate", () => {
     let connectionOptions: DataSourceOptions[]
     let createFileStub: sinon.SinonStub
     let timerStub: sinon.SinonFakeTimers
-    let getConnectionOptionsStub: sinon.SinonStub
+    let loadDataSourceStub: sinon.SinonStub | undefined
     let migrationGenerateCommand: MigrationGenerateCommand
-    let connectionOptionsReader: ConnectionOptionsReader
-    let baseConnectionOptions: DataSourceOptions
 
     const enabledDrivers = ["mysql"] as DatabaseType[]
 
-    // simulate args: `npm run typeorm migration:run -- -n test-migration -d test-directory`
-    const testHandlerArgs = (options: Record<string, any>) => ({
+    // simulate args: `npm run typeorm migration:generate -- ./test-directory/test-migration -d ./dummy-data-source.ts`
+    const testHandlerArgs = {
         $0: "test",
         _: ["test"],
-        name: "test-migration",
-        dir: "test-directory",
-        ...options,
-    })
+        path: "./test-directory/test-migration",
+        dataSource: "./dummy-data-source.ts",
+    }
+    const dummyDataSourceAbsPath = path.resolve(
+        process.cwd(),
+        testHandlerArgs.dataSource,
+    )
 
     before(async () => {
         // clean out db from any prior tests in case previous state impacts the generated migrations
@@ -49,7 +46,6 @@ describe.skip("commands - migration generate", () => {
             entities: [Post],
             enabledDrivers,
         })
-        connectionOptionsReader = new ConnectionOptionsReader()
         migrationGenerateCommand = new MigrationGenerateCommand()
         createFileStub = sinon.stub(CommandUtils, "createFile")
 
@@ -61,26 +57,21 @@ describe.skip("commands - migration generate", () => {
         createFileStub.restore()
     })
 
+    afterEach(async () => {
+        loadDataSourceStub?.restore()
+    })
+
     it("writes regular migration file when no option is passed", async () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
-            getConnectionOptionsStub = sinon
-                .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+            loadDataSourceStub = sinon
+                .stub(CommandUtils, "loadDataSource")
+                .resolves(new DataSource(connectionOption))
 
-            await migrationGenerateCommand.handler(
-                testHandlerArgs({
-                    connection: connectionOption.name,
-                }),
-            )
+            await migrationGenerateCommand.handle(testHandlerArgs)
 
+            sinon.assert.calledWith(loadDataSourceStub, dummyDataSourceAbsPath)
             // compare against control test strings in results-templates.ts
             sinon.assert.calledWith(
                 createFileStub,
@@ -88,7 +79,7 @@ describe.skip("commands - migration generate", () => {
                 sinon.match(resultsTemplates.control),
             )
 
-            getConnectionOptionsStub.restore()
+            loadDataSourceStub.restore()
         }
     })
 
@@ -96,22 +87,14 @@ describe.skip("commands - migration generate", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
-            getConnectionOptionsStub = sinon
-                .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+            loadDataSourceStub = sinon
+                .stub(CommandUtils, "loadDataSource")
+                .resolves(new DataSource(connectionOption))
 
-            await migrationGenerateCommand.handler(
-                testHandlerArgs({
-                    connection: connectionOption.name,
-                    outputJs: true,
-                }),
-            )
+            await migrationGenerateCommand.handle({
+                ...testHandlerArgs,
+                outputJs: true,
+            })
 
             // compare against "pretty" test strings in results-templates.ts
             sinon.assert.calledWith(
@@ -120,7 +103,7 @@ describe.skip("commands - migration generate", () => {
                 sinon.match(resultsTemplates.javascript),
             )
 
-            getConnectionOptionsStub.restore()
+            loadDataSourceStub.restore()
         }
     })
 
@@ -128,22 +111,14 @@ describe.skip("commands - migration generate", () => {
         for (const connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
-            getConnectionOptionsStub = sinon
-                .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
+            loadDataSourceStub = sinon
+                .stub(CommandUtils, "loadDataSource")
+                .resolves(new DataSource(connectionOption))
 
-            await migrationGenerateCommand.handler(
-                testHandlerArgs({
-                    connection: connectionOption.name,
-                    timestamp: "1641163894670",
-                }),
-            )
+            await migrationGenerateCommand.handle({
+                ...testHandlerArgs,
+                timestamp: "1641163894670",
+            })
 
             // compare against control test strings in results-templates.ts
             sinon.assert.calledWith(
@@ -152,7 +127,7 @@ describe.skip("commands - migration generate", () => {
                 sinon.match(resultsTemplates.timestamp),
             )
 
-            getConnectionOptionsStub.restore()
+            loadDataSourceStub.restore()
         }
     })
 })

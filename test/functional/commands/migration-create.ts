@@ -1,10 +1,6 @@
 import "../../utils/test-setup"
 import sinon from "sinon"
-import {
-    ConnectionOptionsReader,
-    DatabaseType,
-    DataSourceOptions,
-} from "../../../src"
+import { DatabaseType, DataSourceOptions } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -16,15 +12,11 @@ import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCom
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-create"
 
-// TODO: broken after 0.3.0 changes, fix later
-describe.skip("commands - migration create", () => {
+describe("commands - migration create", () => {
     let connectionOptions: DataSourceOptions[]
     let createFileStub: sinon.SinonStub
     let timerStub: sinon.SinonFakeTimers
-    let getConnectionOptionsStub: sinon.SinonStub
     let migrationCreateCommand: MigrationCreateCommand
-    let connectionOptionsReader: ConnectionOptionsReader
-    let baseConnectionOptions: DataSourceOptions
 
     const enabledDrivers = [
         "postgres",
@@ -37,14 +29,12 @@ describe.skip("commands - migration create", () => {
         "cockroachdb",
     ] as DatabaseType[]
 
-    // simulate args: `npm run typeorm migration:run -- -n test-migration -d test-directory`
-    const testHandlerArgs = (options: Record<string, any>) => ({
+    // simulate args: `npm run typeorm migration:create -- ./test-directory/test-migration`
+    const testHandlerArgs = {
         $0: "test",
         _: ["test"],
-        name: "test-migration",
-        dir: "test-directory",
-        ...options,
-    })
+        path: "./test-directory/test-migration",
+    }
 
     before(async () => {
         // clean out db from any prior tests in case previous state impacts the generated migrations
@@ -59,7 +49,6 @@ describe.skip("commands - migration create", () => {
             entities: [Post],
             enabledDrivers,
         })
-        connectionOptionsReader = new ConnectionOptionsReader()
         migrationCreateCommand = new MigrationCreateCommand()
         createFileStub = sinon.stub(CommandUtils, "createFile")
 
@@ -71,29 +60,11 @@ describe.skip("commands - migration create", () => {
         createFileStub.restore()
     })
 
-    afterEach(async () => {
-        getConnectionOptionsStub.restore()
-    })
-
     it("should write regular empty migration file when no option is passed", async () => {
-        for (const connectionOption of connectionOptions) {
+        for (const _connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
-            getConnectionOptionsStub = sinon
-                .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
-
-            await migrationCreateCommand.handler(
-                testHandlerArgs({
-                    connection: connectionOption.name,
-                }),
-            )
+            await migrationCreateCommand.handle(testHandlerArgs)
 
             // compare against control test strings in results-templates.ts
             sinon.assert.calledWith(
@@ -101,31 +72,17 @@ describe.skip("commands - migration create", () => {
                 sinon.match(/test-directory.*test-migration.ts/),
                 sinon.match(resultsTemplates.control),
             )
-
-            getConnectionOptionsStub.restore()
         }
     })
 
     it("should write Javascript empty migration file when option is passed", async () => {
-        for (const connectionOption of connectionOptions) {
+        for (const _connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
-            getConnectionOptionsStub = sinon
-                .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
-
-            await migrationCreateCommand.handler(
-                testHandlerArgs({
-                    connection: connectionOption.name,
-                    outputJs: true,
-                }),
-            )
+            await migrationCreateCommand.handle({
+                ...testHandlerArgs,
+                outputJs: true,
+            })
 
             // compare against control test strings in results-templates.ts
             sinon.assert.calledWith(
@@ -133,31 +90,17 @@ describe.skip("commands - migration create", () => {
                 sinon.match(/test-directory.*test-migration.js/),
                 sinon.match(resultsTemplates.javascript),
             )
-
-            getConnectionOptionsStub.restore()
         }
     })
 
     it("should use custom timestamp when option is passed", async () => {
-        for (const connectionOption of connectionOptions) {
+        for (const _connectionOption of connectionOptions) {
             createFileStub.resetHistory()
 
-            baseConnectionOptions = await connectionOptionsReader.get(
-                connectionOption.name as string,
-            )
-            getConnectionOptionsStub = sinon
-                .stub(ConnectionOptionsReader.prototype, "get")
-                .resolves({
-                    ...baseConnectionOptions,
-                    entities: [Post],
-                })
-
-            await migrationCreateCommand.handler(
-                testHandlerArgs({
-                    connection: connectionOption.name,
-                    timestamp: "1641163894670",
-                }),
-            )
+            await migrationCreateCommand.handle({
+                ...testHandlerArgs,
+                timestamp: "1641163894670",
+            })
 
             // compare against control test strings in results-templates.ts
             sinon.assert.calledWith(
@@ -165,8 +108,6 @@ describe.skip("commands - migration create", () => {
                 sinon.match("test-directory/1641163894670-test-migration.ts"),
                 sinon.match(resultsTemplates.timestamp),
             )
-
-            getConnectionOptionsStub.restore()
         }
     })
 })

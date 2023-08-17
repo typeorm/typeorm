@@ -61,6 +61,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     }
 
     async handler(args: yargs.Arguments) {
+        const exitCode = await this.handle(args)
+        process.exit(exitCode)
+    }
+    async handle(args: yargs.Arguments): Promise<number> {
         const timestamp = CommandUtils.getTimestamp(args.timestamp)
         const extension = args.outputJs ? ".js" : ".ts"
         const fullPath = (args.path as string).startsWith("/")
@@ -137,18 +141,18 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     console.log(
                         chalk.green(`No changes in database schema were found`),
                     )
-                    process.exit(0)
+                    return 0
                 } else {
                     console.log(
                         chalk.yellow(
                             `No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`,
                         ),
                     )
-                    process.exit(1)
+                    return 1
                 }
             } else if (!args.path) {
                 console.log(chalk.yellow("Please specify a migration path"))
-                process.exit(1)
+                return 1
             }
 
             const fileContent = args.outputJs
@@ -173,7 +177,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                         )}`,
                     ),
                 )
-                process.exit(1)
+                return 1
             }
 
             if (args.dryrun) {
@@ -196,11 +200,11 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                         )} has been generated successfully.`,
                     ),
                 )
-                process.exit(0)
             }
+            return 0
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration generation:", err)
-            process.exit(1)
+            return 1
         }
     }
 

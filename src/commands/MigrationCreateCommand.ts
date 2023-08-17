@@ -30,6 +30,11 @@ export class MigrationCreateCommand implements yargs.CommandModule {
     }
 
     async handler(args: yargs.Arguments) {
+        const exitCode = await this.handle(args)
+        process.exit(exitCode)
+    }
+
+    async handle(args: yargs.Arguments): Promise<number> {
         try {
             const timestamp = CommandUtils.getTimestamp(args.timestamp)
             const inputPath = (args.path as string).startsWith("/")
@@ -55,9 +60,10 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                     fullPath + (args.outputJs ? ".js" : ".ts"),
                 )} has been generated successfully.`,
             )
+            return 0
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration creation:", err)
-            process.exit(1)
+            return 1
         }
     }
 
