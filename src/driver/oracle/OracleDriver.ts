@@ -975,13 +975,10 @@ export class OracleDriver implements Driver {
         } catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
         }
-        const oracleDBDriverMode =
-            process.env.NODE_ORACLEDB_DRIVER_MODE || "thick"
-        if (oracleDBDriverMode === "thick") {
-            typeof this.options.thickDriverLibDir
-                ? this.oracle.initOracleClient({
-                      libDir: this.options.thickDriverLibDir,
-                  })
+        const thickMode = this.options.thickMode
+        if (thickMode) {
+            typeof thickMode === "object"
+                ? this.oracle.initOracleClient(thickMode)
                 : this.oracle.initOracleClient()
         }
     }
