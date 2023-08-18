@@ -6,8 +6,8 @@ import {
 } from "../../../../src"
 
 export class Embedded {
-    @Column({ type: "integer", nullable: true })
-    a: number | null
+    @Column({ type: "varchar", nullable: true })
+    a: string | null
 
     @Column({ type: "varchar", nullable: true })
     b: string | null

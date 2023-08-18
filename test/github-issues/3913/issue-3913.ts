@@ -28,10 +28,10 @@ describe("github issues > #3913 Cannot set embedded entity to null", () => {
                 const qb = connection.createQueryBuilder(Test, "s")
                 const t = new Test()
 
-                t.embedded = { a: 1, b: "b" }
+                t.embedded = { a: "a", b: "b" }
                 const { id } = await connection.manager.save(t)
                 const t1 = await qb.getOne()
-                expect(t1!.embedded).to.deep.equal({ a: 1, b: "b" })
+                expect(t1!.embedded).to.deep.equal({ a: "a", b: "b" })
 
                 t!.embedded = null
                 t!.id = id
@@ -43,10 +43,10 @@ describe("github issues > #3913 Cannot set embedded entity to null", () => {
 
                 await qb
                     .update()
-                    .set({ embedded: { a: 1, b: null } })
+                    .set({ embedded: { a: "a", b: null } })
                     .execute()
                 const t3 = await qb.getOne()
-                expect(t3!.embedded).to.deep.equal({ a: 1, b: null })
+                expect(t3!.embedded).to.deep.equal({ a: "a", b: null })
 
                 await qb.update().set({ embedded: null }).execute()
                 const t4 = await qb.getOne()
