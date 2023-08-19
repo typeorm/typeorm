@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { ExampleEntity } from "./entity/ExampleEntity"
 
-describe("github issues > #9927", () => {
+describe("github issues > #9927 aggregate function throw error when column alias name is set", () => {
     let dataSources: DataSource[]
 
     before(async () => {
