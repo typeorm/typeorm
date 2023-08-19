@@ -153,6 +153,7 @@ export interface TestingOptions {
      */
     createLogger?: () =>
         | "advanced-console"
+        | "formatted-console"
         | "simple-console"
         | "file"
         | "debug"

@@ -299,6 +299,7 @@ export abstract class AbstractLogger implements Logger {
                 addColonToPrefix: true,
                 appendParameterAsComment: true,
                 highlightSql: true,
+                formatSql: false,
             },
             ...options,
         }
@@ -313,6 +314,11 @@ export abstract class AbstractLogger implements Logger {
 
             if (message.format === "sql") {
                 let sql = String(message.message)
+
+                console.log("")
+                if (options.formatSql) {
+                    sql = PlatformTools.formatSql(sql)
+                }
 
                 if (
                     options.appendParameterAsComment &&
