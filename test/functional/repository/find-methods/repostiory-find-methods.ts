@@ -149,8 +149,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         order: { id: "ASC" },
                     })
                     exists.should.be.equal(true)
@@ -169,8 +169,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         where: { categoryName: "odd" },
                         order: { id: "ASC" },
                     })
@@ -191,8 +191,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         where: { categoryName: "odd", isNew: true },
                         order: { id: "ASC" },
                     })
@@ -215,8 +215,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist()
+                    // check exists method
+                    const exists = await postRepository.exists()
                     exists.should.be.equal(true)
                 }),
             ))
@@ -236,8 +236,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         where: { categoryName: "even", isNew: true },
                         skip: 1,
                         take: 2,

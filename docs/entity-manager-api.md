@@ -183,6 +183,22 @@ await manager.increment(User, { firstName: "Timber" }, "age", 3)
 await manager.decrement(User, { firstName: "Timber" }, "age", 3)
 ```
 
+-   `exists` - Check whether any entity exists that matches `FindOptions`.
+
+```typescript
+const exists = await manager.exists(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `existsBy` - Checks whether any entity exists that matches `FindOptionsWhere`.
+
+```typescript
+const exists = await manager.existsBy(User, { firstName: "Timber" })
+```
+
 -   `count` - Counts entities that match `FindOptions`. Useful for pagination.
 
 ```typescript

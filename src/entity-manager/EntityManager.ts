@@ -955,7 +955,7 @@ export class EntityManager {
     }
 
     /**
-     * Checks whether any entity exists with the given condition
+     * Checks whether any entity exists with the given options.
      */
     exists<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -968,6 +968,19 @@ export class EntityManager {
                 metadata.name,
         )
             .setFindOptions(options || {})
+            .getExists()
+    }
+
+    /**
+     * Checks whether any entity exists with the given conditions.
+     */
+    async existsBy<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<boolean> {
+        const metadata = this.connection.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions({ where })
             .getExists()
     }
 
