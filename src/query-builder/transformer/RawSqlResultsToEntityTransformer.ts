@@ -254,18 +254,36 @@ export class RawSqlResultsToEntityTransformer {
         // Set all embedded column values to null if all their child columns are null
         if (entity) {
             metadata.embeddeds.forEach((embedded) => {
-                if (
-                    embedded.propertyName in entity &&
-                    typeof entity[embedded.propertyName] === "object" &&
-                    Object.values(entity[embedded.propertyName]).every(
-                        (value) => value == null,
+                if (embedded.propertyName in entity) {
+                    entity[embedded.propertyName] = this.deeplyNullify(
+                        entity[embedded.propertyName],
                     )
-                ) {
-                    entity[embedded.propertyName] = null
                 }
             })
         }
         return hasData
+    }
+
+    /**
+     * Returns whether an object is an iterrable
+     * This is useful when trying to avoid objects such as Dates
+     */
+    private isIterrableObject(obj: any): obj is object {
+        const prototype = Object.prototype.toString.call(obj)
+        return prototype === "[object Object]" || prototype === "[object Array]"
+    }
+
+    /**
+     * Deeply nullify an object if all its properties values are null or undefined
+     */
+    private deeplyNullify<T>(obj: T): T | null {
+        if (!this.isIterrableObject(obj)) return obj
+
+        for (const key in obj) {
+            obj[key] = this.deeplyNullify(obj[key] as any)
+        }
+        const nullify = Object.values(obj).every((value) => value == null)
+        return nullify ? null : obj
     }
 
     /**
