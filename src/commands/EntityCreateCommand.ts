@@ -11,6 +11,14 @@ export class EntityCreateCommand implements yargs.CommandModule {
     command = "entity:create <path>"
     describe = "Generates a new entity."
 
+    builder(args: yargs.Argv) {
+        return args.positional("path", {
+            type: "string",
+            describe: "Path of the entity file",
+            demandOption: true,
+        })
+    }
+
     async handler(args: yargs.Arguments) {
         try {
             const fullPath = (args.path as string).startsWith("/")
