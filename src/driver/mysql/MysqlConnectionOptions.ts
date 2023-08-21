@@ -106,7 +106,7 @@ export interface MysqlConnectionOptions
      * TypeORM will automatically use package found in your node_modules, prioritizing mysql over mysql2,
      * but you can specify it manually
      */
-    readonly connectorPackage?: "mysql" | "mysql2"
+    readonly connectorPackage?: "mysql" | "mysql2" | "mariadb"
 
     /**
      * Replication setup.

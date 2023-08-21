@@ -1168,7 +1168,9 @@ export class MysqlDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
-        const connectorPackage = this.options.connectorPackage ?? "mysql"
+        const connectorPackage =
+            this.options.connectorPackage ??
+            (this.options.type === "mariadb" ? "mariadb" : "mysql")
         const fallbackConnectorPackage =
             connectorPackage === "mysql"
                 ? ("mysql2" as const)
