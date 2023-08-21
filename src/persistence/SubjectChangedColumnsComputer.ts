@@ -61,6 +61,10 @@ export class SubjectChangedColumnsComputer {
             // we don't perform operation over undefined properties (but we DO need null properties!)
             if (entityValue === undefined) return
 
+            // Ignore marking relation as null
+            if (relatedEntity === null && relation.orphanedRowAction === 'disable')
+                return;
+
             // if there is no database entity then all columns are treated as new, e.g. changed
             if (subject.databaseEntity) {
                 // skip transform database value for json / jsonb for comparison later on
