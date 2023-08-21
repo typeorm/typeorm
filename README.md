@@ -25,13 +25,13 @@ that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeS
 and can be used with TypeScript and JavaScript (ES5, ES6, ES7, ES8).
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
-small applications with a few tables to large scale enterprise applications
+small applications with a few tables to large-scale enterprise applications
 with multiple databases.
 
 TypeORM supports both [Active Record](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
-which means you can write high quality, loosely coupled, scalable,
-maintainable applications the most productive way.
+which means you can write high-quality, loosely coupled, scalable,
+maintainable applications in the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
@@ -43,10 +43,10 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Database-specific column types.
 -   Entity manager.
 -   Repositories and custom repositories.
--   Clean object relational model.
+-   Clean object-relational model.
 -   Associations (relations).
 -   Eager and lazy relations.
--   Uni-directional, bi-directional and self-referenced relations.
+-   Uni-directional, bi-directional, and self-referenced relations.
 -   Supports multiple inheritance patterns.
 -   Cascades.
 -   Indices.
@@ -55,7 +55,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Connection pooling.
 -   Replication.
 -   Using multiple database instances.
--   Working with multiple databases types.
+-   Working with multiple database types.
 -   Cross-database and cross-schema queries.
 -   Elegant-syntax, flexible and powerful QueryBuilder.
 -   Left and inner joins.
@@ -72,7 +72,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
 -   TypeScript and JavaScript support.
 -   ESM and CommonJS support.
--   Produced code is performant, flexible, clean and maintainable.
+-   Produced code is performant, flexible, clean, and maintainable.
 -   Follows all possible best practices.
 -   CLI.
 
@@ -362,7 +362,7 @@ This guide will show you how to set up TypeORM from scratch and make it do what 
 
 ### Create a model
 
-Working with a database starts from creating tables.
+Working with a database starts with creating tables.
 How do you tell TypeORM to create a database table?
 The answer is - through the models.
 Your models in your app are your database tables.
@@ -410,7 +410,7 @@ export class Photo {
 
 Now, a database table will be created for the `Photo` entity and we'll be able to work with it anywhere in our app.
 We have created a database table, however, what table can exist without columns?
-Let's create few columns in our database table.
+Let's create a few columns in our database table.
 
 ### Adding table columns
 
@@ -442,7 +442,7 @@ export class Photo {
 }
 ```
 
-Now `id`, `name`, `description`, `filename`, `views` and `isPublished` columns will be added to the `photo` table.
+Now `id`, `name`, `description`, `filename`, `views`, and `isPublished` columns will be added to the `photo` table.
 Column types in the database are inferred from the property types you used, e.g.
 `number` will be converted into `integer`, `string` into `varchar`, `boolean` into `bool`, etc.
 But you can use any column type your database supports by explicitly specifying a column type into the `@Column` decorator.
@@ -516,7 +516,7 @@ export class Photo {
 Next, let's fix our data types. By default, the string is mapped to a varchar(255)-like type (depending on the database type).
 The number is mapped to an integer-like type (depending on the database type).
 We don't want all our columns to be limited varchars or integers.
-Let's setup correct data types:
+Let's setup the correct data types:
 
 ```typescript
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
@@ -570,7 +570,7 @@ const AppDataSource = new DataSource({
     logging: false,
 })
 
-// to initialize initial connection with the database, register all entities
+// to initialize the initial connection with the database, register all entities
 // and "synchronize" database schema, call "initialize()" method of a newly created database
 // once in your application bootstrap
 AppDataSource.initialize()
@@ -584,7 +584,7 @@ We are using Postgres in this example, but you can use any other supported datab
 To use another database, simply change the `type` in the options to the database type you are using:
 `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `sap`, `spanner`, `cordova`, `nativescript`, `react-native`,
 `expo`, or `mongodb`.
-Also make sure to use your own host, port, username, password and database settings.
+Also make sure to use your own host, port, username, password, and database settings.
 
 We added our Photo entity to the list of entities for this data source.
 Each entity you are using in your connection must be listed there.
@@ -816,7 +816,7 @@ If you run the app, you'll see a newly generated table, and it will contain a co
 
 ### Save a one-to-one relation
 
-Now let's save a photo, its metadata and attach them to each other.
+Now let's save a photo, and its metadata and attach them to each other.
 
 ```typescript
 import { Photo } from "./entity/Photo"
@@ -955,7 +955,7 @@ export class Photo {
 
 Now let's load our photo and its photo metadata in a single query.
 There are two ways to do it - using `find*` methods or using `QueryBuilder` functionality.
-Let's use `find*` methods first.
+Let's use `find*` method first.
 `find*` methods allow you to specify an object with the `FindOneOptions` / `FindManyOptions` interface.
 
 ```typescript
@@ -1009,7 +1009,7 @@ export class Photo {
 }
 ```
 
-Using `cascade` allows us not to separately save photo and separately save metadata objects now.
+Using `cascade` allows us not to separately save photos and separately save metadata objects now.
 Now we can simply save a photo object, and the metadata object will be saved automatically because of cascade options.
 
 ```typescript
@@ -1041,7 +1041,7 @@ await photoRepository.save(photo)
 console.log("Photo is saved, photo metadata is saved too.")
 ```
 
-Notice that we now set the photo's `metadata` property, instead of the metadata's `photo` property as before. The `cascade` feature only works if you connect the photo to its metadata from the photo's side. If you set the metadata's side, the metadata would not be saved automatically.
+Notice that we now set the photo's `metadata` property, instead of the metadata's `photo` property as before. The `cascade` feature only works if you connect the photo to its metadata from the photo's side. If you set the metadata side, the metadata would not be saved automatically.
 
 ### Creating a many-to-one / one-to-many relation
 
@@ -1091,7 +1091,7 @@ export class Photo {
 }
 ```
 
-In many-to-one / one-to-many relation, the owner side is always many-to-one.
+In many-to-one / one-to-many relations, the owner side is always many-to-one.
 It means that the class that uses `@ManyToOne` will store the id of the related object.
 
 After you run the application, the ORM will create the `author` table:
@@ -1182,7 +1182,7 @@ const options: DataSourceOptions = {
 }
 ```
 
-Now let's insert albums and photos to our database:
+Now let's insert albums and photos into our database:
 
 ```typescript
 import { AppDataSource } from "./index"
@@ -1258,7 +1258,7 @@ This query selects all published photos with "My" or "Mishka" names.
 It will select results from position 5 (pagination offset)
 and will select only 10 results (pagination limit).
 The selection result will be ordered by id in descending order.
-The photo's albums will be left joined and their metadata will be inner joined.
+The photo albums will be left joined and their metadata will be inner joined.
 
 You'll use the query builder in your application a lot.
 Learn more about QueryBuilder [here](./docs/select-query-builder.md).
@@ -1267,7 +1267,7 @@ Learn more about QueryBuilder [here](./docs/select-query-builder.md).
 
 Take a look at the samples in [sample](https://github.com/typeorm/typeorm/tree/master/sample) for examples of usage.
 
-There are a few repositories which you can clone and start with:
+There are a few repositories that you can clone and start with:
 
 -   [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
 -   [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
@@ -1292,7 +1292,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   [TypeORM + GraphQL framework](https://github.com/vesper-framework/vesper)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
--   Models generation from existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+-   Models generation from the existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
 -   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
 -   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
@@ -1303,7 +1303,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 
 ## Contributing
 
-Learn about contribution [here](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md) and how to setup your development environment [here](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md).
+Learn about contribution [here](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md) and how to set up your development environment [here](https://github.com/typeorm/typeorm/blob/master/DEVELOPER.md).
 
 This project exists thanks to all the people who contribute:
 

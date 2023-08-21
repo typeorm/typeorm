@@ -2,6 +2,7 @@ import sinon from "sinon"
 import {
     ConnectionOptionsReader,
     DatabaseType,
+    DataSource,
     DataSourceOptions,
 } from "../../../src"
 import {
@@ -15,24 +16,32 @@ import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerat
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-generate"
 
-// TODO: broken after 0.3.0 changes, fix later
-describe.skip("commands - migration generate", () => {
+describe("commands - migration generate", () => {
     let connectionOptions: DataSourceOptions[]
     let createFileStub: sinon.SinonStub
+    let loadDataSourceStub: sinon.SinonStub
     let timerStub: sinon.SinonFakeTimers
     let getConnectionOptionsStub: sinon.SinonStub
     let migrationGenerateCommand: MigrationGenerateCommand
     let connectionOptionsReader: ConnectionOptionsReader
     let baseConnectionOptions: DataSourceOptions
 
-    const enabledDrivers = ["mysql"] as DatabaseType[]
+    const enabledDrivers = [
+        "postgres",
+        "mssql",
+        "mysql",
+        "mariadb",
+        "sqlite",
+        "better-sqlite3",
+        "oracle",
+        "cockroachdb",
+    ] as DatabaseType[]
 
     // simulate args: `npm run typeorm migration:run -- -n test-migration -d test-directory`
     const testHandlerArgs = (options: Record<string, any>) => ({
         $0: "test",
         _: ["test"],
-        name: "test-migration",
-        dir: "test-directory",
+        path: "test-directory/test-migration",
         ...options,
     })
 
@@ -52,6 +61,7 @@ describe.skip("commands - migration generate", () => {
         connectionOptionsReader = new ConnectionOptionsReader()
         migrationGenerateCommand = new MigrationGenerateCommand()
         createFileStub = sinon.stub(CommandUtils, "createFile")
+        loadDataSourceStub = sinon.stub(CommandUtils, "loadDataSource")
 
         timerStub = sinon.useFakeTimers(1610975184784)
     })
@@ -59,6 +69,7 @@ describe.skip("commands - migration generate", () => {
     after(async () => {
         timerStub.restore()
         createFileStub.restore()
+        loadDataSourceStub.restore()
     })
 
     it("writes regular migration file when no option is passed", async () => {
@@ -75,9 +86,11 @@ describe.skip("commands - migration generate", () => {
                     entities: [Post],
                 })
 
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    dataSource: "dummy-path",
                 }),
             )
 
@@ -106,9 +119,11 @@ describe.skip("commands - migration generate", () => {
                     entities: [Post],
                 })
 
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    dataSource: "dummy-path",
                     outputJs: true,
                 }),
             )
@@ -138,9 +153,11 @@ describe.skip("commands - migration generate", () => {
                     entities: [Post],
                 })
 
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
-                    connection: connectionOption.name,
+                    dataSource: "dummy-path",
                     timestamp: "1641163894670",
                 }),
             )

@@ -4,11 +4,11 @@ import { TypeORMError } from "./TypeORMError"
 /**
  * Thrown when query execution has failed.
  */
-export class QueryFailedError extends TypeORMError {
+export class QueryFailedError<T extends Error = Error> extends TypeORMError {
     constructor(
         readonly query: string,
         readonly parameters: any[] | undefined,
-        readonly driverError: any,
+        readonly driverError: T,
     ) {
         super(
             driverError

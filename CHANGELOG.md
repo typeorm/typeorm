@@ -1,3 +1,10 @@
+## [0.3.17](https://github.com/typeorm/typeorm/compare/0.3.16...0.3.17) (2023-06-20)
+
+### Bug Fixes
+
+* [#10040](https://github.com/typeorm/typeorm/issues/10040) TypeORM synchronize database even if it is up to date ([#10041](https://github.com/typeorm/typeorm/issues/10041)) ([b1a3a39](https://github.com/typeorm/typeorm/commit/b1a3a395049052f3f031e9fd27b99769b03b9011))
+* add missing await ([#10084](https://github.com/typeorm/typeorm/issues/10084)) ([f5d4397](https://github.com/typeorm/typeorm/commit/f5d43975dbbf02d0e40d64d01265105d4018cf7a))
+
 ## [0.3.16](https://github.com/typeorm/typeorm/compare/0.3.15...0.3.16) (2023-05-09)
 
 ### Bug Fixes

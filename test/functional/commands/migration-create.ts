@@ -16,8 +16,7 @@ import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCom
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-create"
 
-// TODO: broken after 0.3.0 changes, fix later
-describe.skip("commands - migration create", () => {
+describe("commands - migration create", () => {
     let connectionOptions: DataSourceOptions[]
     let createFileStub: sinon.SinonStub
     let timerStub: sinon.SinonFakeTimers
@@ -41,8 +40,7 @@ describe.skip("commands - migration create", () => {
     const testHandlerArgs = (options: Record<string, any>) => ({
         $0: "test",
         _: ["test"],
-        name: "test-migration",
-        dir: "test-directory",
+        path: "test-directory/test-migration",
         ...options,
     })
 

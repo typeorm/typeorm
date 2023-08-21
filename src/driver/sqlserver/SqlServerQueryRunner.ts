@@ -4085,12 +4085,33 @@ export class SqlServerQueryRunner
             case "tinyint":
                 return this.driver.mssql.TinyInt
             case "char":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.Char(...parameter.params)
+                }
+                return this.driver.mssql.NChar(...parameter.params)
             case "nchar":
                 return this.driver.mssql.NChar(...parameter.params)
             case "text":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.Text
+                }
+                return this.driver.mssql.Ntext
             case "ntext":
                 return this.driver.mssql.Ntext
             case "varchar":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.VarChar(...parameter.params)
+                }
+                return this.driver.mssql.NVarChar(...parameter.params)
             case "nvarchar":
                 return this.driver.mssql.NVarChar(...parameter.params)
             case "xml":
