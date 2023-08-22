@@ -119,7 +119,10 @@ export class MaterializedPathSubjectExecutor {
             subject.metadata.materializedPathColumn!.propertyPath
         await this.queryRunner.manager
             .createQueryBuilder()
-            .update(subject.metadata.target)
+            .update(
+                subject.metadata.parentEntityMetadata.target ??
+                    subject.metadata.target,
+            )
             .set({
                 [propertyPath]: () =>
                     `REPLACE(${this.queryRunner.connection.driver.escape(
@@ -152,19 +155,28 @@ export class MaterializedPathSubjectExecutor {
         subject: Subject,
         id: ObjectLiteral,
     ): Promise<string> {
-        const metadata = subject.metadata
+        const target =
+            subject.metadata.parentEntityMetadata.target ??
+            subject.metadata.target
+
+        const targetName = subject.metadata.parentEntityMetadata.target
+            ? subject.metadata.parentEntityMetadata.targetName
+            : subject.metadata.targetName
+
+        const metadata =
+            subject.metadata.parentEntityMetadata ?? subject.metadata
         const normalized = (Array.isArray(id) ? id : [id]).map((id) =>
             metadata.ensureEntityIdMap(id),
         )
         return this.queryRunner.manager
             .createQueryBuilder()
             .select(
-                subject.metadata.targetName +
+                targetName +
                     "." +
                     subject.metadata.materializedPathColumn!.propertyPath,
                 "path",
             )
-            .from(subject.metadata.target, subject.metadata.targetName)
+            .from(target, subject.metadata.targetName)
             .where(
                 new Brackets((qb) => {
                     for (const data of normalized) {

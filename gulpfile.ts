@@ -125,7 +125,7 @@ export class Gulpfile {
     packagePack() {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
-                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
+                "cd ./build/package && npm pack && mv -f pocketlaw-typeorm-*.tgz .."
             ]));
     }
 
