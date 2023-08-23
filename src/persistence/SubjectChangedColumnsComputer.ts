@@ -57,10 +57,9 @@ export class SubjectChangedColumnsComputer {
 
             // get user provided value - column value from the user provided persisted entity
             const entityValue = column.getEntityValue(subject.entity!)
-
             // we don't perform operation over undefined properties (but we DO need null properties!)
             if (entityValue === undefined) return
-
+            
             // if there is no database entity then all columns are treated as new, e.g. changed
             if (subject.databaseEntity) {
                 // skip transform database value for json / jsonb for comparison later on
@@ -194,6 +193,10 @@ export class SubjectChangedColumnsComputer {
             // we don't perform operation over undefined properties (but we DO need null properties!)
             if (relatedEntity === undefined) return
 
+            // Ignore marking relation as null
+            if (relatedEntity === null && relation.orphanedRowAction === 'disable')
+                return;
+            
             // if there is no database entity then all relational columns are treated as new, e.g. changed
             if (subject.databaseEntity) {
                 // here we cover two scenarios:
@@ -210,6 +213,10 @@ export class SubjectChangedColumnsComputer {
                         relatedEntityRelationIdMap,
                     )!
 
+                // If all the join columns are not selected then save query nullifies the relation columns in primary table.
+                if (relatedEntityRelationIdMap === undefined)
+                    return;
+                
                 // get database related entity. Since loadRelationIds are used on databaseEntity
                 // related entity will contain only its relation ids
                 const databaseRelatedEntityRelationIdMap =
