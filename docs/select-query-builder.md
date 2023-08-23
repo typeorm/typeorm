@@ -1197,7 +1197,7 @@ If the model you are querying has a column with the attribute `@DeleteDateColumn
 Let's say you have the following entity:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, DeleteDateColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
