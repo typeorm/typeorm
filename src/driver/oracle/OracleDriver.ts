@@ -247,7 +247,7 @@ export class OracleDriver implements Driver {
     maxAliasLength = 29
 
     cteCapabilities: CteCapabilities = {
-        enabled: false, // TODO: enable
+        enabled: true,
     }
 
     dummyTableName = "DUAL"
