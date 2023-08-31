@@ -151,7 +151,7 @@
     "mongodb": "^5.2.0",
     "mssql": "^9.1.1",
     "mysql2": "^2.2.5 || ^3.0.1",
-    "oracledb": "^6.0.3",
+    "oracledb": "^6.1.0",
     "pg": "^8.5.1",
     "pg-native": "^3.0.0",
     "pg-query-stream": "^4.0.0",
