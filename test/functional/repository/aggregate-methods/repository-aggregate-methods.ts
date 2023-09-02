@@ -10,7 +10,6 @@ import { LessThan } from "../../../../src"
 import { expect } from "chai"
 
 describe("repository > aggregate methods", () => {
-    debugger
     let connections: DataSource[]
     let repository: Repository<Post>
 
