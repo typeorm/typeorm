@@ -23,13 +23,13 @@
 
 你可以在项目中设置 ts-node 以简化操作，如下所示：
 
-```
+```bash
 npm install ts-node --save-dev
 ```
 
 在 package.json 中的 scripts 下添加 typeorm 命令
 
-```
+```json
 "script" {
     ...
     "typeorm": "typeorm-ts-node-commonjs"
@@ -38,13 +38,13 @@ npm install ts-node --save-dev
 
 然后运行如下命令：
 
-```
+```bash
 npm run typeorm migration:run
 ```
 
 如果你需要将带有破折号的参数传递给 npm 脚本，则需要在`--`之后添加。例如，如果需要生成，则命令如下：
 
-```
+```bash
 npm run typeorm migration:generate -- -n migrationNameHere
 ```
 
@@ -52,7 +52,7 @@ npm run typeorm migration:generate -- -n migrationNameHere
 
 你可以使用已设置的所有内容创建新项目：
 
-```
+```bash
 typeorm init
 ```
 
@@ -73,25 +73,25 @@ typeorm init
 所有文件都在当前目录中生成。
 如果要在特殊目录中生成它们，可以使用`--name`：
 
-```
+```bash
 typeorm init --name my-project
 ```
 
 要指定使用的特定数据库，可以使用`--database`：
 
-```
+```bash
 typeorm init --database mssql
 ```
 
 你还可以使用 Express 生成基础项目：
 
-```
+```bash
 typeorm init --name my-project --express
 ```
 
 如果你使用的是 docker，可以使用以下命令生成`docker-compose.yml`文件：
 
-```
+```bash
 typeorm init --docker
 ```
 
@@ -101,7 +101,7 @@ typeorm init --docker
 
 你可以使用 CLI 创建新实体：
 
-```
+```bash
 typeorm entity:create -n User
 ```
 
@@ -121,7 +121,7 @@ typeorm entity:create -n User
 
 如果多个目录中具有多个实体的多模块项目结构，则需要提供 CLI 生成实体目录的路径：
 
-```
+```bash
 typeorm entity:create -n User -d src/user/entity
 ```
 
@@ -131,7 +131,7 @@ typeorm entity:create -n User -d src/user/entity
 
 可以使用 CLI 创建新订阅者：
 
-```
+```bash
 typeorm subscriber:create -n UserSubscriber
 ```
 
@@ -150,7 +150,7 @@ typeorm subscriber:create -n UserSubscriber
 了解有关[连接选项](./connection-options.md)的更多信息。
 如果你有一个不同目录中有多个订阅用户的多模块结构的项目，可以给 CLI 命令提供相应的路径，然后在其中生成 subscriber：
 
-```
+```bash
 typeorm subscriber:create -n UserSubscriber -d src/user/subscriber
 ```
 
@@ -160,7 +160,7 @@ typeorm subscriber:create -n UserSubscriber -d src/user/subscriber
 
 你可以使用 CLI 创建新的迁移：
 
-```
+```bash
 typeorm migration:create path-to-migrations-dir/migrationName
 ```
 
@@ -179,7 +179,7 @@ typeorm migration:create path-to-migrations-dir/migrationName
 了解有关[连接选项](./connection-options.md)的更多信息。
 如果你有一个在不同目录中具有多个迁移的多模块结构的项目，则可以提供要生成迁移的 CLI 命令的路径：
 
-```
+```bash
 typeorm migration:create path-to-migrations-dir/migrationName
 ```
 
@@ -189,7 +189,7 @@ typeorm migration:create path-to-migrations-dir/migrationName
 
 自动迁移生成会创建新的迁移文件并编写必须执行的所有 sql 查询以更新数据库。
 
-```
+```bash
 typeorm migration:generate -n UserMigration
 ```
 
@@ -201,7 +201,7 @@ typeorm migration:generate -n UserMigration
 
 要执行所有挂起的迁移，请使用以下命令：
 
-```
+```bash
 typeorm migration:run
 ```
 
@@ -211,8 +211,8 @@ typeorm migration:run
 
 要还原最近执行的迁移，请使用以下命令：
 
-```
-typeorm migration:revert -- -d path-to-datasource-config
+```bash
+typeorm migration:revert -d path-to-datasource-config
 ```
 
 此命令将仅撤消上次执行的迁移。
@@ -223,7 +223,7 @@ typeorm migration:revert -- -d path-to-datasource-config
 
 要同步数据库架构，请使用：
 
-```
+```bash
 typeorm schema:sync
 ```
 
@@ -233,7 +233,7 @@ typeorm schema:sync
 
 要检查将要运行的 sql 查询，请使用`schema：sync`：
 
-```
+```bash
 typeorm schema:log
 ```
 
@@ -241,8 +241,8 @@ typeorm schema:log
 
 要完全删除数据库架构，请使用以下命令：
 
-```
-typeorm schema:drop -- -d path-to-datasource-config
+```bash
+typeorm schema:drop -d path-to-datasource-config
 ```
 
 在生产环境时要谨慎使用这个命令，因为它会完全删除数据库中的数据。
@@ -251,7 +251,7 @@ typeorm schema:drop -- -d path-to-datasource-config
 
 你可以使用以下命令直接在数据库中执行想要的任何 SQL 查询：
 
-```
+```bash
 typeorm query "SELECT * FROM USERS"
 ```
 
@@ -260,7 +260,7 @@ typeorm query "SELECT * FROM USERS"
 如果你使用`QueryBuilder`缓存，有时可能希望清除缓存中存储的所有内容。
 则可以使用以下命令执行此操作：
 
-```
+```bash
 typeorm cache:clear
 ```
 
@@ -268,6 +268,6 @@ typeorm cache:clear
 
 可以通过运行以下命令来检查已安装（本地和全局）的 typeorm 版本：
 
-```
+```bash
 typeorm version
 ```

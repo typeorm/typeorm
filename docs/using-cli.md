@@ -33,13 +33,13 @@ You may setup ts-node in your project to ease the operation as follows:
 
 Install ts-node:
 
-```
+```bash
 npm install ts-node --save-dev
 ```
 
 Add typeorm command under scripts section in package.json
 
-```
+```json
 "scripts": {
     ...
     "typeorm": "typeorm-ts-node-commonjs"
@@ -48,7 +48,7 @@ Add typeorm command under scripts section in package.json
 
 For ESM projects add this instead:
 
-```
+```json
 "scripts": {
     ...
     "typeorm": "typeorm-ts-node-esm"
@@ -59,8 +59,8 @@ If you want to load more modules like [module-alias](https://github.com/ilearnio
 
 Then you may run the command like this:
 
-```
-npm run typeorm migration:run -- -d path-to-datasource-config
+```bash
+npm run typeorm migration:run -d path-to-datasource-config
 ```
 
 ### How to read the documentation
@@ -71,7 +71,7 @@ To reduce verbosity of the documentation, the following sections are using a glo
 
 You can create a new project with everything already setup:
 
-```
+```bash
 typeorm init
 ```
 
@@ -90,31 +90,31 @@ After that, you can run your application by running `npm start`.
 All files are generated in the current directory.
 If you want to generate them in a special directory you can use `--name`:
 
-```
+```bash
 typeorm init --name my-project
 ```
 
 To specify a specific database you use you can use `--database`:
 
-```
+```bash
 typeorm init --database mssql
 ```
 
 To generate an ESM base project you can use `--module esm`:
 
-```
+```bash
 typeorm init --name my-project --module esm
 ```
 
 You can also generate a base project with Express:
 
-```
+```bash
 typeorm init --name my-project --express
 ```
 
 If you are using docker you can generate a `docker-compose.yml` file using:
 
-```
+```bash
 typeorm init --docker
 ```
 
@@ -124,7 +124,7 @@ typeorm init --docker
 
 You can create a new entity using CLI:
 
-```
+```bash
 typeorm entity:create path-to-entity-dir/entity
 ```
 
@@ -134,7 +134,7 @@ Learn more about [entities](./entities.md).
 
 You can create a new subscriber using CLI:
 
-```
+```bash
 typeorm subscriber:create path-to-subscriber-dir/subscriber
 ```
 
@@ -144,9 +144,10 @@ Learn more about [Subscribers](./listeners-and-subscribers.md).
 
 You can create a new migration using CLI:
 
-```
+```bash
 typeorm migration:create path-to-migrations-dir/migrationName
 ```
+
 Learn more about [Migrations](./migrations.md).
 
 ## Generate a migration from existing table schema
@@ -156,7 +157,7 @@ and writes all sql queries that must be executed to update the database.
 
 If no there were no changes generated, the command will exit with code 1.
 
-```
+```bash
 typeorm migration:generate path/to/Migration -d path/to/datasource
 ```
 
@@ -170,8 +171,8 @@ Learn more about [Migrations](./migrations.md).
 
 To execute all pending migrations use following command:
 
-```
-typeorm migration:run -- -d path-to-datasource-config
+```bash
+typeorm migration:run -d path-to-datasource-config
 ```
 
 Learn more about [Migrations](./migrations.md).
@@ -180,8 +181,8 @@ Learn more about [Migrations](./migrations.md).
 
 To revert the most recently executed migration use the following command:
 
-```
-typeorm migration:revert -- -d path-to-datasource-config
+```bash
+typeorm migration:revert -d path-to-datasource-config
 ```
 
 This command will undo only the last executed migration.
@@ -192,8 +193,8 @@ Learn more about [Migrations](./migrations.md).
 
 To show all migrations and whether they've been run or not use following command:
 
-```
-typeorm migration:show  -- -d path-to-datasource-config
+```bash
+typeorm migration:show -d path-to-datasource-config
 ```
 
 [X] = Migration has been ran
@@ -204,7 +205,7 @@ typeorm migration:show  -- -d path-to-datasource-config
 
 To synchronize a database schema use:
 
-```
+```bash
 typeorm schema:sync
 ```
 
@@ -216,7 +217,7 @@ Check which sql queries it will run before running on production.
 
 To check what sql queries `schema:sync` is going to run use:
 
-```
+```bash
 typeorm schema:log
 ```
 
@@ -224,8 +225,8 @@ typeorm schema:log
 
 To completely drop a database schema use:
 
-```
-typeorm schema:drop -- -d path-to-datasource-config
+```bash
+typeorm schema:drop -d path-to-datasource-config
 ```
 
 Be careful with this command on production since it completely removes data from your database.
@@ -234,7 +235,7 @@ Be careful with this command on production since it completely removes data from
 
 You can execute any SQL query you want directly in the database using:
 
-```
+```bash
 typeorm query "SELECT * FROM USERS"
 ```
 
@@ -243,7 +244,7 @@ typeorm query "SELECT * FROM USERS"
 If you are using `QueryBuilder` caching, sometimes you may want to clear everything stored in the cache.
 You can do it using the following command:
 
-```
+```bash
 typeorm cache:clear
 ```
 
@@ -251,6 +252,6 @@ typeorm cache:clear
 
 You can check what typeorm version you have installed (both local and global) by running:
 
-```
+```bash
 typeorm version
 ```

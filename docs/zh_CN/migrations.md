@@ -76,7 +76,7 @@ TypeORM 提供了一个可以编写此类 SQL 查询并在需要时运行它们�
 
 设置连接选项后，可以使用 CLI 创建新的迁移：
 
-```
+```bash
 typeorm migration:create path-to-migrations-dir/migrationName
 ```
 
@@ -129,16 +129,16 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
 迁移到生产后，可以使用 CLI 命令运行它们：
 
-```
-typeorm migration:run -- -d path-to-datasource-config
+```bash
+typeorm migration:run -d path-to-datasource-config
 ```
 
 **`typeorm migration：create`和`typeorm migration：generate`将创建`.ts`文件。 `migration：run`和`migration：revert`命令仅适用于`.js`文件。 因此，在运行命令之前需要编译 typescript 文件。**或者你可以使用`ts-node`和`typeorm`来运行`.ts`迁移文件。
 
 `ts-node`的示例：
 
-```
-npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
+```bash
+npx typeorm-ts-node-commonjs migration:run -d path-to-datasource-config
 ```
 
 此命令将执行所有挂起的迁移，并按其时间戳排序的顺序运行它们。
@@ -147,8 +147,8 @@ npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
 
 如果由于某种原因你想要还原更改，则可以运行：
 
-```
-typeorm migration:revert -- -d path-to-datasource-config
+```bash
+typeorm migration:revert -d path-to-datasource-config
 ```
 
 该命令将在最近执行的迁移中执行`down`。
@@ -161,7 +161,7 @@ typeorm migration:revert -- -d path-to-datasource-config
 假设你有一个带有`title`列的`Post`实体，并且已将名称`title`更改为`name`。
 则可以运行以下命令：
 
-```
+```bash
 typeorm migration:generate -n PostRefactoring
 ```
 

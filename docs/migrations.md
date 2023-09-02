@@ -81,7 +81,7 @@ Here we setup two options:
 
 Once you setup connection options you can create a new migration using CLI:
 
-```
+```bash
 typeorm migration:create ./path-to-migrations-dir/PostRefactoring
 
 ```
@@ -138,25 +138,25 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
 Once you have a migration to run on production, you can run them using a CLI command:
 
-```
-typeorm migration:run -- -d path-to-datasource-config
+```bash
+typeorm migration:run -d path-to-datasource-config
 ```
 
 **`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
 
-```
-npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
+```bash
+npx typeorm-ts-node-commonjs migration:run -d path-to-datasource-config
 ```
 
 Example with `ts-node` in ESM projects:
 
-```
-npx typeorm-ts-node-esm migration:run -- -d path-to-datasource-config
+```bash
+npx typeorm-ts-node-esm migration:run -d path-to-datasource-config
 ```
 
-```
+```bash
 npx typeorm-ts-node-esm migration:generate ./src/migrations/update-post-table -d ./src/data-source.ts
 ```
 
@@ -166,8 +166,8 @@ That's all! Now you have your database schema up-to-date.
 
 If for some reason you want to revert the changes, you can run:
 
-```
-typeorm migration:revert -- -d path-to-datasource-config
+```bash
+typeorm migration:revert -d path-to-datasource-config
 ```
 
 This command will execute `down` in the latest executed migration.
@@ -180,13 +180,13 @@ to the migrations table without running it. This is useful for migrations create
 have already been made to the database or when migrations have been run externally
 (e.g. by another tool or application), and you still would like to keep a consistent migration history.
 
-```
+```bash
 typeorm migration:run --fake
 ```
 
 This is also possible with rollbacks.
 
-```
+```bash
 typeorm migration:revert --fake
 ```
 
@@ -225,13 +225,13 @@ TypeORM is able to automatically generate migration files with schema changes yo
 Let's say you have a `Post` entity with a `title` column, and you have changed the name `title` to `name`.
 You can run following command:
 
-```
+```bash
 typeorm migration:generate PostRefactoring -d path-to-datasource-config
 ```
 
 If you encounter any error, it require you have the path to migration name and data source. You can try this option
 
-```
+```bash
 typeorm migration:generate -d <path/to/datasource> path/to/migrations/<migration-name>
 ```
 
@@ -282,7 +282,7 @@ The rule of thumb for generating migrations is that you generate them after **ea
 
 If you need to run/revert/generate/show your migrations use the `-d` (alias for `--dataSource`) and pass the path to the file where your DataSource instance is defined as an argument
 
-```
+```bash
 typeorm -d <your-data-source-path> migration:{run|revert}
 ```
 
@@ -290,7 +290,7 @@ typeorm -d <your-data-source-path> migration:{run|revert}
 
 If you need to specify a timestamp for the migration name, use the `-t` (alias for `--timestamp`) and pass the timestamp (should be a non-negative number)
 
-```
+```bash
 typeorm -t <specific-timestamp> migration:{create|generate}
 ```
 
