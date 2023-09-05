@@ -3743,10 +3743,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     protected async loadRawResults(queryRunner: QueryRunner) {
         const [sql, parameters] = this.getQueryAndParameters()
-        const queryId = sql + " -- PARAMETERS: " + JSON.stringify(
-            parameters,
-            (_, value) => typeof value === "bigint" ? value.toString() : value
-        )
+        const queryId =
+            sql +
+            " -- PARAMETERS: " +
+            JSON.stringify(parameters, (_, value) =>
+                typeof value === "bigint" ? value.toString() : value,
+            )
         const cacheOptions =
             typeof this.connection.options.cache === "object"
                 ? this.connection.options.cache
