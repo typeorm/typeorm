@@ -54,13 +54,13 @@ describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY everytime 
                     {
                         where: { name: catName },
                     },
-                );
-                assert.isTrue(categoryTest instanceof Category);
+                )
+                assert.isTrue(categoryTest instanceof Category)
 
-                post1.categories = Promise.resolve([categoryTest as Category]);
-                
+                post1.categories = Promise.resolve([categoryTest as Category])
+
                 // This is the line that causes the error "QueryFailedError: ER_DUP_ENTRY: Duplicate entry '1-1' for key 'PRIMARY'" with previous code
-                await connection.manager.save(post1);
+                await connection.manager.save(post1)
             }),
         ))
 })
