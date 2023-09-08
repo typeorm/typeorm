@@ -65,9 +65,7 @@ export class DebugLogger extends AbstractLogger {
         logMessage: LogMessage | LogMessage[],
         queryRunner?: QueryRunner,
     ) {
-        const messages = this.prepareLogMessages(logMessage, {
-            appendParameterAsComment: false,
-        })
+        const messages = this.prepareLogMessages(logMessage)
 
         for (let message of messages) {
             const messageTypeOrLevel = message.type ?? level

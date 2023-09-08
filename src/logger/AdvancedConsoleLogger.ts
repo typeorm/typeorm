@@ -16,7 +16,9 @@ export class AdvancedConsoleLogger extends AbstractLogger {
         logMessage: LogMessage | LogMessage[],
         queryRunner?: QueryRunner,
     ) {
-        const messages = this.prepareLogMessages(logMessage)
+        const messages = this.prepareLogMessages(logMessage, {
+            appendParameterAsComment: true,
+        })
 
         for (let message of messages) {
             switch (message.type ?? level) {
