@@ -17,9 +17,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
             level: LogLevel,
             logMessage: LogMessage | LogMessage[],
         ) {
-            const messages = this.prepareLogMessages(logMessage, {
-                highlightSql: false,
-            })
+            const messages = this.prepareLogMessages(logMessage)
 
             for (let message of messages) {
                 switch (message.type ?? level) {

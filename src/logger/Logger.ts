@@ -97,7 +97,6 @@ export type LogMessageType =
  * Options for prepare log messages
  */
 export type PrepareLogMessagesOptions = {
-    highlightSql: boolean
     appendParameterAsComment: boolean
     addColonToPrefix: boolean
 }

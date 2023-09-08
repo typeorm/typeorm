@@ -1,5 +1,4 @@
 import { DataSource } from "../data-source/DataSource"
-import { highlight } from "cli-highlight"
 import * as yargs from "yargs"
 import chalk from "chalk"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -81,7 +80,7 @@ export class SchemaLogCommand implements yargs.CommandModule {
                         sqlString.substr(-1) === ";"
                             ? sqlString
                             : sqlString + ";"
-                    console.log(highlight(sqlString))
+                    console.log(sqlString)
                 })
             }
             await dataSource.destroy()

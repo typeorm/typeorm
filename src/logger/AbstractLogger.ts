@@ -298,7 +298,6 @@ export abstract class AbstractLogger implements Logger {
             ...{
                 addColonToPrefix: true,
                 appendParameterAsComment: true,
-                highlightSql: true,
             },
             ...options,
         }
@@ -322,10 +321,6 @@ export abstract class AbstractLogger implements Logger {
                     sql += ` -- PARAMETERS: ${this.stringifyParams(
                         message.parameters,
                     )}`
-                }
-
-                if (options.highlightSql) {
-                    sql = PlatformTools.highlightSql(sql)
                 }
 
                 message.message = sql

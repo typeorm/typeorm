@@ -34,7 +34,6 @@ export class FileLogger extends AbstractLogger {
         queryRunner?: QueryRunner,
     ) {
         const messages = this.prepareLogMessages(logMessage, {
-            highlightSql: false,
             addColonToPrefix: false,
         })
 

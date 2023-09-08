@@ -47,10 +47,7 @@ export class QueryCommand implements yargs.CommandModule {
             // create a query runner and execute query using it
             queryRunner = dataSource.createQueryRunner()
             const query = args.query as string
-            console.log(
-                chalk.green("Running query: ") +
-                    PlatformTools.highlightSql(query),
-            )
+            console.log(chalk.green("Running query: ") + query)
             const queryResult = await queryRunner.query(query)
 
             if (typeof queryResult === "undefined") {
@@ -61,11 +58,7 @@ export class QueryCommand implements yargs.CommandModule {
                 )
             } else {
                 console.log(chalk.green("Query has been executed. Result: "))
-                console.log(
-                    PlatformTools.highlightJson(
-                        JSON.stringify(queryResult, undefined, 2),
-                    ),
-                )
+                console.log(JSON.stringify(queryResult, undefined, 2))
             }
 
             await queryRunner.release()
