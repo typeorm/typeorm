@@ -146,14 +146,10 @@ export class DataSource {
             this.options.logger,
             this.options.logging,
         )
-        this.driver = new DriverFactory().create(this)
         this.manager = this.createEntityManager()
         this.namingStrategy =
             options.namingStrategy || new DefaultNamingStrategy()
         this.metadataTableName = options.metadataTableName || "typeorm_metadata"
-        this.queryResultCache = options.cache
-            ? new QueryResultCacheFactory(this).create()
-            : undefined
         this.relationLoader = new RelationLoader(this)
         this.relationIdLoader = new RelationIdLoader(this)
         this.isInitialized = false
@@ -248,6 +244,11 @@ export class DataSource {
     async initialize(): Promise<this> {
         if (this.isInitialized)
             throw new CannotConnectAlreadyConnectedError(this.name)
+
+        this.driver = await DriverFactory.create(this)
+        this.queryResultCache = this.options.cache
+            ? new QueryResultCacheFactory(this).create()
+            : undefined
 
         // connect to the database via its driver
         await this.driver.connect()

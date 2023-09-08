@@ -4,6 +4,7 @@ import { ConnectionMetadataBuilder } from "../../../../src/connection/Connection
 import { EntityMetadataValidator } from "../../../../src/metadata-builder/EntityMetadataValidator"
 import { expect } from "chai"
 import { InitializedRelationError } from "../../../../src/error/InitializedRelationError"
+import { DriverFactory } from "../../../../src/driver/DriverFactory"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Image } from "./entity/Image"
@@ -21,6 +22,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Post, Category],
         })
+        connection.driver = await DriverFactory.create(connection)
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(
             connection,
         )
@@ -48,6 +50,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Image, ImageInfo],
         })
+        connection.driver = await DriverFactory.create(connection)
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(
             connection,
         )
@@ -75,6 +78,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Category],
         })
+        connection.driver = await DriverFactory.create(connection)
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(
             connection,
         )
@@ -99,6 +103,7 @@ describe("entity-metadata-validator > initialized relations", () => {
             database: "test",
             entities: [Question, Category],
         })
+        connection.driver = await DriverFactory.create(connection)
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(
             connection,
         )

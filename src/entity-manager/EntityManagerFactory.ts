@@ -12,10 +12,10 @@ export class EntityManagerFactory {
      * Creates a new entity manager depend on a given connection's driver.
      */
     create(connection: DataSource, queryRunner?: QueryRunner): EntityManager {
-        if (connection.driver.options.type === "mongodb")
+        if (connection.options.type === "mongodb")
             return new MongoEntityManager(connection)
 
-        if (connection.driver.options.type === "sqljs")
+        if (connection.options.type === "sqljs")
             return new SqljsEntityManager(connection, queryRunner)
 
         return new EntityManager(connection, queryRunner)

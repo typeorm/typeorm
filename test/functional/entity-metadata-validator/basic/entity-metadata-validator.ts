@@ -2,6 +2,7 @@ import "reflect-metadata"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { ConnectionMetadataBuilder } from "../../../../src/connection/ConnectionMetadataBuilder"
 import { EntityMetadataValidator } from "../../../../src/metadata-builder/EntityMetadataValidator"
+import { DriverFactory } from "../../../../src/driver/DriverFactory"
 import { expect } from "chai"
 
 describe("entity-metadata-validator", () => {
@@ -15,6 +16,7 @@ describe("entity-metadata-validator", () => {
             database: "test",
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
+        connection.driver = await DriverFactory.create(connection)
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(
             connection,
         )
