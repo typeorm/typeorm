@@ -44,7 +44,7 @@ describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY everytime 
 
                 if (!post1) {
                     post1 = new Post()
-                    post1.title = "post #1"
+                    post1.title = postName
                     post1.categories = Promise.resolve([category1])
                     await connection.manager.save(post1)
                 }
