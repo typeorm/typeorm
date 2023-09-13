@@ -312,7 +312,7 @@ One query builder is not limited to one alias, they can have multiple aliases.
 Each select can have its own alias,
 you can select from multiple tables each with its own alias,
 you can join multiple tables each with its own alias.
-You can use those aliases to access tables are you selecting (or data you are selecting).
+You can use those aliases to access tables you are selecting (or data you are selecting).
 
 ## Using parameters to escape data
 
