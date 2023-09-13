@@ -1,7 +1,7 @@
 import { DataSource, SelectQueryBuilder } from ".."
 import { OrderByCondition } from "../find-options/OrderByCondition"
 import { TableType } from "../metadata/types/TableTypes"
-import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
+import { VersioningOptions } from "../schema-builder/options/VersioningOptions"
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.

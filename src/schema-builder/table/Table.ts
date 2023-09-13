@@ -8,7 +8,7 @@ import { TableUtils } from "../util/TableUtils"
 import { TableUnique } from "./TableUnique"
 import { TableCheck } from "./TableCheck"
 import { TableExclusion } from "./TableExclusion"
-import { VersioningOptions } from "../../../src/decorator/options/VersioningOptions"
+import { VersioningOptions } from "../options/VersioningOptions"
 
 /**
  * Table in the database represented in this class.
@@ -145,31 +145,15 @@ export class Table {
             this.engine = options.engine
 
             if (options.versioning) {
-                this.versioning = options.versioning
-            }
-
-            /*
-            this.versioning = {
-                columnFrom:
-                    options.versioning === true || options.versioning === false
-                        ? "row_start"
-                        : options.versioning?.columnFrom || "row_start",
-                columnTo:
-                    options.versioning === true || options.versioning === false
-                        ? "row_end"
-                        : options.versioning?.columnTo || "row_end",
-            } */
-
-            /*
-            if (options.versioning === true || options.versioning === false) {
-                this.versioning = {
-                    columnFrom: "row_start",
-                    columnTo: "row_end",
+                if (options.versioning === true) {
+                    this.versioning = {
+                        columnFrom: "row_start",
+                        columnTo: "row_end",
+                    }
+                } else {
+                    this.versioning = options.versioning
                 }
-            } else {
-                const { columnFrom, columnTo } = options.versioning
-                this.versioning = { columnFrom, columnTo }
-            } */
+            }
         }
     }
 

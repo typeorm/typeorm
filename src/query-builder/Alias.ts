@@ -1,7 +1,7 @@
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "../error"
-import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
+import { VersioningOptions } from "../schema-builder/options/VersioningOptions"
 
 /**
  */

@@ -23,7 +23,7 @@ import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
-import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
+import { VersioningOptions } from "../schema-builder/options/VersioningOptions"
 
 /**
  * Contains all entity metadata.

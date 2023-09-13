@@ -3637,7 +3637,30 @@ export class SqlServerQueryRunner
         sql += `)`
 
         if (table.versioning) {
-            sql += ` WITH (SYSTEM_VERSIONING = ON (DATA_CONSISTENCY_CHECK = ON))`
+            const options = []
+
+            let historyTable = table.versioning.historyTable
+
+            if (historyTable) {
+                const { schema } = this.driver.parseTableName(table)
+
+                // History table must be in two-part name format.
+                // Example: 'dbo.UserHistory'
+                historyTable =
+                    historyTable.indexOf(".") === -1
+                        ? `${schema}.${historyTable}`
+                        : historyTable
+
+                options.push(`HISTORY_TABLE = ${historyTable}`)
+            }
+
+            if (table.versioning.dataConsistencyCheck) {
+                options.push(`DATA_CONSISTENCY_CHECK = ON`)
+            }
+
+            sql += ` WITH (SYSTEM_VERSIONING = ON ${
+                options.length > 0 ? `(${options.join(",")})` : ""
+            })`
         }
 
         return new Query(sql)

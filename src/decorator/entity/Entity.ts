@@ -31,17 +31,6 @@ export function Entity(
         typeof nameOrOptions === "string" ? nameOrOptions : options.name
 
     return function (target) {
-        const versioning = {
-            columnFrom:
-                options.versioning === true || options.versioning === false
-                    ? "row_start"
-                    : options.versioning?.columnFrom || "row_start",
-            columnTo:
-                options.versioning === true || options.versioning === false
-                    ? "row_end"
-                    : options.versioning?.columnTo || "row_end",
-        }
-
         getMetadataArgsStorage().tables.push({
             target,
             name,
@@ -52,7 +41,7 @@ export function Entity(
             schema: options.schema ? options.schema : undefined,
             synchronize: options.synchronize,
             withoutRowid: options.withoutRowid,
-            versioning,
+            versioning: options.versioning,
         } as TableMetadataArgs)
     }
 }

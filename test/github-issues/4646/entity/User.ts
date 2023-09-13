@@ -7,7 +7,13 @@ import {
 } from "../../../../src"
 import { Photo } from "./Photo"
 
-@Entity({ versioning: { columnFrom: "row_start", columnTo: "row_end" } })
+@Entity({
+    versioning: {
+        columnFrom: "row_start",
+        columnTo: "row_end",
+        historyTable: "user_history",
+    },
+})
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number

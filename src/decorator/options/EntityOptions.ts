@@ -1,5 +1,5 @@
 import { OrderByCondition } from "../../find-options/OrderByCondition"
-import { VersioningOptions } from "./VersioningOptions"
+import { VersioningOptions } from "../../schema-builder/options/VersioningOptions"
 
 /**
  * Describes all entity's options.

@@ -13,7 +13,7 @@ import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
 import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
 import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
-import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
+import { VersioningOptions } from "../schema-builder/options/VersioningOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.

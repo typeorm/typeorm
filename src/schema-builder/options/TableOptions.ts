@@ -4,7 +4,7 @@ import { TableForeignKeyOptions } from "./TableForeignKeyOptions"
 import { TableUniqueOptions } from "./TableUniqueOptions"
 import { TableCheckOptions } from "./TableCheckOptions"
 import { TableExclusionOptions } from "./TableExclusionOptions"
-import { VersioningOptions } from "../../../src/decorator/options/VersioningOptions"
+import { VersioningOptions } from "./VersioningOptions"
 
 /**
  * Table options.
@@ -79,5 +79,5 @@ export interface TableOptions {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning?: VersioningOptions
+    versioning?: VersioningOptions | boolean
 }
