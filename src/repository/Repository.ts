@@ -525,12 +525,20 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds entities that match given find options.
+     * Finds entities that match given WHERE conditions and at a specific timestamp.
+     *
+     * @param {Object} [options] Where conditions or a timestamp
+     * @param {Date} [timestamp] A timestamp to get datasets at a specific time
+     * @returns {Object} If entity was not found in the database this method returns null.
      */
-    findAt(
-        timestamp: Date,
-        options?: FindManyOptions<Entity>,
+    findAsOf(
+        options?: FindManyOptions | Date,
+        timestamp?: Date,
     ): Promise<Entity[]> {
+        if (options instanceof Date) {
+            return this.manager.find(this.metadata.target, {}, options)
+        }
+
         return this.manager.find(this.metadata.target, options, timestamp)
     }
 
@@ -588,12 +596,15 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Finds first entity by a given find options.
-     * If entity was not found in the database - returns null.
+     * Finds first entity that matches given conditions and at a specific timestamp.
+     *
+     * @param {Object} [options] Where conditions or a timestamp
+     * @param {Date} [timestamp] A timestamp to get datasets at a specific time
+     * @returns {Object} If entity was not found in the database this method returns null.
      */
-    async findOneAt(
-        timestamp: Date,
+    findOneAsOf(
         options: FindOneOptions<Entity>,
+        timestamp?: Date,
     ): Promise<Entity | null> {
         return this.manager.findOne(this.metadata.target, options, timestamp)
     }

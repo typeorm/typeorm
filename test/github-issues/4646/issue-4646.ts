@@ -44,22 +44,25 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
             const timestamp = await getCurrentTimestamp()
 
-            let result = await User.findOneBy({ id: 1 })
+            let result = await User.findOneAsOf({ where: { id: 1 } })
             expect(result?.name).to.be.equal("foo")
 
             user.name = "bar"
             await dataSource.manager.save(user)
 
-            result = await User.findOneBy({ id: 1 })
+            result = await User.findOneAsOf({ where: { id: 1 } })
             expect(result?.name).to.be.equal("bar")
 
-            result = await User.findOneAt(timestamp, { where: { id: 1 } })
+            result = await User.findOneAsOf({ where: { id: 1 } }, timestamp)
             expect(result?.name).to.be.equal("foo")
 
-            let users = await User.findAt(timestamp)
+            let users = await User.findAsOf()
+            expect(users[0].name).to.be.eql("bar")
+
+            users = await User.findAsOf(timestamp)
             expect(users[0].name).to.be.eql("foo")
 
-            users = await User.findAt(timestamp, { where: { id: 1 } })
+            users = await User.findAsOf({ where: { id: 1 } }, timestamp)
             expect(users[0].name).to.be.eql("foo")
 
             await user.remove()
@@ -78,25 +81,29 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
                 const timestamp = await getCurrentTimestamp()
 
-                let result = await repository.findOneBy({ id: 1 })
+                let result = await repository.findOneAsOf({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("foo")
 
                 user.name = "bar"
                 await manager.save(user)
 
-                result = await repository.findOne({ where: { id: 1 } })
+                result = await repository.findOneAsOf({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("bar")
 
                 // check user name from the history
-                let users = await repository.findAt(timestamp)
+                let users = await repository.findAsOf(timestamp)
                 expect(users[0].name).to.be.eql("foo")
 
-                users = await repository.findAt(timestamp, { where: { id: 1 } })
+                users = await repository.findAsOf(
+                    { where: { id: 1 } },
+                    timestamp,
+                )
                 expect(users[0].name).to.be.eql("foo")
 
-                result = await repository.findOneAt(timestamp, {
-                    where: { id: 1 },
-                })
+                result = await repository.findOneAsOf(
+                    { where: { id: 1 } },
+                    timestamp,
+                )
                 expect(result?.name).to.be.equal("foo")
 
                 await repository.delete(1)
@@ -120,15 +127,15 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
                 const timestamp = await getCurrentTimestamp()
 
-                let results = await repository.find()
+                let results = await repository.findAsOf()
                 expect(results).to.have.length(2)
 
                 await repository.delete(2)
 
-                results = await repository.find()
+                results = await repository.findAsOf()
                 expect(results).to.have.length(1)
 
-                results = await repository.findAt(timestamp)
+                results = await repository.findAsOf(timestamp)
                 expect(results).to.have.length(2)
 
                 await repository.delete(1)
