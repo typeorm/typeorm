@@ -1,4 +1,5 @@
 import { OrderByCondition } from "../../find-options/OrderByCondition"
+import { VersioningOptions } from "./VersioningOptions"
 
 /**
  * Describes all entity's options.
@@ -50,5 +51,5 @@ export interface EntityOptions {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning?: boolean
+    versioning?: VersioningOptions | boolean
 }

@@ -2899,8 +2899,8 @@ export class SqlServerQueryRunner
                 const condition = tables
                     .map(
                         ({ TABLE_SCHEMA, TABLE_NAME }) =>
-                            // ignore internal columns which are used for temporal tables
-                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND "column_name" NOT IN('row_start', 'row_end'))`,
+                            // ignore hidden columns which are used for temporal tables
+                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') = 0)`,
                     )
                     .join("OR")
 
@@ -3515,13 +3515,15 @@ export class SqlServerQueryRunner
         )
 
         if (table.versioning) {
+            const { columnFrom, columnTo } = table.versioning
+
             columns.push(
-                `row_start DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
+                `${columnFrom} DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
             )
             columns.push(
-                `row_end DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
+                `${columnTo} DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
             )
-            columns.push(`PERIOD FOR SYSTEM_TIME (row_start, row_end)`)
+            columns.push(`PERIOD FOR SYSTEM_TIME (${columnFrom}, ${columnTo})`)
         }
 
         const columnDefinitions = columns.join(", ")

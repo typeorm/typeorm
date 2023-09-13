@@ -8,6 +8,7 @@ import { TableUtils } from "../util/TableUtils"
 import { TableUnique } from "./TableUnique"
 import { TableCheck } from "./TableCheck"
 import { TableExclusion } from "./TableExclusion"
+import { VersioningOptions } from "../../../src/decorator/options/VersioningOptions"
 
 /**
  * Table in the database represented in this class.
@@ -86,7 +87,7 @@ export class Table {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning: boolean
+    versioning: VersioningOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -142,7 +143,33 @@ export class Table {
             if (options.withoutRowid) this.withoutRowid = options.withoutRowid
 
             this.engine = options.engine
-            this.versioning = Boolean(options.versioning)
+
+            if (options.versioning) {
+                this.versioning = options.versioning
+            }
+
+            /*
+            this.versioning = {
+                columnFrom:
+                    options.versioning === true || options.versioning === false
+                        ? "row_start"
+                        : options.versioning?.columnFrom || "row_start",
+                columnTo:
+                    options.versioning === true || options.versioning === false
+                        ? "row_end"
+                        : options.versioning?.columnTo || "row_end",
+            } */
+
+            /*
+            if (options.versioning === true || options.versioning === false) {
+                this.versioning = {
+                    columnFrom: "row_start",
+                    columnTo: "row_end",
+                }
+            } else {
+                const { columnFrom, columnTo } = options.versioning
+                this.versioning = { columnFrom, columnTo }
+            } */
         }
     }
 
@@ -177,6 +204,7 @@ export class Table {
             justCreated: this.justCreated,
             withoutRowid: this.withoutRowid,
             engine: this.engine,
+            versioning: this.versioning,
         })
     }
 

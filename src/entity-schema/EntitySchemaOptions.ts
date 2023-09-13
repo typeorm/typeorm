@@ -13,6 +13,7 @@ import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
 import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
 import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
+import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -128,5 +129,5 @@ export class EntitySchemaOptions<T> {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning?: boolean
+    versioning?: VersioningOptions
 }

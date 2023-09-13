@@ -1,6 +1,7 @@
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "../error"
+import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
 
 /**
  */
@@ -23,7 +24,7 @@ export class Alias {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning: boolean
+    versioning?: VersioningOptions | boolean
 
     constructor(alias?: Alias) {
         ObjectUtils.assign(this, alias || {})

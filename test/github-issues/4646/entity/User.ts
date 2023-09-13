@@ -7,7 +7,7 @@ import {
 } from "../../../../src"
 import { Photo } from "./Photo"
 
-@Entity({ versioning: true })
+@Entity({ versioning: { columnFrom: "row_start", columnTo: "row_end" } })
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number

@@ -432,7 +432,7 @@ export class QueryExpressionMap {
             alias.metadata = this.connection.getMetadata(options.target)
         if (options.tablePath) alias.tablePath = options.tablePath
         if (options.subQuery) alias.subQuery = options.subQuery
-        alias.versioning = Boolean(options.metadata?.versioning)
+        alias.versioning = options.metadata?.versioning
 
         this.aliases.push(alias)
         return alias

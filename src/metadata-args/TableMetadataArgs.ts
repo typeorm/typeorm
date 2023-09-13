@@ -1,6 +1,7 @@
 import { DataSource, SelectQueryBuilder } from ".."
 import { OrderByCondition } from "../find-options/OrderByCondition"
 import { TableType } from "../metadata/types/TableTypes"
+import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
@@ -74,5 +75,5 @@ export interface TableMetadataArgs {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning?: boolean
+    versioning?: VersioningOptions
 }

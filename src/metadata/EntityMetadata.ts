@@ -23,6 +23,7 @@ import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
+import { VersioningOptions } from "../../src/decorator/options/VersioningOptions"
 
 /**
  * Contains all entity metadata.
@@ -519,7 +520,7 @@ export class EntityMetadata {
     /**
      * If set to 'true' the database creates additional temporal tables for this entity.
      */
-    versioning?: boolean
+    versioning?: VersioningOptions
 
     // ---------------------------------------------------------------------
     // Constructor
