@@ -9,7 +9,6 @@ import { TableUnique } from "./TableUnique"
 import { TableCheck } from "./TableCheck"
 import { TableExclusion } from "./TableExclusion"
 import { VersioningOptions } from "../options/VersioningOptions"
-// import { TableColumnOptions } from "../options/TableColumnOptions"
 
 /**
  * Table in the database represented in this class.
@@ -86,7 +85,8 @@ export class Table {
     engine?: string
 
     /**
-     * If set to 'true' the database creates additional temporal tables for this entity.
+     * The value 'true' enables system versioning. You can also customize each option like
+     * start row column, history table, etc.
      */
     versioning: VersioningOptions
 

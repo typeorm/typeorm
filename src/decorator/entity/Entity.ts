@@ -32,8 +32,8 @@ export function Entity(
 
     return function (target) {
         getMetadataArgsStorage().tables.push({
-            target,
-            name,
+            target: target,
+            name: name,
             type: "regular",
             orderBy: options.orderBy ? options.orderBy : undefined,
             engine: options.engine ? options.engine : undefined,

@@ -1,5 +1,5 @@
 /**
- * Customize temporal tables
+ * Customize temporal tables options
  */
 export interface VersioningOptions {
     /*
