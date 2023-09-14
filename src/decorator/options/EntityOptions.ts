@@ -49,7 +49,7 @@ export interface EntityOptions {
     withoutRowid?: boolean
 
     /**
-     * The value 'true' enables system versioning. You can also customize each option like 
+     * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */
     versioning?: VersioningOptions | boolean
