@@ -26,11 +26,42 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             dropSchema: true,
             enabledDrivers: ["mariadb", "mssql"],
             entities: [Photo, User],
-            schemaCreate: true,
+            schemaCreate: false,
         })
     })
 
     after(() => closeTestingConnections(dataSources))
+
+    it("should honor temploral table options", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.runMigrations()
+
+                const { upQueries } = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+
+                if (dataSource.driver.options.type === "mssql") {
+                    expect(upQueries[0].query).to.include(
+                        "DATA_CONSISTENCY_CHECK = OFF",
+                    )
+
+                    expect(upQueries[0].query).to.include(
+                        "HISTORY_TABLE = dbo.user_history",
+                    )
+
+                    expect(upQueries[0].query).to.include(
+                        "valid_from DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL",
+                    )
+
+                    expect(upQueries[0].query).to.include(
+                        "valid_to DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL",
+                    )
+                }
+
+                await dataSource.synchronize()
+            }),
+        ))
 
     it("should check new find methods from the BaseEntity class", async () => {
         // this test has to run serial because class User exists only once

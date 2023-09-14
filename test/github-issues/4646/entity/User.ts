@@ -9,8 +9,9 @@ import { Photo } from "./Photo"
 
 @Entity({
     versioning: {
-        columnFrom: "row_start",
-        columnTo: "row_end",
+        validFrom: "valid_from",
+        validTo: "valid_to",
+        dataConsistencyCheck: false,
         historyTable: "user_history",
     },
 })

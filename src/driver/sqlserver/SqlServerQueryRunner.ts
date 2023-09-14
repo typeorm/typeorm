@@ -3515,15 +3515,15 @@ export class SqlServerQueryRunner
         )
 
         if (table.versioning) {
-            const { columnFrom, columnTo } = table.versioning
+            const { validFrom, validTo } = table.versioning
 
             columns.push(
-                `${columnFrom} DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
+                `${validFrom} DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
             )
             columns.push(
-                `${columnTo} DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
+                `${validTo} DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
             )
-            columns.push(`PERIOD FOR SYSTEM_TIME (${columnFrom}, ${columnTo})`)
+            columns.push(`PERIOD FOR SYSTEM_TIME (${validFrom}, ${validTo})`)
         }
 
         const columnDefinitions = columns.join(", ")
@@ -3654,13 +3654,15 @@ export class SqlServerQueryRunner
                 options.push(`HISTORY_TABLE = ${historyTable}`)
             }
 
-            if (table.versioning.dataConsistencyCheck) {
-                options.push(`DATA_CONSISTENCY_CHECK = ON`)
-            }
+            options.push(
+                `DATA_CONSISTENCY_CHECK = ${
+                    table.versioning.dataConsistencyCheck === false
+                        ? "OFF"
+                        : "ON"
+                }`,
+            )
 
-            sql += ` WITH (SYSTEM_VERSIONING = ON ${
-                options.length > 0 ? `(${options.join(",")})` : ""
-            })`
+            sql += ` WITH (SYSTEM_VERSIONING = ON ${`(${options.join(",")})`})`
         }
 
         return new Query(sql)

@@ -9,6 +9,7 @@ import { TableUnique } from "./TableUnique"
 import { TableCheck } from "./TableCheck"
 import { TableExclusion } from "./TableExclusion"
 import { VersioningOptions } from "../options/VersioningOptions"
+// import { TableColumnOptions } from "../options/TableColumnOptions"
 
 /**
  * Table in the database represented in this class.
@@ -146,9 +147,10 @@ export class Table {
 
             if (options.versioning) {
                 if (options.versioning === true) {
+                    // Default values
                     this.versioning = {
-                        columnFrom: "row_start",
-                        columnTo: "row_end",
+                        validFrom: "row_start",
+                        validTo: "row_end",
                     }
                 } else {
                     this.versioning = options.versioning
