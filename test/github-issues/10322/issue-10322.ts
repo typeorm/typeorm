@@ -50,7 +50,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should <put a detailed description of what it should do here>", () =>
+    it("should call fakeLog when migration failed", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 try {
