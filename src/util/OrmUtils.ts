@@ -350,7 +350,7 @@ export class OrmUtils {
         x: any,
         y: any,
     ) {
-        let p
+        let p, subProperty
 
         // remember that NaN === NaN returns false
         // and isNaN(undefined) returns true
@@ -410,7 +410,16 @@ export class OrmUtils {
             if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
                 return false
             } else if (typeof y[p] !== typeof x[p]) {
-                return false
+                // Added condition AND for index y[p][p] and second condition to handle joins with different name field in related table
+                try {
+                    subProperty =
+                        Object.keys(y[p]).length > 0 ? Object.keys(y[p])[0] : p
+                } catch (e) {
+                    subProperty = p
+                }
+                if (typeof y[p][subProperty] !== typeof x[p]) {
+                    return false
+                }
             }
         }
 
@@ -418,7 +427,16 @@ export class OrmUtils {
             if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
                 return false
             } else if (typeof y[p] !== typeof x[p]) {
-                return false
+                // added condition AND for index y[p][p] and second condition to handle joins with different name field in related table >>>
+                try {
+                    subProperty =
+                        Object.keys(y[p]).length > 0 ? Object.keys(y[p])[0] : p
+                } catch (e) {
+                    subProperty = p
+                }
+                if (typeof y[p][subProperty] !== typeof x[p]) {
+                    return false
+                }
             }
 
             switch (typeof x[p]) {
@@ -439,7 +457,18 @@ export class OrmUtils {
 
                 default:
                     if (x[p] !== y[p]) {
-                        return false
+                        // added condition AND for index y[p][p] and second condition to handle joins with different name field in related table
+                        try {
+                            subProperty =
+                                Object.keys(y[p]).length > 0
+                                    ? Object.keys(y[p])[0]
+                                    : p
+                        } catch (e) {
+                            subProperty = p
+                        }
+                        if (y[p][subProperty] !== x[p]) {
+                            return false
+                        }
                     }
                     break
             }
