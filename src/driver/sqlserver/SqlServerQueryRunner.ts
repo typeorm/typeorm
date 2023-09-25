@@ -3638,27 +3638,16 @@ export class SqlServerQueryRunner
 
         if (table.versioning) {
             const options = []
-
-            let historyTable = table.versioning.historyTable
+            const historyTable = this.getHistoryTableName(table)
+            const { dataConsistencyCheck } = table.versioning
 
             if (historyTable) {
-                const { schema } = this.driver.parseTableName(table)
-
-                // History table must be in two-part name format.
-                // Example: 'dbo.UserHistory'
-                historyTable =
-                    historyTable.indexOf(".") === -1
-                        ? `${schema}.${historyTable}`
-                        : historyTable
-
                 options.push(`HISTORY_TABLE = ${historyTable}`)
             }
 
             options.push(
                 `DATA_CONSISTENCY_CHECK = ${
-                    table.versioning.dataConsistencyCheck === false
-                        ? "OFF"
-                        : "ON"
+                    dataConsistencyCheck === false ? "OFF" : "ON"
                 }`,
             )
 
@@ -4078,6 +4067,23 @@ export class SqlServerQueryRunner
             column.enum.map((val) => "'" + val + "'").join(",") +
             ")"
         )
+    }
+
+    /**
+     * History table must be in two-part name format.
+     * E.q. 'dbo.UserHistory'
+     */
+    private getHistoryTableName(table: Table) {
+        const { schema } = this.driver.parseTableName(table)
+        const { historyTable } = table.versioning
+
+        if (historyTable) {
+            return historyTable.indexOf(".") === -1
+                ? `${schema}.${historyTable}`
+                : historyTable
+        }
+
+        return null
     }
 
     protected isEnumCheckConstraint(name: string): boolean {
