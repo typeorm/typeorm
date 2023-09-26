@@ -1176,7 +1176,7 @@ export class EntityManager {
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
-     * @param timestamp get datasets from this timestamp (temporal tables)
+     * @param {Date} [timestamp] A timestamp to get datasets at a specific time.
      */
     async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
