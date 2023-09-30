@@ -7,7 +7,7 @@
 	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
 		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield">
 	</a>
-	<a href="https://badge.fury.io/js/typeorm">
+	<a href="https://badge.fury.io/js/typeorm">  
 		<img src="https://badge.fury.io/js/typeorm.svg">
 	</a>
     <a href="https://codecov.io/gh/typeorm/typeorm">
