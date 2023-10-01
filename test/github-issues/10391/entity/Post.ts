@@ -1,4 +1,4 @@
-import { Comment } from "./comment"
+import { Comment } from "./Comment"
 import { Column, Entity, ObjectId, ObjectIdColumn } from "../../../../src"
 
 @Entity()
