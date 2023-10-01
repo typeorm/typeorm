@@ -9,7 +9,7 @@ import { Comment } from "./entity/Comment"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 
-describe.only("github issues > #10391 mongodb entities with nested arrays should be created correctly", () => {
+describe("github issues > #10391 mongodb entities with nested arrays should be created correctly", () => {
     let connections: DataSource[]
     before(
         async () =>
