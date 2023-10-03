@@ -234,7 +234,7 @@ const [timbers, timbersCount] = await manager.findAndCount(User, {
     but ignores pagination settings (from and take options).
 
 ```typescript
-const [timbers, timbersCount] = await manager.findAndCount(User, {
+const [timbers, timbersCount] = await manager.findAndCountBy(User, {
     firstName: "Timber",
 })
 ```
