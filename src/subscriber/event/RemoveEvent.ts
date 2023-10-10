@@ -7,7 +7,7 @@ import { ObjectLiteral } from "../../common/ObjectLiteral"
 /**
  * RemoveEvent is an object that broadcaster sends to the entity subscriber when entity is being removed to the database.
  */
-export interface RemoveEvent<Entity, Data = ObjectLiteral> {
+export interface RemoveEvent<Entity, EntityID = any, Data = ObjectLiteral> {
     /**
      * Connection used in the event.
      */
@@ -44,5 +44,5 @@ export interface RemoveEvent<Entity, Data = ObjectLiteral> {
     /**
      * Id or ids of the entity that is being removed.
      */
-    entityId?: any
+    entityId?: EntityID
 }
