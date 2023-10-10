@@ -9,7 +9,7 @@ import { ObjectLiteral } from "../../common/ObjectLiteral"
 /**
  * UpdateEvent is an object that broadcaster sends to the entity subscriber when entity is being updated in the database.
  */
-export interface UpdateEvent<Entity> {
+export interface UpdateEvent<Entity, Data = ObjectLiteral> {
     /**
      * Connection used in the event.
      */
@@ -19,7 +19,7 @@ export interface UpdateEvent<Entity> {
      * QueryRunner used in the event transaction.
      * All database operations in the subscribed event listener should be performed using this query runner instance.
      */
-    queryRunner: QueryRunner
+    queryRunner: QueryRunner<Data>
 
     /**
      * EntityManager used in the event transaction.
