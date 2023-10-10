@@ -829,7 +829,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         // to scrub "ending" characters from the SQL but otherwise we can leave everything else
         // as-is and it should be valid.
 
-        return `/* ${this.expressionMap.comment.replace("*/", "")} */ `
+        return `/* ${this.expressionMap.comment.replace(/\*\//g, "")} */ `
     }
 
     /**

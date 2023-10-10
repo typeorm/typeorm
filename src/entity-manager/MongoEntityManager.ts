@@ -54,6 +54,7 @@ import {
     IndexInformationOptions,
     ObjectId,
     FilterOperators,
+    CountDocumentsOptions,
 } from "../driver/mongodb/typings"
 import { DataSource } from "../data-source/DataSource"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
@@ -497,6 +498,22 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.count(metadata.tableName, query, options)
+    }
+
+    /**
+     * Count number of matching documents in the db to a query.
+     */
+    countDocuments<Entity>(
+        entityClassOrName: EntityTarget<Entity>,
+        query: Filter<Document> = {},
+        options: CountDocumentsOptions = {},
+    ): Promise<number> {
+        const metadata = this.connection.getMetadata(entityClassOrName)
+        return this.mongoQueryRunner.countDocuments(
+            metadata.tableName,
+            query,
+            options,
+        )
     }
 
     /**
