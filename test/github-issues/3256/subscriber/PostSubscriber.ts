@@ -13,7 +13,9 @@ export class PostSubscriber implements EntitySubscriberInterface<Post> {
     }
 
     async beforeInsert(event: InsertEvent<Post>) {
-        event.entity.inserted = true
+        if (event.entity) {
+            event.entity.inserted = true
+        }
     }
 
     async beforeUpdate(event: UpdateEvent<Post>) {

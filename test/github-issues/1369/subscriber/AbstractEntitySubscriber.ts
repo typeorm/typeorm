@@ -14,7 +14,9 @@ export class AbstractEntitySubscriber
         return AbstractEntity
     }
     async beforeInsert(event: InsertEvent<AbstractEntity>) {
-        this.updateFullName(event.entity)
+        if (event.entity) {
+            this.updateFullName(event.entity)
+        }
     }
     async beforeUpdate(event: UpdateEvent<AbstractEntity>) {
         if (event.entity) {
