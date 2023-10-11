@@ -97,6 +97,7 @@
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/debug": "^4.1.7",
+    "@types/glob": "^8.1.0",
     "@types/mkdirp": "^1.0.2",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.13.0",
