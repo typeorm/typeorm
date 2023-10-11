@@ -4,7 +4,6 @@ import { EntityManager } from "../../entity-manager/EntityManager"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
 
 /**
  * UpdateEvent is an object that broadcaster sends to the entity subscriber when entity is being updated in the database.
@@ -29,8 +28,9 @@ export interface UpdateEvent<Entity> {
 
     /**
      * Updating entity.
+     * This may absent if entity is updated without being loaded (for examples by cascades).
      */
-    entity: ObjectLiteral | undefined
+    entity?: Entity
 
     /**
      * Metadata of the entity.
