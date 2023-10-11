@@ -19,7 +19,7 @@ import { ReplicationMode } from "../driver/types/ReplicationMode"
 /**
  * Runs queries on a single database connection.
  */
-export interface QueryRunner {
+export interface QueryRunner<Data = ObjectLiteral> {
     /**
      * Connection used by this query runner.
      */
@@ -50,7 +50,7 @@ export interface QueryRunner {
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
      */
-    data: ObjectLiteral
+    data: Data
 
     /**
      * All synchronized tables in the database.
