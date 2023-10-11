@@ -6,7 +6,7 @@ import { EntityMetadata } from "../../metadata/EntityMetadata"
 /**
  * RemoveEvent is an object that broadcaster sends to the entity subscriber when entity is being removed to the database.
  */
-export interface RemoveEvent<Entity> {
+export interface RemoveEvent<Entity, EntityID = any> {
     /**
      * Connection used in the event.
      */
@@ -43,5 +43,5 @@ export interface RemoveEvent<Entity> {
     /**
      * Id or ids of the entity that is being removed.
      */
-    entityId?: any
+    entityId?: EntityID
 }
