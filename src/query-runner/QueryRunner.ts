@@ -50,7 +50,7 @@ export interface QueryRunner<Data = ObjectLiteral> {
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
      */
-    data: Data
+    data?: Data
 
     /**
      * All synchronized tables in the database.
