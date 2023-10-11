@@ -26,8 +26,9 @@ export interface InsertEvent<Entity> {
 
     /**
      * Inserting event.
+     * This may absent if entity is inserted by cascades.
      */
-    entity: Entity
+    entity?: Entity
 
     /**
      * Metadata of the entity.
