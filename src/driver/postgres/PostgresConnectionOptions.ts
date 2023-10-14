@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 
 /**
@@ -6,7 +7,7 @@ import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCreden
  */
 export interface PostgresConnectionOptions
     extends BaseDataSourceOptions,
-    PostgresConnectionCredentialsOptions {
+        PostgresConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -47,6 +48,12 @@ export interface PostgresConnectionOptions
          * List of read-from severs (slaves).
          */
         readonly slaves: PostgresConnectionCredentialsOptions[]
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
 
     /**

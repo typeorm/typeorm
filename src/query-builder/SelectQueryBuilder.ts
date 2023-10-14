@@ -3842,7 +3842,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Creates a query builder used to execute sql queries inside this query builder.
      */
     protected obtainQueryRunner() {
-        return this.queryRunner || this.connection.createQueryRunner("slave")
+        return (
+            this.queryRunner ||
+            this.connection.createQueryRunner(
+                this.connection.defaultReplicationModeForReads(),
+            )
+        )
     }
 
     protected buildSelect(
