@@ -6,7 +6,7 @@ import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCreden
  */
 export interface PostgresConnectionOptions
     extends BaseDataSourceOptions,
-        PostgresConnectionCredentialsOptions {
+    PostgresConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -77,12 +77,6 @@ export interface PostgresConnectionOptions
      * Automatically install postgres extensions
      */
     readonly installExtensions?: boolean
-
-    /**
-     * sets the application_name var to help db administrators identify
-     * the service using this connection. Defaults to 'undefined'
-     */
-    readonly applicationName?: string
 
     /**
      * Return 64-bit integers (int8) as JavaScript integers.
