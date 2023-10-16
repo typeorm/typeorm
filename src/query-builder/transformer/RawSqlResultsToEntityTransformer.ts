@@ -164,8 +164,6 @@ export class RawSqlResultsToEntityTransformer {
             entity,
             metadata,
         )
-
-
         const hasRelations = this.transformJoins(
             rawResults,
             entity,
