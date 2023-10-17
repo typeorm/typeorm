@@ -235,8 +235,8 @@ If you want to explicitly use master in SELECT created by query builder, you can
 const masterQueryRunner = dataSource.createQueryRunner("master")
 try {
     const postsFromMaster = await dataSource
-        .createQueryBuilder(Post, "post")
-        .setQueryRunner(masterQueryRunner)
+        .createQueryBuilder(Post, "post", masterQueryRunner) // you can either pass QueryRunner as an optional argument with query builder
+        .setQueryRunner(masterQueryRunner) // or use setQueryRunner which sets or overrides query builder's QueryRunner
         .getMany()
 } finally {
     await masterQueryRunner.release()

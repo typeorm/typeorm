@@ -98,10 +98,17 @@ export class ManyToManySubjectBuilder {
 
         // if subject don't have database entity it means all related entities in persisted subject are new and must be bind
         // and we don't need to remove something that is not exist
-        if (subject.databaseEntity)
-            databaseRelatedEntityIds = relation.getEntityValue(
+        if (subject.databaseEntity) {
+            const databaseRelatedEntityValue = relation.getEntityValue(
                 subject.databaseEntity,
             )
+            if (databaseRelatedEntityValue) {
+                databaseRelatedEntityIds = databaseRelatedEntityValue.map(
+                    (e: any) =>
+                        relation.inverseEntityMetadata.getEntityIdMap(e),
+                )
+            }
+        }
 
         // extract entity's relation value
         // by example: categories inside our post (subject.entity is post)

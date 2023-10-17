@@ -14,6 +14,7 @@
 -   [`mongodb` data source options](#mongodb-data-source-options)
 -   [`sql.js` data source options](#sqljs-data-source-options)
 -   [`expo` data source options](#expo-data-source-options)
+-   [`oracle` data source options](#oracle-data-source-options)
 -   [DataSource options example](#data-source-options-example)
 
 ## What is `DataSourceOptions`
@@ -530,6 +531,24 @@ Different RDBMS-es have their own specific options.
 
 -   `database` - Name of the database. For example, "mydb".
 -   `driver` - The Expo SQLite module. For example, `require('expo-sqlite')`.
+
+## `oracle` data source options
+
+The following TNS connection string will be used in the next explanations:
+
+```bash
+(DESCRIPTION=
+  (ADDRESS=(PROTOCOL=tcp)(HOST=sales-server)(PORT=1521))
+  (CONNECT_DATA=
+     (SID=sales)
+     (SERVICE_NAME=sales.us.example.com)
+     (INSTANCE_NAME=sales))
+     (SERVER=shared)))
+)
+```
+-   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
+-   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
+
 
 ## Data Source Options example
 
