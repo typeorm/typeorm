@@ -1078,6 +1078,9 @@ export class SubjectExecutor {
                 // entities does not have virtual columns
                 if (column.isVirtual) return
 
+                // if column is deletedAt
+                if (column.isDeleteDate) return
+
                 // update nullable columns
                 if (column.isNullable) {
                     const columnValue = column.getEntityValue(subject.entity!)
