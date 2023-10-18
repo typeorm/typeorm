@@ -1,7 +1,7 @@
 import { DeferrableType } from "../../metadata/types/DeferrableType"
 import { OnDeleteType } from "../../metadata/types/OnDeleteType"
 import { OnUpdateType } from "../../metadata/types/OnUpdateType"
-import {FindOptionsWhere} from "../../find-options/FindOptionsWhere";
+import { FindOptionsWhere } from "../../find-options/FindOptionsWhere"
 
 /**
  * Describes all relation's options.
@@ -78,5 +78,5 @@ export interface RelationOptions<T> {
     /**
      * Indicates if it has some static where in relationship, like if deletedAt is null, it will be added in left join condition automatically.
      */
-    where: FindOptionsWhere<T>,
+    where?: FindOptionsWhere<T>
 }

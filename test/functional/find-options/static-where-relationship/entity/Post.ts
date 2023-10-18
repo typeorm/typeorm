@@ -1,7 +1,8 @@
 import {
     BaseEntity,
     Column,
-    Entity, IsNull,
+    Entity,
+    IsNull,
     JoinTable,
     ManyToMany,
     PrimaryColumn,
@@ -27,7 +28,7 @@ export class Post extends BaseEntity {
     })
     text: string
 
-    @ManyToMany((type) => Category, {where: {deletedAt: IsNull()}})
+    @ManyToMany((type) => Category, { where: { deletedAt: IsNull() } })
     @JoinTable()
     categories: Category[]
 }

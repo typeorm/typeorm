@@ -8,6 +8,6 @@ export class Category extends BaseEntity {
     @Column()
     name: string
 
-    @Column({type: 'date', nullable: true})
+    @Column({ type: "date", nullable: true })
     deletedAt: Date | null
 }
