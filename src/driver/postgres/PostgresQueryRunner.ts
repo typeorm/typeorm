@@ -4244,9 +4244,9 @@ export class PostgresQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
-                index.name
-            }" ON ${this.escapePath(table)} ${
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}${
+                index.isConcurrent ? "CONCURRENTLY " : ""
+            }INDEX "${index.name}" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
@@ -4278,10 +4278,21 @@ export class PostgresQueryRunner
         let indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
+        const concurrent = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName.isConcurrent
+            : false
         const { schema } = this.driver.parseTableName(table)
         return schema
-            ? new Query(`DROP INDEX "${schema}"."${indexName}"`)
-            : new Query(`DROP INDEX "${indexName}"`)
+            ? new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY" : ""
+                  }"${schema}"."${indexName}"`,
+              )
+            : new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY" : ""
+                  }"${indexName}"`,
+              )
     }
 
     /**
