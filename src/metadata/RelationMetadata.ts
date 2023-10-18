@@ -12,6 +12,7 @@ import { PropertyTypeFactory } from "./types/PropertyTypeInFunction"
 import { TypeORMError } from "../error"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import {FindOptionsWhere} from "../find-options/FindOptionsWhere";
 
 /**
  * Contains all information about some entity's relation.
@@ -277,6 +278,11 @@ export class RelationMetadata {
      */
     inverseJoinColumns: ColumnMetadata[] = []
 
+    /**
+     * Indicates if it has some static where in relationship, like if deletedAt is null, it will be added in left join condition automatically.
+     */
+    where: FindOptionsWhere<any> = {};
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -359,6 +365,7 @@ export class RelationMetadata {
         this.isManyToMany = this.relationType === "many-to-many"
         this.isOneToOneNotOwner = this.isOneToOne ? true : false
         this.isManyToManyNotOwner = this.isManyToMany ? true : false
+        this.where = args.options.where
     }
 
     // ---------------------------------------------------------------------

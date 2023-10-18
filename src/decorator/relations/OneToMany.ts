@@ -11,10 +11,10 @@ import { RelationOptions } from "../options/RelationOptions"
 export function OneToMany<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
     inverseSide: string | ((object: T) => any),
-    options?: RelationOptions,
+    options?: RelationOptions<T>,
 ): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        if (!options) options = {} as RelationOptions<T>
 
         // Now try to determine if it is a lazy relation.
         let isLazy = options && options.lazy === true

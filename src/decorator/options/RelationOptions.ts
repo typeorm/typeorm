@@ -1,11 +1,12 @@
 import { DeferrableType } from "../../metadata/types/DeferrableType"
 import { OnDeleteType } from "../../metadata/types/OnDeleteType"
 import { OnUpdateType } from "../../metadata/types/OnUpdateType"
+import {FindOptionsWhere} from "../../find-options/FindOptionsWhere";
 
 /**
  * Describes all relation's options.
  */
-export interface RelationOptions {
+export interface RelationOptions<T> {
     /**
      * Sets cascades options for the given relation.
      * If set to true then it means that related object can be allowed to be inserted or updated in the database.
@@ -73,4 +74,9 @@ export interface RelationOptions {
      * disable will keep the relation intact. Removal of related item is only possible through its own repo.
      */
     orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
+
+    /**
+     * Indicates if it has some static where in relationship, like if deletedAt is null, it will be added in left join condition automatically.
+     */
+    where: FindOptionsWhere<T>,
 }

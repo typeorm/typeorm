@@ -2367,7 +2367,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const junctionAlias = joinAttr.junctionAlias
                 let junctionCondition = "",
                     destinationCondition = ""
-
+                const relationWhere = this.buildWhere(relation.where, relation.inverseEntityMetadata, joinAttr.alias.name);
                 if (relation.isOwning) {
                     junctionCondition = relation.joinColumns
                         .map((joinColumn) => {
@@ -2398,6 +2398,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             )
                         })
                         .join(" AND ")
+                    destinationCondition += relationWhere ? ` AND ${relationWhere}` : ''
                 } else {
                     junctionCondition = relation
                         .inverseRelation!.inverseJoinColumns.map(
@@ -2430,6 +2431,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             )
                         })
                         .join(" AND ")
+                    destinationCondition += relationWhere ? ` AND ${relationWhere}` : ''
                 }
 
                 return (

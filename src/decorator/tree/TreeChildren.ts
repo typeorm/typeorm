@@ -12,7 +12,7 @@ export function TreeChildren(options?: {
         | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
 }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        if (!options) options = {} as RelationOptions<any>
 
         // now try to determine it its lazy relation
         const reflectedType =

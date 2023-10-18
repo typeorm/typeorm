@@ -10,7 +10,7 @@ import { ObjectUtils } from "../../util/ObjectUtils"
  */
 export function OneToOne<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
-    options?: RelationOptions,
+    options?: RelationOptions<T>,
 ): PropertyDecorator
 
 /**
@@ -20,7 +20,7 @@ export function OneToOne<T>(
 export function OneToOne<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
     inverseSide?: string | ((object: T) => any),
-    options?: RelationOptions,
+    options?: RelationOptions<T>,
 ): PropertyDecorator
 
 /**
@@ -29,19 +29,19 @@ export function OneToOne<T>(
  */
 export function OneToOne<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
-    inverseSideOrOptions?: string | ((object: T) => any) | RelationOptions,
-    options?: RelationOptions,
+    inverseSideOrOptions?: string | ((object: T) => any) | RelationOptions<T>,
+    options?: RelationOptions<T>,
 ): PropertyDecorator {
     // normalize parameters
     let inverseSideProperty: string | ((object: T) => any)
     if (ObjectUtils.isObject(inverseSideOrOptions)) {
-        options = <RelationOptions>inverseSideOrOptions
+        options = <RelationOptions<T>>inverseSideOrOptions
     } else {
         inverseSideProperty = inverseSideOrOptions as any
     }
 
     return function (object: Object, propertyName: string) {
-        if (!options) options = {} as RelationOptions
+        if (!options) options = {} as RelationOptions<T>
 
         // now try to determine it its lazy relation
         let isLazy = options && options.lazy === true ? true : false
