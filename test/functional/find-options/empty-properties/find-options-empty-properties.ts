@@ -27,9 +27,13 @@ describe("find options > where", () => {
         post2.title = "Post #2"
         post2.text = "About post #2"
         await connection.manager.save(post2)
+
+        const post3 = new Post()
+        post3.title = "Post #3"
+        await connection.manager.save(post3)
     }
 
-    it("should skip undefined properties", () =>
+    it("should not skip undefined properties and return no result", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await prepareData(connection)
@@ -47,13 +51,11 @@ describe("find options > where", () => {
                     })
                     .getMany()
 
-                posts.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1" },
-                ])
+                posts.should.be.eql([])
             }),
         ))
 
-    it("should skip null properties", () =>
+    it("should not skip null properties and only return if the field matches IsNull", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await prepareData(connection)
@@ -72,9 +74,7 @@ describe("find options > where", () => {
                     })
                     .getMany()
 
-                posts1.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1" },
-                ])
+                posts1.should.be.eql([])
 
                 const posts2 = await connection
                     .createQueryBuilder(Post, "post")
@@ -89,10 +89,7 @@ describe("find options > where", () => {
                     })
                     .getMany()
 
-                posts2.should.be.eql([
-                    { id: 1, title: "Post #1", text: "About post #1" },
-                    { id: 2, title: "Post #2", text: "About post #2" },
-                ])
+                posts2.should.be.eql([{ id: 3, title: "Post #3", text: null }])
             }),
         ))
 })

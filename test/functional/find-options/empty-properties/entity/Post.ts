@@ -8,6 +8,6 @@ export class Post {
     @Column()
     title: string
 
-    @Column()
+    @Column({ nullable: true })
     text: string
 }

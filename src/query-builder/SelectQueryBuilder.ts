@@ -4222,7 +4222,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         } else {
             let andConditions: string[] = []
             for (let key in where) {
-                if (where[key] === undefined || where[key] === null) continue
+                // NOTE: preserving typeorm v0.2 behavior for query safety,
+                //  nulls will be treated as IsNull, undefined values should never return results
+                //if (where[key] === undefined || where[key] === null) continue
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
                 const column =
