@@ -711,6 +711,7 @@ export class RelationIdLoader {
         return qb
             .from(relation.entityMetadata.target, mainAlias)
             .where(condition)
+            .andWhere(relation.inverseRelation?.where || {})
             .getRawMany()
     }
 }

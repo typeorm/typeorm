@@ -110,6 +110,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                         parameters,
                         this,
                     )
+                    console.log(2222, query, parameters, err);
                     fail(new QueryFailedError(query, parameters, err))
                 } else {
                     const result = new QueryResult()

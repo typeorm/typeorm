@@ -2286,7 +2286,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // if real entity relation is involved
             if (relation.isManyToOne || relation.isOneToOneOwner) {
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
-                const condition = relation.joinColumns
+
+                const relationWhere = this.buildWhere(
+                    relation.where,
+                    relation.inverseEntityMetadata,
+                    joinAttr.alias.name,
+                )
+                let condition = relation.joinColumns
                     .map((joinColumn) => {
                         return (
                             destinationTableAlias +
@@ -2301,7 +2307,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                     })
                     .join(" AND ")
-
+                condition += relationWhere.trim() ? ` AND ${relationWhere}` : "";
                 return (
                     " " +
                     joinAttr.direction +
@@ -2315,7 +2321,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = relation
+                const relationWhere = this.buildWhere(
+                    relation.where,
+                    relation.inverseEntityMetadata,
+                    joinAttr.alias.name,
+                )
+                let condition = relation
                     .inverseRelation!.joinColumns.map((joinColumn) => {
                         if (
                             relation.inverseEntityMetadata.tableType ===
@@ -2347,6 +2358,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                     })
                     .join(" AND ")
+                condition += relationWhere.trim() ? ` AND ${relationWhere}` : ""
 
                 return (
                     " " +
@@ -3602,7 +3614,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                               this.findOptions.relations,
                           )
                         : this.findOptions.relations
-
                     const queryBuilder = this.createQueryBuilder()
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
@@ -3628,9 +3639,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             withDeleted: this.findOptions.withDeleted,
                             relationLoadStrategy:
                                 this.findOptions.relationLoadStrategy,
+                            where: relation.where
                         })
                     if (entities.length > 0) {
-                        const relatedEntityGroups: any[] =
+                        const relatedEntityGroups =
                             await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
                                 relation,
                                 entities,
