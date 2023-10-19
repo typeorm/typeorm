@@ -2503,7 +2503,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         const alias = this.expressionMap.aliases.find(
                             (alias) => alias.name === aliasName,
                         )
-                        if (alias) {
+                        if (alias && alias.hasMetadata) {
                             const column =
                                 alias.metadata.findColumnWithPropertyPath(
                                     propertyPath,
