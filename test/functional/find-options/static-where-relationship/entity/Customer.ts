@@ -1,5 +1,12 @@
-import {BaseEntity, Column, Entity, IsNull, OneToMany, PrimaryColumn} from "../../../../../src"
-import {Post} from "./Post";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    IsNull,
+    OneToMany,
+    PrimaryColumn,
+} from "../../../../../src"
+import { Post } from "./Post"
 
 @Entity()
 export class Customer extends BaseEntity {
@@ -12,6 +19,8 @@ export class Customer extends BaseEntity {
     @Column({ type: "date", nullable: true })
     deletedAt: Date | null
 
-    @OneToMany((type) => Post, (item) => item.createdBy, {where: {blockedBy: IsNull(), deletedAt: IsNull()}})
+    @OneToMany((type) => Post, (item) => item.createdBy, {
+        where: { blockedBy: IsNull(), deletedAt: IsNull() },
+    })
     posts: Post[]
 }

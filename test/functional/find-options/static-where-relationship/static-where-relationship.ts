@@ -7,8 +7,8 @@ import {
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import {Customer} from "./entity/Customer";
-import {Staff} from "./entity/Staff";
+import { Customer } from "./entity/Customer"
+import { Staff } from "./entity/Staff"
 
 describe("static-where-relationship", () => {
     let connections: DataSource[]
@@ -29,7 +29,7 @@ describe("static-where-relationship", () => {
             Customer.useDataSource(connection)
             Staff.useDataSource(connection)
 
-            const customer = await  Customer.save({
+            const customer = await Customer.save({
                 id: 1,
                 name: "Category 1",
                 deletedAt: null,
@@ -103,7 +103,7 @@ describe("static-where-relationship", () => {
 
             const staff = await Staff.save({
                 id: 1,
-                name: 'staff 1',
+                name: "staff 1",
                 blockedPosts: [],
             })
 
@@ -153,11 +153,13 @@ describe("static-where-relationship", () => {
                 deletedAt: null,
             })
 
-            const customers = await Customer.find({relations: {posts: {categories: true}}})
+            const customers = await Customer.find({
+                relations: { posts: { categories: true } },
+            })
             customers.length.should.be.eql(1)
             customers[0].should.be.instanceOf(Customer)
             customers[0].id.should.be.eql(1)
-            customers[0].name.should.be.eql('Customer 1')
+            customers[0].name.should.be.eql("Customer 1")
             customers[0].posts.length.should.be.eql(3)
             // customers[0].posts[0].should.be.eql();
         }

@@ -1,5 +1,11 @@
-import {BaseEntity, Column, Entity, OneToMany, PrimaryColumn} from "../../../../../src"
-import {Post} from "./Post";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryColumn,
+} from "../../../../../src"
+import { Post } from "./Post"
 
 @Entity()
 export class Staff extends BaseEntity {

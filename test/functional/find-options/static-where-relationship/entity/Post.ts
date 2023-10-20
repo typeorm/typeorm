@@ -9,12 +9,11 @@ import {
     PrimaryColumn,
 } from "../../../../../src"
 import { Category } from "./Category"
-import {Staff} from "./Staff";
-import {Customer} from "./Customer";
+import { Staff } from "./Staff"
+import { Customer } from "./Customer"
 
 @Entity()
 export class Post extends BaseEntity {
-
     @PrimaryColumn()
     id: number
 
@@ -36,7 +35,7 @@ export class Post extends BaseEntity {
     @JoinTable()
     categories: Category[]
 
-    @ManyToOne((type) => Staff,(item) => item.blockedPosts, { nullable: true })
+    @ManyToOne((type) => Staff, (item) => item.blockedPosts, { nullable: true })
     blockedBy: Staff | null
 
     @ManyToOne((type) => Customer, (item) => item.posts, {})

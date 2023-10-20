@@ -2307,7 +2307,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                     })
                     .join(" AND ")
-                condition += relationWhere.trim() ? ` AND ${relationWhere}` : "";
+                condition += relationWhere.trim() ? ` AND ${relationWhere}` : ""
                 return (
                     " " +
                     joinAttr.direction +
@@ -3639,7 +3639,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             withDeleted: this.findOptions.withDeleted,
                             relationLoadStrategy:
                                 this.findOptions.relationLoadStrategy,
-                            where: relation.where
+                            where: relation.where,
                         })
                     if (entities.length > 0) {
                         const relatedEntityGroups =
