@@ -4489,6 +4489,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
             condition = andConditions.join(" AND ")
         }
+
+        if (condition === '()') {
+            condition = '(1=1)'
+        }
+
         return condition
     }
 }
