@@ -2,7 +2,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
 
 export interface OracleThickModeOptions {
-    binaryDir?:string
+    binaryDir?: string
     configDir?: string
     driverName?: string
     errorUrl?: string
