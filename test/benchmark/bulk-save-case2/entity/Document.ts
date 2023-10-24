@@ -19,6 +19,9 @@ export class Document {
     @Column({ type: "jsonb" })
     distributions: Distribution[]
 
+    @Column({ type: "jsonpath" })
+    path: string
+
     @Column({ type: "timestamp with time zone" })
     date: Date
 }

@@ -271,7 +271,7 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 `timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
-`tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
+`tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `jsonpath`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`
 
 ### `sqlite`/`cordova`/`react-native`/`expo`的列类型
