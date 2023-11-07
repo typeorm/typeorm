@@ -3416,47 +3416,60 @@ export class PostgresQueryRunner
 
                             if (
                                 tableColumn.type === "numeric" ||
+                                tableColumn.type === "numeric[]" ||
                                 tableColumn.type === "decimal" ||
                                 tableColumn.type === "float"
                             ) {
+                                let numericPrecision =
+                                    dbColumn["numeric_precision"]
+                                let numericScale = dbColumn["numeric_scale"]
+                                if (dbColumn["data_type"] === "ARRAY") {
+                                    const numericSize = dbColumn[
+                                        "format_type"
+                                    ].match(
+                                        /^numeric\(([0-9]+),([0-9]+)\)\[\]$/,
+                                    )
+                                    if (numericSize) {
+                                        numericPrecision = +numericSize[1]
+                                        numericScale = +numericSize[2]
+                                    }
+                                }
                                 // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
                                 // we set 'undefined' in to unspecified property to avoid changing column on sync
                                 if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
-                                    tableColumn.precision =
-                                        dbColumn["numeric_precision"]
+                                    tableColumn.precision = numericPrecision
                                 } else if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
                                     tableColumn.precision = undefined
                                 }
                                 if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
-                                    tableColumn.scale =
-                                        dbColumn["numeric_scale"]
+                                    tableColumn.scale = numericScale
                                 } else if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
                                     tableColumn.scale = undefined
