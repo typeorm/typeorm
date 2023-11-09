@@ -36,6 +36,7 @@ export type FindOptionsWhereProperty<
           | FindOptionsWhere<Property>[]
           | EqualOperator<Property>
           | FindOperator<any>
+          | boolean
           | Property
     : Property | FindOperator<Property>
 
