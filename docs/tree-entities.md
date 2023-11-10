@@ -231,10 +231,14 @@ There are other special methods to work with tree entities through `TreeReposito
 -   `findTrees` - Returns all trees in the database with all their children, children of children, etc.
 
 ```typescript
-const treeCategories = await dataSource.manager.getTreeRepository(Category).findTrees()
+const treeCategories = await dataSource.manager
+    .getTreeRepository(Category)
+    .findTrees()
 // returns root categories with sub categories inside
 
-const treeCategoriesWithLimitedDepth = await dataSource.manager.getTreeRepository(Category).findTrees({ depth: 2 })
+const treeCategoriesWithLimitedDepth = await dataSource.manager
+    .getTreeRepository(Category)
+    .findTrees({ depth: 2 })
 // returns root categories with sub categories inside, up to depth 2
 ```
 
@@ -242,14 +246,18 @@ const treeCategoriesWithLimitedDepth = await dataSource.manager.getTreeRepositor
     Does not load children's leaves.
 
 ```typescript
-const rootCategories = await dataSource.manager.getTreeRepository(Category).findRoots()
+const rootCategories = await dataSource.manager
+    .getTreeRepository(Category)
+    .findRoots()
 // returns root categories without sub categories inside
 ```
 
 -   `findDescendants` - Gets all children (descendants) of the given entity. Returns them all in a flat array.
 
 ```typescript
-const children = await dataSource.manager.getTreeRepository(Category).findDescendants(parentCategory)
+const children = await dataSource.manager
+    .getTreeRepository(Category)
+    .findDescendants(parentCategory)
 // returns all direct subcategories (without its nested categories) of a parentCategory
 ```
 
@@ -281,7 +289,9 @@ const children = await repository
 -   `countDescendants` - Gets the number of descendants of the entity.
 
 ```typescript
-const childrenCount = await dataSource.manager.getTreeRepository(Category).countDescendants(parentCategory)
+const childrenCount = await dataSource.manager
+    .getTreeRepository(Category)
+    .countDescendants(parentCategory)
 ```
 
 -   `findAncestors` - Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
@@ -294,7 +304,9 @@ const parents = await repository.findAncestors(childCategory)
 -   `findAncestorsTree` - Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
 
 ```typescript
-const parentsTree = await dataSource.manager.getTreeRepository(Category).findAncestorsTree(childCategory)
+const parentsTree = await dataSource.manager
+    .getTreeRepository(Category)
+    .findAncestorsTree(childCategory)
 // returns all direct childCategory's parent categories (with "parent of parents")
 ```
 
@@ -310,7 +322,9 @@ const parents = await repository
 -   `countAncestors` - Gets the number of ancestors of the entity.
 
 ```typescript
-const parentsCount = await dataSource.manager.getTreeRepository(Category).countAncestors(childCategory)
+const parentsCount = await dataSource.manager
+    .getTreeRepository(Category)
+    .countAncestors(childCategory)
 ```
 
 For the following methods, options can be passed:
@@ -329,13 +343,17 @@ The following options are available:
 Examples:
 
 ```typescript
-const treeCategoriesWithRelations = await dataSource.manager.getTreeRepository(Category).findTrees({
-    relations: ["sites"],
-})
+const treeCategoriesWithRelations = await dataSource.manager
+    .getTreeRepository(Category)
+    .findTrees({
+        relations: { sites: true },
+    })
 // automatically joins the sites relation
 
-const parentsWithRelations = await dataSource.manager.getTreeRepository(Category).findAncestors(childCategory, {
-    relations: ["members"],
-})
+const parentsWithRelations = await dataSource.manager
+    .getTreeRepository(Category)
+    .findAncestors(childCategory, {
+        relations: { members: true },
+    })
 // returns all direct childCategory's parent categories (without "parent of parents") and joins the 'members' relation
 ```
