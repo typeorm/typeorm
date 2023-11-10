@@ -7,13 +7,14 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Product } from "./entity/Product"
+import { Brand } from "./entity/Brand"
 
 describe("tree tables > materialized-path", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [Product, Category],
+                entities: [Product, Category, Brand],
                 // logging: true,
             })),
     )
@@ -495,6 +496,104 @@ describe("tree tables > materialized-path", () => {
             }),
         ))
 
+    it("findTrees() tests > findTress should load relations when provided", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const categoryRepository =
+                    connection.getTreeRepository(Category)
+
+                const brandRepository = connection.getRepository(Brand)
+                const productRepository = connection.getRepository(Product)
+
+                const b1 = new Brand()
+                b1.name = "b1"
+                const b2 = new Brand()
+                b2.name = "b2"
+
+                await brandRepository.save([b1, b2])
+
+                const p1 = new Product()
+                p1.name = "p1"
+                p1.brand = b1
+
+                const p2 = new Product()
+                p2.name = "p2"
+                p2.brand = b2
+
+                await productRepository.save([p1, p2])
+
+                const a1 = new Category()
+                a1.name = "a1"
+                a1.product = p1
+
+                const a11 = new Category()
+                a11.name = "a11"
+                a11.product = p1
+
+                const a12 = new Category()
+                a12.name = "a12"
+                a12.product = p2
+
+                a1.childCategories = [a11, a12]
+                await categoryRepository.save(a1)
+
+                const categoriesTree = await categoryRepository.findTrees({
+                    relations: {
+                        product: {
+                            brand: true,
+                        },
+                    },
+                })
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree[0].childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+                categoriesTree.should.be.eql([
+                    {
+                        id: a1.id,
+                        name: a1.name,
+                        product: {
+                            id: p1.id,
+                            name: p1.name,
+                            brand: {
+                                id: b1.id,
+                                name: b1.name,
+                            },
+                        },
+                        childCategories: [
+                            {
+                                id: a11.id,
+                                name: a11.name,
+                                childCategories: [],
+                                product: {
+                                    id: p1.id,
+                                    name: p1.name,
+                                    brand: {
+                                        id: b1.id,
+                                        name: b1.name,
+                                    },
+                                },
+                            },
+                            {
+                                id: a12.id,
+                                name: a12.name,
+                                childCategories: [],
+                                product: {
+                                    id: p2.id,
+                                    name: p2.name,
+                                    brand: {
+                                        id: b2.id,
+                                        name: b2.name,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ])
+            }),
+        ))
+
     it("findDescendantsTree() tests > findDescendantsTree should load all category descendents and nested children", () =>
         Promise.all(
             connections.map(async (connection) => {
@@ -553,6 +652,115 @@ describe("tree tables > materialized-path", () => {
                             id: a12.id,
                             name: "a12",
                             childCategories: [],
+                        },
+                    ],
+                })
+            }),
+        ))
+
+    it("findDescendantsTree() tests > findDescendantsTree should load relations when provided", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const categoryRepository =
+                    connection.getTreeRepository(Category)
+
+                const brandRepository = connection.getRepository(Brand)
+                const productRepository = connection.getRepository(Product)
+
+                const b1 = new Brand()
+                b1.name = "b1"
+                const b2 = new Brand()
+                b2.name = "b2"
+
+                await brandRepository.save([b1, b2])
+
+                const p1 = new Product()
+                p1.name = "p1"
+                p1.brand = b1
+
+                const p2 = new Product()
+                p2.name = "p2"
+                p2.brand = b2
+
+                await productRepository.save([p1, p2])
+
+                const a1 = new Category()
+                a1.name = "a1"
+
+                const a11 = new Category()
+                a11.name = "a11"
+                a11.product = p1
+
+                const a111 = new Category()
+                a111.name = "a111"
+                a111.product = p1
+
+                const a12 = new Category()
+                a12.name = "a12"
+                a12.product = p2
+
+                a1.childCategories = [a11, a12]
+                a11.childCategories = [a111]
+                await categoryRepository.save(a1)
+
+                const categoriesTree =
+                    await categoryRepository.findDescendantsTree(a1, {
+                        relations: {
+                            product: {
+                                brand: true,
+                            },
+                        },
+                    })
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree.childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree.childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
+                categoriesTree.should.be.eql({
+                    id: a1.id,
+                    name: "a1",
+                    childCategories: [
+                        {
+                            id: a11.id,
+                            name: "a11",
+                            product: {
+                                id: p1.id,
+                                name: p1.name,
+                                brand: {
+                                    id: b1.id,
+                                    name: b1.name,
+                                },
+                            },
+                            childCategories: [
+                                {
+                                    id: a111.id,
+                                    name: "a111",
+                                    childCategories: [],
+                                    product: {
+                                        id: p1.id,
+                                        name: p1.name,
+                                        brand: {
+                                            id: b1.id,
+                                            name: b1.name,
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: a12.id,
+                            name: "a12",
+                            childCategories: [],
+                            product: {
+                                id: p2.id,
+                                name: p2.name,
+                                brand: {
+                                    id: b2.id,
+                                    name: b2.name,
+                                },
+                            },
                         },
                     ],
                 })

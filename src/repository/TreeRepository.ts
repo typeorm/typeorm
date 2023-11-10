@@ -239,7 +239,7 @@ export class TreeRepository<
      */
     findAncestors(
         entity: Entity,
-        options?: FindTreeOptions,
+        options?: FindTreeOptions<Entity>,
     ): Promise<Entity[]> {
         const qb = this.createAncestorsQueryBuilder(
             "treeEntity",
