@@ -43,6 +43,7 @@ import {
     UpdateFilter,
     UpdateOptions,
     UpdateResult,
+    CountDocumentsOptions,
 } from "../driver/mongodb/typings"
 import { FindManyOptions } from "../find-options/FindManyOptions"
 
@@ -242,6 +243,20 @@ export class MongoRepository<
      */
     count(query?: ObjectLiteral, options?: CountOptions): Promise<number> {
         return this.manager.count(this.metadata.target, query || {}, options)
+    }
+
+    /**
+     * Count number of matching documents in the db to a query.
+     */
+    countDocuments(
+        query?: ObjectLiteral,
+        options?: CountDocumentsOptions,
+    ): Promise<number> {
+        return this.manager.countDocuments(
+            this.metadata.target,
+            query || {},
+            options,
+        )
     }
 
     /**
