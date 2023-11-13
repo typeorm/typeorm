@@ -284,6 +284,10 @@ Perform a bulkWrite operation without a fluent API.
 
 Count number of matching documents in the db to a query.
 
+### `countDocuments`
+
+Count number of matching documents in the db to a query.
+
 #### `createCollectionIndex`
 
 Creates an index on the db and collection.
