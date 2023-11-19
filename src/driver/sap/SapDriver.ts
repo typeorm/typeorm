@@ -182,7 +182,7 @@ export class SapDriver implements Driver {
         cacheTime: "bigint",
         cacheDuration: "integer",
         cacheQuery: "nvarchar(5000)" as any,
-        cacheResult: "text",
+        cacheResult: "nclob",
         metadataType: "nvarchar",
         metadataDatabase: "nvarchar",
         metadataSchema: "nvarchar",

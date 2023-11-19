@@ -25,16 +25,16 @@ describe("commands - migration create", () => {
     let connectionOptionsReader: ConnectionOptionsReader
     let baseConnectionOptions: DataSourceOptions
 
-    const enabledDrivers = [
-        "postgres",
+    const enabledDrivers: DatabaseType[] = [
+        "better-sqlite3",
+        "cockroachdb",
+        "mariadb",
         "mssql",
         "mysql",
-        "mariadb",
-        "sqlite",
-        "better-sqlite3",
         "oracle",
-        "cockroachdb",
-    ] as DatabaseType[]
+        "postgres",
+        "sqlite",
+    ]
 
     // simulate args: `npm run typeorm migration:run -- -n test-migration -d test-directory`
     const testHandlerArgs = (options: Record<string, any>) => ({
@@ -70,7 +70,7 @@ describe("commands - migration create", () => {
     })
 
     afterEach(async () => {
-        getConnectionOptionsStub.restore()
+        getConnectionOptionsStub?.restore()
     })
 
     it("should write regular empty migration file when no option is passed", async () => {

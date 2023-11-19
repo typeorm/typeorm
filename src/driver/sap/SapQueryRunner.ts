@@ -1249,28 +1249,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
-                const explicitDefaultUp =
-                    (newColumn.default === null ||
-                        newColumn.default === undefined) &&
-                    !(
-                        oldColumn.default === null ||
-                        oldColumn.default === undefined
-                    )
-                const explicitDefaultDown =
-                    (oldColumn.default === null ||
-                        oldColumn.default === undefined) &&
-                    !(
-                        newColumn.default === null ||
-                        newColumn.default === undefined
-                    )
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
                             table,
                         )} ALTER (${this.buildCreateColumnSql(
                             newColumn,
-                            explicitDefaultUp,
-                            newColumn.isNullable && !oldColumn.isNullable,
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            !oldColumn.isNullable,
                         )})`,
                     ),
                 )
@@ -1280,8 +1269,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             table,
                         )} ALTER (${this.buildCreateColumnSql(
                             oldColumn,
-                            explicitDefaultDown,
-                            oldColumn.isNullable && !newColumn.isNullable,
+                            !(
+                                newColumn.default === null ||
+                                newColumn.default === undefined
+                            ),
+                            !newColumn.isNullable,
                         )})`,
                     ),
                 )
@@ -3272,38 +3264,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return `"${tableName}"`
-    }
-
-    /**
-     * Concat database name and schema name to the foreign key name.
-     * Needs because FK name is relevant to the schema and database.
-     */
-    protected buildForeignKeyName(
-        fkName: string,
-        schemaName: string | undefined,
-        dbName: string | undefined,
-    ): string {
-        let joinedFkName = fkName
-        if (schemaName) joinedFkName = schemaName + "." + joinedFkName
-        if (dbName) joinedFkName = dbName + "." + joinedFkName
-
-        return joinedFkName
-    }
-
-    /**
-     * Removes parenthesis around default value.
-     * Sql server returns default value with parenthesis around, e.g.
-     *  ('My text') - for string
-     *  ((1)) - for number
-     *  (newsequentialId()) - for function
-     */
-    protected removeParenthesisFromDefault(defaultValue: any): any {
-        if (defaultValue.substr(0, 1) !== "(") return defaultValue
-        const normalizedDefault = defaultValue.substr(
-            1,
-            defaultValue.lastIndexOf(")") - 1,
-        )
-        return this.removeParenthesisFromDefault(normalizedDefault)
     }
 
     /**
