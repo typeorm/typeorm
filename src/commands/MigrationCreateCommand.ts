@@ -1,9 +1,9 @@
 import { CommandUtils } from "./CommandUtils"
-import { camelCase } from "../util/StringUtils"
 import * as yargs from "yargs"
 import chalk from "chalk"
 import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
+import { DataSource } from "../data-source"
 
 /**
  * Creates a new migration file.
@@ -44,12 +44,11 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             const fullPath =
                 path.dirname(inputPath) + "/" + timestamp + "-" + filename
 
-            const fileContent = args.outputJs
-                ? MigrationCreateCommand.getJavascriptTemplate(
-                      filename,
-                      timestamp,
-                  )
-                : MigrationCreateCommand.getTemplate(filename, timestamp)
+            const fileContent = DataSource.createMigration({
+                timestamp,
+                name: filename,
+                outputJs: args.outputJs,
+            })
 
             await CommandUtils.createFile(
                 fullPath + (args.outputJs ? ".js" : ".ts"),
@@ -64,51 +63,5 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             PlatformTools.logCmdErr("Error during migration creation:", err)
             process.exit(1)
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Gets contents of the migration file.
-     */
-    protected static getTemplate(name: string, timestamp: number): string {
-        return `import { MigrationInterface, QueryRunner } from "typeorm";
-
-export class ${camelCase(
-            name,
-            true,
-        )}${timestamp} implements MigrationInterface {
-
-    public async up(queryRunner: QueryRunner): Promise<void> {
-    }
-
-    public async down(queryRunner: QueryRunner): Promise<void> {
-    }
-
-}
-`
-    }
-
-    /**
-     * Gets contents of the migration file in Javascript.
-     */
-    protected static getJavascriptTemplate(
-        name: string,
-        timestamp: number,
-    ): string {
-        return `const { MigrationInterface, QueryRunner } = require("typeorm");
-
-module.exports = class ${camelCase(name, true)}${timestamp} {
-
-    async up(queryRunner) {
-    }
-
-    async down(queryRunner) {
-    }
-
-}
-`
     }
 }

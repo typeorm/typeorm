@@ -430,6 +430,36 @@ export class DataSource {
     }
 
     /**
+     * Generate a file containing the SQL queries to run migrations.
+     * Returns the file content in string format.
+     */
+    async generateMigration(options: {
+        pretty?: boolean
+        name: string
+        timestamp: number
+        outputJs?: boolean
+    }): Promise<{
+        fileContent: string
+        hasSqlToRun: boolean
+    }> {
+        if (!this.isInitialized) {
+            throw new CannotExecuteNotConnectedError(this.name)
+        }
+
+        const migrationExecutor = new MigrationExecutor(this)
+
+        return migrationExecutor.generateMigration(options)
+    }
+
+    static createMigration(options: {
+        name: string
+        timestamp: number
+        outputJs?: boolean
+    }): string {
+        return MigrationExecutor.createMigration(options)
+    }
+
+    /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
      */
     hasMetadata(target: EntityTarget<any>): boolean {

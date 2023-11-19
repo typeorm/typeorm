@@ -1,8 +1,6 @@
 import { CommandUtils } from "./CommandUtils"
-import { camelCase } from "../util/StringUtils"
 import * as yargs from "yargs"
 import chalk from "chalk"
-import { format } from "@sqltools/formatter/lib/sqlFormatter"
 import { PlatformTools } from "../platform/PlatformTools"
 import { DataSource } from "../data-source"
 import * as path from "path"
@@ -86,58 +84,24 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             })
             await dataSource.initialize()
 
-            const upSqls: string[] = [],
-                downSqls: string[] = []
+            let fileContent = ""
+            let hasSqlToRun = false
 
             try {
-                const sqlInMemory = await dataSource.driver
-                    .createSchemaBuilder()
-                    .log()
-
-                if (args.pretty) {
-                    sqlInMemory.upQueries.forEach((upQuery) => {
-                        upQuery.query = MigrationGenerateCommand.prettifyQuery(
-                            upQuery.query,
-                        )
-                    })
-                    sqlInMemory.downQueries.forEach((downQuery) => {
-                        downQuery.query =
-                            MigrationGenerateCommand.prettifyQuery(
-                                downQuery.query,
-                            )
-                    })
-                }
-
-                sqlInMemory.upQueries.forEach((upQuery) => {
-                    upSqls.push(
-                        "        await queryRunner.query(`" +
-                            upQuery.query.replace(new RegExp("`", "g"), "\\`") +
-                            "`" +
-                            MigrationGenerateCommand.queryParams(
-                                upQuery.parameters,
-                            ) +
-                            ");",
-                    )
+                const ret = await dataSource.generateMigration({
+                    pretty: args.pretty,
+                    name: filename,
+                    timestamp,
+                    outputJs: args.outputJs,
                 })
-                sqlInMemory.downQueries.forEach((downQuery) => {
-                    downSqls.push(
-                        "        await queryRunner.query(`" +
-                            downQuery.query.replace(
-                                new RegExp("`", "g"),
-                                "\\`",
-                            ) +
-                            "`" +
-                            MigrationGenerateCommand.queryParams(
-                                downQuery.parameters,
-                            ) +
-                            ");",
-                    )
-                })
+
+                fileContent = ret.fileContent
+                hasSqlToRun = ret.hasSqlToRun
             } finally {
                 await dataSource.destroy()
             }
 
-            if (!upSqls.length) {
+            if (!hasSqlToRun) {
                 if (args.check) {
                     console.log(
                         chalk.green(`No changes in database schema were found`),
@@ -155,20 +119,6 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 console.log(chalk.yellow("Please specify a migration path"))
                 process.exit(1)
             }
-
-            const fileContent = args.outputJs
-                ? MigrationGenerateCommand.getJavascriptTemplate(
-                      path.basename(fullPath),
-                      timestamp,
-                      upSqls,
-                      downSqls.reverse(),
-                  )
-                : MigrationGenerateCommand.getTemplate(
-                      path.basename(fullPath),
-                      timestamp,
-                      upSqls,
-                      downSqls.reverse(),
-                  )
 
             if (args.check) {
                 console.log(
@@ -207,89 +157,5 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             PlatformTools.logCmdErr("Error during migration generation:", err)
             process.exit(1)
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected Static Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Formats query parameters for migration queries if parameters actually exist
-     */
-    protected static queryParams(parameters: any[] | undefined): string {
-        if (!parameters || !parameters.length) {
-            return ""
-        }
-
-        return `, ${JSON.stringify(parameters)}`
-    }
-
-    /**
-     * Gets contents of the migration file.
-     */
-    protected static getTemplate(
-        name: string,
-        timestamp: number,
-        upSqls: string[],
-        downSqls: string[],
-    ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
-
-        return `import { MigrationInterface, QueryRunner } from "typeorm";
-
-export class ${migrationName} implements MigrationInterface {
-    name = '${migrationName}'
-
-    public async up(queryRunner: QueryRunner): Promise<void> {
-${upSqls.join(`
-`)}
-    }
-
-    public async down(queryRunner: QueryRunner): Promise<void> {
-${downSqls.join(`
-`)}
-    }
-
-}
-`
-    }
-
-    /**
-     * Gets contents of the migration file in Javascript.
-     */
-    protected static getJavascriptTemplate(
-        name: string,
-        timestamp: number,
-        upSqls: string[],
-        downSqls: string[],
-    ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
-
-        return `const { MigrationInterface, QueryRunner } = require("typeorm");
-
-module.exports = class ${migrationName} {
-    name = '${migrationName}'
-
-    async up(queryRunner) {
-${upSqls.join(`
-`)}
-    }
-
-    async down(queryRunner) {
-${downSqls.join(`
-`)}
-    }
-}
-`
-    }
-
-    /**
-     *
-     */
-    protected static prettifyQuery(query: string) {
-        const formattedQuery = format(query, { indent: "    " })
-        return (
-            "\n" + formattedQuery.replace(/^/gm, "            ") + "\n        "
-        )
     }
 }

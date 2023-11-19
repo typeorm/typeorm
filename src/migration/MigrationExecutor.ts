@@ -7,6 +7,8 @@ import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import { ForbiddenTransactionModeOverrideError, TypeORMError } from "../error"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { format } from "@sqltools/formatter"
+import { camelCase } from "../util/StringUtils"
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -739,5 +741,161 @@ export class MigrationExecutor {
                 await queryRunner.release()
             }
         }
+    }
+
+    async generateMigration({
+        pretty = false,
+        name,
+        timestamp,
+        outputJs = false,
+    }: {
+        pretty?: boolean
+        name: string
+        timestamp: number
+        outputJs?: boolean
+    }): Promise<{
+        fileContent: string
+        hasSqlToRun: boolean
+    }> {
+        const upSqls: string[] = [],
+            downSqls: string[] = []
+
+        const sqlInMemory = await this.connection.driver
+            .createSchemaBuilder()
+            .log()
+        if (pretty) {
+            sqlInMemory.upQueries.forEach((upQuery) => {
+                upQuery.query = MigrationExecutor.prettifyQuery(upQuery.query)
+            })
+            sqlInMemory.downQueries.forEach((downQuery) => {
+                downQuery.query = MigrationExecutor.prettifyQuery(
+                    downQuery.query,
+                )
+            })
+        }
+
+        sqlInMemory.upQueries.forEach((upQuery) => {
+            upSqls.push(
+                "        await queryRunner.query(`" +
+                    upQuery.query.replace(new RegExp("`", "g"), "\\`") +
+                    "`" +
+                    MigrationExecutor.queryParams(upQuery.parameters) +
+                    ");",
+            )
+        })
+        sqlInMemory.downQueries.forEach((downQuery) => {
+            downSqls.push(
+                "        await queryRunner.query(`" +
+                    downQuery.query.replace(new RegExp("`", "g"), "\\`") +
+                    "`" +
+                    MigrationExecutor.queryParams(downQuery.parameters) +
+                    ");",
+            )
+        })
+
+        const fileContent = outputJs
+            ? MigrationExecutor.getJavascriptTemplate(
+                  name,
+                  timestamp,
+                  upSqls,
+                  downSqls.reverse(),
+              )
+            : MigrationExecutor.getTemplate(
+                  name,
+                  timestamp,
+                  upSqls,
+                  downSqls.reverse(),
+              )
+
+        return {
+            fileContent,
+            hasSqlToRun: !!sqlInMemory.upQueries.length,
+        }
+    }
+
+    static createMigration({
+        name,
+        timestamp,
+        outputJs = false,
+    }: {
+        name: string
+        timestamp: number
+        outputJs?: boolean
+    }): string {
+        if (outputJs) {
+            return this.getJavascriptTemplate(name, timestamp, [], [])
+        }
+        return this.getTemplate(name, timestamp, [], [])
+    }
+
+    private static getTemplate(
+        name: string,
+        timestamp: number,
+        upSqls: string[],
+        downSqls: string[],
+    ): string {
+        const migrationName = `${camelCase(name, true)}${timestamp}`
+
+        return `import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class ${migrationName} implements MigrationInterface {
+    name = '${migrationName}'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+${upSqls.join(`
+`)}
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+${downSqls.join(`
+`)}
+    }
+
+}
+`
+    }
+
+    /**
+     * Gets contents of the migration file in Javascript.
+     */
+    private static getJavascriptTemplate(
+        name: string,
+        timestamp: number,
+        upSqls: string[],
+        downSqls: string[],
+    ): string {
+        const migrationName = `${camelCase(name, true)}${timestamp}`
+
+        return `const { MigrationInterface, QueryRunner } = require("typeorm");
+
+module.exports = class ${migrationName} {
+    name = '${migrationName}'
+
+    async up(queryRunner) {
+${upSqls.join(`
+`)}
+    }
+
+    async down(queryRunner) {
+${downSqls.join(`
+`)}
+    }
+}
+`
+    }
+
+    private static prettifyQuery(query: string) {
+        const formattedQuery = format(query, { indent: "    " })
+        return (
+            "\n" + formattedQuery.replace(/^/gm, "            ") + "\n        "
+        )
+    }
+
+    private static queryParams(parameters: any[] | undefined): string {
+        if (!parameters || !parameters.length) {
+            return ""
+        }
+
+        return `, ${JSON.stringify(parameters)}`
     }
 }
