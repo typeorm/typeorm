@@ -765,7 +765,8 @@ export class SapDriver implements Driver {
                         this.getColumnLength(columnMetadata)) ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                // || tableColumn.comment !== columnMetadata.comment || // todo
+                tableColumn.comment !==
+                    this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
                     hanaNullComapatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
@@ -833,5 +834,16 @@ export class SapDriver implements Driver {
                 "@sap/hana-client",
             )
         }
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment
+
+        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+
+        return comment
     }
 }

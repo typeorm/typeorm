@@ -1248,19 +1248,56 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn)) {
+            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+                const explicitDefaultUp =
+                    (newColumn.default === null ||
+                        newColumn.default === undefined) &&
+                    !(
+                        oldColumn.default === null ||
+                        oldColumn.default === undefined
+                    )
+                const explicitDefaultDown =
+                    (oldColumn.default === null ||
+                        oldColumn.default === undefined) &&
+                    !(
+                        newColumn.default === null ||
+                        newColumn.default === undefined
+                    )
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
                             table,
-                        )} ALTER (${this.buildCreateColumnSql(newColumn)})`,
+                        )} ALTER (${this.buildCreateColumnSql(
+                            newColumn,
+                            explicitDefaultUp,
+                            newColumn.isNullable && !oldColumn.isNullable,
+                        )})`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
                             table,
-                        )} ALTER (${this.buildCreateColumnSql(oldColumn)})`,
+                        )} ALTER (${this.buildCreateColumnSql(
+                            oldColumn,
+                            explicitDefaultDown,
+                            oldColumn.isNullable && !newColumn.isNullable,
+                        )})`,
+                    ),
+                )
+            } else if (oldColumn.comment !== newColumn.comment) {
+                upQueries.push(
+                    new Query(
+                        `COMMENT ON COLUMN ${this.escapePath(table)}."${
+                            oldColumn.name
+                        }" IS ${this.escapeComment(newColumn.comment)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `COMMENT ON COLUMN ${this.escapePath(table)}."${
+                            newColumn.name
+                        }" IS ${this.escapeComment(oldColumn.comment)}`,
                     ),
                 )
             }
@@ -1409,74 +1446,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     upQueries.push(this.dropIndexSql(table, uniqueIndex!))
                     downQueries.push(this.createIndexSql(table, uniqueIndex!))
-                }
-            }
-
-            if (newColumn.default !== oldColumn.default) {
-                if (
-                    newColumn.default !== null &&
-                    newColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER ("${
-                                newColumn.name
-                            }" ${this.connection.driver.createFullType(
-                                newColumn,
-                            )} DEFAULT ${newColumn.default})`,
-                        ),
-                    )
-
-                    if (
-                        oldColumn.default !== null &&
-                        oldColumn.default !== undefined
-                    ) {
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} ALTER ("${
-                                    oldColumn.name
-                                }" ${this.connection.driver.createFullType(
-                                    oldColumn,
-                                )} DEFAULT ${oldColumn.default})`,
-                            ),
-                        )
-                    } else {
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} ALTER ("${
-                                    oldColumn.name
-                                }" ${this.connection.driver.createFullType(
-                                    oldColumn,
-                                )} DEFAULT NULL)`,
-                            ),
-                        )
-                    }
-                } else if (
-                    oldColumn.default !== null &&
-                    oldColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER ("${
-                                newColumn.name
-                            }" ${this.connection.driver.createFullType(
-                                newColumn,
-                            )} DEFAULT NULL)`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER ("${
-                                oldColumn.name
-                            }" ${this.connection.driver.createFullType(
-                                oldColumn,
-                            )} DEFAULT ${oldColumn.default})`,
-                        ),
-                    )
                 }
             }
 
@@ -2751,7 +2720,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                                         dbColumn["DEFAULT_VALUE"]
                                 }
                             }
-                            tableColumn.comment = "" // dbColumn["COLUMN_COMMENT"];
+                            if (dbColumn["COMMENTS"]) {
+                                tableColumn.comment = dbColumn["COMMENTS"]
+                            }
                             if (dbColumn["character_set_name"])
                                 tableColumn.charset =
                                     dbColumn["character_set_name"]
@@ -3278,6 +3249,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) {
+            return "NULL"
+        }
+
+        comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+
+        return `'${comment}'`
+    }
+
+    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table | View | string): string {
@@ -3325,22 +3309,34 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: TableColumn) {
+    protected buildCreateColumnSql(
+        column: TableColumn,
+        explicitDefault?: boolean,
+        explicitNullable?: boolean,
+    ) {
         let c =
             `"${column.name}" ` + this.connection.driver.createFullType(column)
         if (column.charset) c += " CHARACTER SET " + column.charset
         if (column.collation) c += " COLLATE " + column.collation
-        if (column.default !== undefined && column.default !== null)
-            // DEFAULT must be placed before NOT NULL
+        if (column.default !== undefined && column.default !== null) {
             c += " DEFAULT " + column.default
-        if (column.isNullable !== true && !column.isGenerated)
+        } else if (explicitDefault) {
+            c += " DEFAULT NULL"
+        }
+        if (!column.isGenerated) {
             // NOT NULL is not supported with GENERATED
-            c += " NOT NULL"
+            if (column.isNullable !== true) c += " NOT NULL"
+            else if (explicitNullable) c += " NULL"
+        }
         if (
             column.isGenerated === true &&
             column.generationStrategy === "increment"
-        )
+        ) {
             c += " GENERATED ALWAYS AS IDENTITY"
+        }
+        if (column.comment) {
+            c += ` COMMENT ${this.escapeComment(column.comment)}`
+        }
 
         return c
     }
