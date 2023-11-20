@@ -1128,6 +1128,21 @@ export class EntityMetadataBuilder {
      * Creates indices for the table of single table inheritance.
      */
     protected createKeysForTableInheritance(entityMetadata: EntityMetadata) {
+        const isDiscriminatorColumnAlreadyIndexed = entityMetadata.indices.some(
+            ({ givenColumnNames }) =>
+                !!givenColumnNames &&
+                Array.isArray(givenColumnNames) &&
+                givenColumnNames.length === 1 &&
+                givenColumnNames[0] ===
+                    entityMetadata.discriminatorColumn?.databaseName,
+        )
+
+        // If the discriminator column is already indexed, there is no need to
+        // add another index on top of it.
+        if (isDiscriminatorColumnAlreadyIndexed) {
+            return
+        }
+
         entityMetadata.indices.push(
             new IndexMetadata({
                 entityMetadata: entityMetadata,
