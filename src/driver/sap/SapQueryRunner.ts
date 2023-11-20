@@ -295,7 +295,22 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         onEnd?: Function,
         onError?: Function,
     ): Promise<ReadStream> {
-        throw new TypeORMError(`Stream is not supported by SAP driver.`)
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+
+        const databaseConnection = await this.connect()
+        this.driver.connection.logger.logQuery(query, parameters, this)
+
+        const prepareAsync = promisify(databaseConnection.prepare).bind(
+            databaseConnection,
+        )
+        const statement = await prepareAsync(query)
+        const resultSet = statement.executeQuery(parameters)
+        const stream = this.driver.streamClient.createObjectStream(resultSet)
+
+        if (onEnd) stream.on("end", onEnd)
+        if (onError) stream.on("error", onError)
+
+        return stream
     }
 
     /**
@@ -384,7 +399,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = ${parsedTableName.schema} AND "TABLE_NAME" = ${parsedTableName.tableName} AND "COLUMN_NAME" = '${columnName}'`
+        const sql = `SELECT * FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}'`
         const result = await this.query(sql)
         return result.length ? true : false
     }

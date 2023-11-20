@@ -48,6 +48,10 @@ export class SapDriver implements Driver {
     client: any
 
     /**
+     * Hana Client streaming extension.
+     */
+    streamClient: any
+    /**
      * Pool for master database.
      */
     master: any
@@ -825,6 +829,9 @@ export class SapDriver implements Driver {
         try {
             if (!this.options.hanaClientDriver) {
                 PlatformTools.load("@sap/hana-client")
+                this.streamClient = PlatformTools.load(
+                    "@sap/hana-client/extension/Stream",
+                )
             }
         } catch (e) {
             // todo: better error for browser env
