@@ -74,6 +74,7 @@ When using the `QueryBuilder`, you need to provide unique parameters in your `WH
 
 ```TypeScript
 const result = await dataSource
+    .getRepository(User)
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')
@@ -85,6 +86,7 @@ const result = await dataSource
 
 ```TypeScript
 const result = await dataSource
+    .getRepository(User)
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')
