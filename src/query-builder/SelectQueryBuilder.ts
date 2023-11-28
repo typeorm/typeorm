@@ -2348,6 +2348,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                     .join(" AND ")
 
+                if (!condition)
+                    throw new TypeORMError(
+                        `Relation ${relation.entityMetadata.name}.${relation.propertyName} does not have join columns.`,
+                    )
+
                 return (
                     " " +
                     joinAttr.direction +
