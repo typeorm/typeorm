@@ -1,5 +1,5 @@
 # Eager and Lazy Relations
-
+#Eager and Lazy 
 ## Eager relations
 
 Eager relations are loaded automatically each time you load entities from the database.
