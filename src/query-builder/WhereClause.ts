@@ -1,6 +1,6 @@
 type WrappingOperator = "not" | "brackets";
 
-type PredicateOperator = "lessThan" | "lessThanOrEqual" | "moreThan" | "moreThanOrEqual" | "equal" | "notEqual" | "ilike" | "like" | "between" | "in" | "any" | "isNull";
+type PredicateOperator = "lessThan" | "lessThanOrEqual" | "moreThan" | "moreThanOrEqual" | "equal" | "notEqual" | "ilike" | "like" | "between" | "in" | "any" | "isNull" | "and";
 
 export interface WherePredicateOperator {
     operator: PredicateOperator;
