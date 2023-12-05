@@ -1,6 +1,7 @@
 import {
     EntitySubscriberInterface,
     EventSubscriber,
+    InsertEvent,
     LoadEvent,
     UpdateEvent,
 } from "../../../../src"
@@ -27,7 +28,7 @@ export class SettingSubscriber implements EntitySubscriberInterface {
         this.counter.updates++
     }
 
-    beforeInsert(event: UpdateEvent<any>): void {
+    beforeInsert(event: InsertEvent<any>): void {
         this.counter.inserts++
     }
 

@@ -300,6 +300,7 @@ export class SubjectExecutor {
                     result,
                     subject.metadata,
                     subject.entity!,
+                    subject.identifier,
                 ),
             )
         if (this.updateSubjects.length)
