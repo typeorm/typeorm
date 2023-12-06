@@ -675,20 +675,25 @@ export class Repository<Entity extends ObjectLiteral> {
      * Extends repository with provided functions.
      */
     extend<CustomRepository>(
-        custom: CustomRepository & ThisType<this & CustomRepository>,
+        customs: CustomRepository & ThisType<this & CustomRepository>,
     ): this & CustomRepository {
         // return {
         //     ...this,
         //     ...custom
         // };
-        const thisRepo = this.constructor as new (...args: any[]) => typeof this
+        const thisRepo: any = this.constructor
         const { target, manager, queryRunner } = this
-        const cls = new (class extends thisRepo {})(
-            target,
-            manager,
-            queryRunner,
-        )
-        Object.assign(cls, custom)
-        return cls as any
+        const ChildClass = class extends thisRepo {
+            constructor(
+                target: EntityTarget<Entity>,
+                manager: EntityManager,
+                queryRunner?: QueryRunner,
+            ) {
+                super(target, manager, queryRunner)
+            }
+        }
+        for (const custom in customs)
+            ChildClass.prototype[custom] = customs[custom]
+        return new ChildClass(target, manager, queryRunner) as any
     }
 }

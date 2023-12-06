@@ -1,5 +1,6 @@
 import { DefaultAuthentication } from "./authentication/DefaultAuthentication"
 import { AzureActiveDirectoryAccessTokenAuthentication } from "./authentication/AzureActiveDirectoryAccessTokenAuthentication"
+import { AzureActiveDirectoryDefaultAuthentication } from "./authentication/AzureActiveDirectoryDefaultAuthentication"
 import { AzureActiveDirectoryMsiAppServiceAuthentication } from "./authentication/AzureActiveDirectoryMsiAppServiceAuthentication"
 import { AzureActiveDirectoryMsiVmAuthentication } from "./authentication/AzureActiveDirectoryMsiVmAuthentication"
 import { AzureActiveDirectoryPasswordAuthentication } from "./authentication/AzureActiveDirectoryPasswordAuthentication"
@@ -10,6 +11,7 @@ export type SqlServerConnectionCredentialsAuthenticationOptions =
     | DefaultAuthentication
     | NtlmAuthentication
     | AzureActiveDirectoryAccessTokenAuthentication
+    | AzureActiveDirectoryDefaultAuthentication
     | AzureActiveDirectoryMsiAppServiceAuthentication
     | AzureActiveDirectoryMsiVmAuthentication
     | AzureActiveDirectoryPasswordAuthentication

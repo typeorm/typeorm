@@ -66,12 +66,13 @@ commands:
               unzip -qqo node_modules/oracledb/instantclient.zip -d node_modules/oracledb/
               rm node_modules/oracledb/instantclient.zip
 
-              DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
+              sudo apt-get update -qq && sudo apt-get -qq -y install libaio1
               (cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/ ||
                 cp /usr/lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/)
             fi
           environment:
             BLOB_URL: https://download.oracle.com/otn_software/linux/instantclient/19800/instantclient-basiclite-linux.x64-19.8.0.0.0dbru.zip
+            DEBIAN_FRONTEND: noninteractive
       - save_cache:
           name: Save node_modules cache
           key: node_modules-{{ checksum "package-lock.json" }}
@@ -82,7 +83,7 @@ jobs:
   lint:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:16
+      - image: cimg/node:16.20.0
     steps:
       - checkout
       - install-packages:
@@ -92,7 +93,7 @@ jobs:
   build:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:16
+      - image: cimg/node:16.20.0
     steps:
       - checkout
       - install-packages:
@@ -113,7 +114,7 @@ jobs:
         default: "16"
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:<< parameters.node-version >>
+      - image: cimg/node:<< parameters.node-version >>
     steps:
       - checkout
       - setup_remote_docker
@@ -139,7 +140,7 @@ jobs:
               --volume /typeorm \
               --name typeorm-code \
               --workdir /typeorm \
-              circleci/node:<< parameters.node-version >> \
+              cimg/node:<< parameters.node-version >> \
               /bin/bash -c "sudo chmod 777 /typeorm && sudo chown circleci /typeorm"
             docker cp ./ typeorm-code:/typeorm
       - run:
@@ -194,7 +195,7 @@ jobs:
               --tty \
               --workdir /typeorm \
               --name typeorm-testrunner \
-              circleci/node:<< parameters.node-version >> \
+              cimg/node:<< parameters.node-version >> \
               npx nyc npm run test-fast
 
             docker cp typeorm-testrunner:/typeorm/coverage/ ./
@@ -220,26 +221,26 @@ workflows:
           matrix:
             parameters:
               node-version:
-                - "14"
-                - "16"
+                - "14.21.3"
+                - "16.20.0"
       - test:
           name: test (cockroachdb) - Node v16
           requires:
             - lint
             - build
           databases: "cockroachdb"
-          node-version: "16"
+          node-version: "16.20.0"
       - test:
           name: test (oracle) - Node v16
           requires:
             - lint
             - build
           databases: "oracle"
-          node-version: "16"
+          node-version: "16.20.0"
       - test:
           name: test (postgres 12) - Node v16
           requires:
             - lint
             - build
           databases: "postgres-12"
-          node-version: "16"
+          node-version: "16.20.0"

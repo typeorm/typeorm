@@ -186,6 +186,12 @@ export interface SqlServerConnectionOptions
         readonly disableOutputReturning?: boolean
 
         /**
+         * A boolean, controlling whether MssqlParameter types char, varchar, and text are converted to their unicode equivalents, nchar, nvarchar, and ntext.
+         * (default: false, meaning that char/varchar/text parameters will be converted to nchar/nvarchar/ntext)
+         */
+        readonly disableAsciiToUnicodeParamConversion?: boolean
+
+        /**
          * Debug options
          */
         readonly debug?: {

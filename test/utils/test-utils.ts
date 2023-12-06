@@ -431,9 +431,6 @@ export async function createTestingConnections(
                     `SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`,
                 )
                 await queryRunner.query(
-                    `SET CLUSTER SETTING kv.raft_log.disable_synchronization_unsafe = 'true'`,
-                )
-                await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
                 )
             }

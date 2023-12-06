@@ -6,9 +6,9 @@ import {
     Table,
     TableColumn,
     TableForeignKey,
-    TypeORMError,
 } from "../.."
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { TypeORMError } from "../../error/TypeORMError"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
