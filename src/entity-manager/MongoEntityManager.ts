@@ -642,7 +642,7 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         query: ObjectLiteral,
         options?: FindOneAndDeleteOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndDelete(
             metadata.tableName,
@@ -659,7 +659,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         replacement: Document,
         options?: FindOneAndReplaceOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndReplace(
             metadata.tableName,
@@ -677,7 +677,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndUpdate(
             metadata.tableName,
