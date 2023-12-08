@@ -184,6 +184,7 @@ export class PostgresDriver implements Driver {
         "geography",
         "cube",
         "ltree",
+        "vector",
     ]
 
     /**
