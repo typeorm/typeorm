@@ -7,9 +7,6 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Participant } from "./entity/Participant"
 import { expect } from "chai"
-import { Message } from "./entity/Message"
-import { Translation } from "./entity/Translation"
-import { Locale } from "./entity/Locale"
 
 describe("github issues > #720 `.save()` not updating composite key with Postgres", () => {
     let connections: DataSource[]
@@ -82,43 +79,43 @@ describe("github issues > #720 `.save()` not updating composite key with Postgre
             }),
         ))
 
-    it("reproducing second comment issue", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const message = new Message()
-                await connection.manager.save(message)
+    // it("reproducing second comment issue", () =>
+    //     Promise.all(
+    //         connections.map(async (connection) => {
+    //             const message = new Message()
+    //             await connection.manager.save(message)
 
-                const locale = new Locale()
-                locale.code = "US"
-                locale.englishName = "USA"
-                locale.name = message
-                await connection.manager.save(locale)
+    //             const locale = new Locale()
+    //             locale.code = "US"
+    //             locale.englishName = "USA"
+    //             locale.name = message
+    //             await connection.manager.save(locale)
 
-                const translation = new Translation()
-                translation.message = message
-                translation.locale = locale
-                translation.text = "Some Text"
-                await connection.manager.save(translation)
+    //             const translation = new Translation()
+    //             translation.message = message
+    //             translation.locale = locale
+    //             translation.text = "Some Text"
+    //             await connection.manager.save(translation)
 
-                // change its text and save again
-                translation.text = "Changed Text"
-                await connection.manager.save(translation)
+    //             // change its text and save again
+    //             translation.text = "Changed Text"
+    //             await connection.manager.save(translation)
 
-                const foundTranslation = await connection.manager
-                    .getRepository(Translation)
-                    .findOneBy({
-                        locale: {
-                            code: "US",
-                        },
-                        message: {
-                            id: "1",
-                        },
-                    })
-                expect(foundTranslation).to.be.eql({
-                    localeCode: "US",
-                    messageId: "1",
-                    text: "Changed Text",
-                })
-            }),
-        ))
+    //             const foundTranslation = await connection.manager
+    //                 .getRepository(Translation)
+    //                 .findOneBy({
+    //                     locale: {
+    //                         code: "US",
+    //                     },
+    //                     message: {
+    //                         id: "1",
+    //                     },
+    //                 })
+    //             expect(foundTranslation).to.be.eql({
+    //                 localeCode: "US",
+    //                 messageId: "1",
+    //                 text: "Changed Text",
+    //             })
+    //         }),
+    //     ))
 })

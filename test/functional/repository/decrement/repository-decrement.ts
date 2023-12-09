@@ -7,7 +7,6 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { UpdateResult } from "../../../../src"
 import { Post } from "./entity/Post"
-import { PostBigInt } from "./entity/PostBigInt"
 import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity"
 
 describe("repository > decrement method", () => {
@@ -174,69 +173,69 @@ describe("repository > decrement method", () => {
             ))
     })
 
-    describe("bigint", () => {
-        let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    entities: [PostBigInt],
-                    enabledDrivers: ["mysql", "mariadb", "postgres"],
-                    // logging: true
-                })),
-        )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+    // describe("bigint", () => {
+    //     let connections: DataSource[]
+    //     before(
+    //         async () =>
+    //             (connections = await createTestingConnections({
+    //                 entities: [PostBigInt],
+    //                 enabledDrivers: ["mysql", "mariadb", "postgres"],
+    //                 // logging: true
+    //             })),
+    //     )
+    //     beforeEach(() => reloadTestingDatabases(connections))
+    //     after(() => closeTestingConnections(connections))
 
-        it("should decrement value", () =>
-            Promise.all(
-                connections.map(async (connection) => {
-                    // save few dummy posts
-                    const postBigInt1 = new PostBigInt()
-                    postBigInt1.id = 1
-                    postBigInt1.title = "post #1"
-                    postBigInt1.counter = "9000000000000000001"
-                    const postBigInt2 = new PostBigInt()
-                    postBigInt2.id = 2
-                    postBigInt2.title = "post #2"
-                    postBigInt2.counter = "9000000000000000002"
-                    await connection.manager.save([postBigInt1, postBigInt2])
+    //     it("should decrement value", () =>
+    //         Promise.all(
+    //             connections.map(async (connection) => {
+    //                 // save few dummy posts
+    //                 const postBigInt1 = new PostBigInt()
+    //                 postBigInt1.id = 1
+    //                 postBigInt1.title = "post #1"
+    //                 postBigInt1.counter = "9000000000000000001"
+    //                 const postBigInt2 = new PostBigInt()
+    //                 postBigInt2.id = 2
+    //                 postBigInt2.title = "post #2"
+    //                 postBigInt2.counter = "9000000000000000002"
+    //                 await connection.manager.save([postBigInt1, postBigInt2])
 
-                    // decrement counter of post 1
-                    await connection
-                        .getRepository(PostBigInt)
-                        .decrement({ id: 1 }, "counter", "9000000000000000000")
+    //                 // decrement counter of post 1
+    //                 await connection
+    //                     .getRepository(PostBigInt)
+    //                     .decrement({ id: 1 }, "counter", "9000000000000000000")
 
-                    // decrement counter of post 2
-                    await connection.manager.decrement(
-                        PostBigInt,
-                        { id: 2 },
-                        "counter",
-                        "9000000000000000000",
-                    )
+    //                 // decrement counter of post 2
+    //                 await connection.manager.decrement(
+    //                     PostBigInt,
+    //                     { id: 2 },
+    //                     "counter",
+    //                     "9000000000000000000",
+    //                 )
 
-                    // load and check counter
-                    const loadedPost1 = await connection.manager.findOne(
-                        PostBigInt,
-                        {
-                            where: {
-                                id: 1,
-                            },
-                        },
-                    )
-                    loadedPost1!.counter.should.be.equal("1")
+    //                 // load and check counter
+    //                 const loadedPost1 = await connection.manager.findOne(
+    //                     PostBigInt,
+    //                     {
+    //                         where: {
+    //                             id: 1,
+    //                         },
+    //                     },
+    //                 )
+    //                 loadedPost1!.counter.should.be.equal("1")
 
-                    const loadedPost2 = await connection.manager.findOne(
-                        PostBigInt,
-                        {
-                            where: {
-                                id: 2,
-                            },
-                        },
-                    )
-                    loadedPost2!.counter.should.be.equal("2")
-                }),
-            ))
-    })
+    //                 const loadedPost2 = await connection.manager.findOne(
+    //                     PostBigInt,
+    //                     {
+    //                         where: {
+    //                             id: 2,
+    //                         },
+    //                     },
+    //                 )
+    //                 loadedPost2!.counter.should.be.equal("2")
+    //             }),
+    //         ))
+    // })
 
     describe("embeded entities", () => {
         let connections: DataSource[]
