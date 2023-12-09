@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "../../../../../src"
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "../../../../../src"
 import { Author } from "./Author";
 
 export type Translations = {
@@ -23,14 +23,4 @@ export class Post {
     @OneToOne(type => Author, {nullable: true})
     @JoinColumn()
     author:Author;
-
-    @OneToMany(type => Author, author => author.post)
-    authorsOneToMany:Author[];
-
-    @ManyToOne(type => Author, {nullable: true})
-    authorsManyToOne:Author;
-
-    @ManyToMany(type => Author, {nullable: true})
-    authorsManyToMany:Author[];
-
 }

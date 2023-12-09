@@ -1,5 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "../../../../../src"
-import { Post } from "./Post";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
 
 export type Translations = {
     fr: string;
@@ -15,7 +14,4 @@ export class Author {
         type: "jsonb",
     })
     name: Translations
-
-    @ManyToOne(type => Post, {nullable: true})
-    post: Post;
 }
