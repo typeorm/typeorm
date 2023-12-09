@@ -19,6 +19,8 @@ type PredicateOperator =
     | "and"
     | "jsonContains"
     | "or"
+    | "jsonOperator"
+
 
 export interface WherePredicateOperator {
     operator: PredicateOperator

@@ -8,5 +8,5 @@ export function Between<T>(
     from: T | FindOperator<T>,
     to: T | FindOperator<T>,
 ): FindOperator<T> {
-    return new FindOperator("between", [from, to] as any, true, true)
+    return new FindOperator("between", [from, to], true, true)
 }

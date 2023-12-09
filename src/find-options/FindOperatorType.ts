@@ -21,3 +21,4 @@ export type FindOperatorType =
     | "and"
     | "jsonContains"
     | "or"
+    | "jsonOperator"

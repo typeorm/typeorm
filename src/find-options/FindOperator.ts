@@ -24,7 +24,7 @@ export class FindOperator<T> {
     /**
      * Parameter value.
      */
-    private _value: T | FindOperator<T>
+    private _value: (T | FindOperator<T>) | (T | FindOperator<T>)[];
 
     /**
      * ObjectLiteral parameters.
@@ -52,7 +52,7 @@ export class FindOperator<T> {
 
     constructor(
         type: FindOperatorType,
-        value: T | FindOperator<T>,
+        value: (T | FindOperator<T>) | (T | FindOperator<T>)[],
         useParameter: boolean = true,
         multipleParameters: boolean = false,
         getSql?: SqlGeneratorType,
@@ -102,11 +102,17 @@ export class FindOperator<T> {
     /**
      * Gets the final value needs to be used as parameter value.
      */
-    get value(): T {
-        if (InstanceChecker.isFindOperator(this._value))
-            return this._value.value
+    get value(): T|T[] {
+        if(Array.isArray(this._value)) {
+            return this._value.map((value) => this.getValueFromValueOrFindOperator(value)).flat() as T[]
+        }
+        return this.getValueFromValueOrFindOperator(this._value)
+    }
 
-        return this._value
+    private getValueFromValueOrFindOperator(value: T | FindOperator<T>): T|T[] {
+        if (InstanceChecker.isFindOperator(value)) return value.value
+
+        return value
     }
 
     /**
