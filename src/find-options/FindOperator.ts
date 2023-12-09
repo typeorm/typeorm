@@ -24,7 +24,7 @@ export class FindOperator<T> {
     /**
      * Parameter value.
      */
-    private _value: (T | FindOperator<T>) | (T | FindOperator<T>)[];
+    private _value: (T | FindOperator<T>) | (T | FindOperator<T>)[]
 
     /**
      * ObjectLiteral parameters.
@@ -102,14 +102,18 @@ export class FindOperator<T> {
     /**
      * Gets the final value needs to be used as parameter value.
      */
-    get value(): T|T[] {
-        if(Array.isArray(this._value)) {
-            return this._value.map((value) => this.getValueFromValueOrFindOperator(value)).flat() as T[]
+    get value(): T | T[] {
+        if (Array.isArray(this._value)) {
+            return this._value
+                .map((value) => this.getValueFromValueOrFindOperator(value))
+                .flat() as T[]
         }
         return this.getValueFromValueOrFindOperator(this._value)
     }
 
-    private getValueFromValueOrFindOperator(value: T | FindOperator<T>): T|T[] {
+    private getValueFromValueOrFindOperator(
+        value: T | FindOperator<T>,
+    ): T | T[] {
         if (InstanceChecker.isFindOperator(value)) return value.value
 
         return value

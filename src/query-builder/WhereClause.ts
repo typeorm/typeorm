@@ -21,7 +21,6 @@ type PredicateOperator =
     | "or"
     | "jsonOperator"
 
-
 export interface WherePredicateOperator {
     operator: PredicateOperator
 

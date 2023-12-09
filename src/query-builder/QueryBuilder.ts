@@ -1137,8 +1137,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 return "(" + condition.parameters.join(" OR ") + ")"
             default:
                 throw new TypeError(
-                               `Unsupported FindOperator ${FindOperator.constructor.name}`,
-                         );
+                    `Unsupported FindOperator ${FindOperator.constructor.name}`,
+                )
         }
     }
 
@@ -1575,13 +1575,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         ),
                     ),
                 }
-            } else if (parameterValue.type === 'jsonOperator') {
-                const [jsonKey, operator]: [string, FindOperator<any>] = parameterValue.value;
+            } else if (parameterValue.type === "jsonOperator") {
+                const [jsonKey, operator]: [string, FindOperator<any>] =
+                    parameterValue.value
+
                 return {
                     operator: parameterValue.type,
-                    parameters: [aliasPath, jsonKey, this.createWhereConditionExpression(this.getWherePredicateCondition('', operator)) ]
+                    parameters: [
+                        aliasPath,
+                        jsonKey,
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition("", operator),
+                        ),
+                    ],
                 }
-
             } else {
                 return {
                     operator: parameterValue.type,
