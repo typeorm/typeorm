@@ -1,8 +1,8 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
 
 export type Translations = {
-    fr: string;
-    en: string;
+    fr: string
+    en: string
 }
 
 @Entity()

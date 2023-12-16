@@ -1,9 +1,15 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "../../../../../src"
-import { Author } from "./Author";
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "../../../../../src"
+import { Author } from "./Author"
 
 export type Translations = {
-    fr: string;
-    en: string;
+    fr: string
+    en: string
 }
 
 @Entity()
@@ -20,7 +26,7 @@ export class Post {
     })
     category: Translations
 
-    @OneToOne(type => Author, {nullable: true})
+    @OneToOne((type) => Author, { nullable: true })
     @JoinColumn()
-    author:Author;
+    author: Author
 }
