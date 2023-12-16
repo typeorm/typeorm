@@ -7,7 +7,7 @@ name: Manual workflow
 on:
   push:
     branches:
-    - master
+      - master
     
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -29,7 +29,6 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
 
-      - uses: ./.github/actions/install-packages
       - run: docker-compose up
       - name: Run tests
         run: npm test
