@@ -1,0 +1,43 @@
+# This is a basic workflow that is manually triggered
+
+name: Manual workflow
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  push:
+    branches:
+    - master
+    
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "greet"
+  test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+      - name: Cache dependencies...
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
+
+      - uses: ./.github/actions/install-packages
+      - run: docker-compose up
+      - name: Run tests
+        run: npm test
+
+      - name: Save Modules
+        id: cache-deps-save
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
