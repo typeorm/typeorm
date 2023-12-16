@@ -1097,7 +1097,7 @@ export class MongoEntityManager extends EntityManager {
             ) || {}
         if (id) {
             query["_id"] =
-                id instanceof objectIdInstance ? id : new ObjectId(id)
+                id instanceof objectIdInstance ? id : new objectIdInstance(id)
         }
         const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =
