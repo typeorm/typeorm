@@ -8,5 +8,10 @@ export function JSONOperator<T>(
     jsonKey: T,
     operator: FindOperator<T>,
 ): FindOperator<T> {
-    return new FindOperator("jsonOperator", [jsonKey, operator] as any, true, true)
+    return new FindOperator(
+        "jsonOperator",
+        [jsonKey, operator] as any,
+        true,
+        true,
+    )
 }

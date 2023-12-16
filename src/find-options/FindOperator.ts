@@ -24,7 +24,7 @@ export class FindOperator<T> {
     /**
      * Parameter value.
      */
-    private _value: (T | FindOperator<T>)
+    private _value: T | FindOperator<T>
 
     /**
      * ObjectLiteral parameters.
@@ -52,7 +52,7 @@ export class FindOperator<T> {
 
     constructor(
         type: FindOperatorType,
-        value: (T | FindOperator<T>),
+        value: T | FindOperator<T>,
         useParameter: boolean = true,
         multipleParameters: boolean = false,
         getSql?: SqlGeneratorType,
@@ -106,7 +106,7 @@ export class FindOperator<T> {
         if (InstanceChecker.isFindOperator(this._value))
             return this._value.value
 
-        return this._value;
+        return this._value
     }
 
     /**
