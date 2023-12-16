@@ -2788,17 +2788,31 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         aliasName: string,
         metadata: EntityMetadata,
     ): SelectQuery[] {
+        const isSimpleFilteredView =
+            metadata.tableType === "view" && !!metadata.inheritanceTree[1]
+
         const hasMainAlias = this.expressionMap.selects.some(
             (select) => select.selection === aliasName,
         )
 
         const columns: ColumnMetadata[] = []
         if (hasMainAlias) {
-            columns.push(
-                ...metadata.columns.filter(
-                    (column) => column.isSelect === true,
-                ),
-            )
+            if (isSimpleFilteredView) {
+                const parentMetadata = metadata.connection.getMetadata(
+                    metadata.inheritanceTree[1],
+                )
+                columns.push(
+                    ...parentMetadata.columns.filter(
+                        (column) => column.isSelect === true,
+                    ),
+                )
+            } else {
+                columns.push(
+                     ...metadata.columns.filter(
+                        (column) => column.isSelect === true,
+                    ),
+                )
+            }
         }
         columns.push(
             ...metadata.columns.filter((column) => {
@@ -4172,7 +4186,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 //     }
                 // }
 
-                // console.log("add sort", selection, aliasPath, direction, nulls)
+                // log("add sort", selection, aliasPath, direction, nulls)
                 this.addOrderBy(aliasPath, direction, nulls)
                 // this.orderBys.push({ alias: alias + "." + propertyPath, direction, nulls });
             } else if (embed) {

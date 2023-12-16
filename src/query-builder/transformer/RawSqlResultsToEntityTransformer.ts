@@ -127,7 +127,23 @@ export class RawSqlResultsToEntityTransformer {
         // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
         let metadata = alias.metadata
 
-        if (metadata.discriminatorColumn) {
+        const isSimpleFilteredView =
+            metadata.tableType === "view" && !!metadata.inheritanceTree[1]
+        const parentMetadata = isSimpleFilteredView ? metadata.connection.getMetadata(
+                metadata.inheritanceTree[1],
+        ): null;
+
+        const [discriminatorColumn, childrenEntityMetadatas] =
+            metadata.discriminatorColumn
+                ? [metadata.discriminatorColumn, metadata.childEntityMetadatas]
+                : isSimpleFilteredView
+                ? [
+                      parentMetadata!.discriminatorColumn,
+                      parentMetadata!.childEntityMetadatas,
+                  ]
+                : [undefined, undefined]
+
+        if (discriminatorColumn) {
             const discriminatorValues = rawResults.map(
                 (result) =>
                     result[
@@ -135,11 +151,11 @@ export class RawSqlResultsToEntityTransformer {
                             this.driver,
                             undefined,
                             alias.name,
-                            alias.metadata.discriminatorColumn!.databaseName,
+                            discriminatorColumn.databaseName,
                         )
                     ],
             )
-            const discriminatorMetadata = metadata.childEntityMetadatas.find(
+            const discriminatorMetadata = childrenEntityMetadatas.find(
                 (childEntityMetadata) => {
                     return (
                         typeof discriminatorValues.find(
