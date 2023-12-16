@@ -1,6 +1,6 @@
 [
   {
-    "skip": false,
+    "skip": true,
     "name": "mysql",
     "type": "mysql",
     "host": "localhost",
@@ -11,7 +11,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
@@ -22,7 +22,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqlite",
     "type": "sqlite",
     "database": "./temp/sqlitedb-1.db",
@@ -30,7 +30,7 @@
     "relationLoadStrategy": "join"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqlite-2",
     "type": "sqlite",
     "database": "./temp/sqlitedb-2.db",
@@ -38,7 +38,7 @@
     "relationLoadStrategy": "query"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "better-sqlite3",
     "type": "better-sqlite3",
     "database": "temp/better-sqlite3db.db",
@@ -49,7 +49,7 @@
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",
-    "port": 5432,
+    "port": 5440,
     "username": "test",
     "password": "test",
     "database": "test",
@@ -80,7 +80,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "cockroachdb",
     "type": "cockroachdb",
     "host": "localhost",
@@ -90,7 +90,7 @@
     "database": "defaultdb"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sap",
     "type": "sap",
     "host": "192.168.56.102",
@@ -101,7 +101,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",

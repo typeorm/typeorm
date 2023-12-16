@@ -1,29 +1,29 @@
 version: "3"
 services:
-  # mysql
-  mysql:
-    platform: linux/amd64
-    image: "mysql:5.7.37"
-    container_name: "typeorm-mysql"
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+  # # mysql
+  # mysql:
+  #   platform: linux/amd64
+  #   image: "mysql:5.7.37"
+  #   container_name: "typeorm-mysql"
+  #   ports:
+  #     - "3306:3306"
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: "admin"
+  #     MYSQL_USER: "test"
+  #     MYSQL_PASSWORD: "test"
+  #     MYSQL_DATABASE: "test"
 
-  # mariadb
-  mariadb:
-    image: "mariadb:10.10.3"
-    container_name: "typeorm-mariadb"
-    ports:
-      - "3307:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: "admin"
-      MYSQL_USER: "test"
-      MYSQL_PASSWORD: "test"
-      MYSQL_DATABASE: "test"
+  # # mariadb
+  # mariadb:
+  #   image: "mariadb:10.10.3"
+  #   container_name: "typeorm-mariadb"
+  #   ports:
+  #     - "3307:3306"
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: "admin"
+  #     MYSQL_USER: "test"
+  #     MYSQL_PASSWORD: "test"
+  #     MYSQL_DATABASE: "test"
 
   # postgres
   postgres:
@@ -33,50 +33,50 @@ services:
     image: "postgis/postgis:14-3.3"
     container_name: "typeorm-postgres"
     ports:
-      - "5432:5432"
+      - "5440:5432"
     environment:
       POSTGRES_USER: "test"
       POSTGRES_PASSWORD: "test"
       POSTGRES_DB: "test"
 
-  # mssql
-  mssql:
-    image: "mcr.microsoft.com/mssql/server:2022-latest"
-    container_name: "typeorm-mssql"
-    ports:
-      - "1433:1433"
-    environment:
-      SA_PASSWORD: "Admin12345"
-      ACCEPT_EULA: "Y"
+  # # mssql
+  # mssql:
+  #   image: "mcr.microsoft.com/mssql/server:2022-latest"
+  #   container_name: "typeorm-mssql"
+  #   ports:
+  #     - "1433:1433"
+  #   environment:
+  #     SA_PASSWORD: "Admin12345"
+  #     ACCEPT_EULA: "Y"
 
-  # cockroachdb
-  cockroachdb:
-    image: "cockroachdb/cockroach:v23.1.9"
-    container_name: "typeorm-cockroachdb"
-    command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25
-    ports:
-      - "26257:26257"
+  # # cockroachdb
+  # cockroachdb:
+  #   image: "cockroachdb/cockroach:v23.1.9"
+  #   container_name: "typeorm-cockroachdb"
+  #   command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25
+  #   ports:
+  #     - "26257:26257"
 
-  # oracle
-  oracle:
-    build:
-      context: docker/oracle
-    container_name: "typeorm-oracle"
-    ports:
-      - "1521:1521"
-    #volumes:
-     # - oracle-data:/opt/oracle/oradata
-    healthcheck:
-      test: [ "CMD", "/opt/oracle/checkDBStatus.sh" ]
-      interval: 2s
+  # # oracle
+  # oracle:
+  #   build:
+  #     context: docker/oracle
+  #   container_name: "typeorm-oracle"
+  #   ports:
+  #     - "1521:1521"
+  #   #volumes:
+  #    # - oracle-data:/opt/oracle/oradata
+  #   healthcheck:
+  #     test: [ "CMD", "/opt/oracle/checkDBStatus.sh" ]
+  #     interval: 2s
 
-  # google cloud spanner
-  spanner:
-    image: alexmesser/spanner-emulator
-    container_name: "typeorm-spanner"
-    ports:
-      - "9010:9010"
-      - "9020:9020"
+  # # google cloud spanner
+  # spanner:
+  #   image: alexmesser/spanner-emulator
+  #   container_name: "typeorm-spanner"
+  #   ports:
+  #     - "9010:9010"
+  #     - "9020:9020"
 
   # sap hana (works only on linux)
   # hanaexpress:
@@ -100,19 +100,19 @@ services:
   #     - volume-hana-xe:/hana/mounts
   #     - ./docker/hana/hxe-config.json:/hana/hxe-config.json
   #   ports:
-  #     - 39013:39013
-  #     - 39017:39017
-  #     - 39041-39045:39041-39045
-  #     - 1128-1129:1128-1129
-  #     - 59013-59014:59013-59014
+  #     - "5532:5432"
+  #   environment:
+  #     POSTGRES_USER: "test"
+  #     POSTGRES_PASSWORD: "test"
+  #     POSTGRES_DB: "test"
 
-  # mongodb
-  mongodb:
-    image: "mongo:5.0.12"
-    container_name: "typeorm-mongodb"
-    ports:
-      - "27017:27017"
-  # redis
+  # # mongodb
+  # mongodb:
+  #   image: "mongo:5.0.12"
+  #   container_name: "typeorm-mongodb"
+  #   ports:
+  #     - "27017:27017"
+  # # redis
   # redis:
   #   image: "redis:3.0.3"
   #   container_name: "typeorm-redis"

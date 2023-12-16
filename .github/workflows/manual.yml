@@ -31,6 +31,7 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
 
       - run: docker-compose up
+      - run: cp ormconfig.json.dist ormconfig.json
       - name: Run tests
         run: npm test
 
