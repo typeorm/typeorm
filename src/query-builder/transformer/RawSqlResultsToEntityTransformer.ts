@@ -299,7 +299,7 @@ export class RawSqlResultsToEntityTransformer {
             if (
                 join.relation &&
                 !metadata.relations.find(
-                    (relation) => relation === join.relation,
+                    (relation) => relation.target === join.relation?.target,
                 )
             )
                 return
