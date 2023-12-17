@@ -209,6 +209,10 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return prefix + tableName
     }
 
+    eagerJoinRelationAlias(alias: string, propertyPath: string): string {
+        return alias + "_" + propertyPath.replace(".", "_")
+    }
+
     nestedSetColumnNames = { left: "nsleft", right: "nsright" }
     materializedPathColumnName = "mpath"
 }

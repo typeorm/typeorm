@@ -391,7 +391,7 @@ export class FindOptionsUtils {
                 qb.connection.driver,
                 { joiner: "__" },
                 alias,
-                relation.propertyName,
+                relation.propertyPath,
             )
 
             // add a join for the relation
