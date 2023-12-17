@@ -64,10 +64,6 @@
     "./index.js": "./browser/index.js",
     "./index.mjs": "./browser/index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/typeorm/typeorm.git"
-  },
   "bugs": {
     "url": "https://github.com/typeorm/typeorm/issues"
   },
