@@ -463,7 +463,6 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
                 await Promise.all([student, person].map(pers => connection.manager.getRepository(Person).insert(pers)))
                 
-                console.log(await connection.manager.getRepository(Person).find())
                 const studentRetrieved = await connection.manager.getRepository(Student).findOneByOrFail({id: 1});
 
                 studentRetrieved.constructor.name.should.be.eql('Student')
