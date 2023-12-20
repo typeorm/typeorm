@@ -450,4 +450,24 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedPerson2!.should.not.haveOwnProperty("faculty")
             }),
         ))
+        it('should be able to insert children entities through the parent repository', () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const student = new Student()
+                student.id = 1;
+                student.name = "Alice"
+                student.faculty = "Economics"
+
+                const person = new Person()
+                person.name = 'Any Person'
+
+                await Promise.all([student, person].map(pers => connection.manager.getRepository(Person).insert(pers)))
+                
+                console.log(await connection.manager.getRepository(Person).find())
+                const studentRetrieved = await connection.manager.getRepository(Student).findOneByOrFail({id: 1});
+
+                studentRetrieved.constructor.name.should.be.eql('Student')
+                studentRetrieved.faculty.should.be.eql('Economics')
+            }),
+        ))
 })

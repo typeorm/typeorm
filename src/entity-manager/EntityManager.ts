@@ -667,11 +667,37 @@ export class EntityManager {
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
     ): Promise<InsertResult> {
-        return this.createQueryBuilder()
-            .insert()
-            .into(target)
-            .values(entity)
-            .execute()
+        const entities = Array.isArray(entity) ? entity : [entity];
+        const entitiesByTarget = entities.reduce<Record<string,{entities: QueryDeepPartialEntity<Entity>[]; target: any}>>((partialEntitiesByTarget, entity) => {
+            const targetTakingIntoAccountInheritance = this.connection
+            .getMetadata(target)
+            .findInheritanceMetadata(entity)
+            if(targetTakingIntoAccountInheritance.name in partialEntitiesByTarget){
+                partialEntitiesByTarget[targetTakingIntoAccountInheritance.name].entities.push(entity);
+            } else {
+                partialEntitiesByTarget[targetTakingIntoAccountInheritance.name] = {
+                    entities: [entity],
+                    target: targetTakingIntoAccountInheritance
+                };
+            }
+            return partialEntitiesByTarget;
+        },{})
+
+        const allInsertResults = await Promise.all(Object.values(entitiesByTarget).map(({entities, target}) => this.createQueryBuilder()
+        .insert()
+        .into(target)
+        .values(entity)
+        .execute()))
+
+        if(allInsertResults.length === 1) return allInsertResults[0];
+        return this.mergeInsertResults(allInsertResults)
+    }
+
+    private mergeInsertResults(insertResults: InsertResult[]){
+        const mergedInsertResult = new InsertResult();
+        mergedInsertResult.identifiers = insertResults.map(res => res.identifiers).flat();
+        mergedInsertResult.generatedMaps = insertResults.map(res => res.generatedMaps).flat();
+        return mergedInsertResult;
     }
 
     async upsert<Entity extends ObjectLiteral>(
