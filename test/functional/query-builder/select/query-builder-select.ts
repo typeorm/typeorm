@@ -12,6 +12,7 @@ import { Tag } from "./entity/Tag"
 import { HeroImage } from "./entity/HeroImage"
 import { ExternalPost } from "./entity/ExternalPost"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { RawResultNotFoundError } from "../../../../src/error/RawResultNotFoundError"
 
 describe("query builder > select", () => {
     let connections: DataSource[]
@@ -517,6 +518,89 @@ describe("query builder > select", () => {
                             .where("post.id = :id", { id: "2" })
                             .getOneOrFail(),
                     ).to.be.rejectedWith("")
+                }),
+            ))
+
+        it("should return a single raw result for getRawOne when found", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await connection.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    const rawResult = await connection
+                        .createQueryBuilder(Post, "post")
+                        .select("post.id", "id")
+                        .addSelect("post.title", "title")
+                        .where("post.id = :id", { id: "1" })
+                        .getRawOne()
+
+                    expect(rawResult).not.to.be.null
+                    expect(rawResult.id).to.equal("1")
+                    expect(rawResult.title).to.equal("Hello")
+                }),
+            ))
+
+        it("should return undefined for getRawOne when not found", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await connection.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    const entity = await connection
+                        .createQueryBuilder(Post, "post")
+                        .where("post.id = :id", { id: "2" })
+                        .getRawOne()
+
+                    expect(entity).to.be.null
+                }),
+            ))
+
+        it("should return a single entity for getRawOneOrFail when found", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await connection.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    const rawResult = await connection
+                        .createQueryBuilder(Post, "post")
+                        .select("post.id", "id")
+                        .addSelect("post.title", "title")
+                        .where("post.id = :id", { id: "1" })
+                        .getRawOneOrFail()
+
+                    expect(rawResult.id).to.equal("1")
+                    expect(rawResult.title).to.equal("Hello")
+                }),
+            ))
+
+        it("should throw an Error for getRawOneOrFail when not found", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await connection.getRepository(Post).save({
+                        id: "1",
+                        title: "Hello",
+                        description: "World",
+                        rating: 0,
+                    })
+
+                    await expect(
+                        connection
+                            .createQueryBuilder(Post, "post")
+                            .where("post.id = :id", { id: "2" })
+                            .getRawOneOrFail(),
+                    ).should.be.rejectedWith(RawResultNotFoundError)
                 }),
             ))
     })

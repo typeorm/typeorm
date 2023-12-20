@@ -45,6 +45,7 @@ import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { RawResultNotFoundError } from "../error/RawResultNotFoundError"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1601,6 +1602,19 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     async getRawOne<T = any>(): Promise<T | undefined> {
         return (await this.getRawMany())[0]
+    }
+
+    /**
+     * Gets first raw result returned by execution of generated query builder sql or rejects the returned promise on error.
+     */
+    async getRawOneOrFail<T = any>(): Promise<T> {
+        const rawResult = await this.getRawOne()
+
+        if (!rawResult) {
+            throw new RawResultNotFoundError(this.expressionMap.parameters)
+        }
+
+        return rawResult
     }
 
     /**
