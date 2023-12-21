@@ -542,6 +542,21 @@ export class EntityMetadataBuilder {
                         (column) => column.propertyName === args.propertyName,
                     )!
 
+                // for multiple table inheritance we can override default column values
+                if (
+                    entityMetadata.tableType === "regular" &&
+                    args.target !== entityMetadata.target
+                ) {
+                    const childArgs = this.metadataArgsStorage.columns.find(
+                        (c) =>
+                            c.propertyName === args.propertyName &&
+                            c.target === entityMetadata.target,
+                    )
+                    if (childArgs && childArgs.options.default) {
+                        args.options.default = childArgs.options.default
+                    }
+                }
+
                 const column = new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata,
