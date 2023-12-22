@@ -1,10 +1,10 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { CordovaConnectionOptions } from "./CordovaConnectionOptions"
-import { CordovaQueryRunner } from "./CordovaQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataSource } from "../../data-source/DataSource"
-import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {AbstractSqliteDriver} from "../sqlite-abstract/AbstractSqliteDriver"
+import {CordovaConnectionOptions} from "./CordovaConnectionOptions"
+import {CordovaQueryRunner} from "./CordovaQueryRunner"
+import {QueryRunner} from "../../query-runner/QueryRunner"
+import {DataSource} from "../../data-source/DataSource"
+import {DriverPackageNotInstalledError} from "../../error/DriverPackageNotInstalledError"
+import {ReplicationMode} from "../types/ReplicationMode"
 
 // needed for typescript compiler
 interface Window {
@@ -74,8 +74,9 @@ export class CordovaDriver extends AbstractSqliteDriver {
             this.options.extra || {},
         )
 
-        const connection = await new Promise<any>((resolve) => {
-            this.sqlite.openDatabase(options, (db: any) => resolve(db))
+        const connection = await new Promise<any>((resolve, fail) => {
+            //fix moianra - Added fail callback in order to throw an exception if the database cannot be opened.
+            this.sqlite.openDatabase(options, (db: any) => resolve(db), (err: any) => fail(err))
         })
 
         await new Promise<void>((ok, fail) => {
