@@ -70,6 +70,11 @@ export class YdbDriver implements Driver {
     withScaleColumnTypes: ColumnType[]
 
     /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] // TODO: Not implemented
+
+    /**
      * ORM has special columns and we need to know what database column types should be for those columns.
      * Column types are driver dependant.
      */
