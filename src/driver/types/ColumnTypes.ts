@@ -34,7 +34,7 @@ export type WithPrecisionColumnType =
     | "float" // mysql, mssql, oracle, sqlite
     | "double" // mysql, sqlite
     | "dec" // oracle, mssql, mysql
-    | "decimal" // mysql, postgres, mssql, sqlite
+    | "decimal" // mysql, postgres, mssql, sqlite, ydb
     | "smalldecimal" // sap
     | "fixed" // mysql
     | "numeric" // postgres, mssql, sqlite, mysql
@@ -97,9 +97,14 @@ export type SimpleColumnType =
     | "integer" // postgres, oracle, sqlite, cockroachdb
     | "int4" // postgres, cockroachdb
     | "int8" // postgres, sqlite, cockroachdb
-    | "int64" // cockroachdb, spanner
+    | "int32" // ydb
+    | "int64" // cockroachdb, spanner, ydb
     | "unsigned big int" // sqlite
-    | "float" // mysql, mssql, oracle, sqlite, sap
+    | "uint8" // ydb
+    | "uint32" // ydb
+    | "uint64" // ydb
+    | "float" // mysql, mssql, oracle, sqlite, sap, ydb
+    | "double" // ydb
     | "float4" // postgres, cockroachdb
     | "float8" // postgres, cockroachdb
     | "float64" // spanner
@@ -108,7 +113,7 @@ export type SimpleColumnType =
 
     // boolean types
     | "boolean" // postgres, sqlite, mysql, cockroachdb
-    | "bool" // postgres, mysql, cockroachdb, spanner
+    | "bool" // postgres, mysql, cockroachdb, spanner, ydb
 
     // text/binary types
     | "tinyblob" // mysql
@@ -133,13 +138,19 @@ export type SimpleColumnType =
     | "clob" // oracle, sqlite, sap
     | "nclob" // oracle, sap
     | "image" // mssql
+    | "dyNumber" // ydb
+    | "string" // ydb
+    | "utf8" // ydb
 
     // date types
     | "timetz" // postgres
     | "timestamptz" // postgres, cockroachdb
     | "timestamp with local time zone" // oracle
     | "smalldatetime" // mssql
-    | "date" // mysql, postgres, mssql, oracle, sqlite, spanner
+    | "date" // mysql, postgres, mssql, oracle, sqlite, spanner, ydb
+    | "datetime" // ydb
+    | "timestamp" // ydb
+    | "interval" //ydb
     | "interval year to month" // oracle
     | "interval day to second" // oracle
     | "interval" // postgres, cockroachdb
@@ -187,8 +198,10 @@ export type SimpleColumnType =
     | "tsquery" // postgres
     | "uuid" // postgres, cockroachdb, mariadb
     | "xml" // mssql, postgres
-    | "json" // mysql, postgres, cockroachdb, spanner
+    | "json" // mysql, postgres, cockroachdb, spanner, ydb
     | "jsonb" // postgres, cockroachdb
+    | "jsonDocument" // ydb
+    | "yson" // ydb
     | "varbinary" // mssql, sap
     | "hierarchyid" // mssql
     | "sql_variant" // mssql

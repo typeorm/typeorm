@@ -102,6 +102,12 @@
   },
   {
     "skip": false,
+    "name": "ydb",
+    "type": "ydb",
+    "database": "test"
+  },
+  {
+    "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",

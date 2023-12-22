@@ -37,6 +37,12 @@ export class PlatformTools {
             // switch case to explicit require statements for webpack compatibility.
             switch (name) {
                 /**
+                 * ydb
+                 */
+                case "ydb":
+                    return require("ydb-sdk")
+
+                /**
                  * spanner
                  */
                 case "spanner":
