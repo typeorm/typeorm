@@ -194,7 +194,16 @@ export class PostgresDriver implements Driver {
     /**
      * Gets list of spatial column data types.
      */
-    spatialTypes: ColumnType[] = ["geometry", "geography"]
+    spatialTypes: ColumnType[] = [
+        "geometry",
+        "geography",
+        "int4range",
+        "int8range",
+        "numrange",
+        "tsrange",
+        "tstzrange",
+        "daterange"
+    ]
 
     /**
      * Gets list of column data types that support length by a driver.
