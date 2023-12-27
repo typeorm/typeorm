@@ -5,7 +5,7 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 
-describe.only("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
+describe("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
     let dataSources: DataSource[]
 
     before(
