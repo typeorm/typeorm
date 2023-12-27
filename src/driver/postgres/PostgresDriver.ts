@@ -202,7 +202,7 @@ export class PostgresDriver implements Driver {
         "numrange",
         "tsrange",
         "tstzrange",
-        "daterange"
+        "daterange",
     ]
 
     /**

@@ -1,34 +1,50 @@
-import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections } from "../../utils/test-utils";
+import "reflect-metadata"
+import {
+    createTestingConnections,
+    closeTestingConnections,
+} from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 
 describe.only("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
-    let dataSources: DataSource[];
+    let dataSources: DataSource[]
 
-    before(async () => dataSources = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: false,
-        dropSchema: true,
-        enabledDrivers: ["postgres"],
-    }));
+    before(
+        async () =>
+            (dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: false,
+                dropSchema: true,
+                enabledDrivers: ["postgres"],
+            })),
+    )
 
-    after(() => closeTestingConnections(dataSources));
+    after(() => closeTestingConnections(dataSources))
 
-    it("can recognize model changes", () => Promise.all(dataSources.map(async dataSource => {
-      const sqlInMemory = await dataSource.driver.createSchemaBuilder().log();
+    it("can recognize model changes", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
 
-      console.log('sqlInMemory.upQueries', sqlInMemory.upQueries);
+                console.log("sqlInMemory.upQueries", sqlInMemory.upQueries)
 
-      sqlInMemory.upQueries.length.should.be.greaterThan(0);
-      sqlInMemory.downQueries.length.should.be.greaterThan(0);
-    })));
+                sqlInMemory.upQueries.length.should.be.greaterThan(0)
+                sqlInMemory.downQueries.length.should.be.greaterThan(0)
+            }),
+        ))
 
-    it("does not generate when no model changes", () => Promise.all(dataSources.map(async dataSource => {
-      await dataSource.driver.createSchemaBuilder().build();
+    it("does not generate when no model changes", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.driver.createSchemaBuilder().build()
 
-      const sqlInMemory = await dataSource.driver.createSchemaBuilder().log();
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
 
-      sqlInMemory.upQueries.length.should.be.equal(0);
-      sqlInMemory.downQueries.length.should.be.equal(0);
-    })));
-});
+                sqlInMemory.upQueries.length.should.be.equal(0)
+                sqlInMemory.downQueries.length.should.be.equal(0)
+            }),
+        ))
+})
