@@ -28,6 +28,12 @@ export interface TableIndexOptions {
     isSpatial?: boolean
 
     /**
+     * Builds the index using the concurrently option.
+     * This options is only supported for postgres database.
+     */
+    isConcurrent?: boolean
+
+    /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
      * Supported only in MySQL & SAP HANA.
      */

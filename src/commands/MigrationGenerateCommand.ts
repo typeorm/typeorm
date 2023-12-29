@@ -201,7 +201,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                         )} has been generated successfully.`,
                     ),
                 )
-                process.exit(0)
+                if (args.exitProcess !== false) {
+                    process.exit(0)
+                }
             }
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration generation:", err)

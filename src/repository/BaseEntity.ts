@@ -390,6 +390,26 @@ export class BaseEntity {
     }
 
     /**
+     * Checks whether any entity exists that matches the given options.
+     */
+    static exists<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        options?: FindManyOptions<T>,
+    ): Promise<boolean> {
+        return this.getRepository<T>().exists(options)
+    }
+
+    /**
+     * Checks whether any entity exists that matches the given conditions.
+     */
+    static existsBy<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        where: FindOptionsWhere<T>,
+    ): Promise<boolean> {
+        return this.getRepository<T>().existsBy(where)
+    }
+
+    /**
      * Counts entities that match given options.
      */
     static count<T extends BaseEntity>(

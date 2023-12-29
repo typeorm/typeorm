@@ -340,6 +340,81 @@ export class OrmUtils {
         return !haveSharedObjects
     }
 
+    /**
+     * Parses the CHECK constraint on the specified column and returns
+     * all values allowed by the constraint or undefined if the constraint
+     * is not present.
+     */
+    static parseSqlCheckExpression(
+        sql: string,
+        columnName: string,
+    ): string[] | undefined {
+        const enumMatch = sql.match(
+            new RegExp(
+                `"${columnName}" varchar CHECK\\s*\\(\\s*"${columnName}"\\s+IN\\s*`,
+            ),
+        )
+
+        if (enumMatch && enumMatch.index) {
+            const afterMatch = sql.substring(
+                enumMatch.index + enumMatch[0].length,
+            )
+
+            // This is an enum
+            // all enum values stored as a comma separated list
+            const chars = afterMatch
+
+            /**
+             * * When outside quotes: empty string
+             * * When inside single quotes: `'`
+             */
+            let currentQuotes = ""
+            let nextValue = ""
+            const enumValues: string[] = []
+            for (let idx = 0; idx < chars.length; idx++) {
+                const char = chars[idx]
+                switch (char) {
+                    case ",":
+                        if (currentQuotes == "") {
+                            enumValues.push(nextValue)
+                            nextValue = ""
+                        } else {
+                            nextValue += char
+                        }
+                        break
+                    case "'":
+                        if (currentQuotes == char) {
+                            const isNextCharQuote = chars[idx + 1] === char
+                            if (isNextCharQuote) {
+                                // double quote in sql should be treated as a
+                                // single quote that's part of the quoted string
+                                nextValue += char
+                                idx += 1 // skip that next quote
+                            } else {
+                                currentQuotes = ""
+                            }
+                        } else {
+                            currentQuotes = char
+                        }
+                        break
+                    case ")":
+                        if (currentQuotes == "") {
+                            enumValues.push(nextValue)
+                            return enumValues
+                        } else {
+                            nextValue += char
+                        }
+                        break
+                    default:
+                        if (currentQuotes != "") {
+                            nextValue += char
+                        }
+                }
+            }
+        }
+        return undefined
+    }
+
     // -------------------------------------------------------------------------
     // Private methods
     // -------------------------------------------------------------------------

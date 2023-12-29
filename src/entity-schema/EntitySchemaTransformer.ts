@@ -66,6 +66,15 @@ export class EntitySchemaTransformer {
                 } as InheritanceMetadataArgs)
             }
 
+            const { discriminatorValue } = options
+
+            if (discriminatorValue) {
+                metadataArgsStorage.discriminatorValues.push({
+                    target: options.target || options.name,
+                    value: discriminatorValue,
+                })
+            }
+
             this.transformColumnsRecursive(options, metadataArgsStorage)
         })
 

@@ -526,25 +526,47 @@ export class InsertQueryBuilder<
                         )}`
                     }
 
+                    const updatePart: string[] = []
+
                     if (Array.isArray(overwrite)) {
-                        query += ` ${conflictTarget} DO UPDATE SET `
-                        query += overwrite
-                            ?.map(
+                        updatePart.push(
+                            ...overwrite?.map(
                                 (column) =>
                                     `${this.escape(
                                         column,
                                     )} = EXCLUDED.${this.escape(column)}`,
-                            )
-                            .join(", ")
-                        query += " "
+                            ),
+                        )
                     } else if (columns) {
-                        query += ` ${conflictTarget} DO UPDATE SET `
-                        query += columns
-                            .map(
+                        updatePart.push(
+                            ...columns.map(
                                 (column) =>
                                     `${this.escape(column)} = :${column}`,
-                            )
-                            .join(", ")
+                            ),
+                        )
+                    }
+
+                    if (updatePart.length > 0) {
+                        query += ` ${conflictTarget} DO UPDATE SET `
+
+                        updatePart.push(
+                            ...this.expressionMap
+                                .mainAlias!.metadata.columns.filter(
+                                    (column) =>
+                                        column.isUpdateDate &&
+                                        !overwrite?.includes(
+                                            column.databaseName,
+                                        ),
+                                )
+                                .map(
+                                    (column) =>
+                                        `${this.escape(
+                                            column.databaseName,
+                                        )} = DEFAULT`,
+                                ),
+                        )
+
+                        query += updatePart.join(", ")
                         query += " "
                     }
 
