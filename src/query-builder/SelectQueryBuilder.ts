@@ -46,7 +46,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { DateUtils } from "../util/DateUtils"
-import { addYears } from "date-fns"
+import dayjs from "dayjs"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -3773,7 +3773,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     protected async loadRawResults(
         queryRunner: QueryRunner,
-        timestamp = addYears(new Date(), 10),
+        timestamp = dayjs().add(10, "year").toDate(),
     ) {
         this.setParameter(
             "timestamp",
