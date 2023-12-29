@@ -153,7 +153,7 @@ Let's create `app-data-source.ts` where we set up initial database connection op
 ```ts
 import { DataSource } from "typeorm"
 
-const myDataSource = new DataSource({
+export const myDataSource = new DataSource({
     type: "mysql",
     host: "localhost",
     port: 3306,

@@ -6,9 +6,9 @@ import {
     Table,
     TableColumn,
     TableForeignKey,
-    TypeORMError,
 } from "../.."
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { TypeORMError } from "../../error/TypeORMError"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
@@ -47,6 +47,10 @@ export class SapDriver implements Driver {
      */
     client: any
 
+    /**
+     * Hana Client streaming extension.
+     */
+    streamClient: any
     /**
      * Pool for master database.
      */
@@ -182,7 +186,7 @@ export class SapDriver implements Driver {
         cacheTime: "bigint",
         cacheDuration: "integer",
         cacheQuery: "nvarchar(5000)" as any,
-        cacheResult: "text",
+        cacheResult: "nclob",
         metadataType: "nvarchar",
         metadataDatabase: "nvarchar",
         metadataSchema: "nvarchar",
@@ -765,7 +769,8 @@ export class SapDriver implements Driver {
                         this.getColumnLength(columnMetadata)) ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                // || tableColumn.comment !== columnMetadata.comment || // todo
+                tableColumn.comment !==
+                    this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
                     hanaNullComapatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
@@ -825,6 +830,9 @@ export class SapDriver implements Driver {
         try {
             if (!this.options.hanaClientDriver) {
                 PlatformTools.load("@sap/hana-client")
+                this.streamClient = PlatformTools.load(
+                    "@sap/hana-client/extension/Stream",
+                )
             }
         } catch (e) {
             // todo: better error for browser env
@@ -833,5 +841,16 @@ export class SapDriver implements Driver {
                 "@sap/hana-client",
             )
         }
+    }
+
+    /**
+     * Escapes a given comment.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) return comment
+
+        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+
+        return comment
     }
 }

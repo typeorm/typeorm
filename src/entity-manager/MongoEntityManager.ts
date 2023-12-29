@@ -54,6 +54,7 @@ import {
     IndexInformationOptions,
     ObjectId,
     FilterOperators,
+    CountDocumentsOptions,
 } from "../driver/mongodb/typings"
 import { DataSource } from "../data-source/DataSource"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
@@ -502,6 +503,22 @@ export class MongoEntityManager extends EntityManager {
     /**
      * Count number of matching documents in the db to a query.
      */
+    countDocuments<Entity>(
+        entityClassOrName: EntityTarget<Entity>,
+        query: Filter<Document> = {},
+        options: CountDocumentsOptions = {},
+    ): Promise<number> {
+        const metadata = this.connection.getMetadata(entityClassOrName)
+        return this.mongoQueryRunner.countDocuments(
+            metadata.tableName,
+            query,
+            options,
+        )
+    }
+
+    /**
+     * Count number of matching documents in the db to a query.
+     */
     countBy<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         query?: ObjectLiteral,
@@ -625,7 +642,7 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         query: ObjectLiteral,
         options?: FindOneAndDeleteOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndDelete(
             metadata.tableName,
@@ -642,7 +659,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         replacement: Document,
         options?: FindOneAndReplaceOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndReplace(
             metadata.tableName,
@@ -660,7 +677,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndUpdate(
             metadata.tableName,

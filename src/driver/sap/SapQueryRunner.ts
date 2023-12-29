@@ -295,7 +295,22 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         onEnd?: Function,
         onError?: Function,
     ): Promise<ReadStream> {
-        throw new TypeORMError(`Stream is not supported by SAP driver.`)
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+
+        const databaseConnection = await this.connect()
+        this.driver.connection.logger.logQuery(query, parameters, this)
+
+        const prepareAsync = promisify(databaseConnection.prepare).bind(
+            databaseConnection,
+        )
+        const statement = await prepareAsync(query)
+        const resultSet = statement.executeQuery(parameters)
+        const stream = this.driver.streamClient.createObjectStream(resultSet)
+
+        if (onEnd) stream.on("end", onEnd)
+        if (onError) stream.on("error", onError)
+
+        return stream
     }
 
     /**
@@ -384,7 +399,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = ${parsedTableName.schema} AND "TABLE_NAME" = ${parsedTableName.tableName} AND "COLUMN_NAME" = '${columnName}'`
+        const sql = `SELECT * FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}'`
         const result = await this.query(sql)
         return result.length ? true : false
     }
@@ -1248,19 +1263,48 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn)) {
+            if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
                             table,
-                        )} ALTER (${this.buildCreateColumnSql(newColumn)})`,
+                        )} ALTER (${this.buildCreateColumnSql(
+                            newColumn,
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            !oldColumn.isNullable,
+                        )})`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
                             table,
-                        )} ALTER (${this.buildCreateColumnSql(oldColumn)})`,
+                        )} ALTER (${this.buildCreateColumnSql(
+                            oldColumn,
+                            !(
+                                newColumn.default === null ||
+                                newColumn.default === undefined
+                            ),
+                            !newColumn.isNullable,
+                        )})`,
+                    ),
+                )
+            } else if (oldColumn.comment !== newColumn.comment) {
+                upQueries.push(
+                    new Query(
+                        `COMMENT ON COLUMN ${this.escapePath(table)}."${
+                            oldColumn.name
+                        }" IS ${this.escapeComment(newColumn.comment)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `COMMENT ON COLUMN ${this.escapePath(table)}."${
+                            newColumn.name
+                        }" IS ${this.escapeComment(oldColumn.comment)}`,
                     ),
                 )
             }
@@ -1409,74 +1453,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     upQueries.push(this.dropIndexSql(table, uniqueIndex!))
                     downQueries.push(this.createIndexSql(table, uniqueIndex!))
-                }
-            }
-
-            if (newColumn.default !== oldColumn.default) {
-                if (
-                    newColumn.default !== null &&
-                    newColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER ("${
-                                newColumn.name
-                            }" ${this.connection.driver.createFullType(
-                                newColumn,
-                            )} DEFAULT ${newColumn.default})`,
-                        ),
-                    )
-
-                    if (
-                        oldColumn.default !== null &&
-                        oldColumn.default !== undefined
-                    ) {
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} ALTER ("${
-                                    oldColumn.name
-                                }" ${this.connection.driver.createFullType(
-                                    oldColumn,
-                                )} DEFAULT ${oldColumn.default})`,
-                            ),
-                        )
-                    } else {
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(
-                                    table,
-                                )} ALTER ("${
-                                    oldColumn.name
-                                }" ${this.connection.driver.createFullType(
-                                    oldColumn,
-                                )} DEFAULT NULL)`,
-                            ),
-                        )
-                    }
-                } else if (
-                    oldColumn.default !== null &&
-                    oldColumn.default !== undefined
-                ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER ("${
-                                newColumn.name
-                            }" ${this.connection.driver.createFullType(
-                                newColumn,
-                            )} DEFAULT NULL)`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ALTER ("${
-                                oldColumn.name
-                            }" ${this.connection.driver.createFullType(
-                                oldColumn,
-                            )} DEFAULT ${oldColumn.default})`,
-                        ),
-                    )
                 }
             }
 
@@ -2751,7 +2727,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                                         dbColumn["DEFAULT_VALUE"]
                                 }
                             }
-                            tableColumn.comment = "" // dbColumn["COLUMN_COMMENT"];
+                            if (dbColumn["COMMENTS"]) {
+                                tableColumn.comment = dbColumn["COMMENTS"]
+                            }
                             if (dbColumn["character_set_name"])
                                 tableColumn.charset =
                                     dbColumn["character_set_name"]
@@ -3278,6 +3256,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Escapes a given comment so it's safe to include in a query.
+     */
+    protected escapeComment(comment?: string) {
+        if (!comment) {
+            return "NULL"
+        }
+
+        comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+
+        return `'${comment}'`
+    }
+
+    /**
      * Escapes given table or view path.
      */
     protected escapePath(target: Table | View | string): string {
@@ -3291,56 +3282,36 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Concat database name and schema name to the foreign key name.
-     * Needs because FK name is relevant to the schema and database.
-     */
-    protected buildForeignKeyName(
-        fkName: string,
-        schemaName: string | undefined,
-        dbName: string | undefined,
-    ): string {
-        let joinedFkName = fkName
-        if (schemaName) joinedFkName = schemaName + "." + joinedFkName
-        if (dbName) joinedFkName = dbName + "." + joinedFkName
-
-        return joinedFkName
-    }
-
-    /**
-     * Removes parenthesis around default value.
-     * Sql server returns default value with parenthesis around, e.g.
-     *  ('My text') - for string
-     *  ((1)) - for number
-     *  (newsequentialId()) - for function
-     */
-    protected removeParenthesisFromDefault(defaultValue: any): any {
-        if (defaultValue.substr(0, 1) !== "(") return defaultValue
-        const normalizedDefault = defaultValue.substr(
-            1,
-            defaultValue.lastIndexOf(")") - 1,
-        )
-        return this.removeParenthesisFromDefault(normalizedDefault)
-    }
-
-    /**
      * Builds a query for create column.
      */
-    protected buildCreateColumnSql(column: TableColumn) {
+    protected buildCreateColumnSql(
+        column: TableColumn,
+        explicitDefault?: boolean,
+        explicitNullable?: boolean,
+    ) {
         let c =
             `"${column.name}" ` + this.connection.driver.createFullType(column)
         if (column.charset) c += " CHARACTER SET " + column.charset
         if (column.collation) c += " COLLATE " + column.collation
-        if (column.default !== undefined && column.default !== null)
-            // DEFAULT must be placed before NOT NULL
+        if (column.default !== undefined && column.default !== null) {
             c += " DEFAULT " + column.default
-        if (column.isNullable !== true && !column.isGenerated)
+        } else if (explicitDefault) {
+            c += " DEFAULT NULL"
+        }
+        if (!column.isGenerated) {
             // NOT NULL is not supported with GENERATED
-            c += " NOT NULL"
+            if (column.isNullable !== true) c += " NOT NULL"
+            else if (explicitNullable) c += " NULL"
+        }
         if (
             column.isGenerated === true &&
             column.generationStrategy === "increment"
-        )
+        ) {
             c += " GENERATED ALWAYS AS IDENTITY"
+        }
+        if (column.comment) {
+            c += ` COMMENT ${this.escapeComment(column.comment)}`
+        }
 
         return c
     }

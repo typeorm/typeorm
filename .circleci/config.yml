@@ -221,7 +221,6 @@ workflows:
           matrix:
             parameters:
               node-version:
-                - "14.21.3"
                 - "16.20.0"
       - test:
           name: test (mssql) - Node v16
