@@ -26,32 +26,37 @@ describe("github issues > #9965", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should pass entityId to afterInsert method", async () => {
-        const [dataSource] = dataSources
+    it("should pass entityId to afterInsert method", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const testBook = dataSource.manager.create(Book, {
+                    name: "TestPost",
+                })
+                await dataSource.manager.save(testBook)
 
-        const testBook = dataSource.manager.create(Book, { name: "TestPost" })
-        await dataSource.manager.save(testBook)
+                const testUser = dataSource.manager.create(User, {
+                    name: "TestUser",
+                })
+                await dataSource.manager.save(testUser)
 
-        const testUser = dataSource.manager.create(User, { name: "TestUser" })
-        await dataSource.manager.save(testUser)
+                testUser.borrowed = [testBook]
 
-        testUser.borrowed = [testBook]
+                const [subscriber] = dataSource.subscribers
+                const beforeInsert = spy(subscriber, "afterInsert")
 
-        const [subscriber] = dataSource.subscribers
-        const beforeInsert = spy(subscriber, "afterInsert")
+                await dataSource.manager.save(testUser)
 
-        await dataSource.manager.save(testUser)
-
-        expect(beforeInsert.called).to.be.true
-        expect(
-            beforeInsert.calledWith(
-                Sinon.match((event) => {
-                    return (
-                        typeof event.entityId?.userId === "string" &&
-                        typeof event.entityId?.bookId === "string"
-                    )
-                }),
-            ),
-        ).to.be.ok
-    })
+                expect(beforeInsert.called).to.be.true
+                expect(
+                    beforeInsert.calledWith(
+                        Sinon.match((event) => {
+                            return (
+                                typeof event.entityId?.userId === "string" &&
+                                typeof event.entityId?.bookId === "string"
+                            )
+                        }),
+                    ),
+                ).to.be.ok
+            }),
+        ))
 })
