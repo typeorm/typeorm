@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../src/index.js"
 
 describe("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
     let dataSources: DataSource[]
@@ -26,8 +26,6 @@ describe("github issues > #10567 Postgres: Gist index on daterange column recrea
                 const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
-
-                console.log("sqlInMemory.upQueries", sqlInMemory.upQueries)
 
                 sqlInMemory.upQueries.length.should.be.greaterThan(0)
                 sqlInMemory.downQueries.length.should.be.greaterThan(0)

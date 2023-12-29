@@ -1,28 +1,37 @@
-import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    Index,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
-} from "../../../../src"
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "../../../../src"
 
 @Entity()
 export class AddressHistory {
     @PrimaryGeneratedColumn("uuid")
     uuid: string
 
-    @CreateDateColumn()
-    createdAt: Date
-
-    @UpdateDateColumn()
-    updatedAt: Date
-
+    @Index()
     @Column({ type: "uuid" })
     entityUuid: string
 
+    @Index()
     @Column({ type: "uuid" })
     addressUuid: string
+
+    @Index({ spatial: true })
+    @Column({ type: "int4range" })
+    int4range: string
+
+    @Index({ spatial: true })
+    @Column({ type: "int8range" })
+    int8range: string
+
+    @Index({ spatial: true })
+    @Column({ type: "numrange" })
+    numrange: string
+
+    @Index({ spatial: true })
+    @Column({ type: "tsrange" })
+    tsrange: string
+
+    @Index({ spatial: true })
+    @Column({ type: "tstzrange" })
+    tstzrange: string
 
     @Index({ spatial: true })
     @Column({ type: "daterange" })
