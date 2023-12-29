@@ -272,9 +272,6 @@ Different RDBMS-es have their own specific options.
 -   `pool.maxWaitingClients` - maximum number of queued requests allowed, additional acquire calls will be callback with
     an err in a future cycle of the event loop.
 
--   `pool.testOnBorrow` - should the pool validate resources before giving them to clients. Requires that either
-    `factory.validate` or `factory.validateAsync` to be specified.
-
 -   `pool.acquireTimeoutMillis` - max milliseconds an `acquire` call will wait for a resource before timing out.
     (default no limit), if supplied should non-zero positive integer.
 
