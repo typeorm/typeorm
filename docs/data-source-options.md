@@ -239,6 +239,7 @@ Different RDBMS-es have their own specific options.
 -   `database` - Database name
 
 ## `mssql` data source options
+Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
 
