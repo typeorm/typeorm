@@ -355,7 +355,7 @@ export class MongoRepository<
     findOneAndDelete(
         query: ObjectLiteral,
         options?: FindOneAndDeleteOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         return this.manager.findOneAndDelete(
             this.metadata.tableName,
             query,
@@ -370,7 +370,7 @@ export class MongoRepository<
         query: ObjectLiteral,
         replacement: Object,
         options?: FindOneAndReplaceOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         return this.manager.findOneAndReplace(
             this.metadata.tableName,
             query,
@@ -386,7 +386,7 @@ export class MongoRepository<
         query: ObjectLiteral,
         update: Object,
         options?: FindOneAndUpdateOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         return this.manager.findOneAndUpdate(
             this.metadata.tableName,
             query,

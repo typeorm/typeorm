@@ -3311,13 +3311,14 @@ export class PostgresQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `INNER JOIN "pg_am" "am" ON "i"."relam" = "am"."oid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('r', 'p') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
@@ -3416,47 +3417,60 @@ export class PostgresQueryRunner
 
                             if (
                                 tableColumn.type === "numeric" ||
+                                tableColumn.type === "numeric[]" ||
                                 tableColumn.type === "decimal" ||
                                 tableColumn.type === "float"
                             ) {
+                                let numericPrecision =
+                                    dbColumn["numeric_precision"]
+                                let numericScale = dbColumn["numeric_scale"]
+                                if (dbColumn["data_type"] === "ARRAY") {
+                                    const numericSize = dbColumn[
+                                        "format_type"
+                                    ].match(
+                                        /^numeric\(([0-9]+),([0-9]+)\)\[\]$/,
+                                    )
+                                    if (numericSize) {
+                                        numericPrecision = +numericSize[1]
+                                        numericScale = +numericSize[2]
+                                    }
+                                }
                                 // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
                                 // we set 'undefined' in to unspecified property to avoid changing column on sync
                                 if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
-                                    tableColumn.precision =
-                                        dbColumn["numeric_precision"]
+                                    tableColumn.precision = numericPrecision
                                 } else if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
                                     tableColumn.precision = undefined
                                 }
                                 if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
-                                    tableColumn.scale =
-                                        dbColumn["numeric_scale"]
+                                    tableColumn.scale = numericScale
                                 } else if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
                                     tableColumn.scale = undefined
@@ -3926,12 +3940,7 @@ export class PostgresQueryRunner
                         columnNames: indices.map((i) => i["column_name"]),
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
-                        isSpatial: indices.every(
-                            (i) =>
-                                this.driver.spatialTypes.indexOf(
-                                    i["type_name"],
-                                ) >= 0,
-                        ),
+                        isSpatial: constraint["index_type"] === "gist",
                         isFulltext: false,
                     })
                 })
@@ -4244,9 +4253,9 @@ export class PostgresQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
-                index.name
-            }" ON ${this.escapePath(table)} ${
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}${
+                index.isConcurrent ? "CONCURRENTLY " : ""
+            }INDEX "${index.name}" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
@@ -4278,10 +4287,21 @@ export class PostgresQueryRunner
         let indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
+        const concurrent = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName.isConcurrent
+            : false
         const { schema } = this.driver.parseTableName(table)
         return schema
-            ? new Query(`DROP INDEX "${schema}"."${indexName}"`)
-            : new Query(`DROP INDEX "${indexName}"`)
+            ? new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY" : ""
+                  }"${schema}"."${indexName}"`,
+              )
+            : new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY" : ""
+                  }"${indexName}"`,
+              )
     }
 
     /**

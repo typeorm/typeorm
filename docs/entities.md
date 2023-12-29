@@ -308,12 +308,10 @@ await dataSource.manager
     .where(
         "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0",
     )
-    .orderBy({
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))":
-            {
-                order: "ASC",
-            },
-    })
+    .orderBy(
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))",
+        "ASC",
+    )
     .setParameters({
         // stringify GeoJSON
         origin: JSON.stringify(origin),

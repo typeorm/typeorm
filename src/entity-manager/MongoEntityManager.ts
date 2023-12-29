@@ -642,7 +642,7 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
         query: ObjectLiteral,
         options?: FindOneAndDeleteOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndDelete(
             metadata.tableName,
@@ -659,7 +659,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         replacement: Document,
         options?: FindOneAndReplaceOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndReplace(
             metadata.tableName,
@@ -677,7 +677,7 @@ export class MongoEntityManager extends EntityManager {
         query: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndUpdate(
             metadata.tableName,
@@ -1025,11 +1025,11 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const queryRunner = this.mongoQueryRunner
-        cursor.toArray = () =>
-            cursor
-                .clone()
-                .toArray()
-                .then(async (results: Entity[]) => {
+
+        ;(cursor as any)["__to_array_func"] = cursor.toArray
+        cursor.toArray = async () =>
+            ((cursor as any)["__to_array_func"] as CallableFunction)().then(
+                async (results: Entity[]) => {
                     const transformer = new DocumentToEntityTransformer()
                     const entities = transformer.transformAll(results, metadata)
                     // broadcast "load" events
@@ -1039,13 +1039,12 @@ export class MongoEntityManager extends EntityManager {
                         entities,
                     )
                     return entities
-                })
-
-        cursor.next = () =>
-            cursor
-                .clone()
-                .next()
-                .then(async (result: Entity) => {
+                },
+            )
+        ;(cursor as any)["__next_func"] = cursor.next
+        cursor.next = async () =>
+            ((cursor as any)["__next_func"] as CallableFunction)().then(
+                async (result: Entity) => {
                     if (!result) {
                         return result
                     }
@@ -1056,7 +1055,8 @@ export class MongoEntityManager extends EntityManager {
                         entity,
                     ])
                     return entity
-                })
+                },
+            )
     }
 
     protected filterSoftDeleted<Entity>(
@@ -1097,7 +1097,7 @@ export class MongoEntityManager extends EntityManager {
             ) || {}
         if (id) {
             query["_id"] =
-                id instanceof objectIdInstance ? id : new ObjectId(id)
+                id instanceof objectIdInstance ? id : new objectIdInstance(id)
         }
         const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =

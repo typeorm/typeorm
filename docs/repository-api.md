@@ -257,6 +257,22 @@ await repository.increment({ firstName: "Timber" }, "age", 3)
 await repository.decrement({ firstName: "Timber" }, "age", 3)
 ```
 
+-   `exists` - Check whether any entity exists that matches `FindOptions`.
+
+```typescript
+const exists = await repository.exists({
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `existsBy` - Checks whether any entity exists that matches `FindOptionsWhere`.
+
+```typescript
+const exists = await repository.existsBy({ firstName: "Timber" })
+```
+
 -   `count` - Counts entities that match `FindOptions`. Useful for pagination.
 
 ```typescript

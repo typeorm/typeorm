@@ -366,6 +366,7 @@ export class Broadcaster {
         result: BroadcasterResult,
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
     ): void {
         if (entity && metadata.afterInsertListeners.length) {
             metadata.afterInsertListeners.forEach((listener) => {
@@ -390,6 +391,7 @@ export class Broadcaster {
                         manager: this.queryRunner.manager,
                         entity: entity,
                         metadata: metadata,
+                        entityId: metadata.getEntityIdMixedMap(identifier),
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)

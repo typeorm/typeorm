@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 /**
  * Browser's implementation of the platform-specific tools.
  *
@@ -164,8 +166,8 @@ interface Window {
 }
 
 declare var window: Window;
-if (typeof window !== "undefined" && typeof require !== "undefined") {
-    window.Buffer = require("buffer/").Buffer;
+if (typeof window !== "undefined") {
+    window.Buffer = Buffer;
 }
 // NativeScript uses global, not window
 if (typeof global !== "undefined" && typeof require !== "undefined") {

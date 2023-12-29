@@ -2165,7 +2165,7 @@ export declare class Collection<TSchema extends Document = Document> {
     findOneAndDelete(
         filter: Filter<TSchema>,
         options?: FindOneAndDeleteOptions,
-    ): Promise<ModifyResult<TSchema>>
+    ): Promise<ModifyResult<TSchema> | null>
     /**
      * Find a document and replace it in one atomic operation. Requires a write lock for the duration of the operation.
      *
@@ -2177,7 +2177,7 @@ export declare class Collection<TSchema extends Document = Document> {
         filter: Filter<TSchema>,
         replacement: WithoutId<TSchema>,
         options?: FindOneAndReplaceOptions,
-    ): Promise<ModifyResult<TSchema>>
+    ): Promise<ModifyResult<TSchema> | null>
     /**
      * Find a document and update it in one atomic operation. Requires a write lock for the duration of the operation.
      *
@@ -2189,7 +2189,7 @@ export declare class Collection<TSchema extends Document = Document> {
         filter: Filter<TSchema>,
         update: UpdateFilter<TSchema>,
         options?: FindOneAndUpdateOptions,
-    ): Promise<ModifyResult<TSchema>>
+    ): Promise<ModifyResult<TSchema> | null>
     /**
      * Execute an aggregation framework pipeline against the collection, needs MongoDB \>= 2.2
      *
@@ -3787,7 +3787,7 @@ export declare interface GridFSBucketReadStreamOptionsWithRevision
  * @public
  */
 export declare class GridFSBucketWriteStream {
-    /* 
+    /*
     `implements NodeJS.WritableStream`
     Has to be removed, otherwise tsc places a `/// <reference types="vinyl-fs" />` in the output file,
     because vinyl-fs messed with NodeJS.WritableStream in the global scope:

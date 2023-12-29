@@ -213,16 +213,22 @@ workflows:
       - lint
       - build
       - test:
-          name: test (mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs) - Node v<< matrix.node-version >>
+          name: test (mysql mariadb postgres mongodb sqlite better-sqlite3 sqljs) - Node v<< matrix.node-version >>
           requires:
             - lint
             - build
-          databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs"
+          databases: "mysql mariadb postgres mongodb sqlite better-sqlite3 sqljs"
           matrix:
             parameters:
               node-version:
-                - "14.21.3"
                 - "16.20.0"
+      - test:
+          name: test (mssql) - Node v16
+          requires:
+            - lint
+            - build
+          databases: "mssql"
+          node-version: "16.20.0"
       - test:
           name: test (cockroachdb) - Node v16
           requires:

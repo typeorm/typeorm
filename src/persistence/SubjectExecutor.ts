@@ -300,6 +300,7 @@ export class SubjectExecutor {
                     result,
                     subject.metadata,
                     subject.entity!,
+                    subject.identifier,
                 ),
             )
         if (this.updateSubjects.length)
@@ -1077,6 +1078,9 @@ export class SubjectExecutor {
 
                 // entities does not have virtual columns
                 if (column.isVirtual) return
+
+                // if column is deletedAt
+                if (column.isDeleteDate) return
 
                 // update nullable columns
                 if (column.isNullable) {

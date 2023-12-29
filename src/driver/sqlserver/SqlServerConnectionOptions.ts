@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
 
 /**
@@ -310,6 +311,12 @@ export interface SqlServerConnectionOptions
          * List of read-from severs (slaves).
          */
         readonly slaves: SqlServerConnectionCredentialsOptions[]
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
 
     readonly poolSize?: never
