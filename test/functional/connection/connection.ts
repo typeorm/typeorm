@@ -42,7 +42,7 @@ describe("Connection", () => {
             return Promise.resolve()
         })
 
-        it("connection.isConnected should be false", () => {
+        it("connection.isInitialized should be false", () => {
             if (!dataSource) return
 
             dataSource.isInitialized.should.be.false
@@ -124,7 +124,7 @@ describe("Connection", () => {
         )
         afterEach(() => closeTestingConnections(connections))
 
-        it("connection.isConnected should be true", () =>
+        it("connection.isInitialized should be true", () =>
             connections.forEach((connection) => {
                 connection.isInitialized.should.be.true
             }))
@@ -273,7 +273,7 @@ describe("Connection", () => {
                 return connection.close().should.be.rejected // CannotCloseNotConnectedError
             }))
 
-        it("connection.isConnected should be false", () =>
+        it("connection.isInitialized should be false", () =>
             connections.forEach((connection) => {
                 connection.isInitialized.should.be.false
             }))

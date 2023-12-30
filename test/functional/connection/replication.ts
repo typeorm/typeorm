@@ -52,7 +52,7 @@ describe("Connection replication", () => {
             const post = new Post()
             post.title = "TypeORM Intro"
 
-            await connection
+            return connection
                 .createQueryBuilder()
                 .insert()
                 .into(Post)
@@ -62,7 +62,7 @@ describe("Connection replication", () => {
 
         afterEach(() => closeTestingConnections([connection]))
 
-        it("connection.isConnected should be true", () =>
+        it("connection.isInitialized should be true", () =>
             connection.isInitialized.should.be.true)
 
         it("query runners should go to the master by default", async () => {
