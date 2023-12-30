@@ -254,7 +254,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     fromDummy(): SelectQueryBuilder<any> {
         return this.from(
             this.connection.driver.dummyTableName ??
-                "(SELECT 1 AS dummy_column)",
+            "(SELECT 1 AS dummy_column)",
             "dummy_table",
         )
     }
@@ -1128,11 +1128,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             this.loadRelationIdAndMap(
                 this.expressionMap.mainAlias!.name +
-                    "." +
-                    relation.propertyPath,
+                "." +
+                relation.propertyPath,
                 this.expressionMap.mainAlias!.name +
-                    "." +
-                    relation.propertyPath,
+                "." +
+                relation.propertyPath,
                 options,
             )
         })
@@ -2090,9 +2090,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Creates "SELECT FROM" part of SQL query.
+     * Creates selection part of SQL query.
      */
-    protected createSelectExpression() {
+    protected createSelection() {
         if (!this.expressionMap.mainAlias)
             throw new TypeORMError(
                 "Cannot build query because main alias is not set (call qb#from method)",
@@ -2149,7 +2149,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 }
             }
         })
-
         // add all other selects
         this.expressionMap.selects
             .filter((select) => excludedSelects.indexOf(select) === -1)
@@ -2162,6 +2161,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         // if still selection is empty, then simply set it to all (*)
         if (allSelects.length === 0) allSelects.push({ selection: "*" })
+        return allSelects
+            .map(
+                (select) =>
+                    select.selection +
+                    (select.aliasName
+                        ? " AS " + this.escape(select.aliasName)
+                        : ""),
+            )
+            .join(", ")
+    }
+
+    /**
+     * Creates "SELECT FROM" part of SQL query.
+     */
+    protected createSelectExpression() {
+
+        const selection = this.createSelection();
 
         // Use certain index
         let useIndex: string = ""
@@ -2190,15 +2206,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             })
 
         const select = this.createSelectDistinctExpression()
-        const selection = allSelects
-            .map(
-                (select) =>
-                    select.selection +
-                    (select.aliasName
-                        ? " AS " + this.escape(select.aliasName)
-                        : ""),
-            )
-            .join(", ")
 
         return (
             select +
@@ -2319,7 +2326,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .inverseRelation!.joinColumns.map((joinColumn) => {
                         if (
                             relation.inverseEntityMetadata.tableType ===
-                                "entity-child" &&
+                            "entity-child" &&
                             relation.inverseEntityMetadata.discriminatorColumn
                         ) {
                             appendedCondition +=
@@ -2492,8 +2499,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         typeof orderBys[columnName] === "string"
                             ? orderBys[columnName]
                             : (orderBys[columnName] as any).order +
-                              " " +
-                              (orderBys[columnName] as any).nulls
+                            " " +
+                            (orderBys[columnName] as any).nulls
                     const selection = this.expressionMap.selects.find(
                         (s) => s.selection === columnName,
                     )
@@ -2819,8 +2826,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const nonSelectedPrimaryColumns = this.expressionMap.queryEntity
             ? metadata.primaryColumns.filter(
-                  (primaryColumn) => columns.indexOf(primaryColumn) === -1,
-              )
+                (primaryColumn) => columns.indexOf(primaryColumn) === -1,
+            )
             : []
         const allColumns = [...columns, ...nonSelectedPrimaryColumns]
         const finalSelects: SelectQuery[] = []
@@ -2843,8 +2850,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 ) {
                     const useLegacy = (
                         this.connection.driver as
-                            | MysqlDriver
-                            | AuroraMysqlDriver
+                        | MysqlDriver
+                        | AuroraMysqlDriver
                     ).options.legacySpatialSupport
                     const asText = useLegacy ? "AsText" : "ST_AsText"
                     selectionPath = `${asText}(${selectionPath})`
@@ -2872,11 +2879,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         aliasName: selection.aliasName
                             ? selection.aliasName
                             : DriverUtils.buildAlias(
-                                  this.connection.driver,
-                                  undefined,
-                                  aliasName,
-                                  column.databaseName,
-                              ),
+                                this.connection.driver,
+                                undefined,
+                                aliasName,
+                                column.databaseName,
+                            ),
                         // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                         virtual: selection.virtual,
                     })
@@ -2922,6 +2929,19 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const primaryColumns = metadata.primaryColumns
         const distinctAlias = this.escape(mainAlias)
 
+        if (
+            DriverUtils.isPostgresFamily(this.connection.driver) &&
+            this.expressionMap.selectDistinctOn.length > 0
+        ) {
+            const selectDistinctOnMap = this.expressionMap.selectDistinctOn
+                .map((on) => this.replacePropertyNames(on))
+                .join(", ")
+
+            return `COUNT(DISTINCT ON (${selectDistinctOnMap}) ${this.createSelection()})`
+        } else if (this.expressionMap.selectDistinct) {
+            return `COUNT(DISTINCT ${this.createSelection()})`
+        }
+        
         // If we aren't doing anything that will create a join, we can use a simpler `COUNT` instead
         // so we prevent poor query patterns in the most likely cases
         if (
@@ -3082,8 +3102,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (this.findOptions.select) {
                 const select = Array.isArray(this.findOptions.select)
                     ? OrmUtils.propertyPathsToTruthyObject(
-                          this.findOptions.select as string[],
-                      )
+                        this.findOptions.select as string[],
+                    )
                     : this.findOptions.select
 
                 this.buildSelect(
@@ -3101,8 +3121,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (this.findOptions.relations) {
                 const relations = Array.isArray(this.findOptions.relations)
                     ? OrmUtils.propertyPathsToTruthyObject(
-                          this.findOptions.relations,
-                      )
+                        this.findOptions.relations,
+                    )
                     : this.findOptions.relations
 
                 this.buildRelations(
@@ -3121,7 +3141,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         relations,
                         typeof this.findOptions.select === "object"
                             ? (this.findOptions
-                                  .select as FindOptionsSelect<any>)
+                                .select as FindOptionsSelect<any>)
                             : undefined,
                         this.expressionMap.mainAlias!.metadata,
                         this.expressionMap.mainAlias!.name,
@@ -3287,28 +3307,28 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.lock.mode === "pessimistic_write" ||
                     this.findOptions.lock.mode === "dirty_read" ||
                     this.findOptions.lock.mode ===
-                        "pessimistic_partial_write" ||
+                    "pessimistic_partial_write" ||
                     this.findOptions.lock.mode ===
-                        "pessimistic_write_or_fail" ||
+                    "pessimistic_write_or_fail" ||
                     this.findOptions.lock.mode === "for_no_key_update" ||
                     this.findOptions.lock.mode === "for_key_share"
                 ) {
                     const tableNames = this.findOptions.lock.tables
                         ? this.findOptions.lock.tables.map((table) => {
-                              const tableAlias =
-                                  this.expressionMap.aliases.find((alias) => {
-                                      return (
-                                          alias.metadata
-                                              .tableNameWithoutPrefix === table
-                                      )
-                                  })
-                              if (!tableAlias) {
-                                  throw new TypeORMError(
-                                      `"${table}" is not part of this query`,
-                                  )
-                              }
-                              return this.escape(tableAlias.name)
-                          })
+                            const tableAlias =
+                                this.expressionMap.aliases.find((alias) => {
+                                    return (
+                                        alias.metadata
+                                            .tableNameWithoutPrefix === table
+                                    )
+                                })
+                            if (!tableAlias) {
+                                throw new TypeORMError(
+                                    `"${table}" is not part of this query`,
+                                )
+                            }
+                            return this.escape(tableAlias.name)
+                        })
                         : undefined
                     this.setLock(
                         this.findOptions.lock.mode,
@@ -3525,7 +3545,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         // fixes #190. if all numbers then its safe to perform query without parameter
                         condition = `${mainAliasName}.${
                             metadata.primaryColumns[0].propertyPath
-                        } IN (${ids.join(", ")})`
+                            } IN (${ids.join(", ")})`
                     } else {
                         parameters["orm_distinct_ids"] = ids
                         condition =
@@ -3589,13 +3609,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     const select = Array.isArray(this.findOptions.select)
                         ? OrmUtils.propertyPathsToTruthyObject(
-                              this.findOptions.select as string[],
-                          )
+                            this.findOptions.select as string[],
+                        )
                         : this.findOptions.select
                     const relations = Array.isArray(this.findOptions.relations)
                         ? OrmUtils.propertyPathsToTruthyObject(
-                              this.findOptions.relations,
-                          )
+                            this.findOptions.relations,
+                        )
                         : this.findOptions.relations
 
                     const queryBuilder = this.createQueryBuilder()
@@ -3604,21 +3624,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         .setFindOptions({
                             select: select
                                 ? OrmUtils.deepValue(
-                                      select,
-                                      relation.propertyPath,
-                                  )
+                                    select,
+                                    relation.propertyPath,
+                                )
                                 : undefined,
                             order: this.findOptions.order
                                 ? OrmUtils.deepValue(
-                                      this.findOptions.order,
-                                      relation.propertyPath,
-                                  )
+                                    this.findOptions.order,
+                                    relation.propertyPath,
+                                )
                                 : undefined,
                             relations: relations
                                 ? OrmUtils.deepValue(
-                                      relations,
-                                      relation.propertyPath,
-                                  )
+                                    relations,
+                                    relation.propertyPath,
+                                )
                                 : undefined,
                             withDeleted: this.findOptions.withDeleted,
                             relationLoadStrategy:
@@ -3711,15 +3731,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     alias.metadata.findColumnWithPropertyPath(propertyPath)
                 orderByObject[
                     this.escape(parentAlias) +
-                        "." +
-                        this.escape(
-                            DriverUtils.buildAlias(
-                                this.connection.driver,
-                                undefined,
-                                aliasName,
-                                column!.databaseName,
-                            ),
-                        )
+                    "." +
+                    this.escape(
+                        DriverUtils.buildAlias(
+                            this.connection.driver,
+                            undefined,
+                            aliasName,
+                            column!.databaseName,
+                        ),
+                    )
                 ] = orderBys[orderCriteria]
             } else {
                 if (
@@ -3731,8 +3751,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 ) {
                     orderByObject[
                         this.escape(parentAlias) +
-                            "." +
-                            this.escape(orderCriteria)
+                        "." +
+                        this.escape(orderCriteria)
                     ] = orderBys[orderCriteria]
                 } else {
                     orderByObject[orderCriteria] = orderBys[orderCriteria]
@@ -3957,10 +3977,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             select: true,
                             selection:
                                 selection &&
-                                typeof selection[relationName] === "object"
+                                    typeof selection[relationName] === "object"
                                     ? (selection[
-                                          relationName
-                                      ] as FindOptionsSelect<any>)
+                                        relationName
+                                    ] as FindOptionsSelect<any>)
                                     : undefined,
                             alias: joinAlias,
                             parentAlias: alias,
@@ -3973,7 +3993,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         ) {
                             this.buildSelect(
                                 selection[
-                                    relationName
+                                relationName
                                 ] as FindOptionsSelect<any>,
                                 relation.inverseEntityMetadata,
                                 joinAlias,
@@ -3990,9 +4010,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         relationValue,
                         typeof selection === "object"
                             ? OrmUtils.deepValue(
-                                  selection,
-                                  relation.propertyPath,
-                              )
+                                selection,
+                                relation.propertyPath,
+                            )
                             : undefined,
                         relation.inverseEntityMetadata,
                         joinAlias,
@@ -4078,7 +4098,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             ) {
                                 this.buildSelect(
                                     selection[
-                                        relationName
+                                    relationName
                                     ] as FindOptionsSelect<any>,
                                     relation.inverseEntityMetadata,
                                     joinAlias,
@@ -4093,9 +4113,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         relationValue,
                         typeof selection === "object"
                             ? OrmUtils.deepValue(
-                                  selection,
-                                  relation.propertyPath,
-                              )
+                                selection,
+                                relation.propertyPath,
+                            )
                             : undefined,
                         relation.inverseEntityMetadata,
                         joinAlias,
@@ -4131,8 +4151,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         : order[key]
                 direction =
                     direction === "DESC" ||
-                    direction === "desc" ||
-                    direction === -1
+                        direction === "desc" ||
+                        direction === -1
                         ? "DESC"
                         : "ASC"
                 let nulls =
@@ -4143,8 +4163,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     nulls?.toLowerCase() === "first"
                         ? "NULLS FIRST"
                         : nulls?.toLowerCase() === "last"
-                        ? "NULLS LAST"
-                        : undefined
+                            ? "NULLS LAST"
+                            : undefined
 
                 let aliasPath = `${alias}.${propertyPath}`
                 // const selection = this.expressionMap.selects.find(
@@ -4270,10 +4290,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         parameterValue instanceof FindOperator
                             ? parameterValue.transformValue(column.transformer)
                             : (parameterValue =
-                                  ApplyValueTransformers.transformTo(
-                                      column.transformer,
-                                      parameterValue,
-                                  ))
+                                ApplyValueTransformers.transformTo(
+                                    column.transformer,
+                                    parameterValue,
+                                ))
                     }
 
                     // if (parameterValue === null) {
@@ -4370,12 +4390,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                             .map((column) => {
                                                 return `${
                                                     relation.joinTableName
-                                                }.${
+                                                    }.${
                                                     column.propertyName
-                                                } = ${alias}.${
+                                                    } = ${alias}.${
                                                     column.referencedColumn!
                                                         .propertyName
-                                                }`
+                                                    }`
                                             })
                                             .join(" AND "),
                                     )
@@ -4392,12 +4412,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                                     return `${
                                                         relation.inverseRelation!
                                                             .joinTableName
-                                                    }.${
+                                                        }.${
                                                         column.propertyName
-                                                    } = ${alias}.${
+                                                        } = ${alias}.${
                                                         column.referencedColumn!
                                                             .propertyName
-                                                    }`
+                                                        }`
                                                 },
                                             )
                                             .join(" AND "),
@@ -4417,12 +4437,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                                         relation
                                                             .inverseEntityMetadata
                                                             .tableName
-                                                    }.${
+                                                        }.${
                                                         column.propertyName
-                                                    } = ${alias}.${
+                                                        } = ${alias}.${
                                                         column.referencedColumn!
                                                             .propertyName
-                                                    }`
+                                                        }`
                                                 },
                                             )
                                             .join(" AND "),
@@ -4437,10 +4457,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             //     .andWhere(this.escape(relation.propertyAliasName + "_cnt") + " " + sqlOperator + " " + parseInt(where[key].value));
                             this.andWhere(
                                 qb.getSql() +
-                                    " " +
-                                    sqlOperator +
-                                    " " +
-                                    parseInt(where[key].value),
+                                " " +
+                                sqlOperator +
+                                " " +
+                                parseInt(where[key].value),
                             )
                         } else {
                             if (
