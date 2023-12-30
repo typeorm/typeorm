@@ -12,12 +12,12 @@ describe("github issues > #10334 incorrect count value using both getCount() and
 
     before(
         async () =>
-        (dataSources = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
-            schemaCreate: true,
-            dropSchema: true,
-            logging: true,
-        })),
+            (dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+                logging: true,
+            })),
     )
 
     after(() => closeTestingConnections(dataSources))
@@ -34,23 +34,19 @@ describe("github issues > #10334 incorrect count value using both getCount() and
                     new Region("West", "QWE", 42),
                     new Region("West", "RTY", 5),
                     new Region("East", "UIO", 20),
-                ]);
+                ])
                 const queryBuilder = dataSource.manager
-                    .createQueryBuilder(Region, 'region')
+                    .createQueryBuilder(Region, "region")
                     .select(`region_name`)
-                    .orderBy(`region_name`, 'ASC')
-                    .distinct();
+                    .orderBy(`region_name`, "ASC")
+                    .distinct()
 
-                const cnt = await queryBuilder.getCount();
-                assert(
-                    cnt === 5,
-                    `cnt=${cnt}`,
-                )
+                const cnt = await queryBuilder.getCount()
+                assert(cnt === 5, `cnt=${cnt}`)
             }),
-
         ))
 
-        it("getManyAndCount() with distinct values has to return the right value", () =>
+    it("getManyAndCount() with distinct values has to return the right value", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await dataSource.manager.save([
@@ -62,19 +58,15 @@ describe("github issues > #10334 incorrect count value using both getCount() and
                     new Region("West", "QWE", 42),
                     new Region("West", "RTY", 5),
                     new Region("East", "UIO", 20),
-                ]);
+                ])
                 const queryBuilder = dataSource.manager
-                    .createQueryBuilder(Region, 'region')
+                    .createQueryBuilder(Region, "region")
                     .select(`region_name`)
-                    .orderBy(`region_name`, 'ASC')
-                    .distinct();
+                    .orderBy(`region_name`, "ASC")
+                    .distinct()
 
-                const [, cnt] = await queryBuilder.getManyAndCount();
-                assert(
-                    cnt === 5,
-                    `cnt=${cnt}`,
-                )
+                const [, cnt] = await queryBuilder.getManyAndCount()
+                assert(cnt === 5, `cnt=${cnt}`)
             }),
-
         ))
 })

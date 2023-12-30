@@ -17,8 +17,8 @@ export class Region {
     region_id?: number
 
     constructor(region_name: string, region_code: string, region_id?: number) {
-        this.region_name = region_name;
-        this.region_code = region_code;
-        this.region_id = region_id;
+        this.region_name = region_name
+        this.region_code = region_code
+        this.region_id = region_id
     }
 }
