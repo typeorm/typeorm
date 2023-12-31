@@ -27,12 +27,15 @@ describe("Connection replication", () => {
         beforeEach(async () => {
             const ormConfigConnectionOptionsArray = getTypeOrmConfig()
             const postgres = ormConfigConnectionOptionsArray.find(
-                (options) => options.type == "postgres",
+                (options) =>
+                    options.type == "postgres" && options.skip === false,
             )
-            if (!postgres)
-                throw new Error(
+            if (!postgres) {
+                console.error(
                     "need a postgres connection in the test connection options to test replication",
                 )
+                this.pending = true
+            }
 
             connection = (
                 await createTestingConnections({
@@ -114,12 +117,15 @@ describe("Connection replication", () => {
         beforeEach(async () => {
             const ormConfigConnectionOptionsArray = getTypeOrmConfig()
             const postgres = ormConfigConnectionOptionsArray.find(
-                (options) => options.type == "postgres",
+                (options) =>
+                    options.type == "postgres" && options.skip === false,
             )
-            if (!postgres)
-                throw new Error(
+            if (!postgres) {
+                console.error(
                     "need a postgres connection in the test connection options to test replication",
                 )
+                this.pending = true
+            }
 
             connection = (
                 await createTestingConnections({
