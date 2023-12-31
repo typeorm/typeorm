@@ -75,7 +75,6 @@ export class CordovaDriver extends AbstractSqliteDriver {
         )
 
         const connection = await new Promise<any>((resolve, fail) => {
-            //fix moianra - Added fail callback in order to throw an exception if the database cannot be opened.
             this.sqlite.openDatabase(
                 options,
                 (db: any) => resolve(db),
