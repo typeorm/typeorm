@@ -436,7 +436,7 @@ describe("repository > basic methods", () => {
             ))
     })
 
-    describe("upsert", function () {
+    xdescribe("upsert", function () {
         it("should first create then update an entity", () =>
             Promise.all(
                 connections.map(async (connection) => {

@@ -31,20 +31,6 @@ services:
     # necessary extensions. sorry, and thanks for adding support for them!
     image: "postgis/postgis:14-3.3"
     container_name: "typeorm-postgres"
-    # command: postgres -c default_statistics_target=100 -c max_connections=100 -c max_locks_per_transaction=64 -c checkpoint_timeout=30min -c maintenance_work_mem=1GB -c effective_cache_size=16GB -c work_mem=500MB -c max_wal_size=10GB -c wal_buffers=16MB -c shared_buffers=8GB
-    # command: ["postgres", "-c", "checkpoint_timeout=30min"]
-    command:
-      [
-        "postgres",
-        "-c",
-        "log_checkpoints=on",
-        "-c",
-        "checkpoint_flush_after=0",
-        "-c",
-        "checkpoint_timeout=60min",
-      ]
-    # command: ["postgres", "--mode=smart"]
-    # stop_signal: SIGINT # Fast Shutdown mode
     ports:
       - "5432:5432"
     environment:
@@ -58,17 +44,6 @@ services:
     # necessary extensions. sorry, and thanks for adding support for them!
     image: "postgis/postgis:12-2.5"
     container_name: "typeorm-postgres-12"
-    # command: ["postgres", "-c", "checkpoint_timeout=30min"]
-    command:
-      [
-        "postgres",
-        "-c",
-        "log_checkpoints=on",
-        "-c",
-        "checkpoint_flush_after=0",
-        "-c",
-        "checkpoint_timeout=60min",
-      ]
     ports:
       - "5532:5432"
     environment:
