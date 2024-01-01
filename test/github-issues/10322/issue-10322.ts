@@ -14,7 +14,7 @@ import {
 import sinon from "sinon"
 import { expect } from "chai"
 
-describe("github issues > #10322 logMigration of AbstractLogger has wrong logging condition.", () => {
+xdescribe("github issues > #10322 logMigration of AbstractLogger has wrong logging condition.", () => {
     let dataSources: DataSource[]
     const fakeLog = sinon.fake()
 

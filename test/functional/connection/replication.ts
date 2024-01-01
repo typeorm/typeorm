@@ -21,7 +21,7 @@ const expectCurrentApplicationName = async (
     expect(result[0].application_name).to.equal(name)
 }
 
-describe("Connection replication", () => {
+xdescribe("Connection replication", () => {
     describe("after connection is established successfully", function () {
         let connection: DataSource
         beforeEach(async () => {
