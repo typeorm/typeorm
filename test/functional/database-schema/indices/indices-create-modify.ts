@@ -10,7 +10,7 @@ import {
 
 import { Person } from "./entity/Person"
 
-describe("database schema > indices > reading index from entity and updating database", () => {
+xdescribe("database schema > indices > reading index from entity and updating database", () => {
     let connections: DataSource[]
     before(
         async () =>

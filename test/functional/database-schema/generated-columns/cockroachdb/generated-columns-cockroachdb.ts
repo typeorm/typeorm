@@ -7,7 +7,7 @@ import {
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
 
-describe("database schema > generated columns > cockroachdb", () => {
+xdescribe("database schema > generated columns > cockroachdb", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

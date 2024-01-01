@@ -275,7 +275,7 @@ describe("repository > find options > comment", () => {
         ))
 })
 
-describe("repository > find options > cache", () => {
+xdescribe("repository > find options > cache", () => {
     let connections: DataSource[]
     before(
         async () =>

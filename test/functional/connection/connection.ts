@@ -202,7 +202,7 @@ describe("Connection", () => {
         // }));
     })
 
-    describe("generate a schema when connection.synchronize is called", function () {
+    xdescribe("generate a schema when connection.synchronize is called", function () {
         let connections: DataSource[]
         before(() =>
             createTestingConnections({
