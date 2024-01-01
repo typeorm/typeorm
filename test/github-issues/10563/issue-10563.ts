@@ -12,12 +12,12 @@ describe.only("github issues > #10653 Default value in child table/entity column
     let dataSources: DataSource[]
     before(
         async () =>
-        (dataSources = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
-            schemaCreate: true,
-            dropSchema: true,
-            logging: true,
-        })),
+            (dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+                logging: true,
+            })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
