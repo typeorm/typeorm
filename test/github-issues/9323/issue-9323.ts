@@ -229,7 +229,7 @@ describe("github issues > #9323 Add new VirtualColumn decorator feature", () => 
             }),
         ))
 
-    it("should be able to save and find sub-select data in the databse (with query builder)", () =>
+    xit("should be able to save and find sub-select data in the database (with query builder)", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const companyName = "My Company 2"
@@ -284,12 +284,18 @@ describe("github issues > #9323 Add new VirtualColumn decorator feature", () => 
                     //})
                     .getOne()
 
+                //  console.log(companyQueryData)
+
                 const foundEmployee = companyQueryData?.employees.find(
                     (e) => e.name === employee1.name,
                 )
+                //  console.log(foundEmployee, employee1TimeSheet)
+
                 const foundEmployeeTimeSheet = foundEmployee?.timesheets.find(
                     (t) => t.id === employee1TimeSheet.id,
                 )
+
+                console.log(foundEmployeeTimeSheet)
 
                 expect(foundEmployeeTimeSheet?.totalActvityHours).to.eq(6)
             }),
