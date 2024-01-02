@@ -253,10 +253,10 @@ export class PostSubscriber implements EntitySubscriberInterface {
     }
 
     /**
-     * Called before post insertion.
+     * Called before entity insertion.
      */
     beforeInsert(event: InsertEvent<any>) {
-        console.log(`BEFORE POST INSERTED: `, event.entity)
+        console.log(`BEFORE ENTITY INSERTED: `, event.entity)
     }
 
     /**

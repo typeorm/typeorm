@@ -136,13 +136,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             await this.query(
                 "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
             )
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -175,14 +176,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -2419,7 +2421,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             (dbColumn) =>
                                 dbColumn["OWNER"] === dbTable["OWNER"] &&
                                 dbColumn["TABLE_NAME"] ===
-                                    dbTable["TABLE_NAME"],
+                                    dbTable["TABLE_NAME"] &&
+                                // Filter out auto-generated virtual columns,
+                                // since TypeORM will have no info about them.
+                                !(
+                                    dbColumn["VIRTUAL_COLUMN"] === "YES" &&
+                                    dbColumn["USER_GENERATED"] === "NO"
+                                ),
                         )
                         .map(async (dbColumn) => {
                             const columnConstraints = dbConstraints.filter(
@@ -2711,6 +2719,35 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     },
                 )
 
+                // Attempt to map auto-generated virtual columns to their
+                // referenced columns, through its 'DATA_DEFAULT' property.
+                //
+                // An example of this happening is when a column of type
+                // TIMESTAMP WITH TIME ZONE is indexed. Oracle will create a
+                // virtual column of type TIMESTAMP with a default value of
+                // SYS_EXTRACT_UTC(<column>).
+                const autoGenVirtualDbColumns = dbColumns
+                    .filter(
+                        (dbColumn) =>
+                            dbColumn["OWNER"] === dbTable["OWNER"] &&
+                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbColumn["VIRTUAL_COLUMN"] === "YES" &&
+                            dbColumn["USER_GENERATED"] === "NO",
+                    )
+                    .reduce((acc, x) => {
+                        const referencedDbColumn = dbColumns.find((dbColumn) =>
+                            x["DATA_DEFAULT"].includes(dbColumn["COLUMN_NAME"]),
+                        )
+
+                        if (!referencedDbColumn) return acc
+
+                        return {
+                            ...acc,
+                            [x["COLUMN_NAME"]]:
+                                referencedDbColumn["COLUMN_NAME"],
+                        }
+                    }, {})
+
                 // create TableIndex objects from the loaded indices
                 table.indices = dbIndices
                     .filter(
@@ -2719,9 +2756,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             dbIndex["OWNER"] === dbTable["OWNER"],
                     )
                     .map((dbIndex) => {
+                        //
+                        const columnNames = dbIndex["COLUMN_NAMES"]
+                            .split(",")
+                            .map(
+                                (
+                                    columnName: keyof typeof autoGenVirtualDbColumns,
+                                ) =>
+                                    autoGenVirtualDbColumns[columnName] ??
+                                    columnName,
+                            )
+
                         return new TableIndex({
                             name: dbIndex["INDEX_NAME"],
-                            columnNames: dbIndex["COLUMN_NAMES"].split(","),
+                            columnNames,
                             isUnique: dbIndex["UNIQUENESS"] === "UNIQUE",
                         })
                     })

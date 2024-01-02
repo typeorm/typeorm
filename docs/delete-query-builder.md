@@ -12,7 +12,7 @@ Examples:
 
 ```typescript
 await myDataSource
-    .createQueryBuilder('users')
+    .createQueryBuilder()
     .delete()
     .from(User)
     .where("id = :id", { id: 1 })

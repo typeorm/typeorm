@@ -33,7 +33,9 @@ describe("schema builder > add column", () => {
                 }
 
                 let stringType = "varchar"
-                if (connection.driver.options.type === "spanner") {
+                if (connection.driver.options.type === "sap") {
+                    stringType = "nvarchar"
+                } else if (connection.driver.options.type === "spanner") {
                     stringType = "string"
                 }
 

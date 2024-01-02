@@ -14,6 +14,11 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     builder(args: yargs.Argv) {
         return args
+            .positional("path", {
+                type: "string",
+                describe: "Path of the migration file",
+                demandOption: true,
+            })
             .option("o", {
                 alias: "outputJs",
                 type: "boolean",
@@ -29,12 +34,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             })
     }
 
-    async handler(args: yargs.Arguments) {
+    async handler(args: yargs.Arguments<any & { path: string }>) {
         try {
             const timestamp = CommandUtils.getTimestamp(args.timestamp)
-            const inputPath = (args.path as string).startsWith("/")
-                ? (args.path as string)
-                : path.resolve(process.cwd(), args.path as string)
+            const inputPath = args.path.startsWith("/")
+                ? args.path
+                : path.resolve(process.cwd(), args.path)
             const filename = path.basename(inputPath)
             const fullPath =
                 path.dirname(inputPath) + "/" + timestamp + "-" + filename
@@ -69,7 +74,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import { MigrationInterface, QueryRunner } from "typeorm"
+        return `import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class ${camelCase(
             name,

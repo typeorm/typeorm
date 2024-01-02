@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
 
 /**
@@ -60,12 +61,6 @@ export interface SqlServerConnectionOptions
          * cycle of the event loop.
          */
         readonly maxWaitingClients?: number
-
-        /**
-         * Should the pool validate resources before giving them to clients. Requires that either factory.validate or
-         * factory.validateAsync to be specified
-         */
-        readonly testOnBorrow?: boolean
 
         /**
          * Max milliseconds an acquire call will wait for a resource before timing out. (default no limit), if supplied should non-zero positive integer.
@@ -186,6 +181,12 @@ export interface SqlServerConnectionOptions
         readonly disableOutputReturning?: boolean
 
         /**
+         * A boolean, controlling whether MssqlParameter types char, varchar, and text are converted to their unicode equivalents, nchar, nvarchar, and ntext.
+         * (default: false, meaning that char/varchar/text parameters will be converted to nchar/nvarchar/ntext)
+         */
+        readonly disableAsciiToUnicodeParamConversion?: boolean
+
+        /**
          * Debug options
          */
         readonly debug?: {
@@ -304,6 +305,12 @@ export interface SqlServerConnectionOptions
          * List of read-from severs (slaves).
          */
         readonly slaves: SqlServerConnectionCredentialsOptions[]
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
 
     readonly poolSize?: never

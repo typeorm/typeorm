@@ -195,7 +195,10 @@ export class Subject {
             (this.databaseEntityLoaded === false ||
                 (this.databaseEntityLoaded && this.databaseEntity)) &&
             // ((this.entity && this.databaseEntity) || (!this.entity && !this.databaseEntity)) &&
-            this.changeMaps.length > 0
+            // ensure there are one or more changes for updatable columns
+            this.changeMaps.some(
+                (change) => !change.column || change.column.isUpdate,
+            )
         )
     }
 
