@@ -16,13 +16,14 @@ describe("github issues > #10653 Default value in child table/entity column deco
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
+                logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should honor distinct default value configured on inherited column of child entity", () =>
-        Promise.all(
+    it("should honor distinct default value configured on inherited column of child entity", async () =>
+        await Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
                 let dog: Dog = new Dog()

@@ -261,8 +261,9 @@ export class QueryExpressionMap {
 
     /**
      * Indicates if query result cache is enabled or not.
+     * It is undefined by default to avoid overriding the `alwaysEnabled` config
      */
-    cache: boolean = false
+    cache?: boolean
 
     /**
      * Time in milliseconds in which cache will expire.

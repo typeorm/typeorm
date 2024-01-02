@@ -33,10 +33,7 @@ describe("github issues > #300 support of embeddeds that are not set", () => {
                 expect(loadedRace).to.exist
                 expect(loadedRace!.id).to.exist
                 loadedRace!.name.should.be.equal("National Race")
-                expect(loadedRace!.duration).to.exist
-                expect(loadedRace!.duration.minutes).to.be.null
-                expect(loadedRace!.duration.hours).to.be.null
-                expect(loadedRace!.duration.days).to.be.null
+                expect(loadedRace!.duration).to.be.null
             }),
         ))
 })

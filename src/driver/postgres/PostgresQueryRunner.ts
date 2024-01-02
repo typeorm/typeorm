@@ -26,6 +26,7 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -173,6 +174,7 @@ export class PostgresQueryRunner
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             await this.query("START TRANSACTION")
             if (isolationLevel) {
                 await this.query(
@@ -180,9 +182,9 @@ export class PostgresQueryRunner
                 )
             }
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -197,14 +199,15 @@ export class PostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -219,14 +222,15 @@ export class PostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -242,8 +246,15 @@ export class PostgresQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
+        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
+
         try {
             const queryStartTime = +new Date()
             const raw = await databaseConnection.query(query, parameters)
@@ -252,6 +263,17 @@ export class PostgresQueryRunner
                 this.driver.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -296,7 +318,19 @@ export class PostgresQueryRunner
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
