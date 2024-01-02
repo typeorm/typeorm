@@ -883,10 +883,19 @@ export class CockroachDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("table:", columnMetadata.entityMetadata.tableName)
+            // console.log("name:", {
+            //     tableColumn: tableColumn.name,
+            //     columnMetadata: columnMetadata.databaseName,
+            // })
+            // console.log("type:", {
+            //     tableColumn: tableColumn.type,
+            //     columnMetadata: this.normalizeType(columnMetadata),
+            // })
+            // console.log("length:", {
+            //     tableColumn: tableColumn.length,
+            //     columnMetadata: columnMetadata.length,
+            // })
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
@@ -896,7 +905,10 @@ export class CockroachDriver implements Driver {
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("asExpression:", {
+            //     tableColumn: (tableColumn.asExpression || "").trim(),
+            //     columnMetadata: (columnMetadata.asExpression || "").trim(),
+            // })
             // console.log("==========================================");
 
             return (

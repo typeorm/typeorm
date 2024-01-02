@@ -5,7 +5,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { StrictlyInitializedEntity } from "./entity/StrictlyInitializedEntity"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../src"
 
 describe("github issues > #8444 entitySkipConstructor not working", () => {
     describe("without entitySkipConstructor", () => {

@@ -3301,7 +3301,8 @@ export class CockroachQueryRunner
                             }
 
                             if (
-                                dbColumn["is_generated"] === "YES" &&
+                                (dbColumn["is_generated"] === "YES" ||
+                                    dbColumn["is_generated"] === "ALWAYS") &&
                                 dbColumn["generation_expression"]
                             ) {
                                 tableColumn.generatedType =
