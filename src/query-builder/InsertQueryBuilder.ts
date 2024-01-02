@@ -556,6 +556,19 @@ export class InsertQueryBuilder<
                                         column.isUpdateDate &&
                                         !overwrite?.includes(
                                             column.databaseName,
+                                        ) &&
+                                        !(
+                                            (this.connection.driver.options
+                                                .type === "oracle" &&
+                                                this.getValueSets().length >
+                                                    1) ||
+                                            DriverUtils.isSQLiteFamily(
+                                                this.connection.driver,
+                                            ) ||
+                                            this.connection.driver.options
+                                                .type === "sap" ||
+                                            this.connection.driver.options
+                                                .type === "spanner"
                                         ),
                                 )
                                 .map(

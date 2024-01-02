@@ -3798,7 +3798,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             (cacheOptions.alwaysEnabled &&
                 this.expressionMap.cache !== false) ||
             // ...or it's enabled locally explicitly.
-            this.expressionMap.cache
+            this.expressionMap.cache === true
         let cacheError = false
         if (this.connection.queryResultCache && isCachingEnabled) {
             try {

@@ -63,12 +63,6 @@ export interface SqlServerConnectionOptions
         readonly maxWaitingClients?: number
 
         /**
-         * Should the pool validate resources before giving them to clients. Requires that either factory.validate or
-         * factory.validateAsync to be specified
-         */
-        readonly testOnBorrow?: boolean
-
-        /**
          * Max milliseconds an acquire call will wait for a resource before timing out. (default no limit), if supplied should non-zero positive integer.
          */
         readonly acquireTimeoutMillis?: number

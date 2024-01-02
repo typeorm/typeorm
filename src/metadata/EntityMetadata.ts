@@ -459,7 +459,7 @@ export class EntityMetadata {
     afterLoadListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER INSERT" type.
+     * Listener metadatas with "BEFORE INSERT" type.
      */
     beforeInsertListeners: EntityListenerMetadata[] = []
 
@@ -469,7 +469,7 @@ export class EntityMetadata {
     afterInsertListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER UPDATE" type.
+     * Listener metadatas with "BEFORE UPDATE" type.
      */
     beforeUpdateListeners: EntityListenerMetadata[] = []
 
@@ -479,7 +479,7 @@ export class EntityMetadata {
     afterUpdateListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER REMOVE" type.
+     * Listener metadatas with "BEFORE REMOVE" type.
      */
     beforeRemoveListeners: EntityListenerMetadata[] = []
 
@@ -763,6 +763,10 @@ export class EntityMetadata {
         // if we find relation and it has a single join column then its the column user was seeking
         const relation = this.findRelationWithPropertyPath(propertyPath)
         if (relation && relation.joinColumns) return relation.joinColumns
+
+        // try to find a relation with a property path being an embedded entity
+        const embedded = this.findEmbeddedWithPropertyPath(propertyPath)
+        if (embedded) return embedded.columns
 
         return []
     }

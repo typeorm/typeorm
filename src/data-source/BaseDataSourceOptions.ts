@@ -208,4 +208,9 @@ export interface BaseDataSourceOptions {
                */
               readonly ignoreErrors?: boolean
           }
+
+    /**
+     * Allows automatic isolation of where clauses
+     */
+    readonly isolateWhereStatements?: boolean
 }

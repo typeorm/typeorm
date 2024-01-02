@@ -25,7 +25,7 @@ import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectId
+    _id: ObjectId
 
     @Column()
     firstName: string

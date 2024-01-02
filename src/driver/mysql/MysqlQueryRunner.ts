@@ -26,6 +26,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -118,6 +119,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err
         }
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             if (isolationLevel) {
                 await this.query(
                     "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
@@ -125,9 +127,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
             await this.query("START TRANSACTION")
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -142,14 +144,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -164,14 +167,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -187,19 +191,29 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         return new Promise(async (ok, fail) => {
+            const broadcasterResult = new BroadcasterResult()
+
             try {
                 const databaseConnection = await this.connect()
+
                 this.driver.connection.logger.logQuery(query, parameters, this)
+                this.broadcaster.broadcastBeforeQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                )
+
                 const queryStartTime = +new Date()
                 databaseConnection.query(
                     query,
                     parameters,
-                    (err: any, raw: any) => {
+                    async (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime
                         const queryEndTime = +new Date()
                         const queryExecutionTime = queryEndTime - queryStartTime
+
                         if (
                             maxQueryExecutionTime &&
                             queryExecutionTime > maxQueryExecutionTime
@@ -218,10 +232,30 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 parameters,
                                 this,
                             )
+                            this.broadcaster.broadcastAfterQueryEvent(
+                                broadcasterResult,
+                                query,
+                                parameters,
+                                false,
+                                undefined,
+                                undefined,
+                                err,
+                            )
+
                             return fail(
                                 new QueryFailedError(query, parameters, err),
                             )
                         }
+
+                        this.broadcaster.broadcastAfterQueryEvent(
+                            broadcasterResult,
+                            query,
+                            parameters,
+                            true,
+                            queryExecutionTime,
+                            raw,
+                            undefined,
+                        )
 
                         const result = new QueryResult()
 
@@ -246,6 +280,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )
             } catch (err) {
                 fail(err)
+            } finally {
+                await broadcasterResult.wait()
             }
         })
     }
