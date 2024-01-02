@@ -27,7 +27,7 @@ describe("sqljs driver > autosave", () => {
     it("should call autoSaveCallback on insert, update and delete", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let posts = [
+                const posts = [
                     {
                         title: "second post",
                     },
@@ -55,11 +55,11 @@ describe("sqljs driver > autosave", () => {
                     .execute()
 
                 const repository = connection.getRepository(Post)
-                let post = new Post()
+                const post = new Post()
                 post.title = "A post"
                 await repository.save(post)
 
-                let savedPost = await repository.findOneBy({ title: "A post" })
+                const savedPost = await repository.findOneBy({ title: "A post" })
 
                 expect(savedPost).not.to.be.null
 
@@ -100,11 +100,11 @@ describe("sqljs driver > autosave off", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const repository = connection.getRepository(Post)
-                let post = new Post()
+                const post = new Post()
                 post.title = "A post"
                 await repository.save(post)
 
-                let savedPost = await repository.findOneBy({ title: "A post" })
+                const savedPost = await repository.findOneBy({ title: "A post" })
 
                 expect(savedPost).not.to.be.null
 

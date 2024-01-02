@@ -14,15 +14,14 @@ import { EntitySchema } from "../../../../../src"
  * So we run tests only for mysql.
  */
 describe("basic-lazy-relations", () => {
-    let UserSchema: any, ProfileSchema: any
     const appRoot = require("app-root-path")
     const resourceDir =
         appRoot +
         "/test/functional/relations/lazy-relations/basic-lazy-relation/"
-    UserSchema = new EntitySchema<any>(
+    const UserSchema = new EntitySchema<any>(
         require(resourceDir + "schema/user.json"),
     )
-    ProfileSchema = new EntitySchema<any>(
+    const ProfileSchema = new EntitySchema<any>(
         require(resourceDir + "schema/profile.json"),
     )
 

@@ -4,15 +4,13 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
 import { expect } from "chai"
 import { Block } from "./entity/Block"
 import { PlanOfRecord } from "./entity/PlanOfRecord"
 
 describe("github issues > #6752 column name not been find on unique index decorator", () => {
     it("dont change anything", async () => {
-        let connections: DataSource[]
-        connections = await createTestingConnections({
+        const connections = await createTestingConnections({
             entities: [Block, PlanOfRecord],
             schemaCreate: false,
             dropSchema: true,

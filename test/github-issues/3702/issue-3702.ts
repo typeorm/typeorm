@@ -30,7 +30,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
         it("should use GeomFromText", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    let queryBuilder = connection.createQueryBuilder().insert()
+                    const queryBuilder = connection.createQueryBuilder().insert()
                     queryBuilder
                         .into(LetterBox)
                         .values({ coord: "POINT(20 30)" })
@@ -46,7 +46,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
         it("should provide SRID", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    let queryBuilder = connection.createQueryBuilder().insert()
+                    const queryBuilder = connection.createQueryBuilder().insert()
                     queryBuilder
                         .into(LetterBox)
                         .values({ coord: "POINT(25 100)" })
@@ -62,7 +62,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
             Promise.all(
                 connections.map(async (connection) => {
                     const repository = connection.getRepository(LetterBox)
-                    let queryBuilder = repository
+                    const queryBuilder = repository
                         .createQueryBuilder("letterBox")
                         .select(["letterBox"])
                     const sql = queryBuilder.getSql()
@@ -95,7 +95,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
         it("should use ST_GeomFromText", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    let queryBuilder = connection.createQueryBuilder().insert()
+                    const queryBuilder = connection.createQueryBuilder().insert()
                     queryBuilder
                         .into(LetterBox)
                         .values({ coord: "POINT(20 30)" })
@@ -110,7 +110,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
         it("should provide SRID", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    let queryBuilder = connection.createQueryBuilder().insert()
+                    const queryBuilder = connection.createQueryBuilder().insert()
                     queryBuilder
                         .into(LetterBox)
                         .values({ coord: "POINT(25 100)" })
@@ -126,7 +126,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
             Promise.all(
                 connections.map(async (connection) => {
                     const repository = connection.getRepository(LetterBox)
-                    let queryBuilder = repository
+                    const queryBuilder = repository
                         .createQueryBuilder("letterBox")
                         .select(["letterBox"])
                     const sql = queryBuilder.getSql()

@@ -209,7 +209,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // we throw original error even if rollback thrown an error
                     if (!this.isTransactionActive && !isSelect)
                         await this.sessionTransaction.rollback()
-                } catch (rollbackError) {}
+                } catch (rollbackError) {
+                    /* empty */
+                }
                 throw error
             }
 
@@ -1480,10 +1482,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            for (let query of dropIndexQueries) {
+            for (const query of dropIndexQueries) {
                 await this.updateDDL(query["query"])
             }
-            for (let query of dropFKQueries) {
+            for (const query of dropFKQueries) {
                 await this.updateDDL(query["query"])
             }
 
@@ -1491,7 +1493,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             //     await this.updateDDL(query["query"])
             // }
 
-            for (let query of dropTableQueries) {
+            for (const query of dropTableQueries) {
                 await this.updateDDL(query["query"])
             }
 
@@ -1501,7 +1503,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+                /* empty */
+            }
             throw error
         }
     }
@@ -2027,7 +2031,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
-        let { schema, tableName: name } = this.driver.parseTableName(view)
+        const { schema, tableName: name } = this.driver.parseTableName(view)
 
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
@@ -2058,7 +2062,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds remove view sql.
      */
     protected async deleteViewDefinitionSql(view: View): Promise<Query> {
-        let { schema, tableName: name } = this.driver.parseTableName(view)
+        const { schema, tableName: name } = this.driver.parseTableName(view)
 
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
@@ -2091,7 +2095,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName =
+        const indexName =
             indexOrName instanceof TableIndex ? indexOrName.name : indexOrName
         return new Query(`DROP INDEX \`${indexName}\``)
     }
@@ -2139,7 +2143,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const referencedColumnNames = foreignKey.referencedColumnNames
             .map((column) => this.driver.escape(column))
             .join(",")
-        let sql =
+        const sql =
             `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT \`${
                 foreignKey.name
             }\` FOREIGN KEY (${columnNames}) ` +

@@ -2416,7 +2416,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+                /* empty */
+            }
             throw error
         }
     }
@@ -2440,6 +2442,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const viewsCondition = viewNames
             .map((viewName) => {
+                // eslint-disable-next-line prefer-const
                 let { schema, tableName: name } =
                     this.driver.parseTableName(viewName)
 
@@ -3069,6 +3072,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
+        // eslint-disable-next-line prefer-const
         let { schema, tableName: name } = this.driver.parseTableName(view)
 
         if (!schema) {
@@ -3100,6 +3104,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected async deleteViewDefinitionSql(
         viewOrPath: View | string,
     ): Promise<Query> {
+        // eslint-disable-next-line prefer-const
         let { schema, tableName: name } = this.driver.parseTableName(viewOrPath)
 
         if (!schema) {
@@ -3152,7 +3157,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         const parsedTableName = this.driver.parseTableName(table)

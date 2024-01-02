@@ -97,7 +97,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch (rollbackError) {
+                    /* empty */
+                }
             }
             throw error
         } finally {

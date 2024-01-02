@@ -47,7 +47,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(
@@ -137,7 +137,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(
@@ -214,7 +214,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(
@@ -321,7 +321,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(

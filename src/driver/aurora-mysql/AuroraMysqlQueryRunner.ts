@@ -1918,7 +1918,9 @@ export class AuroraMysqlQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+                /* empty */
+            }
             throw error
         }
     }
@@ -1940,6 +1942,7 @@ export class AuroraMysqlQueryRunner
         const currentDatabase = await this.getCurrentDatabase()
         const viewsCondition = viewNames
             .map((tableName) => {
+                // eslint-disable-next-line prefer-const
                 let { database, tableName: name } =
                     this.driver.parseTableName(tableName)
 
@@ -2626,7 +2629,7 @@ export class AuroraMysqlQueryRunner
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(

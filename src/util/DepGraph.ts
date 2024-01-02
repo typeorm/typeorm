@@ -21,8 +21,8 @@ import { TypeORMError } from "../error"
  * @param result An array in which the results will be populated
  */
 function createDFS(edges: any, leavesOnly: any, result: any) {
-    let currentPath: any[] = []
-    let visited: any = {}
+    const currentPath: any[] = []
+    const visited: any = {}
     return function DFS(currentNode: any) {
         visited[currentNode] = true
         currentPath.push(currentNode)
@@ -79,7 +79,7 @@ export class DepGraph {
                 edgeList,
             ) {
                 Object.keys(edgeList).forEach(function (key: any) {
-                    let idx = edgeList[key].indexOf(node)
+                    const idx = edgeList[key].indexOf(node)
                     if (idx >= 0) {
                         edgeList[key].splice(idx, 1)
                     }
@@ -167,10 +167,10 @@ export class DepGraph {
      */
     dependenciesOf(node: any, leavesOnly: any) {
         if (this.hasNode(node)) {
-            let result: any[] = []
-            let DFS = createDFS(this.outgoingEdges, leavesOnly, result)
+            const result: any[] = []
+            const DFS = createDFS(this.outgoingEdges, leavesOnly, result)
             DFS(node)
-            let idx = result.indexOf(node)
+            const idx = result.indexOf(node)
             if (idx >= 0) {
                 result.splice(idx, 1)
             }
@@ -189,10 +189,10 @@ export class DepGraph {
      */
     dependantsOf(node: any, leavesOnly: any) {
         if (this.hasNode(node)) {
-            let result: any[] = []
-            let DFS = createDFS(this.incomingEdges, leavesOnly, result)
+            const result: any[] = []
+            const DFS = createDFS(this.incomingEdges, leavesOnly, result)
             DFS(node)
-            let idx = result.indexOf(node)
+            const idx = result.indexOf(node)
             if (idx >= 0) {
                 result.splice(idx, 1)
             }
@@ -210,20 +210,20 @@ export class DepGraph {
      * If `leavesOnly` is true, only nodes that do not depend on any other nodes will be returned.
      */
     overallOrder(leavesOnly?: any) {
-        let self = this
-        let result: any[] = []
-        let keys = Object.keys(this.nodes)
+        const self = this
+        const result: any[] = []
+        const keys = Object.keys(this.nodes)
         if (keys.length === 0) {
             return result // Empty graph
         } else {
             // Look for cycles - we run the DFS starting at all the nodes in case there
             // are several disconnected subgraphs inside this dependency graph.
-            let CycleDFS = createDFS(this.outgoingEdges, false, [])
+            const CycleDFS = createDFS(this.outgoingEdges, false, [])
             keys.forEach(function (n: any) {
                 CycleDFS(n)
             })
 
-            let DFS = createDFS(this.outgoingEdges, leavesOnly, result)
+            const DFS = createDFS(this.outgoingEdges, leavesOnly, result)
             // Find all potential starting points (nodes with nothing depending on them) an
             // run a DFS starting at these points to get the order
             keys.filter(function (node) {

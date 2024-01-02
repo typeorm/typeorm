@@ -208,7 +208,9 @@ export class InsertQueryBuilder<
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch (rollbackError) {
+                    /* empty */
+                }
             }
             throw error
         } finally {

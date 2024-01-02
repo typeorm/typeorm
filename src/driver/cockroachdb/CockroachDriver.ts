@@ -526,7 +526,7 @@ export class CockroachDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -564,7 +564,7 @@ export class CockroachDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -1009,7 +1009,9 @@ export class CockroachDriver implements Driver {
                     this.options.nativeDriver || PlatformTools.load("pg-native")
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native
-            } catch (e) {}
+            } catch (e) {
+                /* empty */
+            }
         } catch (e) {
             // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg")

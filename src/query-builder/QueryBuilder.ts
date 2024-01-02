@@ -1504,7 +1504,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         parameterValue: any,
     ): WhereClauseCondition {
         if (InstanceChecker.isFindOperator(parameterValue)) {
-            let parameters: any[] = []
+            const parameters: any[] = []
             if (parameterValue.useParameter) {
                 if (parameterValue.objectLiteralParameters) {
                     this.setParameters(parameterValue.objectLiteralParameters)

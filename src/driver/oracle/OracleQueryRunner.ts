@@ -669,7 +669,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const oldTable = InstanceChecker.isTable(oldTableOrName)
             ? oldTableOrName
             : await this.getCachedTable(oldTableOrName)
-        let newTable = oldTable.clone()
+        const newTable = oldTable.clone()
 
         const { database: dbName, tableName: oldTableName } =
             this.driver.parseTableName(oldTable)
@@ -2253,7 +2253,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+                /* empty */
+            }
             throw error
         }
     }
@@ -2982,7 +2984,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop index sql.
      */
     protected dropIndexSql(indexOrName: TableIndex | string): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(`DROP INDEX "${indexName}"`)
