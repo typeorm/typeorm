@@ -32,7 +32,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
     after(() => closeTestingConnections(dataSources))
 
-    it("should honor temploral table options", () =>
+    it("should honor temporal table options", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await dataSource.runMigrations()
