@@ -22,7 +22,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqlite",
     "type": "sqlite",
     "database": "./temp/sqlitedb-1.db",
@@ -30,7 +30,7 @@
     "relationLoadStrategy": "join"
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqlite-2",
     "type": "sqlite",
     "database": "./temp/sqlitedb-2.db",
@@ -56,7 +56,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "sqljs",
     "type": "sqljs",
     "logging": false

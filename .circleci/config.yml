@@ -139,11 +139,13 @@ jobs:
             )
             echo "Running '$COMMANDS'"
 
-            docker run \
-              --network typeorm_default \
-              --tty \
-              ubuntu:trusty \
-              timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+            if [ ! -z "$COMMANDS" ]; then
+              docker run \
+                --network typeorm_default \
+                --tty \
+                ubuntu:trusty \
+                timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+            fi
       - run:
           name: "Wait for OracleDB to be Available"
           command: |
