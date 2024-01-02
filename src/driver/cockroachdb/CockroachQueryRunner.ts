@@ -55,7 +55,7 @@ export class CockroachQueryRunner
     /**
      * Special callback provided by a driver used to release a created connection.
      */
-    protected releaseCallback: Function
+    protected releaseCallback?: (err: any) => void
 
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
@@ -105,7 +105,18 @@ export class CockroachQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
-                    this.releaseCallback = release
+
+                    const onErrorCallback = (err: Error) =>
+                        this.releaseConnection(err)
+                    this.releaseCallback = (err?: Error) => {
+                        this.databaseConnection.removeListener(
+                            "error",
+                            onErrorCallback,
+                        )
+                        release(err)
+                    }
+                    this.databaseConnection.on("error", onErrorCallback)
+
                     return this.databaseConnection
                 })
         } else {
@@ -115,7 +126,18 @@ export class CockroachQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
-                    this.releaseCallback = release
+
+                    const onErrorCallback = (err: Error) =>
+                        this.releaseConnection(err)
+                    this.releaseCallback = (err?: Error) => {
+                        this.databaseConnection.removeListener(
+                            "error",
+                            onErrorCallback,
+                        )
+                        release(err)
+                    }
+                    this.databaseConnection.on("error", onErrorCallback)
+
                     return this.databaseConnection
                 })
         }
@@ -124,21 +146,33 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Release a connection back to the pool, optionally specifying an Error to release with.
+     * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     */
+    private async releaseConnection(err?: Error) {
+        if (this.isReleased) {
+            return
+        }
+
+        this.isReleased = true
+        if (this.releaseCallback) {
+            this.releaseCallback(err)
+            this.releaseCallback = undefined
+        }
+
+        const index = this.driver.connectedQueryRunners.indexOf(this)
+
+        if (index !== -1) {
+            this.driver.connectedQueryRunners.splice(index, 1)
+        }
+    }
+
+    /**
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
-        if (this.isReleased) {
-            return Promise.resolve()
-        }
-
-        this.isReleased = true
-        if (this.releaseCallback) this.releaseCallback()
-
-        const index = this.driver.connectedQueryRunners.indexOf(this)
-        if (index !== -1) this.driver.connectedQueryRunners.splice(index)
-
-        return Promise.resolve()
+        return this.releaseConnection()
     }
 
     /**

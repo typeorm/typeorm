@@ -3,9 +3,4 @@ import { NamingStrategyInterface } from "../../../../src/naming-strategy/NamingS
 
 export class NamingStrategyUnderTest
     extends DefaultNamingStrategy
-    implements NamingStrategyInterface
-{
-    eagerJoinRelationAlias(alias: string, propertyPath: string): string {
-        return alias + "__" + propertyPath.replace(".", "_")
-    }
-}
+    implements NamingStrategyInterface {}

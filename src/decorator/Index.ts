@@ -139,6 +139,7 @@ export function Index(
             parser: options ? options.parser : undefined,
             sparse: options && options.sparse ? true : false,
             background: options && options.background ? true : false,
+            concurrent: options && options.concurrent ? true : false,
             expireAfterSeconds: options
                 ? options.expireAfterSeconds
                 : undefined,

@@ -53,6 +53,12 @@ export interface IndexOptions {
     background?: boolean
 
     /**
+     * Create the index using the CONCURRENTLY modifier
+     * Works only in postgres.
+     */
+    concurrent?: boolean
+
+    /**
      * Specifies a time to live, in seconds.
      * This option is only supported for mongodb database.
      */

@@ -113,6 +113,11 @@ export interface Driver {
     mappedDataTypes: MappedColumnTypes
 
     /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix?: string
+
+    /**
      * Max length allowed by the DBMS for aliases (execution of queries).
      */
     maxAliasLength?: number

@@ -1456,20 +1456,10 @@ export abstract class AbstractSqliteQueryRunner
                         }
 
                         if (tableColumn.type === "varchar") {
-                            // Check if this is an enum
-                            const enumMatch = sql.match(
-                                new RegExp(
-                                    '"(' +
-                                        tableColumn.name +
-                                        ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)",
-                                ),
+                            tableColumn.enum = OrmUtils.parseSqlCheckExpression(
+                                sql,
+                                tableColumn.name,
                             )
-                            if (enumMatch) {
-                                // This is an enum
-                                tableColumn.enum = enumMatch[2]
-                                    .substr(1, enumMatch[2].length - 2)
-                                    .split("','")
-                            }
                         }
 
                         // parse datatype and attempt to retrieve length, precision and scale
