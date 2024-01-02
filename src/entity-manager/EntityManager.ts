@@ -686,7 +686,7 @@ export class EntityManager {
         const allInsertResults = await Promise.all(Object.values(entitiesByTarget).map(({entities, target}) => this.createQueryBuilder()
         .insert()
         .into(target)
-        .values(entity)
+        .values(entities)
         .execute()))
 
         if(allInsertResults.length === 1) return allInsertResults[0];

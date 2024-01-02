@@ -460,9 +460,15 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 student.faculty = "Economics"
 
                 const person = new Person()
+                person.id = 2
                 person.name = 'Any Person'
 
-                await Promise.all([student, person].map(pers => connection.manager.getRepository(Person).insert(pers)))
+                const employee = new Employee()
+                employee.id = 3
+                employee.name = 'Any Employee'
+                employee.salary = 1000
+
+                await connection.manager.getRepository(Person).insert([student, person, employee])
 
                 const studentRetrieved = await connection.manager.getRepository(Student).findOneByOrFail({id: 1});
 
@@ -479,6 +485,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 student.faculty = "Economics"
 
                 const person = new Person()
+                person.id = 2;
                 person.name = 'Any Person'
 
                 await connection.manager.save([student, person])
