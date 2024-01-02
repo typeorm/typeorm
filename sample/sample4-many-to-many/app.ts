@@ -17,18 +17,18 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        const details1 = new PostDetails()
+        let details1 = new PostDetails()
         details1.comment = "People"
 
-        const details2 = new PostDetails()
+        let details2 = new PostDetails()
         details2.comment = "Human"
 
-        const post = new Post()
+        let post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.details = [details1, details2]
 
-        const postRepository = dataSource.getRepository(Post)
+        let postRepository = dataSource.getRepository(Post)
 
         postRepository
             .save(post)

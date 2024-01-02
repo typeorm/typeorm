@@ -145,9 +145,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -552,7 +550,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      * Creates "LIMIT" parts of SQL query.
      */
     protected createLimitExpression(): string {
-        const limit: number | undefined = this.expressionMap.limit
+        let limit: number | undefined = this.expressionMap.limit
 
         if (limit) {
             if (DriverUtils.isMySQLFamily(this.connection.driver)) {

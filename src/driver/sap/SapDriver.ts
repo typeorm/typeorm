@@ -369,7 +369,7 @@ export class SapDriver implements Driver {
                     return full
                 }
 
-                const value: any = parameters[key]
+                let value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -410,7 +410,7 @@ export class SapDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        const tablePath = [tableName]
+        let tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)

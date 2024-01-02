@@ -19,24 +19,24 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        const postRepository = dataSource.getRepository(Post)
+        let postRepository = dataSource.getRepository(Post)
 
-        const category1 = new Category()
+        let category1 = new Category()
         category1.name = "category #1"
 
-        const category2 = new Category()
+        let category2 = new Category()
         category2.name = "category #2"
 
-        const post = new Post()
+        let post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.categories = [category1, category2]
 
-        const author = new Author()
+        let author = new Author()
         author.name = "Umed"
         post.author = author
 
-        const author2 = new Author()
+        let author2 = new Author()
         author2.name = "Bakhrom"
 
         postRepository
@@ -55,7 +55,7 @@ dataSource.initialize().then(
                     "Lets update a post - add a new category and change author",
                 )
 
-                const category3 = new Category()
+                let category3 = new Category()
                 category3.name = "category #3"
                 post.categories.push(category3)
 

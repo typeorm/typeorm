@@ -31,17 +31,17 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        const details = new PostDetails()
+        let details = new PostDetails()
         details.authorName = "Umed"
         details.comment = "about post"
         details.metadata = "post,details,one-to-one"
 
-        const post = new Post()
+        let post = new Post()
         post.text = "hello how are you?"
         post.title = "hello"
         post.details = details
 
-        const postRepository = dataSource.getRepository(Post)
+        let postRepository = dataSource.getRepository(Post)
 
         postRepository
             .save(post)

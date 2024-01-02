@@ -33,7 +33,7 @@ describe.skip("github issues > #1926 Update fails for entity with compound relat
                 let event = new Event()
                 event.title = "The Big Event"
 
-                const eventRole = new EventRole()
+                let eventRole = new EventRole()
                 eventRole.description = "Be the boss"
                 eventRole.compensation = "All the money!"
                 eventRole.roleId = role.id

@@ -18,8 +18,8 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        const postRepository = dataSource.getRepository(Post)
-        const authorRepository = dataSource.getRepository(Author)
+        let postRepository = dataSource.getRepository(Post)
+        let authorRepository = dataSource.getRepository(Author)
 
         const authorPromise = authorRepository
             .findOneBy({ id: 1 })

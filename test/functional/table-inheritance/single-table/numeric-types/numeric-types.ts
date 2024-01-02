@@ -46,7 +46,7 @@ describe("table-inheritance > single-table > numeric types", () => {
                 // Select
                 // -------------------------------------------------------------------------
 
-                const persons = await connection.manager
+                let persons = await connection.manager
                     .createQueryBuilder(Person, "person")
                     .addOrderBy("person.id")
                     .getMany()

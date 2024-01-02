@@ -10,7 +10,7 @@ import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
 
 describe("github issue > #2200 Bug - Issue with snake_case naming strategy", () => {
     let connections: DataSource[]
-    const namingStrategy = new NamingStrategyUnderTest()
+    let namingStrategy = new NamingStrategyUnderTest()
 
     before(
         async () =>

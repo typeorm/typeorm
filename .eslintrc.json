@@ -18,12 +18,15 @@
     "@typescript-eslint/triple-slash-reference": "warn",
     "no-async-promise-executor": "warn",
     "no-control-regex": "warn",
+    "no-debugger": "warn",
+    "no-empty": "warn",
     "no-extra-boolean-cast": "warn",
     "no-extra-semi": "warn",
     "no-prototype-builtins": "warn",
     "no-regex-spaces": "warn",
     "no-unsafe-optional-chaining": "warn",
     "no-useless-escape": "warn",
+    "prefer-const": "warn",
     "prefer-rest-params": "warn",
     "prefer-spread": "warn"
   }

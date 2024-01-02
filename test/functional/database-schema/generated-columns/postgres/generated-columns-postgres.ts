@@ -47,7 +47,7 @@ describe("database schema > generated columns > postgres", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                const table = await queryRunner.getTable("post")
+                let table = await queryRunner.getTable("post")
                 const storedFullName =
                     table!.findColumnByName("storedFullName")!
                 const name = table!.findColumnByName("name")!

@@ -223,7 +223,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                             }
 
                             if (raw?.hasOwnProperty("rows")) {
-                                const resultSet = []
+                                let resultSet = []
                                 for (let i = 0; i < raw.rows.length; i++) {
                                     resultSet.push(raw.rows.item(i))
                                 }

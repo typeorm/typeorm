@@ -51,7 +51,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post2.categories = [category3]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .getMany()
@@ -62,7 +62,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 expect(loadedPosts![1].categoryIds).to.not.be.eql([])
                 expect(loadedPosts![1].categoryIds[0]).to.be.equal(3)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()
@@ -105,7 +105,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post2.categories = [category3]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .getMany()
@@ -116,7 +116,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 expect(loadedPosts![1].removedCategoryIds).to.not.be.eql([])
                 expect(loadedPosts![1].removedCategoryIds[0]).to.be.equal(3)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()
@@ -146,7 +146,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post.subcategories = [category1, category2]
                 await connection.manager.save(post)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()
@@ -177,7 +177,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post.subcategories = [category1, category2]
                 await connection.manager.save(post)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()
@@ -208,7 +208,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post2.categories = [category]
                 await connection.manager.save(post2)
 
-                const loadedCategory = await connection.manager
+                let loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
                     .getOne()
@@ -240,7 +240,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post2.categories = [category]
                 await connection.manager.save(post2)
 
-                const loadedCategory = await connection.manager
+                let loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
                     .getOne()
@@ -298,7 +298,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post2.categories = [category3]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")
@@ -325,7 +325,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 ).to.be.equal(1)
                 expect(loadedPosts![1].categories[0].imageIds[0]).to.be.equal(3)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")
@@ -369,7 +369,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post.categories = [category1]
                 await connection.manager.save(post)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect(
                         "post.categories",
@@ -436,7 +436,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                 post2.categories = [category3]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")
@@ -469,7 +469,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
                     loadedPosts![1].categories[0].removedImageIds[0],
                 ).to.be.equal(3)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")

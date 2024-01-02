@@ -290,7 +290,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
 
                 let recipients = await connection.manager.find(Recipient)
 
-                for (const recipient of recipients) {
+                for (let recipient of recipients) {
                     await connection.getRepository(Recipient).remove(recipient)
                 }
 

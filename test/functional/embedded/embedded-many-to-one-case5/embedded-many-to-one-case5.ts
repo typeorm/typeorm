@@ -255,7 +255,7 @@ describe("embedded > embedded-many-to-one-case5", () => {
                     user2.likedPosts = [post3]
                     await connection.getRepository(User).save(user2)
 
-                    const loadedUsers = await connection.manager
+                    let loadedUsers = await connection.manager
                         .createQueryBuilder(User, "user")
                         .leftJoinAndSelect("user.likedPosts", "likedPost")
                         .orderBy("user.id, likedPost.id")

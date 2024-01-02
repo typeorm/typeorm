@@ -23,12 +23,12 @@ describe("github issues > #1314 UPDATE on json column stores string type", () =>
     it("should not store json type as string on update", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const recordRepo = connection.getRepository(Record)
+                let recordRepo = connection.getRepository(Record)
 
-                const record = new Record()
+                let record = new Record()
                 record.data = { foo: "bar" }
 
-                const persistedRecord = await recordRepo.save(record)
+                let persistedRecord = await recordRepo.save(record)
                 record.data.should.be.eql({ foo: "bar" })
 
                 let foundRecord = await recordRepo.findOne({

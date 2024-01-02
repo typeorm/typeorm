@@ -30,10 +30,10 @@ describe("github issues > #3246 Saving an entity with a 1:1 cascading insert doe
     it("should insert and return the order with id", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const company = new Broker()
+                let company = new Broker()
                 company.name = "Acme Inc."
 
-                const order = new Order()
+                let order = new Order()
                 order.orderReferenceNumber = "abcd"
 
                 const orderCustomer = new OrderCustomer()

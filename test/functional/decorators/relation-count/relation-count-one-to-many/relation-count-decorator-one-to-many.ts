@@ -70,7 +70,7 @@ describe("decorators > relation-count-decorator > one-to-many", () => {
                 post2.categories = [category3]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .addOrderBy("post.id, categories.id")
@@ -86,7 +86,7 @@ describe("decorators > relation-count-decorator > one-to-many", () => {
                 expect(loadedPosts![1].categoryCount).to.be.equal(1)
                 expect(loadedPosts![1].categories[0].imageCount).to.be.equal(1)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .where("post.id = :id", { id: 1 })

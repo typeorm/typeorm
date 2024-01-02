@@ -23,7 +23,7 @@ describe("database schema > custom constraint names > foreign key", () => {
     it("should set custom constraint names", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const metadata = dataSource.getMetadata(Animal)
+                let metadata = dataSource.getMetadata(Animal)
 
                 // check ManyToMany constraints
                 const joinTable = metadata.ownRelations[0]

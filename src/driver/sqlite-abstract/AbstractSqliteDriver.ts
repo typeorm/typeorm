@@ -468,7 +468,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                     return full
                 }
 
-                const value: any = parameters[key]
+                let value: any = parameters[key]
 
                 if (isArray) {
                     return value

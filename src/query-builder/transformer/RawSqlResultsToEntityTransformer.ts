@@ -152,7 +152,7 @@ export class RawSqlResultsToEntityTransformer {
             )
             if (discriminatorMetadata) metadata = discriminatorMetadata
         }
-        const entity: any = metadata.create(this.queryRunner, {
+        let entity: any = metadata.create(this.queryRunner, {
             fromDeserializer: true,
             pojo: this.expressionMap.options.indexOf("create-pojo") !== -1,
         })

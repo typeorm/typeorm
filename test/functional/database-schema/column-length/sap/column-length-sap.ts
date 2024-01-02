@@ -47,7 +47,7 @@ describe("database schema > column length > sap", () => {
     it("all types should update their size", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const metadata = connection.getMetadata(Post)
+                let metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("nvarchar")!.length = "100"
                 metadata.findColumnWithPropertyName("alphanum")!.length = "100"

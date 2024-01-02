@@ -32,7 +32,7 @@ describe("insertion", function () {
             connections.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
-                const newPost = new Post()
+                let newPost = new Post()
                 newPost.text = "Hello post"
                 newPost.title = "this is post title"
                 newPost.likesCount = 0

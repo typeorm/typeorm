@@ -22,7 +22,7 @@ describe("github issues > #9829 Incorrect default value with concat value of fun
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("example_entity")
+                let table = await queryRunner.getTable("example_entity")
 
                 const nameColumn = table!.findColumnByName("someValue")!
                 nameColumn!.default!.should.be.equal(

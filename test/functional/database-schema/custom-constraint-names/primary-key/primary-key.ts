@@ -25,8 +25,8 @@ describe("database schema > custom constraint names > primary key", () => {
     it("should set custom constraint names", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const post = dataSource.getMetadata(Post)
-                const user = dataSource.getMetadata(User)
+                let post = dataSource.getMetadata(Post)
+                let user = dataSource.getMetadata(User)
 
                 const idPK = user.primaryColumns.find(
                     (it) => it.primaryKeyConstraintName === "PK_ID",

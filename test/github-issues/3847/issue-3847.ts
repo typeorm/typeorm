@@ -11,7 +11,7 @@ import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
 
 describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key override name", () => {
     let connections: DataSource[]
-    const namingStrategy = new NamingStrategyUnderTest()
+    let namingStrategy = new NamingStrategyUnderTest()
 
     before(
         async () =>
@@ -30,7 +30,7 @@ describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key ov
             connections.map(async (connection) => {
                 await connection.getRepository(Animal).find()
 
-                const metadata = connection.getMetadata(Animal)
+                let metadata = connection.getMetadata(Animal)
 
                 expect(metadata.foreignKeys[0].name).to.eq(
                     "fk_animal_category_categoryId",

@@ -130,7 +130,7 @@ export class DriverUtils {
         const joiner =
             buildOptions && buildOptions.joiner ? buildOptions.joiner : "_"
 
-        const newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
+        let newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
 
         if (
             maxAliasLength &&
@@ -236,7 +236,7 @@ export class DriverUtils {
         let hostReplicaSet = undefined
         let replicaSet = undefined
 
-        const optionsObject: any = {}
+        let optionsObject: any = {}
 
         if (afterBase && afterBase.indexOf("?") !== -1) {
             // split params
@@ -280,7 +280,7 @@ export class DriverUtils {
             ;[host, port] = hostAndPort.split(":")
         }
 
-        const connectionUrl: any = {
+        let connectionUrl: any = {
             type: type,
             host: host,
             hostReplicaSet: hostReplicaSet,

@@ -616,7 +616,7 @@ export class SubjectExecutor {
                 }
 
                 const updateResult = await updateQueryBuilder.execute()
-                const updateGeneratedMap = updateResult.generatedMaps[0]
+                let updateGeneratedMap = updateResult.generatedMaps[0]
                 if (updateGeneratedMap) {
                     subject.metadata.columns.forEach((column) => {
                         const value = column.getEntityValue(updateGeneratedMap!)

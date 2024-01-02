@@ -51,7 +51,7 @@ describe("decorators > relation-id > one-to-many", () => {
                 post3.category = category2
                 await connection.manager.save(post3)
 
-                const loadedCategories = await connection.manager
+                let loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .orderBy("category.id")
                     .getMany()
@@ -62,7 +62,7 @@ describe("decorators > relation-id > one-to-many", () => {
                 expect(loadedCategories![1].postIds.length).to.be.equal(1)
                 expect(loadedCategories![1].postIds[0]).to.be.equal(3)
 
-                const loadedCategory = await connection.manager
+                let loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
                     .getOne()
@@ -106,7 +106,7 @@ describe("decorators > relation-id > one-to-many", () => {
                 post3.isRemoved = true
                 await connection.manager.save(post3)
 
-                const loadedCategories = await connection.manager
+                let loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .orderBy("category.id")
                     .getMany()
@@ -118,7 +118,7 @@ describe("decorators > relation-id > one-to-many", () => {
                 expect(loadedCategories![0].removedPostIds[0]).to.be.equal(2)
                 expect(loadedCategories![1].removedPostIds[0]).to.be.equal(3)
 
-                const loadedCategory = await connection.manager
+                let loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .where("category.id = :id", { id: 1 })
                     .getOne()

@@ -28,7 +28,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
                 highlightSql: false,
             })
 
-            for (const message of messages) {
+            for (let message of messages) {
                 switch (message.type ?? level) {
                     case "migration":
                         fakeLog(message.message)

@@ -56,7 +56,7 @@ export class EntityPersistExecutor {
         if (this.options && this.options.data) {
             queryRunner.data = this.options.data
         }
-        const oldQueryRunnerData = queryRunner.data
+        let oldQueryRunnerData = queryRunner.data
 
         try {
             // collect all operate subjects
@@ -81,7 +81,7 @@ export class EntityPersistExecutor {
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode)
 
-                        const metadata = this.connection
+                        let metadata = this.connection
                             .getMetadata(entityTarget)
                             .findInheritanceMetadata(entity)
 
@@ -193,9 +193,7 @@ export class EntityPersistExecutor {
                 if (isTransactionStartedByUs) {
                     try {
                         await queryRunner.rollbackTransaction()
-                    } catch (rollbackError) {
-                        /* empty */
-                    }
+                    } catch (rollbackError) {}
                 }
                 throw error
             }

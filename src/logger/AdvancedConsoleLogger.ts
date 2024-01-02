@@ -18,7 +18,7 @@ export class AdvancedConsoleLogger extends AbstractLogger {
     ) {
         const messages = this.prepareLogMessages(logMessage)
 
-        for (const message of messages) {
+        for (let message of messages) {
             switch (message.type ?? level) {
                 case "log":
                 case "schema-build":

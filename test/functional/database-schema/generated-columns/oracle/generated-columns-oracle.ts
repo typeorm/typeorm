@@ -36,7 +36,7 @@ describe("database schema > generated columns > oracle", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                const table = await queryRunner.getTable("post")
+                let table = await queryRunner.getTable("post")
                 const virtualFullName =
                     table!.findColumnByName("virtualFullName")!
                 const name = table!.findColumnByName("name")!

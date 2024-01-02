@@ -22,8 +22,8 @@ describe("github issues > #2044 Should not double get embedded column value", ()
     it("Insert query should work with relational columns", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const userId = "1234"
-                const photoId = "4321"
+                let userId = "1234"
+                let photoId = "4321"
 
                 const user = new User()
                 user.id = userId

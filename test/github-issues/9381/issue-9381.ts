@@ -18,7 +18,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
 
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                const repository = dataSource.getRepository(ExampleEntity)
+                let repository = dataSource.getRepository(ExampleEntity)
                 await repository.save(new ExampleEntity())
                 await repository.save(new ExampleEntity())
                 await repository.save(new ExampleEntity())
@@ -60,7 +60,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
 
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                const repository = dataSource.getRepository(JsonExampleEntity)
+                let repository = dataSource.getRepository(JsonExampleEntity)
                 await repository.save(new JsonExampleEntity({ foo: "bar1" }))
                 await repository.save(new JsonExampleEntity({ foo: "bar2" }))
                 await repository.save(new JsonExampleEntity({ foo: "bar3" }))

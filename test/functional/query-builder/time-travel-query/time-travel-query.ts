@@ -113,7 +113,7 @@ describe("query builder > time-travel-query", () => {
                     .getMany()
 
                 // update accounts
-                for (const account of accounts) {
+                for (let account of accounts) {
                     account.balance = account.balance + 100
                     await repository.save(account)
                 }
@@ -173,7 +173,7 @@ describe("query builder > time-travel-query", () => {
                     .getMany()
 
                 // update accounts
-                for (const account of accounts) {
+                for (let account of accounts) {
                     account.balance = account.balance + 100
                     await accountRepository.save(account)
                 }
@@ -235,7 +235,7 @@ describe("query builder > time-travel-query", () => {
                     .getMany()
 
                 // update accounts
-                for (const account of accounts) {
+                for (let account of accounts) {
                     account.balance = account.balance + 100
                     await accountRepository.save(account)
                 }

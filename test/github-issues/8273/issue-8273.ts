@@ -35,7 +35,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("user")
+                let table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("increment")!
                 const newColumn = column.clone()
                 newColumn.isGenerated = true
@@ -64,7 +64,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("user")
+                let table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName(
                     "incrementWithGenerated",
                 )!
@@ -98,7 +98,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("user")
+                let table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("uuid")!
                 const newColumn = column.clone()
                 newColumn.isGenerated = true
@@ -122,7 +122,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("user")
+                let table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("uuidWithGenerated")!
                 const newColumn = column.clone()
                 newColumn.isGenerated = false

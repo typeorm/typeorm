@@ -388,7 +388,7 @@ export class SqlServerDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                const value: any = parameters[key]
+                let value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -430,7 +430,7 @@ export class SqlServerDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        const tablePath = [tableName]
+        let tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)

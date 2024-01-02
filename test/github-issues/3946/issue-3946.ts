@@ -56,7 +56,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 post2.categories = [category4, category5]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationCountAndMap(
                         "post.categoryCount",
@@ -68,7 +68,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 expect(loadedPosts![0].categoryCount).to.be.equal(3)
                 expect(loadedPosts![1].categoryCount).to.be.equal(2)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationCountAndMap(
                         "post.categoryCount",
@@ -131,7 +131,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 post4.title = "about Airbus"
                 await connection.manager.save(post4)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationCountAndMap(
                         "post.categoryCount",
@@ -206,7 +206,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 post2.categories = [category4, category5]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -251,7 +251,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 expect(loadedPosts![1].categoryCount).to.be.equal(2)
                 expect(loadedPosts![1].categories[0].imageCount).to.be.equal(1)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -325,7 +325,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 post2.categories = [category1, category3]
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -347,7 +347,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 expect(loadedPosts![1].categories[0].postCount).to.be.equal(2)
                 expect(loadedPosts![1].categories[1].postCount).to.be.equal(2)
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -412,7 +412,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 post5.categories = [category2]
                 await connection.manager.save(post5)
 
-                const loadedCategories = await connection.manager
+                let loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
@@ -424,7 +424,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 expect(loadedCategories![0].postCount).to.be.equal(3)
                 expect(loadedCategories![1].postCount).to.be.equal(2)
 
-                const loadedCategory = await connection.manager
+                let loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
@@ -490,7 +490,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 post5.categories = [category2]
                 await connection.manager.save(post5)
 
-                const loadedCategories = await connection.manager
+                let loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
@@ -551,7 +551,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 post5.categories = [category2]
                 await connection.manager.save(post5)
 
-                const loadedCategories = await connection.manager
+                let loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
@@ -573,7 +573,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
                 expect(loadedCategories![0].removedPostCount).to.be.equal(2)
                 expect(loadedCategories![1].postCount).to.be.equal(2)
 
-                const loadedCategory = await connection.manager
+                let loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",

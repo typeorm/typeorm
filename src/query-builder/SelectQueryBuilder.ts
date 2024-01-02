@@ -1636,9 +1636,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1682,9 +1680,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1799,9 +1795,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1845,9 +1839,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1900,9 +1892,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1954,9 +1944,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         }
@@ -3884,7 +3872,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         embedPrefix?: string,
     ) {
-        for (const key in select) {
+        for (let key in select) {
             if (select[key] === undefined || select[key] === false) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4129,7 +4117,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         embedPrefix?: string,
     ) {
-        for (const key in order) {
+        for (let key in order) {
             if (order[key] === undefined) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4163,7 +4151,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         ? "NULLS LAST"
                         : undefined
 
-                const aliasPath = `${alias}.${propertyPath}`
+                let aliasPath = `${alias}.${propertyPath}`
                 // const selection = this.expressionMap.selects.find(
                 //     (s) => s.selection === aliasPath,
                 // )
@@ -4253,8 +4241,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .join(" OR ") +
                 ")"
         } else {
-            const andConditions: string[] = []
-            for (const key in where) {
+            let andConditions: string[] = []
+            for (let key in where) {
                 if (where[key] === undefined || where[key] === null) continue
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key

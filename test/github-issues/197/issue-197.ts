@@ -23,9 +23,9 @@ describe("github issues > #197 Fails to drop indexes when removing fields", () =
     it("it should drop the column and the referenced index", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const entityMetadata: EntityMetadata =
+                let entityMetadata: EntityMetadata =
                     connection.getMetadata(Person)
-                const idx: number = entityMetadata.columns.findIndex(
+                let idx: number = entityMetadata.columns.findIndex(
                     (x) => x.databaseName === "firstname",
                 )
                 entityMetadata.columns.splice(idx, 1)

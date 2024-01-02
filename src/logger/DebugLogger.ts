@@ -69,7 +69,7 @@ export class DebugLogger extends AbstractLogger {
             appendParameterAsComment: false,
         })
 
-        for (const message of messages) {
+        for (let message of messages) {
             const messageTypeOrLevel = message.type ?? level
 
             if (messageTypeOrLevel in this.logger) {

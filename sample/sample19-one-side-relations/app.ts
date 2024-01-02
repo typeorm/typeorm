@@ -20,24 +20,24 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        const postRepository = dataSource.getRepository(Post)
-        const authorRepository = dataSource.getRepository(Author)
-        const categoryRepository = dataSource.getRepository(Category)
-        const metadataRepository = dataSource.getRepository(PostMetadata)
+        let postRepository = dataSource.getRepository(Post)
+        let authorRepository = dataSource.getRepository(Author)
+        let categoryRepository = dataSource.getRepository(Category)
+        let metadataRepository = dataSource.getRepository(PostMetadata)
 
-        const category1 = categoryRepository.create()
+        let category1 = categoryRepository.create()
         category1.name = "Hello category1"
 
-        const category2 = categoryRepository.create()
+        let category2 = categoryRepository.create()
         category2.name = "Bye category2"
 
-        const author = authorRepository.create()
+        let author = authorRepository.create()
         author.name = "Umed"
 
-        const metadata = metadataRepository.create()
+        let metadata = metadataRepository.create()
         metadata.comment = "Metadata about post"
 
-        const post = postRepository.create()
+        let post = postRepository.create()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.author = author

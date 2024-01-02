@@ -32,7 +32,7 @@ describe("sqljs driver > save", () => {
                     fs.unlinkSync(pathToSqlite)
                 }
 
-                const post = new Post()
+                let post = new Post()
                 post.title = "The second title"
 
                 const repository = dataSource.getRepository(Post)

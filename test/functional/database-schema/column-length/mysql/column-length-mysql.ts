@@ -38,7 +38,7 @@ describe("database schema > column length > mysql", () => {
     it("all types should update their length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const metadata = connection.getMetadata(Post)
+                let metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("char")!.length = "100"
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
 

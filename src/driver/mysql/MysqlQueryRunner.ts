@@ -2255,9 +2255,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {
-                /* empty */
-            }
+            } catch (rollbackError) {}
             throw error
         }
     }
@@ -2279,7 +2277,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         const currentDatabase = await this.getCurrentDatabase()
         const viewsCondition = viewNames
             .map((tableName) => {
-                // eslint-disable-next-line prefer-const
                 let { database, tableName: name } =
                     this.driver.parseTableName(tableName)
 
@@ -2363,7 +2360,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const tablesSql = tableNames
                 .filter((tableName) => tableName)
                 .map((tableName) => {
-                    // eslint-disable-next-line prefer-const
                     let { database, tableName: name } =
                         this.driver.parseTableName(tableName)
 
@@ -3154,7 +3150,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        const indexName = InstanceChecker.isTableIndex(indexOrName)
+        let indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(

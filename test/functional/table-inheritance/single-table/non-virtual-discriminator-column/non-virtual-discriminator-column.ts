@@ -51,7 +51,7 @@ describe("table-inheritance > single-table > non-virtual-discriminator-column", 
                 // Select
                 // -------------------------------------------------------------------------
 
-                const persons = await connection.manager
+                let persons = await connection.manager
                     .createQueryBuilder(Person, "person")
                     .addOrderBy("person.id")
                     .getMany()

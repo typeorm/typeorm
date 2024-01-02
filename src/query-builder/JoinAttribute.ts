@@ -85,7 +85,7 @@ export class JoinAttribute {
      */
     get isSelected(): boolean {
         if (!this.isSelectedEvaluated) {
-            const getValue = () => {
+            let getValue = () => {
                 for (const select of this.queryExpressionMap.selects) {
                     if (select.selection === this.alias.name) return true
 
@@ -159,7 +159,7 @@ export class JoinAttribute {
      */
     get relation(): RelationMetadata | undefined {
         if (!this.relationEvaluated) {
-            const getValue = () => {
+            let getValue = () => {
                 if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
                     return undefined
 

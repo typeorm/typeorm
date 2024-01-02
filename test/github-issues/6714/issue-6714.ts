@@ -4,13 +4,15 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
+import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Session as baseEntity } from "./entity/session"
 import { Session as changedEntity } from "./entity/sessionchanged"
 
 describe("github issues > #6714 Migration:generate issue with onUpdate using mariadb 10.4", () => {
     it("dont change anything", async () => {
-        const connections = await createTestingConnections({
+        let connections: DataSource[]
+        connections = await createTestingConnections({
             entities: [baseEntity],
             schemaCreate: false,
             dropSchema: true,

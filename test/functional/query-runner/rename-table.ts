@@ -130,7 +130,7 @@ describe("query runner > rename table", () => {
                             "text",
                             "tag",
                         ])
-                    const tableUnique = table!.uniques.find((unique) => {
+                    let tableUnique = table!.uniques.find((unique) => {
                         return !!unique.columnNames.find(
                             (columnName) => columnName === "tag",
                         )

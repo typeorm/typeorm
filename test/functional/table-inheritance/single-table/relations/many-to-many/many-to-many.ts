@@ -82,7 +82,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                     // Select
                     // -------------------------------------------------------------------------
 
-                    const loadedStudent = await connection.manager
+                    let loadedStudent = await connection.manager
                         .createQueryBuilder(Student, "student")
                         .leftJoinAndSelect("student.faculties", "faculty")
                         .where("student.name = :name", { name: "Alice" })
@@ -103,7 +103,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                         .map((f) => f.name)
                         .should.deep.include("Programming")
 
-                    const loadedTeacher = await connection.manager
+                    let loadedTeacher = await connection.manager
                         .createQueryBuilder(Teacher, "teacher")
                         .leftJoinAndSelect(
                             "teacher.specializations",
@@ -129,7 +129,7 @@ describe("table-inheritance > single-table > relations > many-to-many", () => {
                         .should.deep.include("Economist")
                     loadedTeacher!.salary.should.equal(2000)
 
-                    const loadedAccountant = await connection.manager
+                    let loadedAccountant = await connection.manager
                         .createQueryBuilder(Accountant, "accountant")
                         .leftJoinAndSelect(
                             "accountant.departments",

@@ -16,12 +16,12 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        const categoryRepository = dataSource.getRepository(Category)
+        let categoryRepository = dataSource.getRepository(Category)
 
-        const category1 = new Category()
+        let category1 = new Category()
         category1.name = "category #1"
 
-        const mainCategory = new Category()
+        let mainCategory = new Category()
         mainCategory.manyCategories = []
         mainCategory.name = "main category"
         mainCategory.oneCategory = category1

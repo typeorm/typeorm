@@ -23,7 +23,7 @@ describe("github issues > #4947 beforeUpdate subscriber entity argument is undef
     it("if entity has been updated via repository update(), subscriber should get passed entity to change", () =>
         Promise.all(
             connections.map(async function (connection) {
-                const repo = connection.getRepository(Post)
+                let repo = connection.getRepository(Post)
 
                 const newPost = new Post()
                 await repo.save(newPost)

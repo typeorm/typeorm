@@ -134,6 +134,7 @@ export class RelationIdLoader {
             inverseColumns = relation.inverseRelation!.joinColumns.map(
                 (column) => column.referencedColumn!,
             )
+        } else {
         }
 
         return entities.map((entity) => {
@@ -431,9 +432,9 @@ export class RelationIdLoader {
             },
         )
         if (relatedEntities && hasAllJoinColumnsInEntity) {
-            const relationIdMaps: ObjectLiteral[] = []
+            let relationIdMaps: ObjectLiteral[] = []
             entities.forEach((entity) => {
-                const relationIdMap: ObjectLiteral = {}
+                let relationIdMap: ObjectLiteral = {}
                 relation.entityMetadata.primaryColumns.forEach(
                     (primaryColumn) => {
                         const key =

@@ -105,7 +105,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                     }
 
                     if (raw?.hasOwnProperty("rows")) {
-                        const records = []
+                        let records = []
                         for (let i = 0; i < raw.rows.length; i++) {
                             records.push(raw.rows.item(i))
                         }

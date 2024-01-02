@@ -19,7 +19,7 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        const questionRepository = dataSource.getRepository(Question)
+        let questionRepository = dataSource.getRepository(Question)
 
         const question = new Question()
         question.title = "Hello question!"

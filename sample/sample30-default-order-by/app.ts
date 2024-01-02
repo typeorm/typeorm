@@ -15,24 +15,24 @@ const dataSource = new DataSource(options)
 dataSource
     .initialize()
     .then(async (dataSource) => {
-        const postRepository = dataSource.getRepository(Post)
+        let postRepository = dataSource.getRepository(Post)
 
-        const post1 = new Post("Me", "hello me", [
+        let post1 = new Post("Me", "hello me", [
             new Category("programming"),
             new Category("family"),
             new Category("chocolate"),
         ])
-        const post2 = new Post("Zorro", "hello zorro", [
+        let post2 = new Post("Zorro", "hello zorro", [
             new Category("woman"),
             new Category("money"),
             new Category("weapon"),
         ])
-        const post3 = new Post("About earth", "hello earth", [
+        let post3 = new Post("About earth", "hello earth", [
             new Category("kids"),
             new Category("people"),
             new Category("animals"),
         ])
-        const post4 = new Post("Zorro", "hello zorro", [
+        let post4 = new Post("Zorro", "hello zorro", [
             new Category("woman"),
             new Category("money"),
             new Category("weapon"),

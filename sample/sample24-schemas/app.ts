@@ -40,9 +40,9 @@ const dataSource = new DataSource(options)
 dataSource
     .initialize()
     .then((dataSource) => {
-        const postRepository = dataSource.getRepository<Post>("Post")
+        let postRepository = dataSource.getRepository<Post>("Post")
 
-        const post: Post = {
+        let post: Post = {
             title: "Hello post",
             text: "I am virtual post!",
             details: {

@@ -182,9 +182,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -482,7 +480,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
         // it doesn't make sense to update undefined properties, so just skip them
         const valuesSetNormalized: ObjectLiteral = {}
-        for (const key in valuesSet) {
+        for (let key in valuesSet) {
             if (valuesSet[key] !== undefined) {
                 valuesSetNormalized[key] = valuesSet[key]
             }
@@ -652,7 +650,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             }
         } else {
             Object.keys(valuesSetNormalized).map((key) => {
-                const value = valuesSetNormalized[key]
+                let value = valuesSetNormalized[key]
 
                 // todo: duplication zone
                 if (typeof value === "function") {
@@ -742,7 +740,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Creates "LIMIT" parts of SQL query.
      */
     protected createLimitExpression(): string {
-        const limit: number | undefined = this.expressionMap.limit
+        let limit: number | undefined = this.expressionMap.limit
 
         if (limit) {
             if (

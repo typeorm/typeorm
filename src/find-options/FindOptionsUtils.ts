@@ -305,7 +305,7 @@ export class FindOptionsUtils {
         // go through all matched relations and add join for them
         matchedBaseRelations.forEach((relation) => {
             // generate a relation alias
-            const relationAlias: string = DriverUtils.buildAlias(
+            let relationAlias: string = DriverUtils.buildAlias(
                 qb.connection.driver,
                 { joiner: "__" },
                 alias,

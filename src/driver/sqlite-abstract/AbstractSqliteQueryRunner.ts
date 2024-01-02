@@ -1209,9 +1209,7 @@ export abstract class AbstractSqliteQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {
-                /* empty */
-            }
+            } catch (rollbackError) {}
             throw error
         } finally {
             await this.query(`PRAGMA foreign_keys = ON`)
@@ -1374,7 +1372,7 @@ export abstract class AbstractSqliteQueryRunner
                 // find column name with auto increment
                 let autoIncrementColumnName: string | undefined = undefined
                 const tableSql: string = dbTable["sql"]
-                const autoIncrementIndex = tableSql
+                let autoIncrementIndex = tableSql
                     .toUpperCase()
                     .indexOf("AUTOINCREMENT")
                 if (autoIncrementIndex !== -1) {
@@ -1465,16 +1463,16 @@ export abstract class AbstractSqliteQueryRunner
                         }
 
                         // parse datatype and attempt to retrieve length, precision and scale
-                        const pos = tableColumn.type.indexOf("(")
+                        let pos = tableColumn.type.indexOf("(")
                         if (pos !== -1) {
                             const fullType = tableColumn.type
-                            const dataType = fullType.substr(0, pos)
+                            let dataType = fullType.substr(0, pos)
                             if (
                                 !!this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
-                                const len = parseInt(
+                                let len = parseInt(
                                     fullType.substring(
                                         pos + 1,
                                         fullType.length - 1,
@@ -1732,7 +1730,7 @@ export abstract class AbstractSqliteQueryRunner
             table.name,
         )} (${columnDefinitions}`
 
-        const [databaseNew, tableName] = this.splitTablePath(table.name)
+        let [databaseNew, tableName] = this.splitTablePath(table.name)
         const newTableName = temporaryTable
             ? `${databaseNew ? `${databaseNew}.` : ""}${tableName.replace(
                   /^temporary_/,
@@ -1938,7 +1936,7 @@ export abstract class AbstractSqliteQueryRunner
      * Builds drop index sql.
      */
     protected dropIndexSql(indexOrName: TableIndex | string): Query {
-        const indexName = InstanceChecker.isTableIndex(indexOrName)
+        let indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(`DROP INDEX ${this.escapePath(indexName!)}`)
@@ -2002,9 +2000,8 @@ export abstract class AbstractSqliteQueryRunner
         })
 
         // change table name into 'temporary_table'
-        // eslint-disable-next-line prefer-const
         let [databaseNew, tableNameNew] = this.splitTablePath(newTable.name)
-        const [, tableNameOld] = this.splitTablePath(oldTable.name)
+        let [, tableNameOld] = this.splitTablePath(oldTable.name)
         newTable.name = tableNameNew = `${
             databaseNew ? `${databaseNew}.` : ""
         }temporary_${tableNameNew}`

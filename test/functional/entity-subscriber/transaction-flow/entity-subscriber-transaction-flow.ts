@@ -12,13 +12,13 @@ import sinon from "sinon"
 import { expect } from "chai"
 
 describe("entity subscriber > transaction flow", () => {
-    const beforeTransactionStart = sinon.spy()
-    const afterTransactionStart = sinon.spy()
-    const afterInsert = sinon.spy()
-    const beforeTransactionCommit = sinon.spy()
-    const afterTransactionCommit = sinon.spy()
-    const beforeTransactionRollback = sinon.spy()
-    const afterTransactionRollback = sinon.spy()
+    let beforeTransactionStart = sinon.spy()
+    let afterTransactionStart = sinon.spy()
+    let afterInsert = sinon.spy()
+    let beforeTransactionCommit = sinon.spy()
+    let afterTransactionCommit = sinon.spy()
+    let beforeTransactionRollback = sinon.spy()
+    let afterTransactionRollback = sinon.spy()
 
     @EventSubscriber()
     class PostSubscriber implements EntitySubscriberInterface {
@@ -64,7 +64,7 @@ describe("entity subscriber > transaction flow", () => {
     after(() => closeTestingConnections(connections))
 
     it("transactionStart", async () => {
-        for (const connection of connections) {
+        for (let connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -150,7 +150,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionCommit", async () => {
-        for (const connection of connections) {
+        for (let connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -218,7 +218,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionRollback", async () => {
-        for (const connection of connections) {
+        for (let connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -292,7 +292,7 @@ describe("entity subscriber > transaction flow", () => {
         const example = new Example()
         const data = { hello: ["world"] }
 
-        for (const connection of connections) {
+        for (let connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"

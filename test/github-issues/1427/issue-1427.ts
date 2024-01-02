@@ -21,7 +21,7 @@ describe("github issues > #1427 precision and scale column types with errant beh
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("post")
+                let table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
                 table!.findColumnByName("qty")!.type.should.be.equal("decimal")

@@ -23,12 +23,12 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
     it("should persist class table child successfully", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const battlefront = new Game()
+                let battlefront = new Game()
                 battlefront.name = "SW Battlefront"
                 battlefront.searchTerms = "star-wars,arcade"
                 battlefront.isReviewed = false
 
-                const republicCommando = new Game()
+                let republicCommando = new Game()
                 republicCommando.name = "SW Republic Commando"
                 republicCommando.searchTerms = "star-wars,shooter"
                 republicCommando.isReviewed = false
@@ -47,7 +47,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
                     .getRepository(Platform)
                     .findOne({ where: { slug: "windows" } })
 
-                const jediAcademy = new Game()
+                let jediAcademy = new Game()
                 jediAcademy.name = "SW Jedi Academy"
                 jediAcademy.searchTerms = "star-wars,arcade"
                 jediAcademy.platforms = [loadedPlatform!]

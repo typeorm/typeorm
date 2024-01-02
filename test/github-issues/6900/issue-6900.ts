@@ -10,7 +10,7 @@ import { Warn } from "./entity/Warn"
 import { MongoConnectionOptions } from "../../../src/driver/mongodb/MongoConnectionOptions"
 
 describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given database, creates new database "test" instead', () => {
-    const connections: DataSource[] = []
+    let connections: DataSource[] = []
     afterEach(async () => {
         await closeTestingConnections(connections)
         connections.length = 0

@@ -1019,7 +1019,7 @@ export class CockroachQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (const column of enumColumns) {
+        for (let column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -2875,9 +2875,7 @@ export class CockroachQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {
-                /* empty */
-            }
+            } catch (rollbackError) {}
             throw error
         }
     }
@@ -3773,7 +3771,6 @@ export class CockroachQueryRunner
 
     protected async insertViewDefinitionSql(view: View): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
-        // eslint-disable-next-line prefer-const
         let { schema, tableName: name } = this.driver.parseTableName(view)
         if (!schema) {
             schema = currentSchema
@@ -3806,7 +3803,6 @@ export class CockroachQueryRunner
     ): Promise<Query> {
         const currentSchema = await this.getCurrentSchema()
 
-        // eslint-disable-next-line prefer-const
         let { schema, tableName: name } = this.driver.parseTableName(viewOrPath)
 
         if (!schema) {
@@ -3906,7 +3902,7 @@ export class CockroachQueryRunner
         table: Table,
         indexOrName: TableIndex | TableUnique | string,
     ): Query {
-        const indexName =
+        let indexName =
             InstanceChecker.isTableIndex(indexOrName) ||
             InstanceChecker.isTableUnique(indexOrName)
                 ? indexOrName.name
@@ -4118,7 +4114,6 @@ export class CockroachQueryRunner
     }
 
     protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
-        // eslint-disable-next-line prefer-const
         let { schema, tableName: name } = this.driver.parseTableName(table)
 
         if (!schema) {

@@ -429,7 +429,7 @@ export class AuroraMysqlDriver implements Driver {
                     return full
                 }
 
-                const value: any = parameters[key]
+                let value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -470,7 +470,7 @@ export class AuroraMysqlDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        const tablePath = [tableName]
+        let tablePath = [tableName]
 
         if (database) {
             tablePath.unshift(database)

@@ -57,7 +57,7 @@ describe("decorators > relation-id-decorator > many-to-one", () => {
                 post2.categoryByName = categoryByName2
                 await connection.manager.save(post2)
 
-                const loadedPosts = await connection.manager
+                let loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.id")
                     .getMany()
@@ -71,7 +71,7 @@ describe("decorators > relation-id-decorator > many-to-one", () => {
                 expect(loadedPosts![1].categoryName).to.not.be.undefined
                 expect(loadedPosts![1].categoryName).to.be.equal("Boeing")
 
-                const loadedPost = await connection.manager
+                let loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .where("post.id = :id", { id: 1 })
                     .getOne()

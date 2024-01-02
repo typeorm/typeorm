@@ -274,7 +274,7 @@ describe("repository > find methods", () => {
                     loadedPosts[99].title.should.be.equal("post #99")
 
                     // check findAndCount method
-                    const [loadedPosts2, count] =
+                    let [loadedPosts2, count] =
                         await postRepository.findAndCount({
                             order: { id: "ASC" },
                         })
@@ -314,7 +314,7 @@ describe("repository > find methods", () => {
                     loadedPosts[49].title.should.be.equal("post #99")
 
                     // check findAndCount method
-                    const [loadedPosts2, count] =
+                    let [loadedPosts2, count] =
                         await postRepository.findAndCount({
                             where: { categoryName: "odd" },
                             order: { id: "ASC" },
@@ -356,7 +356,7 @@ describe("repository > find methods", () => {
                     loadedPosts[4].title.should.be.equal("post #99")
 
                     // check findAndCount method
-                    const [loadedPosts2, count] =
+                    let [loadedPosts2, count] =
                         await postRepository.findAndCount({
                             where: { categoryName: "odd", isNew: true },
                             order: { id: "ASC" },
@@ -464,7 +464,7 @@ describe("repository > find methods", () => {
                     loadedPosts[1].title.should.be.equal("new post #96")
 
                     // check findAndCount method
-                    const [loadedPosts2, count] =
+                    let [loadedPosts2, count] =
                         await postRepository.findAndCount({
                             where: {
                                 categoryName: "even",
@@ -741,7 +741,7 @@ describe("repository > find methods", () => {
                         await userRepository.save(user)
                     }
 
-                    const loadedUser = await userRepository.findOneOrFail({
+                    let loadedUser = await userRepository.findOneOrFail({
                         where: {
                             id: 0,
                             secondName: "Doe",

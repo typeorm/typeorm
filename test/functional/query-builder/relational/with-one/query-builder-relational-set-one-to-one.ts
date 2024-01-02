@@ -363,7 +363,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
 
                 expect(error).to.be.instanceof(Error)
 
-                const loadedPost1 = await connection.manager.findOne(Post, {
+                let loadedPost1 = await connection.manager.findOne(Post, {
                     where: {
                         id: 1,
                     },
@@ -373,7 +373,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                 })
                 expect(loadedPost1!.image).to.be.null
 
-                const loadedPost2 = await connection.manager.findOne(Post, {
+                let loadedPost2 = await connection.manager.findOne(Post, {
                     where: {
                         id: 2,
                     },
@@ -383,7 +383,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                 })
                 expect(loadedPost2!.image).to.be.null
 
-                const loadedPost3 = await connection.manager.findOne(Post, {
+                let loadedPost3 = await connection.manager.findOne(Post, {
                     where: {
                         id: 3,
                     },

@@ -26,10 +26,10 @@ describe("github issues > #10653 Default value in child table/entity column deco
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
-                const dog: Dog = new Dog()
+                let dog: Dog = new Dog()
                 dog.name = "Fifi"
                 await manager.save(dog)
-                const fifi = await manager.findOneBy(Dog, {
+                let fifi = await manager.findOneBy(Dog, {
                     name: "Fifi",
                 })
                 assert(

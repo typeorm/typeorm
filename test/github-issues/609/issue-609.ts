@@ -21,7 +21,7 @@ describe("github issues > #609 Custom precision on CreateDateColumn and UpdateDa
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable("post")
+                let table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
                 table!

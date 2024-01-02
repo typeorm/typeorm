@@ -25,7 +25,7 @@ describe("github issues > #8026 Inserting a value for a column that has a relati
     it("it should include a related date column in the constructed query", async () =>
         await Promise.all(
             connections.map(async (connection) => {
-                const queryBuilder = await connection.createQueryBuilder()
+                let queryBuilder = await connection.createQueryBuilder()
 
                 const insertValue = {
                     scheduled_departure_time: new Date(),

@@ -25,9 +25,9 @@ describe("github issues > #1576 Entities with null as `id` are merged [@next]", 
         Promise.all(
             connections.map(async (connection) => {
                 const newpost = new Post()
-                const cat1 = new Category()
+                let cat1 = new Category()
                 cat1.name2 = "1"
-                const cat2 = new Category()
+                let cat2 = new Category()
                 cat2.name = "2"
                 newpost.categories = [cat1, cat2]
 

@@ -21,13 +21,13 @@ describe("query runner > has column", () => {
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
-                const hasIdColumn = await queryRunner.hasColumn("post", "id")
-                const hasNameColumn = await queryRunner.hasColumn("post", "name")
-                const hasVersionColumn = await queryRunner.hasColumn(
+                let hasIdColumn = await queryRunner.hasColumn("post", "id")
+                let hasNameColumn = await queryRunner.hasColumn("post", "name")
+                let hasVersionColumn = await queryRunner.hasColumn(
                     "post",
                     "version",
                 )
-                const hasDescriptionColumn = await queryRunner.hasColumn(
+                let hasDescriptionColumn = await queryRunner.hasColumn(
                     "post",
                     "description",
                 )
