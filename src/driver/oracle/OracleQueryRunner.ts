@@ -2573,7 +2573,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 tableColumn.generatedType = "VIRTUAL"
 
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         table: dbTable["TABLE_NAME"],
                                         type: MetadataTableType.GENERATED_COLUMN,
                                         name: tableColumn.name,

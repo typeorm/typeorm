@@ -1005,7 +1005,7 @@ export class PostgresDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
-        if (defaultValue === null) {
+        if (defaultValue === null || defaultValue === undefined) {
             return undefined
         }
 
@@ -1037,10 +1037,6 @@ export class PostgresDriver implements Driver {
 
         if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`
-        }
-
-        if (defaultValue === undefined) {
-            return undefined
         }
 
         return `${defaultValue}`

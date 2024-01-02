@@ -3748,7 +3748,7 @@ export class PostgresQueryRunner
                                 tableColumn.generatedType = "STORED"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         database: currentDatabase,
                                         schema: dbTable["table_schema"],
                                         table: dbTable["table_name"],

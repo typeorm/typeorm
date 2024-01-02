@@ -14,6 +14,7 @@ import { Photo } from "./entity/Photo"
 import sinon from "sinon"
 import { FileLogger } from "../../../../src"
 import { promisify } from "util"
+import fs from "fs"
 import { readFile, unlink } from "fs"
 
 describe("repository > find options", () => {
@@ -255,7 +256,9 @@ describe("repository > find options > comment", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(async () => {
         await closeTestingConnections(connections)
-        await promisify(unlink)(logPath)
+        if (fs.existsSync(logPath)) {
+            await promisify(unlink)(logPath)
+        }
     })
 
     it("repository should insert comment", () =>

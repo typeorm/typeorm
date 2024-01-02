@@ -700,12 +700,15 @@ export class CockroachDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
             defaultValue !== undefined
         ) {
-            if (defaultValue === null) return "NULL"
             if (columnMetadata.isArray) {
                 const enumName = this.buildEnumName(columnMetadata)
                 let arrayValue = defaultValue
@@ -752,10 +755,6 @@ export class CockroachDriver implements Driver {
 
         if (ObjectUtils.isObject(defaultValue) && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`
-        }
-
-        if (defaultValue === undefined || defaultValue === null) {
-            return undefined
         }
 
         return `${defaultValue}`

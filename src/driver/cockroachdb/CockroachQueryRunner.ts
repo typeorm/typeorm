@@ -3310,7 +3310,7 @@ export class CockroachQueryRunner
                                         : "VIRTUAL"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         schema: dbTable["table_schema"],
                                         table: dbTable["table_name"],
                                         type: MetadataTableType.GENERATED_COLUMN,
