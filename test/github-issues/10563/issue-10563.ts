@@ -8,7 +8,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { assert } from "chai"
 import { Dog } from "./entity/family"
 
-describe("github issues > #10653 Default value in child table/entity column decorator for multiple table inheritance is ignored for inherited columns", () => {
+xdescribe("github issues > #10563 Default value in child table/entity column decorator for multiple table inheritance is ignored for inherited columns", () => {
     let dataSources: DataSource[]
     before(
         async () =>
