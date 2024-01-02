@@ -49,6 +49,8 @@ describe("Connection replication", () => {
                 })
             )[0]
 
+            if (!connection) return
+
             const post = new Post()
             post.title = "TypeORM Intro"
 
