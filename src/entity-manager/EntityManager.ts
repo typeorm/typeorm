@@ -1096,7 +1096,6 @@ export class EntityManager {
         options?: FindManyOptions<Entity>,
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
-
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             FindOptionsUtils.extractFindManyOptionsAlias(options) ||

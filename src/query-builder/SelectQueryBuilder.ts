@@ -2183,8 +2183,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name)
 
-                console.log(this.findOptions)
-
                 return (
                     this.getTableName(alias.tablePath!) +
                     (alias.versioning && this.findOptions.timestamp
