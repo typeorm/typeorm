@@ -75,25 +75,25 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
             const timestamp = await getCurrentTimestamp()
 
-            let result = await User.findOneAsOf({ where: { id: 1 } })
+            let result = await User.findOne({ where: { id: 1 } })
             expect(result?.name).to.be.equal("foo")
 
             user.name = "bar"
             await dataSource.manager.save(user)
 
-            result = await User.findOneAsOf({ where: { id: 1 } })
+            result = await User.findOne({ where: { id: 1 } })
             expect(result?.name).to.be.equal("bar")
 
-            result = await User.findOneAsOf({ where: { id: 1 } }, timestamp)
+            result = await User.findOne({ timestamp, where: { id: 1 } })
             expect(result?.name).to.be.equal("foo")
 
-            let users = await User.findAsOf()
+            let users = await User.find()
             expect(users[0].name).to.be.eql("bar")
 
-            users = await User.findAsOf(timestamp)
+            users = await User.find({ timestamp })
             expect(users[0].name).to.be.eql("foo")
 
-            users = await User.findAsOf({ where: { id: 1 } }, timestamp)
+            users = await User.find({ timestamp, where: { id: 1 } })
             expect(users[0].name).to.be.eql("foo")
 
             await user.remove()
@@ -112,29 +112,29 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
                 const timestamp = await getCurrentTimestamp()
 
-                let result = await repository.findOneAsOf({ where: { id: 1 } })
+                let result = await repository.findOne({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("foo")
 
                 user.name = "bar"
                 await manager.save(user)
 
-                result = await repository.findOneAsOf({ where: { id: 1 } })
+                result = await repository.findOne({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("bar")
 
                 // check user name from the history
-                let users = await repository.findAsOf(timestamp)
+                let users = await repository.find({ timestamp })
                 expect(users[0].name).to.be.eql("foo")
 
-                users = await repository.findAsOf(
-                    { where: { id: 1 } },
+                users = await repository.find({
                     timestamp,
-                )
+                    where: { id: 1 },
+                })
                 expect(users[0].name).to.be.eql("foo")
 
-                result = await repository.findOneAsOf(
-                    { where: { id: 1 } },
+                result = await repository.findOne({
                     timestamp,
-                )
+                    where: { id: 1 },
+                })
                 expect(result?.name).to.be.equal("foo")
 
                 await repository.delete(1)
@@ -158,15 +158,15 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
 
                 const timestamp = await getCurrentTimestamp()
 
-                let results = await repository.findAsOf()
+                let results = await repository.find()
                 expect(results).to.have.length(2)
 
                 await repository.delete(2)
 
-                results = await repository.findAsOf()
+                results = await repository.find()
                 expect(results).to.have.length(1)
 
-                results = await repository.findAsOf(timestamp)
+                results = await repository.find({ timestamp })
                 expect(results).to.have.length(2)
 
                 await repository.delete(1)
@@ -213,7 +213,8 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 const result2 = await dataSource
                     .createQueryBuilder(Photo, "photo")
                     .innerJoinAndSelect("photo.user", "user")
-                    .getOne(timestamp)
+                    .setFindOptions({ timestamp })
+                    .getOne()
 
                 expect(result2).to.deep.equal({
                     id: 1,

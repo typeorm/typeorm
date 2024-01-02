@@ -1094,7 +1094,6 @@ export class EntityManager {
     async find<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
-        timestamp?: Date,
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1104,7 +1103,7 @@ export class EntityManager {
                 metadata.name,
         )
             .setFindOptions(options || {})
-            .getMany(timestamp)
+            .getMany()
     }
 
     /**
@@ -1189,12 +1188,10 @@ export class EntityManager {
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
-     * @param {Date} [timestamp] A timestamp to get datasets at a specific time.
      */
     async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
-        timestamp?: Date,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1216,7 +1213,7 @@ export class EntityManager {
                 ...options,
                 take: 1,
             })
-            .getOne(timestamp)
+            .getOne()
     }
 
     /**

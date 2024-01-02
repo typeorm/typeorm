@@ -484,21 +484,6 @@ export class BaseEntity {
     }
 
     /**
-     * Finds entities that match given WHERE conditions and at a specific timestamp.
-     *
-     * @param {Object} [options] Where conditions or a timestamp
-     * @param {Date} [timestamp] A timestamp to get datasets at a specific time
-     * @returns {Object} If entity was not found in the database this method returns null.
-     */
-    static findAsOf<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        options?: FindManyOptions<T> | Date,
-        timestamp?: Date,
-    ): Promise<T[]> {
-        return this.getRepository<T>().findAsOf(options, timestamp)
-    }
-
-    /**
      * Finds entities that match given WHERE conditions.
      */
     static findBy<T extends BaseEntity>(
@@ -557,21 +542,6 @@ export class BaseEntity {
         options: FindOneOptions<T>,
     ): Promise<T | null> {
         return this.getRepository<T>().findOne(options)
-    }
-
-    /**
-     * Finds first entity that matches given conditions and at a specific timestamp.
-     *
-     * @param {Object} [options] Where conditions or a timestamp
-     * @param {Date} [timestamp] A timestamp to get datasets at a specific time
-     * @returns {Object} If entity was not found in the database this method returns null.
-     */
-    static findOneAsOf<T extends BaseEntity>(
-        this: { new (): T } & typeof BaseEntity,
-        options: FindOneOptions<T>,
-        timestamp?: Date,
-    ): Promise<T | null> {
-        return this.getRepository<T>().findOneAsOf(options, timestamp)
     }
 
     /**
