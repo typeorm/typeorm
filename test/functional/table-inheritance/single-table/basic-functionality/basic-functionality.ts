@@ -11,6 +11,7 @@ import { Accountant } from "./entity/Accountant"
 import { Employee } from "./entity/Employee"
 import { Person } from "./entity/Person"
 import { expect } from "chai"
+import { FindOptionsWhere } from "../../../../../src"
 
 describe("table-inheritance > single-table > basic-functionality", () => {
     let connections: DataSource[]
@@ -462,11 +463,33 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 person.name = 'Any Person'
 
                 await Promise.all([student, person].map(pers => connection.manager.getRepository(Person).insert(pers)))
-                
+
                 const studentRetrieved = await connection.manager.getRepository(Student).findOneByOrFail({id: 1});
 
                 studentRetrieved.constructor.name.should.be.eql('Student')
                 studentRetrieved.faculty.should.be.eql('Economics')
             }),
         ))
+        it('should be able to search using children entities fields through the parent repository', () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const student = new Student()
+                student.id = 1;
+                student.name = "Alice"
+                student.faculty = "Economics"
+
+                const person = new Person()
+                person.name = 'Any Person'
+
+                await connection.manager.save([student, person])
+
+                const results = await connection.manager.getRepository(Person).findBy({ faculty: 'Economics' } as FindOptionsWhere<Person>) as Student[];
+
+                results.length.should.be.eql(1);
+
+                results[0].constructor.name.should.be.eql('Student')
+                results[0].faculty.should.be.eql('Economics')
+            }),
+        ))
+
 })

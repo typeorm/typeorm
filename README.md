@@ -633,7 +633,7 @@ It's not a new copy of the object, it modifies its "id" and returns it.
 ### Using Entity Manager
 
 We just created a new photo and saved it in the database.
-We used `EntityManager` to save it.
+We used `EntityManager` to  save it.
 Using entity manager you can manipulate any entity in your app.
 For example, let's load our saved entity:
 
