@@ -37,7 +37,9 @@ export class EntityNotFoundError extends TypeORMError {
     private stringifyCriteria(criteria: any): string {
         try {
             return JSON.stringify(criteria, null, 4)
-        } catch (e) {}
+        } catch (e) {
+            /* empty */
+        }
         return "" + criteria
     }
 }

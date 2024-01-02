@@ -1009,7 +1009,9 @@ export class CockroachDriver implements Driver {
                     this.options.nativeDriver || PlatformTools.load("pg-native")
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native
-            } catch (e) {}
+            } catch (e) {
+                /* empty */
+            }
         } catch (e) {
             // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg")

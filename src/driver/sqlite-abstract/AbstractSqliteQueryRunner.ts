@@ -1209,7 +1209,9 @@ export abstract class AbstractSqliteQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+                /* empty */
+            }
             throw error
         } finally {
             await this.query(`PRAGMA foreign_keys = ON`)

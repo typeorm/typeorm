@@ -52,7 +52,9 @@ describe("transaction > nested transaction", () => {
                             })
                             throw new Error("")
                         })
-                    } catch (_) {}
+                    } catch (_) {
+                        /* empty */
+                    }
 
                     await em0.transaction(async (em1) => {
                         const post = new Post()
@@ -85,7 +87,9 @@ describe("transaction > nested transaction", () => {
                                 })
                                 throw new Error("")
                             })
-                        } catch (_) {}
+                        } catch (_) {
+                            /* empty */
+                        }
 
                         await em1.transaction(async (em2) => {
                             const post = new Post()
@@ -121,7 +125,9 @@ describe("transaction > nested transaction", () => {
                                     })
                                     throw new Error("")
                                 })
-                            } catch (_) {}
+                            } catch (_) {
+                                /* empty */
+                            }
 
                             await em2.transaction(async (em3) => {
                                 const post = new Post()
@@ -170,7 +176,9 @@ describe("transaction > nested transaction", () => {
                                 conditions.push({ ...post })
                                 throw new Error("")
                             })
-                        } catch (_) {}
+                        } catch (_) {
+                            /* empty */
+                        }
 
                         await em0.transaction(async (em1) => {
                             const post = new Post()
@@ -186,7 +194,9 @@ describe("transaction > nested transaction", () => {
                                     conditions.push({ ...post })
                                     throw new Error("")
                                 })
-                            } catch (_) {}
+                            } catch (_) {
+                                /* empty */
+                            }
 
                             await em1.transaction(async (em2) => {
                                 const post = new Post()
@@ -202,12 +212,16 @@ describe("transaction > nested transaction", () => {
                                         conditions.push({ ...post })
                                         throw new Error("")
                                     })
-                                } catch (_) {}
+                                } catch (_) {
+                                    /* empty */
+                                }
                             })
                         })
                         throw new Error("")
                     })
-                } catch (_) {}
+                } catch (_) {
+                    /* empty */
+                }
 
                 for (const condition of conditions) {
                     const post = await connection.manager.findOne(Post, {

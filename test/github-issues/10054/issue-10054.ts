@@ -25,7 +25,6 @@ describe("github issues > #10054 Nested 'Or' Condition/Operation Support in Repo
     it("should find person where name starts with foo or equal to jane", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                debugger
                 const foo = new Person()
                 foo.name = "Foo"
                 foo.age = null

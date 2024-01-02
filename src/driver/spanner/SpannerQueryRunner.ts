@@ -209,7 +209,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // we throw original error even if rollback thrown an error
                     if (!this.isTransactionActive && !isSelect)
                         await this.sessionTransaction.rollback()
-                } catch (rollbackError) {}
+                } catch (rollbackError) {
+                    /* empty */
+                }
                 throw error
             }
 
@@ -1501,7 +1503,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+                /* empty */
+            }
             throw error
         }
     }

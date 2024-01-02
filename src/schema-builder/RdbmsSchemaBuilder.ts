@@ -109,7 +109,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 if (isUsingTransactions) {
                     await this.queryRunner.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch (rollbackError) {
+                /* empty */
+            }
             throw error
         } finally {
             await this.queryRunner.afterMigration()
