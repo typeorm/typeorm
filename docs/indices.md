@@ -137,6 +137,18 @@ export class Thing {
 }
 ```
 
+## Concurrent creation
+
+In order to avoid having to obtain an access exclusive lock when creating and dropping indexes in postgres, you may create them using the CONCURRENTLY modifier.
+
+Typeorm supports generating SQL with this option if when the concurrent option is specified on the index.
+
+```typescript
+@Index(["firstName", "middleName", "lastName"], { concurrent: true })
+```
+
+For more information see the [postgres documentation](https://www.postgresql.org/docs/current/sql-createindex.html).
+
 ## Disabling synchronization
 
 TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) because of lot of different database specifics and multiple

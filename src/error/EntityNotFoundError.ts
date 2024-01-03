@@ -7,8 +7,14 @@ import { InstanceChecker } from "../util/InstanceChecker"
  * Thrown when no result could be found in methods which are not allowed to return undefined or an empty set.
  */
 export class EntityNotFoundError extends TypeORMError {
+    public readonly entityClass: EntityTarget<any>
+    public readonly criteria: any
+
     constructor(entityClass: EntityTarget<any>, criteria: any) {
         super()
+
+        this.entityClass = entityClass
+        this.criteria = criteria
 
         this.message =
             `Could not find any entity of type "${this.stringifyTarget(

@@ -110,11 +110,12 @@ export class AuroraPostgresQueryRunner
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             await this.client.startTransaction()
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth} - 1`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -129,14 +130,15 @@ export class AuroraPostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.client.commitTransaction()
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -151,14 +153,15 @@ export class AuroraPostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.client.rollbackTransaction()
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }

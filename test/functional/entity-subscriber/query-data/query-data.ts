@@ -16,7 +16,6 @@ describe("entity subscriber > query data", () => {
                 subscribers: [MockSubscriber],
                 dropSchema: true,
                 schemaCreate: true,
-                enabledDrivers: ["sqlite"],
             })),
     )
     beforeEach(() => {

@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 
 /**
@@ -146,5 +147,11 @@ export interface MysqlConnectionOptions
          * ORDER: Select the first node available unconditionally.
          */
         readonly selector?: "RR" | "RANDOM" | "ORDER"
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
 }

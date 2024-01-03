@@ -206,11 +206,10 @@ await getManager()
     .createQueryBuilder(Thing, "thing")
     // 将字符串化的GeoJSON转换为具有与表规范匹配的SRID的geometry
     .where("ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0")
-    .orderBy({
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))": {
-            order: "ASC"
-        }
-    })
+    .orderBy(
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))",
+        "ASC"
+    )
     .setParameters({
         // 字符串化 GeoJSON
         origin: JSON.stringify(origin)

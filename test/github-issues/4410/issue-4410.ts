@@ -13,6 +13,7 @@ import { PlatformTools } from "../../../src/platform/PlatformTools"
 describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     let connections: DataSource[]
     let stub: sinon.SinonStub
+    let sandbox: sinon.SinonSandbox
 
     const testingOptions: TestingOptions = {
         entities: [Username],
@@ -20,10 +21,14 @@ describe("github issues > #4410 allow custom filepath for FileLogger", () => {
         dropSchema: true,
     }
 
-    before(() => (stub = sinon.stub(PlatformTools, "appendFileSync")))
+    before(() => {
+        sandbox = sinon.createSandbox()
+        stub = sandbox.stub(PlatformTools, "appendFileSync")
+    })
     beforeEach(() => reloadTestingDatabases(connections))
     afterEach(async () => {
         stub.resetHistory()
+
         await closeTestingConnections(connections)
     })
 

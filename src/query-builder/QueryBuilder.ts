@@ -80,6 +80,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     private parameterIndex = 0
 
+    /**
+     * Contains all registered query builder classes.
+     */
+    private static queryBuilderRegistry: Record<string, any> = {}
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -179,12 +184,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             ]
         }
 
-        // loading it dynamically because of circular issue
-        const SelectQueryBuilderCls =
-            require("./SelectQueryBuilder").SelectQueryBuilder
         if (InstanceChecker.isSelectQueryBuilder(this)) return this as any
 
-        return new SelectQueryBuilderCls(this)
+        return QueryBuilder.queryBuilderRegistry["SelectQueryBuilder"](this)
     }
 
     /**
@@ -193,12 +195,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     insert(): InsertQueryBuilder<Entity> {
         this.expressionMap.queryType = "insert"
 
-        // loading it dynamically because of circular issue
-        const InsertQueryBuilderCls =
-            require("./InsertQueryBuilder").InsertQueryBuilder
         if (InstanceChecker.isInsertQueryBuilder(this)) return this as any
 
-        return new InsertQueryBuilderCls(this)
+        return QueryBuilder.queryBuilderRegistry["InsertQueryBuilder"](this)
     }
 
     /**
@@ -256,12 +255,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         this.expressionMap.queryType = "update"
         this.expressionMap.valuesSet = updateSet
 
-        // loading it dynamically because of circular issue
-        const UpdateQueryBuilderCls =
-            require("./UpdateQueryBuilder").UpdateQueryBuilder
         if (InstanceChecker.isUpdateQueryBuilder(this)) return this as any
 
-        return new UpdateQueryBuilderCls(this)
+        return QueryBuilder.queryBuilderRegistry["UpdateQueryBuilder"](this)
     }
 
     /**
@@ -270,34 +266,25 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     delete(): DeleteQueryBuilder<Entity> {
         this.expressionMap.queryType = "delete"
 
-        // loading it dynamically because of circular issue
-        const DeleteQueryBuilderCls =
-            require("./DeleteQueryBuilder").DeleteQueryBuilder
         if (InstanceChecker.isDeleteQueryBuilder(this)) return this as any
 
-        return new DeleteQueryBuilderCls(this)
+        return QueryBuilder.queryBuilderRegistry["DeleteQueryBuilder"](this)
     }
 
     softDelete(): SoftDeleteQueryBuilder<any> {
         this.expressionMap.queryType = "soft-delete"
 
-        // loading it dynamically because of circular issue
-        const SoftDeleteQueryBuilderCls =
-            require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder
         if (InstanceChecker.isSoftDeleteQueryBuilder(this)) return this as any
 
-        return new SoftDeleteQueryBuilderCls(this)
+        return QueryBuilder.queryBuilderRegistry["SoftDeleteQueryBuilder"](this)
     }
 
     restore(): SoftDeleteQueryBuilder<any> {
         this.expressionMap.queryType = "restore"
 
-        // loading it dynamically because of circular issue
-        const SoftDeleteQueryBuilderCls =
-            require("./SoftDeleteQueryBuilder").SoftDeleteQueryBuilder
         if (InstanceChecker.isSoftDeleteQueryBuilder(this)) return this as any
 
-        return new SoftDeleteQueryBuilderCls(this)
+        return QueryBuilder.queryBuilderRegistry["SoftDeleteQueryBuilder"](this)
     }
 
     /**
@@ -335,12 +322,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             this.expressionMap.setMainAlias(mainAlias)
         }
 
-        // loading it dynamically because of circular issue
-        const RelationQueryBuilderCls =
-            require("./RelationQueryBuilder").RelationQueryBuilder
         if (InstanceChecker.isRelationQueryBuilder(this)) return this as any
 
-        return new RelationQueryBuilderCls(this)
+        return QueryBuilder.queryBuilderRegistry["RelationQueryBuilder"](this)
     }
 
     /**
@@ -829,7 +813,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         // to scrub "ending" characters from the SQL but otherwise we can leave everything else
         // as-is and it should be valid.
 
-        return `/* ${this.expressionMap.comment.replace("*/", "")} */ `
+        return `/* ${this.expressionMap.comment.replace(/\*\//g, "")} */ `
     }
 
     /**
@@ -1024,9 +1008,31 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                 switch (clause.type) {
                     case "and":
-                        return (index > 0 ? "AND " : "") + expression
+                        return (
+                            (index > 0 ? "AND " : "") +
+                            `${
+                                this.connection.options.isolateWhereStatements
+                                    ? "("
+                                    : ""
+                            }${expression}${
+                                this.connection.options.isolateWhereStatements
+                                    ? ")"
+                                    : ""
+                            }`
+                        )
                     case "or":
-                        return (index > 0 ? "OR " : "") + expression
+                        return (
+                            (index > 0 ? "OR " : "") +
+                            `${
+                                this.connection.options.isolateWhereStatements
+                                    ? "("
+                                    : ""
+                            }${expression}${
+                                this.connection.options.isolateWhereStatements
+                                    ? ")"
+                                    : ""
+                            }`
+                        )
                 }
 
                 return expression
@@ -1121,6 +1127,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 )}`
             case "and":
                 return condition.parameters.join(" AND ")
+            case "or":
+                return condition.parameters.join(" OR ")
         }
 
         throw new TypeError(
@@ -1547,6 +1555,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         ),
                     ),
                 }
+            } else if (parameterValue.type === "or") {
+                const values: FindOperator<any>[] = parameterValue.value
+
+                return {
+                    operator: parameterValue.type,
+                    parameters: values.map((operator) =>
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                operator,
+                            ),
+                        ),
+                    ),
+                }
             } else {
                 return {
                     operator: parameterValue.type,
@@ -1649,5 +1671,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
+    }
+
+    static registerQueryBuilderClass(name: string, factory: any) {
+        QueryBuilder.queryBuilderRegistry[name] = factory
     }
 }

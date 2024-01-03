@@ -74,6 +74,12 @@ export class IndexMetadata {
     isBackground?: boolean
 
     /**
+     * Builds the index using the concurrently option.
+     * This options is only supported for postgres database.
+     */
+    isConcurrent?: boolean
+
+    /**
      * Specifies a time to live, in seconds.
      * This option is only supported for mongodb database.
      */
@@ -148,6 +154,7 @@ export class IndexMetadata {
             this.where = options.args.where
             this.isSparse = options.args.sparse
             this.isBackground = options.args.background
+            this.isConcurrent = options.args.concurrent
             this.expireAfterSeconds = options.args.expireAfterSeconds
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns

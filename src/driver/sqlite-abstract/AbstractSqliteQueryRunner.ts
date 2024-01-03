@@ -101,6 +101,7 @@ export abstract class AbstractSqliteQueryRunner
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             if (isolationLevel) {
                 if (isolationLevel === "READ UNCOMMITTED") {
                     await this.query("PRAGMA read_uncommitted = true")
@@ -110,9 +111,9 @@ export abstract class AbstractSqliteQueryRunner
             }
             await this.query("BEGIN TRANSACTION")
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -127,14 +128,15 @@ export abstract class AbstractSqliteQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -149,14 +151,15 @@ export abstract class AbstractSqliteQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -1435,7 +1438,7 @@ export abstract class AbstractSqliteQueryRunner
                                 dbColumn["hidden"] === 2 ? "VIRTUAL" : "STORED"
 
                             const asExpressionQuery =
-                                await this.selectTypeormMetadataSql({
+                                this.selectTypeormMetadataSql({
                                     table: table.name,
                                     type: MetadataTableType.GENERATED_COLUMN,
                                     name: tableColumn.name,
@@ -1453,20 +1456,10 @@ export abstract class AbstractSqliteQueryRunner
                         }
 
                         if (tableColumn.type === "varchar") {
-                            // Check if this is an enum
-                            const enumMatch = sql.match(
-                                new RegExp(
-                                    '"(' +
-                                        tableColumn.name +
-                                        ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)",
-                                ),
+                            tableColumn.enum = OrmUtils.parseSqlCheckExpression(
+                                sql,
+                                tableColumn.name,
                             )
-                            if (enumMatch) {
-                                // This is an enum
-                                tableColumn.enum = enumMatch[2]
-                                    .substr(1, enumMatch[2].length - 2)
-                                    .split("','")
-                            }
                         }
 
                         // parse datatype and attempt to retrieve length, precision and scale
