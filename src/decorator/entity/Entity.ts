@@ -41,6 +41,7 @@ export function Entity(
             schema: options.schema ? options.schema : undefined,
             synchronize: options.synchronize,
             withoutRowid: options.withoutRowid,
+            comment: options.comment ? options.comment : undefined,
             versioning: options.versioning,
         } as TableMetadataArgs)
     }

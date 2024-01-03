@@ -20,13 +20,13 @@ export class AssetEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string
 
-    @Column({ type: "varchar", length: 255 })
+    @Column({ length: 255 })
     name!: string
 
     @Column({ type: "uuid" })
     configuration_id!: string
 
-    @Column({ type: "numeric" })
+    @Column()
     status!: AssetStatus
 
     @CreateDateColumn()

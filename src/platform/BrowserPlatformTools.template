@@ -1,5 +1,3 @@
-import { Buffer } from "buffer";
-
 /**
  * Browser's implementation of the platform-specific tools.
  *
@@ -7,6 +5,8 @@ import { Buffer } from "buffer";
  * For node.js environment this class is not getting packaged.
  * Don't use methods of this class in the code, use PlatformTools methods instead.
  */
+import { Buffer } from "buffer";
+
 export class PlatformTools {
 
     /**

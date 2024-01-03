@@ -49,6 +49,11 @@ export interface EntityOptions {
     withoutRowid?: boolean
 
     /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
+
+    /**
      * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */

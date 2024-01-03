@@ -3357,7 +3357,7 @@ export class SqlServerQueryRunner
                                         : "VIRTUAL"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         database: dbTable["TABLE_CATALOG"],
                                         schema: dbTable["TABLE_SCHEMA"],
                                         table: dbTable["TABLE_NAME"],
@@ -4229,5 +4229,17 @@ export class SqlServerQueryRunner
             default:
                 return ISOLATION_LEVEL.READ_COMMITTED
         }
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `sqlserver driver does not support change table comment.`,
+        )
     }
 }

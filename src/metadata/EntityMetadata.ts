@@ -518,6 +518,11 @@ export class EntityMetadata {
     propertiesMap: ObjectLiteral
 
     /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
+  
+    /**
      * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */
@@ -1072,6 +1077,8 @@ export class EntityMetadata {
             this.tableMetadataArgs.type === "junction"
         this.isClosureJunction =
             this.tableMetadataArgs.type === "closure-junction"
+
+        this.comment = this.tableMetadataArgs.comment
 
         this.versioning = this.tableMetadataArgs.versioning
     }

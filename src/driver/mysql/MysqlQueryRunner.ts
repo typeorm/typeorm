@@ -747,6 +747,49 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Change table comment.
+     */
+    async changeTableComment(
+        tableOrName: Table | string,
+        newComment?: string,
+    ): Promise<void> {
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        newComment = this.escapeComment(newComment)
+        const comment = this.escapeComment(table.comment)
+
+        if (newComment === comment) {
+            return
+        }
+
+        const newTable = table.clone()
+
+        upQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    newTable,
+                )} COMMENT ${newComment}`,
+            ),
+        )
+        downQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(table)} COMMENT ${comment}`,
+            ),
+        )
+
+        await this.executeQueries(upQueries, downQueries)
+
+        // change table comment and replace it in cached tabled;
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
+    }
+
+    /**
      * Creates a new column from the column in the table.
      */
     async addColumn(
@@ -2346,11 +2389,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // will cause the query to not hit the optimizations & do full scans.  This is why
         // a number of queries below do `UNION`s of single `WHERE` clauses.
 
-        const dbTables: { TABLE_SCHEMA: string; TABLE_NAME: string }[] = []
+        const dbTables: {
+            TABLE_SCHEMA: string
+            TABLE_NAME: string
+            TABLE_COMMENT: string
+        }[] = []
 
         if (!tableNames) {
             // Since we don't have any of this data we have to do a scan
-            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
+            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
 
             dbTables.push(...(await this.query(tablesSql)))
         } else {
@@ -2367,7 +2414,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         database = currentDatabase
                     }
 
-                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
+                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
                 })
                 .join(" UNION ")
 
@@ -2682,7 +2729,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         schema: dbTable["TABLE_SCHEMA"],
                                         table: dbTable["TABLE_NAME"],
                                         type: MetadataTableType.GENERATED_COLUMN,
@@ -2925,6 +2972,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     })
                 })
 
+                table.comment = dbTable["TABLE_COMMENT"]
+
                 return table
             }),
         )
@@ -3060,6 +3109,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (table.versioning) {
             sql += ` WITH SYSTEM VERSIONING`
+        }
+
+        if (table.comment) {
+            sql += ` COMMENT="${table.comment}"`
         }
 
         return new Query(sql)

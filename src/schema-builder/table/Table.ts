@@ -85,6 +85,11 @@ export class Table {
     engine?: string
 
     /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
+
+    /**
      * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */
@@ -145,6 +150,8 @@ export class Table {
 
             this.engine = options.engine
 
+            this.comment = options.comment
+          
             if (options.versioning) {
                 if (options.versioning === true) {
                     // Default values
@@ -190,6 +197,7 @@ export class Table {
             justCreated: this.justCreated,
             withoutRowid: this.withoutRowid,
             engine: this.engine,
+            comment: this.comment,
             versioning: this.versioning,
         })
     }
@@ -431,6 +439,7 @@ export class Table {
             exclusions: entityMetadata.exclusions.map((exclusion) =>
                 TableExclusion.create(exclusion),
             ),
+            comment: entityMetadata.comment,
             versioning: entityMetadata.versioning,
         }
 

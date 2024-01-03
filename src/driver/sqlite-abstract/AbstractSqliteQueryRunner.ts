@@ -1438,7 +1438,7 @@ export abstract class AbstractSqliteQueryRunner
                                 dbColumn["hidden"] === 2 ? "VIRTUAL" : "STORED"
 
                             const asExpressionQuery =
-                                await this.selectTypeormMetadataSql({
+                                this.selectTypeormMetadataSql({
                                     table: table.name,
                                     type: MetadataTableType.GENERATED_COLUMN,
                                     name: tableColumn.name,
@@ -2241,5 +2241,15 @@ export abstract class AbstractSqliteQueryRunner
             .split(".")
             .map((i) => (disableEscape ? i : `"${i}"`))
             .join(".")
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(`sqlit driver does not support change comment.`)
     }
 }
