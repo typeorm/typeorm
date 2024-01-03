@@ -1470,7 +1470,7 @@ export abstract class AbstractSqliteQueryRunner
                             const fullType = tableColumn.type
                             let dataType = fullType.substr(0, pos)
                             if (
-                                !!this.driver.withLengthColumnTypes.find(
+                                this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
@@ -1486,7 +1486,7 @@ export abstract class AbstractSqliteQueryRunner
                                 }
                             }
                             if (
-                                !!this.driver.withPrecisionColumnTypes.find(
+                                this.driver.withPrecisionColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
@@ -1498,7 +1498,7 @@ export abstract class AbstractSqliteQueryRunner
                                     tableColumn.precision = +matches[1]
                                 }
                                 if (
-                                    !!this.driver.withScaleColumnTypes.find(
+                                    this.driver.withScaleColumnTypes.find(
                                         (col) => col === dataType,
                                     )
                                 ) {

@@ -18,7 +18,6 @@
     "@typescript-eslint/triple-slash-reference": "warn",
     "no-async-promise-executor": "warn",
     "no-control-regex": "warn",
-    "no-extra-boolean-cast": "warn",
     "no-extra-semi": "warn",
     "no-prototype-builtins": "warn",
     "no-regex-spaces": "warn",
