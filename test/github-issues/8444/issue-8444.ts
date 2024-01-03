@@ -17,16 +17,23 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
                     driverSpecific: {
                         entitySkipConstructor: false,
                     },
-                    enabledDrivers: ["postgres"],
                     entities: [StrictlyInitializedEntity],
                     schemaCreate: true,
                     dropSchema: true,
                 })
             }
 
-            await expect(
-                bootstrapWithoutEntitySkipConstructor(),
-            ).to.be.rejectedWith("someColumn cannot be undefined")
+            try {
+                const dataSources =
+                    await bootstrapWithoutEntitySkipConstructor()
+                // if we have zero data sources - it means we are testing in mongodb-only mode - we are fine here
+                // if we have any data sources - it means test didn't go as we expected
+                if (dataSources.length > 0) {
+                    expect(true).to.be.false
+                }
+            } catch (err) {
+                expect(err.message).to.contain("someColumn cannot be undefined")
+            }
         })
     })
 
@@ -39,7 +46,6 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
                 driverSpecific: {
                     entitySkipConstructor: true,
                 },
-                enabledDrivers: ["postgres"],
                 entities: [StrictlyInitializedEntity],
                 schemaCreate: true,
                 dropSchema: true,
