@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
-        "lib": ["es5", "es6"],
+        "lib": ["ES2021"],
         "outDir": "build/compiled",
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
-        "target": "ES2019",
+        "target": "ES2021",
         "module": "commonjs",
         "moduleResolution": "node",
         "importHelpers": true,
@@ -24,7 +24,8 @@
     "include": [
       "sample",
       "src",
-      "test"
+      "test",
+      "*.ts"
     ],
     "exclude": [
         "tmp",
