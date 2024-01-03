@@ -72,7 +72,7 @@ describe("repository > find options", () => {
                 user.name = "Alex Messer"
                 await connection.manager.save(user)
 
-                const queryRunner = await connection.createQueryRunner()
+                const queryRunner = connection.createQueryRunner()
 
                 const startTransactionFn = sinon.spy(
                     queryRunner,

@@ -171,7 +171,6 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                 fail(err)
             } finally {
                 await broadcasterResult.wait()
-                console.log("Finally", query, broadcasterResult.count)
             }
         })
     }

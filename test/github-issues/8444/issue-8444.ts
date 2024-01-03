@@ -17,6 +17,7 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
                     driverSpecific: {
                         entitySkipConstructor: false,
                     },
+                    enabledDrivers: ["postgres"],
                     entities: [StrictlyInitializedEntity],
                     schemaCreate: true,
                     dropSchema: true,
@@ -38,6 +39,7 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
                 driverSpecific: {
                     entitySkipConstructor: true,
                 },
+                enabledDrivers: ["postgres"],
                 entities: [StrictlyInitializedEntity],
                 schemaCreate: true,
                 dropSchema: true,
