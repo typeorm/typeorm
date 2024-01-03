@@ -41,7 +41,6 @@ import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { registerQueryBuilders } from "../query-builder"
 
 registerQueryBuilders()
 

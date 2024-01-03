@@ -117,8 +117,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
     }
 
-    private static queryBuilderRegistry: Record<string, any> = {}
-
     static registerQueryBuilderClass(name: string, factory: any) {
         QueryBuilder.queryBuilderRegistry[name] = factory
     }
@@ -1677,9 +1675,5 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
-    }
-
-    static registerQueryBuilderClass(name: string, factory: any) {
-        QueryBuilder.queryBuilderRegistry[name] = factory
     }
 }
