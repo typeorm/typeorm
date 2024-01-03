@@ -10,7 +10,7 @@
     "email": "pleerock.me@gmail.com"
   },
   "engines": {
-    "node": ">= 12.9.0"
+    "node": ">=16.13.0"
   },
   "exports": {
     ".": {
@@ -229,7 +229,7 @@
     "dotenv": "^16.0.3",
     "glob": "^10.3.10",
     "mkdirp": "^2.1.3",
-    "reflect-metadata": "^0.1.13",
+    "reflect-metadata": "^0.2.1",
     "sha.js": "^2.4.11",
     "tslib": "^2.5.0",
     "uuid": "^9.0.0",
