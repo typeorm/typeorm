@@ -1,7 +1,7 @@
 /**
  * Customize temporal tables options
  */
-export interface VersioningOptions {
+export interface TemporalTableOptions {
     /*
      * The system records the start time for the row in this column.
      */

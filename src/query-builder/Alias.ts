@@ -1,7 +1,7 @@
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "../error"
-import { VersioningOptions } from "../schema-builder/options/VersioningOptions"
+import { TemporalTableOptions } from "../schema-builder/options/TemporalTableOptions"
 
 /**
  */
@@ -25,7 +25,7 @@ export class Alias {
      * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */
-    versioning?: VersioningOptions | boolean
+    versioning?: TemporalTableOptions | boolean
 
     constructor(alias?: Alias) {
         ObjectUtils.assign(this, alias || {})

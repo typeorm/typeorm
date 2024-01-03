@@ -8,7 +8,7 @@ import { TableUtils } from "../util/TableUtils"
 import { TableUnique } from "./TableUnique"
 import { TableCheck } from "./TableCheck"
 import { TableExclusion } from "./TableExclusion"
-import { VersioningOptions } from "../options/VersioningOptions"
+import { TemporalTableOptions } from "../options/TemporalTableOptions"
 
 /**
  * Table in the database represented in this class.
@@ -93,7 +93,7 @@ export class Table {
      * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */
-    versioning: VersioningOptions
+    versioning: TemporalTableOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -151,7 +151,7 @@ export class Table {
             this.engine = options.engine
 
             this.comment = options.comment
-          
+
             if (options.versioning) {
                 if (options.versioning === true) {
                     // Default values

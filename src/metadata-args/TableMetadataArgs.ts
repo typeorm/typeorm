@@ -1,7 +1,7 @@
 import { DataSource, SelectQueryBuilder } from ".."
 import { OrderByCondition } from "../find-options/OrderByCondition"
 import { TableType } from "../metadata/types/TableTypes"
-import { VersioningOptions } from "../schema-builder/options/VersioningOptions"
+import { TemporalTableOptions } from "../schema-builder/options/TemporalTableOptions"
 
 /**
  * Arguments for TableMetadata class, helps to construct an TableMetadata object.
@@ -81,5 +81,5 @@ export interface TableMetadataArgs {
      * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */
-    versioning?: VersioningOptions
+    versioning?: TemporalTableOptions
 }

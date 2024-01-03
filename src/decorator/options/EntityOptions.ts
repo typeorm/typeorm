@@ -1,5 +1,5 @@
 import { OrderByCondition } from "../../find-options/OrderByCondition"
-import { VersioningOptions } from "../../schema-builder/options/VersioningOptions"
+import { TemporalTableOptions } from "../../schema-builder/options/TemporalTableOptions"
 
 /**
  * Describes all entity's options.
@@ -57,5 +57,5 @@ export interface EntityOptions {
      * The value 'true' enables system versioning. You can also customize each option like
      * start row column, history table, etc.
      */
-    versioning?: VersioningOptions | boolean
+    versioning?: TemporalTableOptions | boolean
 }
