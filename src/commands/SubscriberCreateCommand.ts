@@ -11,6 +11,14 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
     command = "subscriber:create <path>"
     describe = "Generates a new subscriber."
 
+    builder(args: yargs.Argv) {
+        return args.positional("path", {
+            type: "string",
+            describe: "Path of the subscriber file",
+            demandOption: true,
+        })
+    }
+
     async handler(args: yargs.Arguments) {
         try {
             const fullPath = (args.path as string).startsWith("/")

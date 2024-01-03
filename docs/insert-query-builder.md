@@ -41,7 +41,7 @@ This syntax doesn't escape your values, you need to handle escape on your own.
 If the values you are trying to insert conflict due to existing data the `orUpdate` function can be used to update specific values on the conflicted target.
 
 ```typescript
-await datasource
+await dataSource
     .createQueryBuilder()
     .insert()
     .into(User)
@@ -60,7 +60,7 @@ await datasource
 ### Skip data update if values have not changed (Postgres)
 
 ```typescript
-await datasource
+await dataSource
     .createQueryBuilder()
     .insert()
     .into(User)
@@ -82,7 +82,7 @@ await datasource
 ### Use partial index (Postgres)
 
 ```typescript
-await datasource
+await dataSource
     .createQueryBuilder()
     .insert()
     .into(User)

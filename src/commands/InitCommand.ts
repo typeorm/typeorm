@@ -690,7 +690,7 @@ Steps to run this project:
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         Object.assign(packageJson.devDependencies, {
-            "ts-node": "10.7.0",
+            "ts-node": "10.9.1",
             "@types/node": "^16.11.10",
             typescript: "4.5.2",
         })

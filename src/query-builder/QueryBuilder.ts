@@ -80,6 +80,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     private parameterIndex = 0
 
+    /**
+     * Contains all registered query builder classes.
+     */
+    private static queryBuilderRegistry: Record<string, any> = {}
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -185,7 +190,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             ]
         }
 
-        // loading it dynamically because of circular issue
         if (InstanceChecker.isSelectQueryBuilder(this)) return this as any
 
         return QueryBuilder.queryBuilderRegistry["SelectQueryBuilder"](this)
@@ -815,7 +819,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         // to scrub "ending" characters from the SQL but otherwise we can leave everything else
         // as-is and it should be valid.
 
-        return `/* ${this.expressionMap.comment.replace("*/", "")} */ `
+        return `/* ${this.expressionMap.comment.replace(/\*\//g, "")} */ `
     }
 
     /**
@@ -1010,9 +1014,31 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                 switch (clause.type) {
                     case "and":
-                        return (index > 0 ? "AND " : "") + expression
+                        return (
+                            (index > 0 ? "AND " : "") +
+                            `${
+                                this.connection.options.isolateWhereStatements
+                                    ? "("
+                                    : ""
+                            }${expression}${
+                                this.connection.options.isolateWhereStatements
+                                    ? ")"
+                                    : ""
+                            }`
+                        )
                     case "or":
-                        return (index > 0 ? "OR " : "") + expression
+                        return (
+                            (index > 0 ? "OR " : "") +
+                            `${
+                                this.connection.options.isolateWhereStatements
+                                    ? "("
+                                    : ""
+                            }${expression}${
+                                this.connection.options.isolateWhereStatements
+                                    ? ")"
+                                    : ""
+                            }`
+                        )
                 }
 
                 return expression
@@ -1107,6 +1133,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 )}`
             case "and":
                 return condition.parameters.join(" AND ")
+            case "or":
+                return condition.parameters.join(" OR ")
         }
 
         throw new TypeError(
@@ -1533,6 +1561,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         ),
                     ),
                 }
+            } else if (parameterValue.type === "or") {
+                const values: FindOperator<any>[] = parameterValue.value
+
+                return {
+                    operator: parameterValue.type,
+                    parameters: values.map((operator) =>
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                operator,
+                            ),
+                        ),
+                    ),
+                }
             } else {
                 return {
                     operator: parameterValue.type,
@@ -1635,5 +1677,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
+    }
+
+    static registerQueryBuilderClass(name: string, factory: any) {
+        QueryBuilder.queryBuilderRegistry[name] = factory
     }
 }

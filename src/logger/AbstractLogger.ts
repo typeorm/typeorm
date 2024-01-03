@@ -132,7 +132,7 @@ export abstract class AbstractLogger implements Logger {
      * Logs events from the migration run process.
      */
     logMigration(message: string, queryRunner?: QueryRunner) {
-        if (this.isLogEnabledFor("migration")) {
+        if (!this.isLogEnabledFor("migration")) {
             return
         }
 

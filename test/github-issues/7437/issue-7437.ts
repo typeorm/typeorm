@@ -4,7 +4,7 @@ import { expect } from "chai"
 
 describe("github issues > #7437 MongoDB options never parse in connectionUrl and after my fix was parse incorrect", () => {
     it("should parse options in ConnectionUrl", () => {
-        var options = DriverUtils.buildMongoDBDriverOptions({
+        const options = DriverUtils.buildMongoDBDriverOptions({
             url: "mongodb://testuser:testpwd@test-primary.example.com:27017/testdb?retryWrites=true&w=majority&useUnifiedTopology=true",
         })
 

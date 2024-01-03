@@ -10,7 +10,7 @@ import { InternalUser } from "./entity/InternalUser"
 import { InternalRole } from "./entity/InternalRole"
 import { User } from "./entity/User"
 import { Role } from "./entity/Role"
-import { BaseEntity, TypeORMError } from "../../../src"
+import { BaseEntity } from "../../../src"
 import { ClientRole } from "./entity/ClientRole"
 import { afterEach } from "mocha"
 
@@ -92,14 +92,28 @@ describe("github issues > #8522 Single table inheritance returns the same discri
 
     describe("Related tables", () => {
         it("Should throw error when related tables have the same discriminator", async () => {
-            await createTestingConnections({
-                entities: [BaseEntity, ClientRole, InternalRole, Role, User],
-                schemaCreate: true,
-                dropSchema: true,
-            }).should.be.rejectedWith(
-                TypeORMError,
-                `Entities ClientRole and InternalRole have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.`,
-            )
+            try {
+                const dataSources = await createTestingConnections({
+                    entities: [
+                        BaseEntity,
+                        ClientRole,
+                        InternalRole,
+                        Role,
+                        User,
+                    ],
+                    schemaCreate: true,
+                    dropSchema: true,
+                })
+                // if we have zero data sources - it means we are testing in mongodb-only mode - we are fine here
+                // if we have any data sources - it means test didn't go as we expected
+                if (dataSources.length > 0) {
+                    expect(true).to.be.false
+                }
+            } catch (err) {
+                expect(err.message).to.contain(
+                    "Entities ClientRole and InternalRole have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.",
+                )
+            }
         })
     })
 })

@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 /**
  * Browser's implementation of the platform-specific tools.
  *

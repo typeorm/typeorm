@@ -41,6 +41,9 @@ import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { registerQueryBuilders } from "../query-builder"
+
+registerQueryBuilders()
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -738,5 +741,22 @@ export class DataSource {
                 entityMetadata.target.useDataSource(this)
             }
         }
+    }
+
+    /**
+     * Get the replication mode SELECT queries should use for this datasource by default
+     */
+    defaultReplicationModeForReads(): ReplicationMode {
+        if ("replication" in this.driver.options) {
+            const value = (
+                this.driver.options.replication as {
+                    defaultMode?: ReplicationMode
+                }
+            ).defaultMode
+            if (value) {
+                return value
+            }
+        }
+        return "slave"
     }
 }

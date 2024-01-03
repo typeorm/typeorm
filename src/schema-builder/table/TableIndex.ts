@@ -33,6 +33,12 @@ export class TableIndex {
     isSpatial: boolean
 
     /**
+     * Create the index using the CONCURRENTLY modifier
+     * Works only in postgres.
+     */
+    isConcurrent: boolean
+
+    /**
      * The FULLTEXT modifier indexes the entire column and does not allow prefixing.
      * Works only in MySQL.
      */
@@ -67,6 +73,7 @@ export class TableIndex {
         this.columnNames = options.columnNames
         this.isUnique = !!options.isUnique
         this.isSpatial = !!options.isSpatial
+        this.isConcurrent = !!options.isConcurrent
         this.isFulltext = !!options.isFulltext
         this.isNullFiltered = !!options.isNullFiltered
         this.parser = options.parser
@@ -86,6 +93,7 @@ export class TableIndex {
             columnNames: [...this.columnNames],
             isUnique: this.isUnique,
             isSpatial: this.isSpatial,
+            isConcurrent: this.isConcurrent,
             isFulltext: this.isFulltext,
             isNullFiltered: this.isNullFiltered,
             parser: this.parser,
@@ -108,6 +116,7 @@ export class TableIndex {
             ),
             isUnique: indexMetadata.isUnique,
             isSpatial: indexMetadata.isSpatial,
+            isConcurrent: indexMetadata.isConcurrent,
             isFulltext: indexMetadata.isFulltext,
             isNullFiltered: indexMetadata.isNullFiltered,
             parser: indexMetadata.parser,
