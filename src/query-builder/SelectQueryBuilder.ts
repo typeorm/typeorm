@@ -4237,22 +4237,24 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ) {
         let condition: string = ""
         // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
-        if (Array.isArray(where) && where.length) {
-            condition =
-                "(" +
-                where
-                    .map((whereItem) => {
-                        return this.buildWhere(
-                            whereItem,
-                            metadata,
-                            alias,
-                            embedPrefix,
-                        )
-                    })
-                    .filter((condition) => !!condition)
-                    .map((condition) => "(" + condition + ")")
-                    .join(" OR ") +
-                ")"
+        if (Array.isArray(where)) {
+            if (where.length) {
+                condition =
+                    "(" +
+                    where
+                        .map((whereItem) => {
+                            return this.buildWhere(
+                                whereItem,
+                                metadata,
+                                alias,
+                                embedPrefix,
+                            )
+                        })
+                        .filter((condition) => !!condition)
+                        .map((condition) => "(" + condition + ")")
+                        .join(" OR ") +
+                    ")"
+            }
         } else {
             let andConditions: string[] = []
             for (let key in where) {
