@@ -134,6 +134,7 @@ export class RelationIdLoader {
             inverseColumns = relation.inverseRelation!.joinColumns.map(
                 (column) => column.referencedColumn!,
             )
+        } else {
         }
 
         return entities.map((entity) => {

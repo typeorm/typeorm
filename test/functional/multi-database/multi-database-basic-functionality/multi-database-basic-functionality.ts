@@ -100,7 +100,7 @@ describe("multi-database > basic-functionality", () => {
                     const expectedMainPath = path.join(
                         tempPath,
                         (connections[0].options.database as string).match(
-                            /^.*[\\|\/](?<filename>[^\\|\/]+)$/,
+                            /^.*[\\|/](?<filename>[^\\|/]+)$/,
                         )!.groups!["filename"],
                     )
 

@@ -3348,10 +3348,10 @@ export class CockroachQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/:::[\w\s\[\]\"]+/g, "")
+                                    ].replace(/:::[\w\s[\]"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
-                                            /^(-?[\d\.]+)$/,
+                                            /^(-?[\d.]+)$/,
                                             "($1)",
                                         )
 
@@ -3744,7 +3744,7 @@ export class CockroachQueryRunner
     protected async getVersion(): Promise<string> {
         const result = await this.query(`SELECT version()`)
         return result[0]["version"].replace(
-            /^CockroachDB CCL v([\d\.]+) .*$/,
+            /^CockroachDB CCL v([\d.]+) .*$/,
             "$1",
         )
     }

@@ -767,15 +767,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             statement = statement.replace(
                 new RegExp(
                     // Avoid a lookbehind here since it's not well supported
-                    `([ =\(]|^.{0})` + // any of ' =(' or start of line
+                    `([ =(]|^.{0})` + // any of ' =(' or start of line
                         // followed by our prefix, e.g. 'tablename.' or ''
                         `${
                             replaceAliasNamePrefixes
                                 ? "(" + replaceAliasNamePrefixes + ")"
                                 : ""
-                        }([^ =\(\)\,]+)` + // a possible property name: sequence of anything but ' =(),'
+                        }([^ =(),]+)` + // a possible property name: sequence of anything but ' =(),'
                         // terminated by ' =),' or end of line
-                        `(?=[ =\)\,]|.{0}$)`,
+                        `(?=[ =),]|.{0}$)`,
                     "gm",
                 ),
                 (...matches) => {

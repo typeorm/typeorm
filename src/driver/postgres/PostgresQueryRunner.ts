@@ -3765,7 +3765,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::[\w\s.\[\]\-"]+/g, "")
+                                    ].replace(/::[\w\s.[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
@@ -4138,7 +4138,7 @@ export class PostgresQueryRunner
      */
     protected async getVersion(): Promise<string> {
         const result = await this.query(`SELECT version()`)
-        return result[0]["version"].replace(/^PostgreSQL ([\d\.]+) .*$/, "$1")
+        return result[0]["version"].replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
     }
 
     /**
