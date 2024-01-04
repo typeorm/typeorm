@@ -2740,9 +2740,7 @@ export class SqlServerQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {
-                /* empty */
-            }
+            } catch (rollbackError) {}
             throw error
         }
     }

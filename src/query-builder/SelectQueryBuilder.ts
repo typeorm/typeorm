@@ -1636,9 +1636,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1682,9 +1680,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1799,9 +1795,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1845,9 +1839,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1900,9 +1892,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -1954,9 +1944,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         }

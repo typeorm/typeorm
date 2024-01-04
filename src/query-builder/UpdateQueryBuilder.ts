@@ -182,9 +182,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {

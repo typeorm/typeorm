@@ -3144,9 +3144,7 @@ export class PostgresQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {
-                /* empty */
-            }
+            } catch (rollbackError) {}
             throw error
         }
     }

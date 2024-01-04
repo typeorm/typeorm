@@ -376,9 +376,7 @@ export class MigrationExecutor {
                 try {
                     // we throw original error even if rollback thrown an error
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
 
             throw err
@@ -478,9 +476,7 @@ export class MigrationExecutor {
                 try {
                     // we throw original error even if rollback thrown an error
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {
-                    /* empty */
-                }
+                } catch (rollbackError) {}
             }
 
             throw err
