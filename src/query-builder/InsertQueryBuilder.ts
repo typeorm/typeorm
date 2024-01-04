@@ -530,7 +530,7 @@ export class InsertQueryBuilder<
 
                     if (Array.isArray(overwrite)) {
                         updatePart.push(
-                            ...overwrite?.map(
+                            ...overwrite.map(
                                 (column) =>
                                     `${this.escape(
                                         column,

@@ -22,7 +22,6 @@
     "no-extra-semi": "warn",
     "no-prototype-builtins": "warn",
     "no-regex-spaces": "warn",
-    "no-unsafe-optional-chaining": "warn",
     "prefer-const": "warn",
     "prefer-rest-params": "warn",
     "prefer-spread": "warn"
