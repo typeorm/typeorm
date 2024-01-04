@@ -80,7 +80,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
-        await connection.query(`PRAGMA foreign_keys = ON`)
+        await connection.run(`PRAGMA foreign_keys = ON`)
 
         if (
             this.options.journalMode &&
@@ -88,7 +88,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
                 this.options.journalMode,
             ) !== -1
         ) {
-            await connection.query(
+            await connection.run(
                 `PRAGMA journal_mode = ${this.options.journalMode}`,
             )
         }

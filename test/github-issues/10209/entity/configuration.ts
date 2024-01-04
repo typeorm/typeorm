@@ -21,10 +21,10 @@ export class ConfigurationEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string
 
-    @Column({ type: "varchar", length: 255 })
+    @Column({ length: 255 })
     name!: string
 
-    @Column({ type: "numeric" })
+    @Column()
     status!: ConfigurationStatus
 
     @Column({ type: "uuid", nullable: false })
@@ -34,7 +34,7 @@ export class ConfigurationEntity {
     @JoinColumn({ name: "location_id" })
     location!: LocationEntity
 
-    @Column({ type: "boolean", default: true })
+    @Column({ default: true })
     active!: boolean
 
     @OneToMany(() => AssetEntity, (asset) => asset.configuration, {

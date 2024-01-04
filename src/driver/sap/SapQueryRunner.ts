@@ -3354,4 +3354,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         return c
     }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `spa driver does not support change table comment.`,
+        )
+    }
 }

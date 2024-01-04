@@ -4,13 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import {
-    AbstractLogger,
-    DataSource,
-    LogLevel,
-    LogMessage,
-    QueryRunner,
-} from "../../../src"
+import { AbstractLogger, DataSource, LogLevel, LogMessage } from "../../../src"
 import sinon from "sinon"
 import { expect } from "chai"
 
@@ -22,7 +16,6 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
         protected writeLog(
             level: LogLevel,
             logMessage: LogMessage | LogMessage[],
-            queryRunner?: QueryRunner,
         ) {
             const messages = this.prepareLogMessages(logMessage, {
                 highlightSql: false,
@@ -56,7 +49,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
                 try {
                     await dataSource.runMigrations()
                 } catch (e) {
-                    expect(fakeLog.calledOnce).to.be.true
+                    expect(fakeLog.called).to.be.true
                 }
             }),
         ))

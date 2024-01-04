@@ -174,7 +174,7 @@ export class SubjectExecutor {
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
         // console.time(".updateSpecialColumnsInPersistedEntities");
-        await this.updateSpecialColumnsInPersistedEntities()
+        this.updateSpecialColumnsInPersistedEntities()
         // console.timeEnd(".updateSpecialColumnsInPersistedEntities");
 
         // finally broadcast "after" events after we finish insert / update / remove operations

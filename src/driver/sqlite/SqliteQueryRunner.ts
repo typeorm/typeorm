@@ -88,7 +88,8 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                     }
                 }
 
-                const handler = function (err: any, rows: any) {
+                const self = this;
+                const handler = function (this: any, err: any, rows: any) {
                     if (err && err.toString().indexOf("SQLITE_BUSY:") !== -1) {
                         if (
                             typeof options.busyErrorRetry === "number" &&
@@ -110,7 +111,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                             queryExecutionTime,
                             query,
                             parameters,
-                            this,
+                            self,
                         )
 
                     if (err) {
@@ -118,7 +119,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                             err,
                             query,
                             parameters,
-                            this,
+                            self,
                         )
                         broadcaster.broadcastAfterQueryEvent(
                             broadcasterResult,
@@ -171,7 +172,6 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                 fail(err)
             } finally {
                 await broadcasterResult.wait()
-                console.log("Finally", query, broadcasterResult.count)
             }
         })
     }

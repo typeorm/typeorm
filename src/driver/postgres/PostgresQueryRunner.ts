@@ -3782,7 +3782,7 @@ export class PostgresQueryRunner
                                 tableColumn.generatedType = "STORED"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         database: currentDatabase,
                                         schema: dbTable["table_schema"],
                                         table: dbTable["table_name"],
@@ -4716,5 +4716,17 @@ export class PostgresQueryRunner
             `SELECT TRUE FROM information_schema.columns WHERE table_name = 'pg_class' and column_name = 'relispartition'`,
         )
         return result.length ? true : false
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `postgres driver does not support change table comment.`,
+        )
     }
 }

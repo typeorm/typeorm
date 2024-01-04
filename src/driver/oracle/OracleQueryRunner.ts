@@ -2606,7 +2606,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 tableColumn.generatedType = "VIRTUAL"
 
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         table: dbTable["TABLE_NAME"],
                                         type: MetadataTableType.GENERATED_COLUMN,
                                         name: tableColumn.name,
@@ -3180,5 +3180,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return `"${tableName}"`
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `oracle driver does not support change table comment.`,
+        )
     }
 }

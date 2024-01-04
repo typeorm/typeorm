@@ -700,12 +700,15 @@ export class CockroachDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
             defaultValue !== undefined
         ) {
-            if (defaultValue === null) return "NULL"
             if (columnMetadata.isArray) {
                 const enumName = this.buildEnumName(columnMetadata)
                 let arrayValue = defaultValue
@@ -752,10 +755,6 @@ export class CockroachDriver implements Driver {
 
         if (ObjectUtils.isObject(defaultValue) && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`
-        }
-
-        if (defaultValue === undefined || defaultValue === null) {
-            return undefined
         }
 
         return `${defaultValue}`
@@ -884,10 +883,19 @@ export class CockroachDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("table:", columnMetadata.entityMetadata.tableName)
+            // console.log("name:", {
+            //     tableColumn: tableColumn.name,
+            //     columnMetadata: columnMetadata.databaseName,
+            // })
+            // console.log("type:", {
+            //     tableColumn: tableColumn.type,
+            //     columnMetadata: this.normalizeType(columnMetadata),
+            // })
+            // console.log("length:", {
+            //     tableColumn: tableColumn.length,
+            //     columnMetadata: columnMetadata.length,
+            // })
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
@@ -897,7 +905,10 @@ export class CockroachDriver implements Driver {
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("asExpression:", {
+            //     tableColumn: (tableColumn.asExpression || "").trim(),
+            //     columnMetadata: (columnMetadata.asExpression || "").trim(),
+            // })
             // console.log("==========================================");
 
             return (

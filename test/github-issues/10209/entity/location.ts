@@ -13,10 +13,10 @@ export class LocationEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string
 
-    @Column({ type: "varchar", length: 255 })
+    @Column({ length: 255 })
     name!: string
 
-    @Column({ type: "boolean", default: true })
+    @Column({ default: true })
     active!: boolean
 
     @CreateDateColumn()
