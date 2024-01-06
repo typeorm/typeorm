@@ -8,6 +8,7 @@ import { Brackets } from "./Brackets"
 import { DeleteResult } from "./result/DeleteResult"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { TypeORMError } from "../error"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -143,6 +144,10 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
             | ObjectLiteral[],
         parameters?: ObjectLiteral,
     ): this {
+        if (this.expressionMap.wheres.length > 0)
+            throw new TypeORMError(
+                `.where method cannot be called two times or more.`,
+            )
         this.expressionMap.wheres = [] // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.getWhereCondition(where)
         if (condition)

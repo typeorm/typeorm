@@ -1154,6 +1154,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | ObjectLiteral[],
         parameters?: ObjectLiteral,
     ): this {
+        if (this.expressionMap.wheres.length > 0)
+            throw new TypeORMError(
+                `.where method cannot be called two times or more.`,
+            )
         this.expressionMap.wheres = [] // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.getWhereCondition(where)
         if (condition) {

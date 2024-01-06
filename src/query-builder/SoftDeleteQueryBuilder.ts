@@ -191,6 +191,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
             | ObjectLiteral[],
         parameters?: ObjectLiteral,
     ): this {
+        if (this.expressionMap.wheres.length > 0)
+            throw new TypeORMError(
+                `.where method cannot be called two times or more, or after .whereEntity method.`,
+            )
         this.expressionMap.wheres = [] // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.getWhereCondition(where)
         if (condition)
@@ -405,6 +409,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         if (!this.expressionMap.mainAlias!.hasMetadata)
             throw new TypeORMError(
                 `.whereEntity method can only be used on queries which update real entity table.`,
+            )
+        if (this.expressionMap.wheres.length > 0)
+            throw new TypeORMError(
+                `.whereEntity method cannot be called two times or more, or after .where method.`,
             )
 
         this.expressionMap.wheres = []
