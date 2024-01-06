@@ -9,7 +9,7 @@ export class TestMigration1610975184784 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(\`DROP TABLE "post"\`);
+        await queryRunner.query(\`IF OBJECTPROPERTY(OBJECT_ID('"post"'), 'TableTemporalType') = 2 ALTER TABLE "post" SET (SYSTEM_VERSIONING = OFF); DROP TABLE "post"\`);
     }
 
 }`,
@@ -23,7 +23,7 @@ module.exports = class TestMigration1610975184784 {
     }
 
     async down(queryRunner) {
-        await queryRunner.query(\`DROP TABLE "post"\`);
+        await queryRunner.query(\`IF OBJECTPROPERTY(OBJECT_ID('"post"'), 'TableTemporalType') = 2 ALTER TABLE "post" SET (SYSTEM_VERSIONING = OFF); DROP TABLE "post"\`);
     }
 }`,
     timestamp: `import { MigrationInterface, QueryRunner } from "typeorm";
@@ -36,7 +36,7 @@ export class TestMigration1641163894670 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(\`DROP TABLE "post"\`);
+        await queryRunner.query(\`IF OBJECTPROPERTY(OBJECT_ID('"post"'), 'TableTemporalType') = 2 ALTER TABLE "post" SET (SYSTEM_VERSIONING = OFF); DROP TABLE "post"\`);
     }
 
 }`,

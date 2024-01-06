@@ -44,7 +44,7 @@ result = await User.findOneBy({ id: 1 })
 // user name is "bar"
 
 // get dataset before update (from history)
-result = await User.findOne({ where: { id: 1 } }, timestamp)
+result = await User.findOne({ validAt, where: { id: 1 } })
 // user name is "foo"
 ```
 
@@ -70,6 +70,6 @@ results = await User.find()
 // [ User { id: 1, name: 'foo' } ]
 
 // get datasets before deleting (from history)
-results = await User.find({ timestamp })
+results = await User.find({ validAt })
 // [ User { id: 1, name: 'foo' }, User { id: 2, name: 'bar' } ]
 ```

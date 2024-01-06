@@ -2186,7 +2186,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 return (
                     this.getTableName(alias.tablePath!) +
                     (alias.versioning && this.findOptions.validAt
-                        ? ` FOR SYSTEM_TIME AS OF :timestamp `
+                        ? ` FOR SYSTEM_TIME AS OF :temporalTableValidAt `
                         : " ") +
                     this.escape(alias.name)
                 )
@@ -3761,7 +3761,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     protected async loadRawResults(queryRunner: QueryRunner) {
         this.setParameter(
-            "timestamp",
+            "temporalTableValidAt",
             DateUtils.mixedDateToUtcDatetimeString(this.findOptions.validAt),
         )
 
