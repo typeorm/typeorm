@@ -8,7 +8,7 @@ import { DataSource } from "../../../src/index.js"
 import { User } from "./entity/user"
 import { expect } from "chai"
 
-describe.only("github issues > #10596 QueryBuilder allowing multiple where calls is dangerous", () => {
+describe("github issues > #10596 QueryBuilder allowing multiple where calls is dangerous", () => {
     let dataSources: DataSource[]
 
     before(
