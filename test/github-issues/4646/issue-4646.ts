@@ -73,7 +73,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             user.name = "foo"
             await dataSource.manager.save(user)
 
-            const timestamp = await getCurrentTimestamp()
+            const validAt = await getCurrentTimestamp()
 
             let result = await User.findOne({ where: { id: 1 } })
             expect(result?.name).to.be.equal("foo")
@@ -84,16 +84,16 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             result = await User.findOne({ where: { id: 1 } })
             expect(result?.name).to.be.equal("bar")
 
-            result = await User.findOne({ timestamp, where: { id: 1 } })
+            result = await User.findOne({ validAt, where: { id: 1 } })
             expect(result?.name).to.be.equal("foo")
 
             let users = await User.find()
             expect(users[0].name).to.be.eql("bar")
 
-            users = await User.find({ timestamp })
+            users = await User.find({ validAt })
             expect(users[0].name).to.be.eql("foo")
 
-            users = await User.find({ timestamp, where: { id: 1 } })
+            users = await User.find({ validAt, where: { id: 1 } })
             expect(users[0].name).to.be.eql("foo")
 
             await user.remove()
@@ -110,7 +110,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 user.name = "foo"
                 await manager.save(user)
 
-                const timestamp = await getCurrentTimestamp()
+                const validAt = await getCurrentTimestamp()
 
                 let result = await repository.findOne({ where: { id: 1 } })
                 expect(result?.name).to.be.equal("foo")
@@ -122,17 +122,17 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 expect(result?.name).to.be.equal("bar")
 
                 // check user name from the history
-                let users = await repository.find({ timestamp })
+                let users = await repository.find({ validAt })
                 expect(users[0].name).to.be.eql("foo")
 
                 users = await repository.find({
-                    timestamp,
+                    validAt,
                     where: { id: 1 },
                 })
                 expect(users[0].name).to.be.eql("foo")
 
                 result = await repository.findOne({
-                    timestamp,
+                    validAt,
                     where: { id: 1 },
                 })
                 expect(result?.name).to.be.equal("foo")
@@ -156,7 +156,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 userTwo.name = "bar"
                 await manager.save(userTwo)
 
-                const timestamp = await getCurrentTimestamp()
+                const validAt = await getCurrentTimestamp()
 
                 let results = await repository.find()
                 expect(results).to.have.length(2)
@@ -166,7 +166,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 results = await repository.find()
                 expect(results).to.have.length(1)
 
-                results = await repository.find({ timestamp })
+                results = await repository.find({ validAt })
                 expect(results).to.have.length(2)
 
                 await repository.delete(1)
@@ -201,7 +201,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 photo.user = user
                 await manager.save(photo)
 
-                const timestamp = await getCurrentTimestamp()
+                const validAt = await getCurrentTimestamp()
 
                 await manager.update(User, 1, { name: "bar" })
 
@@ -213,7 +213,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                 const result2 = await dataSource
                     .createQueryBuilder(Photo, "photo")
                     .innerJoinAndSelect("photo.user", "user")
-                    .setFindOptions({ timestamp })
+                    .setFindOptions({ validAt })
                     .getOne()
 
                 expect(result2).to.deep.equal({

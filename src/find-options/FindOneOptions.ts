@@ -115,5 +115,5 @@ export interface FindOneOptions<Entity = any> {
     /**
      * A timestamp to get datasets from temporal tables.
      */
-    timestamp?: Date
+    validAt?: Date
 }

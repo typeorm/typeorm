@@ -2185,7 +2185,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 return (
                     this.getTableName(alias.tablePath!) +
-                    (alias.versioning && this.findOptions.timestamp
+                    (alias.versioning && this.findOptions.validAt
                         ? ` FOR SYSTEM_TIME AS OF :timestamp `
                         : " ") +
                     this.escape(alias.name)
@@ -2312,7 +2312,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.getTableName(destinationTableName) +
                     `${
                         joinAttr.metadata?.versioning &&
-                        this.findOptions.timestamp
+                        this.findOptions.validAt
                             ? " FOR SYSTEM_TIME AS OF :timestamp "
                             : " "
                     }` +
@@ -3762,7 +3762,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     protected async loadRawResults(queryRunner: QueryRunner) {
         this.setParameter(
             "timestamp",
-            DateUtils.mixedDateToUtcDatetimeString(this.findOptions.timestamp),
+            DateUtils.mixedDateToUtcDatetimeString(this.findOptions.validAt),
         )
 
         const [sql, parameters] = this.getQueryAndParameters()
