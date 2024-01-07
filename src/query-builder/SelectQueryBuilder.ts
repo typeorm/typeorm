@@ -2313,7 +2313,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     `${
                         joinAttr.metadata?.versioning &&
                         this.findOptions.validAt
-                            ? " FOR SYSTEM_TIME AS OF :timestamp "
+                            ? " FOR SYSTEM_TIME AS OF :temporalTableValidAt "
                             : " "
                     }` +
                     this.escape(destinationTableAlias) +
