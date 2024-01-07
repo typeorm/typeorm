@@ -849,7 +849,7 @@ export class PostgresDriver implements Driver {
 
                 let value: any = parameters[key]
 
-                if (isArray) {
+                if (isArray || Array.isArray(value)) {
                     return value
                         .map((v: any) => {
                             escapedParameters.push(v)
