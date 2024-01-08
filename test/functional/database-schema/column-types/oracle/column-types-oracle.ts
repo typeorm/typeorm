@@ -60,6 +60,9 @@ describe("database schema > column types > oracle", () => {
                 post.clob = "This is clob"
                 post.nclob = "This is nclob"
                 post.simpleArray = ["A", "B", "C"]
+                post.simpleJson = { id: 1, name: "simple-json" }
+                post.json = { id: 1, name: "json" }
+
                 await postRepository.save(post)
 
                 const loadedPost = (await postRepository.findOneBy({
@@ -104,7 +107,11 @@ describe("database schema > column types > oracle", () => {
                 loadedPost.simpleArray[0].should.be.equal(post.simpleArray[0])
                 loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1])
                 loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2])
-
+                loadedPost.simpleJson.should.be.equal({
+                    id: 1,
+                    name: "simple-json",
+                })
+                loadedPost.simpleJson.should.be.equal({ id: 1, name: "json" })
                 table!.findColumnByName("id")!.type.should.be.equal("number")
                 table!
                     .findColumnByName("name")!
@@ -158,6 +165,10 @@ describe("database schema > column types > oracle", () => {
                 table!
                     .findColumnByName("simpleArray")!
                     .type.should.be.equal("clob")
+                table!
+                    .findColumnByName("simpleJson")!
+                    .type.should.be.equal("clob")
+                table!.findColumnByName("json")!.type.should.be.equal("json")
             }),
         ))
 
