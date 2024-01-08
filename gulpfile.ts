@@ -1,17 +1,13 @@
-///<reference path="node_modules/@types/node/index.d.ts"/>
-///<reference path="node_modules/@types/chai/index.d.ts"/>
-///<reference path="node_modules/@types/mocha/index.d.ts"/>
+import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
 
-import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
-
-const fs = require("fs");
-const gulp = require("gulp");
-const del = require("del");
-const shell = require("gulp-shell");
-const replace = require("gulp-replace");
-const rename = require("gulp-rename");
-const sourcemaps = require("gulp-sourcemaps");
-const ts = require("gulp-typescript");
+import fs from "fs";
+import gulp from "gulp";
+import del from "del";
+import shell from "gulp-shell";
+import replace from "gulp-replace";
+import rename from "gulp-rename";
+import sourcemaps from "gulp-sourcemaps";
+import ts from "gulp-typescript";
 
 @Gulpclass()
 export class Gulpfile {
@@ -21,19 +17,11 @@ export class Gulpfile {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a delay and resolves after 15 seconds.
-     */
-    @Task()
-    wait(cb: Function) {
-        setTimeout(() => cb(), 15000);
-    }
-
-    /**
      * Cleans build folder.
      */
     @Task()
-    clean(cb: Function) {
-        return del(["./build/**"], cb);
+    async clean() {
+        return del(["./build/**"]);
     }
 
     /**
@@ -70,15 +58,15 @@ export class Gulpfile {
     @Task()
     browserCopyTemplates() {
         return gulp.src("./src/platform/*.template")
-            .pipe(rename((p: any) => { p.extname = '.ts'; }))
+            .pipe(rename((p) => { p.extname = '.ts'; }))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
     @MergedTask()
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
-            module: "es2015",
-            "lib": ["es5", "es6", "dom"],
+            module: "es2020",
+            lib: ["es2021", "dom"],
             typescript: require("typescript")
         });
         const tsResult = gulp.src([
@@ -97,7 +85,7 @@ export class Gulpfile {
     }
 
     @Task()
-    browserClearPackageDirectory(cb: Function) {
+    async browserClearPackageDirectory() {
         return del([
             "./build/browser/**"
         ]);
@@ -117,7 +105,7 @@ export class Gulpfile {
                 "cd ./build/package && npm publish"
             ]));
     }
-    
+
     /**
      * Packs a .tgz from ./build/package directory.
      */
@@ -204,10 +192,10 @@ export class Gulpfile {
      * Moves all compiled files to the final package directory.
      */
     @Task()
-    packageClearPackageDirectory(cb: Function) {
+    async packageClearPackageDirectory() {
         return del([
             "build/package/src/**"
-        ], cb);
+        ]);
     }
 
     /**
