@@ -516,9 +516,7 @@ export class InsertQueryBuilder<
                             indexPredicate &&
                             DriverUtils.isPostgresFamily(this.connection.driver)
                         ) {
-                            conflictTarget += ` WHERE ( ${this.escape(
-                                indexPredicate,
-                            )} )`
+                            conflictTarget += ` WHERE ( ${indexPredicate} )`
                         }
                     } else if (conflict) {
                         conflictTarget += ` ON CONSTRAINT ${this.escape(
