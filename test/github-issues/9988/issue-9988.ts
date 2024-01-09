@@ -39,11 +39,12 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
                 const productTwoId = 2
                 await categoryRepo.save(categoryOne)
                 await categoryRepo.save(categoryTwo)
-                const options = (id: number) => ({
-                    relationLoadStrategy: "query",
-                    where: { id },
-                    relations: { categories: true },
-                } as FindManyOptions<Product>)
+                const options = (id: number) =>
+                    ({
+                        relationLoadStrategy: "query",
+                        where: { id },
+                        relations: { categories: true },
+                    } as FindManyOptions<Product>)
 
                 // Create a custom repository that uses a query builder without query planner
                 // For both methods, relationLoadStrategy is set to "query", where the bug lies.
@@ -84,7 +85,10 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
                             txnManager.withRepository(productRepo)
                         const product = customProductRepo.create({
                             id: productTwoId,
-                            categories: [{ id: categoryOne.id }, { id: categoryTwo.id }],
+                            categories: [
+                                { id: categoryOne.id },
+                                { id: categoryTwo.id },
+                            ],
                         })
 
                         await customProductRepo.save(product)

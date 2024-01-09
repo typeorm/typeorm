@@ -21,7 +21,9 @@ const wrap = (
 
         return new Promise<void>((ok, fail) => {
             if (fn.length > 1) {
-                (fn as Func).call(context as unknown as Context, (err: any) => (err ? fail(err) : ok()))
+                ;(fn as Func).call(context as unknown as Context, (err: any) =>
+                    err ? fail(err) : ok(),
+                )
             } else {
                 ok((fn as AsyncFunc).call(context as unknown as Context))
             }

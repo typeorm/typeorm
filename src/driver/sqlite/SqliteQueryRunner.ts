@@ -88,7 +88,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                     }
                 }
 
-                const self = this;
+                const self = this
                 const handler = function (this: any, err: any, rows: any) {
                     if (err && err.toString().indexOf("SQLITE_BUSY:") !== -1) {
                         if (
