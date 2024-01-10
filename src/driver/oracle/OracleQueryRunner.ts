@@ -3193,4 +3193,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             `oracle driver does not support change table comment.`,
         )
     }
+
+    /**
+     * Change table auto increment initial value.
+     */
+    changeTableAutoIncrementStartFrom(
+        tableOrName: Table | string,
+        autoIncrementStartFrom?: number,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `oracle driver does not support change auto increment initial value.`,
+        )
+    }
 }

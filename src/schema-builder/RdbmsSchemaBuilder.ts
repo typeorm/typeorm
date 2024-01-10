@@ -222,6 +222,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // await this.renameTables();
         await this.renameColumns()
         await this.changeTableComment()
+        await this.changeTableAutoIncrementStartFrom()
         await this.createNewTables()
         await this.dropRemovedColumns()
         await this.addNewColumns()
@@ -605,6 +606,28 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (DriverUtils.isMySQLFamily(this.connection.driver)) {
                 const newComment = metadata.comment
                 await this.queryRunner.changeTableComment(table, newComment)
+            }
+        }
+    }
+
+    /**
+     * Change table auto increment initial value
+     */
+    protected async changeTableAutoIncrementStartFrom(): Promise<void> {
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.queryRunner.loadedTables.find(
+                (table) =>
+                    this.getTablePath(table) === this.getTablePath(metadata),
+            )
+            if (!table) continue
+
+            if (DriverUtils.isMySQLFamily(this.connection.driver)) {
+                const newAutoIncrementStartFrom =
+                    metadata.autoIncrementStartFrom
+                await this.queryRunner.changeTableAutoIncrementStartFrom(
+                    table,
+                    newAutoIncrementStartFrom,
+                )
             }
         }
     }

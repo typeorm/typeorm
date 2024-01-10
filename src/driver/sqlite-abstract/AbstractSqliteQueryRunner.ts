@@ -2252,4 +2252,16 @@ export abstract class AbstractSqliteQueryRunner
     ): Promise<void> {
         throw new TypeORMError(`sqlit driver does not support change comment.`)
     }
+
+    /**
+     * Change table auto increment initial value.
+     */
+    changeTableAutoIncrementStartFrom(
+        tableOrName: Table | string,
+        autoIncrementStartFrom?: number,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `sqlite driver does not support change auto increment initial value.`,
+        )
+    }
 }

@@ -280,6 +280,14 @@ export interface QueryRunner {
     ): Promise<void>
 
     /**
+     * Change table auto increment initial value. Only supports MySQL and MariaDB
+     */
+    changeTableAutoIncrementStartFrom(
+        tableOrName: Table | string,
+        autoIncrementStartFrom?: number,
+    ): Promise<void>
+
+    /**
      * Adds a new column.
      */
     addColumn(table: Table | string, column: TableColumn): Promise<void>

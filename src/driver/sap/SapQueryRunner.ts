@@ -3366,4 +3366,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             `spa driver does not support change table comment.`,
         )
     }
+
+    /**
+     * Change table auto increment initial value.
+     */
+    changeTableAutoIncrementStartFrom(
+        tableOrName: Table | string,
+        autoIncrementStartFrom?: number,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `spa driver does not support change auto increment initial value.`,
+        )
+    }
 }

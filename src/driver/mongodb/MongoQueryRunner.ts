@@ -1275,4 +1275,16 @@ export class MongoQueryRunner implements QueryRunner {
             `mongodb driver does not support change table comment.`,
         )
     }
+
+    /**
+     * Change table auto increment initial value.
+     */
+    changeTableAutoIncrementStartFrom(
+        tableOrName: Table | string,
+        autoIncrementStartFrom?: number,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `mongodb driver does not support change auto increment initial value.`,
+        )
+    }
 }

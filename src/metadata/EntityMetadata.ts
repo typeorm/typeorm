@@ -521,6 +521,11 @@ export class EntityMetadata {
      */
     comment?: string
 
+    /**
+     * Set initial value for auto increment. Supported by MySQL family DBs.
+     */
+    autoIncrementStartFrom?: number
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -1072,6 +1077,8 @@ export class EntityMetadata {
             this.tableMetadataArgs.type === "closure-junction"
 
         this.comment = this.tableMetadataArgs.comment
+        this.autoIncrementStartFrom =
+            this.tableMetadataArgs.autoIncrementStartFrom
     }
 
     /**

@@ -79,4 +79,9 @@ export interface TableOptions {
      * Table comment. Not supported by all database types.
      */
     comment?: string
+
+    /**
+     * Set initial value for auto increment. Supported by MySQL family DBs.
+     */
+    autoIncrementStartFrom?: number
 }
