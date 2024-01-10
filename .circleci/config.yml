@@ -126,6 +126,9 @@ jobs:
       - run:
           name: Wait for Services to be Available
           command: |
+            DEFAULT_WAIT_TIME=60
+            ORACLE_WAIT_TIME=120
+
             COMMANDS=$(
                 cat ormconfig.json \
                   | jq -r '
@@ -139,31 +142,15 @@ jobs:
             )
             echo "Running '$COMMANDS'"
 
+            WAIT_TIME=$([ ! -z "$(jq -r '.[] | select(.skip == false and .name == "oracle")' ormconfig.json)" ] && echo "$ORACLE_WAIT_TIME" || echo "$DEFAULT_WAIT_TIME")
+
             if [ ! -z "$COMMANDS" ]; then
               docker run \
                 --network typeorm_default \
                 --tty \
                 ubuntu:trusty \
-                timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+                timeout $WAIT_TIME sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
             fi
-      - run:
-          name: "Wait for OracleDB to be Available"
-          command: |
-            COMMANDS=$(
-                cat ormconfig.json \
-                  | jq -r '
-                    map(select(.skip == false)
-                      | select(.name == "oracle")
-                      | "sleep 60"
-                    )
-                    | join(" && ")
-                  '
-            )
-            if [ ! -z "$COMMANDS" ]; then
-              echo "$COMMANDS seconds to wait for oracledb";
-              $COMMANDS
-            fi
-
       # Download and cache dependencies
       - run:
           name: "Run Tests with Coverage"
