@@ -51,7 +51,6 @@ commands:
           command: |
             if [ ! -d node_modules ]; then
               npm install
-              npm install oracledb
             fi
       - save_cache:
           name: Save node_modules cache
