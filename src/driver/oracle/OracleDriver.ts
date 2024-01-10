@@ -301,8 +301,8 @@ export class OracleDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        this.oracle.fetchAsString = [this.oracle.CLOB]
-        this.oracle.fetchAsBuffer = [this.oracle.BLOB]
+        this.oracle.fetchAsString = [this.oracle.DB_TYPE_CLOB]
+        this.oracle.fetchAsBuffer = [this.oracle.DB_TYPE_BLOB]
         if (this.options.replication) {
             this.slaves = await Promise.all(
                 this.options.replication.slaves.map((slave) => {
@@ -973,7 +973,7 @@ export class OracleDriver implements Driver {
             case "timestamp":
             case "timestamp with time zone":
             case "timestamp with local time zone":
-                return this.oracle.DB_TYPE_DATE
+                return this.oracle.DB_TYPE_TIMESTAMP
             case "json":
                 return this.oracle.DB_TYPE_JSON
         }
