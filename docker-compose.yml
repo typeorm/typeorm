@@ -61,9 +61,6 @@ services:
   oracle:
     build:
       context: docker/oracle
-    networks:
-      - default
-      - typeorm
     ports:
       - "1521:1521"
     #volumes:
@@ -124,6 +121,3 @@ services:
 #volumes:
 #  volume-hana-xe:
 #  mysql8_volume:
-
-networks:
-  typeorm:
