@@ -3603,7 +3603,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                           )
                         : this.findOptions.relations
 
-                    const queryBuilder = this.createQueryBuilder()
+                    const queryBuilder = this.createQueryBuilder(queryRunner)
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
                         .setFindOptions({
