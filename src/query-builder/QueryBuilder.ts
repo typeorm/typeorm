@@ -521,8 +521,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Creates a completely new query builder.
      * Uses same query runner as current QueryBuilder.
      */
-    createQueryBuilder(): this {
-        return new (this.constructor as any)(this.connection, this.queryRunner)
+    createQueryBuilder(queryRunner?: QueryRunner): this {
+        return new (this.constructor as any)(this.connection, queryRunner ?? this.queryRunner)
     }
 
     /**
