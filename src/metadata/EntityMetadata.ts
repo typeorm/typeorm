@@ -1127,6 +1127,7 @@ export class EntityMetadata {
         return this.columns.filter((column) => {
             return (
                 column.default !== undefined ||
+                column.asExpression !== undefined ||
                 column.isGenerated ||
                 column.isCreateDate ||
                 column.isUpdateDate ||
