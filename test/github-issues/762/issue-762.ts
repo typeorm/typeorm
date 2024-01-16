@@ -108,7 +108,13 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
                 loadedFoo3!.should.be.eql({
                     id: 3,
                     name: "Apple3",
-                    metadata: null,
+                    metadata: {
+                        bar: null,
+                        child: {
+                            something: null,
+                            somethingElse: null,
+                        },
+                    },
                 })
             }),
         ))
@@ -126,7 +132,13 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
                 loadedFoo!.should.be.eql({
                     id: 1,
                     name: "Orange",
-                    metadata: null,
+                    metadata: {
+                        bar: null,
+                        child: {
+                            something: null,
+                            somethingElse: null,
+                        },
+                    },
                 })
             }),
         ))
