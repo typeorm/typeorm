@@ -800,9 +800,6 @@ export class ColumnMetadata {
                 } else {
                     value = embeddedObject[this.propertyName]
                 }
-            } else if (embeddedObject === null) {
-                // when embedded object is null, set all its properties to null
-                value = null
             }
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
