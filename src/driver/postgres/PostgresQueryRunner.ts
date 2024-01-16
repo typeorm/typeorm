@@ -4287,9 +4287,9 @@ export class PostgresQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE ${index.isUnique ? "UNIQUE " : ""}${
-                index.isConcurrent ? "CONCURRENTLY " : ""
-            }INDEX "${index.name}" ON ${this.escapePath(table)} ${
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
+                index.isConcurrent ? " CONCURRENTLY" : ""
+            } "${index.name}" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
@@ -4328,12 +4328,12 @@ export class PostgresQueryRunner
         return schema
             ? new Query(
                   `DROP INDEX ${
-                      concurrent ? "CONCURRENTLY" : ""
+                      concurrent ? "CONCURRENTLY " : ""
                   }"${schema}"."${indexName}"`,
               )
             : new Query(
                   `DROP INDEX ${
-                      concurrent ? "CONCURRENTLY" : ""
+                      concurrent ? "CONCURRENTLY " : ""
                   }"${indexName}"`,
               )
     }
