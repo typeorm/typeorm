@@ -1356,7 +1356,7 @@ export abstract class AbstractSqliteQueryRunner
                           )}.${dbTable["name"]}`
                         : dbTable["name"]
 
-                const sql = dbTable["sql"]
+                const sql = dbTable["sql"].replace(/(\r\n|\n|\r)/gm, "") // remove line breaks
 
                 const withoutRowid = sql.includes("WITHOUT ROWID")
                 const table = new Table({ name: tablePath, withoutRowid })
@@ -1513,23 +1513,15 @@ export abstract class AbstractSqliteQueryRunner
                 )
 
                 // find foreign key constraints from CREATE TABLE sql
-                let fkResult
-                const fkMappings: {
-                    name: string
-                    columns: string[]
-                    referencedTableName: string
-                }[] = []
                 const fkRegex =
                     /CONSTRAINT "([^"]*)" FOREIGN KEY ?\((.*?)\) REFERENCES "([^"]*)"/g
-                while ((fkResult = fkRegex.exec(sql)) !== null) {
-                    fkMappings.push({
-                        name: fkResult[1],
-                        columns: fkResult[2]
-                            .substr(1, fkResult[2].length - 2)
-                            .split(`", "`),
-                        referencedTableName: fkResult[3],
-                    })
-                }
+                const fkMappings = OrmUtils.extractConstraints(
+                    sql,
+                    fkRegex,
+                    (result) => ({
+                        referencedTableName: result[3],
+                    }),
+                )
 
                 // build foreign keys
                 const tableForeignKeyConstraints = OrmUtils.uniq(
@@ -1574,17 +1566,11 @@ export abstract class AbstractSqliteQueryRunner
                 )
 
                 // find unique constraints from CREATE TABLE sql
-                let uniqueRegexResult
-                const uniqueMappings: { name: string; columns: string[] }[] = []
                 const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE ?\((.*?)\)/g
-                while ((uniqueRegexResult = uniqueRegex.exec(sql)) !== null) {
-                    uniqueMappings.push({
-                        name: uniqueRegexResult[1],
-                        columns: uniqueRegexResult[2]
-                            .substr(1, uniqueRegexResult[2].length - 2)
-                            .split(`", "`),
-                    })
-                }
+                const uniqueMappings = OrmUtils.extractConstraints(
+                    sql,
+                    uniqueRegex,
+                )
 
                 // build unique constraints
                 const tableUniquePromises = dbIndices

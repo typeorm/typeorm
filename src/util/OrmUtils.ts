@@ -1,5 +1,11 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
 
+type ConstraintMapping = {
+    name: string
+    columns: string[]
+    referencedTableName?: string // Optional for foreign key constraints
+}
+
 export class OrmUtils {
     // -------------------------------------------------------------------------
     // Public methods
@@ -413,6 +419,34 @@ export class OrmUtils {
             }
         }
         return undefined
+    }
+
+    static extractConstraints(
+        sql: string,
+        regex: RegExp,
+        propertyHandler?: (
+            result: RegExpExecArray,
+        ) => Partial<ConstraintMapping>,
+    ): ConstraintMapping[] {
+        let result
+        const mappings: ConstraintMapping[] = []
+
+        while ((result = regex.exec(sql)) !== null) {
+            const columns = result[2].trim()
+            const additionalProperties = propertyHandler
+                ? propertyHandler(result)
+                : {}
+
+            mappings.push({
+                name: result[1],
+                columns: columns
+                    .substr(1, columns.length - 2)
+                    .split(/"\s*,\s*"/),
+                ...additionalProperties,
+            })
+        }
+
+        return mappings
     }
 
     // -------------------------------------------------------------------------
