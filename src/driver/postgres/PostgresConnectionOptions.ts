@@ -1,4 +1,5 @@
 import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import { ReplicationMode } from "../types/ReplicationMode";
 import {PostgresConnectionCredentialsOptions} from "./PostgresConnectionCredentialsOptions";
 
 /**
@@ -36,6 +37,11 @@ export interface PostgresConnectionOptions extends BaseConnectionOptions, Postgr
          */
         readonly slaves: PostgresConnectionCredentialsOptions[];
 
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode;
     };
 
     /**
