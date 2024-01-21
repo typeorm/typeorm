@@ -4226,21 +4226,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
         if (Array.isArray(where)) {
             if (where.length) {
-                condition =
-                    "(" +
-                    where
-                        .map((whereItem) => {
-                            return this.buildWhere(
-                                whereItem,
-                                metadata,
-                                alias,
-                                embedPrefix,
-                            )
-                        })
-                        .filter((condition) => !!condition)
-                        .map((condition) => "(" + condition + ")")
-                        .join(" OR ") +
-                    ")"
+                condition = where
+                    .map((whereItem) => {
+                        return this.buildWhere(
+                            whereItem,
+                            metadata,
+                            alias,
+                            embedPrefix,
+                        )
+                    })
+                    .filter((condition) => !!condition)
+                    .map((condition) => "(" + condition + ")")
+                    .join(" OR ")
             }
         } else {
             let andConditions: string[] = []
@@ -4510,8 +4507,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
                 }
             }
-            condition = andConditions.join(" AND ")
+            condition = andConditions.length
+                ? "(" + andConditions.join(") AND (") + ")"
+                : andConditions.join(" AND ")
         }
-        return condition
+        return condition.length ? "(" + condition + ")" : condition
     }
 }

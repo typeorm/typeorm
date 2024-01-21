@@ -1130,9 +1130,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     true,
                 )}`
             case "and":
-                return condition.parameters.join(" AND ")
+                return "(" + condition.parameters.join(" AND ") + ")"
             case "or":
-                return condition.parameters.join(" OR ")
+                return "(" + condition.parameters.join(" OR ") + ")"
         }
 
         throw new TypeError(
