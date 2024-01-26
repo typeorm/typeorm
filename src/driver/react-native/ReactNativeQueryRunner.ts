@@ -5,6 +5,7 @@ import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQuer
 import { ReactNativeDriver } from "./ReactNativeDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -13,6 +14,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Database driver used by connection.
      */
+    // @ts-ignore temporary, we need to fix the issue with the AbstractSqliteDriver and circular errors
     driver: ReactNativeDriver
 
     // -------------------------------------------------------------------------
@@ -52,17 +54,36 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
         return new Promise(async (ok, fail) => {
             const databaseConnection = await this.connect()
+            const broadcasterResult = new BroadcasterResult()
+
             this.driver.connection.logger.logQuery(query, parameters, this)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
+
             const queryStartTime = +new Date()
             databaseConnection.executeSql(
                 query,
                 parameters,
-                (raw: any) => {
+                async (raw: any) => {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime =
                         this.driver.options.maxQueryExecutionTime
                     const queryEndTime = +new Date()
                     const queryExecutionTime = queryEndTime - queryStartTime
+
+                    this.broadcaster.broadcastAfterQueryEvent(
+                        broadcasterResult,
+                        query,
+                        parameters,
+                        true,
+                        queryExecutionTime,
+                        raw,
+                        undefined,
+                    )
+
                     if (
                         maxQueryExecutionTime &&
                         queryExecutionTime > maxQueryExecutionTime
@@ -73,6 +94,9 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                             parameters,
                             this,
                         )
+
+                    if (broadcasterResult.promises.length > 0)
+                        await Promise.all(broadcasterResult.promises)
 
                     const result = new QueryResult()
 
@@ -101,13 +125,24 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                         ok(result.raw)
                     }
                 },
-                (err: any) => {
+                async (err: any) => {
                     this.driver.connection.logger.logQueryError(
                         err,
                         query,
                         parameters,
                         this,
                     )
+                    this.broadcaster.broadcastAfterQueryEvent(
+                        broadcasterResult,
+                        query,
+                        parameters,
+                        false,
+                        undefined,
+                        undefined,
+                        err,
+                    )
+                    await broadcasterResult.wait()
+
                     fail(new QueryFailedError(query, parameters, err))
                 },
             )

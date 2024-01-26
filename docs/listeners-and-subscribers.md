@@ -239,10 +239,24 @@ export class PostSubscriber implements EntitySubscriberInterface {
     }
 
     /**
-     * Called before post insertion.
+     * Called before query execution.
+     */
+    beforeQuery(event: BeforeQueryEvent<any>) {
+        console.log(`BEFORE QUERY: `, event.query)
+    }
+
+    /**
+     * Called after query execution.
+     */
+    afterQuery(event: AfterQueryEvent<any>) {
+        console.log(`AFTER QUERY: `, event.query)
+    }
+
+    /**
+     * Called before entity insertion.
      */
     beforeInsert(event: InsertEvent<any>) {
-        console.log(`BEFORE POST INSERTED: `, event.entity)
+        console.log(`BEFORE ENTITY INSERTED: `, event.entity)
     }
 
     /**

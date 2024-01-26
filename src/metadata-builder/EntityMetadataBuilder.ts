@@ -542,6 +542,21 @@ export class EntityMetadataBuilder {
                         (column) => column.propertyName === args.propertyName,
                     )!
 
+                // for multiple table inheritance we can override default column values
+                if (
+                    entityMetadata.tableType === "regular" &&
+                    args.target !== entityMetadata.target
+                ) {
+                    const childArgs = this.metadataArgsStorage.columns.find(
+                        (c) =>
+                            c.propertyName === args.propertyName &&
+                            c.target === entityMetadata.target,
+                    )
+                    if (childArgs && childArgs.options.default) {
+                        args.options.default = childArgs.options.default
+                    }
+                }
+
                 const column = new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata,
@@ -606,6 +621,23 @@ export class EntityMetadataBuilder {
                 )
             ) {
                 entityMetadata.ownColumns.push(discriminatorColumn)
+            }
+            // also copy the inheritance pattern & tree metadata
+            // this comes in handy when inheritance and trees are used together
+            entityMetadata.inheritancePattern =
+                entityMetadata.parentEntityMetadata.inheritancePattern
+            if (
+                !entityMetadata.treeType &&
+                !!entityMetadata.parentEntityMetadata.treeType
+            ) {
+                entityMetadata.treeType =
+                    entityMetadata.parentEntityMetadata.treeType
+                entityMetadata.treeOptions =
+                    entityMetadata.parentEntityMetadata.treeOptions
+                entityMetadata.treeParentRelation =
+                    entityMetadata.parentEntityMetadata.treeParentRelation
+                entityMetadata.treeLevelColumn =
+                    entityMetadata.parentEntityMetadata.treeLevelColumn
             }
         }
 
@@ -1111,6 +1143,21 @@ export class EntityMetadataBuilder {
      * Creates indices for the table of single table inheritance.
      */
     protected createKeysForTableInheritance(entityMetadata: EntityMetadata) {
+        const isDiscriminatorColumnAlreadyIndexed = entityMetadata.indices.some(
+            ({ givenColumnNames }) =>
+                !!givenColumnNames &&
+                Array.isArray(givenColumnNames) &&
+                givenColumnNames.length === 1 &&
+                givenColumnNames[0] ===
+                    entityMetadata.discriminatorColumn?.databaseName,
+        )
+
+        // If the discriminator column is already indexed, there is no need to
+        // add another index on top of it.
+        if (isDiscriminatorColumnAlreadyIndexed) {
+            return
+        }
+
         entityMetadata.indices.push(
             new IndexMetadata({
                 entityMetadata: entityMetadata,

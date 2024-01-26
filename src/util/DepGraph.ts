@@ -79,11 +79,11 @@ export class DepGraph {
                 edgeList,
             ) {
                 Object.keys(edgeList).forEach(function (key: any) {
-                    let idx = edgeList[key].indexOf(node)
+                    const idx = edgeList[key].indexOf(node)
                     if (idx >= 0) {
                         edgeList[key].splice(idx, 1)
                     }
-                }, this)
+                })
             })
         }
     }

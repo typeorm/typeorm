@@ -41,7 +41,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         let sql = this.createComment()
         sql += this.createCteExpression()
         sql += this.createDeleteExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**

@@ -76,15 +76,17 @@ Before creating a new migration you need to setup your data source options prope
 
 Here we setup two options:
 
--   `"migrationsTableName": "migrations"` - Specify this option only if you need migration table name to be different from `"migrations"`.
--   `"migrations": [/*...*/]` - list of migrations need to be loaded by TypeORM
+-   `"migrationsTableName": "migrations"` - Specify this option only if you need the migration table name to be different from `"migrations"`.
+-   `"migrations": [/*...*/]` - list of migrations that need to be loaded by TypeORM
 
-Once you setup connection options you can create a new migration using CLI:
+Once you setup the connection options you can create a new migration using CLI:
 
 ```
 typeorm migration:create ./path-to-migrations-dir/PostRefactoring
 
 ```
+
+
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
 After you run the command you can see a new file generated in the "migration" directory
@@ -224,7 +226,13 @@ Let's say you have a `Post` entity with a `title` column, and you have changed t
 You can run following command:
 
 ```
-typeorm migration:generate -n PostRefactoring
+typeorm migration:generate PostRefactoring -d path-to-datasource-config
+```
+
+If you encounter any error, it require you have the path to migration name and data source. You can try this option
+
+```
+typeorm migration:generate -d <path/to/datasource> path/to/migrations/<migration-name>
 ```
 
 And it will generate a new migration called `{TIMESTAMP}-PostRefactoring.ts` with the following content:

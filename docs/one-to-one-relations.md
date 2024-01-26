@@ -44,11 +44,11 @@ export class User {
 }
 ```
 
-Here we added `@OneToOne` to the `user` and specify the target relation type to be `Profile`.
+Here we added `@OneToOne` to the `user` and specified the target relation type to be `Profile`.
 We also added `@JoinColumn` which is required and must be set only on one side of the relation.
-The side you set `@JoinColumn` on, that side's table will contain a "relation id" and foreign keys to target entity table.
+The side you set `@JoinColumn` on, that side's table will contain a "relation id" and foreign keys to the target entity table.
 
-This example will produce following tables:
+This example will produce the following tables:
 
 ```shell
 +-------------+--------------+----------------------------+
@@ -68,7 +68,7 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 ```
 
-Again, `@JoinColumn` must be set only on one side of relation - the side that must have the foreign key in the database table.
+Again, `@JoinColumn` must be set only on one side of the relation - the side that must have the foreign key in the database table.
 
 Example how to save such a relation:
 

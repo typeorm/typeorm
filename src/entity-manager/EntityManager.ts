@@ -26,7 +26,7 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { EntityPersistExecutor } from "../persistence/EntityPersistExecutor"
-import { ObjectID } from "../driver/mongodb/typings"
+import { ObjectId } from "../driver/mongodb/typings"
 import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
@@ -37,6 +37,7 @@ import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { PickKeysByType } from "../common/PickKeysByType"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -66,8 +67,9 @@ export class EntityManager {
 
     /**
      * Once created and then reused by repositories.
+     * Created as a future replacement for the #repositories to provide a bit more perf optimization.
      */
-    protected repositories: Repository<any>[] = []
+    protected repositories = new Map<EntityTarget<any>, Repository<any>>()
 
     /**
      * Once created and then reused by repositories.
@@ -168,7 +170,7 @@ export class EntityManager {
     /**
      * Executes raw SQL query and returns raw database results.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.connection.query(query, parameters, this.queryRunner)
     }
 
@@ -255,34 +257,34 @@ export class EntityManager {
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObject?: DeepPartial<Entity>,
+        plainObject?: EntityLike,
     ): Entity
 
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjects?: DeepPartial<Entity>[],
+        plainObjects?: EntityLike[],
     ): Entity[]
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjectOrObjects?: DeepPartial<Entity> | DeepPartial<Entity>[],
+        plainObjectOrObjects?: EntityLike | EntityLike[],
     ): Entity | Entity[] {
         const metadata = this.connection.getMetadata(entityClass)
 
         if (!plainObjectOrObjects) return metadata.create(this.queryRunner)
 
         if (Array.isArray(plainObjectOrObjects))
-            return (plainObjectOrObjects as DeepPartial<Entity>[]).map(
+            return (plainObjectOrObjects as EntityLike[]).map(
                 (plainEntityLike) => this.create(entityClass, plainEntityLike),
             )
 
@@ -751,8 +753,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
@@ -806,8 +808,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
@@ -860,8 +862,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
@@ -914,8 +916,8 @@ export class EntityManager {
             | number[]
             | Date
             | Date[]
-            | ObjectID
-            | ObjectID[]
+            | ObjectId
+            | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
@@ -953,7 +955,7 @@ export class EntityManager {
     }
 
     /**
-     * Checks whether any entity exists with the given condition
+     * Checks whether any entity exists with the given options.
      */
     exists<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -966,6 +968,19 @@ export class EntityManager {
                 metadata.name,
         )
             .setFindOptions(options || {})
+            .getExists()
+    }
+
+    /**
+     * Checks whether any entity exists with the given conditions.
+     */
+    async existsBy<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<boolean> {
+        const metadata = this.connection.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions({ where })
             .getExists()
     }
 
@@ -999,6 +1014,78 @@ export class EntityManager {
         return this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .getCount()
+    }
+
+    /**
+     * Return the SUM of a column
+     */
+    sum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "SUM", columnName, where)
+    }
+
+    /**
+     * Return the AVG of a column
+     */
+    average<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "AVG", columnName, where)
+    }
+
+    /**
+     * Return the MIN of a column
+     */
+    minimum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MIN", columnName, where)
+    }
+
+    /**
+     * Return the MAX of a column
+     */
+    maximum<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        columnName: PickKeysByType<Entity, number>,
+        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<number | null> {
+        return this.callAggregateFun(entityClass, "MAX", columnName, where)
+    }
+
+    private async callAggregateFun<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        fnName: "SUM" | "AVG" | "MIN" | "MAX",
+        columnName: PickKeysByType<Entity, number>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
+    ): Promise<number | null> {
+        const metadata = this.connection.getMetadata(entityClass)
+        const column = metadata.columns.find(
+            (item) => item.propertyPath === columnName,
+        )
+        if (!column) {
+            throw new TypeORMError(
+                `Column "${columnName}" was not found in table "${metadata.name}"`,
+            )
+        }
+
+        const result = await this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions({ where })
+            .select(
+                `${fnName}(${this.connection.driver.escape(
+                    column.databaseName,
+                )})`,
+                fnName,
+            )
+            .getRawOne()
+        return result[fnName] === null ? null : parseFloat(result[fnName])
     }
 
     /**
@@ -1159,7 +1246,7 @@ export class EntityManager {
      */
     async findOneById<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        id: number | string | Date | ObjectID,
+        id: number | string | Date | ObjectId,
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1313,10 +1400,8 @@ export class EntityManager {
         target: EntityTarget<Entity>,
     ): Repository<Entity> {
         // find already created repository instance and return it if found
-        const repository = this.repositories.find(
-            (repository) => repository.target === target,
-        )
-        if (repository) return repository
+        const repoFromMap = this.repositories.get(target)
+        if (repoFromMap) return repoFromMap
 
         // if repository was not found then create it, store its instance and return it
         if (this.connection.driver.options.type === "mongodb") {
@@ -1325,7 +1410,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository as any)
+            this.repositories.set(target, newRepository)
             return newRepository
         } else {
             const newRepository = new Repository<any>(
@@ -1333,7 +1418,7 @@ export class EntityManager {
                 this,
                 this.queryRunner,
             )
-            this.repositories.push(newRepository)
+            this.repositories.set(target, newRepository)
             return newRepository
         }
     }

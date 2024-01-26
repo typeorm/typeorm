@@ -1,9 +1,9 @@
-import { Column, Entity, ObjectID, ObjectIdColumn } from "../../../../src"
+import { Column, Entity, ObjectId, ObjectIdColumn } from "../../../../src"
 
 @Entity()
 export class Post {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     title: string

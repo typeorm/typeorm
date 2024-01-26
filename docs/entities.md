@@ -1,20 +1,29 @@
 # Entities
 
--   [What is Entity?](#what-is-entity)
--   [Entity columns](#entity-columns)
-    -   [Primary columns](#primary-columns)
-    -   [Special columns](#special-columns)
-    -   [Spatial columns](#spatial-columns)
--   [Column types](#column-types)
-    -   [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-    -   [Column types for `postgres` / `cockroachdb`](#column-types-for-postgres)
-    -   [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
-    -   [Column types for `mssql`](#column-types-for-mssql)
-    -   [`enum` column type](#enum-column-type)
-    -   [`simple-array` column type](#simple-array-column-type)
-    -   [`simple-json` column type](#simple-json-column-type)
-    -   [Columns with generated values](#columns-with-generated-values)
--   [Column options](#column-options)
+- [Entities](#entities)
+  - [What is Entity?](#what-is-entity)
+  - [Entity columns](#entity-columns)
+    - [Primary columns](#primary-columns)
+    - [Special columns](#special-columns)
+    - [Spatial columns](#spatial-columns)
+  - [Column types](#column-types)
+    - [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
+    - [Column types for `postgres`](#column-types-for-postgres)
+    - [Column types for `cockroachdb`](#column-types-for-cockroachdb)
+    - [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
+    - [Column types for `mssql`](#column-types-for-mssql)
+    - [Column types for `oracle`](#column-types-for-oracle)
+    - [Column types for `spanner`](#column-types-for-spanner)
+    - [`enum` column type](#enum-column-type)
+    - [`set` column type](#set-column-type)
+    - [`simple-array` column type](#simple-array-column-type)
+    - [`simple-json` column type](#simple-json-column-type)
+    - [Columns with generated values](#columns-with-generated-values)
+  - [Column options](#column-options)
+  - [Entity inheritance](#entity-inheritance)
+  - [Tree entities](#tree-entities)
+    - [Adjacency list](#adjacency-list)
+    - [Closure table](#closure-table)
 
 ## What is Entity?
 
@@ -308,12 +317,10 @@ await dataSource.manager
     .where(
         "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0",
     )
-    .orderBy({
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))":
-            {
-                order: "ASC",
-            },
-    })
+    .orderBy(
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))",
+        "ASC",
+    )
     .setParameters({
         // stringify GeoJSON
         origin: JSON.stringify(origin),
@@ -369,7 +376,10 @@ or
 `timestamp`, `time`, `year`, `char`, `nchar`, `national char`, `varchar`, `nvarchar`, `national varchar`,
 `text`, `tinytext`, `mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`, `set`,
 `json`, `binary`, `varbinary`, `geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`,
-`multipolygon`, `geometrycollection`
+`multipolygon`, `geometrycollection`, `uuid`, `inet4`, `inet6`
+
+> Note: UUID, INET4, and INET6 are only available for mariadb and for respective versions that made them available.
+
 
 ### Column types for `postgres`
 
@@ -380,7 +390,8 @@ or
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`, `ltree`
+`tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
+`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`
 
 ### Column types for `cockroachdb`
 

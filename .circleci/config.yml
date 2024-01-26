@@ -51,27 +51,7 @@ commands:
           command: |
             if [ ! -d node_modules ]; then
               npm install
-              npm install oracledb
             fi
-      - run:
-          # This is pretty terrible but OracleDB requires you to grab the binaries OOB
-          # from the normal installation, place them in the LD Path
-          # also - not super well documented - grab `libaio` as well
-          # Because this is technically the same image as the runner we'll snag
-          # the libaio1 and place them in the same instantclient directory.
-          name: Download Required OracleDB Binaries
-          command: |
-            if [ ! -d node_modules/oracledb/instantclient_19_8 ]; then
-              curl -sf -o node_modules/oracledb/instantclient.zip $BLOB_URL
-              unzip -qqo node_modules/oracledb/instantclient.zip -d node_modules/oracledb/
-              rm node_modules/oracledb/instantclient.zip
-
-              DEBIAN_FRONTEND=noninteractive sudo apt-get -qq -y install libaio1
-              (cp /lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/ ||
-                cp /usr/lib/*/libaio.so.* node_modules/oracledb/instantclient_19_8/)
-            fi
-          environment:
-            BLOB_URL: https://download.oracle.com/otn_software/linux/instantclient/19800/instantclient-basiclite-linux.x64-19.8.0.0.0dbru.zip
       - save_cache:
           name: Save node_modules cache
           key: node_modules-{{ checksum "package-lock.json" }}
@@ -82,21 +62,21 @@ jobs:
   lint:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:12
+      - image: cimg/node:16.20.0
     steps:
       - checkout
       - install-packages:
-          cache-key: node12
+          cache-key: node16
       - run: npm run lint
 
   build:
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:12
+      - image: cimg/node:16.20.0
     steps:
       - checkout
       - install-packages:
-          cache-key: node12
+          cache-key: node16
       - run: npm run compile
       - persist_to_workspace:
           root: ~/typeorm
@@ -110,10 +90,10 @@ jobs:
         default: ""
       node-version:
         type: string
-        default: "12"
+        default: "16"
     working_directory: ~/typeorm
     docker:
-      - image: circleci/node:<< parameters.node-version >>
+      - image: cimg/node:<< parameters.node-version >>
     steps:
       - checkout
       - setup_remote_docker
@@ -139,29 +119,37 @@ jobs:
               --volume /typeorm \
               --name typeorm-code \
               --workdir /typeorm \
-              circleci/node:<< parameters.node-version >> \
+              cimg/node:<< parameters.node-version >> \
               /bin/bash -c "sudo chmod 777 /typeorm && sudo chown circleci /typeorm"
             docker cp ./ typeorm-code:/typeorm
       - run:
           name: Wait for Services to be Available
           command: |
+            DEFAULT_WAIT_TIME=60
+            ORACLE_WAIT_TIME=120
+
             COMMANDS=$(
                 cat ormconfig.json \
                   | jq -r '
                     map(select(.skip == false)
                       | select(.host)
                       | select(.port)
-                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up")
-                      | join(" && ")
+                      | "nc -z " + .host + " " + (.port|tostring) + " && echo " + .host + " " + (.port|tostring) + " is up"
+                    )
+                    | join(" && ")
                   '
             )
             echo "Running '$COMMANDS'"
 
-            docker run \
-              --network typeorm_default \
-              --tty \
-              ubuntu:trusty \
-              timeout 60 sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+            WAIT_TIME=$([ ! -z "$(jq -r '.[] | select(.skip == false and .name == "oracle")' ormconfig.json)" ] && echo "$ORACLE_WAIT_TIME" || echo "$DEFAULT_WAIT_TIME")
+
+            if [ ! -z "$COMMANDS" ]; then
+              docker run \
+                --network typeorm_default \
+                --tty \
+                ubuntu:trusty \
+                timeout $WAIT_TIME sh -c "until ($COMMANDS); do echo \"Waiting for Services to be Available ...\"; sleep 5; done"
+            fi
       # Download and cache dependencies
       - run:
           name: "Run Tests with Coverage"
@@ -169,13 +157,12 @@ jobs:
           command: |
             docker run \
               --env npm_config_yes='true' \
-              --env LD_LIBRARY_PATH='/typeorm/node_modules/oracledb/instantclient_19_8/:$LD_LIBRARY_PATH' \
               --volumes-from typeorm-code \
               --network typeorm_default \
               --tty \
               --workdir /typeorm \
               --name typeorm-testrunner \
-              circleci/node:<< parameters.node-version >> \
+              cimg/node:<< parameters.node-version >> \
               npx nyc npm run test-fast
 
             docker cp typeorm-testrunner:/typeorm/coverage/ ./
@@ -193,35 +180,51 @@ workflows:
       - lint
       - build
       - test:
-          name: test (mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs) - Node v<< matrix.node-version >>
+          name: test (postgres) - Node v16
           requires:
             - lint
             - build
-          databases: "mysql mariadb postgres mssql mongodb sqlite better-sqlite3 sqljs"
-          matrix:
-            parameters:
-              node-version:
-                - "12"
-                - "14"
-                - "16"
+          databases: "postgres"
+          node-version: "16.20.0"
       - test:
-          name: test (cockroachdb) - Node v12
+          name: test (cockroachdb) - Node v16
           requires:
             - lint
             - build
           databases: "cockroachdb"
-          node-version: "12"
+          node-version: "16.20.0"
       - test:
-          name: test (oracle) - Node v12
+          name: test (mysql mariadb) - Node v16
+          requires:
+            - lint
+            - build
+          databases: "mysql mariadb"
+          node-version: "16.20.0"
+      - test:
+          name: test (mssql) - Node v16
+          requires:
+            - lint
+            - build
+          databases: "mssql"
+          node-version: "16.20.0"
+      - test:
+          name: test (oracle) - Node v16
           requires:
             - lint
             - build
           databases: "oracle"
-          node-version: "12"
+          node-version: "16.20.0"
       - test:
-          name: test (postgres 12) - Node v12
+          name: test (sqlite better-sqlite3 sqljs) - Node v16
           requires:
             - lint
             - build
-          databases: "postgres-12"
-          node-version: "12"
+          databases: "sqlite better-sqlite3 sqljs"
+          node-version: "16.20.0"
+      - test:
+          name: test (mongodb) - Node v16
+          requires:
+            - lint
+            - build
+          databases: "mongodb"
+          node-version: "16.20.0"

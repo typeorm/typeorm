@@ -20,12 +20,12 @@ instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn`.
 Simple entity example:
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectID
+    _id: ObjectId
 
     @Column()
     firstName: string
@@ -54,7 +54,7 @@ Since MongoDB stores objects and objects inside objects (or documents inside doc
 you can do the same in TypeORM:
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 export class Profile {
     @Column()
@@ -69,7 +69,7 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 export class Photo {
     @Column()
@@ -90,12 +90,12 @@ export class Photo {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm"
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     firstName: string
@@ -284,6 +284,10 @@ Perform a bulkWrite operation without a fluent API.
 
 Count number of matching documents in the db to a query.
 
+### `countDocuments`
+
+Count number of matching documents in the db to a query.
+
 #### `createCollectionIndex`
 
 Creates an index on the db and collection.
@@ -372,10 +376,6 @@ Returns if the collection is a capped collection.
 #### `listCollectionIndexes`
 
 Get the list of all indexes information for the collection.
-
-#### `mapReduce`
-
-Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
 
 #### `parallelCollectionScan`
 

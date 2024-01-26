@@ -1,4 +1,4 @@
-import { ObjectID } from "../../../../src/driver/mongodb/typings"
+import { ObjectId } from "../../../../src/driver/mongodb/typings"
 import { Entity } from "../../../../src/decorator/entity/Entity"
 import { ObjectIdColumn } from "../../../../src/decorator/columns/ObjectIdColumn"
 import { Column } from "../../../../src/decorator/columns/Column"
@@ -6,7 +6,7 @@ import { Column } from "../../../../src/decorator/columns/Column"
 @Entity()
 export class Event {
     @ObjectIdColumn()
-    id: ObjectID
+    id: ObjectId
 
     @Column()
     name: string

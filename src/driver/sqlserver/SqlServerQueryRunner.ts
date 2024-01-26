@@ -27,6 +27,7 @@ import { TypeORMError } from "../../error"
 import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -106,6 +107,7 @@ export class SqlServerQueryRunner
             }
 
             if (this.transactionDepth === 0) {
+                this.transactionDepth += 1
                 const pool = await (this.mode === "slave"
                     ? this.driver.obtainSlaveConnection()
                     : this.driver.obtainMasterConnection())
@@ -123,12 +125,12 @@ export class SqlServerQueryRunner
                     this.databaseConnection.begin(transactionCallback)
                 }
             } else {
+                this.transactionDepth += 1
                 await this.query(
-                    `SAVE TRANSACTION typeorm_${this.transactionDepth}`,
+                    `SAVE TRANSACTION typeorm_${this.transactionDepth - 1}`,
                 )
                 ok()
             }
-            this.transactionDepth += 1
         })
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -147,6 +149,7 @@ export class SqlServerQueryRunner
 
         if (this.transactionDepth === 1) {
             return new Promise<void>((ok, fail) => {
+                this.transactionDepth -= 1
                 this.databaseConnection.commit(async (err: any) => {
                     if (err) return fail(err)
                     this.isTransactionActive = false
@@ -156,7 +159,6 @@ export class SqlServerQueryRunner
 
                     ok()
                     this.connection.logger.logQuery("COMMIT")
-                    this.transactionDepth -= 1
                 })
             })
         }
@@ -175,12 +177,13 @@ export class SqlServerQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TRANSACTION typeorm_${this.transactionDepth - 1}`,
-            )
             this.transactionDepth -= 1
+            await this.query(
+                `ROLLBACK TRANSACTION typeorm_${this.transactionDepth}`,
+            )
         } else {
             return new Promise<void>((ok, fail) => {
+                this.transactionDepth -= 1
                 this.databaseConnection.rollback(async (err: any) => {
                     if (err) return fail(err)
                     this.isTransactionActive = false
@@ -190,7 +193,6 @@ export class SqlServerQueryRunner
 
                     ok()
                     this.connection.logger.logQuery("ROLLBACK")
-                    this.transactionDepth -= 1
                 })
             })
         }
@@ -208,8 +210,16 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
+        const broadcasterResult = new BroadcasterResult()
+
         try {
             this.driver.connection.logger.logQuery(query, parameters, this)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
+
             const pool = await (this.mode === "slave"
                 ? this.driver.obtainSlaveConnection()
                 : this.driver.obtainMasterConnection())
@@ -245,6 +255,17 @@ export class SqlServerQueryRunner
                         this.driver.options.maxQueryExecutionTime
                     const queryEndTime = +new Date()
                     const queryExecutionTime = queryEndTime - queryStartTime
+
+                    this.broadcaster.broadcastAfterQueryEvent(
+                        broadcasterResult,
+                        query,
+                        parameters,
+                        true,
+                        queryExecutionTime,
+                        raw,
+                        undefined,
+                    )
+
                     if (
                         maxQueryExecutionTime &&
                         queryExecutionTime > maxQueryExecutionTime
@@ -297,8 +318,20 @@ export class SqlServerQueryRunner
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw err
         } finally {
+            await broadcasterResult.wait()
+
             release()
         }
     }
@@ -1566,7 +1599,9 @@ export class SqlServerQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, false)) {
+            if (
+                this.isColumnChanged(oldColumn, newColumn, false, false, false)
+            ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1576,6 +1611,7 @@ export class SqlServerQueryRunner
                             newColumn,
                             true,
                             false,
+                            true,
                         )}`,
                     ),
                 )
@@ -1588,9 +1624,38 @@ export class SqlServerQueryRunner
                             oldColumn,
                             true,
                             false,
+                            true,
                         )}`,
                     ),
                 )
+            }
+
+            if (this.isEnumChanged(oldColumn, newColumn)) {
+                const oldExpression = this.getEnumExpression(oldColumn)
+                const oldCheck = new TableCheck({
+                    name: this.connection.namingStrategy.checkConstraintName(
+                        table,
+                        oldExpression,
+                        true,
+                    ),
+                    expression: oldExpression,
+                })
+
+                const newExpression = this.getEnumExpression(newColumn)
+                const newCheck = new TableCheck({
+                    name: this.connection.namingStrategy.checkConstraintName(
+                        table,
+                        newExpression,
+                        true,
+                    ),
+                    expression: newExpression,
+                })
+
+                upQueries.push(this.dropCheckConstraintSql(table, oldCheck))
+                upQueries.push(this.createCheckConstraintSql(table, newCheck))
+
+                downQueries.push(this.dropCheckConstraintSql(table, newCheck))
+                downQueries.push(this.createCheckConstraintSql(table, oldCheck))
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -3277,7 +3342,7 @@ export class SqlServerQueryRunner
                                         : "VIRTUAL"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         database: dbTable["TABLE_CATALOG"],
                                         schema: dbTable["TABLE_SCHEMA"],
                                         table: dbTable["TABLE_NAME"],
@@ -3904,17 +3969,14 @@ export class SqlServerQueryRunner
         column: TableColumn,
         skipIdentity: boolean,
         createDefault: boolean,
+        skipEnum?: boolean,
     ) {
         let c = `"${column.name}" ${this.connection.driver.createFullType(
             column,
         )}`
 
-        if (column.enum) {
-            const expression =
-                column.name +
-                " IN (" +
-                column.enum.map((val) => "'" + val + "'").join(",") +
-                ")"
+        if (!skipEnum && column.enum) {
+            const expression = this.getEnumExpression(column)
             const checkName =
                 this.connection.namingStrategy.checkConstraintName(
                     table,
@@ -3976,6 +4038,18 @@ export class SqlServerQueryRunner
         return c
     }
 
+    private getEnumExpression(column: TableColumn) {
+        if (!column.enum) {
+            throw new Error(`Enum is not defined in column ${column.name}`)
+        }
+        return (
+            column.name +
+            " IN (" +
+            column.enum.map((val) => "'" + val + "'").join(",") +
+            ")"
+        )
+    }
+
     protected isEnumCheckConstraint(name: string): boolean {
         return name.indexOf("CHK_") !== -1 && name.indexOf("_ENUM") !== -1
     }
@@ -4008,12 +4082,33 @@ export class SqlServerQueryRunner
             case "tinyint":
                 return this.driver.mssql.TinyInt
             case "char":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.Char(...parameter.params)
+                }
+                return this.driver.mssql.NChar(...parameter.params)
             case "nchar":
                 return this.driver.mssql.NChar(...parameter.params)
             case "text":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.Text
+                }
+                return this.driver.mssql.Ntext
             case "ntext":
                 return this.driver.mssql.Ntext
             case "varchar":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.VarChar(...parameter.params)
+                }
+                return this.driver.mssql.NVarChar(...parameter.params)
             case "nvarchar":
                 return this.driver.mssql.NVarChar(...parameter.params)
             case "xml":
@@ -4065,5 +4160,17 @@ export class SqlServerQueryRunner
             default:
                 return ISOLATION_LEVEL.READ_COMMITTED
         }
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `sqlserver driver does not support change table comment.`,
+        )
     }
 }

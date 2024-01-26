@@ -18,12 +18,12 @@ TypeORM 大多数功能都是特定于 RDBMS 的，
 简单实体示例：
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
   @ObjectIdColumn()
-  id: ObjectID;
+  id: ObjectId;
 
   @Column()
   firstName: string;
@@ -51,7 +51,7 @@ const connection: Connection = await createConnection({
 由于 MongoDB 存储对象和对象内的对象（或文档内的文档），因此你可以在 TypeORM 中执行相同的操作：
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm";
 
 export class Profile {
   @Column()
@@ -66,7 +66,7 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm";
 
 export class Photo {
   @Column()
@@ -87,12 +87,12 @@ export class Photo {
 ```
 
 ```typescript
-import { Entity, ObjectID, ObjectIdColumn, Column } from "typeorm";
+import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
   @ObjectIdColumn()
-  id: ObjectID;
+  id: ObjectId;
 
   @Column()
   firstName: string;
@@ -296,10 +296,6 @@ distinct 命令返回集合中给定键的不同值列表。
 #### `listCollectionIndexes`
 
 获取集合的所有索引信息的列表。
-
-#### `mapReduce`
-
-在集合中运行 Map Reduce。 请注意，out 的内联选项将返回结果数组而不是集合。
 
 #### `parallelCollectionScan`
 

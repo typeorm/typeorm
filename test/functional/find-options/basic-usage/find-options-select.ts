@@ -26,7 +26,7 @@ describe("find options > select", () => {
                 const posts1 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
-                        select: ["id"],
+                        select: { id: true },
                         order: {
                             id: "asc",
                         },
@@ -67,7 +67,7 @@ describe("find options > select", () => {
                 const posts1 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
-                        select: ["title"],
+                        select: { title: true },
                         order: {
                             title: "asc",
                         },
@@ -108,7 +108,7 @@ describe("find options > select", () => {
                 const posts1 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
-                        select: ["title", "text"],
+                        select: { title: true, text: true },
                         order: {
                             title: "asc",
                         },

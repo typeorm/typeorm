@@ -183,6 +183,22 @@ await manager.increment(User, { firstName: "Timber" }, "age", 3)
 await manager.decrement(User, { firstName: "Timber" }, "age", 3)
 ```
 
+-   `exists` - Check whether any entity exists that matches `FindOptions`.
+
+```typescript
+const exists = await manager.exists(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `existsBy` - Checks whether any entity exists that matches `FindOptionsWhere`.
+
+```typescript
+const exists = await manager.existsBy(User, { firstName: "Timber" })
+```
+
 -   `count` - Counts entities that match `FindOptions`. Useful for pagination.
 
 ```typescript
@@ -234,7 +250,7 @@ const [timbers, timbersCount] = await manager.findAndCount(User, {
     but ignores pagination settings (from and take options).
 
 ```typescript
-const [timbers, timbersCount] = await manager.findAndCount(User, {
+const [timbers, timbersCount] = await manager.findAndCountBy(User, {
     firstName: "Timber",
 })
 ```
@@ -252,7 +268,7 @@ const timber = await manager.findOne(User, {
 -   `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
 
 ```typescript
-const timber = await manager.findOne(User, { firstName: "Timber" })
+const timber = await manager.findOneBy(User, { firstName: "Timber" })
 ```
 
 -   `findOneOrFail` - Finds the first entity that matches some id or find options.

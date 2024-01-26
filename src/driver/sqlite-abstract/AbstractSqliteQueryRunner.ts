@@ -101,6 +101,7 @@ export abstract class AbstractSqliteQueryRunner
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             if (isolationLevel) {
                 if (isolationLevel === "READ UNCOMMITTED") {
                     await this.query("PRAGMA read_uncommitted = true")
@@ -110,9 +111,9 @@ export abstract class AbstractSqliteQueryRunner
             }
             await this.query("BEGIN TRANSACTION")
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -127,14 +128,15 @@ export abstract class AbstractSqliteQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -149,14 +151,15 @@ export abstract class AbstractSqliteQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -1435,7 +1438,7 @@ export abstract class AbstractSqliteQueryRunner
                                 dbColumn["hidden"] === 2 ? "VIRTUAL" : "STORED"
 
                             const asExpressionQuery =
-                                await this.selectTypeormMetadataSql({
+                                this.selectTypeormMetadataSql({
                                     table: table.name,
                                     type: MetadataTableType.GENERATED_COLUMN,
                                     name: tableColumn.name,
@@ -1453,20 +1456,10 @@ export abstract class AbstractSqliteQueryRunner
                         }
 
                         if (tableColumn.type === "varchar") {
-                            // Check if this is an enum
-                            const enumMatch = sql.match(
-                                new RegExp(
-                                    '"(' +
-                                        tableColumn.name +
-                                        ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)",
-                                ),
+                            tableColumn.enum = OrmUtils.parseSqlCheckExpression(
+                                sql,
+                                tableColumn.name,
                             )
-                            if (enumMatch) {
-                                // This is an enum
-                                tableColumn.enum = enumMatch[2]
-                                    .substr(1, enumMatch[2].length - 2)
-                                    .split("','")
-                            }
                         }
 
                         // parse datatype and attempt to retrieve length, precision and scale
@@ -1475,7 +1468,7 @@ export abstract class AbstractSqliteQueryRunner
                             const fullType = tableColumn.type
                             let dataType = fullType.substr(0, pos)
                             if (
-                                !!this.driver.withLengthColumnTypes.find(
+                                this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
@@ -1491,7 +1484,7 @@ export abstract class AbstractSqliteQueryRunner
                                 }
                             }
                             if (
-                                !!this.driver.withPrecisionColumnTypes.find(
+                                this.driver.withPrecisionColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
@@ -1503,7 +1496,7 @@ export abstract class AbstractSqliteQueryRunner
                                     tableColumn.precision = +matches[1]
                                 }
                                 if (
-                                    !!this.driver.withScaleColumnTypes.find(
+                                    this.driver.withScaleColumnTypes.find(
                                         (col) => col === dataType,
                                     )
                                 ) {
@@ -1570,7 +1563,7 @@ export abstract class AbstractSqliteQueryRunner
                         )
 
                         return new TableForeignKey({
-                            name: fkMapping!.name,
+                            name: fkMapping?.name,
                             columnNames: columnNames,
                             referencedTableName: foreignKey["table"],
                             referencedColumnNames: referencedColumnNames,
@@ -2248,5 +2241,15 @@ export abstract class AbstractSqliteQueryRunner
             .split(".")
             .map((i) => (disableEscape ? i : `"${i}"`))
             .join(".")
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(`sqlit driver does not support change comment.`)
     }
 }

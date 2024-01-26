@@ -1,6 +1,6 @@
-import { OneToMany, ChildEntity } from "../../../../src/index.js"
-import { Change } from "./Change.js"
-import { Log } from "./Log.js"
+import { OneToMany, ChildEntity } from "../../../../src/index"
+import { Change } from "./Change"
+import { Log } from "./Log"
 
 @ChildEntity()
 export abstract class ChangeLog<T> extends Log {

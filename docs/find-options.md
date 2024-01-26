@@ -606,7 +606,9 @@ SELECT * FROM "post" WHERE "titles" IN ('Go To Statement Considered Harmful', 'S
 
 ## Combining Advanced Options
 
-Also you can combine these operators with `Not` operator:
+Also you can combine these operators with below:
+
+-   `Not`
 
 ```ts
 import { Not, MoreThan, Equal } from "typeorm"
@@ -621,4 +623,36 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE NOT("likes" > 10) AND NOT("title" = 'About #2')
+```
+
+-   `Or`
+
+```ts
+import { Not, MoreThan, ILike } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    title: Or(Equal("About #2"), ILike("About%")),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "title" = 'About #2' OR "title" ILIKE 'About%'
+```
+
+-   `And`
+
+```ts
+import { And, Not, Equal, ILike } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    title: And(Not(Equal("About #2")), ILike("%About%")),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE NOT("title" = 'About #2') AND "title" ILIKE '%About%'
 ```

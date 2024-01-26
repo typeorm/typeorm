@@ -226,6 +226,28 @@ export class EntityMetadataValidator {
 
         // validate relations
         entityMetadata.relations.forEach((relation) => {
+            // check OnDeleteTypes
+            if (
+                driver.supportedOnDeleteTypes &&
+                relation.onDelete &&
+                !driver.supportedOnDeleteTypes.includes(relation.onDelete)
+            ) {
+                throw new TypeORMError(
+                    `OnDeleteType "${relation.onDelete}" is not supported for ${driver.options.type}!`,
+                )
+            }
+
+            // check OnUpdateTypes
+            if (
+                driver.supportedOnUpdateTypes &&
+                relation.onUpdate &&
+                !driver.supportedOnUpdateTypes.includes(relation.onUpdate)
+            ) {
+                throw new TypeORMError(
+                    `OnUpdateType "${relation.onUpdate}" is not valid for ${driver.options.type}!`,
+                )
+            }
+
             // check join tables:
             // using JoinTable is possible only on one side of the many-to-many relation
             // todo(dima): fix

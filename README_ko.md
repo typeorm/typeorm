@@ -1,7 +1,7 @@
 <div align="center">   <a href="http://typeorm.io/">     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">   </a>   <br>   <br> 	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm"> 		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield"> 	</a> 	<a href="https://badge.fury.io/js/typeorm"> 		<img src="https://badge.fury.io/js/typeorm.svg"> 	</a>     <a href="https://codecov.io/gh/typeorm/typeorm">         <img src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg" alt="Codecov">     </a> 	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-uu12ljeb-OH_0086I379fUDApYJHNuw"> 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg"> 	</a>   <br>   <br>
 </div>
 
-TypeORM은 NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo 및 Electron 플랫폼에서 실행할 수 있는 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)이며 TypeScript 및 JavaScript(ES5, ES6, ES7, ES8)와 함께 사용할 수 있다. TypeORM의 목표는 항상 최신 JavaScript 기능을 지원하고 몇 개의 테이블이 있는 작은 응용 프로그램에서 여러 데이터베이스가 있는 대규모 엔터프라이즈 응용 프로그램에 이르기까지 데이터베이스를 사용하는 모든 종류의 응용 프로그램을 개발하는 데 도움이 되는 추가 기능을 제공하는 것이다.
+TypeORM은 NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo 및 Electron 플랫폼에서 실행할 수 있는 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)이며 TypeScript 및 JavaScript(ES2021)와 함께 사용할 수 있다. TypeORM의 목표는 항상 최신 JavaScript 기능을 지원하고 몇 개의 테이블이 있는 작은 응용 프로그램에서 여러 데이터베이스가 있는 대규모 엔터프라이즈 응용 프로그램에 이르기까지 데이터베이스를 사용하는 모든 종류의 응용 프로그램을 개발하는 데 도움이 되는 추가 기능을 제공하는 것이다.
 
 TypeORM은 현재 존재하는 다른 모든 JavaScript ORM과 달리 [Active Record](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) 및 [Data Mapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) 패턴을 모두 지원한다. 즉, 고품질의 느슨하게 결합된 확장 가능하고 유지 관리 가능한 애플리케이션을 가장 생산적인 방식으로 작성할 수 있다.
 
@@ -37,7 +37,6 @@ TypeORM은 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrin
 - 리스너 및 구독자(hooks).
 - 클로저 테이블 패턴 지원.
 - 모델 또는 별도의 설정 파일에서 스키마 선언.
-- json / xml / yml / env 형식의 연결 구성.
 - MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js를 지원.
 - MongoDB NoSQL 데이터베이스 지원.
 - NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron 플랫폼에서 작동.
@@ -185,7 +184,7 @@ await timber.remove();
 
     - **MongoDB** (experimental)의 경우
 
-        `npm install mongodb@^3.6.0 --save`
+        `npm install mongodb@^5.2.0 --save`
 
     - **NativeScript**, **react-native**, **Cordova**의 경우
 

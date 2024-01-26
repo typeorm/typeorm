@@ -102,6 +102,10 @@ export class JunctionEntityMetadataBuilder {
                             ) ||
                                 this.connection.driver.options.type ===
                                     "aurora-mysql") &&
+                            // some versions of mariadb support the column type and should not try to provide the length property
+                            this.connection.driver.normalizeType(
+                                referencedColumn,
+                            ) !== "uuid" &&
                             (referencedColumn.generationStrategy === "uuid" ||
                                 referencedColumn.type === "uuid")
                                 ? "36"
@@ -166,6 +170,10 @@ export class JunctionEntityMetadataBuilder {
                                 ) ||
                                     this.connection.driver.options.type ===
                                         "aurora-mysql") &&
+                                // some versions of mariadb support the column type and should not try to provide the length property
+                                this.connection.driver.normalizeType(
+                                    inverseReferencedColumn,
+                                ) !== "uuid" &&
                                 (inverseReferencedColumn.generationStrategy ===
                                     "uuid" ||
                                     inverseReferencedColumn.type === "uuid")

@@ -14,6 +14,7 @@
 -   [`mongodb` data source options](#mongodb-data-source-options)
 -   [`sql.js` data source options](#sqljs-data-source-options)
 -   [`expo` data source options](#expo-data-source-options)
+-   [`oracle` data source options](#oracle-data-source-options)
 -   [DataSource options example](#data-source-options-example)
 
 ## What is `DataSourceOptions`
@@ -96,6 +97,9 @@ Different RDBMS-es have their own specific options.
 
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
     Read more about caching [here](caching.md).
+
+-   `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
+    eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
 ## `mysql` / `mariadb` data source options
 
@@ -182,15 +186,17 @@ Different RDBMS-es have their own specific options.
 
 -   `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
+-   `maxTransactionRetries` - A maximum number of transaction retries in case of 40001 error. Defaults to 5.
+
 -   `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
 -   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
 -   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
 
--   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript integers.  
-    By default int8 (bigint) values are returned as strings to avoid overflows.  
-    JavaScript doesn't have support for 64-bit integers, the maximum safe integer in js is: Number.MAX_SAFE_INTEGER (`+2^53`). Be careful when enabling `parseInt8`.  
+-   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript integers.
+    By default int8 (bigint) values are returned as strings to avoid overflows.
+    JavaScript doesn't have support for 64-bit integers, the maximum safe integer in js is: Number.MAX_SAFE_INTEGER (`+2^53`). Be careful when enabling `parseInt8`.
     Note: This option is ignored if the undelying driver does not support it.
 
 ## `sqlite` data source options
@@ -236,6 +242,7 @@ Different RDBMS-es have their own specific options.
 -   `database` - Database name
 
 ## `mssql` data source options
+Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
 
@@ -268,9 +275,6 @@ Different RDBMS-es have their own specific options.
 
 -   `pool.maxWaitingClients` - maximum number of queued requests allowed, additional acquire calls will be callback with
     an err in a future cycle of the event loop.
-
--   `pool.testOnBorrow` - should the pool validate resources before giving them to clients. Requires that either
-    `factory.validate` or `factory.validateAsync` to be specified.
 
 -   `pool.acquireTimeoutMillis` - max milliseconds an `acquire` call will wait for a resource before timing out.
     (default no limit), if supplied should non-zero positive integer.
@@ -377,6 +381,8 @@ Different RDBMS-es have their own specific options.
     (default: `7_4`)
 
 -   `options.appName` - Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server. (default: `node-mssql`)
+
+-   `options.trustServerCertificate` - A boolean, controlling whether encryption occurs if there is no verifiable server certificate. (default: `false`)
 
 -   `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
     details (default: `false`).
@@ -506,6 +512,8 @@ Different RDBMS-es have their own specific options.
 
 -   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
+-   `directConnection` - Specifies whether to force dispatch all operations to the specified host.
+
 ## `sql.js` data source options
 
 -   `database`: The raw UInt8Array database that should be imported.
@@ -524,6 +532,24 @@ Different RDBMS-es have their own specific options.
 
 -   `database` - Name of the database. For example, "mydb".
 -   `driver` - The Expo SQLite module. For example, `require('expo-sqlite')`.
+
+## `oracle` data source options
+
+The following TNS connection string will be used in the next explanations:
+
+```bash
+(DESCRIPTION=
+  (ADDRESS=(PROTOCOL=tcp)(HOST=sales-server)(PORT=1521))
+  (CONNECT_DATA=
+     (SID=sales)
+     (SERVICE_NAME=sales.us.example.com)
+     (INSTANCE_NAME=sales))
+     (SERVER=shared)))
+)
+```
+-   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
+-   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
+
 
 ## Data Source Options example
 

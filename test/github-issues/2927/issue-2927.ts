@@ -41,7 +41,7 @@ describe("github issues > #2927 When using base class' custom repository, the di
                 // Retrieve it back from the DB.
                 const contents = await repository.find()
                 expect(contents.length).to.equal(1)
-                expect(contents[0] instanceof Photo).to.equal(true)
+                expect(contents[0]).to.be.an.instanceOf(Photo)
                 const fetchedPhoto = contents[0] as Photo
                 expect(fetchedPhoto).to.eql(photo)
             }),
@@ -64,7 +64,7 @@ describe("github issues > #2927 When using base class' custom repository, the di
                 // Retrieve it back from the DB.
                 const contents = await repository.find()
                 expect(contents.length).to.equal(1)
-                expect(contents[0] instanceof SpecialPhoto).to.equal(true)
+                expect(contents[0]).to.be.an.instanceOf(SpecialPhoto)
                 const fetchedSpecialPhoto = contents[0] as SpecialPhoto
                 expect(fetchedSpecialPhoto).to.eql(specialPhoto)
             }),

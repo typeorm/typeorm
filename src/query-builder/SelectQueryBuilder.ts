@@ -8,6 +8,7 @@ import { JoinAttribute } from "./JoinAttribute"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
 import { RelationIdLoader } from "./relation-id/RelationIdLoader"
+import { RelationIdLoader as QueryStrategyRelationIdLoader } from "./RelationIdLoader"
 import { RelationIdMetadataToAttributeTransformer } from "./relation-id/RelationIdMetadataToAttributeTransformer"
 import { RelationCountLoader } from "./relation-count/RelationCountLoader"
 import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer"
@@ -38,11 +39,12 @@ import { FindOptionsOrder } from "../find-options/FindOptionsOrder"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
 import { FindOptionsRelations } from "../find-options/FindOptionsRelations"
-import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { FindOperator } from "../find-options/FindOperator"
+import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -91,7 +93,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         sql += this.createLockExpression()
         sql = sql.trim()
         if (this.expressionMap.subQuery) sql = "(" + sql + ")"
-        return sql
+        return this.replacePropertyNamesForTheWholeQuery(sql)
     }
 
     // -------------------------------------------------------------------------
@@ -716,6 +718,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
+        mapAsEntity?: Function | string,
     ): this
 
     /**
@@ -780,6 +783,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
+        mapAsEntity?: Function | string,
     ): this {
         this.addSelect(alias)
         this.join(
@@ -790,6 +794,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             parameters,
             mapToProperty,
             false,
+            mapAsEntity,
         )
         return this
     }
@@ -904,6 +909,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
+        mapAsEntity?: Function | string,
     ): this
 
     /**
@@ -968,6 +974,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
+        mapAsEntity?: Function | string,
     ): this {
         this.addSelect(alias)
         this.join(
@@ -978,6 +985,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             parameters,
             mapToProperty,
             false,
+            mapAsEntity,
         )
         return this
     }
@@ -1148,10 +1156,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         this.expressionMap.wheres = [] // don't move this block below since computeWhereParameter can add where expressions
         const condition = this.getWhereCondition(where)
-        if (condition)
+        if (condition) {
             this.expressionMap.wheres = [
                 { type: "simple", condition: condition },
             ]
+        }
         if (parameters) this.setParameters(parameters)
         return this
     }
@@ -1436,10 +1445,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Set's LIMIT - maximum number of rows to be selected.
+     * Sets LIMIT - maximum number of rows to be selected.
      * NOTE that it may not work as you expect if you are using joins.
      * If you want to implement pagination, and you are having join in your query,
-     * then use instead take method instead.
+     * then use the take method instead.
      */
     limit(limit?: number): this {
         this.expressionMap.limit = this.normalizeNumber(limit)
@@ -1455,10 +1464,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Set's OFFSET - selection offset.
+     * Sets OFFSET - selection offset.
      * NOTE that it may not work as you expect if you are using joins.
      * If you want to implement pagination, and you are having join in your query,
-     * then use instead skip method instead.
+     * then use the skip method instead.
      */
     offset(offset?: number): this {
         this.expressionMap.offset = this.normalizeNumber(offset)
@@ -1734,7 +1743,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!entity) {
             throw new EntityNotFoundError(
                 this.expressionMap.mainAlias!.target,
-                this,
+                this.expressionMap.parameters,
             )
         }
 
@@ -1754,7 +1763,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Gets count - number of entities selected by sql generated by this query builder.
-     * Count excludes all limitations set by setFirstResult and setMaxResults methods call.
+     * Count excludes all limitations set by offset, limit, skip, and take.
      */
     async getCount(): Promise<number> {
         if (this.expressionMap.lockMode === "optimistic")
@@ -2007,27 +2016,32 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         parameters?: ObjectLiteral,
         mapToProperty?: string,
         isMappingMany?: boolean,
+        mapAsEntity?: Function | string,
     ): void {
-        this.setParameters(parameters || {})
+        if (parameters) {
+            this.setParameters(parameters)
+        }
 
         const joinAttribute = new JoinAttribute(
             this.connection,
             this.expressionMap,
         )
         joinAttribute.direction = direction
+        joinAttribute.mapAsEntity = mapAsEntity
         joinAttribute.mapToProperty = mapToProperty
         joinAttribute.isMappingMany = isMappingMany
         joinAttribute.entityOrProperty = entityOrProperty // relationName
-        joinAttribute.condition = condition ? condition : undefined // joinInverseSideCondition
+        joinAttribute.condition = condition // joinInverseSideCondition
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
 
-        if (joinAttribute.metadata) {
+        const joinAttributeMetadata = joinAttribute.metadata
+        if (joinAttributeMetadata) {
             if (
-                joinAttribute.metadata.deleteDateColumn &&
+                joinAttributeMetadata.deleteDateColumn &&
                 !this.expressionMap.withDeleted
             ) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttribute.metadata.deleteDateColumn.propertyName} IS NULL`
+                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
                 joinAttribute.condition = joinAttribute.condition
                     ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
                     : `${conditionDeleteColumn}`
@@ -2036,7 +2050,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
                 name: aliasName,
-                metadata: joinAttribute.metadata,
+                metadata: joinAttributeMetadata,
             })
             if (
                 joinAttribute.relation &&
@@ -2334,6 +2348,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                     .join(" AND ")
 
+                if (!condition)
+                    throw new TypeORMError(
+                        `Relation ${relation.entityMetadata.name}.${relation.propertyName} does not have join columns.`,
+                    )
+
                 return (
                     " " +
                     joinAttr.direction +
@@ -2463,31 +2482,57 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     protected createOrderByExpression() {
         const orderBys = this.expressionMap.allOrderBys
-        if (Object.keys(orderBys).length > 0)
-            return (
-                " ORDER BY " +
-                Object.keys(orderBys)
-                    .map((columnName) => {
-                        if (typeof orderBys[columnName] === "string") {
-                            return (
-                                this.replacePropertyNames(columnName) +
-                                " " +
-                                orderBys[columnName]
-                            )
-                        } else {
-                            return (
-                                this.replacePropertyNames(columnName) +
-                                " " +
-                                (orderBys[columnName] as any).order +
-                                " " +
-                                (orderBys[columnName] as any).nulls
-                            )
-                        }
-                    })
-                    .join(", ")
-            )
+        if (Object.keys(orderBys).length === 0) return ""
 
-        return ""
+        return (
+            " ORDER BY " +
+            Object.keys(orderBys)
+                .map((columnName) => {
+                    const orderValue =
+                        typeof orderBys[columnName] === "string"
+                            ? orderBys[columnName]
+                            : (orderBys[columnName] as any).order +
+                              " " +
+                              (orderBys[columnName] as any).nulls
+                    const selection = this.expressionMap.selects.find(
+                        (s) => s.selection === columnName,
+                    )
+                    if (
+                        selection &&
+                        !selection.aliasName &&
+                        columnName.indexOf(".") !== -1
+                    ) {
+                        const criteriaParts = columnName.split(".")
+                        const aliasName = criteriaParts[0]
+                        const propertyPath = criteriaParts.slice(1).join(".")
+                        const alias = this.expressionMap.aliases.find(
+                            (alias) => alias.name === aliasName,
+                        )
+                        if (alias) {
+                            const column =
+                                alias.metadata.findColumnWithPropertyPath(
+                                    propertyPath,
+                                )
+                            if (column) {
+                                const orderAlias = DriverUtils.buildAlias(
+                                    this.connection.driver,
+                                    undefined,
+                                    aliasName,
+                                    column.databaseName,
+                                )
+                                return (
+                                    this.escape(orderAlias) + " " + orderValue
+                                )
+                            }
+                        }
+                    }
+
+                    return (
+                        this.replacePropertyNames(columnName) + " " + orderValue
+                    )
+                })
+                .join(", ")
+        )
     }
 
     /**
@@ -2828,6 +2873,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             ? selection.aliasName
                             : DriverUtils.buildAlias(
                                   this.connection.driver,
+                                  undefined,
                                   aliasName,
                                   column.databaseName,
                               ),
@@ -2836,10 +2882,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                 })
             } else {
+                if (column.isVirtualProperty) {
+                    // Do not add unselected virtual properties to final select
+                    return
+                }
+
                 finalSelects.push({
                     selection: selectionPath,
                     aliasName: DriverUtils.buildAlias(
                         this.connection.driver,
+                        undefined,
                         aliasName,
                         column.databaseName,
                     ),
@@ -3311,6 +3363,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
+    public concatRelationMetadata(relationMetadata: RelationMetadata) {
+        this.relationMetadatas.push(relationMetadata)
+    }
+
     /**
      * Executes sql generated by query builder and returns object with raw results and entities created from them.
      */
@@ -3380,6 +3436,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const columnAlias = this.escape(
                         DriverUtils.buildAlias(
                             this.connection.driver,
+                            undefined,
                             mainAliasName,
                             primaryColumn.databaseName,
                         ),
@@ -3390,6 +3447,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     const alias = DriverUtils.buildAlias(
                         this.connection.driver,
+                        undefined,
                         "ids_" + mainAliasName,
                         primaryColumn.databaseName,
                     )
@@ -3442,10 +3500,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             return metadata.primaryColumns
                                 .map((primaryColumn) => {
                                     const paramKey = `orm_distinct_ids_${index}_${primaryColumn.databaseName}`
+                                    const paramKeyResult =
+                                        DriverUtils.buildAlias(
+                                            this.connection.driver,
+                                            undefined,
+                                            "ids_" + mainAliasName,
+                                            primaryColumn.databaseName,
+                                        )
                                     parameters[paramKey] =
-                                        result[
-                                            `ids_${mainAliasName}_${primaryColumn.databaseName}`
-                                        ]
+                                        result[paramKeyResult]
                                     return `${mainAliasName}.${primaryColumn.propertyPath}=:${paramKey}`
                                 })
                                 .join(" AND ")
@@ -3454,6 +3517,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 } else {
                     const alias = DriverUtils.buildAlias(
                         this.connection.driver,
+                        undefined,
                         "ids_" + mainAliasName,
                         metadata.primaryColumns[0].databaseName,
                     )
@@ -3519,6 +3583,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         if (this.expressionMap.relationLoadStrategy === "query") {
+            const queryStrategyRelationIdLoader =
+                new QueryStrategyRelationIdLoader(this.connection, queryRunner)
+
             await Promise.all(
                 this.relationMetadatas.map(async (relation) => {
                     const relationTarget = relation.inverseEntityMetadata.target
@@ -3536,7 +3603,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                           )
                         : this.findOptions.relations
 
-                    const queryBuilder = this.createQueryBuilder()
+                    const queryBuilder = this.createQueryBuilder(queryRunner)
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
                         .setFindOptions({
@@ -3564,7 +3631,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         })
                     if (entities.length > 0) {
                         const relatedEntityGroups: any[] =
-                            await this.connection.relationIdLoader.loadManyToManyRelationIdsAndGroup(
+                            await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
                                 relation,
                                 entities,
                                 undefined,
@@ -3613,6 +3680,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         this.escape(
                             DriverUtils.buildAlias(
                                 this.connection.driver,
+                                undefined,
                                 aliasName,
                                 column!.databaseName,
                             ),
@@ -3626,7 +3694,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 select.aliasName === orderCriteria,
                         )
                     )
-                        return this.escape(parentAlias) + "." + orderCriteria
+                        return (
+                            this.escape(parentAlias) +
+                            "." +
+                            this.escape(orderCriteria)
+                        )
 
                     return ""
                 }
@@ -3648,6 +3720,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         this.escape(
                             DriverUtils.buildAlias(
                                 this.connection.driver,
+                                undefined,
                                 aliasName,
                                 column!.databaseName,
                             ),
@@ -3662,7 +3735,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
                 ) {
                     orderByObject[
-                        this.escape(parentAlias) + "." + orderCriteria
+                        this.escape(parentAlias) +
+                            "." +
+                            this.escape(orderCriteria)
                     ] = orderBys[orderCriteria]
                 } else {
                     orderByObject[orderCriteria] = orderBys[orderCriteria]
@@ -3678,7 +3753,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     protected async loadRawResults(queryRunner: QueryRunner) {
         const [sql, parameters] = this.getQueryAndParameters()
-        const queryId = sql + " -- PARAMETERS: " + JSON.stringify(parameters)
+        const queryId =
+            sql +
+            " -- PARAMETERS: " +
+            JSON.stringify(parameters, (_, value) =>
+                typeof value === "bigint" ? value.toString() : value,
+            )
         const cacheOptions =
             typeof this.connection.options.cache === "object"
                 ? this.connection.options.cache
@@ -3687,9 +3767,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             undefined
         const isCachingEnabled =
             // Caching is enabled globally and isn't disabled locally.
-            (cacheOptions.alwaysEnabled && this.expressionMap.cache) ||
+            (cacheOptions.alwaysEnabled &&
+                this.expressionMap.cache !== false) ||
             // ...or it's enabled locally explicitly.
-            this.expressionMap.cache
+            this.expressionMap.cache === true
         let cacheError = false
         if (this.connection.queryResultCache && isCachingEnabled) {
             try {
@@ -3777,7 +3858,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Creates a query builder used to execute sql queries inside this query builder.
      */
     protected obtainQueryRunner() {
-        return this.queryRunner || this.connection.createQueryRunner("slave")
+        return (
+            this.queryRunner ||
+            this.connection.createQueryRunner(
+                this.connection.defaultReplicationModeForReads(),
+            )
+        )
     }
 
     protected buildSelect(
@@ -3868,7 +3954,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     typeof relationValue === "object"
                 ) {
                     if (this.expressionMap.relationLoadStrategy === "query") {
-                        this.relationMetadatas.push(relation)
+                        this.concatRelationMetadata(relation)
                     } else {
                         // join
                         this.joins.push({
@@ -4066,23 +4152,27 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         : undefined
 
                 let aliasPath = `${alias}.${propertyPath}`
-                if (column.isVirtualProperty && column.query) {
-                    const selection = this.expressionMap.selects.find(
-                        (s) => s.selection === aliasPath,
-                    )
-                    if (selection) {
-                        // this is not building correctly now???
-                        aliasPath = DriverUtils.buildAlias(
-                            this.connection.driver,
-                            alias,
-                            column.databaseName,
-                        )
-                        selection.aliasName = aliasPath
-                    } else {
-                        aliasPath = `(${column.query(alias)})`
-                    }
-                }
+                // const selection = this.expressionMap.selects.find(
+                //     (s) => s.selection === aliasPath,
+                // )
+                // if (selection) {
+                //     // this is not building correctly now???
+                //     aliasPath = this.escape(
+                //         DriverUtils.buildAlias(
+                //             this.connection.driver,
+                //             undefined,
+                //             alias,
+                //             column.databaseName,
+                //         ),
+                //     )
+                //     // selection.aliasName = aliasPath
+                // } else {
+                //     if (column.isVirtualProperty && column.query) {
+                //         aliasPath = `(${column.query(alias)})`
+                //     }
+                // }
 
+                // console.log("add sort", selection, aliasPath, direction, nulls)
                 this.addOrderBy(aliasPath, direction, nulls)
                 // this.orderBys.push({ alias: alias + "." + propertyPath, direction, nulls });
             } else if (embed) {
@@ -4134,10 +4224,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ) {
         let condition: string = ""
         // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
-        if (Array.isArray(where) && where.length) {
-            condition =
-                "(" +
-                where
+        if (Array.isArray(where)) {
+            if (where.length) {
+                condition = where
                     .map((whereItem) => {
                         return this.buildWhere(
                             whereItem,
@@ -4148,8 +4237,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                     .filter((condition) => !!condition)
                     .map((condition) => "(" + condition + ")")
-                    .join(" OR ") +
-                ")"
+                    .join(" OR ")
+            }
         } else {
             let andConditions: string[] = []
             for (let key in where) {
@@ -4182,10 +4271,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         parameterValue = where[key].value
                     }
                     if (column.transformer) {
-                        parameterValue = ApplyValueTransformers.transformTo(
-                            column.transformer,
-                            parameterValue,
-                        )
+                        parameterValue instanceof FindOperator
+                            ? parameterValue.transformValue(column.transformer)
+                            : (parameterValue =
+                                  ApplyValueTransformers.transformTo(
+                                      column.transformer,
+                                      parameterValue,
+                                  ))
                     }
 
                     // if (parameterValue === null) {
@@ -4255,10 +4347,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (InstanceChecker.isFindOperator(where[key])) {
                         if (
                             where[key].type === "moreThan" ||
-                            where[key].type === "lessThan"
+                            where[key].type === "lessThan" ||
+                            where[key].type === "moreThanOrEqual" ||
+                            where[key].type === "lessThanOrEqual"
                         ) {
-                            const sqlOperator =
-                                where[key].type === "moreThan" ? ">" : "<"
+                            let sqlOperator = ""
+                            if (where[key].type === "moreThan") {
+                                sqlOperator = ">"
+                            } else if (where[key].type === "lessThan") {
+                                sqlOperator = "<"
+                            } else if (where[key].type === "moreThanOrEqual") {
+                                sqlOperator = ">="
+                            } else if (where[key].type === "lessThanOrEqual") {
+                                sqlOperator = "<="
+                            }
                             // basically relation count functionality
                             const qb: QueryBuilder<any> = this.subQuery()
                             if (relation.isManyToManyOwner) {
@@ -4405,8 +4507,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
                 }
             }
-            condition = andConditions.join(" AND ")
+            condition = andConditions.length
+                ? "(" + andConditions.join(") AND (") + ")"
+                : andConditions.join(" AND ")
         }
-        return condition
+        return condition.length ? "(" + condition + ")" : condition
     }
 }

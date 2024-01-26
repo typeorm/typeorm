@@ -109,7 +109,12 @@ With [cascades](./relations.md#cascades) enabled, you can delete this relation w
 To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
 
 ```typescript
-const question = dataSource.getRepository(Question)
+const question = await dataSource.getRepository(Question).findOne({
+    relations: {
+        categories: true,
+    },
+    where: { id: 1 }
+})
 question.categories = question.categories.filter((category) => {
     return category.id !== categoryToRemove.id
 })
@@ -254,20 +259,20 @@ const categoriesWithQuestions = await dataSource
 ## Many-to-many relations with custom properties
 
 In case you need to have additional properties in your many-to-many relationship, you have to create a new entity yourself.
-For example, if you would like entities `Post` and `Category` to have a many-to-many relationship with an additional `order` column, then you need to create an entity `PostToCategory` with two `ManyToOne` relations pointing in both directions and with custom columns in it:
+For example, if you would like entities `Question` and `Category` to have a many-to-many relationship with an additional `order` column, then you need to create an entity `QuestionToCategory` with two `ManyToOne` relations pointing in both directions and with custom columns in it:
 
 ```typescript
 import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
-import { Post } from "./post"
+import { Question } from "./question"
 import { Category } from "./category"
 
 @Entity()
-export class PostToCategory {
+export class QuestionToCategory {
     @PrimaryGeneratedColumn()
-    public postToCategoryId: number
+    public questionToCategoryId: number
 
     @Column()
-    public postId: number
+    public questionId: number
 
     @Column()
     public categoryId: number
@@ -275,24 +280,24 @@ export class PostToCategory {
     @Column()
     public order: number
 
-    @ManyToOne(() => Post, (post) => post.postToCategories)
-    public post: Post
+    @ManyToOne(() => Question, (question) => question.questionToCategories)
+    public question: Question
 
-    @ManyToOne(() => Category, (category) => category.postToCategories)
+    @ManyToOne(() => Category, (category) => category.questionToCategories)
     public category: Category
 }
 ```
 
-Additionally you will have to add a relationship like the following to `Post` and `Category`:
+Additionally you will have to add a relationship like the following to `Question` and `Category`:
 
 ```typescript
 // category.ts
 ...
-@OneToMany(() => PostToCategory, postToCategory => postToCategory.category)
-public postToCategories: PostToCategory[];
+@OneToMany(() => questionToCategory, questionToCategory => questionToCategory.category)
+public questionToCategories: QuestionToCategory[];
 
-// post.ts
+// question.ts
 ...
-@OneToMany(() => PostToCategory, postToCategory => postToCategory.post)
-public postToCategories: PostToCategory[];
+@OneToMany(() => QuestionToCategory, questionToCategory => questionToCategory.question)
+public questionToCategories: QuestionToCategory[];
 ```

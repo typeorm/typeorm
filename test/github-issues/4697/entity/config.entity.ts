@@ -1,4 +1,4 @@
-import { Entity, ObjectIdColumn, ObjectID, Column } from "../../../../src"
+import { Entity, ObjectIdColumn, ObjectId, Column } from "../../../../src"
 
 /**
  * @deprecated use item config instead
@@ -6,7 +6,7 @@ import { Entity, ObjectIdColumn, ObjectID, Column } from "../../../../src"
 @Entity()
 export class Config {
     @ObjectIdColumn()
-    _id: ObjectID
+    _id: ObjectId
 
     @Column()
     itemId: string

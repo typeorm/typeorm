@@ -131,7 +131,7 @@ export class DbQueryResultCache implements QueryResultCache {
     }
 
     /**
-     * Caches given query result.
+     * Get data from cache.
      * Returns cache result if found.
      * Returns undefined if result is not cached.
      */
@@ -158,6 +158,7 @@ export class DbQueryResultCache implements QueryResultCache {
                             ? new MssqlParameter(options.identifier, "nvarchar")
                             : options.identifier,
                 })
+                .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
                 .getRawOne()
         } else if (options.query) {
             if (this.connection.driver.options.type === "oracle") {
@@ -168,6 +169,7 @@ export class DbQueryResultCache implements QueryResultCache {
                         )}, :query) = 0`,
                         { query: options.query },
                     )
+                    .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
                     .getRawOne()
             }
 
@@ -179,6 +181,7 @@ export class DbQueryResultCache implements QueryResultCache {
                             ? new MssqlParameter(options.query, "nvarchar")
                             : options.query,
                 })
+                .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
                 .getRawOne()
         }
 

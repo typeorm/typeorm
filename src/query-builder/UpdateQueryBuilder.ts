@@ -53,7 +53,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         sql += this.createUpdateExpression()
         sql += this.createOrderByExpression()
         sql += this.createLimitExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**

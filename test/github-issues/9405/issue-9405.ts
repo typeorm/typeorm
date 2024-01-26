@@ -4,10 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/index.js"
-import { Email, EmailChanged } from "./entity/EmailChanged.js"
-import { Change } from "./entity/Change.js"
-import { Log } from "./entity/Log.js"
+import { DataSource } from "../../../src/index"
+import { Email, EmailChanged } from "./entity/EmailChanged"
+import { Change } from "./entity/Change"
+import { Log } from "./entity/Log"
 
 describe("github issues > #9405 Incorrect subject sorting with multi-inheritance entities", () => {
     let dataSources: DataSource[]

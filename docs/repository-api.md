@@ -257,6 +257,22 @@ await repository.increment({ firstName: "Timber" }, "age", 3)
 await repository.decrement({ firstName: "Timber" }, "age", 3)
 ```
 
+-   `exists` - Check whether any entity exists that matches `FindOptions`.
+
+```typescript
+const exists = await repository.exists({
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `existsBy` - Checks whether any entity exists that matches `FindOptionsWhere`.
+
+```typescript
+const exists = await repository.existsBy({ firstName: "Timber" })
+```
+
 -   `count` - Counts entities that match `FindOptions`. Useful for pagination.
 
 ```typescript
@@ -271,6 +287,30 @@ const count = await repository.count({
 
 ```typescript
 const count = await repository.countBy({ firstName: "Timber" })
+```
+
+-   `sum` - Returns the sum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const sum = await repository.sum("age", { firstName: "Timber" })
+```
+
+-   `average` - Returns the average of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const average = await repository.average("age", { firstName: "Timber" })
+```
+
+-   `minimum` - Returns the minimum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const minimum = await repository.minimum("age", { firstName: "Timber" })
+```
+
+-   `maximum` - Returns the maximum of a numeric field for all entities that match `FindOptionsWhere`.
+
+```typescript
+const maximum = await repository.maximum("age", { firstName: "Timber" })
 ```
 
 -   `find` - Finds entities that match given `FindOptions`.

@@ -83,6 +83,11 @@ export class Table {
      */
     engine?: string
 
+    /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -137,6 +142,8 @@ export class Table {
             if (options.withoutRowid) this.withoutRowid = options.withoutRowid
 
             this.engine = options.engine
+
+            this.comment = options.comment
         }
     }
 
@@ -171,6 +178,7 @@ export class Table {
             justCreated: this.justCreated,
             withoutRowid: this.withoutRowid,
             engine: this.engine,
+            comment: this.comment,
         })
     }
 
@@ -411,6 +419,7 @@ export class Table {
             exclusions: entityMetadata.exclusions.map((exclusion) =>
                 TableExclusion.create(exclusion),
             ),
+            comment: entityMetadata.comment,
         }
 
         return new Table(options)
