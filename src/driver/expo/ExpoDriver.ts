@@ -3,7 +3,6 @@ import { ExpoConnectionOptions } from "./ExpoConnectionOptions"
 import { ExpoQueryRunner } from "./ExpoQueryRunner"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { ReplicationMode } from "../types/ReplicationMode"
 
 export class ExpoDriver extends AbstractSqliteDriver {
@@ -17,12 +16,6 @@ export class ExpoDriver extends AbstractSqliteDriver {
         super(connection)
 
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
-
-        if (!this.options.driver) throw new DriverOptionNotSetError("driver")
 
         // load sqlite package
         this.sqlite = this.options.driver

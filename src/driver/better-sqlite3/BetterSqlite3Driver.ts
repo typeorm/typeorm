@@ -1,9 +1,8 @@
 import mkdirp from "mkdirp"
 import path from "path"
-import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
+import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
+import { DataSource } from "../../data-source"
 import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
@@ -40,10 +39,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         this.connection = connection
         this.options = connection.options as BetterSqlite3ConnectionOptions
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
 
         // load sqlite package
         this.loadDependencies()
@@ -140,6 +135,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             fileMustExist = false,
             timeout = 5000,
             verbose = null,
+            nativeBinding = null,
             prepareDatabase,
         } = this.options
         const databaseConnection = this.sqlite(database, {
@@ -147,6 +143,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             fileMustExist,
             timeout,
             verbose,
+            nativeBinding,
         })
         // in the options, if encryption key for SQLCipher is setted.
         // Must invoke key pragma before trying to do any other interaction with the database.
@@ -166,7 +163,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         databaseConnection.exec(`PRAGMA foreign_keys = ON`)
 
         // turn on WAL mode to enhance performance
-        databaseConnection.exec(`PRAGMA journal_mode = WAL`)
+        if (this.options.enableWAL) {
+            databaseConnection.exec(`PRAGMA journal_mode = WAL`)
+        }
 
         return databaseConnection
     }

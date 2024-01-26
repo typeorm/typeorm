@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import { assert, expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -131,6 +131,119 @@ describe("repository > find methods", () => {
                         order: { id: "ASC" },
                     })
                     count.should.be.equal(5)
+                }),
+            ))
+    })
+
+    describe("exists", function () {
+        it("should return a True when no criteria given", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository = connection.getRepository(Post)
+
+                    for (let i = 0; i < 100; i++) {
+                        const post = new Post()
+                        post.id = i
+                        post.title = "post #" + i
+                        post.categoryName = "other"
+                        await postRepository.save(post)
+                    }
+
+                    // check exists method
+                    const exists = await postRepository.exists({
+                        order: { id: "ASC" },
+                    })
+                    exists.should.be.equal(true)
+                }),
+            ))
+
+        it("should return True when matches the given criteria", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository = connection.getRepository(Post)
+                    for (let i = 1; i <= 100; i++) {
+                        const post = new Post()
+                        post.id = i
+                        post.title = "post #" + i
+                        post.categoryName = i % 2 === 0 ? "even" : "odd"
+                        await postRepository.save(post)
+                    }
+
+                    // check exists method
+                    const exists = await postRepository.exists({
+                        where: { categoryName: "odd" },
+                        order: { id: "ASC" },
+                    })
+                    exists.should.be.equal(true)
+                }),
+            ))
+
+        it("should return True when matches the given multiple criteria", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository = connection.getRepository(Post)
+                    for (let i = 1; i <= 100; i++) {
+                        const post = new Post()
+                        post.id = i
+                        post.title = "post #" + i
+                        post.categoryName = i % 2 === 0 ? "even" : "odd"
+                        post.isNew = i > 90
+                        await postRepository.save(post)
+                    }
+
+                    // check exists method
+                    const exists = await postRepository.exists({
+                        where: { categoryName: "odd", isNew: true },
+                        order: { id: "ASC" },
+                    })
+                    exists.should.be.equal(true)
+                }),
+            ))
+
+        it("should return True when matches the given find options", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository = connection.getRepository(Post)
+                    for (let i = 1; i <= 100; i++) {
+                        const post = new Post()
+                        post.id = i
+                        post.isNew = i > 90
+                        post.title = post.isNew
+                            ? "new post #" + i
+                            : "post #" + i
+                        post.categoryName = i % 2 === 0 ? "even" : "odd"
+                        await postRepository.save(post)
+                    }
+
+                    // check exists method
+                    const exists = await postRepository.exists()
+                    exists.should.be.equal(true)
+                }),
+            ))
+
+        it("should return True when matches both criteria and find options", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const postRepository = connection.getRepository(Post)
+                    for (let i = 1; i <= 100; i++) {
+                        const post = new Post()
+                        post.id = i
+                        post.isNew = i > 90
+                        post.title = post.isNew
+                            ? "new post #" + i
+                            : "post #" + i
+                        post.categoryName = i % 2 === 0 ? "even" : "odd"
+                        await postRepository.save(post)
+                    }
+
+                    // check exists method
+                    const exists = await postRepository.exists({
+                        where: { categoryName: "even", isNew: true },
+                        skip: 1,
+                        take: 2,
+                        order: { id: "ASC" },
+                    })
+                    exists.should.be.equal(true)
                 }),
             ))
     })
@@ -638,14 +751,20 @@ describe("repository > find methods", () => {
                     loadedUser!.firstName.should.be.equal("name #0")
                     loadedUser!.secondName.should.be.equal("Doe")
 
-                    await userRepository
-                        .findOneOrFail({
-                            where: {
-                                id: 1,
-                                secondName: "Dorian",
-                            },
-                        })
-                        .should.eventually.be.rejectedWith(EntityNotFoundError)
+                    const options = {
+                        where: {
+                            id: 1,
+                            secondName: "Dorian",
+                        },
+                    }
+                    try {
+                        await userRepository.findOneOrFail(options)
+                        assert.fail("Should have thrown an error.")
+                    } catch (err) {
+                        expect(err).to.be.an.instanceOf(EntityNotFoundError)
+                        expect(err).to.have.property("entityClass", "User")
+                        expect(err).to.have.property("criteria", options)
+                    }
                 }),
             ))
 

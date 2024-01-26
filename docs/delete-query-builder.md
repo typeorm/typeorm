@@ -29,10 +29,32 @@ Applying Soft Delete to QueryBuilder
 await dataSource.getRepository(Entity).createQueryBuilder().softDelete()
 ```
 
+Examples:
+
+```typescript
+await myDataSource
+  .getRepository(User)
+  .createQueryBuilder()
+  .softDelete()
+  .where("id = :id", { id: 1 })
+  .execute();
+```
+
 ### `Restore-Soft-Delete`
 
 Alternatively, You can recover the soft deleted rows by using the `restore()` method:
 
 ```typescript
 await dataSource.getRepository(Entity).createQueryBuilder().restore()
+```
+
+Examples:
+
+```typescript
+await myDataSource
+  .getRepository(User)
+  .createQueryBuilder()
+  .restore()
+  .where("id = :id", { id: 1 })
+  .execute();
 ```

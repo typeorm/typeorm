@@ -47,15 +47,15 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
     readonly database?: string
 
     /**
+     * Specifies whether to force dispatch all operations to the specified host. Default: false
+     */
+    readonly directConnection?: boolean
+
+    /**
      * The driver object
      * This defaults to require("mongodb")
      */
     readonly driver?: any
-
-    /**
-     * Set the maximum poolSize for each individual server or proxy connection.
-     */
-    readonly poolSize?: number
 
     /**
      * Use ssl connection (needs to have a mongod server with ssl support). Default: false

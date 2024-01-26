@@ -79,7 +79,7 @@ by setting `maxQueryExecutionTime` in data source options:
 }
 ```
 
-This code will log all queries which run more then `1 second`.
+This code will log all queries which run for more than `1 second`.
 
 ## Changing default logger
 
@@ -115,6 +115,64 @@ export class MyCustomLogger implements Logger {
 }
 ```
 
+Or you can extend the `AbstractLogger` class:
+
+```typescript
+import { AbstractLogger } from "typeorm"
+
+export class MyCustomLogger extends AbstractLogger {
+    /**
+     * Write log to specific output.
+     */
+    protected writeLog(
+        level: LogLevel,
+        logMessage: LogMessage | LogMessage[],
+        queryRunner?: QueryRunner,
+    ) {
+        const messages = this.prepareLogMessages(logMessage, {
+            highlightSql: false,
+        })
+
+        for (let message of messages) {
+            switch (message.type ?? level) {
+                case "log":
+                case "schema-build":
+                case "migration":
+                    console.log(message.message)
+                    break
+
+                case "info":
+                case "query":
+                    if (message.prefix) {
+                        console.info(message.prefix, message.message)
+                    } else {
+                        console.info(message.message)
+                    }
+                    break
+
+                case "warn":
+                case "query-slow":
+                    if (message.prefix) {
+                        console.warn(message.prefix, message.message)
+                    } else {
+                        console.warn(message.message)
+                    }
+                    break
+
+                case "error":
+                case "query-error":
+                    if (message.prefix) {
+                        console.error(message.prefix, message.message)
+                    } else {
+                        console.error(message.message)
+                    }
+                    break
+            }
+        }
+    }
+}
+```
+
 And specify it in data source options:
 
 ```typescript
@@ -134,7 +192,7 @@ const dataSource = new DataSource({
 ```
 
 Logger methods can accept `QueryRunner` when it's available. It's helpful if you want to log additional data.
-Also, via query runner, you can get access to additional data passed during persist/remove. For example:
+Also, via query runner, you can get access to additional data passed during to persist/remove. For example:
 
 ```typescript
 // user sends request during entity save

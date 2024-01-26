@@ -45,7 +45,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
     it("should .save() and .create() complex deep partial entities using a generic repository", () =>
         Promise.all(
             connections.map(async (connection) => {
-                class AbstractService<T> {
+                class AbstractService<T extends object> {
                     private repository: Repository<T>
                     constructor(target: any) {
                         this.repository = new Repository(

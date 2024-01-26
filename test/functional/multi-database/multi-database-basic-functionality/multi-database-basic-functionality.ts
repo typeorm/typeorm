@@ -91,9 +91,7 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            return new Promise((resolve) =>
-                rimraf(`${tempPath}/**/*.attach.db`, {}, () => resolve()),
-            )
+            await rimraf(`${tempPath}/**/*.attach.db`)
         })
 
         it("should correctly attach and create database files", () =>
@@ -102,7 +100,7 @@ describe("multi-database > basic-functionality", () => {
                     const expectedMainPath = path.join(
                         tempPath,
                         (connections[0].options.database as string).match(
-                            /^.*[\\|\/](?<filename>[^\\|\/]+)$/,
+                            /^.*[\\|/](?<filename>[^\\|/]+)$/,
                         )!.groups!["filename"],
                     )
 

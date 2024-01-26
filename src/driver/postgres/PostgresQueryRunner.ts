@@ -1,10 +1,11 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -16,16 +17,16 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { OrmUtils } from "../../util/OrmUtils"
-import { Query } from "../Query"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { PostgresDriver } from "./PostgresDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { VersionUtils } from "../../util/VersionUtils"
-import { TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { PostgresDriver } from "./PostgresDriver"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -93,12 +94,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -114,12 +115,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -173,6 +174,7 @@ export class PostgresQueryRunner
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             await this.query("START TRANSACTION")
             if (isolationLevel) {
                 await this.query(
@@ -180,9 +182,9 @@ export class PostgresQueryRunner
                 )
             }
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -197,14 +199,15 @@ export class PostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -219,14 +222,15 @@ export class PostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -242,8 +246,15 @@ export class PostgresQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
+        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
+
         try {
             const queryStartTime = +new Date()
             const raw = await databaseConnection.query(query, parameters)
@@ -252,6 +263,17 @@ export class PostgresQueryRunner
                 this.driver.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -296,7 +318,19 @@ export class PostgresQueryRunner
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
@@ -567,6 +601,11 @@ export class PostgresQueryRunner
                 downQueries.push(this.dropIndexSql(table, index))
             })
         }
+        
+        if (table.comment) {
+            upQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS '" + table.comment + "'"));
+            downQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS NULL"));
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
@@ -647,13 +686,18 @@ export class PostgresQueryRunner
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -2533,7 +2577,7 @@ export class PostgresQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = primaryColumns[0].primaryKeyConstraintName
+        const pkName = primaryColumns[0]?.primaryKeyConstraintName
             ? primaryColumns[0].primaryKeyConstraintName
             : this.connection.namingStrategy.primaryKeyName(
                   clonedTable,
@@ -2869,6 +2913,15 @@ export class PostgresQueryRunner
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2899,17 +2952,32 @@ export class PostgresQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
         await this.executeQueries(up, down)
         table.addIndex(index)
+    }
+
+    /**
+     * Create a new view index.
+     */
+    async createViewIndex(
+        viewOrName: View | string,
+        index: TableIndex,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+
+        // new index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.createViewIndexSql(view, index)
+        const down = this.dropIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.addIndex(index)
     }
 
     /**
@@ -2921,6 +2989,18 @@ export class PostgresQueryRunner
     ): Promise<void> {
         for (const index of indices) {
             await this.createIndex(tableOrName, index)
+        }
+    }
+
+    /**
+     * Creates new view indices
+     */
+    async createViewIndices(
+        viewOrName: View | string,
+        indices: TableIndex[],
+    ): Promise<void> {
+        for (const index of indices) {
+            await this.createViewIndex(viewOrName, index)
         }
     }
 
@@ -2941,11 +3021,39 @@ export class PostgresQueryRunner
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
         await this.executeQueries(up, down)
         table.removeIndex(index)
+    }
+
+    /**
+     * Drops an index from a view.
+     */
+    async dropViewIndex(
+        viewOrName: View | string,
+        indexOrName: TableIndex | string,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : view.indices.find((i) => i.name === indexOrName)
+        if (!index)
+            throw new TypeORMError(
+                `Supplied index ${indexOrName} was not found in view ${view.name}`,
+            )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.dropIndexSql(view, index)
+        const down = this.createViewIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.removeIndex(index)
     }
 
     /**
@@ -3076,6 +3184,34 @@ export class PostgresQueryRunner
                       })
                       .join(" OR ")
 
+        const constraintsCondition =
+            viewNames.length === 0
+                ? "1=1"
+                : viewNames
+                      .map((tableName) => this.driver.parseTableName(tableName))
+                      .map(({ schema, tableName }) => {
+                          if (!schema) {
+                              schema =
+                                  this.driver.options.schema || currentSchema
+                          }
+
+                          return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${tableName}')`
+                      })
+                      .join(" OR ")
+
+        const indicesSql =
+            `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `"types"."typname" AS "type_name" ` +
+            `FROM "pg_class" "t" ` +
+            `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
+            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
+            `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
+            `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
+            `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
+
         const query =
             `SELECT "t".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
@@ -3087,7 +3223,18 @@ export class PostgresQueryRunner
             }') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
 
         const dbViews = await this.query(query)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         return dbViews.map((dbView: any) => {
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter((dbIndex) => {
+                    return (
+                        dbIndex["table_name"] === dbView["name"] &&
+                        dbIndex["table_schema"] === dbView["schema"]
+                    )
+                }),
+                (dbIndex) => dbIndex["constraint_name"],
+            )
             const view = new View()
             const schema =
                 dbView["schema"] === currentSchema &&
@@ -3100,6 +3247,24 @@ export class PostgresQueryRunner
             view.expression = dbView["value"]
             view.materialized =
                 dbView["type"] === MetadataTableType.MATERIALIZED_VIEW
+            view.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["table_schema"] === constraint["table_schema"] &&
+                        index["table_name"] === constraint["table_name"] &&
+                        index["constraint_name"] ===
+                            constraint["constraint_name"]
+                    )
+                })
+                return new TableIndex(<TableIndexOptions>{
+                    view: view,
+                    name: constraint["constraint_name"],
+                    columnNames: indices.map((i) => i["column_name"]),
+                    isUnique: constraint["is_unique"] === "TRUE",
+                    where: constraint["condition"],
+                    isFulltext: false,
+                })
+            })
             return view
         })
     }
@@ -3116,10 +3281,14 @@ export class PostgresQueryRunner
         const currentSchema = await this.getCurrentSchema()
         const currentDatabase = await this.getCurrentDatabase()
 
-        const dbTables: { table_schema: string; table_name: string }[] = []
+        const dbTables: {
+            table_schema: string
+            table_name: string
+            table_comment: string
+        }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables"`
+            const tablesSql = `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
@@ -3132,7 +3301,7 @@ export class PostgresQueryRunner
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "table_schema", "table_name" FROM "information_schema"."tables" WHERE ` +
+                `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
                 tablesCondition
             dbTables.push(...(await this.query(tablesSql)))
         }
@@ -3185,13 +3354,14 @@ export class PostgresQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `INNER JOIN "pg_am" "am" ON "i"."relam" = "am"."oid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('r', 'p') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
@@ -3255,6 +3425,7 @@ export class PostgresQueryRunner
                 const schema = getSchemaFromKey(dbTable, "table_schema")
                 table.database = currentDatabase
                 table.schema = dbTable["table_schema"]
+                table.comment = dbTable["table_comment"]
                 table.name = this.driver.buildTableName(
                     dbTable["table_name"],
                     schema,
@@ -3290,47 +3461,60 @@ export class PostgresQueryRunner
 
                             if (
                                 tableColumn.type === "numeric" ||
+                                tableColumn.type === "numeric[]" ||
                                 tableColumn.type === "decimal" ||
                                 tableColumn.type === "float"
                             ) {
+                                let numericPrecision =
+                                    dbColumn["numeric_precision"]
+                                let numericScale = dbColumn["numeric_scale"]
+                                if (dbColumn["data_type"] === "ARRAY") {
+                                    const numericSize = dbColumn[
+                                        "format_type"
+                                    ].match(
+                                        /^numeric\(([0-9]+),([0-9]+)\)\[\]$/,
+                                    )
+                                    if (numericSize) {
+                                        numericPrecision = +numericSize[1]
+                                        numericScale = +numericSize[2]
+                                    }
+                                }
                                 // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
                                 // we set 'undefined' in to unspecified property to avoid changing column on sync
                                 if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
-                                    tableColumn.precision =
-                                        dbColumn["numeric_precision"]
+                                    tableColumn.precision = numericPrecision
                                 } else if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
                                     tableColumn.precision = undefined
                                 }
                                 if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
-                                    tableColumn.scale =
-                                        dbColumn["numeric_scale"]
+                                    tableColumn.scale = numericScale
                                 } else if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
                                     tableColumn.scale = undefined
@@ -3411,48 +3595,22 @@ export class PostgresQueryRunner
                                 }
                             }
 
-                            if (tableColumn.type === "geometry") {
-                                const geometryColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geometry_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geometry_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
+                            if (
+                                tableColumn.type === "geometry" ||
+                                tableColumn.type === "geography"
+                            ) {
+                                const sql =
+                                    `SELECT * FROM (` +
+                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `FROM "${tableColumn.type}_columns"` +
+                                    `) AS _ ` +
+                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                    `"table_name" = '${dbColumn["table_name"]}'`
 
                                 const results: ObjectLiteral[] =
-                                    await this.query(geometryColumnSql)
-
-                                if (results.length > 0) {
-                                    tableColumn.spatialFeatureType =
-                                        results[0].type
-                                    tableColumn.srid = results[0].srid
-                                }
-                            }
-
-                            if (tableColumn.type === "geography") {
-                                const geographyColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geography_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geography_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
-
-                                const results: ObjectLiteral[] =
-                                    await this.query(geographyColumnSql)
+                                    await this.query(sql)
 
                                 if (results.length > 0) {
                                     tableColumn.spatialFeatureType =
@@ -3599,8 +3757,13 @@ export class PostgresQueryRunner
                                         dbColumn["column_default"],
                                     )
                                 ) {
-                                    tableColumn.isGenerated = true
-                                    tableColumn.generationStrategy = "uuid"
+                                    if (tableColumn.type === "uuid") {
+                                        tableColumn.isGenerated = true
+                                        tableColumn.generationStrategy = "uuid"
+                                    } else {
+                                        tableColumn.default =
+                                            dbColumn["column_default"]
+                                    }
                                 } else if (
                                     dbColumn["column_default"] === "now()" ||
                                     dbColumn["column_default"].indexOf(
@@ -3612,7 +3775,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::[\w\s\.\[\]\"]+/g, "")
+                                    ].replace(/::[\w\s.[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
@@ -3629,7 +3792,7 @@ export class PostgresQueryRunner
                                 tableColumn.generatedType = "STORED"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         database: currentDatabase,
                                         schema: dbTable["table_schema"],
                                         table: dbTable["table_name"],
@@ -3821,12 +3984,7 @@ export class PostgresQueryRunner
                         columnNames: indices.map((i) => i["column_name"]),
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
-                        isSpatial: indices.every(
-                            (i) =>
-                                this.driver.spatialTypes.indexOf(
-                                    i["type_name"],
-                                ) >= 0,
-                        ),
+                        isSpatial: constraint["index_type"] === "gist",
                         isFulltext: false,
                     })
                 })
@@ -3989,8 +4147,8 @@ export class PostgresQueryRunner
      * Loads Postgres version.
      */
     protected async getVersion(): Promise<string> {
-        const result = await this.query(`SHOW SERVER_VERSION`)
-        return result[0]["server_version"]
+        const result = await this.query(`SELECT version()`)
+        return result[0]["version"].replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
     }
 
     /**
@@ -4139,11 +4297,27 @@ export class PostgresQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
-                index.name
-            }" ON ${this.escapePath(table)} ${
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
+                index.isConcurrent ? " CONCURRENTLY" : ""
+            } "${index.name}" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+        )
+    }
+
+    /**
+     * Builds create view index sql.
+     */
+    protected createViewIndexSql(view: View, index: TableIndex): Query {
+        const columns = index.columnNames
+            .map((columnName) => `"${columnName}"`)
+            .join(", ")
+        return new Query(
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(view)} (${columns}) ${
+                index.where ? "WHERE " + index.where : ""
+            }`,
         )
     }
 
@@ -4151,16 +4325,27 @@ export class PostgresQueryRunner
      * Builds drop index sql.
      */
     protected dropIndexSql(
-        table: Table,
+        table: Table | View,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
+        const concurrent = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName.isConcurrent
+            : false
         const { schema } = this.driver.parseTableName(table)
         return schema
-            ? new Query(`DROP INDEX "${schema}"."${indexName}"`)
-            : new Query(`DROP INDEX "${indexName}"`)
+            ? new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY " : ""
+                  }"${schema}"."${indexName}"`,
+              )
+            : new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY " : ""
+                  }"${indexName}"`,
+              )
     }
 
     /**
@@ -4541,5 +4726,48 @@ export class PostgresQueryRunner
             `SELECT TRUE FROM information_schema.columns WHERE table_name = 'pg_class' and column_name = 'relispartition'`,
         )
         return result.length ? true : false
+    }
+
+    /**
+     * Change table comment.
+     */
+    async changeTableComment(
+        tableOrName: Table | string,
+        newComment?: string,
+    ): Promise<void> {
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        newComment = this.escapeComment(newComment)
+        const comment = this.escapeComment(table.comment)
+        
+        if (newComment === comment) {
+            return
+        }
+
+        const newTable = table.clone()
+
+        upQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(
+                    newTable,
+                )} IS ${newComment}`,
+            ),
+        )
+
+        downQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(table)} IS ${comment}`,
+            ),
+        )
+
+        await this.executeQueries(upQueries, downQueries)
+
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
     }
 }

@@ -5,6 +5,6 @@ export const PostRepository = Sample33CustomRepositoryConnection.getRepository(
     Post,
 ).extend({
     findMyPost() {
-        return this.findOne()
+        return this.findOne({})
     },
 })

@@ -1,21 +1,26 @@
 # 实体
 
-* [实体是什么?](#实体是什么)
-* [实体列](#实体列)
-  * [主列](#主列)
-  * [特殊列](#特殊列)
-  * [空间列](#空间列)
-* [列类型](#列类型)
-  * [`mysql`/`mariadb`的列类型](#`mysql`/`mariadb`的列类型)
-  * [`postgres`的列类型](#`postgres`的列类型)
-  * [`sqlite`/`cordova`/`react-native`/`expo`的列类型](#sqlite`/`cordova`/`react-native`/`expo`的列类型)
-  *   [`mssql`的列类型](#`mssql`的列类型)
-  *   [`oracle`的列类型](#`oracle`的列类型)
-  *   [`enum`列类型](#`enum`列类型)
-  *   [`simple-array`的列类型](#`simple-array`的列类型)
-  *   [`simple-json`列类型](#`simple-json`列类型)
-  *   [具有生成值的列](#具有生成值的列)
-* [列选项](#列选项)
+- [实体](#实体)
+  - [实体是什么?](#实体是什么)
+  - [实体列](#实体列)
+    - [主列](#主列)
+    - [特殊列](#特殊列)
+    - [空间列](#空间列)
+  - [列类型](#列类型)
+    - [`mysql`/`mariadb`的列类型](#mysqlmariadb的列类型)
+    - [`postgres`的列类型](#postgres的列类型)
+    - [`sqlite`/`cordova`/`react-native`/`expo`的列类型](#sqlitecordovareact-nativeexpo的列类型)
+    - [`mssql`的列类型](#mssql的列类型)
+    - [`oracle`的列类型](#oracle的列类型)
+    - [`enum` 列类型](#enum-列类型)
+    - [`simple-array`的列类型](#simple-array的列类型)
+    - [`simple-json` 列类型](#simple-json-列类型)
+    - [具有生成值的列](#具有生成值的列)
+  - [列选项](#列选项)
+  - [实体继承](#实体继承)
+  - [树实体](#树实体)
+    - [邻接列表](#邻接列表)
+    - [Closure 表](#closure-表)
 
 ## 实体是什么?
 
@@ -206,11 +211,10 @@ await getManager()
     .createQueryBuilder(Thing, "thing")
     // 将字符串化的GeoJSON转换为具有与表规范匹配的SRID的geometry
     .where("ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0")
-    .orderBy({
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))": {
-            order: "ASC"
-        }
-    })
+    .orderBy(
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))",
+        "ASC"
+    )
     .setParameters({
         // 字符串化 GeoJSON
         origin: JSON.stringify(origin)
@@ -272,7 +276,8 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`
+`tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
+`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`
 
 ### `sqlite`/`cordova`/`react-native`/`expo`的列类型
 

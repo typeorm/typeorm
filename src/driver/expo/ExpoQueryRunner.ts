@@ -5,6 +5,7 @@ import { TransactionNotStartedError } from "../../error/TransactionNotStartedErr
 import { ExpoDriver } from "./ExpoDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -70,9 +71,6 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             throw err
         }
 
-        if (this.transactionDepth > 0) {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
         this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -95,14 +93,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
-        if (this.transactionDepth > 1) {
-            await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
-        } else {
-            this.transaction = undefined
-            this.isTransactionActive = false
-        }
+        this.transaction = undefined
+        this.isTransactionActive = false
+
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -124,14 +117,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
-        if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
-        } else {
-            this.transaction = undefined
-            this.isTransactionActive = false
-        }
+        this.transaction = undefined
+        this.isTransactionActive = false
+
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
@@ -177,7 +165,15 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         return new Promise<any>(async (ok, fail) => {
             const databaseConnection = await this.connect()
+            const broadcasterResult = new BroadcasterResult()
+
             this.driver.connection.logger.logQuery(query, parameters, this)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
+
             const queryStartTime = +new Date()
             // All Expo SQL queries are executed in a transaction context
             databaseConnection.transaction(
@@ -189,13 +185,25 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                     this.transaction.executeSql(
                         query,
                         parameters,
-                        (t: ITransaction, raw: IResultSet) => {
+                        async (t: ITransaction, raw: IResultSet) => {
                             // log slow queries if maxQueryExecution time is set
                             const maxQueryExecutionTime =
                                 this.driver.options.maxQueryExecutionTime
                             const queryEndTime = +new Date()
                             const queryExecutionTime =
                                 queryEndTime - queryStartTime
+
+                            this.broadcaster.broadcastAfterQueryEvent(
+                                broadcasterResult,
+                                query,
+                                parameters,
+                                true,
+                                queryExecutionTime,
+                                raw,
+                                undefined,
+                            )
+                            await broadcasterResult.wait()
+
                             if (
                                 maxQueryExecutionTime &&
                                 queryExecutionTime > maxQueryExecutionTime
@@ -209,11 +217,6 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                             }
 
                             const result = new QueryResult()
-
-                            // return id of inserted row, if query was insert statement.
-                            if (query.substr(0, 11) === "INSERT INTO") {
-                                result.raw = raw.insertId
-                            }
 
                             if (raw?.hasOwnProperty("rowsAffected")) {
                                 result.affected = raw.rowsAffected
@@ -229,19 +232,35 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                                 result.records = resultSet
                             }
 
+                            // return id of inserted row, if query was insert statement.
+                            if (query.startsWith("INSERT INTO")) {
+                                result.raw = raw.insertId
+                            }
+
                             if (useStructuredResult) {
                                 ok(result)
                             } else {
                                 ok(result.raw)
                             }
                         },
-                        (t: ITransaction, err: any) => {
+                        async (t: ITransaction, err: any) => {
                             this.driver.connection.logger.logQueryError(
                                 err,
                                 query,
                                 parameters,
                                 this,
                             )
+                            this.broadcaster.broadcastAfterQueryEvent(
+                                broadcasterResult,
+                                query,
+                                parameters,
+                                false,
+                                undefined,
+                                undefined,
+                                err,
+                            )
+                            await broadcasterResult.wait()
+
                             fail(new QueryFailedError(query, parameters, err))
                         },
                     )

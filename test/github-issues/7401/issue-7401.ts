@@ -4,7 +4,7 @@ import { expect } from "chai"
 
 describe('github issues > #7401 MongoDB replica set connection string not support with method "parseConnectionUrl" & "buildConnectionUrl"', () => {
     it("should parse replicaSet and host list in ConnectionUrl", () => {
-        var options = DriverUtils.buildMongoDBDriverOptions({
+        const options = DriverUtils.buildMongoDBDriverOptions({
             url: "mongodb://testuser:testpwd@test-primary.example.com:27017,test-secondary-1.example.com:27017,test-secondary-2.example.com:27017/testdb?replicaSet=testreplicaset",
         })
 

@@ -18,6 +18,11 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     builder(args: yargs.Argv) {
         return args
+            .positional("path", {
+                type: "string",
+                describe: "Path of the migration file",
+                demandOption: true,
+            })
             .option("dataSource", {
                 alias: "d",
                 type: "string",
@@ -60,12 +65,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             })
     }
 
-    async handler(args: yargs.Arguments) {
+    async handler(args: yargs.Arguments<any & { path: string }>) {
         const timestamp = CommandUtils.getTimestamp(args.timestamp)
         const extension = args.outputJs ? ".js" : ".ts"
-        const fullPath = (args.path as string).startsWith("/")
-            ? (args.path as string)
-            : path.resolve(process.cwd(), args.path as string)
+        const fullPath = args.path.startsWith("/")
+            ? args.path
+            : path.resolve(process.cwd(), args.path)
         const filename = timestamp + "-" + path.basename(fullPath) + extension
 
         let dataSource: DataSource | undefined = undefined
@@ -196,6 +201,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                         )} has been generated successfully.`,
                     ),
                 )
+                if (args.exitProcess !== false) {
+                    process.exit(0)
+                }
             }
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration generation:", err)

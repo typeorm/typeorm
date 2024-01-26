@@ -24,6 +24,7 @@ import { TypeORMError } from "../../error"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -135,13 +136,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             await this.query(
                 "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
             )
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -174,14 +176,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -197,14 +200,21 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
+        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
+
         const queryStartTime = +new Date()
 
         try {
             const executionOptions = {
                 autoCommit: !this.isTransactionActive,
-                outFormat: this.driver.oracle.OBJECT,
+                outFormat: this.driver.oracle.OUT_FORMAT_OBJECT,
             }
 
             const raw = await databaseConnection.execute(
@@ -218,6 +228,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.driver.options.maxQueryExecutionTime
             const queryEndTime = +new Date()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -271,7 +292,19 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
@@ -290,7 +323,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const executionOptions = {
             autoCommit: !this.isTransactionActive,
-            outFormat: this.driver.oracle.OBJECT,
+            outFormat: this.driver.oracle.OUT_FORMAT_OBJECT,
         }
 
         const databaseConnection = await this.connect()
@@ -594,13 +627,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(this.insertViewDefinitionSql(view))
+        if (syncWithMetadata) upQueries.push(this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -2109,12 +2146,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(index)
@@ -2152,6 +2184,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(index)
         const down = this.createIndexSql(table, index)
@@ -2241,17 +2275,25 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const currentDatabase = await this.getCurrentDatabase()
         const currentSchema = await this.getCurrentSchema()
 
-        const viewNamesString = viewNames
-            .map((name) => "'" + name + "'")
-            .join(", ")
+        const viewsCondition = viewNames
+            .map((viewName) => this.driver.parseTableName(viewName))
+            .map(({ schema, tableName }) => {
+                if (!schema) {
+                    schema = this.driver.options.schema || currentSchema
+                }
+
+                return `("T"."schema" = '${schema}' AND "T"."name" = '${tableName}')`
+            })
+            .join(" OR ")
+
         let query =
             `SELECT "T".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
             )} "T" ` +
             `INNER JOIN "USER_OBJECTS" "O" ON "O"."OBJECT_NAME" = "T"."name" AND "O"."OBJECT_TYPE" IN ( 'MATERIALIZED VIEW', 'VIEW' ) ` +
-            `WHERE "T"."type" IN ( '${MetadataTableType.MATERIALIZED_VIEW}', '${MetadataTableType.VIEW}' )`
-        if (viewNamesString.length > 0)
-            query += ` AND "T"."name" IN (${viewNamesString})`
+            `WHERE "T"."type" IN ('${MetadataTableType.MATERIALIZED_VIEW}', '${MetadataTableType.VIEW}')`
+        if (viewsCondition.length > 0) query += ` AND ${viewsCondition}`
+
         const dbViews = await this.query(query)
         return dbViews.map((dbView: any) => {
             const parsedName = this.driver.parseTableName(dbView["name"])
@@ -2379,7 +2421,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             (dbColumn) =>
                                 dbColumn["OWNER"] === dbTable["OWNER"] &&
                                 dbColumn["TABLE_NAME"] ===
-                                    dbTable["TABLE_NAME"],
+                                    dbTable["TABLE_NAME"] &&
+                                // Filter out auto-generated virtual columns,
+                                // since TypeORM will have no info about them.
+                                !(
+                                    dbColumn["VIRTUAL_COLUMN"] === "YES" &&
+                                    dbColumn["USER_GENERATED"] === "NO"
+                                ),
                         )
                         .map(async (dbColumn) => {
                             const columnConstraints = dbConstraints.filter(
@@ -2558,7 +2606,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 tableColumn.generatedType = "VIRTUAL"
 
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         table: dbTable["TABLE_NAME"],
                                         type: MetadataTableType.GENERATED_COLUMN,
                                         name: tableColumn.name,
@@ -2671,6 +2719,35 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     },
                 )
 
+                // Attempt to map auto-generated virtual columns to their
+                // referenced columns, through its 'DATA_DEFAULT' property.
+                //
+                // An example of this happening is when a column of type
+                // TIMESTAMP WITH TIME ZONE is indexed. Oracle will create a
+                // virtual column of type TIMESTAMP with a default value of
+                // SYS_EXTRACT_UTC(<column>).
+                const autoGenVirtualDbColumns = dbColumns
+                    .filter(
+                        (dbColumn) =>
+                            dbColumn["OWNER"] === dbTable["OWNER"] &&
+                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbColumn["VIRTUAL_COLUMN"] === "YES" &&
+                            dbColumn["USER_GENERATED"] === "NO",
+                    )
+                    .reduce((acc, x) => {
+                        const referencedDbColumn = dbColumns.find((dbColumn) =>
+                            x["DATA_DEFAULT"].includes(dbColumn["COLUMN_NAME"]),
+                        )
+
+                        if (!referencedDbColumn) return acc
+
+                        return {
+                            ...acc,
+                            [x["COLUMN_NAME"]]:
+                                referencedDbColumn["COLUMN_NAME"],
+                        }
+                    }, {})
+
                 // create TableIndex objects from the loaded indices
                 table.indices = dbIndices
                     .filter(
@@ -2679,9 +2756,20 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             dbIndex["OWNER"] === dbTable["OWNER"],
                     )
                     .map((dbIndex) => {
+                        //
+                        const columnNames = dbIndex["COLUMN_NAMES"]
+                            .split(",")
+                            .map(
+                                (
+                                    columnName: keyof typeof autoGenVirtualDbColumns,
+                                ) =>
+                                    autoGenVirtualDbColumns[columnName] ??
+                                    columnName,
+                            )
+
                         return new TableIndex({
                             name: dbIndex["INDEX_NAME"],
-                            columnNames: dbIndex["COLUMN_NAMES"].split(","),
+                            columnNames,
                             isUnique: dbIndex["UNIQUENESS"] === "UNIQUE",
                         })
                     })
@@ -2776,10 +2864,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }" FOREIGN KEY (${columnNames}) REFERENCES ${this.escapePath(
                         this.getTablePath(fk),
                     )} (${referencedColumnNames})`
-                    if (fk.onDelete && fk.onDelete !== "NO ACTION")
+                    if (fk.onDelete && fk.onDelete !== "NO ACTION") {
                         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
                         constraint += ` ON DELETE ${fk.onDelete}`
-
+                    }
                     return constraint
                 })
                 .join(", ")
@@ -2847,9 +2935,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const type = view.materialized
             ? MetadataTableType.MATERIALIZED_VIEW
             : MetadataTableType.VIEW
+        const { schema, tableName } = this.driver.parseTableName(view)
         return this.insertTypeormMetadataSql({
             type: type,
-            name: view.name,
+            name: tableName,
+            schema: schema,
             value: expression,
         })
     }
@@ -3027,9 +3117,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 this.getTablePath(foreignKey),
             )} (${referencedColumnNames})`
         // Oracle does not support NO ACTION, but we set NO ACTION by default in EntityMetadata
-        if (foreignKey.onDelete && foreignKey.onDelete !== "NO ACTION")
+        if (foreignKey.onDelete && foreignKey.onDelete !== "NO ACTION") {
             sql += ` ON DELETE ${foreignKey.onDelete}`
-
+        }
         return new Query(sql)
     }
 
@@ -3090,5 +3180,17 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return `"${tableName}"`
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `oracle driver does not support change table comment.`,
+        )
     }
 }

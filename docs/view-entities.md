@@ -152,9 +152,46 @@ List of available options in `ViewColumnOptions`:
 -   `name: string` - Column name in the database view.
 -   `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to unmarshal properties of arbitrary type `DatabaseType` supported by the database into a type `EntityType`. Arrays of transformers are also supported and are applied in reverse order when reading. Note that because database views are read-only, `transformer.to(value)` will never be used.
 
+## Materialized View Indices
+
+There's support for creation of indices for materialized views if using `PostgreSQL`.
+
+```typescript
+@ViewEntity({
+    materialized: true,
+    expression: (dataSource: DataSource) =>
+        dataSource
+            .createQueryBuilder()
+            .select("post.id", "id")
+            .addSelect("post.name", "name")
+            .addSelect("category.name", "categoryName")
+            .from(Post, "post")
+            .leftJoin(Category, "category", "category.id = post.categoryId"),
+})
+export class PostCategory {
+    @ViewColumn()
+    id: number
+
+    @Index()
+    @ViewColumn()
+    name: string
+
+    @Index("catname-idx")
+    @ViewColumn()
+    categoryName: string
+}
+```
+However, `unique` is currently the only supported option for indices in materialized views. The rest of the indices options will be ignored.
+
+````typescript
+@Index("name-idx", { unique: true })
+@ViewColumn()
+name: string
+````
+
 ## Complete example
 
-Let create two entities and a view containing aggregated data from these entities:
+Lets create two entities and a view containing aggregated data from these entities:
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"

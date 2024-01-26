@@ -22,7 +22,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class UpdateQueryBuilder<Entity>
+export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     extends QueryBuilder<Entity>
     implements WhereExpressionBuilder
 {
@@ -53,7 +53,7 @@ export class UpdateQueryBuilder<Entity>
         sql += this.createUpdateExpression()
         sql += this.createOrderByExpression()
         sql += this.createLimitExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**
@@ -518,6 +518,7 @@ export class UpdateQueryBuilder<Entity>
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
+                            !(value instanceof Date) &&
                             value !== null &&
                             !Buffer.isBuffer(value)
                         ) {
@@ -584,8 +585,9 @@ export class UpdateQueryBuilder<Entity>
                                     expression = `${geomFromText}(${paramName})`
                                 }
                             } else if (
-                                this.connection.driver.options.type ===
-                                    "postgres" &&
+                                DriverUtils.isPostgresFamily(
+                                    this.connection.driver,
+                                ) &&
                                 this.connection.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1

@@ -87,6 +87,11 @@ export interface BaseDataSourceOptions {
     readonly maxQueryExecutionTime?: number
 
     /**
+     * Maximum number of clients the pool should contain.
+     */
+    readonly poolSize?: number
+
+    /**
      * Indicates if database schema should be auto created on every application launch.
      * Be careful with this option and don't use this in production - otherwise you can lose production data.
      * This option is useful during debug and development.
@@ -203,4 +208,9 @@ export interface BaseDataSourceOptions {
                */
               readonly ignoreErrors?: boolean
           }
+
+    /**
+     * Allows automatic isolation of where clauses
+     */
+    readonly isolateWhereStatements?: boolean
 }

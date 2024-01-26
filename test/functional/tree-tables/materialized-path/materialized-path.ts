@@ -14,7 +14,7 @@ describe("tree tables > materialized-path", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Product, Category],
-                logging: true,
+                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

@@ -26,6 +26,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -118,6 +119,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err
         }
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             if (isolationLevel) {
                 await this.query(
                     "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
@@ -125,9 +127,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
             await this.query("START TRANSACTION")
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
-        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -142,14 +144,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -164,14 +167,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -187,19 +191,29 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         return new Promise(async (ok, fail) => {
+            const broadcasterResult = new BroadcasterResult()
+
             try {
                 const databaseConnection = await this.connect()
+
                 this.driver.connection.logger.logQuery(query, parameters, this)
+                this.broadcaster.broadcastBeforeQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                )
+
                 const queryStartTime = +new Date()
                 databaseConnection.query(
                     query,
                     parameters,
-                    (err: any, raw: any) => {
+                    async (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime
                         const queryEndTime = +new Date()
                         const queryExecutionTime = queryEndTime - queryStartTime
+
                         if (
                             maxQueryExecutionTime &&
                             queryExecutionTime > maxQueryExecutionTime
@@ -218,10 +232,30 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 parameters,
                                 this,
                             )
+                            this.broadcaster.broadcastAfterQueryEvent(
+                                broadcasterResult,
+                                query,
+                                parameters,
+                                false,
+                                undefined,
+                                undefined,
+                                err,
+                            )
+
                             return fail(
                                 new QueryFailedError(query, parameters, err),
                             )
                         }
+
+                        this.broadcaster.broadcastAfterQueryEvent(
+                            broadcasterResult,
+                            query,
+                            parameters,
+                            true,
+                            queryExecutionTime,
+                            raw,
+                            undefined,
+                        )
 
                         const result = new QueryResult()
 
@@ -246,6 +280,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )
             } catch (err) {
                 fail(err)
+            } finally {
+                await broadcasterResult.wait()
             }
         })
     }
@@ -529,13 +565,18 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -703,6 +744,49 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename old table and replace it in cached tabled;
         oldTable.name = newTable.name
         this.replaceCachedTable(oldTable, newTable)
+    }
+
+    /**
+     * Change table comment.
+     */
+    async changeTableComment(
+        tableOrName: Table | string,
+        newComment?: string,
+    ): Promise<void> {
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        newComment = this.escapeComment(newComment)
+        const comment = this.escapeComment(table.comment)
+
+        if (newComment === comment) {
+            return
+        }
+
+        const newTable = table.clone()
+
+        upQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    newTable,
+                )} COMMENT ${newComment}`,
+            ),
+        )
+        downQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(table)} COMMENT ${comment}`,
+            ),
+        )
+
+        await this.executeQueries(upQueries, downQueries)
+
+        // change table comment and replace it in cached tabled;
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
     }
 
     /**
@@ -2099,12 +2183,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -2142,6 +2221,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -2307,11 +2389,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // will cause the query to not hit the optimizations & do full scans.  This is why
         // a number of queries below do `UNION`s of single `WHERE` clauses.
 
-        const dbTables: { TABLE_SCHEMA: string; TABLE_NAME: string }[] = []
+        const dbTables: {
+            TABLE_SCHEMA: string
+            TABLE_NAME: string
+            TABLE_COMMENT: string
+        }[] = []
 
         if (!tableNames) {
             // Since we don't have any of this data we have to do a scan
-            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
+            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
 
             dbTables.push(...(await this.query(tablesSql)))
         } else {
@@ -2328,7 +2414,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         database = currentDatabase
                     }
 
-                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
+                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
                 })
                 .join(" UNION ")
 
@@ -2560,6 +2646,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             tableColumn.type =
                                 dbColumn["DATA_TYPE"].toLowerCase()
 
+                            // since mysql 8.0, "geometrycollection" returned as "geomcollection"
+                            // typeorm still use "geometrycollection"
+                            if (tableColumn.type === "geomcollection") {
+                                tableColumn.type = "geometrycollection"
+                            }
+
                             tableColumn.zerofill =
                                 dbColumn["COLUMN_TYPE"].indexOf("zerofill") !==
                                 -1
@@ -2637,7 +2729,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         schema: dbTable["TABLE_SCHEMA"],
                                         table: dbTable["TABLE_NAME"],
                                         type: MetadataTableType.GENERATED_COLUMN,
@@ -2880,6 +2972,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     })
                 })
 
+                table.comment = dbTable["TABLE_COMMENT"]
+
                 return table
             }),
         )
@@ -3012,6 +3106,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         sql += `) ENGINE=${table.engine || "InnoDB"}`
+
+        if (table.comment) {
+            sql += ` COMMENT="${table.comment}"`
+        }
 
         return new Query(sql)
     }

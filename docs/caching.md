@@ -137,8 +137,10 @@ Example:
     cache: {
         type: "redis",
         options: {
-            host: "localhost",
-            port: 6379
+            socket: {
+                host: "localhost",
+                port: 6379
+            }
         }
     }
 }
@@ -240,8 +242,10 @@ Example:
     cache: {
         type: "redis",
         options: {
-            host: "localhost",
-            port: 6379
+            socket: {
+                host: "localhost",
+                port: 6379
+            }
         },
         ignoreErrors: true
     }

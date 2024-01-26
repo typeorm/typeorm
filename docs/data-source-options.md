@@ -14,6 +14,7 @@
 -   [`mongodb` data source options](#mongodb-data-source-options)
 -   [`sql.js` data source options](#sqljs-data-source-options)
 -   [`expo` data source options](#expo-data-source-options)
+-   [`oracle` data source options](#oracle-data-source-options)
 -   [DataSource options example](#data-source-options-example)
 
 ## What is `DataSourceOptions`
@@ -62,6 +63,8 @@ Different RDBMS-es have their own specific options.
 -   `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
     then logger will log this query.
 
+-   `poolSize` - Configure maximum number of active connections is the pool.
+
 -   `namingStrategy` - Naming strategy to be used to name tables and columns in the database.
 
 -   `entityPrefix` - Prefixes with the given string all tables (or collections) on this data source.
@@ -95,9 +98,8 @@ Different RDBMS-es have their own specific options.
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
     Read more about caching [here](caching.md).
 
--   `cli.entitiesDir` - Directory where entities should be created by default by CLI.
-
--   `cli.subscribersDir` - Directory where subscribers should be created by default by CLI.
+-   `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
+    eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
 ## `mysql` / `mariadb` data source options
 
@@ -184,11 +186,18 @@ Different RDBMS-es have their own specific options.
 
 -   `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
 
+-   `maxTransactionRetries` - A maximum number of transaction retries in case of 40001 error. Defaults to 5.
+
 -   `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
 -   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
 -   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
+
+-   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript integers.
+    By default int8 (bigint) values are returned as strings to avoid overflows.
+    JavaScript doesn't have support for 64-bit integers, the maximum safe integer in js is: Number.MAX_SAFE_INTEGER (`+2^53`). Be careful when enabling `parseInt8`.
+    Note: This option is ignored if the undelying driver does not support it.
 
 ## `sqlite` data source options
 
@@ -201,6 +210,8 @@ Different RDBMS-es have their own specific options.
 -   `statementCacheSize` - Cache size of sqlite statement to speed up queries (default 100).
 
 -   `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
+
+-   `nativeBinding` - Relative or absolute path to the native addon (better_sqlite3.node).
 
 ## `capacitor` data source options
 
@@ -231,6 +242,7 @@ Different RDBMS-es have their own specific options.
 -   `database` - Database name
 
 ## `mssql` data source options
+Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
 
@@ -263,9 +275,6 @@ Different RDBMS-es have their own specific options.
 
 -   `pool.maxWaitingClients` - maximum number of queued requests allowed, additional acquire calls will be callback with
     an err in a future cycle of the event loop.
-
--   `pool.testOnBorrow` - should the pool validate resources before giving them to clients. Requires that either
-    `factory.validate` or `factory.validateAsync` to be specified.
 
 -   `pool.acquireTimeoutMillis` - max milliseconds an `acquire` call will wait for a resource before timing out.
     (default no limit), if supplied should non-zero positive integer.
@@ -304,7 +313,7 @@ Different RDBMS-es have their own specific options.
 
 -   `options.packetSize` - The size of TDS packets (subject to negotiation with the server). Should be a power of 2. (default: `4096`).
 
--   `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `true`).
+-   `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `false`).
 
 -   `options.abortTransactionOnError` - A boolean determining whether to rollback a transaction automatically if any
     error is encountered during the given transaction's execution. This sets the value for `SET XACT_ABORT` during the
@@ -343,7 +352,7 @@ Different RDBMS-es have their own specific options.
     SQL Server Availability Group. For more information, see here. (default: `false`).
 
 -   `options.encrypt` - A boolean determining whether or not the connection will be encrypted. Set to true if you're
-    on Windows Azure. (default: `false`).
+    on Windows Azure. (default: `true`).
 
 -   `options.cryptoCredentialsDetails` - When encryption is used, an object may be supplied that will be used for the
     first argument when calling [tls.createSecurePair](http://nodejs.org/docs/latest/api/tls.html#tls_tls_createsecurepair_credentials_isserver_requestcert_rejectunauthorized)
@@ -370,6 +379,10 @@ Different RDBMS-es have their own specific options.
     -   `7_4`
 
     (default: `7_4`)
+
+-   `options.appName` - Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server. (default: `node-mssql`)
+
+-   `options.trustServerCertificate` - A boolean, controlling whether encryption occurs if there is no verifiable server certificate. (default: `false`)
 
 -   `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
     details (default: `false`).
@@ -499,6 +512,8 @@ Different RDBMS-es have their own specific options.
 
 -   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
+-   `directConnection` - Specifies whether to force dispatch all operations to the specified host.
+
 ## `sql.js` data source options
 
 -   `database`: The raw UInt8Array database that should be imported.
@@ -517,6 +532,24 @@ Different RDBMS-es have their own specific options.
 
 -   `database` - Name of the database. For example, "mydb".
 -   `driver` - The Expo SQLite module. For example, `require('expo-sqlite')`.
+
+## `oracle` data source options
+
+The following TNS connection string will be used in the next explanations:
+
+```bash
+(DESCRIPTION=
+  (ADDRESS=(PROTOCOL=tcp)(HOST=sales-server)(PORT=1521))
+  (CONNECT_DATA=
+     (SID=sales)
+     (SERVICE_NAME=sales.us.example.com)
+     (INSTANCE_NAME=sales))
+     (SERVER=shared)))
+)
+```
+-   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
+-   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
+
 
 ## Data Source Options example
 
@@ -542,11 +575,6 @@ Here is a small example of data source options for mysql:
     ],
     migrations: [
         "migration/*.js"
-    ],
-    cli: {
-        entitiesDir: "entity",
-        migrationsDir: "migration",
-        subscribersDir: "subscriber"
-    }
+    ]
 }
 ```

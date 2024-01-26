@@ -103,7 +103,7 @@ export class User {
 
 ## Spatial Indices
 
-MySQL and PostgreSQL (when PostGIS is available) both support spatial indices.
+MySQL, CockroachDB and PostgreSQL (when PostGIS is available) supports spatial indices.
 
 To create a spatial index on a column in MySQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `point`, `linestring`,
 `polygon`, `multipoint`, `multilinestring`, `multipolygon`,
@@ -118,7 +118,7 @@ export class Thing {
 }
 ```
 
-To create a spatial index on a column in PostgreSQL, add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `geography`):
+To create a spatial index on a column add an `Index` with `spatial: true` on a column that uses a spatial type (`geometry`, `geography`):
 
 ```typescript
 export interface Geometry {
@@ -136,6 +136,19 @@ export class Thing {
     point: Geometry
 }
 ```
+
+## Concurrent creation
+
+In order to avoid having to obtain an access exclusive lock when creating and dropping indexes in postgres, you may create them using the CONCURRENTLY modifier.
+If you want use the concurrent option, you need set `migrationsTransactionMode: none` between data source options.
+
+Typeorm supports generating SQL with this option if when the concurrent option is specified on the index.
+
+```typescript
+@Index(["firstName", "middleName", "lastName"], { concurrent: true })
+```
+
+For more information see the [postgres documentation](https://www.postgresql.org/docs/current/sql-createindex.html).
 
 ## Disabling synchronization
 

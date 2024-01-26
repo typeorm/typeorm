@@ -2,6 +2,7 @@ import { PostgresConnectionOptions } from "../driver/postgres/PostgresConnection
 import { Query } from "../driver/Query"
 import { SqlInMemory } from "../driver/SqlInMemory"
 import { SqlServerConnectionOptions } from "../driver/sqlserver/SqlServerConnectionOptions"
+import { TableIndex } from "../schema-builder/table/TableIndex"
 import { View } from "../schema-builder/view/View"
 import { DataSource } from "../data-source/DataSource"
 import { Table } from "../schema-builder/table/Table"
@@ -319,6 +320,7 @@ export abstract class BaseQueryRunner {
             foundTable.checks = changedTable.checks
             foundTable.justCreated = changedTable.justCreated
             foundTable.engine = changedTable.engine
+            foundTable.comment = changedTable.comment
         }
     }
 
@@ -471,6 +473,7 @@ export abstract class BaseQueryRunner {
         newColumn: TableColumn,
         checkDefault?: boolean,
         checkComment?: boolean,
+        checkEnum = true,
     ): boolean {
         // this logs need to debug issues in column change detection. Do not delete it!
 
@@ -512,7 +515,14 @@ export abstract class BaseQueryRunner {
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
             (checkComment && oldColumn.comment !== newColumn.comment) ||
-            !OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || [])
+            (checkEnum && this.isEnumChanged(oldColumn, newColumn))
+        )
+    }
+
+    protected isEnumChanged(oldColumn: TableColumn, newColumn: TableColumn) {
+        return !OrmUtils.isArraysEqual(
+            oldColumn.enum || [],
+            newColumn.enum || [],
         )
     }
 
@@ -649,5 +659,20 @@ export abstract class BaseQueryRunner {
         for (const { query, parameters } of upQueries) {
             await this.query(query, parameters)
         }
+    }
+
+    /**
+     * Generated an index name for a table and index
+     */
+    protected generateIndexName(
+        table: Table | View,
+        index: TableIndex,
+    ): string {
+        // new index may be passed without name. In this case we generate index name manually.
+        return this.connection.namingStrategy.indexName(
+            table,
+            index.columnNames,
+            index.where,
+        )
     }
 }

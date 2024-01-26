@@ -136,8 +136,8 @@ await manager.insert(User, [
 -   `update` - Partially updates entity by a given update options or entity id.
 
 ```typescript
-await manager.update(User, { firstName: "Timber" }, { firstName: "Rizzrak" })
-// executes UPDATE user SET firstName = Rizzrak WHERE firstName = Timber
+await manager.update(User, { age: 18 }, { category: "ADULT" })
+// executes UPDATE user SET category = ADULT WHERE age = 18
 
 await manager.update(User, 1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
@@ -181,6 +181,22 @@ await manager.increment(User, { firstName: "Timber" }, "age", 3)
 
 ```typescript
 await manager.decrement(User, { firstName: "Timber" }, "age", 3)
+```
+
+-   `exists` - Check whether any entity exists that matches `FindOptions`.
+
+```typescript
+const exists = await manager.exists(User, {
+    where: {
+        firstName: "Timber",
+    },
+})
+```
+
+-   `existsBy` - Checks whether any entity exists that matches `FindOptionsWhere`.
+
+```typescript
+const exists = await manager.existsBy(User, { firstName: "Timber" })
 ```
 
 -   `count` - Counts entities that match `FindOptions`. Useful for pagination.
@@ -234,7 +250,7 @@ const [timbers, timbersCount] = await manager.findAndCount(User, {
     but ignores pagination settings (from and take options).
 
 ```typescript
-const [timbers, timbersCount] = await manager.findAndCount(User, {
+const [timbers, timbersCount] = await manager.findAndCountBy(User, {
     firstName: "Timber",
 })
 ```
@@ -252,7 +268,7 @@ const timber = await manager.findOne(User, {
 -   `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
 
 ```typescript
-const timber = await manager.findOne(User, { firstName: "Timber" })
+const timber = await manager.findOneBy(User, { firstName: "Timber" })
 ```
 
 -   `findOneOrFail` - Finds the first entity that matches some id or find options.
@@ -304,7 +320,7 @@ const userRepository = manager.getMongoRepository(User)
     Learn more about [Custom repositories](custom-repository.md).
 
 ```typescript
-const myUserRepository = manager.getCustomRepository(UserRepository)
+const myUserRepository = manager.withRepository(UserRepository)
 ```
 
 -   `release` - Releases query runner of an entity manager.

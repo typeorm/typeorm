@@ -232,7 +232,13 @@ sid: "xe.oracle.docker",`
                 break
             case "mongodb":
                 dbSettings = `type: "mongodb",
-database: "test",`
+    database: "test",`
+                break
+            case "spanner":
+                dbSettings = `type: "spanner",
+    projectId: "test",
+    instanceId: "test",
+    databaseId: "test",`
                 break
         }
         return `import "reflect-metadata"
@@ -309,7 +315,7 @@ temp/`
     protected static getUserEntityTemplate(database: string): string {
         return `import { Entity, ${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectID"
+                ? "ObjectIdColumn, ObjectId"
                 : "PrimaryGeneratedColumn"
         }, Column } from "typeorm"
 
@@ -321,7 +327,7 @@ export class User {
             ? "@ObjectIdColumn()"
             : "@PrimaryGeneratedColumn()"
     }
-    id: ${database === "mongodb" ? "ObjectID" : "number"}
+    id: ${database === "mongodb" ? "ObjectId" : "number"}
 
     @Column()
     firstName: string
@@ -371,29 +377,58 @@ export const Routes = [{
      * Gets contents of the user controller file (used when express is enabled).
      */
     protected static getControllerTemplate(isEsm: boolean): string {
-        return `import { getRepository } from "typeorm"
+        return `import { AppDataSource } from "../data-source${
+            isEsm ? ".js" : ""
+        }"
 import { NextFunction, Request, Response } from "express"
 import { User } from "../entity/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
-    private userRepository = getRepository(User)
+    private userRepository = AppDataSource.getRepository(User)
 
     async all(request: Request, response: Response, next: NextFunction) {
         return this.userRepository.find()
     }
 
     async one(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.findOne(request.params.id)
+        const id = parseInt(request.params.id)
+
+
+        const user = await this.userRepository.findOne({
+            where: { id }
+        })
+
+        if (!user) {
+            return "unregistered user"
+        }
+        return user
     }
 
     async save(request: Request, response: Response, next: NextFunction) {
-        return this.userRepository.save(request.body)
+        const { firstName, lastName, age } = request.body;
+
+        const user = Object.assign(new User(), {
+            firstName,
+            lastName,
+            age
+        })
+
+        return this.userRepository.save(user)
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        let userToRemove = await this.userRepository.findOneBy({ id: request.params.id })
+        const id = parseInt(request.params.id)
+
+        let userToRemove = await this.userRepository.findOneBy({ id })
+
+        if (!userToRemove) {
+            return "this user not exist"
+        }
+
         await this.userRepository.remove(userToRemove)
+
+        return "user has been removed"
     }
 
 }`
@@ -519,7 +554,7 @@ AppDataSource.initialize().then(async () => {
 services:
 
   mysql:
-    image: "mysql:5.7.10"
+    image: "mysql:8.0.30"
     ports:
       - "3306:3306"
     environment:
@@ -534,7 +569,7 @@ services:
 services:
 
   mariadb:
-    image: "mariadb:10.1.16"
+    image: "mariadb:10.8.4"
     ports:
       - "3306:3306"
     environment:
@@ -549,7 +584,7 @@ services:
 services:
 
   postgres:
-    image: "postgres:9.6.1"
+    image: "postgres:14.5"
     ports:
       - "5432:5432"
     environment:
@@ -563,7 +598,7 @@ services:
 services:
 
   cockroachdb:
-    image: "cockroachdb/cockroach:v2.1.4"
+    image: "cockroachdb/cockroach:v22.1.6"
     command: start --insecure
     ports:
       - "26257:26257"
@@ -597,10 +632,21 @@ services:
 services:
 
   mongodb:
-    image: "mongo:4.0.6"
+    image: "mongo:5.0.12"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
+
+`
+            case "spanner":
+                return `version: '3'
+services:
+
+  spanner:
+    image: gcr.io/cloud-spanner-emulator/emulator:1.4.1
+    ports:
+      - "9010:9010"
+      - "9020:9020"
 
 `
         }
@@ -644,14 +690,17 @@ Steps to run this project:
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         Object.assign(packageJson.devDependencies, {
-            "ts-node": "10.7.0",
+            "ts-node": "10.9.1",
             "@types/node": "^16.11.10",
             typescript: "4.5.2",
         })
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
         Object.assign(packageJson.dependencies, {
-            typeorm: require("../package.json").version,
+            typeorm:
+                require("../package.json").version !== "0.0.0"
+                    ? require("../package.json").version // install version from package.json if present
+                    : require("../package.json").installFrom, // else use custom source
             "reflect-metadata": "^0.1.13",
         })
 
@@ -665,19 +714,22 @@ Steps to run this project:
                 packageJson.dependencies["pg"] = "^8.4.0"
                 break
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^4.0.3"
+                packageJson.dependencies["sqlite3"] = "^5.0.2"
                 break
             case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] = "^7.0.0"
                 break
             case "oracle":
-                packageJson.dependencies["oracledb"] = "^1.13.1"
+                packageJson.dependencies["oracledb"] = "^5.1.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^4.0.4"
+                packageJson.dependencies["mssql"] = "^9.1.1"
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^3.0.8"
+                packageJson.dependencies["mongodb"] = "^5.2.0"
+                break
+            case "spanner":
+                packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"
                 break
         }
 

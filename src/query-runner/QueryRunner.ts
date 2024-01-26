@@ -252,7 +252,11 @@ export interface QueryRunner {
     /**
      * Creates a new view.
      */
-    createView(view: View, oldView?: View): Promise<void>
+    createView(
+        view: View,
+        syncWithMetadata?: boolean,
+        oldView?: View,
+    ): Promise<void>
 
     /**
      * Drops a view.
@@ -265,6 +269,14 @@ export interface QueryRunner {
     renameTable(
         oldTableOrName: Table | string,
         newTableName: string,
+    ): Promise<void>
+
+    /**
+     * Change table comment. Only supports MySQL and MariaDB
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
     ): Promise<void>
 
     /**

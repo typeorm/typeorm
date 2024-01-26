@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 
 /**
@@ -11,6 +12,12 @@ export interface CockroachConnectionOptions
      * Database type.
      */
     readonly type: "cockroachdb"
+
+    /**
+     * Enable time travel queries on cockroachdb.
+     * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
+     */
+    readonly timeTravelQueries: boolean
 
     /**
      * Schema name.
@@ -42,6 +49,12 @@ export interface CockroachConnectionOptions
          * List of read-from severs (slaves).
          */
         readonly slaves: CockroachConnectionCredentialsOptions[]
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
 
     /**
@@ -50,9 +63,14 @@ export interface CockroachConnectionOptions
      */
     readonly applicationName?: string
 
-    /*
+    /**
      * Function handling errors thrown by drivers pool.
      * Defaults to logging error with `warn` level.
      */
     readonly poolErrorHandler?: (err: any) => any
+
+    /**
+     * Max number of transaction retries in case of 40001 error.
+     */
+    readonly maxTransactionRetries?: number
 }

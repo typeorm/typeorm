@@ -2,7 +2,6 @@ import mkdirp from "mkdirp"
 import path from "path"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SqliteQueryRunner } from "./SqliteQueryRunner"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source/DataSource"
 import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
@@ -36,14 +35,9 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
     constructor(connection: DataSource) {
         super(connection)
-
         this.connection = connection
         this.options = connection.options as SqliteConnectionOptions
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
 
         // load sqlite package
         this.loadDependencies()
@@ -131,16 +125,32 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Creates connection with the database.
      */
     protected async createDatabaseConnection() {
-        await this.createDatabaseDirectory(this.options.database)
+        if (
+            this.options.flags === undefined ||
+            !(this.options.flags & this.sqlite.OPEN_URI)
+        ) {
+            await this.createDatabaseDirectory(this.options.database)
+        }
 
         const databaseConnection: any = await new Promise((ok, fail) => {
-            const connection = new this.sqlite.Database(
-                this.options.database,
-                (err: any) => {
-                    if (err) return fail(err)
-                    ok(connection)
-                },
-            )
+            if (this.options.flags === undefined) {
+                const connection = new this.sqlite.Database(
+                    this.options.database,
+                    (err: any) => {
+                        if (err) return fail(err)
+                        ok(connection)
+                    },
+                )
+            } else {
+                const connection = new this.sqlite.Database(
+                    this.options.database,
+                    this.options.flags,
+                    (err: any) => {
+                        if (err) return fail(err)
+                        ok(connection)
+                    },
+                )
+            }
         })
 
         // Internal function to run a command on the connection and fail if an error occured.
@@ -160,6 +170,14 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
         if (this.options.enableWAL) {
             await run(`PRAGMA journal_mode = WAL`)
+        }
+
+        if (
+            this.options.busyTimeout &&
+            typeof this.options.busyTimeout === "number" &&
+            this.options.busyTimeout > 0
+        ) {
+            await run(`PRAGMA busy_timeout = ${this.options.busyTimeout}`)
         }
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features

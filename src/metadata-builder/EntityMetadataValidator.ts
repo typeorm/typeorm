@@ -123,29 +123,39 @@ export class EntityMetadataValidator {
         })
 
         if (!(driver.options.type === "mongodb")) {
-            entityMetadata.columns.forEach((column) => {
-                const normalizedColumn = driver.normalizeType(
-                    column,
-                ) as ColumnType
-                if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
-                    throw new DataTypeNotSupportedError(
+            entityMetadata.columns
+                .filter((column) => !column.isVirtualProperty)
+                .forEach((column) => {
+                    const normalizedColumn = driver.normalizeType(
                         column,
-                        normalizedColumn,
-                        driver.options.type,
-                    )
-                if (
-                    column.length &&
-                    driver.withLengthColumnTypes.indexOf(normalizedColumn) ===
+                    ) as ColumnType
+                    if (
+                        driver.supportedDataTypes.indexOf(normalizedColumn) ===
                         -1
-                )
-                    throw new TypeORMError(
-                        `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
                     )
-                if (column.type === "enum" && !column.enum && !column.enumName)
-                    throw new TypeORMError(
-                        `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
+                        throw new DataTypeNotSupportedError(
+                            column,
+                            normalizedColumn,
+                            driver.options.type,
+                        )
+                    if (
+                        column.length &&
+                        driver.withLengthColumnTypes.indexOf(
+                            normalizedColumn,
+                        ) === -1
                     )
-            })
+                        throw new TypeORMError(
+                            `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
+                        )
+                    if (
+                        column.type === "enum" &&
+                        !column.enum &&
+                        !column.enumName
+                    )
+                        throw new TypeORMError(
+                            `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
+                        )
+                })
         }
 
         if (
@@ -216,6 +226,28 @@ export class EntityMetadataValidator {
 
         // validate relations
         entityMetadata.relations.forEach((relation) => {
+            // check OnDeleteTypes
+            if (
+                driver.supportedOnDeleteTypes &&
+                relation.onDelete &&
+                !driver.supportedOnDeleteTypes.includes(relation.onDelete)
+            ) {
+                throw new TypeORMError(
+                    `OnDeleteType "${relation.onDelete}" is not supported for ${driver.options.type}!`,
+                )
+            }
+
+            // check OnUpdateTypes
+            if (
+                driver.supportedOnUpdateTypes &&
+                relation.onUpdate &&
+                !driver.supportedOnUpdateTypes.includes(relation.onUpdate)
+            ) {
+                throw new TypeORMError(
+                    `OnUpdateType "${relation.onUpdate}" is not valid for ${driver.options.type}!`,
+                )
+            }
+
             // check join tables:
             // using JoinTable is possible only on one side of the many-to-many relation
             // todo(dima): fix

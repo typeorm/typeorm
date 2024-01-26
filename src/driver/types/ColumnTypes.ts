@@ -172,18 +172,28 @@ export type SimpleColumnType =
     | "tstzrange" // postgres
     | "daterange" // postgres
 
+    // multirange types
+    | "int4multirange" // postgres
+    | "int8multirange" // postgres
+    | "nummultirange" // postgres
+    | "tsmultirange" // postgres
+    | "tstzmultirange" // postgres
+    | "datemultirange" // postgres
+
     // other types
     | "enum" // mysql, postgres
     | "set" // mysql
     | "cidr" // postgres
     | "inet" // postgres, cockroachdb
+    | "inet4" // mariadb
+    | "inet6" // mariadb
     | "macaddr" // postgres
     | "bit" // postgres, mssql
     | "bit varying" // postgres
     | "varbit" // postgres
     | "tsvector" // postgres
     | "tsquery" // postgres
-    | "uuid" // postgres, cockroachdb
+    | "uuid" // postgres, cockroachdb, mariadb
     | "xml" // mssql, postgres
     | "json" // mysql, postgres, cockroachdb, spanner
     | "jsonb" // postgres, cockroachdb

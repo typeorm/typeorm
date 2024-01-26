@@ -1,35 +1,36 @@
 {
+    "extends": "@tsconfig/node16/tsconfig.json",
     "compilerOptions": {
-        "lib": ["es5", "es6"],
-        "outDir": "build/compiled",
         "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "target": "ES2019",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "importHelpers": true,
+        "declaration": true,
+        "downlevelIteration": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "sourceMap": true,
-        "noImplicitAny": true,
-        "declaration": true,
+        "importHelpers": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
         "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
         "noImplicitReturns": true,
-        "stripInternal": true,
-        "pretty": true,
-        "strictNullChecks": true,
         "noUnusedLocals": true,
-        "downlevelIteration": true
+        "outDir": "build/compiled",
+        "pretty": true,
+        "sourceMap": true,
+        "strictFunctionTypes": false,
+        "strictPropertyInitialization": false,
+        "stripInternal": true,
+        "useUnknownInCatchVariables": false
     },
     "include": [
       "sample",
       "src",
-      "test"
+      "test",
+      "*.ts"
     ],
     "exclude": [
-        "tmp",
-        "temp",
         "build",
-        "node_modules"
+        "node_modules",
+        "temp",
+        "tmp"
     ]
 }

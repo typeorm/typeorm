@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../../src"
+import {
+    DataSource,
+    GeometryCollection,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+} from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -27,6 +36,84 @@ describe("database schema > column types > cockroachdb", () => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
+
+                const point: Point = {
+                    type: "Point",
+                    coordinates: [116.443987, 39.920843],
+                }
+                const linestring: LineString = {
+                    type: "LineString",
+                    coordinates: [
+                        [-87.623177, 41.881832],
+                        [-90.199402, 38.627003],
+                        [-82.446732, 38.413651],
+                        [-87.623177, 41.881832],
+                    ],
+                }
+                const polygon: Polygon = {
+                    type: "Polygon",
+                    coordinates: [
+                        [
+                            [-87.906471, 43.038902],
+                            [-95.992775, 36.15398],
+                            [-75.704722, 36.076944],
+                            [-87.906471, 43.038902],
+                        ],
+                        [
+                            [-87.623177, 41.881832],
+                            [-90.199402, 38.627003],
+                            [-82.446732, 38.413651],
+                            [-87.623177, 41.881832],
+                        ],
+                    ],
+                }
+                const multipoint: MultiPoint = {
+                    type: "MultiPoint",
+                    coordinates: [
+                        [100.0, 0.0],
+                        [101.0, 1.0],
+                    ],
+                }
+                const multilinestring: MultiLineString = {
+                    type: "MultiLineString",
+                    coordinates: [
+                        [
+                            [170.0, 45.0],
+                            [180.0, 45.0],
+                        ],
+                        [
+                            [-180.0, 45.0],
+                            [-170.0, 45.0],
+                        ],
+                    ],
+                }
+                const multipolygon: MultiPolygon = {
+                    type: "MultiPolygon",
+                    coordinates: [
+                        [
+                            [
+                                [180.0, 40.0],
+                                [180.0, 50.0],
+                                [170.0, 50.0],
+                                [170.0, 40.0],
+                                [180.0, 40.0],
+                            ],
+                        ],
+                        [
+                            [
+                                [-170.0, 40.0],
+                                [-170.0, 50.0],
+                                [-180.0, 50.0],
+                                [-180.0, 40.0],
+                                [-170.0, 40.0],
+                            ],
+                        ],
+                    ],
+                }
+                const geometrycollection: GeometryCollection = {
+                    type: "GeometryCollection",
+                    geometries: [point, linestring, polygon],
+                }
 
                 const post = new Post()
                 post.id = 1
@@ -72,6 +159,20 @@ describe("database schema > column types > cockroachdb", () => {
                 post.boolean = true
                 post.bool = false
                 post.inet = "192.168.100.128"
+                post.point = point
+                post.linestring = linestring
+                post.polygon = polygon
+                post.multipoint = multipoint
+                post.multilinestring = multilinestring
+                post.multipolygon = multipolygon
+                post.geometrycollection = geometrycollection
+                post.point_geography = point
+                post.linestring_geography = linestring
+                post.polygon_geography = polygon
+                post.multipoint_geography = multipoint
+                post.multilinestring_geography = multilinestring
+                post.multipolygon_geography = multipolygon
+                post.geometrycollection_geography = geometrycollection
                 post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976"
                 post.jsonb = { id: 1, name: "Post" }
                 post.json = { id: 1, name: "Post" }
@@ -113,12 +214,12 @@ describe("database schema > column types > cockroachdb", () => {
                     .should.be.equal(post.bytea.toString())
                 loadedPost.blob.toString().should.be.equal(post.blob.toString())
                 loadedPost.date.should.be.equal(post.date)
-                // loadedPost.interval.years.should.be.equal(1);
-                // loadedPost.interval.months.should.be.equal(2);
-                // loadedPost.interval.days.should.be.equal(3);
-                // loadedPost.interval.hours.should.be.equal(4);
-                // loadedPost.interval.minutes.should.be.equal(5);
-                // loadedPost.interval.seconds.should.be.equal(6);
+                loadedPost.interval.years.should.be.equal(1)
+                loadedPost.interval.months.should.be.equal(2)
+                loadedPost.interval.days.should.be.equal(3)
+                loadedPost.interval.hours.should.be.equal(4)
+                loadedPost.interval.minutes.should.be.equal(5)
+                loadedPost.interval.seconds.should.be.equal(6)
                 loadedPost.time.should.be.equal(post.time)
                 loadedPost.timeWithoutTimeZone.should.be.equal(
                     post.timeWithoutTimeZone,
@@ -138,6 +239,38 @@ describe("database schema > column types > cockroachdb", () => {
                 loadedPost.boolean.should.be.equal(post.boolean)
                 loadedPost.bool.should.be.equal(post.bool)
                 loadedPost.inet.should.be.equal(post.inet)
+                loadedPost.point.should.deep.include(post.point)
+                loadedPost.linestring.should.deep.include(post.linestring)
+                loadedPost.polygon.should.deep.include(post.polygon)
+                loadedPost.multipoint.should.deep.include(post.multipoint)
+                loadedPost.multilinestring.should.deep.include(
+                    post.multilinestring,
+                )
+                loadedPost.multipolygon.should.deep.include(post.multipolygon)
+                loadedPost.geometrycollection.should.deep.include(
+                    post.geometrycollection,
+                )
+                loadedPost.point_geography.should.deep.include(
+                    post.point_geography,
+                )
+                loadedPost.linestring_geography.should.deep.include(
+                    post.linestring_geography,
+                )
+                loadedPost.polygon_geography.should.deep.include(
+                    post.polygon_geography,
+                )
+                loadedPost.multipoint_geography.should.deep.include(
+                    post.multipoint_geography,
+                )
+                loadedPost.multilinestring_geography.should.deep.include(
+                    post.multilinestring_geography,
+                )
+                loadedPost.multipolygon_geography.should.deep.include(
+                    post.multipolygon_geography,
+                )
+                loadedPost.geometrycollection_geography.should.deep.include(
+                    post.geometrycollection_geography,
+                )
                 loadedPost.uuid.should.be.eql(post.uuid)
                 loadedPost.jsonb.should.be.eql(post.jsonb)
                 loadedPost.json.should.be.eql(post.json)
@@ -223,6 +356,48 @@ describe("database schema > column types > cockroachdb", () => {
                 table!.findColumnByName("boolean")!.type.should.be.equal("bool")
                 table!.findColumnByName("bool")!.type.should.be.equal("bool")
                 table!.findColumnByName("inet")!.type.should.be.equal("inet")
+                table!
+                    .findColumnByName("point")!
+                    .type.should.be.equal("geometry")
+                table!
+                    .findColumnByName("linestring")!
+                    .type.should.be.equal("geometry")
+                table!
+                    .findColumnByName("polygon")!
+                    .type.should.be.equal("geometry")
+                table!
+                    .findColumnByName("multipoint")!
+                    .type.should.be.equal("geometry")
+                table!
+                    .findColumnByName("multilinestring")!
+                    .type.should.be.equal("geometry")
+                table!
+                    .findColumnByName("multipolygon")!
+                    .type.should.be.equal("geometry")
+                table!
+                    .findColumnByName("geometrycollection")!
+                    .type.should.be.equal("geometry")
+                table!
+                    .findColumnByName("point_geography")!
+                    .type.should.be.equal("geography")
+                table!
+                    .findColumnByName("linestring_geography")!
+                    .type.should.be.equal("geography")
+                table!
+                    .findColumnByName("polygon_geography")!
+                    .type.should.be.equal("geography")
+                table!
+                    .findColumnByName("multipoint_geography")!
+                    .type.should.be.equal("geography")
+                table!
+                    .findColumnByName("multilinestring_geography")!
+                    .type.should.be.equal("geography")
+                table!
+                    .findColumnByName("multipolygon_geography")!
+                    .type.should.be.equal("geography")
+                table!
+                    .findColumnByName("geometrycollection_geography")!
+                    .type.should.be.equal("geography")
                 table!.findColumnByName("uuid")!.type.should.be.equal("uuid")
                 table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb")
                 table!.findColumnByName("json")!.type.should.be.equal("jsonb")

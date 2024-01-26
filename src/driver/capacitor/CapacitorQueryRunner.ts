@@ -62,7 +62,10 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
         this.driver.connection.logger.logQuery(query, parameters, this)
 
-        const command = query.substr(0, query.indexOf(" "))
+        const command = query.substring(
+            0,
+            query.indexOf(" ") !== -1 ? query.indexOf(" ") : undefined,
+        )
 
         try {
             let raw: any
@@ -78,7 +81,9 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
                 ].indexOf(command) !== -1
             ) {
                 raw = await databaseConnection.execute(query, false)
-            } else if (["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1) {
+            } else if (
+                ["INSERT", "UPDATE", "DELETE", "PRAGMA"].indexOf(command) !== -1
+            ) {
                 raw = await databaseConnection.run(query, parameters, false)
             } else {
                 raw = await databaseConnection.query(query, parameters || [])

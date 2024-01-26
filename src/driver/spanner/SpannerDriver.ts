@@ -20,6 +20,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { CteCapabilities } from "../types/CteCapabilities"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with Spanner DBMS.
@@ -99,7 +100,7 @@ export class SpannerDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = undefined
+    supportedUpsertTypes: UpsertType[] = []
 
     /**
      * Gets list of spatial column data types.
@@ -155,6 +156,11 @@ export class SpannerDriver implements Driver {
         metadataName: "string",
         metadataValue: "string",
     }
+
+    /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "@param"
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -250,11 +256,16 @@ export class SpannerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
                     return full
+                }
+
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
                 let value: any = parameters[key]
@@ -278,7 +289,9 @@ export class SpannerDriver implements Driver {
                 if (value instanceof Function) {
                     return value()
                 }
+
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length - 1)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -439,6 +452,9 @@ export class SpannerDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -713,7 +729,7 @@ export class SpannerDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "@param" + index
+        return this.parametersPrefix + index
     }
 
     // -------------------------------------------------------------------------

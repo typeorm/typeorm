@@ -219,10 +219,19 @@ or
     mode: "pessimistic_read" |
         "pessimistic_write" |
         "dirty_read" |
+        /*
+            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
+            will be removed in a future version.
+
+            Use onLocked instead.
+         */
         "pessimistic_partial_write" |
         "pessimistic_write_or_fail" |
         "for_no_key_update" |
-        "for_key_share"
+        "for_key_share",
+
+    tables: string[],
+    onLocked: "nowait" | "skip_locked"
 }
 ```
 
@@ -237,19 +246,7 @@ userRepository.findOne({
 })
 ```
 
-Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
-
-```text
-|                 | pessimistic_read         | pessimistic_write       | dirty_read    | pessimistic_partial_write   | pessimistic_write_or_fail   | for_no_key_update   | for_key_share |
-| --------------- | --------------------     | ----------------------- | ------------- | --------------------------- | --------------------------- | ------------------- | ------------- |
-| MySQL           | LOCK IN SHARE MODE       | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED      | FOR UPDATE NOWAIT           |                     |               |
-| Postgres        | FOR SHARE                | FOR UPDATE              | (nothing)     | FOR UPDATE SKIP LOCKED      | FOR UPDATE NOWAIT           | FOR NO KEY UPDATE   | FOR KEY SHARE |
-| Oracle          | FOR UPDATE               | FOR UPDATE              | (nothing)     |                             |                             |                     |               |
-| SQL Server      | WITH (HOLDLOCK, ROWLOCK) | WITH (UPDLOCK, ROWLOCK) | WITH (NOLOCK) |                             |                             |                     |               |
-| AuroraDataApi   | LOCK IN SHARE MODE       | FOR UPDATE              | (nothing)     |                             |                             |                     |               |
-| CockroachDB     |                          | FOR UPDATE              | (nothing)     |                             | FOR UPDATE NOWAIT           | FOR NO KEY UPDATE   |               |
-
-```
+See [lock modes](./select-query-builder.md#lock-modes) for more information
 
 Complete example of find options:
 
@@ -609,7 +606,9 @@ SELECT * FROM "post" WHERE "titles" IN ('Go To Statement Considered Harmful', 'S
 
 ## Combining Advanced Options
 
-Also you can combine these operators with `Not` operator:
+Also you can combine these operators with below:
+
+-   `Not`
 
 ```ts
 import { Not, MoreThan, Equal } from "typeorm"
@@ -624,4 +623,36 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE NOT("likes" > 10) AND NOT("title" = 'About #2')
+```
+
+-   `Or`
+
+```ts
+import { Not, MoreThan, ILike } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    title: Or(Equal("About #2"), ILike("About%")),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "title" = 'About #2' OR "title" ILIKE 'About%'
+```
+
+-   `And`
+
+```ts
+import { And, Not, Equal, ILike } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    title: And(Not(Equal("About #2")), ILike("%About%")),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE NOT("title" = 'About #2') AND "title" ILIKE '%About%'
 ```
