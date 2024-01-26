@@ -54,7 +54,7 @@ export interface RelationMetadataArgs {
     /**
      * Additional relation options.
      */
-    readonly options: RelationOptions
+    readonly options: RelationOptions<any>
 
     /**
      * Indicates if this is a parent (can be only many-to-one relation) relation in the tree tables.
