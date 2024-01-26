@@ -383,6 +383,8 @@ or
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `geometry`, `geography`, `cube`, `ltree`
 
+> Note: `vector` is also available when the [pgvector](https://github.com/pgvector/pgvector) extension is installed.
+
 ### Column types for `cockroachdb`
 
 `array`, `bool`, `boolean`, `bytes`, `bytea`, `blob`, `date`, `numeric`, `decimal`, `dec`, `float`,
