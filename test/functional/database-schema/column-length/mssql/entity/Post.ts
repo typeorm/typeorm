@@ -1,41 +1,39 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column("char", {
-        length: 50
+        length: 50,
     })
-    char: string;
+    char: string
 
     @Column("varchar", {
-        length: 50
+        length: 50,
     })
-    varchar: string;
+    varchar: string
 
     @Column("nchar", {
-        length: 50
+        length: 50,
     })
-    nchar: string;
+    nchar: string
 
     @Column("nvarchar", {
-        length: 50
+        length: 50,
     })
-    nvarchar: string;
+    nvarchar: string
 
     @Column("binary", {
-        length: 50
+        length: 50,
     })
-    binary: Buffer;
+    binary: Buffer
 
     @Column("varbinary", {
-        length: 50
+        length: 50,
     })
-    varbinary: Buffer;
-
+    varbinary: Buffer
 }

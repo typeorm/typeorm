@@ -1,26 +1,26 @@
-import { Entity, ObjectIdColumn, Column, ObjectID } from "../../../../src";
+import { Entity, ObjectIdColumn, Column, ObjectId } from "../../../../src"
 
 export class Page {
     @Column()
-    number: number;
+    number: number
 }
 
 export class Chapter {
     @Column()
-    title: string;
+    title: string
 
-    @Column(type => Page)
-    pages: Page[];
+    @Column((type) => Page)
+    pages: Page[]
 }
 
 @Entity()
 export class Book {
     @ObjectIdColumn()
-    id: ObjectID;
+    id: ObjectId
 
     @Column()
-    title: string;
+    title: string
 
-    @Column(type => Chapter)
-    chapters: Chapter[];
+    @Column((type) => Chapter)
+    chapters: Chapter[]
 }

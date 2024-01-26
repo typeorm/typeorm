@@ -20,231 +20,276 @@
 //     }
 // }
 
+function noop() {}
 
-// columns
+/* export */
+class BaseEntity {}
 
-/* export */ function Column(typeOrOptions, options) {
-    return function (object, propertyName) {
-    };
+exports.BaseEntity = BaseEntity
+
+/* export */ function Column() {
+    return noop
 }
 exports.Column = Column;
 
-/* export */ function ViewColumn(typeOrOptions, options) {
-    return function (object, propertyName) { 
-    };
-}
-exports.ViewColumn = ViewColumn;
-
-/* export */ function DeleteDateColumn(options) {
-    return function (object, propertyName) {
-    };
-}
-exports.DeleteDateColumn = DeleteDateColumn;
-
-/* export */ function CreateDateColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function CreateDateColumn() {
+    return noop
 }
 exports.CreateDateColumn = CreateDateColumn;
 
-/* export */ function ObjectIdColumn(columnOptions) {
-    return function (object, propertyName) {
-    };
+/* export */ function DeleteDateColumn() {
+    return noop
 }
-exports.ObjectIdColumn = ObjectIdColumn;
+exports.DeleteDateColumn = DeleteDateColumn;
 
-/* export */ function PrimaryColumn(typeOrOptions, options) {
-    return function (object, propertyName) {
-    };
-}
-exports.PrimaryColumn = PrimaryColumn;
-
-/* export */ function PrimaryGeneratedColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function PrimaryGeneratedColumn() {
+    return noop
 }
 exports.PrimaryGeneratedColumn = PrimaryGeneratedColumn;
 
-/* export */ function UpdateDateColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function PrimaryColumn() {
+    return noop
+}
+exports.PrimaryColumn = PrimaryColumn;
+
+/* export */ function UpdateDateColumn() {
+    return noop
 }
 exports.UpdateDateColumn = UpdateDateColumn;
 
-/* export */ function VersionColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function VersionColumn() {
+    return noop
 }
 exports.VersionColumn = VersionColumn;
 
-// entities
-
-/* export */ function ChildEntity(tableName, options) {
-    return function (object) {
-    };
+/* export */ function ViewColumn() {
+    return noop
 }
-exports.ChildEntity = ChildEntity;
+exports.ViewColumn = ViewColumn;
 
-/* export */ function Entity(name, options) {
-    return function (object) {
-    };
+/* export */ function ObjectIdColumn() {
+    return noop
 }
-exports.Entity = Entity;
-
-/* export */ function ViewEntity(name, options) {
-    return function (object) {
-    };
-}
-exports.ViewEntity = ViewEntity;
-
-/* export */ function TableInheritance(type) {
-    return function (object) {
-    };
-}
-exports.TableInheritance = TableInheritance;
-
-// listeners
+exports.ObjectIdColumn = ObjectIdColumn;
 
 /* export */ function AfterInsert() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.AfterInsert = AfterInsert;
 
 /* export */ function AfterLoad() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.AfterLoad = AfterLoad;
 
+/* export */ function AfterSoftRemove() {
+    return noop
+}
+exports.AfterSoftRemove = AfterSoftRemove;
+
+/* export */ function AfterRecover() {
+    return noop
+}
+exports.AfterRecover = AfterRecover;
+
 /* export */ function AfterRemove() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.AfterRemove = AfterRemove;
 
 /* export */ function AfterUpdate() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.AfterUpdate = AfterUpdate;
 
 /* export */ function BeforeInsert() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.BeforeInsert = BeforeInsert;
 
+/* export */ function BeforeSoftRemove() {
+    return noop
+}
+exports.BeforeSoftRemove = BeforeSoftRemove;
+
+/* export */ function BeforeRecover() {
+    return noop
+}
+exports.BeforeRecover = BeforeRecover;
+
 /* export */ function BeforeRemove() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.BeforeRemove = BeforeRemove;
 
 /* export */ function BeforeUpdate() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.BeforeUpdate = BeforeUpdate;
 
 /* export */ function EventSubscriber() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.EventSubscriber = EventSubscriber;
 
-// relations
+/* export */ function ColumnOptions() {
+    return noop
+}
+exports.ColumnOptions = ColumnOptions;
 
-/* export */ function JoinColumn(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function IndexOptions() {
+    return noop
+}
+exports.IndexOptions = IndexOptions;
+
+/* export */ function JoinColumnOptions() {
+    return noop
+}
+exports.JoinColumnOptions = JoinColumnOptions;
+
+/* export */ function JoinTableOptions() {
+    return noop
+}
+exports.JoinTableOptions = JoinTableOptions;
+
+/* export */ function RelationOptions() {
+    return noop
+}
+exports.RelationOptions = RelationOptions;
+
+/* export */ function EntityOptions() {
+    return noop
+}
+exports.EntityOptions = EntityOptions;
+
+/* export */ function ValueTransformer() {
+    return noop
+}
+exports.ValueTransformer = ValueTransformer;
+
+/* export */ function JoinColumn() {
+    return noop
 }
 exports.JoinColumn = JoinColumn;
 
-/* export */ function JoinTable(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function JoinTable() {
+    return noop
 }
 exports.JoinTable = JoinTable;
 
-/* export */ function ManyToMany(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function ManyToMany() {
+    return noop
 }
 exports.ManyToMany = ManyToMany;
 
-/* export */ function ManyToOne(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function ManyToOne() {
+    return noop
 }
 exports.ManyToOne = ManyToOne;
 
-/* export */ function OneToMany(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function OneToMany() {
+    return noop
 }
 exports.OneToMany = OneToMany;
 
-/* export */ function OneToOne(typeFunction, inverseSideOrOptions, options) {
-    return function (object, propertyName) {
-    };
+/* export */ function OneToOne() {
+    return noop
 }
 exports.OneToOne = OneToOne;
 
-/* export */ function RelationCount(relation) {
-    return function (object, propertyName) {
-    };
+/* export */ function RelationCount() {
+    return noop
 }
 exports.RelationCount = RelationCount;
 
-/* export */ function RelationId(relation) {
-    return function (object, propertyName) {
-    };
+/* export */ function RelationId() {
+    return noop
 }
 exports.RelationId = RelationId;
 
-// tree
-
-/* export */ function Tree(name, options) {
-    return function (object) {
-    };
+/* export */ function Entity() {
+    return noop
 }
-exports.Tree = Tree;
+exports.Entity = Entity;
 
-/* export */ function TreeChildren(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function ChildEntity() {
+    return noop
 }
-exports.TreeChildren = TreeChildren;
+exports.ChildEntity = ChildEntity;
 
-/* export */ function TreeChildrenCount(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function TableInheritance() {
+    return noop
 }
-exports.TreeChildrenCount = TreeChildrenCount;
+exports.TableInheritance = TableInheritance;
+
+/* export */ function ViewEntity() {
+    return noop
+}
+exports.ViewEntity = ViewEntity;
+
+/* export */ function Transaction() {
+    return noop
+}
+exports.Transaction = Transaction;
+
+/* export */ function TransactionManager() {
+    return noop
+}
+exports.TransactionManager = TransactionManager;
+
+/* export */ function TransactionRepository() {
+    return noop
+}
+exports.TransactionRepository = TransactionRepository;
 
 /* export */ function TreeLevelColumn() {
-    return function (object, propertyName) {
-    };
+    return noop
 }
 exports.TreeLevelColumn = TreeLevelColumn;
 
-/* export */ function TreeParent(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function TreeParent() {
+    return noop
 }
 exports.TreeParent = TreeParent;
 
-// other
+/* export */ function TreeChildren() {
+    return noop
+}
+exports.TreeChildren = TreeChildren;
 
-/* export */ function Generated(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function Tree() {
+    return noop
+}
+exports.Tree = Tree;
+
+/* export */ function Index() {
+    return noop
+}
+exports.Index = Index;
+
+/* export */ function Unique() {
+    return noop
+}
+exports.Unique = Unique;
+
+/* export */ function Check() {
+    return noop
+}
+exports.Check = Check;
+
+/* export */ function Exclusion() {
+    return noop
+}
+exports.Exclusion = Exclusion;
+
+/* export */ function Generated() {
+    return noop
 }
 exports.Generated = Generated;
 
-/* export */ function Index(options) {
-    return function (object, propertyName) {
-    };
+/* export */ function EntityRepository() {
+    return noop
 }
-exports.Index = Index;
+exports.EntityRepository = EntityRepository;
+
+

@@ -1,12 +1,7 @@
-/**
- */
-export class QueryRunnerAlreadyReleasedError extends Error {
-    name = "QueryRunnerAlreadyReleasedError";
+import { TypeORMError } from "./TypeORMError"
 
+export class QueryRunnerAlreadyReleasedError extends TypeORMError {
     constructor() {
-        super();
-        Object.setPrototypeOf(this, QueryRunnerAlreadyReleasedError.prototype);
-        this.message = `Query runner already released. Cannot run queries anymore.`;
+        super(`Query runner already released. Cannot run queries anymore.`)
     }
-
 }

@@ -1,34 +1,32 @@
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {Column} from "../../../../src/decorator/columns/Column";
-import {BeforeUpdate} from "../../../../src/decorator/listeners/BeforeUpdate";
-import {UpdateDateColumn} from "../../../../src/decorator/columns/UpdateDateColumn";
-import {AfterLoad, ObjectIdColumn} from "../../../../src";
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { BeforeUpdate } from "../../../../src/decorator/listeners/BeforeUpdate"
+import { UpdateDateColumn } from "../../../../src/decorator/columns/UpdateDateColumn"
+import { AfterLoad, ObjectIdColumn } from "../../../../src"
 
 @Entity()
 export class Post {
-
     @ObjectIdColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
-    @Column({default: false})
-    active: boolean;
+    @Column({ default: false })
+    active: boolean
 
     @UpdateDateColumn()
-    updateDate: Date;
+    updateDate: Date
 
     @BeforeUpdate()
     async beforeUpdate() {
-        this.title += "!";
+        this.title += "!"
     }
 
-    loaded: Boolean = false;
+    loaded: Boolean = false
 
     @AfterLoad()
     async afterLoad() {
-        this.loaded = true;
+        this.loaded = true
     }
-
 }

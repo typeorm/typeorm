@@ -1,15 +1,13 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
 
 @Entity("sample31_author")
 export class Author {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
-
+    lastName: string
 }

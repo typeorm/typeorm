@@ -1,16 +1,15 @@
-import {Column} from "../../../../src/decorator/columns/Column";
-import {Entity} from "../../../../src/decorator/entity/Entity";
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "../../../../src/decorator/entity/Entity"
 
 @Entity()
 export class Dummy {
-    @Column("integer", {
+    @Column({
         generated: true,
         nullable: false,
         primary: true,
     })
-    id: number;
+    id: number
 
     @Column({ default: "name" })
-    name: string;
+    name: string
 }
-

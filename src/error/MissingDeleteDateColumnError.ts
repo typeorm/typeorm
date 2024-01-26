@@ -1,14 +1,10 @@
-import {EntityMetadata} from "../metadata/EntityMetadata";
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { TypeORMError } from "./TypeORMError"
 
-/**
- */
-export class MissingDeleteDateColumnError extends Error {
-    name = "MissingDeleteDateColumnError";
-
+export class MissingDeleteDateColumnError extends TypeORMError {
     constructor(entityMetadata: EntityMetadata) {
-        super();
-        Object.setPrototypeOf(this, MissingDeleteDateColumnError.prototype);
-        this.message = `Entity "${entityMetadata.name}" does not have delete date columns.`;
+        super(
+            `Entity "${entityMetadata.name}" does not have delete date columns.`,
+        )
     }
-
 }

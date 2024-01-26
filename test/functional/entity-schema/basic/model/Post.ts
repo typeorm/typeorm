@@ -1,10 +1,8 @@
-import {Category} from "./Category";
+import { Category } from "./Category"
 
 export interface Post {
-
-    id: number;
-    title: string;
-    text: string;
-    categories: Category[];
-
+    id: number
+    title: string
+    text: string
+    categories: Category[]
 }

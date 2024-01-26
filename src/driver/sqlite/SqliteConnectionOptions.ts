@@ -1,24 +1,29 @@
-import {BaseConnectionOptions} from "../../connection/BaseConnectionOptions";
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * Sqlite-specific connection options.
  */
-export interface SqliteConnectionOptions extends BaseConnectionOptions {
-
+export interface SqliteConnectionOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
-    readonly type: "sqlite";
+    readonly type: "sqlite"
 
     /**
      * Storage type or path to the storage.
      */
-    readonly database: string;
+    readonly database: string
+
+    /**
+     * The driver object
+     * This defaults to require("sqlite3")
+     */
+    readonly driver?: any
 
     /**
      * Encryption key for for SQLCipher.
      */
-    readonly key?: string;
+    readonly key?: string
 
     /**
      * In your SQLite application when you perform parallel writes its common to face SQLITE_BUSY error.
@@ -31,13 +36,29 @@ export interface SqliteConnectionOptions extends BaseConnectionOptions {
      * Enabling WAL can improve your app performance and face less SQLITE_BUSY issues.
      * Time in milliseconds.
      */
-    readonly busyErrorRetry?: number;
+    readonly busyErrorRetry?: number
 
     /**
      * Enables WAL mode. By default its disabled.
      *
      * @see https://www.sqlite.org/wal.html
      */
-    readonly enableWAL?: boolean;
+    readonly enableWAL?: boolean
 
+    /**
+     * Specifies the open file flags. By default its undefined.
+     * @see https://www.sqlite.org/c3ref/c_open_autoproxy.html
+     * @see https://github.com/TryGhost/node-sqlite3/blob/master/test/open_close.test.js
+     */
+    readonly flags?: number
+
+    readonly poolSize?: never
+
+    /**
+     * Query or change the setting of the busy timeout.
+     * Time in milliseconds.
+     *
+     * @see https://www.sqlite.org/pragma.html#pragma_busy_timeout
+     */
+    readonly busyTimeout?: number
 }

@@ -1,109 +1,112 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("number")
-    number: number;
+    number: number
 
     @Column("numeric")
-    numeric: number;
+    numeric: number
 
     @Column("float")
-    float: number;
+    float: number
 
     @Column("dec")
-    dec: number;
+    dec: number
 
     @Column("decimal")
-    decimal: number;
+    decimal: number
 
     @Column("int")
-    int: number;
+    int: number
 
     @Column("integer")
-    integer: number;
+    integer: number
 
     @Column("smallint")
-    smallint: number;
+    smallint: number
 
     @Column("real")
-    real: number;
+    real: number
 
     @Column("double precision")
-    doublePrecision: number;
+    doublePrecision: number
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("char")
-    char: string;
+    char: string
 
     @Column("nchar")
-    nchar: string;
+    nchar: string
 
     @Column("nvarchar2")
-    nvarchar2: string;
+    nvarchar2: string
 
     @Column("varchar2")
-    varchar2: string;
+    varchar2: string
 
     @Column("long")
-    long: string;
+    long: string
 
     @Column("raw")
-    raw: Buffer;
+    raw: Buffer
 
     // -------------------------------------------------------------------------
     // Date Types
     // -------------------------------------------------------------------------
 
     @Column("date")
-    dateObj: Date;
+    dateObj: Date
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("timestamp")
-    timestamp: Date;
+    timestamp: Date
 
     @Column("timestamp with time zone")
-    timestampWithTimeZone: Date;
+    timestampWithTimeZone: Date
 
     @Column("timestamp with local time zone")
-    timestampWithLocalTimeZone: Date;
+    timestampWithLocalTimeZone: Date
 
     // -------------------------------------------------------------------------
     // LOB Type
     // -------------------------------------------------------------------------
 
     @Column("blob")
-    blob: Buffer;
+    blob: Buffer
 
     @Column("clob")
-    clob: string;
+    clob: string
 
     @Column("nclob")
-    nclob: string;
+    nclob: string
 
+    @Column("json")
+    json: any
     // -------------------------------------------------------------------------
     // TypeOrm Specific Type
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
-    simpleArray: string[];
+    simpleArray: string[]
 
+    @Column("simple-json")
+    simpleJson: any
 }

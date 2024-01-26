@@ -1,29 +1,64 @@
-import "reflect-metadata";
-import {closeTestingConnections, createTestingConnections, reloadTestingDatabases} from "../../../utils/test-utils";
-import {Connection} from "../../../../src/connection/Connection";
-import {PersonSchema} from "./entity/Person";
-import {MysqlDriver} from "../../../../src/driver/mysql/MysqlDriver";
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src/data-source/DataSource"
+import { PersonSchema } from "./entity/Person"
+import { PersonSchema2 } from "./entity/Person2"
 
 describe("entity-schema > checks", () => {
+    describe("entity-schema > checks > postgres, cockroachdb, oracle, mssql", () => {
+        let connections: DataSource[]
+        before(
+            async () =>
+                (connections = await createTestingConnections({
+                    entities: [<any>PersonSchema],
+                    enabledDrivers: [
+                        "postgres",
+                        "cockroachdb",
+                        "oracle",
+                        "mssql",
+                    ],
+                })),
+        )
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
 
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
-        entities: [<any>PersonSchema],
-    }));
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+        it("should create a check constraints", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const queryRunner = connection.createQueryRunner()
+                    const table = await queryRunner.getTable("person")
+                    await queryRunner.release()
 
-    it("should create a check constraints", () => Promise.all(connections.map(async connection => {
-        // Mysql does not support check constraints.
-        if (connection.driver instanceof MysqlDriver)
-            return;
+                    table!.checks.length.should.be.equal(2)
+                }),
+            ))
+    })
 
-        const queryRunner = connection.createQueryRunner();
-        const table = await queryRunner.getTable("person");
-        await queryRunner.release();
+    describe("entity-schema > checks > spanner", () => {
+        let connections: DataSource[]
+        before(
+            async () =>
+                (connections = await createTestingConnections({
+                    entities: [<any>PersonSchema2],
+                    enabledDrivers: ["spanner"],
+                })),
+        )
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
 
-        table!.checks.length.should.be.equal(2);
+        it("should create a check constraints", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const queryRunner = connection.createQueryRunner()
+                    const table = await queryRunner.getTable("person")
+                    await queryRunner.release()
 
-    })));
-
-});
+                    table!.checks.length.should.be.equal(2)
+                }),
+            ))
+    })
+})

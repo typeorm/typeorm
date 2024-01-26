@@ -1,25 +1,24 @@
-import { Entity, Column, PrimaryColumn } from "../../../../../src";
-
+import { Entity, Column, PrimaryColumn } from "../../../../../src"
 
 export enum NumericEnum {
     ADMIN,
     EDITOR,
     MODERATOR,
-    GHOST
+    GHOST,
 }
 
 export enum StringEnum {
     ADMIN = "a",
     EDITOR = "e",
     MODERATOR = "m",
-    GHOST = "g"
+    GHOST = "g",
 }
 
 export enum StringNumericEnum {
     ONE = "1",
     TWO = "2",
     THREE = "3",
-    FOUR = "4"
+    FOUR = "4",
 }
 
 export enum HeterogeneousEnum {
@@ -27,79 +26,76 @@ export enum HeterogeneousEnum {
     YES = "YES",
 }
 
-export type ArrayDefinedStringEnumType = "admin" | "editor" | "ghost";
+export type ArrayDefinedStringEnumType = "admin" | "editor" | "ghost"
 
-export type ArrayDefinedNumericEnumType = 11 | 12 | 13;
-
+export type ArrayDefinedNumericEnumType = 11 | 12 | 13
 
 @Entity()
 export class EnumArrayEntity {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({
         type: "simple-enum",
         enum: NumericEnum,
         array: true,
-        default: [NumericEnum.GHOST, NumericEnum.ADMIN]
+        default: [NumericEnum.GHOST, NumericEnum.ADMIN],
     })
-    numericEnums: NumericEnum[];
+    numericEnums: NumericEnum[]
 
     @Column({
         type: "simple-enum",
         enum: StringEnum,
         array: true,
-        default: []
+        default: [],
     })
-    stringEnums: StringEnum[];
+    stringEnums: StringEnum[]
 
     @Column({
         type: "simple-enum",
         enum: StringNumericEnum,
         array: true,
-        default: [StringNumericEnum.THREE, StringNumericEnum.ONE]
+        default: [StringNumericEnum.THREE, StringNumericEnum.ONE],
     })
-    stringNumericEnums: StringNumericEnum[];
+    stringNumericEnums: StringNumericEnum[]
 
     @Column({
         type: "simple-enum",
         enum: HeterogeneousEnum,
         array: true,
-        default: [HeterogeneousEnum.YES]
+        default: [HeterogeneousEnum.YES],
     })
-    heterogeneousEnums: HeterogeneousEnum[];
+    heterogeneousEnums: HeterogeneousEnum[]
 
     @Column({
         type: "simple-enum",
         enum: ["admin", "editor", "ghost"],
         array: true,
-        default: ["admin"]
+        default: ["admin"],
     })
-    arrayDefinedStringEnums: ArrayDefinedStringEnumType[];
+    arrayDefinedStringEnums: ArrayDefinedStringEnumType[]
 
     @Column({
         type: "simple-enum",
         enum: [11, 12, 13],
         array: true,
-        default: [11, 13]
+        default: [11, 13],
     })
-    arrayDefinedNumericEnums: ArrayDefinedNumericEnumType[];
+    arrayDefinedNumericEnums: ArrayDefinedNumericEnumType[]
 
     @Column({
         type: "simple-enum",
         enum: StringEnum,
         array: true,
-        nullable: true
+        nullable: true,
     })
-    enumWithoutDefault: StringEnum[];
-
+    enumWithoutDefault: StringEnum[]
 
     @Column({
         type: "simple-enum",
         enum: StringEnum,
         array: true,
-        default: "{}"
+        default: "{}",
     })
-    legacyDefaultAsString: StringEnum[];
+    legacyDefaultAsString: StringEnum[]
 }

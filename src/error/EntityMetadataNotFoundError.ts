@@ -1,25 +1,26 @@
-import {EntityTarget} from "../common/EntityTarget";
-import {EntitySchema} from "../index";
+import { EntityTarget } from "../common/EntityTarget"
+import { TypeORMError } from "./TypeORMError"
+import { ObjectUtils } from "../util/ObjectUtils"
+import { InstanceChecker } from "../util/InstanceChecker"
 
-/**
- */
-export class EntityMetadataNotFoundError extends Error {
-    name = "EntityMetadataNotFound";
-
+export class EntityMetadataNotFoundError extends TypeORMError {
     constructor(target: EntityTarget<any>) {
-        super();
-        Object.setPrototypeOf(this, EntityMetadataNotFoundError.prototype);
-        let targetName: string;
-        if (target instanceof EntitySchema) {
-            targetName = target.options.name;
-        } else if (typeof target === "function") {
-            targetName = target.name;
-        } else if (typeof target === "object" && "name" in target) {
-            targetName = target.name;
-        } else {
-            targetName = target;
-        }
-        this.message = `No metadata for "${targetName}" was found.`;
+        super()
+
+        this.message = `No metadata for "${this.stringifyTarget(
+            target,
+        )}" was found.`
     }
 
+    private stringifyTarget(target: EntityTarget<any>): string {
+        if (InstanceChecker.isEntitySchema(target)) {
+            return target.options.name
+        } else if (typeof target === "function") {
+            return target.name
+        } else if (ObjectUtils.isObject(target) && "name" in (target as any)) {
+            return (target as any).name
+        } else {
+            return target as any
+        }
+    }
 }

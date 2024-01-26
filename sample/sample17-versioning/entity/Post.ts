@@ -1,19 +1,17 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../src/index";
-import {VersionColumn} from "../../../src/decorator/columns/VersionColumn";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src/index"
+import { VersionColumn } from "../../../src/decorator/columns/VersionColumn"
 
 @Entity("sample17_post")
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    text: string;
+    text: string
 
     @VersionColumn()
-    version: number;
-    
+    version: number
 }

@@ -1,10 +1,10 @@
 # Caching queries
 
-You can cache results selected by these `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne`  and `getCount`.
+You can cache results selected by these `QueryBuilder` methods: `getMany`, `getOne`, `getRawMany`, `getRawOne` and `getCount`.
 
- You can also cache results selected by these `Repository` methods: `find`, `findAndCount`, `findByIds`, and `count`.
+You can also cache results selected by `find*` and `count*` methods of the `Repository` and `EntityManager`.
 
-To enable caching you need to explicitly enable it in your connection options:
+To enable caching you need to explicitly enable it in data source options:
 
 ```typescript
 {
@@ -17,26 +17,25 @@ To enable caching you need to explicitly enable it in your connection options:
 ```
 
 When you enable cache for the first time,
-you must synchronize your database schema (using CLI, migrations or the `synchronize` connection option).
+you must synchronize your database schema (using CLI, migrations or the `synchronize` data source option).
 
 Then in `QueryBuilder` you can enable query cache for any query:
 
 ```typescript
-const users = await connection
+const users = await dataSource
     .createQueryBuilder(User, "user")
     .where("user.isAdmin = :isAdmin", { isAdmin: true })
     .cache(true)
-    .getMany();
+    .getMany()
 ```
 
 Equivalent `Repository` query:
+
 ```typescript
-const users = await connection
-    .getRepository(User)
-    .find({
-        where: { isAdmin: true },
-        cache: true
-    });
+const users = await dataSource.getRepository(User).find({
+    where: { isAdmin: true },
+    cache: true,
+})
 ```
 
 This will execute a query to fetch all admin users and cache the results.
@@ -49,25 +48,23 @@ Any users inserted during the 1 second cache window won't be returned to the use
 You can change cache time manually via `QueryBuilder`:
 
 ```typescript
-const users = await connection
+const users = await dataSource
     .createQueryBuilder(User, "user")
     .where("user.isAdmin = :isAdmin", { isAdmin: true })
     .cache(60000) // 1 minute
-    .getMany();
+    .getMany()
 ```
 
 Or via `Repository`:
 
 ```typescript
-const users = await connection
-    .getRepository(User)
-    .find({
-        where: { isAdmin: true },
-        cache: 60000
-    });
+const users = await dataSource.getRepository(User).find({
+    where: { isAdmin: true },
+    cache: 60000,
+})
 ```
 
-Or globally in connection options:
+Or globally in data source options:
 
 ```typescript
 {
@@ -84,36 +81,34 @@ Or globally in connection options:
 Also, you can set a "cache id" via `QueryBuilder`:
 
 ```typescript
-const users = await connection
+const users = await dataSource
     .createQueryBuilder(User, "user")
     .where("user.isAdmin = :isAdmin", { isAdmin: true })
     .cache("users_admins", 25000)
-    .getMany();
+    .getMany()
 ```
 
 Or with `Repository`:
+
 ```typescript
-const users = await connection
-    .getRepository(User)
-    .find({
-        where: { isAdmin: true },
-        cache: {
-            id: "users_admins",
-            milliseconds: 25000
-        }
-    });
+const users = await dataSource.getRepository(User).find({
+    where: { isAdmin: true },
+    cache: {
+        id: "users_admins",
+        milliseconds: 25000,
+    },
+})
 ```
 
 This gives you granular control of your cache,
 for example, clearing cached results when you insert a new user:
 
 ```typescript
-await connection.queryResultCache.remove(["users_admins"]);
+await dataSource.queryResultCache.remove(["users_admins"])
 ```
 
-
 By default, TypeORM uses a separate table called `query-result-cache` and stores all queries and results there.
-Table name is configurable, so you could change its by give the value in the tableName property.
+Table name is configurable, so you could change it by specifying a different value in the tableName property.
 Example:
 
 ```typescript
@@ -142,15 +137,16 @@ Example:
     cache: {
         type: "redis",
         options: {
-            host: "localhost",
-            port: 6379
+            socket: {
+                host: "localhost",
+                port: 6379
+            }
         }
     }
 }
 ```
 
-"options" can be [node_redis specific options](https://github.com/NodeRedis/node_redis#options-object-properties) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
-
+"options" can be [node_redis specific options](https://github.com/redis/node-redis/blob/master/docs/client-configuration.md) or [ioredis specific options](https://github.com/luin/ioredis/blob/master/API.md#new-redisport-host-options) depending on what type you're using.
 
 In case you want to connect to a redis-cluster using IORedis's cluster functionality, you can do that as well by doing the following:
 
@@ -188,7 +184,7 @@ In case you want to connect to a redis-cluster using IORedis's cluster functiona
 }
 ```
 
-Note that, you can still use options as first argument of IORedis's cluster constructor.
+Note that, you can still use options as the first argument of IORedis's cluster constructor.
 
 ```typescript
 {
@@ -218,7 +214,7 @@ If none of the built-in cache providers satisfy your demands, then you can also 
 
 ```typescript
 class CustomQueryResultCache implements QueryResultCache {
-    constructor(private connection: Connection) {}
+    constructor(private dataSource: DataSource) {}
     ...
 }
 ```
@@ -227,9 +223,31 @@ class CustomQueryResultCache implements QueryResultCache {
 {
     ...
     cache: {
-        provider(connection) {
-            return new CustomQueryResultCache(connection);
+        provider(dataSource) {
+            return new CustomQueryResultCache(dataSource);
         }
+    }
+}
+```
+
+If you wish to ignore cache errors and want the queries to pass through to database in case of cache errors, you can use ignoreErrors option.
+Example:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "redis",
+        options: {
+            socket: {
+                host: "localhost",
+                port: 6379
+            }
+        },
+        ignoreErrors: true
     }
 }
 ```

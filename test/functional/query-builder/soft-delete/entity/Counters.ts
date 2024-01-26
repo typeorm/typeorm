@@ -1,16 +1,15 @@
-import {Column} from "../../../../../src/decorator/columns/Column";
-import {DeleteDateColumn} from "../../../../../src/decorator/columns/DeleteDateColumn";
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { DeleteDateColumn } from "../../../../../src/decorator/columns/DeleteDateColumn"
 export class Counters {
-
     @Column({ default: 1 })
-    likes: number;
+    likes: number
 
     @Column({ nullable: true })
-    favorites: number;
+    favorites: number
 
     @Column({ default: 0 })
-    comments: number;
+    comments: number
 
     @DeleteDateColumn()
-    deletedAt: Date;
+    deletedAt: Date
 }

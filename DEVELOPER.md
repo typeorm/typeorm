@@ -46,7 +46,7 @@ git clone git@github.com:<github username>/typeorm.git
 # Go to the TypeORM directory:
 cd typeorm
 
-# Add the main TyepORM repository as an upstream remote to your repository:
+# Add the main TypeORM repository as an upstream remote to your repository:
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
 ## Installing NPM Modules
@@ -56,10 +56,6 @@ Install all TypeORM dependencies by running this command:
 ```shell
 npm install
 ```
-
-During installation you may have some problems with some dependencies.
-For example to proper install oracle driver you need to follow all instructions from
- [node-oracle documentation](https://github.com/oracle/node-oracledb).
 
 ## ORM config
 
@@ -81,6 +77,15 @@ This command will generate you a distribution package in the `build/package` dir
 You can link (or simply copy/paste) this directory into your project and test TypeORM there
 (but make sure to keep all node_modules required by TypeORM).
 
+To build the distribution package of TypeORM packed into a `.tgz`, run:
+
+```shell
+npm run pack
+```
+
+This command will generate you a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
+You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz` to bundle your build of TypeORM in your project.
+
 ## Running Tests Locally
 
 It would be greatly appreciated if PRs that change code come with appropriate tests.
@@ -93,22 +98,22 @@ Most tests will benefit from using this template as a starting point:
 
 ```ts
 import "reflect-metadata";
-import {createTestingConnections, closeTestingConnections, reloadTestingDatabases} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
-import {expect} from "chai";
+import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
+import { DataSource } from "../../../src/data-source/DataSource"
+import { expect } from "chai";
 
 describe("github issues > #<issue number> <issue title>", () => {
 
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
+    let dataSources: DataSource[];
+    before(async () => dataSources = await createTestingConnections({
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchema: true,
     }));
-    beforeEach(() => reloadTestingDatabases(connections));
-    after(() => closeTestingConnections(connections));
+    beforeEach(() => reloadTestingDatabases(dataSources));
+    after(() => closeTestingConnections(dataSources));
 
-    it("should <put a detailed description of what it should do here>", () => Promise.all(connections.map(async connection => {
+    it("should <put a detailed description of what it should do here>", () => Promise.all(dataSources.map(async dataSource => {
 
        // tests go here
 
@@ -134,7 +139,7 @@ npm test
 You should execute test suites before submitting a PR to github.
 All the tests are executed on our Continuous Integration infrastructure and a PR could only be merged once the tests pass.
 
-**Executing only some tests**: When you are creating tests to some specific code, you may want only execute the tests that you're creating, so you waste less time to verify your code. To do this, you can temporarily modify your tests definitions adding `.only` *mocha* commands **(describe, it)**. Example: 
+**Executing only some tests**: When you are creating tests to some specific code, you may want only execute the tests that you're creating, so you waste less time to verify your code. To do this, you can temporarily modify your tests definitions adding `.only` *mocha* commands **(describe, it)**. Example:
 
 ```
 describe.only('your describe test', ....)

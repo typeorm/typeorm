@@ -1,17 +1,16 @@
-import { User} from "./User";
-import {Entity} from "../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {ManyToMany} from "../../../../src/decorator/relations/ManyToMany";
-import {JoinTable} from "../../../../src/decorator/relations/JoinTable";
+import { User } from "./User"
+import { Entity } from "../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { ManyToMany } from "../../../../src/decorator/relations/ManyToMany"
+import { JoinTable } from "../../../../src/decorator/relations/JoinTable"
 
 @Entity()
 export class Circle {
-
     /**
      * Circle's identifier
      */
-    @PrimaryGeneratedColumn({type: "bigint"})
-    private id: string;
+    @PrimaryGeneratedColumn({ type: "bigint" })
+    private id: string
 
     /**
      * Circle's user
@@ -19,8 +18,8 @@ export class Circle {
      * You have to use getter and setter
      */
     @ManyToMany((type) => User, (user) => "circles")
-    @JoinTable({name: "circle_users_user"})
-    private users: Promise<User[]>;
+    @JoinTable({ name: "circle_users_user" })
+    private users: Promise<User[]>
 
     /**
      * Getter identifier
@@ -28,7 +27,7 @@ export class Circle {
      * @returns {number}
      */
     public getId(): string {
-        return this.id;
+        return this.id
     }
 
     /**
@@ -37,7 +36,7 @@ export class Circle {
      * @param id new identifier value
      */
     public setId(id: string): void {
-        this.id = id;
+        this.id = id
     }
 
     /**
@@ -46,9 +45,8 @@ export class Circle {
      * @param {Promise<User[]>} users
      */
     public setUsers(users: Promise<User[]>): void {
-        this.users = users;
+        this.users = users
     }
-
 
     /**
      * Getter user
@@ -56,6 +54,6 @@ export class Circle {
      * @returns {User[]}
      */
     public getUsers(): Promise<User[]> {
-        return this.users;
+        return this.users
     }
 }

@@ -1,22 +1,13 @@
-///<reference path="node_modules/@types/node/index.d.ts"/>
-///<reference path="node_modules/@types/chai/index.d.ts"/>
-///<reference path="node_modules/@types/mocha/index.d.ts"/>
+import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
 
-import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
-
-const gulp = require("gulp");
-const del = require("del");
-const shell = require("gulp-shell");
-const replace = require("gulp-replace");
-const rename = require("gulp-rename");
-const mocha = require("gulp-mocha");
-const chai = require("chai");
-const eslint = require("gulp-eslint");
-const sourcemaps = require("gulp-sourcemaps");
-const istanbul = require("gulp-istanbul");
-const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
-const ts = require("gulp-typescript");
-const args = require("yargs").argv;
+import fs from "fs";
+import gulp from "gulp";
+import del from "del";
+import shell from "gulp-shell";
+import replace from "gulp-replace";
+import rename from "gulp-rename";
+import sourcemaps from "gulp-sourcemaps";
+import ts from "gulp-typescript";
 
 @Gulpclass()
 export class Gulpfile {
@@ -26,19 +17,11 @@ export class Gulpfile {
     // -------------------------------------------------------------------------
 
     /**
-     * Creates a delay and resolves after 15 seconds.
-     */
-    @Task()
-    wait(cb: Function) {
-        setTimeout(() => cb(), 15000);
-    }
-
-    /**
      * Cleans build folder.
      */
     @Task()
-    clean(cb: Function) {
-        return del(["./build/**"], cb);
+    async clean() {
+        return del(["./build/**"]);
     }
 
     /**
@@ -75,15 +58,15 @@ export class Gulpfile {
     @Task()
     browserCopyTemplates() {
         return gulp.src("./src/platform/*.template")
-            .pipe(rename((p: any) => { p.extname = '.ts'; }))
+            .pipe(rename((p) => { p.extname = '.ts'; }))
             .pipe(gulp.dest("./build/browser/src/platform"));
     }
 
     @MergedTask()
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
-            module: "es2015",
-            "lib": ["es5", "es6", "dom"],
+            module: "es2020",
+            lib: ["es2021", "dom"],
             typescript: require("typescript")
         });
         const tsResult = gulp.src([
@@ -102,7 +85,7 @@ export class Gulpfile {
     }
 
     @Task()
-    browserClearPackageDirectory(cb: Function) {
+    async browserClearPackageDirectory() {
         return del([
             "./build/browser/**"
         ]);
@@ -120,6 +103,17 @@ export class Gulpfile {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
                 "cd ./build/package && npm publish"
+            ]));
+    }
+
+    /**
+     * Packs a .tgz from ./build/package directory.
+     */
+    @Task()
+    packagePack() {
+        return gulp.src("package.json", { read: false })
+            .pipe(shell([
+                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
             ]));
     }
 
@@ -166,6 +160,24 @@ export class Gulpfile {
     }
 
     /**
+     * Create ESM index file in the final package directory.
+     */
+    @Task()
+    async packageCreateEsmIndex() {
+        const buildDir = "./build/package";
+        const cjsIndex = require(`${buildDir}/index.js`);
+        const cjsKeys = Object.keys(cjsIndex).filter(key => key !== "default" && !key.startsWith("__"));
+
+        const indexMjsContent =
+            'import TypeORM from "./index.js";\n' +
+            `const {\n    ${cjsKeys.join(",\n    ")}\n} = TypeORM;\n` +
+            `export {\n    ${cjsKeys.join(",\n    ")}\n};\n` +
+            'export default TypeORM;\n';
+
+        fs.writeFileSync(`${buildDir}/index.mjs`, indexMjsContent, "utf8");
+    }
+
+    /**
      * Removes /// <reference from compiled sources.
      */
     @Task()
@@ -180,10 +192,10 @@ export class Gulpfile {
      * Moves all compiled files to the final package directory.
      */
     @Task()
-    packageClearPackageDirectory(cb: Function) {
+    async packageClearPackageDirectory() {
         return del([
             "build/package/src/**"
-        ], cb);
+        ]);
     }
 
     /**
@@ -225,6 +237,7 @@ export class Gulpfile {
             ["browserCopySources", "browserCopyTemplates"],
             ["packageCompile", "browserCompile"],
             "packageMoveCompiledFiles",
+            "packageCreateEsmIndex",
             [
                 "browserClearPackageDirectory",
                 "packageClearPackageDirectory",
@@ -234,6 +247,14 @@ export class Gulpfile {
                 "packageCopyShims"
             ],
         ];
+    }
+
+    /**
+     * Creates a package .tgz
+     */
+    @SequenceTask()
+    pack() {
+        return ["package", "packagePack"];
     }
 
     /**
@@ -250,106 +271,6 @@ export class Gulpfile {
     @SequenceTask("publish-next")
     publishNext() {
         return ["package", "packagePublishNext"];
-    }
-
-    // -------------------------------------------------------------------------
-    // Run tests tasks
-    // -------------------------------------------------------------------------
-
-    /**
-     * Runs ts linting to validate source code.
-     */
-    @Task()
-    eslint() {
-        return gulp.src(["./src/**/*.ts", "./test/**/*.ts", "./sample/**/*.ts"])
-            .pipe(eslint())
-            .pipe(eslint.format('stylish'))
-            .pipe(eslint.failAfterError())
-    }
-
-    /**
-     * Runs before test coverage, required step to perform a test coverage.
-     */
-    @Task()
-    coveragePre() {
-        return gulp.src(["./build/compiled/src/**/*.js"])
-            .pipe(istanbul())
-            .pipe(istanbul.hookRequire());
-    }
-
-    /**
-     * Runs post coverage operations.
-     */
-    @Task()
-    coveragePost() {
-        return gulp.src(["./build/compiled/test/**/*.js"])
-            .pipe(istanbul.writeReports());
-    }
-
-    /**
-     * Runs mocha tests.
-     */
-    @Task()
-    runTests() {
-        chai.should();
-        chai.use(require("sinon-chai"));
-        chai.use(require("chai-as-promised"));
-
-        return gulp.src(["./build/compiled/test/**/*.js"])
-            .pipe(mocha({
-                bail: true,
-                grep: !!args.grep ? new RegExp(args.grep) : undefined,
-                timeout: 15000
-            }));
-    }
-
-    @Task()
-    coverageRemap() {
-        return gulp.src("./coverage/coverage-final.json")
-            .pipe(remapIstanbul())
-            .pipe(gulp.dest("./coverage"));
-    }
-
-    /**
-     * Compiles the code and runs tests + makes coverage report.
-     */
-    @SequenceTask()
-    tests() {
-        return [
-            "compile",
-            "coveragePre",
-            "runTests",
-            "coveragePost",
-            "coverageRemap"
-        ];
-    }
-
-    /**
-     * Runs tests, but creates a small delay before running them to make sure to give time for docker containers to be initialized.
-     */
-    @SequenceTask("ci-tests")
-    ciTests() {
-        return [
-            "clean",
-            "compile",
-            "tslint",
-            "wait",
-            "coveragePre",
-            "runTests",
-            "coveragePost",
-            "coverageRemap"
-        ];
-    }
-
-    // -------------------------------------------------------------------------
-    // CI tasks
-    // -------------------------------------------------------------------------
-
-    @Task()
-    createTravisOrmConfig() {
-        return gulp.src("./ormconfig.travis.json")
-            .pipe(rename("ormconfig.json"))
-            .pipe(gulp.dest("./"));
     }
 
 }

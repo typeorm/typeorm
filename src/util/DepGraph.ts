@@ -8,6 +8,8 @@
  * A simple dependency graph
  */
 
+import { TypeORMError } from "../error"
+
 /**
  * Helper for creating a Depth-First-Search on
  * a set of edges.
@@ -19,31 +21,35 @@
  * @param result An array in which the results will be populated
  */
 function createDFS(edges: any, leavesOnly: any, result: any) {
-    let currentPath: any[] = [];
-    let visited: any = {};
+    let currentPath: any[] = []
+    let visited: any = {}
     return function DFS(currentNode: any) {
-        visited[currentNode] = true;
-        currentPath.push(currentNode);
+        visited[currentNode] = true
+        currentPath.push(currentNode)
         edges[currentNode].forEach(function (node: any) {
             if (!visited[node]) {
-                DFS(node);
+                DFS(node)
             } else if (currentPath.indexOf(node) >= 0) {
-                currentPath.push(node);
-                throw new Error(`Dependency Cycle Found: ${currentPath.join(" -> ")}`);
+                currentPath.push(node)
+                throw new TypeORMError(
+                    `Dependency Cycle Found: ${currentPath.join(" -> ")}`,
+                )
             }
-        });
-        currentPath.pop();
-        if ((!leavesOnly || edges[currentNode].length === 0) && result.indexOf(currentNode) === -1) {
-            result.push(currentNode);
+        })
+        currentPath.pop()
+        if (
+            (!leavesOnly || edges[currentNode].length === 0) &&
+            result.indexOf(currentNode) === -1
+        ) {
+            result.push(currentNode)
         }
-    };
+    }
 }
 
-
 export class DepGraph {
-    nodes: any = {};
-    outgoingEdges: any = {}; // Node -> [Dependency Node]
-    incomingEdges: any = {}; // Node -> [Dependant Node]
+    nodes: any = {}
+    outgoingEdges: any = {} // Node -> [Dependency Node]
+    incomingEdges: any = {} // Node -> [Dependant Node]
 
     /**
      * Add a node to the dependency graph. If a node already exists, this method will do nothing.
@@ -52,12 +58,12 @@ export class DepGraph {
         if (!this.hasNode(node)) {
             // Checking the arguments length allows the user to add a node with undefined data
             if (arguments.length === 2) {
-                this.nodes[node] = data;
+                this.nodes[node] = data
             } else {
-                this.nodes[node] = node;
+                this.nodes[node] = node
             }
-            this.outgoingEdges[node] = [];
-            this.incomingEdges[node] = [];
+            this.outgoingEdges[node] = []
+            this.incomingEdges[node] = []
         }
     }
 
@@ -66,17 +72,19 @@ export class DepGraph {
      */
     removeNode(node: any) {
         if (this.hasNode(node)) {
-            delete this.nodes[node];
-            delete this.outgoingEdges[node];
-            delete this.incomingEdges[node];
-            [this.incomingEdges, this.outgoingEdges].forEach(function (edgeList) {
+            delete this.nodes[node]
+            delete this.outgoingEdges[node]
+            delete this.incomingEdges[node]
+            ;[this.incomingEdges, this.outgoingEdges].forEach(function (
+                edgeList,
+            ) {
                 Object.keys(edgeList).forEach(function (key: any) {
-                    let idx = edgeList[key].indexOf(node);
+                    const idx = edgeList[key].indexOf(node)
                     if (idx >= 0) {
-                        edgeList[key].splice(idx, 1);
+                        edgeList[key].splice(idx, 1)
                     }
-                }, this);
-            });
+                })
+            })
         }
     }
 
@@ -84,7 +92,7 @@ export class DepGraph {
      * Check if a node exists in the graph
      */
     hasNode(node: any) {
-        return this.nodes.hasOwnProperty(node);
+        return this.nodes.hasOwnProperty(node)
     }
 
     /**
@@ -92,9 +100,9 @@ export class DepGraph {
      */
     getNodeData(node: any) {
         if (this.hasNode(node)) {
-            return this.nodes[node];
+            return this.nodes[node]
         } else {
-            throw new Error(`Node does not exist: ${node}`);
+            throw new TypeORMError(`Node does not exist: ${node}`)
         }
     }
 
@@ -103,9 +111,9 @@ export class DepGraph {
      */
     setNodeData(node: any, data: any) {
         if (this.hasNode(node)) {
-            this.nodes[node] = data;
+            this.nodes[node] = data
         } else {
-            throw new Error(`Node does not exist: ${node}`);
+            throw new TypeORMError(`Node does not exist: ${node}`)
         }
     }
 
@@ -115,36 +123,36 @@ export class DepGraph {
      */
     addDependency(from: any, to: any) {
         if (!this.hasNode(from)) {
-            throw new Error(`Node does not exist: ${from}`);
+            throw new TypeORMError(`Node does not exist: ${from}`)
         }
         if (!this.hasNode(to)) {
-            throw new Error(`Node does not exist: ${to}`);
+            throw new TypeORMError(`Node does not exist: ${to}`)
         }
         if (this.outgoingEdges[from].indexOf(to) === -1) {
-            this.outgoingEdges[from].push(to);
+            this.outgoingEdges[from].push(to)
         }
         if (this.incomingEdges[to].indexOf(from) === -1) {
-            this.incomingEdges[to].push(from);
+            this.incomingEdges[to].push(from)
         }
-        return true;
+        return true
     }
 
     /**
      * Remove a dependency between two nodes.
      */
     removeDependency(from: any, to: any) {
-        let idx: any;
+        let idx: any
         if (this.hasNode(from)) {
-            idx = this.outgoingEdges[from].indexOf(to);
+            idx = this.outgoingEdges[from].indexOf(to)
             if (idx >= 0) {
-                this.outgoingEdges[from].splice(idx, 1);
+                this.outgoingEdges[from].splice(idx, 1)
             }
         }
 
         if (this.hasNode(to)) {
-            idx = this.incomingEdges[to].indexOf(from);
+            idx = this.incomingEdges[to].indexOf(from)
             if (idx >= 0) {
-                this.incomingEdges[to].splice(idx, 1);
+                this.incomingEdges[to].splice(idx, 1)
             }
         }
     }
@@ -159,17 +167,16 @@ export class DepGraph {
      */
     dependenciesOf(node: any, leavesOnly: any) {
         if (this.hasNode(node)) {
-            let result: any[] = [];
-            let DFS = createDFS(this.outgoingEdges, leavesOnly, result);
-            DFS(node);
-            let idx = result.indexOf(node);
+            let result: any[] = []
+            let DFS = createDFS(this.outgoingEdges, leavesOnly, result)
+            DFS(node)
+            let idx = result.indexOf(node)
             if (idx >= 0) {
-                result.splice(idx, 1);
+                result.splice(idx, 1)
             }
-            return result;
-        }
-        else {
-            throw new Error(`Node does not exist: ${node}`);
+            return result
+        } else {
+            throw new TypeORMError(`Node does not exist: ${node}`)
         }
     }
 
@@ -182,16 +189,16 @@ export class DepGraph {
      */
     dependantsOf(node: any, leavesOnly: any) {
         if (this.hasNode(node)) {
-            let result: any[] = [];
-            let DFS = createDFS(this.incomingEdges, leavesOnly, result);
-            DFS(node);
-            let idx = result.indexOf(node);
+            let result: any[] = []
+            let DFS = createDFS(this.incomingEdges, leavesOnly, result)
+            DFS(node)
+            let idx = result.indexOf(node)
             if (idx >= 0) {
-                result.splice(idx, 1);
+                result.splice(idx, 1)
             }
-            return result;
+            return result
         } else {
-            throw new Error(`Node does not exist: ${node}`);
+            throw new TypeORMError(`Node does not exist: ${node}`)
         }
     }
 
@@ -203,30 +210,29 @@ export class DepGraph {
      * If `leavesOnly` is true, only nodes that do not depend on any other nodes will be returned.
      */
     overallOrder(leavesOnly?: any) {
-        let self = this;
-        let result: any[] = [];
-        let keys = Object.keys(this.nodes);
+        let self = this
+        let result: any[] = []
+        let keys = Object.keys(this.nodes)
         if (keys.length === 0) {
-            return result; // Empty graph
+            return result // Empty graph
         } else {
             // Look for cycles - we run the DFS starting at all the nodes in case there
             // are several disconnected subgraphs inside this dependency graph.
-            let CycleDFS = createDFS(this.outgoingEdges, false, []);
+            let CycleDFS = createDFS(this.outgoingEdges, false, [])
             keys.forEach(function (n: any) {
-                CycleDFS(n);
-            });
+                CycleDFS(n)
+            })
 
-            let DFS = createDFS(this.outgoingEdges, leavesOnly, result);
+            let DFS = createDFS(this.outgoingEdges, leavesOnly, result)
             // Find all potential starting points (nodes with nothing depending on them) an
             // run a DFS starting at these points to get the order
             keys.filter(function (node) {
-                return self.incomingEdges[node].length === 0;
+                return self.incomingEdges[node].length === 0
             }).forEach(function (n) {
-                DFS(n);
-            });
+                DFS(n)
+            })
 
-            return result;
+            return result
         }
     }
-
 }

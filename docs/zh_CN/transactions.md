@@ -66,7 +66,7 @@ await getManager().transaction("SERIALIZABLE", transactionalEntityManager => {})
 
 以下装饰器可以帮助你组织事务操作 - `@Transaction`, `@TransactionManager` 和 `@TransactionRepository`。
 
-`@Transaction`将其所有执行包装到一个数据库事务中，`@TransportManager`提供了一个事务实体管理器，它必须用于在该事务中执行查询：
+`@Transaction`将其所有执行包装到一个数据库事务中，`@TransactionManager`提供了一个事务实体管理器，它必须用于在该事务中执行查询：
 
 ```typescript
 @Transaction()
@@ -84,7 +84,7 @@ save(@TransactionManager() manager: EntityManager, user: User) {
 }
 ```
 
-你**必须**使用`@TransportManager`提供的管理器。
+你**必须**使用`@TransactionManager`提供的管理器。
 
 但是，你也可以使用`@TransactionRepository`注入事务存储库（使用事务实体管理器）：
 

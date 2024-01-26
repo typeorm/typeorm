@@ -1,69 +1,83 @@
-import {createConnection} from "../index";
-import {QueryRunner} from "../query-runner/QueryRunner";
-import {ConnectionOptionsReader} from "../connection/ConnectionOptionsReader";
-import {Connection} from "../connection/Connection";
-import {PlatformTools} from "../platform/PlatformTools";
-import * as yargs from "yargs";
-import chalk from "chalk";
+import { QueryRunner } from "../query-runner/QueryRunner"
+import { DataSource } from "../data-source/DataSource"
+import { PlatformTools } from "../platform/PlatformTools"
+import * as yargs from "yargs"
+import chalk from "chalk"
+import path from "path"
+import process from "process"
+import { CommandUtils } from "./CommandUtils"
 
 /**
- * Executes an sql query on the given connection.
+ * Executes an SQL query on the given dataSource.
  */
 export class QueryCommand implements yargs.CommandModule {
-    command = "query";
-    describe = "Executes given SQL query on a default connection. Specify connection name to run query on a specific connection.";
+    command = "query [query]"
+    describe =
+        "Executes given SQL query on a default dataSource. Specify connection name to run query on a specific dataSource."
 
     builder(args: yargs.Argv) {
         return args
-            .option("c", {
-                alias: "connection",
-                default: "default",
-                describe: "Name of the connection on which to run a query."
+            .positional("query", {
+                describe: "The SQL Query to run",
+                type: "string",
             })
-            .option("f", {
-                alias: "config",
-                default: "ormconfig",
-                describe: "Name of the file with connection configuration."
-            });
+            .option("dataSource", {
+                alias: "d",
+                describe:
+                    "Path to the file where your DataSource instance is defined.",
+                demandOption: true,
+            })
     }
 
     async handler(args: yargs.Arguments) {
-
-        let connection: Connection|undefined = undefined;
-        let queryRunner: QueryRunner|undefined = undefined;
+        let queryRunner: QueryRunner | undefined = undefined
+        let dataSource: DataSource | undefined = undefined
         try {
-
-            // create a connection
-            const connectionOptionsReader = new ConnectionOptionsReader({
-                root: process.cwd(),
-                configName: args.config as any
-            });
-            const connectionOptions = await connectionOptionsReader.get(args.connection as any);
-            Object.assign(connectionOptions, {
+            dataSource = await CommandUtils.loadDataSource(
+                path.resolve(process.cwd(), args.dataSource as string),
+            )
+            dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: false
-            });
-            connection = await createConnection(connectionOptions);
+                logging: false,
+            })
+            await dataSource.initialize()
 
             // create a query runner and execute query using it
-            queryRunner = connection.createQueryRunner();
-            console.log(chalk.green("Running query: ") + PlatformTools.highlightSql(args._[1]));
-            const queryResult = await queryRunner.query(args._[1]);
-            console.log(chalk.green("Query has been executed. Result: "));
-            console.log(PlatformTools.highlightJson(JSON.stringify(queryResult, undefined, 2)));
+            queryRunner = dataSource.createQueryRunner()
+            const query = args.query as string
+            console.log(
+                chalk.green("Running query: ") +
+                    PlatformTools.highlightSql(query),
+            )
+            const queryResult = await queryRunner.query(query)
 
-            await queryRunner.release();
-            await connection.close();
+            if (typeof queryResult === "undefined") {
+                console.log(
+                    chalk.green(
+                        "Query has been executed. No result was returned.",
+                    ),
+                )
+            } else {
+                console.log(chalk.green("Query has been executed. Result: "))
+                console.log(
+                    PlatformTools.highlightJson(
+                        JSON.stringify(queryResult, undefined, 2),
+                    ),
+                )
+            }
 
+            await queryRunner.release()
+            await dataSource.destroy()
         } catch (err) {
-            if (queryRunner) await (queryRunner as QueryRunner).release();
-            if (connection) await (connection as Connection).close();
+            PlatformTools.logCmdErr("Error during query execution:", err)
 
-            console.log(chalk.black.bgRed("Error during query execution:"));
-            console.error(err);
-            process.exit(1);
+            if (queryRunner) await (queryRunner as QueryRunner).release()
+            if (dataSource && dataSource.isInitialized)
+                await dataSource.destroy()
+
+            process.exit(1)
         }
     }
 }

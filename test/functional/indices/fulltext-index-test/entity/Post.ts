@@ -1,18 +1,16 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "../../../../../src";
-import {Index} from "../../../../../src/decorator/Index";
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
+import { Index } from "../../../../../src/decorator/Index"
 
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Index({ fulltext: true })
     @Column()
-    default: string;
+    default: string
 
     @Index({ fulltext: true, parser: "ngram" })
     @Column()
-    ngram: string;
-
+    ngram: string
 }

@@ -1,32 +1,34 @@
-import "reflect-metadata";
-import {ConnectionOptions, createConnection} from "../../src/index";
-import {Post} from "./entity/Post";
+import "reflect-metadata"
+import { DataSource, DataSourceOptions } from "../../src/index"
+import { Post } from "./entity/Post"
 
-const options: ConnectionOptions = {
-    "name": "sap",
-    "type": "sap",
-    "host": "192.168.56.102",
-    "port": 39015,
-    "username": "SYSTEM",
-    "password": "MySuperHanaPwd123!",
-    "database": "HXE",
-    "logging": true,
+const options: DataSourceOptions = {
+    name: "sap",
+    type: "sap",
+    host: "192.168.56.102",
+    port: 39015,
+    username: "SYSTEM",
+    password: "MySuperHanaPwd123!",
+    database: "HXE",
+    logging: true,
     synchronize: true,
-    entities: [Post]
-};
+    entities: [Post],
+}
 
-createConnection(options).then(async connection => {
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    async (dataSource) => {
+        let post = new Post()
+        post.text = "Hello how are you?"
+        post.title = "hello"
+        post.likesCount = 100
 
-    let post = new Post();
-    post.text = "Hello how are you?";
-    post.title = "hello";
-    post.likesCount = 100;
+        let postRepository = dataSource.getRepository(Post)
 
-    let postRepository = connection.getRepository(Post);
-
-    postRepository
-        .save(post)
-        .then(post => console.log("Post has been saved: ", post))
-        .catch(error => console.log("Cannot save. Error: ", error));
-
-}, error => console.log("Cannot connect: ", error));
+        postRepository
+            .save(post)
+            .then((post) => console.log("Post has been saved: ", post))
+            .catch((error) => console.log("Cannot save. Error: ", error))
+    },
+    (error) => console.log("Cannot connect: ", error),
+)

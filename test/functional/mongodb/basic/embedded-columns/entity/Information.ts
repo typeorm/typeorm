@@ -1,14 +1,12 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 export class Information {
+    @Column()
+    description: string
 
     @Column()
-    description: string;
+    visible: boolean
 
     @Column()
-    visible: boolean;
-
-    @Column()
-    editable: boolean;
-
+    editable: boolean
 }

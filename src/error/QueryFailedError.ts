@@ -1,23 +1,32 @@
-import {ObjectUtils} from "../util/ObjectUtils";
+import { ObjectUtils } from "../util/ObjectUtils"
+import { TypeORMError } from "./TypeORMError"
 
 /**
  * Thrown when query execution has failed.
-*/
-export class QueryFailedError extends Error {
+ */
+export class QueryFailedError<T extends Error = Error> extends TypeORMError {
+    constructor(
+        readonly query: string,
+        readonly parameters: any[] | undefined,
+        readonly driverError: T,
+    ) {
+        super(
+            driverError
+                .toString()
+                .replace(/^error: /, "")
+                .replace(/^Error: /, "")
+                .replace(/^Request/, ""),
+        )
 
-    constructor(query: string, parameters: any[]|undefined, driverError: any) {
-        super();
-        Object.setPrototypeOf(this, QueryFailedError.prototype);
-        this.message = driverError.toString()
-            .replace(/^error: /, "")
-            .replace(/^Error: /, "")
-            .replace(/^Request/, "");
-        ObjectUtils.assign(this, {
-            ...driverError,
-            name: "QueryFailedError",
-            query: query,
-            parameters: parameters || []
-        });
+        if (driverError) {
+            const {
+                name: _, // eslint-disable-line
+                ...otherProperties
+            } = driverError
+
+            ObjectUtils.assign(this, {
+                ...otherProperties,
+            })
+        }
     }
-
 }

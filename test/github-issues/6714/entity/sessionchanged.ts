@@ -1,9 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src";
+import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src"
 
 @Entity({ name: "Session" })
 export class Session {
     @PrimaryGeneratedColumn()
-    id?: number;
+    id?: number
 
     @Column({
         type: "timestamp",
@@ -11,5 +11,5 @@ export class Session {
         default: () => "CURRENT_TIMESTAMP(4)",
         onUpdate: "CURRENT_TIMESTAMP(4)",
     })
-    ts: Date;
+    ts: Date
 }

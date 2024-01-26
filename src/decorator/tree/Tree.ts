@@ -1,6 +1,7 @@
-import {getMetadataArgsStorage} from "../../";
-import {TreeMetadataArgs} from "../../metadata-args/TreeMetadataArgs";
-import {TreeType} from "../../metadata/types/TreeTypes";
+import { getMetadataArgsStorage } from "../../globals"
+import { TreeMetadataArgs } from "../../metadata-args/TreeMetadataArgs"
+import { TreeType } from "../../metadata/types/TreeTypes"
+import { ClosureTreeOptions } from "../../metadata/types/ClosureTreeOptions"
 
 /**
  * Marks entity to work like a tree.
@@ -8,12 +9,15 @@ import {TreeType} from "../../metadata/types/TreeTypes";
  * @TreeParent decorator must be used in tree entities.
  * TreeRepository can be used to manipulate with tree entities.
  */
-export function Tree(type: TreeType): ClassDecorator {
+export function Tree(
+    type: TreeType,
+    options?: ClosureTreeOptions,
+): ClassDecorator {
     return function (target: Function) {
-
         getMetadataArgsStorage().trees.push({
             target: target,
-            type: type
-        } as TreeMetadataArgs);
-    };
+            type: type,
+            options: type === "closure-table" ? options : undefined,
+        } as TreeMetadataArgs)
+    }
 }

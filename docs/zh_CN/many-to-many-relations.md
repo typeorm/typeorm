@@ -32,7 +32,7 @@ export class Question {
   @Column()
   text: string;
 
-  @ManyToMany(type => Category)
+  @ManyToMany(() => Category)
   @JoinTable()
   categories: Category[];
 }
@@ -121,7 +121,7 @@ export class Category {
   @Column()
   name: string;
 
-  @ManyToMany(type => Question, question => question.categories)
+  @ManyToMany(() => Question, question => question.categories)
   questions: Question[];
 }
 ```
@@ -141,7 +141,7 @@ export class Question {
   @Column()
   text: string;
 
-  @ManyToMany(type => Category, category => category.questions)
+  @ManyToMany(() => Category, category => category.questions)
   @JoinTable()
   categories: Category[];
 }

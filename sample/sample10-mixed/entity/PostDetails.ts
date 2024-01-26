@@ -1,31 +1,36 @@
-import {Column, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn} from "../../../src/index";
-import {Post} from "./Post";
-import {Chapter} from "./Chapter";
-import {Category} from "./Category";
+import {
+    Column,
+    Entity,
+    ManyToOne,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "../../../src/index"
+import { Post } from "./Post"
+import { Chapter } from "./Chapter"
+import { Category } from "./Category"
 
 @Entity("sample10_post_details")
 export class PostDetails {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    meta: string;
+    meta: string
 
     @Column()
-    comment: string;
+    comment: string
 
-    @OneToOne(type => Post, post => post.details)
-    post: Post;
+    @OneToOne((type) => Post, (post) => post.details)
+    post: Post
 
-    @OneToMany(type => Category, category => category.details, {
-        cascade: ["insert"]
+    @OneToMany((type) => Category, (category) => category.details, {
+        cascade: ["insert"],
     })
-    categories: Category[];
+    categories: Category[]
 
-    @ManyToOne(type => Chapter, chapter => chapter.postDetails, {
-        cascade: ["insert"]
+    @ManyToOne((type) => Chapter, (chapter) => chapter.postDetails, {
+        cascade: ["insert"],
     })
-    chapter: Chapter;
-
+    chapter: Chapter
 }

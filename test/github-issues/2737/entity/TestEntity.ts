@@ -1,14 +1,44 @@
-import { Entity } from "../../../../src/decorator/entity/Entity";
-import { Column } from "../../../../src/decorator/columns/Column";
-import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn";
+import { Entity } from "../../../../src"
+import { Column } from "../../../../src"
+import { PrimaryGeneratedColumn } from "../../../../src"
+import { CreateDateColumn } from "../../../../src"
+
 @Entity()
 export class TestEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({ type: "varchar", length: 100, nullable: true, unique: true })
-    unique_column: string;
+    unique_column: string
 
     @Column({ type: "varchar", length: 100, nullable: true, unique: false })
-    nonunique_column: string;
+    nonunique_column: string
+
+    @CreateDateColumn({
+        type: "timestamp",
+        default: () => "CURRENT_TIMESTAMP(6)",
+    })
+    from: Date
+
+    @CreateDateColumn({
+        precision: 3,
+        type: "timestamp",
+        default: () => "CURRENT_TIMESTAMP(3)",
+    })
+    from2: Date
+
+    @CreateDateColumn({
+        precision: null,
+        type: "timestamp",
+        default: () => "CURRENT_TIMESTAMP",
+    })
+    from3: Date
+
+    @Column({
+        precision: null,
+        type: "timestamp",
+        default: null,
+        nullable: true,
+    })
+    to: Date
 }

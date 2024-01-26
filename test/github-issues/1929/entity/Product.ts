@@ -1,25 +1,22 @@
-import {Column, Entity, ObjectID, ObjectIdColumn} from "../../../../src";
+import { Column, Entity, ObjectId, ObjectIdColumn } from "../../../../src"
 
 @Entity()
 export class Product {
-
-
     constructor(name: string, label: string, price: number) {
-        this.name = name;
-        this.label = label;
-        this.price = price;
+        this.name = name
+        this.label = label
+        this.price = price
     }
 
     @ObjectIdColumn()
-    id: ObjectID;
+    id: ObjectId
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    label: string;
+    label: string
 
     @Column()
-    price: number;
-
+    price: number
 }

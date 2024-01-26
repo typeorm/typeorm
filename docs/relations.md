@@ -3,6 +3,7 @@
 * [What are relations](#what-are-relations)
 * [Relation options](#relation-options)
 * [Cascades](#cascades)
+	* [Cascade Options](#cascade-options)
 * [`@JoinColumn` options](#joincolumn-options)
 * [`@JoinTable` options](#jointable-options)
 
@@ -11,79 +12,84 @@
 Relations helps you to work with related entities easily.
 There are several types of relations:
 
-* [one-to-one](./one-to-one-relations.md) using `@OneToOne`
-* [many-to-one](./many-to-one-one-to-many-relations.md) using `@ManyToOne`
-* [one-to-many](./many-to-one-one-to-many-relations.md) using `@OneToMany`
-* [many-to-many](./many-to-many-relations.md) using `@ManyToMany`
+-   [one-to-one](./one-to-one-relations.md) using `@OneToOne`
+-   [many-to-one](./many-to-one-one-to-many-relations.md) using `@ManyToOne`
+-   [one-to-many](./many-to-one-one-to-many-relations.md) using `@OneToMany`
+-   [many-to-many](./many-to-many-relations.md) using `@ManyToMany`
 
 ## Relation options
 
 There are several options you can specify for relations:
 
-* `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity
-* `cascade: boolean | ("insert" | "update")[]` - If set to true, the related object will be inserted and updated in the database. You can also specify an array of [cascade options](#cascade-options).
-* `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign key should behave when referenced object is deleted
-* `primary: boolean` - Indicates whether this relation's column will be a primary column or not.
-* `nullable: boolean` - Indicates whether this relation's column is nullable or not. By default it is nullable.
+-   `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity
+-   `cascade: boolean | ("insert" | "update")[]` - If set to true, the related object will be inserted and updated in the database. You can also specify an array of [cascade options](#cascade-options).
+-   `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign key should behave when referenced object is deleted
+-   `nullable: boolean` - Indicates whether this relation's column is nullable or not. By default it is nullable.
+-   `orphanedRowAction: "nullify" | "delete" | "soft-delete" | disable` - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
+  _delete_ will remove these children from database. _soft-delete_ will mark children as soft-deleted. _nullify_ will remove the relation key. _disable_ will keep the relation intact. To delete, one has to use their own repository.
 
 ## Cascades
 
 Cascades example:
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany} from "typeorm";
-import {Question} from "./Question";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from "typeorm"
+import { Question } from "./Question"
 
 @Entity()
 export class Category {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @ManyToMany(type => Question, question => question.categories)
-    questions: Question[];
-
+    @ManyToMany((type) => Question, (question) => question.categories)
+    questions: Question[]
 }
 ```
 
 ```typescript
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable} from "typeorm";
-import {Category} from "./Category";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToMany,
+    JoinTable,
+} from "typeorm"
+import { Category } from "./Category"
 
 @Entity()
 export class Question {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    text: string;
+    text: string
 
-    @ManyToMany(type => Category, category => category.questions, {
-        cascade: true
+    @ManyToMany((type) => Category, (category) => category.questions, {
+        cascade: true,
     })
     @JoinTable()
-    categories: Category[];
-
+    categories: Category[]
 }
 ```
 
 ```typescript
-const category1 = new Category();
-category1.name = "animals";
+const category1 = new Category()
+category1.name = "ORMs"
 
-const category2 = new Category();
-category2.name = "zoo";
+const category2 = new Category()
+category2.name = "Programming"
 
-const question = new Question();
-question.categories = [category1, category2];
-await connection.manager.save(question);
+const question = new Question()
+question.title = "How to ask questions?"
+question.text = "Where can I ask TypeORM-related questions?"
+question.categories = [category1, category2]
+await dataSource.manager.save(question)
 ```
 
 As you can see in this example we did not call `save` for `category1` and `category2`.
@@ -96,7 +102,7 @@ Also, they provide a less explicit way of saving new objects into the database.
 
 ### Cascade Options
 
-The `cascade` option can be set as a `boolean` or an array of cascade options `("insert", "update")[]`.
+The `cascade` option can be set as a `boolean` or an array of cascade options `("insert" | "update" | "remove" | "soft-remove" | "recover")[]`.
 
 It will default to `false`, meaning no cascades. Setting `cascade: true` will enable full cascades. You can also specify options by providing an array.
 
@@ -105,47 +111,46 @@ For example:
 ```typescript
 @Entity(Post)
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    text: string;
+    text: string
 
     // Full cascades on categories.
-    @ManyToMany(type => PostCategory, {
-        cascade: true
+    @ManyToMany((type) => PostCategory, {
+        cascade: true,
     })
     @JoinTable()
-    categories: PostCategory[];
+    categories: PostCategory[]
 
     // Cascade insert here means if there is a new PostDetails instance set
     // on this relation, it will be inserted automatically to the db when you save this Post entity
-    @ManyToMany(type => PostDetails, details => details.posts, {
-        cascade: ["insert"]
+    @ManyToMany((type) => PostDetails, (details) => details.posts, {
+        cascade: ["insert"],
     })
     @JoinTable()
-    details: PostDetails[];
+    details: PostDetails[]
 
     // Cascade update here means if there are changes to an existing PostImage, it
     // will be updated automatically to the db when you save this Post entity
-    @ManyToMany(type => PostImage, image => image.posts, {
-        cascade: ["update"]
+    @ManyToMany((type) => PostImage, (image) => image.posts, {
+        cascade: ["update"],
     })
     @JoinTable()
-    images: PostImage[];
+    images: PostImage[]
 
     // Cascade insert & update here means if there are new PostInformation instances
     // or an update to an existing one, they will be automatically inserted or updated
     // when you save this Post entity
-    @ManyToMany(type => PostInformation, information => information.posts, {
-        cascade: ["insert", "update"]
+    @ManyToMany((type) => PostInformation, (information) => information.posts, {
+        cascade: ["insert", "update"],
     })
     @JoinTable()
-    informations: PostInformation[];
+    informations: PostInformation[]
 }
 ```
 

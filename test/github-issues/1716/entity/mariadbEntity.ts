@@ -1,18 +1,16 @@
-import { PrimaryColumn, Entity, Column } from "../../../../src";
+import { PrimaryColumn, Entity, Column } from "../../../../src"
 
 @Entity()
 export class MariadbEntity {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column("time")
-    fieldTime: Date;
+    fieldTime: Date
 
     @Column("timestamp")
-    fieldTimestamp: Date;
+    fieldTimestamp: Date
 
     @Column("datetime")
-    fieldDatetime: Date;
-
+    fieldDatetime: Date
 }

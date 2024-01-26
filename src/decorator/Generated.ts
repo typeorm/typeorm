@@ -1,5 +1,5 @@
-import {getMetadataArgsStorage} from "../";
-import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
+import { getMetadataArgsStorage } from "../globals"
+import { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
 
 /**
  * Marks a column to generate a value on entity insertion.
@@ -10,13 +10,14 @@ import {GeneratedMetadataArgs} from "../metadata-args/GeneratedMetadataArgs";
  *
  * Note, some databases do not support non-primary generation columns.
  */
-export function Generated(strategy: "increment"|"uuid"|"rowid" = "increment"): PropertyDecorator {
+export function Generated(
+    strategy: "increment" | "uuid" | "rowid" = "increment",
+): PropertyDecorator {
     return function (object: Object, propertyName: string) {
-
         getMetadataArgsStorage().generations.push({
             target: object.constructor,
             propertyName: propertyName,
-            strategy: strategy
-        } as GeneratedMetadataArgs);
-    };
+            strategy: strategy,
+        } as GeneratedMetadataArgs)
+    }
 }

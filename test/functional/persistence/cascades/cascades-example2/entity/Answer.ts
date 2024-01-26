@@ -1,32 +1,30 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryGeneratedColumn} from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn";
-import {ManyToOne} from "../../../../../../src/decorator/relations/ManyToOne";
-import {Photo} from "./Photo";
-import {User} from "./User";
-import {Question} from "./Question";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { ManyToOne } from "../../../../../../src/decorator/relations/ManyToOne"
+import { Photo } from "./Photo"
+import { User } from "./User"
+import { Question } from "./Question"
 
 @Entity()
 export class Answer {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
-    @ManyToOne(type => Question, question => question.answers, {
+    @ManyToOne((type) => Question, (question) => question.answers, {
         cascade: ["insert"],
-        nullable: false
+        nullable: false,
     })
-    question: Question;
+    question: Question
 
-    @ManyToOne(type => Photo, {
+    @ManyToOne((type) => Photo, {
         cascade: ["insert"],
-        nullable: false
+        nullable: false,
     })
-    photo: Photo;
+    photo: Photo
 
-    @ManyToOne(type => User, {
+    @ManyToOne((type) => User, {
         cascade: ["insert"],
-        nullable: false
+        nullable: false,
     })
-    user: User;
-
+    user: User
 }

@@ -1,14 +1,12 @@
-import { ObjectID, ObjectIdColumn } from "../../../../src";
-import { Column } from "../../../../src/decorator/columns/Column";
-import { Entity } from "../../../../src/decorator/entity/Entity";
+import { ObjectId, ObjectIdColumn } from "../../../../src"
+import { Column } from "../../../../src/decorator/columns/Column"
+import { Entity } from "../../../../src/decorator/entity/Entity"
 
 @Entity()
 export class PostV2 {
-
     @ObjectIdColumn()
-    postId: ObjectID;
+    postId: ObjectId
 
     @Column()
-    title: string;
-
+    title: string
 }

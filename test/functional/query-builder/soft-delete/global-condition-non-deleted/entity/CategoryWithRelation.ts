@@ -1,18 +1,17 @@
-import {Column} from "../../../../../../src/decorator/columns/Column";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {OneToOne} from "../../../../../../src/decorator/relations/OneToOne";
-import {PostWithRelation} from "./PostWithRelation";
+import { Column } from "../../../../../../src/decorator/columns/Column"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { OneToOne } from "../../../../../../src/decorator/relations/OneToOne"
+import { PostWithRelation } from "./PostWithRelation"
 
 @Entity()
 export class CategoryWithRelation {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column({ unique: true })
-    name: string;
+    name: string
 
-    @OneToOne(type => PostWithRelation, post => post.category)
-    post: PostWithRelation;
+    @OneToOne((type) => PostWithRelation, (post) => post.category)
+    post: PostWithRelation
 }

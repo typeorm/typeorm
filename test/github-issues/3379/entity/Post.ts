@@ -1,15 +1,13 @@
-import {Index, PrimaryGeneratedColumn} from "../../../../src";
-import {Column} from "../../../../src";
-import {Entity} from "../../../../src";
+import { Index, PrimaryGeneratedColumn } from "../../../../src"
+import { Column } from "../../../../src"
+import { Entity } from "../../../../src"
 
 @Index("name_index", ["name"])
 @Entity()
 export class Post {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
-
+    name: string
 }

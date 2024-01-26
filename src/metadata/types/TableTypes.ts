@@ -1,4 +1,10 @@
 /**
- * Table type. Tables can be abstract, closure, junction, embedded, etc.
+ * Table type. Tables can be closure, junction,, etc.
  */
-export type TableType = "regular"|"view"|"junction"|"closure"|"closure-junction"|"entity-child";
+export type TableType =
+    | "regular"
+    | "view"
+    | "junction"
+    | "closure"
+    | "closure-junction"
+    | "entity-child"

@@ -1,20 +1,20 @@
 export default {
     name: "Question",
     table: {
-        name: "question"
+        name: "question",
     },
     columns: {
         id: {
-            type: "int",
+            type: Number,
             primary: true,
-            generated: true
+            generated: true,
         },
         title: {
-            type: "varchar",
-            nullable: false
-        }
+            type: String,
+            nullable: false,
+        },
     },
-    target: function Question() {
-        this.type = "question";
-    }
-};
+    target: function Question(this: any) {
+        this.type = "question"
+    },
+}

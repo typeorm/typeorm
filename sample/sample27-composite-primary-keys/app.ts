@@ -1,8 +1,8 @@
-import "reflect-metadata";
-import {ConnectionOptions, createConnection} from "../../src/index";
-import {Post} from "./entity/Post";
+import "reflect-metadata"
+import { DataSource, DataSourceOptions } from "../../src/index"
+import { Post } from "./entity/Post"
 
-const options: ConnectionOptions = {
+const options: DataSourceOptions = {
     type: "mysql",
     host: "localhost",
     port: 3306,
@@ -11,24 +11,29 @@ const options: ConnectionOptions = {
     database: "test",
     logging: ["query", "error"],
     synchronize: true,
-    entities: [Post]
-};
+    entities: [Post],
+}
 
-createConnection(options).then(async connection => {
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    async (dataSource) => {
+        let postRepository = dataSource.getRepository(Post)
 
-    let postRepository = connection.getRepository(Post);
+        const post = new Post()
+        post.id = 1
+        post.type = "person"
+        post.text = "this is test post!"
 
-    const post = new Post();
-    post.id = 1;
-    post.type = "person";
-    post.text = "this is test post!";
+        console.log("saving the post: ")
+        await postRepository.save(post)
+        console.log("Post has been saved: ", post)
 
-    console.log("saving the post: ");
-    await postRepository.save(post);
-    console.log("Post has been saved: ", post);
-
-    console.log("now loading the post: ");
-    const loadedPost = await postRepository.findOne({ id: 1, type: "person" });
-    console.log("loaded post: ", loadedPost);
-
-}, error => console.log("Error: ", error));
+        console.log("now loading the post: ")
+        const loadedPost = await postRepository.findOneBy({
+            id: 1,
+            type: "person",
+        })
+        console.log("loaded post: ", loadedPost)
+    },
+    (error) => console.log("Error: ", error),
+)

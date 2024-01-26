@@ -1,8 +1,8 @@
 # Entity Inheritance
 
-* [Concrete Table Inheritance](#concrete-table-inheritance)
-* [Single Table Inheritance](#single-table-inheritance)
-* [Using embeddeds](#using-embeddeds)
+-   [Concrete Table Inheritance](#concrete-table-inheritance)
+-   [Single Table Inheritance](#single-table-inheritance)
+-   [Using embeddeds](#using-embeddeds)
 
 ## Concrete Table Inheritance
 
@@ -10,61 +10,55 @@ You can reduce duplication in your code by using entity inheritance patterns.
 The simplest and the most effective is concrete table inheritance.
 
 For example, you have `Photo`, `Question`, `Post` entities:
-  
+
 ```typescript
 @Entity()
 export class Photo {
-    
     @PrimaryGeneratedColumn()
-    id: number;
- 
+    id: number
+
     @Column()
-    title: string;
-    
+    title: string
+
     @Column()
-    description: string;
-    
+    description: string
+
     @Column()
-    size: string;
-    
+    size: string
 }
 ```
 
 ```typescript
 @Entity()
 export class Question {
-    
     @PrimaryGeneratedColumn()
-    id: number;
- 
+    id: number
+
     @Column()
-    title: string;
-    
+    title: string
+
     @Column()
-    description: string;
-    
+    description: string
+
     @Column()
-    answersCount: number;
-    
+    answersCount: number
 }
 ```
 
 ```typescript
 @Entity()
 export class Post {
-    
     @PrimaryGeneratedColumn()
-    id: number;
- 
+    id: number
+
     @Column()
-    title: string;
-    
+    title: string
+
     @Column()
-    description: string;
-    
+    description: string
+
     @Column()
-    viewCount: number;
-    
+    viewCount: number
 }
 ```
 
@@ -73,46 +67,38 @@ To reduce duplication and produce a better abstraction we can create a base clas
 
 ```typescript
 export abstract class Content {
-    
     @PrimaryGeneratedColumn()
-    id: number;
- 
+    id: number
+
     @Column()
-    title: string;
-    
+    title: string
+
     @Column()
-    description: string;
-    
+    description: string
 }
 ```
 
 ```typescript
 @Entity()
 export class Photo extends Content {
-    
     @Column()
-    size: string;
-    
+    size: string
 }
 ```
 
 ```typescript
 @Entity()
 export class Question extends Content {
-    
     @Column()
-    answersCount: number;
-    
+    answersCount: number
 }
 ```
 
 ```typescript
 @Entity()
 export class Post extends Content {
-    
     @Column()
-    viewCount: number;
-    
+    viewCount: number
 }
 ```
 
@@ -123,7 +109,7 @@ This example will create 3 tables - `photo`, `question` and `post`.
 
 ## Single Table Inheritance
 
-TypeORM also supports single table inheritance. 
+TypeORM also supports single table inheritance.
 Single table inheritance is a pattern when you have multiple classes with their own properties,
 but in the database they are stored in the same table.
 
@@ -131,50 +117,42 @@ but in the database they are stored in the same table.
 @Entity()
 @TableInheritance({ column: { type: "varchar", name: "type" } })
 export class Content {
-    
     @PrimaryGeneratedColumn()
-    id: number;
- 
+    id: number
+
     @Column()
-    title: string;
-    
+    title: string
+
     @Column()
-    description: string;
-    
+    description: string
 }
 ```
 
 ```typescript
 @ChildEntity()
 export class Photo extends Content {
-    
     @Column()
-    size: string;
-    
+    size: string
 }
 ```
 
 ```typescript
 @ChildEntity()
 export class Question extends Content {
-    
     @Column()
-    answersCount: number;
-    
+    answersCount: number
 }
 ```
 
 ```typescript
 @ChildEntity()
 export class Post extends Content {
-    
     @Column()
-    viewCount: number;
-    
+    viewCount: number
 }
 ```
 
-This will create a single table called `content` and all instances of photos, questions and posts 
+This will create a single table called `content` and all instances of photos, questions and posts
 will be saved into this table.
 
 ## Using embeddeds

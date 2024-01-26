@@ -1,39 +1,44 @@
-import "reflect-metadata";
-import {CockroachDriver} from "../../../src/driver/cockroachdb/CockroachDriver";
-import {closeTestingConnections, createTestingConnections} from "../../utils/test-utils";
-import {Connection} from "../../../src/connection/Connection";
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
+import { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #423 Cannot use Group as Table name && cannot autoSchemeSync when use alias Entity", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: false,
+                dropSchema: true,
+            })),
+    )
+    after(() => closeTestingConnections(connections))
 
-    let connections: Connection[];
-    before(async () => connections = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: false,
-        dropSchema: true
-    }));
-    after(() => closeTestingConnections(connections));
+    it("should successfully sync schema", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await connection.synchronize()
 
-    it("should successfully sync schema", () => Promise.all(connections.map(async connection => {
-        await connection.synchronize();
+                const queryRunner = connection.createQueryRunner()
+                const table = await queryRunner.getTable("groups")
+                await queryRunner.release()
 
-        const queryRunner = connection.createQueryRunner();
-        const table = await queryRunner.getTable("groups");
-        await queryRunner.release();
+                table!.should.exist
 
-        table!.should.exist;
-        
-        // CockroachDB stores unique indices as UNIQUE constraints
-        if (connection.driver instanceof CockroachDriver) {
-            table!.uniques.length.should.be.equal(1);
-            table!.uniques[0].name!.should.be.equal("Groups name");
-            table!.uniques[0].columnNames[0].should.be.equal("name");
-        } else {
-            table!.indices.length.should.be.equal(1);
-            table!.indices[0].name!.should.be.equal("Groups name");
-            table!.indices[0].columnNames[0].should.be.equal("name");
-            table!.indices[0].isUnique!.should.be.true;
-        }
-
-    })));
-
-});
+                // CockroachDB stores unique indices as UNIQUE constraints
+                if (connection.driver.options.type === "cockroachdb") {
+                    table!.uniques.length.should.be.equal(1)
+                    table!.uniques[0].name!.should.be.equal("Groups name")
+                    table!.uniques[0].columnNames[0].should.be.equal("name")
+                } else {
+                    table!.indices.length.should.be.equal(1)
+                    table!.indices[0].name!.should.be.equal("Groups name")
+                    table!.indices[0].columnNames[0].should.be.equal("name")
+                    table!.indices[0].isUnique!.should.be.true
+                }
+            }),
+        ))
+})

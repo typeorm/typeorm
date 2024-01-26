@@ -1,257 +1,278 @@
-import {Entity} from "../../../../../../src/decorator/entity/Entity";
-import {PrimaryColumn} from "../../../../../../src/decorator/columns/PrimaryColumn";
-import {Column} from "../../../../../../src/decorator/columns/Column";
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class Post {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     // -------------------------------------------------------------------------
     // Numeric Types
     // -------------------------------------------------------------------------
 
     @Column("integer")
-    integer: number;
+    integer: number
 
     @Column("int4")
-    int4: number;
+    int4: number
 
     @Column("int")
-    int: number;
+    int: number
 
     @Column("smallint")
-    smallint: number;
+    smallint: number
 
     @Column("int2")
-    int2: number;
+    int2: number
 
     @Column("bigint")
-    bigint: string;
+    bigint: string
 
     @Column("int8")
-    int8: string;
+    int8: string
 
     @Column("numeric")
-    numeric: string;
+    numeric: string
 
     @Column("decimal")
-    decimal: string;
+    decimal: string
 
     @Column("double precision")
-    doublePrecision: number;
+    doublePrecision: number
 
     @Column("float8")
-    float8: number;
+    float8: number
 
     @Column("real")
-    real: number;
+    real: number
 
     @Column("float4")
-    float4: number;
+    float4: number
 
     // -------------------------------------------------------------------------
     // Monetary Types
     // -------------------------------------------------------------------------
 
     @Column("money")
-    money: string;
+    money: string
 
     // -------------------------------------------------------------------------
     // Character Types
     // -------------------------------------------------------------------------
 
     @Column("char")
-    char: string;
+    char: string
 
     @Column("character")
-    character: string;
+    character: string
 
     @Column("varchar")
-    varchar: string;
+    varchar: string
 
     @Column("character varying")
-    characterVarying: string;
+    characterVarying: string
 
     @Column("text")
-    text: string;
+    text: string
 
     @Column("citext")
-    citext: string;
+    citext: string
 
     @Column("hstore")
-    hstore: string;
+    hstore: string
 
     // -------------------------------------------------------------------------
     // Binary Data Types
     // -------------------------------------------------------------------------
 
     @Column("bytea")
-    bytea: Buffer;
+    bytea: Buffer
 
     // -------------------------------------------------------------------------
     // Date/Time Types
     // -------------------------------------------------------------------------
 
     @Column("date")
-    date: string;
+    date: string
 
     @Column("interval")
-    interval: any;
+    interval: any
 
     @Column("time")
-    time: string;
+    time: string
 
     @Column("time with time zone")
-    timeWithTimeZone: string;
+    timeWithTimeZone: string
 
     @Column("timetz")
-    timetz: string;
+    timetz: string
 
     @Column("timestamp")
-    timestamp: Date;
+    timestamp: Date
 
     @Column("timestamp with time zone")
-    timestampWithTimeZone: Date;
+    timestampWithTimeZone: Date
 
     @Column("timestamptz")
-    timestamptz: Date;
+    timestamptz: Date
 
     // -------------------------------------------------------------------------
     // Boolean Type
     // -------------------------------------------------------------------------
 
     @Column("boolean")
-    boolean: boolean;
+    boolean: boolean
 
     @Column("bool")
-    bool: boolean;
+    bool: boolean
 
     // -------------------------------------------------------------------------
     // Enumerated Type
     // -------------------------------------------------------------------------
 
     @Column("enum", { enum: ["A", "B", "C"] })
-    enum: string;
+    enum: string
 
     // -------------------------------------------------------------------------
     // Geometric Type
     // -------------------------------------------------------------------------
 
     @Column("point")
-    point: string|Object;
+    point: string | Object
 
     @Column("line")
-    line: string;
+    line: string
 
     @Column("lseg")
-    lseg: string|string[];
+    lseg: string | string[]
 
     @Column("box")
-    box: string|Object;
+    box: string | Object
 
     @Column("path")
-    path: string;
+    path: string
 
     @Column("polygon")
-    polygon: string;
+    polygon: string
 
     @Column("circle")
-    circle: string|Object;
+    circle: string | Object
 
     // -------------------------------------------------------------------------
     // Network Address Type
     // -------------------------------------------------------------------------
 
     @Column("cidr")
-    cidr: string;
+    cidr: string
 
     @Column("inet")
-    inet: string;
+    inet: string
 
     @Column("macaddr")
-    macaddr: string;
+    macaddr: string
 
     // -------------------------------------------------------------------------
     // Bit String Type
     // -------------------------------------------------------------------------
 
     @Column("bit")
-    bit: string;
+    bit: string
 
     @Column("varbit")
-    varbit: string;
+    varbit: string
 
     @Column("bit varying")
-    bitVarying: string;
+    bitVarying: string
 
     // -------------------------------------------------------------------------
     // UUID Type
     // -------------------------------------------------------------------------
 
     @Column("uuid")
-    uuid: string;
+    uuid: string
 
     // -------------------------------------------------------------------------
     // XML Type
     // -------------------------------------------------------------------------
 
     @Column("xml")
-    xml: string;
+    xml: string
 
     // -------------------------------------------------------------------------
     // JSON Type
     // -------------------------------------------------------------------------
 
     @Column("json")
-    json: Object;
+    json: Object
 
     @Column("jsonb")
-    jsonb: Object;
+    jsonb: Object
 
     // -------------------------------------------------------------------------
     // Range Type
     // -------------------------------------------------------------------------
 
     @Column("int4range")
-    int4range: string;
+    int4range: string
 
     @Column("int8range")
-    int8range: string;
+    int8range: string
 
     @Column("numrange")
-    numrange: string;
+    numrange: string
 
     @Column("tsrange")
-    tsrange: string;
+    tsrange: string
 
     @Column("tstzrange")
-    tstzrange: string;
+    tstzrange: string
 
     @Column("daterange")
-    daterange: string;
+    daterange: string
+
+    // -------------------------------------------------------------------------
+    // Multirange Type
+    // -------------------------------------------------------------------------
+
+    @Column("int4multirange")
+    int4multirange: string
+
+    @Column("int8multirange")
+    int8multirange: string
+
+    @Column("nummultirange")
+    nummultirange: string
+
+    @Column("tsmultirange")
+    tsmultirange: string
+
+    @Column("tstzmultirange")
+    tstzmultirange: string
+
+    @Column("datemultirange")
+    datemultirange: string
 
     // -------------------------------------------------------------------------
     // Array Type
     // -------------------------------------------------------------------------
 
     @Column("int", { array: true })
-    array: number[];
+    array: number[]
 
     // -------------------------------------------------------------------------
     // TypeOrm Specific Types
     // -------------------------------------------------------------------------
 
     @Column("simple-array")
-    simpleArray: string[];
+    simpleArray: string[]
 
     @Column("simple-json")
-    simpleJson: { param: string };
+    simpleJson: { param: string }
 
     @Column("simple-enum", { enum: ["A", "B", "C"] })
-    simpleEnum: string;
+    simpleEnum: string
 }

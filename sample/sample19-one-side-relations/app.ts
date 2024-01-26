@@ -1,11 +1,11 @@
-import "reflect-metadata";
-import {ConnectionOptions, createConnection} from "../../src/index";
-import {Post} from "./entity/Post";
-import {Author} from "./entity/Author";
-import {Category} from "./entity/Category";
-import {PostMetadata} from "./entity/PostMetadata";
+import "reflect-metadata"
+import { DataSource, DataSourceOptions } from "../../src/index"
+import { Post } from "./entity/Post"
+import { Author } from "./entity/Author"
+import { Category } from "./entity/Category"
+import { PostMetadata } from "./entity/PostMetadata"
 
-const options: ConnectionOptions = {
+const options: DataSourceOptions = {
     type: "mysql",
     host: "localhost",
     port: 3306,
@@ -14,62 +14,63 @@ const options: ConnectionOptions = {
     database: "test",
     logging: ["query", "error"],
     synchronize: true,
-    entities: [Post, Author, Category, PostMetadata]
-};
+    entities: [Post, Author, Category, PostMetadata],
+}
 
-createConnection(options).then(connection => {
+const dataSource = new DataSource(options)
+dataSource.initialize().then(
+    (dataSource) => {
+        let postRepository = dataSource.getRepository(Post)
+        let authorRepository = dataSource.getRepository(Author)
+        let categoryRepository = dataSource.getRepository(Category)
+        let metadataRepository = dataSource.getRepository(PostMetadata)
 
-    let postRepository = connection.getRepository(Post);
-    let authorRepository = connection.getRepository(Author);
-    let categoryRepository = connection.getRepository(Category);
-    let metadataRepository = connection.getRepository(PostMetadata);
+        let category1 = categoryRepository.create()
+        category1.name = "Hello category1"
 
-    let category1 = categoryRepository.create();
-    category1.name = "Hello category1";
+        let category2 = categoryRepository.create()
+        category2.name = "Bye category2"
 
-    let category2 = categoryRepository.create();
-    category2.name = "Bye category2";
-    
-    let author = authorRepository.create();
-    author.name = "Umed";
-    
-    let metadata = metadataRepository.create();
-    metadata.comment = "Metadata about post";
-    
-    let post = postRepository.create();
-    post.text = "Hello how are you?";
-    post.title = "hello";
-    post.author = author;
-    post.metadata = metadata;
-    post.categories = [category1, category2];
+        let author = authorRepository.create()
+        author.name = "Umed"
 
-    postRepository
-        .save(post)
-        .then(post => {
-            console.log("Post has been saved.");
-            console.log(post);
+        let metadata = metadataRepository.create()
+        metadata.comment = "Metadata about post"
 
-            console.log("Now lets load posts with all their relations:");
-            return postRepository.find({
-                join: {
-                    alias: "post",
-                    leftJoinAndSelect: {
-                        author: "post.author",
-                        metadata: "post.metadata",
-                        categories: "post.categories"
-                    }
-                }
-            });
+        let post = postRepository.create()
+        post.text = "Hello how are you?"
+        post.title = "hello"
+        post.author = author
+        post.metadata = metadata
+        post.categories = [category1, category2]
 
-            // let secondPost = postRepository.create();
-            // secondPost.text = "Second post";
-            // secondPost.title = "About second post";
-            // return authorRepository.save(author);
+        postRepository
+            .save(post)
+            .then((post) => {
+                console.log("Post has been saved.")
+                console.log(post)
 
-        }).then(post => {
-            console.log("Loaded posts: ", post);
-        })
-        /*    posts[0].title = "should be updated second post";
+                console.log("Now lets load posts with all their relations:")
+                return postRepository.find({
+                    join: {
+                        alias: "post",
+                        leftJoinAndSelect: {
+                            author: "post.author",
+                            metadata: "post.metadata",
+                            categories: "post.categories",
+                        },
+                    },
+                })
+
+                // let secondPost = postRepository.create();
+                // secondPost.text = "Second post";
+                // secondPost.title = "About second post";
+                // return authorRepository.save(author);
+            })
+            .then((post) => {
+                console.log("Loaded posts: ", post)
+            })
+            /*    posts[0].title = "should be updated second post";
 
         return author.posts.then(posts => {
                 return authorRepository.save(author);
@@ -88,15 +89,15 @@ createConnection(options).then(connection => {
             return postRepository.save(posts[0]);
         })
         .then(posts => {
-            console.log("Two post's author has been removed.");  
+            console.log("Two post's author has been removed.");
             console.log("Now lets check many-to-many relations");
-            
+
             let category1 = categoryRepository.create();
             category1.name = "Hello category1";
-            
+
             let category2 = categoryRepository.create();
             category2.name = "Bye category2";
-            
+
             let post = postRepository.create();
             post.title = "Post & Categories";
             post.text = "Post with many categories";
@@ -104,7 +105,7 @@ createConnection(options).then(connection => {
                 category1,
                 category2
             ]);
-            
+
             return postRepository.save(post);
         })
         .then(posts => {
@@ -121,9 +122,10 @@ createConnection(options).then(connection => {
                 return postRepository.save(posts[0]);
             });
         })*/
-        .then(posts => {
-            // console.log("One of the post category has been removed.");
-        })
-        .catch(error => console.log(error.stack));
-
-}, error => console.log("Cannot connect: ", error));
+            .then((posts) => {
+                // console.log("One of the post category has been removed.");
+            })
+            .catch((error) => console.log(error.stack))
+    },
+    (error) => console.log("Cannot connect: ", error),
+)

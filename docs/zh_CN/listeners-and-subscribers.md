@@ -1,13 +1,18 @@
 # 实体监听器和订阅者
-* [监听器](#监听器)
-  * [`@AfterLoad`](#afterload)
-  * [`@BeforeInsert`](#beforeinsert)
-  * [`@AfterInsert`](#afterinsert)
-  * [`@BeforeUpdate`](#beforeupdate)
-  * [`@AfterUpdate`](#afterupdate)
-  * [`@BeforeRemove`](#beforeremove)
-  * [`@AfterRemove`](#afterremove)
-* [订阅者](#订阅者)
+- [实体监听器和订阅者](#实体监听器和订阅者)
+  - [监听器](#监听器)
+    - [`@AfterLoad`](#afterload)
+    - [`@BeforeInsert`](#beforeinsert)
+    - [`@AfterInsert`](#afterinsert)
+    - [`@BeforeUpdate`](#beforeupdate)
+    - [`@AfterUpdate`](#afterupdate)
+    - [`@BeforeRemove`](#beforeremove)
+    - [`@AfterRemove`](#afterremove)
+    - [`@BeforeSoftRemove`](#beforesoftremove)
+    - [`@AfterSoftRemove`](#aftersoftremove)
+    - [`@BeforeRecover`](#beforerecover)
+    - [`@AfterRecover`](#afterrecover)
+  - [订阅者](#订阅者)
 
 ## 监听器
 
@@ -106,7 +111,7 @@ export class Post {
 
 ### `@AfterRemove`
 
-你可以在实体中定义一个具有任何名称的方法，并使用`@ AfterRemove`标记它，TypeORM 将在使用 repository/manager `remove`删除实体后调用它。
+你可以在实体中定义一个具有任何名称的方法，并使用`@AfterRemove`标记它，TypeORM 将在使用 repository/manager `remove`删除实体后调用它。
 例如：
 
 ```typescript
@@ -115,6 +120,66 @@ export class Post {
   @AfterRemove()
   updateStatus() {
     this.status = "removed";
+  }
+}
+```
+
+### `@BeforeSoftRemove`
+
+你可以在实体中定义具有任何名称的方法，并使用`@BeforeSoftRemove`标记它，并且 TypeORM 将在使用 repository/manager `softRemove`删除实体之前调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+  @BeforeSoftRemove()
+  updateStatus() {
+    this.status = "soft-removed";
+  }
+}
+```
+
+### `@AfterSoftRemove`
+
+你可以在实体中定义一个具有任何名称的方法，并使用`@AfterSoftRemove`标记它，TypeORM 将在使用 repository/manager `softRemove`删除实体后调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+  @AfterSoftRemove()
+  updateStatus() {
+    this.status = "soft-removed";
+  }
+}
+```
+
+### `@BeforeRecover`
+
+你可以在实体中定义具有任何名称的方法，并使用`@BeforeRecover`标记它，并且 TypeORM 将在使用 repository/manager `recover`删除实体之前调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+  @BeforeRecover()
+  updateStatus() {
+    this.status = "recovered";
+  }
+}
+```
+
+### `@AfterRecover`
+
+你可以在实体中定义一个具有任何名称的方法，并使用`@AfterRecover`标记它，TypeORM 将在使用 repository/manager `recover`删除实体后调用它。
+例如：
+
+```typescript
+@Entity()
+export class Post {
+  @AfterRecover()
+  updateStatus() {
+    this.status = "recovered";
   }
 }
 ```

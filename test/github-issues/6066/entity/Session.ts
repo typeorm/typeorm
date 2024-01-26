@@ -1,11 +1,9 @@
-import {Entity, PrimaryColumn} from "../../../../src";
+import { Entity, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class Session {
-
     @PrimaryColumn({
-        comment: "That's the way the cookie crumbles"
+        comment: "That's the way the cookie crumbles",
     })
-    cookie: string = "";
-
+    cookie: string = ""
 }
