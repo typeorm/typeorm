@@ -115,12 +115,12 @@
     "type": "oracle",
     "host": "typeorm-oracle",
     "port": 1521,
-    "sid": "XE",
-    "username": "system",
+    "serviceName": "XEPDB1",
+    "username": "typeorm",
     "password": "oracle",
     "logging": false,
     "extra": {
-      "connectString": "typeorm-oracle:1521/XE"
+      "connectString": "typeorm-oracle:1521/XEPDB1"
     }
   }
 ]

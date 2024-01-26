@@ -601,6 +601,11 @@ export class PostgresQueryRunner
                 downQueries.push(this.dropIndexSql(table, index))
             })
         }
+        
+        if (table.comment) {
+            upQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS '" + table.comment + "'"));
+            downQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS NULL"));
+        }
 
         await this.executeQueries(upQueries, downQueries)
     }
@@ -3276,10 +3281,14 @@ export class PostgresQueryRunner
         const currentSchema = await this.getCurrentSchema()
         const currentDatabase = await this.getCurrentDatabase()
 
-        const dbTables: { table_schema: string; table_name: string }[] = []
+        const dbTables: {
+            table_schema: string
+            table_name: string
+            table_comment: string
+        }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables"`
+            const tablesSql = `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
@@ -3292,7 +3301,7 @@ export class PostgresQueryRunner
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "table_schema", "table_name" FROM "information_schema"."tables" WHERE ` +
+                `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
                 tablesCondition
             dbTables.push(...(await this.query(tablesSql)))
         }
@@ -3416,6 +3425,7 @@ export class PostgresQueryRunner
                 const schema = getSchemaFromKey(dbTable, "table_schema")
                 table.database = currentDatabase
                 table.schema = dbTable["table_schema"]
+                table.comment = dbTable["table_comment"]
                 table.name = this.driver.buildTableName(
                     dbTable["table_name"],
                     schema,
@@ -4287,9 +4297,9 @@ export class PostgresQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE ${index.isUnique ? "UNIQUE " : ""}${
-                index.isConcurrent ? "CONCURRENTLY " : ""
-            }INDEX "${index.name}" ON ${this.escapePath(table)} ${
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
+                index.isConcurrent ? " CONCURRENTLY" : ""
+            } "${index.name}" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
@@ -4318,7 +4328,7 @@ export class PostgresQueryRunner
         table: Table | View,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         const concurrent = InstanceChecker.isTableIndex(indexOrName)
@@ -4328,12 +4338,12 @@ export class PostgresQueryRunner
         return schema
             ? new Query(
                   `DROP INDEX ${
-                      concurrent ? "CONCURRENTLY" : ""
+                      concurrent ? "CONCURRENTLY " : ""
                   }"${schema}"."${indexName}"`,
               )
             : new Query(
                   `DROP INDEX ${
-                      concurrent ? "CONCURRENTLY" : ""
+                      concurrent ? "CONCURRENTLY " : ""
                   }"${indexName}"`,
               )
     }
@@ -4721,12 +4731,43 @@ export class PostgresQueryRunner
     /**
      * Change table comment.
      */
-    changeTableComment(
+    async changeTableComment(
         tableOrName: Table | string,
-        comment?: string,
+        newComment?: string,
     ): Promise<void> {
-        throw new TypeORMError(
-            `postgres driver does not support change table comment.`,
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        newComment = this.escapeComment(newComment)
+        const comment = this.escapeComment(table.comment)
+        
+        if (newComment === comment) {
+            return
+        }
+
+        const newTable = table.clone()
+
+        upQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(
+                    newTable,
+                )} IS ${newComment}`,
+            ),
         )
+
+        downQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(table)} IS ${comment}`,
+            ),
+        )
+
+        await this.executeQueries(upQueries, downQueries)
+
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
     }
 }

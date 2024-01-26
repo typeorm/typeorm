@@ -57,10 +57,6 @@ Install all TypeORM dependencies by running this command:
 npm install
 ```
 
-During installation, you may have some problems with some dependencies.
-For example to properly install oracle driver you need to follow all instructions from
- [node-oracle documentation](https://github.com/oracle/node-oracledb).
-
 ## ORM config
 
 To create an initial `ormconfig.json` file, run the following command:
@@ -174,41 +170,3 @@ in the root of the project. Once all images are fetched and run you can run test
 
 - The docker image of mssql-server needs at least 3.25GB of RAM.
 - Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
-
-### Oracle XE
-
-In order to run tests on Oracle XE locally, we need to start 2 docker containers:
-
-- a container with Oracle XE database
-- a container with typeorm and its tests
-
-#### 1. Booting Oracle XE database
-
-Execute in shell the next command:
-
-```shell
-docker-compose up -d oracle
-```
-
-It will start an oracle instance only.
-The instance will be run in background,
-therefore, we need to stop it later on.
-
-#### 2. Booting typeorm for Oracle
-
-Execute in shell the next command:
-
-```shell
-docker-compose -f docker-compose.oracle.yml up
-```
-
-it will start a nodejs instance which builds typeorm and executes unit tests.
-The instance exits after the run.
-
-#### 3. Shutting down Oracle XE database
-
-Execute in shell the next command:
-
-```shell
-docker-compose down
-```
