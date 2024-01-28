@@ -1,29 +1,14 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { AbstractSqliteConnectionOptions } from "../sqlite-abstract/AbstractSqliteConnectionOptions"
 
 /**
  * Sqlite-specific connection options.
  */
-export interface SqliteConnectionOptions extends BaseDataSourceOptions {
+export interface SqliteConnectionOptions
+    extends AbstractSqliteConnectionOptions {
     /**
      * Database type.
      */
     readonly type: "sqlite"
-
-    /**
-     * Storage type or path to the storage.
-     */
-    readonly database: string
-
-    /**
-     * The driver object
-     * This defaults to require("sqlite3")
-     */
-    readonly driver?: any
-
-    /**
-     * Encryption key for for SQLCipher.
-     */
-    readonly key?: string
 
     /**
      * In your SQLite application when you perform parallel writes its common to face SQLITE_BUSY error.
@@ -39,20 +24,11 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
     readonly busyErrorRetry?: number
 
     /**
-     * Enables WAL mode. By default its disabled.
-     *
-     * @see https://www.sqlite.org/wal.html
-     */
-    readonly enableWAL?: boolean
-
-    /**
      * Specifies the open file flags. By default its undefined.
      * @see https://www.sqlite.org/c3ref/c_open_autoproxy.html
      * @see https://github.com/TryGhost/node-sqlite3/blob/master/test/open_close.test.js
      */
     readonly flags?: number
-
-    readonly poolSize?: never
 
     /**
      * Query or change the setting of the busy timeout.

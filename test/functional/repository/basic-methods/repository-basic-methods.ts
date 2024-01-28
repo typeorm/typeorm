@@ -392,7 +392,9 @@ describe("repository > basic methods", () => {
                 connections
                     .filter(
                         (c) =>
-                            c.name === "sqlite" || c.name === "better-sqlite3",
+                            c.name === "sqlite" ||
+                            c.name === "better-sqlite3" ||
+                            c.name === "libsql",
                     )
                     .map(async (connection) => {
                         if (

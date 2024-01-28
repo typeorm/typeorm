@@ -20,6 +20,7 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
                     "sqlite",
                     "better-sqlite3",
                     "mssql",
+                    "libsql",
                 ],
                 schemaCreate: true,
                 dropSchema: true,

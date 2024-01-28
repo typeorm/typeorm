@@ -21,7 +21,7 @@
 
 ## 常用的连接选项
 
-- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite", "better-sqlite3"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
+- `type` - 数据库类型。你必须指定要使用的数据库引擎。该值可以是"mysql"，"postgres"，"mariadb"，"sqlite", "better-sqlite3"，"libsql"，"cordova"，"nativescript"，"oracle"，"mssql"，"mongodb"，"sqljs"，"react-native"。此选项是**必需**的。
 
 - `name` - 连接名。 在使用 `getConnection(name: string)`
   或 `ConnectionManager.get(name: string)`时候需要用到。不同连接的连接名称不能相同，它们都必须是唯一的。如果没有给出连接名称，那么它将被设置为"default"。
@@ -373,9 +373,9 @@
 
 - `logger` - 指定客户记录器机制，可用于使用你的应用程序级别记录器进行记录。
 
-- `authMechanism` - 设置MongoDB用于验证连接的身份验证机制。 
+- `authMechanism` - 设置MongoDB用于验证连接的身份验证机制。
 
-- `directConnection` - 指定是否强制将所有操作分派到指定的主机。 
+- `directConnection` - 指定是否强制将所有操作分派到指定的主机。
 
 > 注： 由于译者对MongoDB理解不够深入，故一些翻译直接使用了机翻，因此会有些词不达意，如有更好的翻译选项，请提交PR进行完善。
 

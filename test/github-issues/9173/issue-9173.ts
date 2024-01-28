@@ -21,6 +21,7 @@ describe("github issues > #9173 missing typeorm_metadata", () => {
                     "mysql",
                     "postgres",
                     "better-sqlite3",
+                    "libsql",
                 ],
             })),
     )

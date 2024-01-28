@@ -19,6 +19,7 @@ describe("github issues > #5407 Wrong migration created because of default colum
                     "better-sqlite3",
                     "cockroachdb",
                     "sqlite",
+                    "libsql",
                 ],
                 schemaCreate: false,
                 dropSchema: true,

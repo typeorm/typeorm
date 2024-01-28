@@ -46,6 +46,13 @@
   },
   {
     "skip": false,
+    "name": "libsql",
+    "type": "libsql",
+    "database": "temp/libsqldb.db",
+    "logging": false
+  },
+  {
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",

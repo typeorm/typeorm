@@ -90,9 +90,11 @@
     "oracle",
     "oracle-orm",
     "cloud-spanner",
-    "cloud-spanner-orm"
+    "cloud-spanner-orm",
+    "libsql"
   ],
   "devDependencies": {
+    "@libsql/client": "^0.4.2",
     "@tsconfig/node16": "^16.1.1",
     "@types/app-root-path": "^1.2.4",
     "@types/chai": "^4.3.4",
@@ -148,6 +150,7 @@
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
+    "@libsql/client": "^0.4.2",
     "@google-cloud/spanner": "^5.18.0",
     "@sap/hana-client": "^2.12.25",
     "better-sqlite3": "^7.1.2 || ^8.0.0 || ^9.0.0",
@@ -167,6 +170,9 @@
     "typeorm-aurora-data-api-driver": "^2.0.0"
   },
   "peerDependenciesMeta": {
+    "@libsql/client": {
+      "optional": true
+    },
     "@google-cloud/spanner": {
       "optional": true
     },

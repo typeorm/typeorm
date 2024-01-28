@@ -13,7 +13,7 @@ describe("github issues > #8430 sqlite temporary tables do not honor withoutRowi
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite", "better-sqlite3"],
+                enabledDrivers: ["sqlite", "better-sqlite3", "libsql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

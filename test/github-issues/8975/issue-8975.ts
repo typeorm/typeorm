@@ -16,6 +16,7 @@ describe("cli init command", () => {
         // "oracle", // as always oracle have issues: dependency installation doesn't work on mac m1 due to missing oracle binaries for m1
         "mssql",
         "mongodb",
+        "libsql",
     ]
     const testProjectName = Date.now() + "TestProject"
     const builtSrcDirectory = "build/compiled/src"

@@ -1,29 +1,14 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { AbstractSqliteConnectionOptions } from "../sqlite-abstract/AbstractSqliteConnectionOptions"
 
 /**
  * Sqlite-specific connection options.
  */
-export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
+export interface BetterSqlite3ConnectionOptions
+    extends AbstractSqliteConnectionOptions {
     /**
      * Database type.
      */
     readonly type: "better-sqlite3"
-
-    /**
-     * Storage type or path to the storage.
-     */
-    readonly database: string
-
-    /**
-     * The driver object
-     * This defaults to require("better-sqlite3")
-     */
-    readonly driver?: any
-
-    /**
-     * Encryption key for for SQLCipher.
-     */
-    readonly key?: string
 
     /**
      * Cache size of sqlite statement to speed up queries.
@@ -67,13 +52,4 @@ export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
      * Relative or absolute path to the native addon (better_sqlite3.node).
      */
     readonly nativeBinding?: string
-
-    readonly poolSize?: never
-
-    /**
-     * Enables WAL mode. By default its disabled.
-     *
-     * @see https://www.sqlite.org/wal.html
-     */
-    readonly enableWAL?: boolean
 }

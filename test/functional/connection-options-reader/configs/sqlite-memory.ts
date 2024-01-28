@@ -14,4 +14,14 @@ module.exports = [
         name: "memory2",
         database: ":memory:",
     },
+    {
+        type: "libsql",
+        name: "libsql-file",
+        database: "test.libsql",
+    },
+    {
+        type: "libsql",
+        name: "libsql-memory",
+        database: ":memory:",
+    },
 ]
