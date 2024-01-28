@@ -22,6 +22,7 @@ describe("table-inheritance > single-table > database-option-inherited", () => {
                     "sqlite",
                     "better-sqlite3",
                     "sqljs",
+                    "libsql",
                 ],
             })),
     )

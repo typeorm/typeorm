@@ -23,6 +23,7 @@ describe("github issues > #1476 subqueries", () => {
                     "sqlite",
                     "better-sqlite3",
                     "sqljs",
+                    "libsql",
                 ],
             })),
     )

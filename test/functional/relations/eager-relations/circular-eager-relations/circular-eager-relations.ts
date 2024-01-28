@@ -2,6 +2,7 @@ import "reflect-metadata"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { EntityMetadataValidator } from "../../../../../src/metadata-builder/EntityMetadataValidator"
 import { ConnectionMetadataBuilder } from "../../../../../src/connection/ConnectionMetadataBuilder"
+import { DriverFactory } from "../../../../../src/driver/DriverFactory"
 import { expect } from "chai"
 
 describe("relations > eager relations > circular eager relations", () => {
@@ -18,6 +19,7 @@ describe("relations > eager relations > circular eager relations", () => {
         const connectionMetadataBuilder = new ConnectionMetadataBuilder(
             connection,
         )
+        connection.driver = await DriverFactory.create(connection)
         const entityMetadatas =
             await connectionMetadataBuilder.buildEntityMetadatas([
                 __dirname + "/entity/*{.js,.ts}",

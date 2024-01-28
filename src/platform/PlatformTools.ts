@@ -105,6 +105,12 @@ export class PlatformTools {
                     return require("better-sqlite3")
 
                 /**
+                 * libSQL
+                 */
+                case "libsql":
+                    return require("@libsql/client")
+
+                /**
                  * sqlite
                  */
                 case "sqlite3":

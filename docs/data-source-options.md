@@ -26,7 +26,7 @@ Different RDBMS-es have their own specific options.
 
 -   `type` - RDBMS type. You must specify what database engine you use.
     Possible values are:
-    "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "sqlite", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor".
+    "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "sqlite", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor", "libsql".
     This option is **required**.
 
 -   `extra` - Extra options to be passed to the underlying driver.

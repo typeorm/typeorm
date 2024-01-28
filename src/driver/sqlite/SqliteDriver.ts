@@ -1,5 +1,6 @@
 import mkdirp from "mkdirp"
 import path from "path"
+import type { sqlite3, Database as Sqlite3Database } from "sqlite3"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SqliteQueryRunner } from "./SqliteQueryRunner"
 import { PlatformTools } from "../../platform/PlatformTools"
@@ -27,7 +28,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * SQLite underlying library.
      */
-    sqlite: any
+    sqlite: sqlite3
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -132,26 +133,28 @@ export class SqliteDriver extends AbstractSqliteDriver {
             await this.createDatabaseDirectory(this.options.database)
         }
 
-        const databaseConnection: any = await new Promise((ok, fail) => {
-            if (this.options.flags === undefined) {
-                const connection = new this.sqlite.Database(
-                    this.options.database,
-                    (err: any) => {
-                        if (err) return fail(err)
-                        ok(connection)
-                    },
-                )
-            } else {
-                const connection = new this.sqlite.Database(
-                    this.options.database,
-                    this.options.flags,
-                    (err: any) => {
-                        if (err) return fail(err)
-                        ok(connection)
-                    },
-                )
-            }
-        })
+        const databaseConnection: Sqlite3Database = await new Promise(
+            (ok, fail) => {
+                if (this.options.flags === undefined) {
+                    const connection = new this.sqlite.Database(
+                        this.options.database,
+                        (err: any) => {
+                            if (err) return fail(err)
+                            ok(connection)
+                        },
+                    )
+                } else {
+                    const connection = new this.sqlite.Database(
+                        this.options.database,
+                        this.options.flags,
+                        (err: any) => {
+                            if (err) return fail(err)
+                            ok(connection)
+                        },
+                    )
+                }
+            },
+        )
 
         // Internal function to run a command on the connection and fail if an error occured.
         function run(line: string): Promise<void> {

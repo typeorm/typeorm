@@ -48,6 +48,8 @@ const getDriver = async (
             return (await import("./capacitor/CapacitorDriver")).CapacitorDriver
         case "spanner":
             return (await import("./spanner/SpannerDriver")).SpannerDriver
+        case "libsql":
+            return (await import("./libsql/LibSqlDriver")).LibSqlDriver
         default:
             const { MissingDriverError } = await import(
                 "../error/MissingDriverError"

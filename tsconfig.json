@@ -16,6 +16,7 @@
         "outDir": "build/compiled",
         "pretty": true,
         "sourceMap": true,
+        "incremental": true,
         "strictFunctionTypes": false,
         "strictPropertyInitialization": false,
         "stripInternal": true,

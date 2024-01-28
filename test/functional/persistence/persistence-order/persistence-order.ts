@@ -9,6 +9,7 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { ConnectionMetadataBuilder } from "../../../../src/connection/ConnectionMetadataBuilder"
 import { EntityMetadataValidator } from "../../../../src/metadata-builder/EntityMetadataValidator"
+import { DriverFactory } from "../../../../src/driver/DriverFactory"
 import { expect } from "chai"
 
 describe("persistence > order of persistence execution operations", () => {
@@ -23,6 +24,7 @@ describe("persistence > order of persistence execution operations", () => {
                 database: "test",
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })
+            connection.driver = await DriverFactory.create(connection)
             const connectionMetadataBuilder = new ConnectionMetadataBuilder(
                 connection,
             )

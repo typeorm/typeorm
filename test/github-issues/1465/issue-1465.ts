@@ -21,6 +21,7 @@ describe("github issues > #1465 save child and parent entity", () => {
                     "sqlite",
                     "better-sqlite3",
                     "sqljs",
+                    "libsql",
                 ],
             })),
     )

@@ -13,7 +13,7 @@ describe("better-sqlite3 driver > enable wal", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [],
-                enabledDrivers: ["better-sqlite3"],
+                enabledDrivers: ["sqlite", "better-sqlite3", "libsql"],
                 driverSpecific: {
                     enableWAL: true,
                 },

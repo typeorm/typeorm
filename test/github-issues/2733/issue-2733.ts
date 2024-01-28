@@ -15,7 +15,13 @@ describe("github issues > #2733 should correctly handle function calls with uper
             entities: [__dirname + "/entity/MSSQLDummy{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            enabledDrivers: ["mssql", "sqljs", "sqlite", "better-sqlite3"],
+            enabledDrivers: [
+                "mssql",
+                "sqljs",
+                "sqlite",
+                "better-sqlite3",
+                "libsql",
+            ],
         })
         await reloadTestingDatabases(connections)
         await Promise.all(

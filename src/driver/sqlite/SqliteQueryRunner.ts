@@ -1,3 +1,4 @@
+import type { Database as Sqlite3Database } from "sqlite3"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
@@ -73,7 +74,8 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
         return new Promise(async (ok, fail) => {
             try {
-                const databaseConnection = await this.connect()
+                const databaseConnection =
+                    (await this.connect()) as Sqlite3Database
                 this.driver.connection.logger.logQuery(query, parameters, this)
                 const queryStartTime = +new Date()
                 const isInsertQuery = query.startsWith("INSERT ")
@@ -82,9 +84,9 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
                 const execute = async () => {
                     if (isInsertQuery || isDeleteQuery || isUpdateQuery) {
-                        await databaseConnection.run(query, parameters, handler)
+                        databaseConnection.run(query, parameters, handler)
                     } else {
-                        await databaseConnection.all(query, parameters, handler)
+                        databaseConnection.all(query, parameters, handler)
                     }
                 }
 

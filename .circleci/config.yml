@@ -215,11 +215,11 @@ workflows:
           databases: "oracle"
           node-version: "16.20.0"
       - test:
-          name: test (sqlite better-sqlite3 sqljs) - Node v16
+          name: test (sqlite better-sqlite3 sqljs libsql) - Node v16
           requires:
             - lint
             - build
-          databases: "sqlite better-sqlite3 sqljs"
+          databases: "sqlite better-sqlite3 sqljs libsql"
           node-version: "16.20.0"
       - test:
           name: test (mongodb) - Node v16
