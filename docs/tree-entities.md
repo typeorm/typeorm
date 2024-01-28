@@ -12,6 +12,7 @@ To learn more about the hierarchy table take a look at [this awesome presentatio
 ## Adjacency list
 
 Adjacency list is a simple model with self-referencing.
+Note thet TreeRepository doesn't support Adjacency list.
 The benefit of this approach is simplicity,
 a drawback is that you can't load big trees all at once because of join limitations.
 To learn more about the benefits and use of Adjacency Lists look at [this article by Matthew Schinckel](http://schinckel.net/2014/09/13/long-live-adjacency-lists/).
