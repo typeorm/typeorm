@@ -709,11 +709,12 @@ export class ColumnMetadata {
                     if (Object.keys(map).length > 0)
                         return { [this.propertyName]: map }
                 } else {
-                    return {
-                        [this.propertyName]:
-                            this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
-                                entity[this.relationMetadata!.propertyName],
-                            ),
+                    const value =
+                        this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
+                            entity[this.relationMetadata!.propertyName],
+                        )
+                    if (value) {
+                        return { [this.propertyName]: value }
                     }
                 }
 
