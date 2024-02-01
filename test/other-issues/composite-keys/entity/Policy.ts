@@ -4,19 +4,12 @@ import { PolicyGroup } from "./PolicyGroup"
 
 @Entity()
 export class Policy {
-    @PrimaryColumn({
-        type: 'integer',
-        unsigned: true,
-    })
+    @PrimaryColumn()
     id: number
 
-    @OneToMany(() => PolicyGroup, (policyGroup) => policyGroup.policy, {
-        eager: false,
-    })
+    @OneToMany(() => PolicyGroup, (policyGroup) => policyGroup.policy)
     groups: PolicyGroup[]
 
-    @OneToMany(() => PolicyGroup, (policyGroup) => policyGroup.group, {
-        eager: false,
-    })
+    @OneToMany(() => PolicyGroup, (policyGroup) => policyGroup.group)
     policies: PolicyGroup[]
 }

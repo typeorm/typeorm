@@ -694,19 +694,28 @@ export class ColumnMetadata {
                 entity[this.relationMetadata.propertyName] &&
                 ObjectUtils.isObject(entity[this.relationMetadata.propertyName])
             ) {
-                const map = this.relationMetadata.joinColumns.reduce(
-                    (map, joinColumn) => {
-                        const value =
-                            joinColumn.referencedColumn!.getEntityValueMap(
+                if (this.relationMetadata.joinColumns.length > 1) {
+                    const map = this.relationMetadata.joinColumns.reduce(
+                        (map, joinColumn) => {
+                            const value =
+                                joinColumn.referencedColumn!.getEntityValueMap(
+                                    entity[this.relationMetadata!.propertyName],
+                                )
+                            if (value === undefined) return map
+                            return OrmUtils.mergeDeep(map, value)
+                        },
+                        {},
+                    )
+                    if (Object.keys(map).length > 0)
+                        return { [this.propertyName]: map }
+                } else {
+                    return {
+                        [this.propertyName]:
+                            this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
                                 entity[this.relationMetadata!.propertyName],
-                            )
-                        if (value === undefined) return map
-                        return OrmUtils.mergeDeep(map, value)
-                    },
-                    {},
-                )
-                if (Object.keys(map).length > 0)
-                    return { [this.propertyName]: map }
+                            ),
+                    }
+                }
 
                 return undefined
             } else {
@@ -714,8 +723,9 @@ export class ColumnMetadata {
                     entity[this.propertyName] !== undefined &&
                     (returnNulls === false ||
                         entity[this.propertyName] !== null)
-                )
+                ) {
                     return { [this.propertyName]: entity[this.propertyName] }
+                }
 
                 return undefined
             }

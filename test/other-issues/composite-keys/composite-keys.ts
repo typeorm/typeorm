@@ -76,14 +76,14 @@ describe("other issues > composite keys doesn't work as expected in 0.3 compared
     it("should properly save new relation items - Drata", async () => {
         for (const connection of connections) {
             let policy = new Policy()
-            policy.id = 1;
+            policy.id = 1
 
-            const group = new Group();
-            group.id = 1;
+            const group = new Group()
+            group.id = 1
 
-            let policyGroup = new PolicyGroup();
-            policyGroup.policy = policy;
-            policyGroup.group = group;
+            let policyGroup = new PolicyGroup()
+            policyGroup.policy = policy
+            policyGroup.group = group
 
             await connection.manager.save(policy)
             await connection.manager.save(group)
@@ -92,8 +92,11 @@ describe("other issues > composite keys doesn't work as expected in 0.3 compared
             /**
              * Query everything back out to start fresh
              */
-            policy = await connection.manager.findOneBy(Policy, {}) as Policy
-            policyGroup = await connection.manager.findOneBy(PolicyGroup, {}) as PolicyGroup
+            policy = await connection.manager.findOneByOrFail(Policy, {})
+            policyGroup = await connection.manager.findOneByOrFail(
+                PolicyGroup,
+                {},
+            )
 
             policy.groups = [policyGroup]
 
