@@ -321,6 +321,8 @@ export abstract class BaseQueryRunner {
             foundTable.justCreated = changedTable.justCreated
             foundTable.engine = changedTable.engine
             foundTable.comment = changedTable.comment
+            foundTable.autoIncrementStartFrom =
+                changedTable.autoIncrementStartFrom
         }
     }
 
