@@ -30,5 +30,5 @@ export function filepathToName(filepath: string): string {
  * Cross platform isAbsolute
  */
 export function isAbsolute(filepath: string): boolean {
-    return !!filepath.match(/^(?:[a-z]:|[\\]|[\/])/i)
+    return !!filepath.match(/^(?:[a-z]:|[\\]|[/])/i)
 }

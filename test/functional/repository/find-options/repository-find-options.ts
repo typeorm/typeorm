@@ -272,7 +272,7 @@ describe("repository > find options > comment", () => {
                 const lines = logs.toString().split("\n")
                 const lastLine = lines[lines.length - 2] // last line is blank after newline
                 // remove timestamp and prefix
-                const sql = lastLine.replace(/^.*\[QUERY\]\: /, "")
+                const sql = lastLine.replace(/^.*\[QUERY\]: /, "")
                 expect(sql).to.match(/^\/\* This is a query comment. \*\//)
             }),
         ))

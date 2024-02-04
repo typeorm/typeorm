@@ -140,6 +140,7 @@ export class Thing {
 ## Concurrent creation
 
 In order to avoid having to obtain an access exclusive lock when creating and dropping indexes in postgres, you may create them using the CONCURRENTLY modifier.
+If you want use the concurrent option, you need set `migrationsTransactionMode: none` between data source options.
 
 Typeorm supports generating SQL with this option if when the concurrent option is specified on the index.
 

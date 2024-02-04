@@ -459,7 +459,10 @@ export class InsertQueryBuilder<
         // add VALUES expression
         if (valuesExpression) {
             if (
-                this.connection.driver.options.type === "oracle" &&
+                (
+                    this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "sap"
+                ) &&
                 this.getValueSets().length > 1
             ) {
                 query += ` ${valuesExpression}`
@@ -516,9 +519,7 @@ export class InsertQueryBuilder<
                             indexPredicate &&
                             DriverUtils.isPostgresFamily(this.connection.driver)
                         ) {
-                            conflictTarget += ` WHERE ( ${this.escape(
-                                indexPredicate,
-                            )} )`
+                            conflictTarget += ` WHERE ( ${indexPredicate} )`
                         }
                     } else if (conflict) {
                         conflictTarget += ` ON CONSTRAINT ${this.escape(
@@ -530,7 +531,7 @@ export class InsertQueryBuilder<
 
                     if (Array.isArray(overwrite)) {
                         updatePart.push(
-                            ...overwrite?.map(
+                            ...overwrite.map(
                                 (column) =>
                                     `${this.escape(
                                         column,

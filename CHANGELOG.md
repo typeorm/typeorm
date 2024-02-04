@@ -1,3 +1,27 @@
+## [0.3.20](https://github.com/typeorm/typeorm/compare/0.3.19...0.3.20) (2024-01-26)
+
+### Bug Fixes
+
+-   added missing parentheses in where conditions ([#10650](https://github.com/typeorm/typeorm/issues/10650)) ([4624930](https://github.com/typeorm/typeorm/commit/46249303be03adea74266837b8e6eb49227f476e)), closes [#10534](https://github.com/typeorm/typeorm/issues/10534)
+-   don't escape indexPredicate ([#10618](https://github.com/typeorm/typeorm/issues/10618)) ([dd49a25](https://github.com/typeorm/typeorm/commit/dd49a254dc475eedfe72378be2670cc6a61aacf1))
+-   fallback runMigrations transaction to DataSourceOptions ([#10601](https://github.com/typeorm/typeorm/issues/10601)) ([0cab0dd](https://github.com/typeorm/typeorm/commit/0cab0dd7308d2cb8ba5600ce46899bd14a062565))
+-   hangup when load relations with relationLoadStrategy: query ([#10630](https://github.com/typeorm/typeorm/issues/10630)) ([54d8d9e](https://github.com/typeorm/typeorm/commit/54d8d9efe9bb41671f44f41ea6372b7b5d2ad0f1)), closes [#10481](https://github.com/typeorm/typeorm/issues/10481)
+-   include asExpression columns in returning clause ([#10632](https://github.com/typeorm/typeorm/issues/10632)) ([f232ba7](https://github.com/typeorm/typeorm/commit/f232ba780872660fbfd2467b52ef5b97cb6f2935)), closes [#8450](https://github.com/typeorm/typeorm/issues/8450) [#8450](https://github.com/typeorm/typeorm/issues/8450)
+-   multiple insert in SAP Hana ([#10597](https://github.com/typeorm/typeorm/issues/10597)) ([1b34c9a](https://github.com/typeorm/typeorm/commit/1b34c9a49e99fa937dd9894ddb7e6bba85c08a42))
+-   resolve issue CREATE/DROP Index concurrently ([#10634](https://github.com/typeorm/typeorm/issues/10634)) ([8aa8690](https://github.com/typeorm/typeorm/commit/8aa8690f94c12c9740bf746b2ec55def13941d35)), closes [#10626](https://github.com/typeorm/typeorm/issues/10626)
+-   type inferencing of EntityManager#create ([#10569](https://github.com/typeorm/typeorm/issues/10569)) ([99d8249](https://github.com/typeorm/typeorm/commit/99d8249e450f7e649685105b372e265f41a0ee47))
+
+### Features
+
+-   add json type support for Oracle ([#10611](https://github.com/typeorm/typeorm/issues/10611)) ([7e85460](https://github.com/typeorm/typeorm/commit/7e85460f10b0c6f57dda9d532fe925ebf0711fe9))
+-   add postgres multirange column types ([#10627](https://github.com/typeorm/typeorm/issues/10627)) ([d0b7670](https://github.com/typeorm/typeorm/commit/d0b76703cc1c7919f5c6a974ad0889c331d78672)), closes [#10556](https://github.com/typeorm/typeorm/issues/10556)
+-   add table comment for postgres ([#10613](https://github.com/typeorm/typeorm/issues/10613)) ([4493db4](https://github.com/typeorm/typeorm/commit/4493db4d1b02eaa2c3f997ff256057d01cc48323))
+
+### Reverts
+
+-   Revert "fix: prevent using absolute table path in migrations unless required (#10123)" (#10624) ([8f371f2](https://github.com/typeorm/typeorm/commit/8f371f23978600c36a2edf8222fec1024ae09c2e)), closes [#10123](https://github.com/typeorm/typeorm/issues/10123) [#10624](https://github.com/typeorm/typeorm/issues/10624)
+-   revert "feat: nullable embedded entities (#10289)" (#10614) ([15de46f](https://github.com/typeorm/typeorm/commit/15de46fd5d31cd742477821e7a32bc98c9616d30)), closes [#10289](https://github.com/typeorm/typeorm/issues/10289) [#10614](https://github.com/typeorm/typeorm/issues/10614)
+
 ## [0.3.19](https://github.com/typeorm/typeorm/compare/0.3.18...0.3.19) (2024-01-03)
 
 ### Bug Fixes

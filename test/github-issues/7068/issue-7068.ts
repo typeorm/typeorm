@@ -1,4 +1,4 @@
-import "reflect-metadata"
+import "../../utils/test-setup"
 import { Category } from "./entity/Category"
 import { DataSource } from "../../../src/data-source/DataSource"
 import {
@@ -47,15 +47,17 @@ describe("github issues > #7068", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const names1 = a11Parent.map((child) => child.name)
+                names1.length.should.be.equal(2)
+                names1.should.deep.include("a1")
+                names1.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                const names2 = a1Children.map((child) => child.name)
+                names2.length.should.be.equal(3)
+                names2.should.deep.include("a1")
+                names2.should.deep.include("a11")
+                names2.should.deep.include("a12")
             }),
         ))
 
@@ -87,15 +89,17 @@ describe("github issues > #7068", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const names1 = a11Parent.map((child) => child.name)
+                names1.length.should.be.equal(2)
+                names1.should.deep.include("a1")
+                names1.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                const names2 = a1Children.map((child) => child.name)
+                names2.length.should.be.equal(3)
+                names2.should.deep.include("a1")
+                names2.should.deep.include("a11")
+                names2.should.deep.include("a12")
             }),
         ))
 
@@ -133,9 +137,10 @@ describe("github issues > #7068", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const names1 = a11Parent.map((child) => child.name)
+                names1.length.should.be.equal(2)
+                names1.should.deep.include("a1")
+                names1.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames = a1Children.map((child) => child.name)

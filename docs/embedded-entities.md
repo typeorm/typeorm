@@ -165,26 +165,3 @@ All columns defined in the `Name` entity will be merged into `user`, `employee` 
 This way code duplication in the entity classes is reduced.
 You can use as many columns (or relations) in embedded classes as you need.
 You even can have nested embedded columns inside embedded classes.
-
-## Nullable embedded entities
-
-When all its columns values are `null`, the embedded entity itself is considered `null`.
-Saving the embedded entity as `null` will set all its columns to `null`
-
-```typescript
-export class Name {
-    @Column({ nullable: true })
-    first: string | null
-
-    @Column({ nullable: true })
-    last: string | null
-}
-
-const student = new Student()
-student.faculty = 'Faculty'
-student.name = { first: null, last: null } // same as student.name = null
-await dataSource.manager.save(student)
-
-// this will return the student name as `null`
-await dataSource.getRepository(Student).findOne()
-```

@@ -57,14 +57,18 @@ services:
     ports:
       - "26257:26257"
 
+  # oracle
   oracle:
-    image: imnotjames/oracle-xe:18
+    build:
+      context: docker/oracle
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
-    networks:
-      - default
-      - typeorm
+    #volumes:
+     # - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: [ "CMD", "/opt/oracle/checkDBStatus.sh" ]
+      interval: 2s
 
   # google cloud spanner
   spanner:
@@ -118,6 +122,3 @@ services:
 #volumes:
 #  volume-hana-xe:
 #  mysql8_volume:
-
-networks:
-  typeorm:

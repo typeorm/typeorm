@@ -69,14 +69,14 @@
     }
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "oracle",
     "type": "oracle",
     "host": "localhost",
-    "username": "system",
+    "username": "typeorm",
     "password": "oracle",
     "port": 1521,
-    "sid": "xe.oracle.docker",
+    "serviceName": "XEPDB1",
     "logging": false
   },
   {

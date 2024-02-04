@@ -394,7 +394,9 @@ export class DataSource {
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
-            (options && options.transaction) || "all"
+            options?.transaction ||
+            this.options?.migrationsTransactionMode ||
+            "all"
         migrationExecutor.fake = (options && options.fake) || false
 
         const successMigrations =
