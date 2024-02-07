@@ -628,7 +628,7 @@ SELECT * FROM "post" WHERE NOT("likes" > 10) AND NOT("title" = 'About #2')
 -   `Or`
 
 ```ts
-import { Not, MoreThan, ILike } from "typeorm"
+import { Or, Equal, ILike } from "typeorm"
 
 const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: Or(Equal("About #2"), ILike("About%")),
