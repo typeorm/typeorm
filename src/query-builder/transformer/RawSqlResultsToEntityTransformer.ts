@@ -152,7 +152,7 @@ export class RawSqlResultsToEntityTransformer {
             )
             if (discriminatorMetadata) metadata = discriminatorMetadata
         }
-        let entity: any = metadata.create(this.queryRunner, {
+        const entity: any = metadata.create(this.queryRunner, {
             fromDeserializer: true,
             pojo: this.expressionMap.options.indexOf("create-pojo") !== -1,
         })
@@ -247,8 +247,8 @@ export class RawSqlResultsToEntityTransformer {
                 entity,
                 this.driver.prepareHydratedValue(value, column),
             )
-            if (value !== null)
-                // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
+            if (value !== null && !column.isVirtualProperty)
+                // we don't mark it as has data if we will have only nulls or virtual properties in our object- we don't need such object
                 hasData = true
         })
         return hasData
