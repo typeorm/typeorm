@@ -17,6 +17,13 @@ describe("github issues > #10638 Validate that virtual columns are being returne
                 entities: [User],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: [
+                    "aurora-mysql",
+                    "aurora-postgres",
+                    "mysql",
+                    "postgres",
+                    "mssql",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
