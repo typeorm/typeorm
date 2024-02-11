@@ -27,10 +27,7 @@ describe("github issues > #10638 Validate that virtual columns are being returne
             dataSources.map(async (dataSource) => {
                 const repository = dataSource.getRepository(User)
 
-                await repository.upsert(
-                    { id: 1, name: "admin" },
-                    { conflictPaths: ["id"] },
-                )
+                await repository.save({ id: 1, name: "admin" })
                 const userAdmins = await repository.findOne({
                     where: { name: "admin" },
                 })
