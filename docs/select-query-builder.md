@@ -29,6 +29,8 @@
 -   [Using subqueries](#using-subqueries)
 -   [Hidden Columns](#hidden-columns)
 -   [Querying Deleted rows](#querying-deleted-rows)
+-   [Common table expressions](#common-table-expressions)
+-   [Time Travel Queries](#time-travel-queries)
 -   [Debugging](#debugging)
 
 ## What is `QueryBuilder`
@@ -74,6 +76,7 @@ When using the `QueryBuilder`, you need to provide unique parameters in your `WH
 
 ```TypeScript
 const result = await dataSource
+    .getRepository(User)
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')
@@ -85,6 +88,7 @@ const result = await dataSource
 
 ```TypeScript
 const result = await dataSource
+    .getRepository(User)
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')

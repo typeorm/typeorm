@@ -303,7 +303,7 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         filter: Filter<Document>,
         options?: FindOneAndDeleteOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         return this.getCollection(collectionName).findOneAndDelete(
             filter,
             options || {},
@@ -318,7 +318,7 @@ export class MongoQueryRunner implements QueryRunner {
         filter: Filter<Document>,
         replacement: Document,
         options?: FindOneAndReplaceOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         return this.getCollection(collectionName).findOneAndReplace(
             filter,
             replacement,
@@ -334,7 +334,7 @@ export class MongoQueryRunner implements QueryRunner {
         filter: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
-    ): Promise<Document> {
+    ): Promise<Document | null> {
         return this.getCollection(collectionName).findOneAndUpdate(
             filter,
             update,
@@ -1262,5 +1262,17 @@ export class MongoQueryRunner implements QueryRunner {
         return this.databaseConnection
             .db(this.connection.driver.database!)
             .collection(collectionName)
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `mongodb driver does not support change table comment.`,
+        )
     }
 }

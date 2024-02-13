@@ -20,7 +20,6 @@ describe("commands - migration generate", () => {
     let connectionOptions: DataSourceOptions[]
     let createFileStub: sinon.SinonStub
     let loadDataSourceStub: sinon.SinonStub
-    let timerStub: sinon.SinonFakeTimers
     let getConnectionOptionsStub: sinon.SinonStub
     let migrationGenerateCommand: MigrationGenerateCommand
     let connectionOptionsReader: ConnectionOptionsReader
@@ -62,12 +61,9 @@ describe("commands - migration generate", () => {
         migrationGenerateCommand = new MigrationGenerateCommand()
         createFileStub = sinon.stub(CommandUtils, "createFile")
         loadDataSourceStub = sinon.stub(CommandUtils, "loadDataSource")
-
-        timerStub = sinon.useFakeTimers(1610975184784)
     })
 
     after(async () => {
-        timerStub.restore()
         createFileStub.restore()
         loadDataSourceStub.restore()
     })
@@ -91,6 +87,8 @@ describe("commands - migration generate", () => {
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
                     dataSource: "dummy-path",
+                    timestamp: "1610975184784",
+                    exitProcess: false,
                 }),
             )
 
@@ -98,7 +96,7 @@ describe("commands - migration generate", () => {
             sinon.assert.calledWith(
                 createFileStub,
                 sinon.match(/test-directory.*test-migration.ts/),
-                sinon.match(resultsTemplates.control),
+                sinon.match(resultsTemplates[connectionOption.type]?.control),
             )
 
             getConnectionOptionsStub.restore()
@@ -124,7 +122,9 @@ describe("commands - migration generate", () => {
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
                     dataSource: "dummy-path",
+                    timestamp: "1610975184784",
                     outputJs: true,
+                    exitProcess: false,
                 }),
             )
 
@@ -132,7 +132,9 @@ describe("commands - migration generate", () => {
             sinon.assert.calledWith(
                 createFileStub,
                 sinon.match(/test-directory.*test-migration.js/),
-                sinon.match(resultsTemplates.javascript),
+                sinon.match(
+                    resultsTemplates[connectionOption.type]?.javascript,
+                ),
             )
 
             getConnectionOptionsStub.restore()
@@ -159,6 +161,7 @@ describe("commands - migration generate", () => {
                 testHandlerArgs({
                     dataSource: "dummy-path",
                     timestamp: "1641163894670",
+                    exitProcess: false,
                 }),
             )
 
@@ -166,7 +169,7 @@ describe("commands - migration generate", () => {
             sinon.assert.calledWith(
                 createFileStub,
                 sinon.match("test-directory/1641163894670-test-migration.ts"),
-                sinon.match(resultsTemplates.timestamp),
+                sinon.match(resultsTemplates[connectionOption.type]?.timestamp),
             )
 
             getConnectionOptionsStub.restore()

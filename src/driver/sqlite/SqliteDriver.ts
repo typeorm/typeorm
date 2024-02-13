@@ -35,7 +35,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
     constructor(connection: DataSource) {
         super(connection)
-
         this.connection = connection
         this.options = connection.options as SqliteConnectionOptions
         this.database = this.options.database

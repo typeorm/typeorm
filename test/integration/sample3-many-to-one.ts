@@ -200,6 +200,47 @@ describe("many-to-one", function () {
                 .getOne()
                 .should.eventually.eql(expectedDetails)
         })
+
+        it("should load post and its details with no hangup if query used", async function () {
+            if (!dataSource) return
+            const expectedPost = new Post()
+            expectedPost.id = savedPost.id
+            expectedPost.text = savedPost.text
+            expectedPost.title = savedPost.title
+            expectedPost.details = new PostDetails()
+            expectedPost.details!.id = savedPost.details!.id
+            expectedPost.details!.authorName = savedPost.details!.authorName
+            expectedPost.details!.comment = savedPost.details!.comment
+            expectedPost.details!.metadata = savedPost.details!.metadata
+
+            const findOne = () => postRepository.findOne({
+                where: {
+                    id: savedPost.id
+                },
+                relations: {
+                    details: true
+                },
+                relationLoadStrategy: "query"
+            })
+
+            const posts = await Promise.all([
+                findOne(),
+                findOne(),
+                findOne(),
+                findOne(),
+                findOne(),
+                findOne(),
+                findOne(),
+                findOne(),
+                findOne(),
+                findOne(),
+            ])
+
+            posts.forEach(post => {
+                expect(post).not.to.be.null
+                post!.should.eql(expectedPost)
+            })
+        })
     })
 
     describe("insert post and category (one-side relation)", function () {

@@ -225,6 +225,11 @@ export class CockroachDriver implements Driver {
     }
 
     /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "$"
+
+    /**
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
@@ -509,11 +514,16 @@ export class CockroachDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
                     return full
+                }
+
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
                 let value: any = parameters[key]
@@ -535,6 +545,7 @@ export class CockroachDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -689,12 +700,15 @@ export class CockroachDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
             defaultValue !== undefined
         ) {
-            if (defaultValue === null) return "NULL"
             if (columnMetadata.isArray) {
                 const enumName = this.buildEnumName(columnMetadata)
                 let arrayValue = defaultValue
@@ -741,10 +755,6 @@ export class CockroachDriver implements Driver {
 
         if (ObjectUtils.isObject(defaultValue) && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`
-        }
-
-        if (defaultValue === undefined || defaultValue === null) {
-            return undefined
         }
 
         return `${defaultValue}`
@@ -873,10 +883,19 @@ export class CockroachDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("table:", columnMetadata.entityMetadata.tableName)
+            // console.log("name:", {
+            //     tableColumn: tableColumn.name,
+            //     columnMetadata: columnMetadata.databaseName,
+            // })
+            // console.log("type:", {
+            //     tableColumn: tableColumn.type,
+            //     columnMetadata: this.normalizeType(columnMetadata),
+            // })
+            // console.log("length:", {
+            //     tableColumn: tableColumn.length,
+            //     columnMetadata: columnMetadata.length,
+            // })
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
@@ -886,7 +905,10 @@ export class CockroachDriver implements Driver {
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("asExpression:", {
+            //     tableColumn: (tableColumn.asExpression || "").trim(),
+            //     columnMetadata: (columnMetadata.asExpression || "").trim(),
+            // })
             // console.log("==========================================");
 
             return (
@@ -961,7 +983,7 @@ export class CockroachDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "$" + (index + 1)
+        return this.parametersPrefix + (index + 1)
     }
 
     // -------------------------------------------------------------------------

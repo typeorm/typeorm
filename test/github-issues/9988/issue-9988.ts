@@ -8,6 +8,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Product } from "./entity/product"
 import { Category } from "./entity/category"
+import { FindManyOptions } from "../../../src"
 
 describe("github issues > #9988 RelationIdLoader reuses the same queryplanner within a transaction", () => {
     let dataSources: DataSource[]
@@ -38,22 +39,23 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
                 const productTwoId = 2
                 await categoryRepo.save(categoryOne)
                 await categoryRepo.save(categoryTwo)
-                const options = (id: number) => ({
-                    relationLoadStrategy: "query",
-                    where: { id: productOneId },
-                    relations: { categories: true },
-                })
+                const options = (id: number) =>
+                    ({
+                        relationLoadStrategy: "query",
+                        where: { id },
+                        relations: { categories: true },
+                    } as FindManyOptions<Product>)
 
                 // Create a custom repository that uses a query builder without query planner
                 // For both methods, relationLoadStrategy is set to "query", where the bug lies.
                 const productRepo = dataSource.getRepository(Product).extend({
-                    async getOne(): Promise<Product> {
+                    async getOne() {
                         return this.createQueryBuilder("product")
                             .setFindOptions(options(productOneId))
                             .getOne()
                     },
 
-                    async getMany(): Promise<Product[]> {
+                    async getMany() {
                         return this.createQueryBuilder("product")
                             .setFindOptions(options(productTwoId))
                             .getMany()
@@ -75,7 +77,7 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
                     },
                 )
 
-                expect(getOneProduct.categories.length).to.be.eql(1)
+                expect(getOneProduct?.categories.length).to.be.eql(1)
 
                 const getManyProduct = await manager.transaction(
                     async (txnManager) => {
@@ -83,7 +85,10 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
                             txnManager.withRepository(productRepo)
                         const product = customProductRepo.create({
                             id: productTwoId,
-                            categories: [{ id: categoryOne.id }],
+                            categories: [
+                                { id: categoryOne.id },
+                                { id: categoryTwo.id },
+                            ],
                         })
 
                         await customProductRepo.save(product)
@@ -91,7 +96,7 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
                     },
                 )
 
-                expect(getManyProduct[0].categories.length).to.be.eql(1)
+                expect(getManyProduct[0].categories.length).to.be.eql(2)
             }),
         )
     })

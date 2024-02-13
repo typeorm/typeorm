@@ -16,7 +16,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
-                enabledDrivers: ["mysql"],
+                // enabledDrivers: ["mysql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

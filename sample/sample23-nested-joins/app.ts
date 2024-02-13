@@ -102,9 +102,7 @@ dataSource.initialize().then(
                     .where("post.id=:id", { id: post.id })
                     .getOne()
             })
-            .then((loadedPost) => {
-                console.log(loadedPost)
-                console.log("Finally bakhrom's post:")
+            .then(() => {
                 post.author = author2
                 return postRepository.save(post)
             })

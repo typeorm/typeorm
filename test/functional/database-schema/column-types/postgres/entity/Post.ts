@@ -238,6 +238,28 @@ export class Post {
     daterange: string
 
     // -------------------------------------------------------------------------
+    // Multirange Type
+    // -------------------------------------------------------------------------
+
+    @Column("int4multirange")
+    int4multirange: string
+
+    @Column("int8multirange")
+    int8multirange: string
+
+    @Column("nummultirange")
+    nummultirange: string
+
+    @Column("tsmultirange")
+    tsmultirange: string
+
+    @Column("tstzmultirange")
+    tstzmultirange: string
+
+    @Column("datemultirange")
+    datemultirange: string
+
+    // -------------------------------------------------------------------------
     // Array Type
     // -------------------------------------------------------------------------
 
