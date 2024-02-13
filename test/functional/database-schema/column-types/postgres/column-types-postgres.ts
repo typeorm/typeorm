@@ -185,6 +185,7 @@ describe("database schema > column types > postgres", () => {
                 loadedPost.uuid.should.be.equal(post.uuid)
                 loadedPost.json.should.be.eql(post.json)
                 loadedPost.jsonb.should.be.eql(post.jsonb)
+                loadedPost.jsonpath.should.be.eql(post.jsonpath)
                 loadedPost.int4range.should.be.eql(post.int4range)
                 loadedPost.int8range.should.be.eql(post.int8range)
                 loadedPost.numrange.should.be.eql(post.numrange)
@@ -320,6 +321,7 @@ describe("database schema > column types > postgres", () => {
                 table!.findColumnByName("xml")!.type.should.be.equal("xml")
                 table!.findColumnByName("json")!.type.should.be.equal("json")
                 table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb")
+                table!.findColumnByName("jsonpath")!.type.should.be.equal("jsonpath")
                 table!
                     .findColumnByName("int4range")!
                     .type.should.be.equal("int4range")

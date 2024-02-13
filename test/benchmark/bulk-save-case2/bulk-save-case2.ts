@@ -49,7 +49,6 @@ describe("benchmark > bulk-save > case2", () => {
                         },
                     ]
                     document.date = new Date()
-                    document.path = "$.weight"
 
                     documents.push(document)
                     // await connection.manager.save(document);
