@@ -198,6 +198,21 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 { type: "simple", condition: condition },
             ]
         if (parameters) this.setParameters(parameters)
+
+        // only update rows that are not already soft deleted
+        this.expressionMap.wheres.push({
+            type: "and",
+            condition: this.getWhereCondition(
+                `${
+                    this.expressionMap.mainAlias!.metadata.deleteDateColumn
+                        ?.propertyName
+                } IS ${
+                    this.expressionMap.queryType === "soft-delete"
+                        ? "NULL"
+                        : "NOT NULL"
+                }`,
+            ),
+        })
         return this
     }
 
