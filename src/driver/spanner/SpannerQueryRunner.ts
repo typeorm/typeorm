@@ -156,6 +156,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         try {
+            this.driver.connection.logger.log(
+                "info",
+                "typeorm:query - start",
+                this,
+            )
             const queryStartTime = +new Date()
             await this.connect()
             let rawResult:
@@ -182,6 +187,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             try {
                 this.driver.connection.logger.logQuery(query, parameters, this)
+                this.driver.connection.logger.log(
+                    "info",
+                    "typeorm:query - before run",
+                    this,
+                )
                 rawResult = await executor.run({
                     sql: query,
                     params: parameters
@@ -192,7 +202,18 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         : undefined,
                     json: true,
                 })
+
+                this.driver.connection.logger.log(
+                    "info",
+                    "typeorm:query - after run",
+                    this,
+                )
                 if (!this.isTransactionActive && !isSelect) {
+                    this.driver.connection.logger.log(
+                        "info",
+                        "typeorm:query -commit",
+                        this,
+                    )
                     await this.sessionTransaction.commit()
                 }
             } catch (error) {
@@ -220,6 +241,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     this,
                 )
 
+            this.driver.connection.logger.log(
+                "info",
+                "typeorm:query - preparing result",
+                this,
+            )
             const result = new QueryResult()
 
             result.raw = rawResult
@@ -232,6 +258,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return result.records
             }
 
+            this.driver.connection.logger.log(
+                "info",
+                "typeorm:query - end",
+                this,
+            )
             return result
         } catch (err) {
             this.driver.connection.logger.logQueryError(
