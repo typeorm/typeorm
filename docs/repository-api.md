@@ -224,14 +224,18 @@ await repository.delete([1, 2, 3])
 await repository.delete({ firstName: "Timber" })
 ```
 
--   `softDelete` and `restore` - Soft deleting and restoring a row by id
+-   `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, or given conditions:
 
 ```typescript
 const repository = dataSource.getRepository(Entity)
-// Delete a entity
+// Soft delete an entity
 await repository.softDelete(1)
-// And You can restore it using restore;
+// And you can restore it using restore;
 await repository.restore(1)
+// Soft delete multiple entities
+await repository.softDelete([1, 2, 3])
+// Or soft delete by other attribute
+await repository.softDelete({ firstName: "Jake" })
 ```
 
 -   `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
