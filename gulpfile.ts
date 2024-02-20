@@ -66,7 +66,7 @@ export class Gulpfile {
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
             module: "es2020",
-            lib: ["es2021", "dom"],
+            lib: ["es2021", "dom", "es2022.Error"],
             typescript: require("typescript")
         });
         const tsResult = gulp.src([

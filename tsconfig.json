@@ -1,6 +1,7 @@
 {
     "extends": "@tsconfig/node16/tsconfig.json",
     "compilerOptions": {
+        "lib": ["ES2022.Error"],
         "allowSyntheticDefaultImports": true,
         "declaration": true,
         "downlevelIteration": true,

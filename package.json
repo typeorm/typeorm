@@ -153,6 +153,7 @@
     "@libsql/client": "^0.4.2",
     "@google-cloud/spanner": "^5.18.0",
     "@sap/hana-client": "^2.12.25",
+    "@sentry/node": "^7.87.0",
     "better-sqlite3": "^7.1.2 || ^8.0.0 || ^9.0.0",
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",
@@ -177,6 +178,9 @@
       "optional": true
     },
     "@sap/hana-client": {
+      "optional": true
+    },
+    "@sentry/node": {
       "optional": true
     },
     "better-sqlite3": {

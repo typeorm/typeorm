@@ -1,3 +1,4 @@
+import { captureException } from "@sentry/node"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
@@ -19,6 +20,7 @@ import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { TransactionRollbackFailedError } from "../../error/TransactionRollbackFailedError"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -146,22 +148,27 @@ export abstract class AbstractSqliteQueryRunner
      * Error will be thrown if transaction was not started.
      */
     async rollbackTransaction(): Promise<void> {
-        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+        try {
+            if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
 
-        if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
-            await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
-            )
-        } else {
-            this.transactionDepth -= 1
-            await this.query("ROLLBACK")
-            this.isTransactionActive = false
+            if (this.transactionDepth > 1) {
+                this.transactionDepth -= 1
+                await this.query(
+                    `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                )
+            } else {
+                this.transactionDepth -= 1
+                await this.query("ROLLBACK")
+                this.isTransactionActive = false
+            }
+
+            await this.broadcaster.broadcast("AfterTransactionRollback")
+        } catch (rollbackError) {
+            captureException(new TransactionRollbackFailedError(rollbackError))
+            throw rollbackError
         }
-
-        await this.broadcaster.broadcast("AfterTransactionRollback")
     }
 
     /**

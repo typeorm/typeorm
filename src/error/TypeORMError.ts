@@ -3,8 +3,8 @@ export class TypeORMError extends Error {
         return this.constructor.name
     }
 
-    constructor(message?: string) {
-        super(message)
+    constructor(message?: string, options: ErrorOptions = {}) {
+        super(message, options)
 
         // restore prototype chain because the base `Error` type
         // will break the prototype chain a little
