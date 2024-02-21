@@ -411,6 +411,14 @@ export class OracleDriver implements Driver {
                     return placeholders
                 }
 
+                if (typeof value === "function") {
+                    return value()
+                }
+                
+                if (typeof value === "boolean") {
+                    return value ? "1" : "0"
+                }
+
                 // For non-array values
                 escapedParameters.push(value)
                 // Generate a unique placeholder based on the current length of escapedParameters
