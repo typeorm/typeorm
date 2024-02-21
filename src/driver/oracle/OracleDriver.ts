@@ -385,7 +385,7 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        const parameterIndexMap = new Map<string, number>()
+        // const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
@@ -393,37 +393,31 @@ export class OracleDriver implements Driver {
                     return full
                 }
 
-                if (parameterIndexMap.has(key)) {
-                    return this.parametersPrefix + parameterIndexMap.get(key)
-                }
-
                 let value: any = parameters[key]
 
+                // Directly handle the value without checking parameterIndexMap
                 if (isArray) {
-                    return value
+                    // Assume value is an array; process each element
+                    const placeholders = value
                         .map((v: any) => {
-                            escapedParameters.push(v)
+                            escapedParameters.push(v) // Push each value to the array
+                            // Generate placeholder for each value
                             return this.createParameter(
                                 key,
                                 escapedParameters.length - 1,
                             )
                         })
                         .join(", ")
+                    return placeholders
                 }
 
-                if (typeof value === "function") {
-                    return value()
-                }
-
-                if (typeof value === "boolean") {
-                    return value ? "1" : "0"
-                }
-
+                // For non-array values
                 escapedParameters.push(value)
-                parameterIndexMap.set(key, escapedParameters.length)
+                // Generate a unique placeholder based on the current length of escapedParameters
                 return this.createParameter(key, escapedParameters.length - 1)
             },
-        ) // todo: make replace only in value statements, otherwise problems
+        )
+        // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters]
     }
 
