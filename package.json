@@ -144,7 +144,7 @@
     "sql.js": "^1.8.0",
     "sqlite3": "^5.1.4",
     "ts-node": "^10.9.2",
-    "typeorm-aurora-data-api-driver": "^2.4.4",
+    "typeorm-aurora-data-api-driver": "^3.0.0",
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
@@ -164,7 +164,7 @@
     "sql.js": "^1.4.0",
     "sqlite3": "^5.0.3",
     "ts-node": "^10.7.0",
-    "typeorm-aurora-data-api-driver": "^2.0.0"
+    "typeorm-aurora-data-api-driver": "^3.0.0"
   },
   "peerDependenciesMeta": {
     "@google-cloud/spanner": {
