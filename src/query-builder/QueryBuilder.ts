@@ -1149,12 +1149,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         const cteStrings = this.expressionMap.commonTableExpressions.map(
             (cte) => {
+                let cteBodyExpression = typeof cte.queryBuilder === 'string' ? cte.queryBuilder : '';
                 if (typeof cte.queryBuilder !== "string") {
                     if (cte.queryBuilder.hasCommonTableExpressions()) {
                         throw new TypeORMError(
                             `Nested CTEs aren't supported (CTE: ${cte.alias})`,
                         )
                     }
+                    cteBodyExpression = cte.queryBuilder.getQuery()
                     if (
                         !this.connection.driver.cteCapabilities.writable &&
                         !InstanceChecker.isSelectQueryBuilder(cte.queryBuilder)
@@ -1165,10 +1167,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     }
                     this.setParameters(cte.queryBuilder.getParameters())
                 }
-                const cteBodyExpression =
-                    typeof cte.queryBuilder === "string"
-                        ? cte.queryBuilder
-                        : cte.queryBuilder.getQuery()
                 let cteHeader = this.escape(cte.alias)
                 if (cte.options.columnNames) {
                     const escapedColumnNames = cte.options.columnNames.map(
