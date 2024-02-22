@@ -1,5 +1,6 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { Brackets } from "./Brackets"
+import { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
  * Query Builders can implement this interface to support where expression
@@ -104,6 +105,21 @@ export interface WhereExpressionBuilder {
      * Additionally you can add parameters used in where expression.
      */
     orWhere(subQuery: (qb: this) => string, parameters?: ObjectLiteral): this
+
+    /**
+     * Sets a new where EXISTS clause
+     */
+    whereExists(subQuery: SelectQueryBuilder<any>): this;
+
+    /**
+     * Adds a new AND where EXISTS clause
+     */
+    andWhereExists(subQuery: SelectQueryBuilder<any>): this;
+
+    /**
+     * Adds a new OR where EXISTS clause
+     */
+    orWhereExists(subQuery: SelectQueryBuilder<any>): this;
 
     /**
      * Sets WHERE condition in the query builder with a condition for the given ids.

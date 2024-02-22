@@ -15,6 +15,7 @@ import { UpdateValuesMissingError } from "../error/UpdateValuesMissingError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -241,6 +242,27 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         })
         if (parameters) this.setParameters(parameters)
         return this
+    }
+
+    /**
+     * Sets a new where EXISTS clause
+     */
+    whereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.where(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new AND where EXISTS clause
+     */
+    andWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.andWhere(...this.getExistsCondition(subQuery))
+    }
+
+    /**
+     * Adds a new OR where EXISTS clause
+     */
+    orWhereExists(subQuery: SelectQueryBuilder<any>): this {
+        return this.orWhere(...this.getExistsCondition(subQuery))
     }
 
     /**
