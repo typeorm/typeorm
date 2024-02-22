@@ -38,7 +38,7 @@ compile and run. Create it using your favorite editor and put the following conf
 {
     "compilerOptions": {
         "lib": ["es5", "es6", "dom"],
-        "target": "es5",
+        "target": "es6",
         "module": "commonjs",
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
