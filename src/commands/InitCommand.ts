@@ -283,7 +283,7 @@ export const AppDataSource = new DataSource({
                 {
                     compilerOptions: {
                         lib: ["es5", "es6"],
-                        target: "es5",
+                        target: "es6",
                         module: "commonjs",
                         moduleResolution: "node",
                         outDir: "./build",
