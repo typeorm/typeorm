@@ -1149,10 +1149,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         const cteStrings = this.expressionMap.commonTableExpressions.map(
             (cte) => {
-                const cteBodyExpression =
-                    typeof cte.queryBuilder === "string"
-                        ? cte.queryBuilder
-                        : cte.queryBuilder.getQuery()
                 if (typeof cte.queryBuilder !== "string") {
                     if (cte.queryBuilder.hasCommonTableExpressions()) {
                         throw new TypeORMError(
@@ -1169,6 +1165,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     }
                     this.setParameters(cte.queryBuilder.getParameters())
                 }
+                const cteBodyExpression =
+                    typeof cte.queryBuilder === "string"
+                        ? cte.queryBuilder
+                        : cte.queryBuilder.getQuery()
                 let cteHeader = this.escape(cte.alias)
                 if (cte.options.columnNames) {
                     const escapedColumnNames = cte.options.columnNames.map(
