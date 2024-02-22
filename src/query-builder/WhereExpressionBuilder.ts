@@ -109,17 +109,17 @@ export interface WhereExpressionBuilder {
     /**
      * Sets a new where EXISTS clause
      */
-    whereExists(subQuery: SelectQueryBuilder<any>): this;
+    whereExists(subQuery: SelectQueryBuilder<any>): this
 
     /**
      * Adds a new AND where EXISTS clause
      */
-    andWhereExists(subQuery: SelectQueryBuilder<any>): this;
+    andWhereExists(subQuery: SelectQueryBuilder<any>): this
 
     /**
      * Adds a new OR where EXISTS clause
      */
-    orWhereExists(subQuery: SelectQueryBuilder<any>): this;
+    orWhereExists(subQuery: SelectQueryBuilder<any>): this
 
     /**
      * Sets WHERE condition in the query builder with a condition for the given ids.
