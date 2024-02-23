@@ -383,24 +383,42 @@ Each time you call `find` or `findOne` from the entity manager, the value is rec
 ```typescript
 @Entity({ name: "companies", alias: "COMP" })
 export class Company extends BaseEntity {
-  @PrimaryColumn("varchar", { length: 50 })
-  name: string;
+    @PrimaryColumn("varchar", { length: 50 })
+    name: string
 
-  @VirtualColumn({ query: (alias) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name` })
-  totalEmployeesCount: number;
+    @VirtualColumn({
+        query: (alias) =>
+            `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name`,
+    })
+    totalEmployeesCount: number
 
-  @OneToMany((type) => Employee, (employee) => employee.company)
-  employees: Employee[];
+    @OneToMany((type) => Employee, (employee) => employee.company)
+    employees: Employee[]
 }
 
 @Entity({ name: "employees" })
 export class Employee extends BaseEntity {
-  @PrimaryColumn("varchar", { length: 50 })
-  name: string;
+    @PrimaryColumn("varchar", { length: 50 })
+    name: string
 
-  @ManyToOne((type) => Company, (company) => company.employees)
-  company: Company;
+    @ManyToOne((type) => Company, (company) => company.employees)
+    company: Company
 }
+```
+
+It is also possible to pass contextual information to the query function when using a manually created QueryBuilder. For example:
+
+```typescript
+const queryBuilder = entityManager.createQueryBuilder()
+queryBuilder.context = { minimumAge: 30 }
+queryBuilder.getMany()
+```
+
+This could then be used to modify the above query function to exclude employees under 30
+
+```typescript
+@VirtualColumn({ query: (alias, context) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name AND age > ${context.minimumAge}` })
+totalEmployeesCount: number;
 ```
 
 ## Relation decorators
@@ -527,7 +545,7 @@ export class Post {
     @JoinColumn({
         name: "cat_id",
         referencedColumnName: "name",
-        foreignKeyConstraintName: "fk_cat_id"
+        foreignKeyConstraintName: "fk_cat_id",
     })
     category: Category
 }
@@ -552,12 +570,12 @@ export class Post {
         joinColumn: {
             name: "question",
             referencedColumnName: "id",
-            foreignKeyConstraintName: "fk_question_categories_questionId"
+            foreignKeyConstraintName: "fk_question_categories_questionId",
         },
         inverseJoinColumn: {
             name: "category",
             referencedColumnName: "id",
-            foreignKeyConstraintName: "fk_question_categories_categoryId"
+            foreignKeyConstraintName: "fk_question_categories_categoryId",
         },
         synchronize: false,
     })
