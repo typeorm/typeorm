@@ -72,6 +72,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         nulls?: "NULLS FIRST" | "NULLS LAST"
     }[] = []
     protected relationMetadatas: RelationMetadata[] = []
+    public context: any | undefined = undefined
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -2831,7 +2832,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 escapedAliasName + "." + this.escape(column.databaseName)
 
             if (column.isVirtualProperty && column.query) {
-                selectionPath = `(${column.query(escapedAliasName)})`
+                selectionPath = `(${column.query(escapedAliasName, this.context)})`
             }
 
             if (
