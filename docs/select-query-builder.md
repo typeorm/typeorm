@@ -110,7 +110,7 @@ There are several ways how you can create a `Query Builder`:
         .select("user")
         .from(User, "user")
         .where("user.id = :id", { id: 1 })
-        .getOne()
+        .getRawOne()
     ```
 
 -   Using entity manager:
