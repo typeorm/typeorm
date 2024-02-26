@@ -1,3 +1,5 @@
+import { EntityMetadata } from "../metadata/EntityMetadata"
+
 /**
  * Metadata args utility functions.
  */
@@ -40,5 +42,12 @@ export class MetadataUtils {
         return array.filter(
             (item) => item.target && classes.indexOf(item.target) !== -1,
         )
+    }
+
+    static isSimpleFilteredView(entityMetadata:EntityMetadata):boolean {
+        const parentEntity = entityMetadata.inheritanceTree[1];
+        return entityMetadata.tableType === "view" && !!parentEntity && !entityMetadata.columns.some((column) => !entityMetadata.connection.getMetadata(
+            parentEntity).columns.find(parentColumn => parentColumn.propertyName === column.propertyName))
+    
     }
 }

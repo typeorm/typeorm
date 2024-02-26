@@ -11,6 +11,7 @@ import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { QueryRunner } from "../.."
 import { DriverUtils } from "../../driver/DriverUtils"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { MetadataUtils } from "../../metadata-builder/MetadataUtils"
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -127,8 +128,8 @@ export class RawSqlResultsToEntityTransformer {
         // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
         let metadata = alias.metadata
 
-        const isSimpleFilteredView =
-            metadata.tableType === "view" && !!metadata.inheritanceTree[1]
+        const isSimpleFilteredView = MetadataUtils.isSimpleFilteredView(metadata);
+
         const parentMetadata = isSimpleFilteredView ? metadata.connection.getMetadata(
                 metadata.inheritanceTree[1],
         ): null;

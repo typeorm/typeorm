@@ -4,6 +4,7 @@ import {
     PrimaryGeneratedColumn,
     TableInheritance,
     ViewEntity,
+    ViewColumn
 } from "../../../../../src"
 
 @Entity()
@@ -23,3 +24,17 @@ export class VersionedRootEntity {
     `,
 })
 export class RootEntity extends VersionedRootEntity {}
+
+
+// Here a non filtered view of root entity with an additional field
+@ViewEntity({
+    expression: `
+        select *, 'thisisAnOtherField' as "otherField" from versioned_root_entity;
+    `,
+})
+export class EnrichedRootEntity extends VersionedRootEntity {
+    @ViewColumn()
+    otherField:string;
+}
+
+

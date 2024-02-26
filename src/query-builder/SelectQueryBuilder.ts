@@ -45,6 +45,7 @@ import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { MetadataUtils } from "../metadata-builder/MetadataUtils"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -2788,8 +2789,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         aliasName: string,
         metadata: EntityMetadata,
     ): SelectQuery[] {
-        const isSimpleFilteredView =
-            metadata.tableType === "view" && !!metadata.inheritanceTree[1]
+        const isSimpleFilteredView = MetadataUtils.isSimpleFilteredView(metadata);
 
         const hasMainAlias = this.expressionMap.selects.some(
             (select) => select.selection === aliasName,
