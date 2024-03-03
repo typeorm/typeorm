@@ -726,7 +726,7 @@ Steps to run this project:
                 packageJson.dependencies["mssql"] = "^9.1.1"
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^5.2.0"
+                packageJson.dependencies["mongodb"] = "^6.0.0"
                 break
             case "spanner":
                 packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"
