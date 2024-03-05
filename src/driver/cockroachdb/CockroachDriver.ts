@@ -157,6 +157,8 @@ export class CockroachDriver implements Driver {
         "json",
         "jsonb",
         "uuid",
+        "tsvector",
+        "tsquery",
     ]
 
     /**

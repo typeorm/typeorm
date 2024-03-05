@@ -191,8 +191,8 @@ export type SimpleColumnType =
     | "bit" // postgres, mssql
     | "bit varying" // postgres
     | "varbit" // postgres
-    | "tsvector" // postgres
-    | "tsquery" // postgres
+    | "tsvector" // postgres, cockroachdb
+    | "tsquery" // postgres, cockroachdb
     | "uuid" // postgres, cockroachdb, mariadb
     | "xml" // mssql, postgres
     | "json" // mysql, postgres, cockroachdb, spanner
