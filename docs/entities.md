@@ -399,7 +399,7 @@ or
 `float4`, `float8`, `double precision`, `real`, `inet`, `int`, `integer`, `int2`, `int8`, `int64`,
 `smallint`, `bigint`, `interval`, `string`, `character varying`, `character`, `char`, `char varying`,
 `varchar`, `text`, `time`, `time without time zone`, `timestamp`, `timestamptz`, `timestamp without time zone`,
-`timestamp with time zone`, `json`, `jsonb`, `uuid`
+`timestamp with time zone`, `json`, `jsonb`, `uuid`, `tsvector`, `tsquery`
 
 > Note: CockroachDB returns all numeric data types as `string`. However if you omit column type and define your property as
 > `number` ORM will `parseInt` string into number.
