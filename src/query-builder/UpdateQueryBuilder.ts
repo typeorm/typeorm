@@ -73,7 +73,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 transactionStartedByUs = true
             }
 
-            // call before updation methods in listeners and subscribers
+            // Call the update methods in listeners and subscribers before updating
             if (
                 this.expressionMap.callListeners === true &&
                 this.expressionMap.mainAlias!.hasMetadata
@@ -161,7 +161,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 )
             }
 
-            // call after updation methods in listeners and subscribers
+            // Call the update methods in listeners and subscribers after updating
             if (
                 this.expressionMap.callListeners === true &&
                 this.expressionMap.mainAlias!.hasMetadata
