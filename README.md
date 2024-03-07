@@ -157,7 +157,7 @@ const firstUser = await User.findOneBy({
 })
 const timber = await User.findOneBy({
     firstName: "Timber",
-    lastName: "Saw"
+    lastName: "Saw",
 })
 
 await timber.remove()
@@ -633,7 +633,7 @@ It's not a new copy of the object, it modifies its "id" and returns it.
 ### Using Entity Manager
 
 We just created a new photo and saved it in the database.
-We used `EntityManager` to  save it.
+We used `EntityManager` to save it.
 Using entity manager you can manipulate any entity in your app.
 For example, let's load our saved entity:
 
@@ -1319,3 +1319,7 @@ Open source is hard and time-consuming. If you want to invest in TypeORM's futur
 Become a gold sponsor and get premium technical support from our core contributors. [Become a gold sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/gold-sponsor.svg?width=890"></a>
+
+## Greenly specifics
+
+In order to generate a release just push a tag corresponding to the version you have set in the `package.json`.

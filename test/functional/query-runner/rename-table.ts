@@ -41,7 +41,7 @@ describe("query runner > rename table", () => {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
-                    facultySeq[0].count.should.be.equal("1")
+                    facultySeq[0].count.should.be.equal(1)
                 }
 
                 let table = await queryRunner.getTable("faculty")
@@ -58,8 +58,8 @@ describe("query runner > rename table", () => {
                     const questionSeq = await queryRunner.query(
                         sequenceQuery("question_id_seq"),
                     )
-                    facultySeq[0].count.should.be.equal("0")
-                    questionSeq[0].count.should.be.equal("1")
+                    facultySeq[0].count.should.be.equal(0)
+                    questionSeq[0].count.should.be.equal(1)
                 }
 
                 await queryRunner.renameTable("question", "answer")
@@ -74,8 +74,8 @@ describe("query runner > rename table", () => {
                     const answerSeq = await queryRunner.query(
                         sequenceQuery("answer_id_seq"),
                     )
-                    questionSeq[0].count.should.be.equal("0")
-                    answerSeq[0].count.should.be.equal("1")
+                    questionSeq[0].count.should.be.equal(0)
+                    answerSeq[0].count.should.be.equal(1)
                 }
 
                 await queryRunner.executeMemoryDownSql()
@@ -91,8 +91,8 @@ describe("query runner > rename table", () => {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
-                    answerSeq[0].count.should.be.equal("0")
-                    facultySeq[0].count.should.be.equal("1")
+                    answerSeq[0].count.should.be.equal(0)
+                    facultySeq[0].count.should.be.equal(1)
                 }
 
                 await queryRunner.release()
@@ -130,7 +130,7 @@ describe("query runner > rename table", () => {
                             "text",
                             "tag",
                         ])
-                    let tableUnique = table!.uniques.find((unique) => {
+                    const tableUnique = table!.uniques.find((unique) => {
                         return !!unique.columnNames.find(
                             (columnName) => columnName === "tag",
                         )

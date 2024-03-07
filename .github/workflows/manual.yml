@@ -4,11 +4,8 @@ name: Manual workflow
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
-on:
-  push:
-    branches:
-      - master
-    
+on: push
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "greet"
@@ -43,3 +40,19 @@ jobs:
           path: |
             node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
+          name: Main
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build
+        run: |
+          echo "PACKAGE_FILENAME=$(npm pack 2>&1 | grep  'npm notice filename' | sed -n 's/.*filename:[[:space:]]*//p')" >> "$GITHUB_ENV"
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ env.PACKAGE_FILENAME }}

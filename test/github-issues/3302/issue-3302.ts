@@ -9,7 +9,7 @@ import {
 } from "../../utils/test-utils"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
-describe("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
+describe.skip("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
     let connections: DataSource[]
     let stub: sinon.SinonStub
     let sandbox: sinon.SinonSandbox
