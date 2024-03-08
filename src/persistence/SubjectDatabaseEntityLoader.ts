@@ -97,7 +97,7 @@ export class SubjectDatabaseEntityLoader {
                     loadEagerRelations: false,
                     loadRelationIds: {
                         relations: loadRelationPropertyPaths,
-                        disableMixedMap: true,
+                        disableMixedMap: false,
                     },
                     // the soft-deleted entities should be included in the loaded entities for recover operation
                     withDeleted: true,
