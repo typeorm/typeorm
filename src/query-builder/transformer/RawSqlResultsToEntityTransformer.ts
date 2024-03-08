@@ -617,7 +617,7 @@ export class RawSqlResultsToEntityTransformer {
 
                     if (
                         columns.length === 1 &&
-                        !rawRelationIdResult.relationIdAttribute.disableMixedMap
+                        rawRelationIdResult.relationIdAttribute.disableMixedMap
                     ) {
                         if (
                             relation.isOneToMany ||
