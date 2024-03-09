@@ -48,7 +48,6 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
                 })
                 await connection.manager.save(user5)
 
-                await connection.manager.save(
                 const recipient = new Recipient({
                     user: user5,
                 });
