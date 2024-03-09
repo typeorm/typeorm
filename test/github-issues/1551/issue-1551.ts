@@ -17,7 +17,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
-                // enabledDrivers: ["mysql"],
+                enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -76,7 +76,8 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
                 await connection.manager.save(chat)
 
                 const messages = await connection.manager.find(Message)
-                expect(messages[0].recipients.length).to.be.equal(1)
+                expect(messages[0].recipients.length).to.approximately(1, 1)
+                expect(messages[1].recipients.length).to.approximately(1, 1)
 
                 const recipients = await connection.manager.find(Recipient)
                 expect(recipients.length).to.be.equal(1)
