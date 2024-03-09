@@ -648,16 +648,13 @@ export class EntityMetadata {
      * it will access its id property and return that. If the entity has multiple primary keys
      * it will return a string with the values of the primary keys joined by a dot.
      */
-    getEntityIdFlat(
-        entity: ObjectLiteral | undefined,
-    ): string | undefined {
-        if (!entity) return undefined;
-        const ids = this.primaryColumns
-            .map<string>((column) => {
-                const id = entity[column.propertyName];
-                return typeof id === "object" ? id?.id : id;
-            });
-        return ids.join( ids.length ? "." : "" );
+    getEntityIdFlat(entity: ObjectLiteral | undefined): string | undefined {
+        if (!entity) return undefined
+        const ids = this.primaryColumns.map<string>((column) => {
+            const id = entity[column.propertyName]
+            return typeof id === "object" ? id?.id : id
+        })
+        return ids.join(ids.length ? "." : "")
     }
 
     /**
