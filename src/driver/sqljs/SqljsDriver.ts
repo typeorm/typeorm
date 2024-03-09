@@ -11,6 +11,7 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { TypeORMError } from "../../error"
+import { VersionUtils } from "../../util/VersionUtils"
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
@@ -22,6 +23,8 @@ declare let window: Window
 export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
     options: SqljsConnectionOptions
+
+    version: string
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -53,6 +56,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
      */
     async connect(): Promise<void> {
         this.databaseConnection = await this.createDatabaseConnection()
+        this.version = this.databaseConnection.exec(
+            "SELECT sqlite_version()",
+        )[0].values[0][0]
     }
 
     /**
@@ -307,5 +313,9 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js")
             }
         }
+    }
+
+    isReturningSqlSupported() {
+        return VersionUtils.isGreaterOrEqual(this.version, "3.35.0")
     }
 }

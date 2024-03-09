@@ -7,7 +7,7 @@ import { TypeORMError } from "./TypeORMError"
 export class ReturningStatementNotSupportedError extends TypeORMError {
     constructor() {
         super(
-            `OUTPUT or RETURNING clause only supported by Microsoft SQL Server or PostgreSQL or MariaDB databases.`,
+            `OUTPUT or RETURNING clause only supported by these databases: Microsoft SQL Server, PostgreSQL, MariaDB, SQLite (v3.35.0 or greater)`,
         )
     }
 }
