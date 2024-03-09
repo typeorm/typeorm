@@ -10,6 +10,7 @@ import { BetterSqlite3ConnectionOptions } from "./BetterSqlite3ConnectionOptions
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
+import { VersionUtils } from "../../util/VersionUtils"
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -29,6 +30,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     sqlite: any
 
+    version: string
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -47,6 +50,15 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    async connect() {
+        await super.connect()
+
+        this.version = this.databaseConnection
+            .prepare("SELECT sqlite_version()")
+            .pluck()
+            .get()
+    }
 
     /**
      * Closes connection with database.
@@ -218,5 +230,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
                 ? optionsDb
                 : path.join(this.options.baseDirectory!, optionsDb),
         )
+    }
+
+    isReturningSqlSupported() {
+        return VersionUtils.isGreaterOrEqual(this.version, "3.35.0")
     }
 }
