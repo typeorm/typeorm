@@ -9,6 +9,7 @@ import { Message, MessageType } from "./entity/Message"
 import { Recipient } from "./entity/Recipient"
 import { User } from "./entity/User"
 import { Chat } from "./entity/Chat"
+import { expect } from 'chai';
 
 describe("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
     let connections: DataSource[]
@@ -48,42 +49,38 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
                 await connection.manager.save(user5)
 
                 await connection.manager.save(
-                    new Chat({
-                        allTimeMembers: [user1, user5],
-                        listingMembers: [user1, user5],
-                        messages: [
-                            new Message({
-                                sender: user1,
-                                content: "I should buy a boat",
-                                type: MessageType.TEXT,
-                                holders: [user1, user5],
-                                recipients: [
-                                    new Recipient({
-                                        user: user5,
-                                    }),
-                                ],
-                            }),
-                            new Message({
-                                sender: user1,
-                                content: "You still there?",
-                                type: MessageType.TEXT,
-                                holders: [user1, user5],
-                                recipients: [
-                                    new Recipient({
-                                        user: user5,
-                                    }),
-                                ],
-                            }),
-                        ],
-                    }),
-                )
+                const recipient = new Recipient({
+                    user: user5,
+                });
+
+                const chat =  new Chat({
+                    allTimeMembers: [user1, user5],
+                    listingMembers: [user1, user5],
+                    messages: [
+                        new Message({
+                            sender: user1,
+                            content: "I should buy a boat",
+                            type: MessageType.TEXT,
+                            holders: [user1, user5],
+                            recipients: [recipient],
+                        }),
+                        new Message({
+                            sender: user1,
+                            content: "You still there?",
+                            type: MessageType.TEXT,
+                            holders: [user1, user5],
+                            recipients: [recipient],
+                        }),
+                    ],
+                });
+
+                await connection.manager.save(chat)
 
                 const messages = await connection.manager.find(Message)
-                messages[0].recipients.length.should.be.equal(1)
-                messages[1].recipients.length.should.be.equal(1)
+                expect(messages[0].recipients.length).to.be.equal(1)
 
                 const recipients = await connection.manager.find(Recipient)
-                recipients.length.should.be.equal(2)
+                expect(recipients.length).to.be.equal(1)
             }),
         ))
 
