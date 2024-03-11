@@ -10,6 +10,7 @@ export const resultsTemplates: Record<string, Record<string, string>> = {
     mariadb: mysql,
     mssql,
     sqlite,
+    "sqlite-pooled": sqlite,
     "better-sqlite3": sqlite,
     postgres,
     oracle,

@@ -21,6 +21,7 @@ describe("github issues > #1476 subqueries", () => {
                     "mysql",
                     "mariadb",
                     "sqlite",
+                    "sqlite-pooled",
                     "better-sqlite3",
                     "sqljs",
                     "libsql",

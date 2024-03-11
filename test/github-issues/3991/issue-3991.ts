@@ -128,7 +128,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
         before(
             async () =>
                 (connections = await createTestingConnections({
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["sqlite", "sqlite-pooled"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [SqlitePost],

@@ -13,7 +13,12 @@ describe("github issues > #190 too many SQL variables when using setMaxResults i
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite", "better-sqlite3", "libsql"], // this issue only related to sqlite
+                enabledDrivers: [
+                    "sqlite",
+                    "sqlite-pooled",
+                    "better-sqlite3",
+                    "libsql",
+                ], // this issue only related to sqlite
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

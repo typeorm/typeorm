@@ -23,6 +23,7 @@ describe("database schema > simple-enums", () => {
                 "mariadb",
                 "postgres",
                 "sqlite",
+                "sqlite-pooled",
                 "better-sqlite3",
                 "libsql",
                 "mssql",

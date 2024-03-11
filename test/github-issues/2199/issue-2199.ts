@@ -18,6 +18,7 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
                     "mysql",
                     "mariadb",
                     "sqlite",
+                    "sqlite-pooled",
                     "better-sqlite3",
                     "mssql",
                     "libsql",

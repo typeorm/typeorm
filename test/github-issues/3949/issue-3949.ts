@@ -14,7 +14,13 @@ describe("github issues > #3949 sqlite date hydration is susceptible to corrupti
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            enabledDrivers: ["sqlite", "better-sqlite3", "sqljs", "libsql"],
+            enabledDrivers: [
+                "sqlite",
+                "sqlite-pooled",
+                "better-sqlite3",
+                "sqljs",
+                "libsql",
+            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
@@ -34,6 +40,8 @@ describe("github issues > #3949 sqlite date hydration is susceptible to corrupti
             const post = await repo.findOneBy({ id: 1 })
 
             post!.date.should.eql(new Date(jsDateString))
+
+            await queryRunner.release()
         }
 
     it("should correctly read date column that was inserted raw in canonical format", () =>

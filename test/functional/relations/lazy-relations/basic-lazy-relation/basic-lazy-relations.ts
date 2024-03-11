@@ -382,6 +382,7 @@ describe("basic-lazy-relations", () => {
                     new Set([
                         "mysql",
                         "sqlite",
+                        "sqlite-pooled",
                         "better-sqlite3",
                         "postgres",
                         "libsql",
@@ -417,6 +418,7 @@ describe("basic-lazy-relations", () => {
                     new Set([
                         "mysql",
                         "sqlite",
+                        "sqlite-pooled",
                         "better-sqlite3",
                         "postgres",
                         "libsql",

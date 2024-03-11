@@ -32,6 +32,7 @@ describe("github issues > #10494 Custom discriminator values when using Single T
                     "postgres",
                     "spanner",
                     "sqlite",
+                    "sqlite-pooled",
                     "libsql",
                 ],
             })),

@@ -52,4 +52,6 @@ export interface BetterSqlite3ConnectionOptions
      * Relative or absolute path to the native addon (better_sqlite3.node).
      */
     readonly nativeBinding?: string
+
+    readonly poolSize?: never
 }

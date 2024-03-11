@@ -13,7 +13,13 @@ describe("github issues > #6636 migration issues with scale & precision", () => 
         async () =>
             (connections = await createTestingConnections({
                 entities: [Test],
-                enabledDrivers: ["sqljs", "sqlite", "better-sqlite3", "libsql"],
+                enabledDrivers: [
+                    "sqljs",
+                    "sqlite",
+                    "sqlite-pooled",
+                    "better-sqlite3",
+                    "libsql",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

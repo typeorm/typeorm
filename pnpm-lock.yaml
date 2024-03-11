@@ -50,6 +50,9 @@ dependencies:
   oracledb:
     specifier: ^6.3.0
     version: 6.3.0
+  p-retry:
+    specifier: ^4.6.1
+    version: 4.6.2
   pg-native:
     specifier: ^3.0.0
     version: 3.0.1
@@ -59,6 +62,9 @@ dependencies:
   sha.js:
     specifier: ^2.4.11
     version: 2.4.11
+  tarn:
+    specifier: 3.0.2
+    version: 3.0.2
   tslib:
     specifier: ^2.5.0
     version: 2.6.2
@@ -79,6 +85,9 @@ devDependencies:
   '@types/app-root-path':
     specifier: ^1.2.4
     version: 1.2.8
+  '@types/better-sqlite3':
+    specifier: ^7.6.9
+    version: 7.6.9
   '@types/chai':
     specifier: ^4.3.4
     version: 4.3.11
@@ -88,6 +97,9 @@ devDependencies:
   '@types/debug':
     specifier: ^4.1.7
     version: 4.1.12
+  '@types/gulp':
+    specifier: ^4.0.17
+    version: 4.0.17
   '@types/gulp-rename':
     specifier: ^2.0.6
     version: 2.0.6
@@ -1065,6 +1077,12 @@ packages:
     resolution: {integrity: sha512-l12miuN6JXAi3yuADZNhRKbyN7IIyaUP9hFVZ/BbHhWYpBkHLbOaX2WkQoXGJyAgMcP9iZ0S9+tz/FN40VrwWQ==}
     dev: true
 
+  /@types/better-sqlite3@7.6.9:
+    resolution: {integrity: sha512-FvktcujPDj9XKMJQWFcl2vVl7OdRIqsSRX9b0acWwTmwLK9CF2eqo/FRcmMLNpugKoX/avA6pb7TorDLmpgTnQ==}
+    dependencies:
+      '@types/node': 18.19.4
+    dev: true
+
   /@types/big.js@6.2.2:
     resolution: {integrity: sha512-e2cOW9YlVzFY2iScnGBBkplKsrn2CsObHQ2Hiw4V1sSyiGbgWL8IyqE3zFi1Pt5o1pdAtYkDAIsF3KKUPjdzaA==}
     dev: false
@@ -1191,6 +1209,10 @@ packages:
       '@types/node': 18.19.4
       safe-buffer: 5.1.2
     dev: true
+
+  /@types/retry@0.12.0:
+    resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
+    dev: false
 
   /@types/semver@7.5.6:
     resolution: {integrity: sha512-dn1l8LaMea/IjDoHNd9J52uBbInB796CDffS6VdIxvqYCPSG0V0DzHp76GpaWnlhg88uYyPbXCDIowa86ybd5A==}
@@ -5705,6 +5727,7 @@ packages:
 
   /nan@2.18.0:
     resolution: {integrity: sha512-W7tfG7vMOGtD30sHoZSSc/JVYiyDPEyQVso/Zz+/uQd0B0L46gtC+pHha5FFMRpil6fm/AoEcRWyOVi4+E/f8w==}
+    requiresBuild: true
 
   /nanoid@3.3.3:
     resolution: {integrity: sha512-p1sjXuopFs0xg+fPASzQ28agW1oHD7xDsd9Xkf3T15H3c/cifrFHVwrh74PdoklAPi+i7MdRsE47vm2r6JoB+w==}
@@ -6123,6 +6146,14 @@ packages:
     dependencies:
       eventemitter3: 4.0.7
       p-timeout: 3.2.0
+    dev: false
+
+  /p-retry@4.6.2:
+    resolution: {integrity: sha512-312Id396EbJdvRONlngUx0NydfrIQ5lsYu0znKVUzVvArzEIt08V1qhtyESbGVd1FGX7UKtiFp5uwKZdM8wIuQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@types/retry': 0.12.0
+      retry: 0.13.1
     dev: false
 
   /p-timeout@3.2.0:
@@ -6977,6 +7008,11 @@ packages:
     dev: true
     optional: true
 
+  /retry@0.13.1:
+    resolution: {integrity: sha512-XQBQ3I8W1Cge0Seh+6gjj03LbmRFWuoszgK9ooCpwYIrhhoO80pfq4cUkU5DkknwfOfFteRwlZ56PYOGYyFWdg==}
+    engines: {node: '>= 4'}
+    dev: false
+
   /reusify@1.0.4:
     resolution: {integrity: sha512-U9nH88a3fc/ekCF1l0/UP1IosiuIjyTh7hBvXVMHYgVcfGvt897Xguj2UOLDeI5BG2m7/uwyaLVT6fbtCwTyzw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
@@ -7673,7 +7709,6 @@ packages:
   /tarn@3.0.2:
     resolution: {integrity: sha512-51LAVKUSZSVfI05vjPESNc5vwqqZpbXCsU+/+wxlOrUjk2SnFTt97v9ZgQrD4YmxYW1Px6w2KjaDitCfkvgxMQ==}
     engines: {node: '>=8.0.0'}
-    dev: true
 
   /tedious@16.7.0:
     resolution: {integrity: sha512-AwZeknjoPSg1z4sDkZYIpNUzqq3/GrPRWxoJEY0yL2RJbbIViD+AURnC+apbNpUza7sOUONagO1FQf74en8gxw==}

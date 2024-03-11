@@ -15,6 +15,7 @@ describe("indices > conditional index", () => {
                 "mssql",
                 "postgres",
                 "sqlite",
+                "sqlite-pooled",
                 "better-sqlite3",
                 "libsql",
             ], // only these drivers supports conditional indices

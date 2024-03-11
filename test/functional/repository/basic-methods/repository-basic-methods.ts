@@ -393,6 +393,7 @@ describe("repository > basic methods", () => {
                     .filter(
                         (c) =>
                             c.name === "sqlite" ||
+                            c.name === "sqlite-pooled" ||
                             c.name === "better-sqlite3" ||
                             c.name === "libsql",
                     )

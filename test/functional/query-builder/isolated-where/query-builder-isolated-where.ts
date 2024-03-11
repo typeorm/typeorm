@@ -14,7 +14,7 @@ describe("query builder > isolated-where", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [User],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["sqlite", "sqlite-pooled"],
                 isolateWhereStatements: true,
             })),
     )

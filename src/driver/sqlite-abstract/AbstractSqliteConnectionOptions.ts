@@ -4,7 +4,7 @@ export interface AbstractSqliteConnectionOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
-    readonly type: "sqlite" | "better-sqlite3" | "libsql"
+    readonly type: "sqlite" | "better-sqlite3" | "libsql" | "sqlite-pooled"
 
     /**
      * Storage type or path to the storage.
@@ -28,6 +28,4 @@ export interface AbstractSqliteConnectionOptions extends BaseDataSourceOptions {
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean
-
-    readonly poolSize?: never
 }

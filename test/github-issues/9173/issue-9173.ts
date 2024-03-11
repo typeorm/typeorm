@@ -18,6 +18,7 @@ describe("github issues > #9173 missing typeorm_metadata", () => {
                 dropSchema: true,
                 enabledDrivers: [
                     "sqlite",
+                    "sqlite-pooled",
                     "mysql",
                     "postgres",
                     "better-sqlite3",

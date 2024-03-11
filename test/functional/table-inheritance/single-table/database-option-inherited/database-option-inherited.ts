@@ -20,13 +20,17 @@ describe("table-inheritance > single-table > database-option-inherited", () => {
                     "mssql",
                     "mysql",
                     "sqlite",
+                    "sqlite-pooled",
                     "better-sqlite3",
                     "sqljs",
                     "libsql",
                 ],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
+
+    // Running sequentially since all SQLite connections are
+    // attaching to the same DB and might cause SQLITE_BUSY
+    beforeEach(() => reloadTestingDatabases(connections, false))
     after(() => closeTestingConnections(connections))
 
     it("should correctly inherit database option", () =>

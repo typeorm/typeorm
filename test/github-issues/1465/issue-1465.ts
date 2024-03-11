@@ -19,6 +19,7 @@ describe("github issues > #1465 save child and parent entity", () => {
                     "mysql",
                     "mariadb",
                     "sqlite",
+                    "sqlite-pooled",
                     "better-sqlite3",
                     "sqljs",
                     "libsql",

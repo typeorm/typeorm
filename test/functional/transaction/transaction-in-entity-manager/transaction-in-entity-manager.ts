@@ -18,6 +18,7 @@ describe("transaction > transaction with entity manager", () => {
                 enabledDrivers: [
                     "mysql",
                     "sqlite",
+                    "sqlite-pooled",
                     "better-sqlite3",
                     "postgres",
                     "libsql",

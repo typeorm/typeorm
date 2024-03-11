@@ -34,6 +34,7 @@ describe("commands - migration create", () => {
         "oracle",
         "postgres",
         "sqlite",
+        "sqlite-pooled",
         "libsql",
     ]
 

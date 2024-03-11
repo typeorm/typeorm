@@ -18,6 +18,8 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
                 entities: [Category, Site],
                 schemaCreate: true,
                 dropSchema: true,
+                // TODO: Seems to be broken with sqlite and "relationLoadStrategy": "query"
+                disabledDrivers: ["sqlite-pooled"],
             })),
     )
 

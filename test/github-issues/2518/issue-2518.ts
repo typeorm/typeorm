@@ -23,6 +23,7 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
                     "mssql",
                     "mysql",
                     "sqlite",
+                    "sqlite-pooled",
                     "better-sqlite3",
                     "sqljs",
                     "libsql",

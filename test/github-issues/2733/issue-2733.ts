@@ -19,6 +19,7 @@ describe("github issues > #2733 should correctly handle function calls with uper
                 "mssql",
                 "sqljs",
                 "sqlite",
+                "sqlite-pooled",
                 "better-sqlite3",
                 "libsql",
             ],

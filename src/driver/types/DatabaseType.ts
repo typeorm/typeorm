@@ -8,6 +8,7 @@ export type DatabaseType =
     | "sap"
     | "mariadb"
     | "sqlite"
+    | "sqlite-pooled"
     | "cordova"
     | "react-native"
     | "nativescript"

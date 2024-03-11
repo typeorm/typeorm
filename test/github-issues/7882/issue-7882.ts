@@ -13,7 +13,7 @@ describe("github issues > #7882  .findOne reduces relations to an empty array", 
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["sqlite", "sqlite-pooled"],
             entities: [Example, ExampleText],
             schemaCreate: false,
             dropSchema: true,

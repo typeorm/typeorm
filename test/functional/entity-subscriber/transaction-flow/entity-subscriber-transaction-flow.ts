@@ -125,6 +125,7 @@ describe("entity subscriber > transaction flow", () => {
                     .find((call) => {
                         return (
                             call.args[0] === "BEGIN TRANSACTION" ||
+                            call.args[0] === "BEGIN IMMEDIATE TRANSACTION" ||
                             call.args[0] === "START TRANSACTION" ||
                             call.args[0] ===
                                 "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"

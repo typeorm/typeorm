@@ -17,6 +17,7 @@ describe("query runner > create unique constraint", () => {
                 "mssql",
                 "postgres",
                 "sqlite",
+                "sqlite-pooled",
                 "better-sqlite3",
                 "oracle",
                 "cockroachdb",

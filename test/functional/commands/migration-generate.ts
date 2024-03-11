@@ -31,6 +31,7 @@ describe("commands - migration generate", () => {
         "mysql",
         "mariadb",
         "sqlite",
+        "sqlite-pooled",
         "better-sqlite3",
         "oracle",
         "cockroachdb",

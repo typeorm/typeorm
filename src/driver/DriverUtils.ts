@@ -16,6 +16,7 @@ export class DriverUtils {
     static isSQLiteFamily(driver: Driver): boolean {
         return [
             "sqlite",
+            "sqlite-pooled",
             "cordova",
             "react-native",
             "nativescript",

@@ -14,7 +14,7 @@ describe("query builder > parameters", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Example],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["sqlite", "sqlite-pooled"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

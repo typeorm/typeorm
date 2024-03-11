@@ -12,7 +12,12 @@ describe("github issues > #9266 queryRunner.getTable() fails if Foreign Key is s
     before(async () => {
         connections = await createTestingConnections({
             migrations: [__dirname + "/migrations/*{.js,.ts}"],
-            enabledDrivers: ["sqlite", "better-sqlite3", "libsql"],
+            enabledDrivers: [
+                "sqlite",
+                "sqlite-pooled",
+                "better-sqlite3",
+                "libsql",
+            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))

@@ -13,7 +13,7 @@ describe("sqlite driver > throws an error when queried after closing connection"
         async () =>
             (connections = await createTestingConnections({
                 entities: [],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["sqlite", "sqlite-pooled"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

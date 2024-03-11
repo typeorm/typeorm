@@ -12,7 +12,12 @@ describe("github issues > #1981 Boolean values not casted properly when used in 
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite", "better-sqlite3", "libsql"],
+                enabledDrivers: [
+                    "sqlite",
+                    "sqlite-pooled",
+                    "better-sqlite3",
+                    "libsql",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

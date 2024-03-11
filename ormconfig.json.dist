@@ -39,6 +39,15 @@
   },
   {
     "skip": false,
+    "name": "sqlite-pooled",
+    "type": "sqlite-pooled",
+    "database": "./temp/sqlitedb-2.db",
+    "logging": false,
+    "relationLoadStrategy": "query",
+    "poolSize": 4
+  },
+  {
+    "skip": false,
     "name": "better-sqlite3",
     "type": "better-sqlite3",
     "database": "temp/better-sqlite3db.db",

@@ -3,12 +3,12 @@ import { AbstractSqliteConnectionOptions } from "../sqlite-abstract/AbstractSqli
 /**
  * Sqlite-specific connection options.
  */
-export interface SqliteConnectionOptions
+export interface SqlitePooledConnectionOptions
     extends AbstractSqliteConnectionOptions {
     /**
      * Database type.
      */
-    readonly type: "sqlite"
+    readonly type: "sqlite-pooled"
 
     /**
      * In your SQLite application when you perform parallel writes its common to face SQLITE_BUSY error.
@@ -38,5 +38,11 @@ export interface SqliteConnectionOptions
      */
     readonly busyTimeout?: number
 
-    readonly poolSize?: never
+    /**
+     * Maximum number of clients in the pool. When left undefined (=default),
+     * the driver will NOT use a pool but instead just create a single
+     * connection and single query runner that will be shared across all
+     * usages (i.e. no blocking).
+     */
+    readonly poolSize?: number
 }

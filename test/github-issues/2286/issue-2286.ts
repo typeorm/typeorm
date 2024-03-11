@@ -19,7 +19,7 @@ describe("github issues > #2286 find operators like MoreThan and LessThan doesn'
                 schemaCreate: true,
                 dropSchema: true,
                 /* Test not eligible for better-sql where binding Dates is impossible */
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["sqlite", "sqlite-pooled"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

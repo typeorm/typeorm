@@ -11,7 +11,7 @@ describe("base entity", () => {
     it("test if DataSource calls `useDataSource` of the provided entities", async () => {
         const dataSourceOptions = setupTestingConnections({
             entities: [User],
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["sqlite", "sqlite-pooled"],
         })
         if (!dataSourceOptions.length) return
 
@@ -33,7 +33,7 @@ describe("base entity", () => {
     it("test if DataSource calls `useDataSource` of the provided entities in the entities directory", async () => {
         const dataSourceOptions = setupTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["sqlite", "sqlite-pooled"],
         })
         if (!dataSourceOptions.length) return
 

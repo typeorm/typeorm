@@ -21,6 +21,7 @@ describe("github issues > #10209", () => {
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
+                disabledDrivers: ["sqlite-pooled"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))

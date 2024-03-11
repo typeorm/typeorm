@@ -81,11 +81,11 @@ describe("multi-database > basic-functionality", () => {
         before(async () => {
             connections = await createTestingConnections({
                 entities: [Answer, Category, Post, User],
-                // enabledDrivers: ["sqlite", "better-sqlite3"],
-                enabledDrivers: ["sqlite"],
+                // enabledDrivers: ["sqlite", "sqlite-pooled", "better-sqlite3"],
+                enabledDrivers: ["sqlite", "sqlite-pooled"],
             })
-            connections = connections.filter(
-                (connection) => connection.name === "sqlite",
+            connections = connections.filter((connection) =>
+                connection.name.startsWith("sqlite"),
             )
         })
         beforeEach(() => reloadTestingDatabases(connections))

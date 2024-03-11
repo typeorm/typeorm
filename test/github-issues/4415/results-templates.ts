@@ -160,4 +160,7 @@ export const resultsTemplates: Record<string, any> = {
     get libsql() {
         return this.sqlite
     },
+    get "sqlite-pooled"() {
+        return this.sqlite
+    },
 }

@@ -9,4 +9,6 @@ export interface LibSqlConnectionOptions
      * Database type.
      */
     readonly type: "libsql"
+
+    readonly poolSize?: never
 }
