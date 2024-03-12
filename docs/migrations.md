@@ -147,7 +147,7 @@ typeorm migration:run -- -d path-to-datasource-config
 Example with `ts-node`:
 
 ```
-npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
+npx typeorm-ts-node-commonjs migration:run --d path-to-datasource-config
 ```
 
 Example with `ts-node` in ESM projects:
