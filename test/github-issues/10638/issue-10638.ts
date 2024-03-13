@@ -7,14 +7,14 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { User } from "./entity"
+import { Role, User } from "./entity"
 
 describe("github issues > #10638 Validate that virtual columns are being returned correctly", () => {
     let dataSources: DataSource[]
     before(
         async () =>
             (dataSources = await createTestingConnections({
-                entities: [User],
+                entities: [User,Role],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["postgres", "mysql", "mariadb", "sqlite"],
@@ -35,6 +35,27 @@ describe("github issues > #10638 Validate that virtual columns are being returne
 
                 expect(userAdmins?.name).eq("admin")
                 expect(userAdmins?.randomVirtualColumn).eql(1)
+            }),
+        ))
+
+    it("should return 1 to requested with @VirtualColumn definitions on the reverse relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository(User);
+                const user = new User({ name: "user1" });
+                await userRepository.save(user)
+
+                const roleRepository = dataSource.getRepository(Role);
+                const role = new Role({ name: "admin", users: [user] });
+                await roleRepository.save(role);
+
+                const roleWithUsers = await roleRepository.findOne({
+                    where: { name: "admin" },
+                    relations: { users: true },
+                });
+
+                expect(roleWithUsers?.name).eq("admin");
+                expect(roleWithUsers?.users[0].randomVirtualColumn).eql(1);
             }),
         ))
 })
