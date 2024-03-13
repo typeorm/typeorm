@@ -19,7 +19,8 @@ export function OneToOne<T>(
  */
 export function OneToOne<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
-	@@ -24,8 +24,8 @@ export function OneToOne<T>(
+	inverseSide?: string | ((object: T) => any),
+    options?: RelationOptions,
 ): PropertyDecorator
 
 /**
