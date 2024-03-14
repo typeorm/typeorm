@@ -9,8 +9,8 @@ dependencies:
     specifier: ^5.18.0
     version: 5.18.0
   '@n8n/p-retry':
-    specifier: ^6.2.0-1
-    version: 6.2.0
+    specifier: 6.2.0-2
+    version: 6.2.0-2
   '@sap/hana-client':
     specifier: ^2.12.25
     version: 2.19.21
@@ -811,11 +811,12 @@ packages:
       sparse-bitfield: 3.0.3
     dev: true
 
-  /@n8n/p-retry@6.2.0:
-    resolution: {integrity: sha512-ESsx3OXyKX8Z8tzlRZVZojQDbfcUOo8XiaCmQC7aSi66G2H33J5t84y821Ei2OD6HRfoMQBiafD7zuptqAPSFg==}
+  /@n8n/p-retry@6.2.0-2:
+    resolution: {integrity: sha512-rbnMnSdEwq2yuYMgzOQ4jTXm+oH7yjN/0ISfB/7O6pUcEPsZt9UW60BYfQ1WWHkKa/evI8vgER2zV5/RC1BupQ==}
     engines: {node: '>=18.10'}
     dependencies:
       '@common.js/is-network-error': 1.0.1
+      '@types/retry': 0.12.5
       retry: 0.13.1
     dev: false
 
@@ -1222,6 +1223,10 @@ packages:
       '@types/node': 18.19.4
       safe-buffer: 5.1.2
     dev: true
+
+  /@types/retry@0.12.5:
+    resolution: {integrity: sha512-3xSjTp3v03X/lSQLkczaN9UIEwJMoMCA1+Nb5HfbJEQWogdeQIyVtTvxPXDQjZ5zws8rFQfVfRdz03ARihPJgw==}
+    dev: false
 
   /@types/semver@7.5.6:
     resolution: {integrity: sha512-dn1l8LaMea/IjDoHNd9J52uBbInB796CDffS6VdIxvqYCPSG0V0DzHp76GpaWnlhg88uYyPbXCDIowa86ybd5A==}
