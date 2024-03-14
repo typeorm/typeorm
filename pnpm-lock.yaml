@@ -8,6 +8,9 @@ dependencies:
   '@google-cloud/spanner':
     specifier: ^5.18.0
     version: 5.18.0
+  '@n8n/p-retry':
+    specifier: ^6.2.0
+    version: 6.2.0
   '@sap/hana-client':
     specifier: ^2.12.25
     version: 2.19.21
@@ -50,9 +53,6 @@ dependencies:
   oracledb:
     specifier: ^6.3.0
     version: 6.3.0
-  p-retry:
-    specifier: ^4.6.1
-    version: 4.6.2
   pg-native:
     specifier: ^3.0.0
     version: 3.0.1
@@ -440,6 +440,11 @@ packages:
       js-tokens: 4.0.0
     dev: true
 
+  /@common.js/is-network-error@1.0.1:
+    resolution: {integrity: sha512-dkk7FX8L/JLia5pi+IQ11lCw2D6FTmbWL2iWTHgCbP40/deeXgknlkEQcQ/rOkjwQbqp8RZ4ey/anR17K66sqw==}
+    engines: {node: '>=16'}
+    dev: false
+
   /@cspotcode/source-map-support@0.8.1:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
@@ -805,6 +810,14 @@ packages:
     dependencies:
       sparse-bitfield: 3.0.3
     dev: true
+
+  /@n8n/p-retry@6.2.0:
+    resolution: {integrity: sha512-ESsx3OXyKX8Z8tzlRZVZojQDbfcUOo8XiaCmQC7aSi66G2H33J5t84y821Ei2OD6HRfoMQBiafD7zuptqAPSFg==}
+    engines: {node: '>=18.10'}
+    dependencies:
+      '@common.js/is-network-error': 1.0.1
+      retry: 0.13.1
+    dev: false
 
   /@neon-rs/load@0.0.4:
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
@@ -1209,10 +1222,6 @@ packages:
       '@types/node': 18.19.4
       safe-buffer: 5.1.2
     dev: true
-
-  /@types/retry@0.12.0:
-    resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
-    dev: false
 
   /@types/semver@7.5.6:
     resolution: {integrity: sha512-dn1l8LaMea/IjDoHNd9J52uBbInB796CDffS6VdIxvqYCPSG0V0DzHp76GpaWnlhg88uYyPbXCDIowa86ybd5A==}
@@ -6146,14 +6155,6 @@ packages:
     dependencies:
       eventemitter3: 4.0.7
       p-timeout: 3.2.0
-    dev: false
-
-  /p-retry@4.6.2:
-    resolution: {integrity: sha512-312Id396EbJdvRONlngUx0NydfrIQ5lsYu0znKVUzVvArzEIt08V1qhtyESbGVd1FGX7UKtiFp5uwKZdM8wIuQ==}
-    engines: {node: '>=8'}
-    dependencies:
-      '@types/retry': 0.12.0
-      retry: 0.13.1
     dev: false
 
   /p-timeout@3.2.0:

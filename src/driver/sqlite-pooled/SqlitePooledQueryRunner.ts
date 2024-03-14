@@ -1,4 +1,4 @@
-import pRetry from "p-retry"
+import pRetry, { Options as RetryOptions } from "@n8n/p-retry"
 import { captureException } from "@sentry/node"
 import type { Database as Sqlite3Database } from "sqlite3"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
@@ -240,7 +240,7 @@ export class SqlitePooledQueryRunner extends AbstractSqliteQueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this)
             const queryStartTime = +new Date()
 
-            const retryOptions = {
+            const retryOptions: RetryOptions = {
                 // Max 10 retries, starting with 20ms and 1.71x factor and
                 // using randomize (multiply each retry with random number
                 // between 1 and 2).
