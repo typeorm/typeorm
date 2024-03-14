@@ -9,7 +9,7 @@ dependencies:
     specifier: ^5.18.0
     version: 5.18.0
   '@n8n/p-retry':
-    specifier: ^6.2.0
+    specifier: ^6.2.0-1
     version: 6.2.0
   '@sap/hana-client':
     specifier: ^2.12.25
