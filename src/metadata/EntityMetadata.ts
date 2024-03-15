@@ -686,13 +686,16 @@ export class EntityMetadata {
         firstEntity: ObjectLiteral,
         secondEntity: ObjectLiteral,
     ): boolean {
-        const firstEntityIdMap = this.getEntityIdMap(firstEntity)
         for (const c of this.primaryColumns) {
-            if (!firstEntity.hasOwnProperty(c.databaseName) ||
-                !secondEntity.hasOwnProperty(c.databaseName)) {
+            const path = c.propertyPath.split(".");
+            const hasFirstKey = !!path.reduce((obj, key) => obj?.[key], firstEntity);
+            const hasSecondKey = !!path.reduce((obj, key) => obj?.[key], secondEntity);
+            if (!hasFirstKey || !hasSecondKey) {
                     return false
             }
         }
+
+        const firstEntityIdMap = this.getEntityIdMap(firstEntity)
         const firstEntityIdFlat = this.getEntityIdFlat(firstEntity)
         if (!firstEntityIdMap && !firstEntityIdFlat) return false
 
