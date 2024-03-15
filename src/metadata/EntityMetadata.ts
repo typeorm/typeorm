@@ -688,8 +688,8 @@ export class EntityMetadata {
     ): boolean {
         const firstEntityIdMap = this.getEntityIdMap(firstEntity)
         for (const c of this.primaryColumns) {
-            if (!Object.hasOwn(firstEntity, c.databaseName) || 
-                !Object.hasOwn(secondEntity, c.databaseName)) {
+            if (!firstEntity.hasOwnProperty(c.databaseName) ||
+                !secondEntity.hasOwnProperty(c.databaseName)) {
                     return false
             }
         }
