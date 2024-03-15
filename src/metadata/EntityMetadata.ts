@@ -688,8 +688,8 @@ export class EntityMetadata {
     ): boolean {
         for (const c of this.primaryColumns) {
             const path = c.propertyPath.split(".");
-            const hasFirstKey = !!path.reduce((obj, key) => obj?.[key], firstEntity);
-            const hasSecondKey = !!path.reduce((obj, key) => obj?.[key], secondEntity);
+            const hasFirstKey = path.reduce((obj, key) => obj?.[key], firstEntity) !== undefined;
+            const hasSecondKey = !!path.reduce((obj, key) => obj?.[key], secondEntity) !== undefined;
             if (!hasFirstKey || !hasSecondKey) {
                     return false
             }
