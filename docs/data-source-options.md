@@ -33,9 +33,8 @@ Different RDBMS-es have their own specific options.
     Use it if you want to pass extra settings to underlying database driver.
 
 -   `entities` - Entities, or Entity Schemas, to be loaded and used for this data source.
-    Accepts both entity classes, entity schema classes, and directories paths to load from.
-    Directories support glob patterns.
-    Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
+    Accepts both entity classes and entity schema classes.
+    Example: `entities: [Post, Category]`.
     Learn more about [Entities](entities.md).
     Learn more about [Entity Schemas](separating-entity-definition.md).
 
