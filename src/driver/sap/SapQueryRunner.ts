@@ -88,10 +88,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     release(): Promise<void> {
         this.isReleased = true
 
-        if (this.databaseConnection) {
-            return this.driver.master.release(this.databaseConnection)
-        }
-
         return Promise.resolve()
     }
 

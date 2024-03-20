@@ -267,40 +267,11 @@ export class SapDriver implements Driver {
         if (this.options.cert) dbParams.cert = this.options.cert
         if (this.options.ca) dbParams.ca = this.options.ca
 
-        // pool options
-        const options: any = {
-            min:
-                this.options.pool && this.options.pool.min
-                    ? this.options.pool.min
-                    : 1,
-            max:
-                this.options.pool && this.options.pool.max
-                    ? this.options.pool.max
-                    : 10,
-        }
-
-        if (this.options.pool && this.options.pool.checkInterval)
-            options.checkInterval = this.options.pool.checkInterval
-        if (this.options.pool && this.options.pool.maxWaitingRequests)
-            options.maxWaitingRequests = this.options.pool.maxWaitingRequests
-        if (this.options.pool && this.options.pool.requestTimeout)
-            options.requestTimeout = this.options.pool.requestTimeout
-        if (this.options.pool && this.options.pool.idleTimeout)
-            options.idleTimeout = this.options.pool.idleTimeout
-
-        const { logger } = this.connection
-
-        const poolErrorHandler =
-            options.poolErrorHandler ||
-            ((error: any) =>
-                logger.log("warn", `SAP Hana pool raised an error. ${error}`))
-        this.client.eventEmitter.on("poolError", poolErrorHandler)
-
-        // create the pool
-        this.master = this.client.createPool(dbParams, options)
+        this.master = this.hanaClient.createConnection()
+        this.master.connect(this.options)
 
         if (!this.database || !this.schema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -694,7 +665,7 @@ export class SapDriver implements Driver {
             throw new TypeORMError("Driver not Connected")
         }
 
-        return this.master.getConnection()
+        return this.master
     }
 
     /**
