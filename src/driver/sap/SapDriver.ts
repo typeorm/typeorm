@@ -48,9 +48,15 @@ export class SapDriver implements Driver {
     client: any
 
     /**
+     * Hana Client instance.
+     */
+    hanaClient: any
+
+    /**
      * Hana Client streaming extension.
      */
     streamClient: any
+
     /**
      * Pool for master database.
      */
@@ -712,9 +718,6 @@ export class SapDriver implements Driver {
                     insertResult
                 ) {
                     value = insertResult
-                    // } else if (generatedColumn.generationStrategy === "uuid") {
-                    //     console.log("getting db value:", generatedColumn.databaseName);
-                    //     value = generatedColumn.getEntityValue(uuidMap);
                 }
 
                 return OrmUtils.mergeDeep(
@@ -729,14 +732,14 @@ export class SapDriver implements Driver {
     }
 
     /**
-     * Differentiate columns of this table and columns from the given column metadatas columns
+     * Differentiate columns of this table and columns from the given column metadata columns
      * and returns only changed.
      */
     findChangedColumns(
         tableColumns: TableColumn[],
-        columnMetadatas: ColumnMetadata[],
+        columnMetadata: ColumnMetadata[],
     ): ColumnMetadata[] {
-        return columnMetadatas.filter((columnMetadata) => {
+        return columnMetadata.filter((columnMetadata) => {
             const tableColumn = tableColumns.find(
                 (c) => c.name === columnMetadata.databaseName,
             )
@@ -758,7 +761,7 @@ export class SapDriver implements Driver {
             // console.log("==========================================");
 
             const normalizeDefault = this.normalizeDefault(columnMetadata)
-            const hanaNullComapatibleDefault =
+            const hanaNullCompatibleDefault =
                 normalizeDefault == null ? undefined : normalizeDefault
 
             return (
@@ -772,7 +775,7 @@ export class SapDriver implements Driver {
                 tableColumn.comment !==
                     this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
-                    hanaNullComapatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
+                    hanaNullCompatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
@@ -820,12 +823,10 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            if (!this.options.hanaClientDriver) {
-                PlatformTools.load("@sap/hana-client")
-                this.streamClient = PlatformTools.load(
-                    "@sap/hana-client/extension/Stream",
-                )
-            }
+            this.hanaClient = PlatformTools.load("@sap/hana-client")
+            this.streamClient = PlatformTools.load(
+                "@sap/hana-client/extension/Stream",
+            )
         } catch (e) {
             // todo: better error for browser env
             throw new DriverPackageNotInstalledError(
