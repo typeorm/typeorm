@@ -19,15 +19,9 @@ export interface SapConnectionOptions
 
     /**
      * The driver objects
-     * This defaults to require("hdb-pool")
+     * This defaults to require("hdb-pool") - deprecated
      */
     readonly driver?: any
-
-    /**
-     * The driver objects
-     * This defaults to require("@sap/hana-client")
-     */
-    readonly hanaClientDriver?: any
 
     /**
      * Pool options.

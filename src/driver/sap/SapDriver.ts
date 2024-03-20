@@ -820,14 +820,6 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const client = this.options.driver || PlatformTools.load("hdb-pool")
-            this.client = client
-        } catch (e) {
-            // todo: better error for browser env
-            throw new DriverPackageNotInstalledError("SAP Hana", "hdb-pool")
-        }
-
-        try {
             if (!this.options.hanaClientDriver) {
                 PlatformTools.load("@sap/hana-client")
                 this.streamClient = PlatformTools.load(

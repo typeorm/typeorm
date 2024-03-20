@@ -57,9 +57,6 @@ export class PlatformTools {
                 case "@sap/hana-client/extension/Stream":
                     return require("@sap/hana-client/extension/Stream")
 
-                case "hdb-pool":
-                    return require("hdb-pool")
-
                 /**
                  * mysql
                  */
