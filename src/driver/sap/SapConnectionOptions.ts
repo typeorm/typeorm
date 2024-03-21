@@ -18,54 +18,40 @@ export interface SapConnectionOptions
     readonly schema?: string
 
     /**
-     * The driver objects
-     * This defaults to require("hdb-pool")
+     * By default, implicit connection pooling is disabled.
      */
-    readonly driver?: any
+    readonly pooling?: boolean
 
     /**
-     * The driver objects
-     * This defaults to require("@sap/hana-client")
+     * The maximum pool size for a specific connection string or option.
+     * By default value is 0, meaning that there is no limit.
+     * DO NOT use this if pooling=false
      */
-    readonly hanaClientDriver?: any
+    readonly maxPoolSize?: number
 
     /**
-     * Pool options.
+     * If set to true, the Node.js driver specifies that connections
+     * in the connection pool should be tested for viability before being reused.
+     * DO NOT use this if pooling=false
      */
-    readonly pool?: {
-        /**
-         * Max number of connections.
-         */
-        readonly max?: number
+    readonly poolingCheck?: boolean
 
-        /**
-         * Minimum number of connections.
-         */
-        readonly min?: number
+    /**
+     * Specifies the maximum time, in seconds,
+     * that the connection is cached in the implicit connection pool.
+     * A value of 0 causes implicit pooled connections to be cached permanently.
+     * DO NOT use this if pooling=false
+     */
+    readonly connectionLifetime?: number
 
-        /**
-         * Maximum number of waiting requests allowed. (default=0, no limit).
-         */
-        readonly maxWaitingRequests?: number
-        /**
-         * Max milliseconds a request will wait for a resource before timing out. (default=5000)
-         */
-        readonly requestTimeout?: number
-        /**
-         * How often to run resource timeout checks. (default=0, disabled)
-         */
-        readonly checkInterval?: number
-        /**
-         * Idle timeout
-         */
-        readonly idleTimeout?: number
+    /**
+     * Sub-pool name.
+     */
+    readonly poolKey?: string
 
-        /**
-         * Function handling errors thrown by drivers pool.
-         * Defaults to logging error with `warn` level.
-         */
-        readonly poolErrorHandler?: (err: any) => any
-    }
-
-    readonly poolSize?: never
+    /**
+     * Aborts communication attempts to the server
+     * after the specified timeout.
+     */
+    readonly communicationTimeout?: number
 }
