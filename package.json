@@ -149,7 +149,7 @@
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0",
-    "@sap/hana-client": "^2.12.25",
+    "@sap/hana-client": "^2.20.15",
     "better-sqlite3": "^7.1.2 || ^8.0.0 || ^9.0.0",
     "ioredis": "^5.0.4",
     "mongodb": "^5.8.0",
