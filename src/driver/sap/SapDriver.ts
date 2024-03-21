@@ -252,14 +252,12 @@ export class SapDriver implements Driver {
     async connect(): Promise<void> {
         // HANA connection info
         const dbParams = {
-            hostName: this.options.host,
-            port: this.options.port,
-            userName: this.options.username,
-            password: this.options.password,
+            serverNode: `${this.options.host}:${this.options.port}`,
+            uid: this.options.username,
+            pwd: this.options.password,
             ...this.options.extra,
         }
 
-        if (this.options.database) dbParams.databaseName = this.options.database
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt
         if (this.options.sslValidateCertificate)
             dbParams.validateCertificate = this.options.sslValidateCertificate
@@ -267,8 +265,20 @@ export class SapDriver implements Driver {
         if (this.options.cert) dbParams.cert = this.options.cert
         if (this.options.ca) dbParams.ca = this.options.ca
 
-        this.master = this.hanaClient.createConnection()
-        this.master.connect(this.options)
+        this.master = this.hanaClient.createPool(dbParams, this.options)
+        if (!this.database || !this.schema) {
+            const queryRunner = this.createQueryRunner("master")
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase()
+            }
+
+            if (!this.schema) {
+                this.schema = await queryRunner.getCurrentSchema()
+            }
+
+            await queryRunner.release()
+        }
 
         if (!this.database || !this.schema) {
             const queryRunner = this.createQueryRunner("master")
@@ -665,7 +675,7 @@ export class SapDriver implements Driver {
             throw new TypeORMError("Driver not Connected")
         }
 
-        return this.master
+        return this.master.getConnection()
     }
 
     /**
