@@ -260,7 +260,8 @@ export class SapDriver implements Driver {
 
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt
         if (this.options.sslValidateCertificate)
-            dbParams.validateCertificate = this.options.sslValidateCertificate
+            dbParams.sslValidateCertificate =
+                this.options.sslValidateCertificate
         if (this.options.key) dbParams.key = this.options.key
         if (this.options.cert) dbParams.cert = this.options.cert
         if (this.options.ca) dbParams.ca = this.options.ca
