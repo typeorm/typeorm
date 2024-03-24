@@ -9,5 +9,5 @@ export class Message {
 
     // create a vector embedding with 5 dimensions
     @Column("vector", { length: 5 })
-    embedding: string;
+    embedding: string
 }

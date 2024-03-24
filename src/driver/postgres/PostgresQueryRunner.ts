@@ -603,8 +603,20 @@ export class PostgresQueryRunner
         }
 
         if (table.comment) {
-            upQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS '" + table.comment + "'"));
-            downQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS NULL"));
+            upQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " +
+                        this.escapePath(table) +
+                        " IS '" +
+                        table.comment +
+                        "'",
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " + this.escapePath(table) + " IS NULL",
+                ),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -3543,7 +3555,8 @@ export class PostgresQueryRunner
                             // NOTE: if ENUM type defined with "array:true" it comes with ARRAY type instead of USER-DEFINED
                             if (
                                 (dbColumn["data_type"] === "USER-DEFINED" ||
-                                    dbColumn["data_type"] === "ARRAY") && dbColumn["udt_name"] !== "vector"
+                                    dbColumn["data_type"] === "ARRAY") &&
+                                dbColumn["udt_name"] !== "vector"
                             ) {
                                 const { name } =
                                     await this.getUserDefinedTypeName(

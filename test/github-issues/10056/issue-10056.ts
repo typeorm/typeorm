@@ -1,12 +1,18 @@
 import "reflect-metadata"
 import {
     createTestingConnections,
-    closeTestingConnections, reloadTestingDatabases,
+    closeTestingConnections,
+    reloadTestingDatabases,
 } from "../../utils/test-utils"
-import {Column, DataSource, Entity, PrimaryGeneratedColumn} from "../../../src"
-import {expect} from "chai"
-import {Message} from "./entity/message";
-import {MemoryLogger} from "../7662/memory-logger";
+import {
+    Column,
+    DataSource,
+    Entity,
+    PrimaryGeneratedColumn,
+} from "../../../src"
+import { expect } from "chai"
+import { Message } from "./entity/message"
+import { MemoryLogger } from "../7662/memory-logger"
 
 describe("github issues > #10056 Postgres vector type", () => {
     describe("vector extension", () => {
@@ -65,8 +71,8 @@ describe("github issues > #10056 Postgres vector type", () => {
                 const connection = connections[0]
 
                 const logger = connection.logger as MemoryLogger
-                const createExtensionQueries = logger.queries.filter((q) =>
-                    q === 'CREATE EXTENSION IF NOT EXISTS "vector"',
+                const createExtensionQueries = logger.queries.filter(
+                    (q) => q === 'CREATE EXTENSION IF NOT EXISTS "vector"',
                 )
 
                 expect(createExtensionQueries).to.have.length(1)
@@ -86,10 +92,10 @@ describe("github issues > #10056 Postgres vector type", () => {
 
             // create a vector embedding with 5 dimensions
             @Column("vector", { length: 5 })
-            embedding: string;
+            embedding: string
 
             @Column({
-                type: "text"
+                type: "text",
             })
             text: string
         }
@@ -103,10 +109,10 @@ describe("github issues > #10056 Postgres vector type", () => {
 
             // create a vector embedding with 5 dimensions
             @Column("vector", { length: 5 })
-            embedding: string;
+            embedding: string
 
             @Column({
-                type: "varchar"
+                type: "varchar",
             })
             text: string
         }
@@ -120,10 +126,10 @@ describe("github issues > #10056 Postgres vector type", () => {
 
             // create a vector embedding with 3 dimensions
             @Column("vector", { length: 3 })
-            embedding: string;
+            embedding: string
 
             @Column({
-                type: "text"
+                type: "text",
             })
             text: string
         }
@@ -147,7 +153,7 @@ describe("github issues > #10056 Postgres vector type", () => {
 
                 connection = connections[0]
 
-                await connection.synchronize(true);
+                await connection.synchronize(true)
             } finally {
                 if (connection) {
                     await closeTestingConnections([connection])
@@ -169,13 +175,17 @@ describe("github issues > #10056 Postgres vector type", () => {
                 }
 
                 connection = connections[0]
-                await connection.synchronize(false);
+                await connection.synchronize(false)
 
                 const logger = connection.logger as MemoryLogger
                 const queries = logger.queries
 
-                expect(queries).to.include("ALTER TABLE \"message\" DROP COLUMN \"text\"")
-                expect(queries).to.not.include("ALTER TABLE \"message\" DROP COLUMN \"embedding\"")
+                expect(queries).to.include(
+                    'ALTER TABLE "message" DROP COLUMN "text"',
+                )
+                expect(queries).to.not.include(
+                    'ALTER TABLE "message" DROP COLUMN "embedding"',
+                )
             } finally {
                 if (connection) {
                     await closeTestingConnections([connection])
@@ -202,7 +212,7 @@ describe("github issues > #10056 Postgres vector type", () => {
 
                 connection = connections[0]
 
-                await connection.synchronize(true);
+                await connection.synchronize(true)
             } finally {
                 if (connection) {
                     await closeTestingConnections([connection])
@@ -224,15 +234,19 @@ describe("github issues > #10056 Postgres vector type", () => {
                 }
 
                 connection = connections[0]
-                await connection.synchronize(false);
+                await connection.synchronize(false)
 
                 const logger = connection.logger as MemoryLogger
                 const queries = logger.queries
 
                 // ALTER TABLE "message" DROP COLUMN "embedding" should exist
-                expect(queries).to.include("ALTER TABLE \"message\" DROP COLUMN \"embedding\"")
+                expect(queries).to.include(
+                    'ALTER TABLE "message" DROP COLUMN "embedding"',
+                )
                 // ALTER TABLE "message" ADD COLUMN "embedding" should exist
-                expect(queries).to.include(`ALTER TABLE "message" ADD "embedding" vector(3) NOT NULL`)
+                expect(queries).to.include(
+                    `ALTER TABLE "message" ADD "embedding" vector(3) NOT NULL`,
+                )
             } finally {
                 if (connection) {
                     await closeTestingConnections([connection])
@@ -265,12 +279,14 @@ describe("github issues > #10056 Postgres vector type", () => {
                         ...dataSource.options,
                         migrationsTransactionMode: "none",
                     })
-                    const messageTable = await dataSource.query<{
-                        columnName: string;
-                        dataType: string;
-                        udtName: string;
-                        characterMaximumLength: number;
-                    }[]>(
+                    const messageTable = await dataSource.query<
+                        {
+                            columnName: string
+                            dataType: string
+                            udtName: string
+                            characterMaximumLength: number
+                        }[]
+                    >(
                         `
                             SELECT column_name              as "columnName",
                                    data_type                as "dataType",
@@ -371,15 +387,26 @@ describe("github issues > #10056 Postgres vector type", () => {
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const em = dataSource.createEntityManager()
-                    const message1 = await em.save(Message, {embedding: `[1,1,1,1,1]`})
-                    const message2 = await em.save(Message, {embedding: `[2,2,2,2,2]`})
-                    const message3 = await em.save(Message, {embedding: `[1,1,2,2,2]`})
-                    const items = await em.createQueryBuilder(Message, "message")
+                    const message1 = await em.save(Message, {
+                        embedding: `[1,1,1,1,1]`,
+                    })
+                    const message2 = await em.save(Message, {
+                        embedding: `[2,2,2,2,2]`,
+                    })
+                    const message3 = await em.save(Message, {
+                        embedding: `[1,1,2,2,2]`,
+                    })
+                    const items = await em
+                        .createQueryBuilder(Message, "message")
                         .orderBy("embedding <-> :embedding")
-                        .setParameters({embedding: `[1,1,1,1,1]`})
+                        .setParameters({ embedding: `[1,1,1,1,1]` })
                         .limit(5)
                         .getMany()
-                    expect(items.map(v => v.id)).to.be.eql([message1.id, message3.id, message2.id])
+                    expect(items.map((v) => v.id)).to.be.eql([
+                        message1.id,
+                        message3.id,
+                        message2.id,
+                    ])
                     expect(items[0].embedding).to.be.eql(`[1,1,1,1,1]`)
                     expect(items[1].embedding).to.be.eql(`[1,1,2,2,2]`)
                     expect(items[2].embedding).to.be.eql(`[2,2,2,2,2]`)
