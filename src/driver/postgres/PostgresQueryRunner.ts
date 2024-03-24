@@ -601,10 +601,22 @@ export class PostgresQueryRunner
                 downQueries.push(this.dropIndexSql(table, index))
             })
         }
-        
+
         if (table.comment) {
-            upQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS '" + table.comment + "'"));
-            downQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS NULL"));
+            upQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " +
+                        this.escapePath(table) +
+                        " IS '" +
+                        table.comment +
+                        "'",
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " + this.escapePath(table) + " IS NULL",
+                ),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -3542,8 +3554,9 @@ export class PostgresQueryRunner
                             // check if column has user-defined data type.
                             // NOTE: if ENUM type defined with "array:true" it comes with ARRAY type instead of USER-DEFINED
                             if (
-                                dbColumn["data_type"] === "USER-DEFINED" ||
-                                dbColumn["data_type"] === "ARRAY"
+                                (dbColumn["data_type"] === "USER-DEFINED" ||
+                                    dbColumn["data_type"] === "ARRAY") &&
+                                dbColumn["udt_name"] !== "vector"
                             ) {
                                 const { name } =
                                     await this.getUserDefinedTypeName(
@@ -3592,6 +3605,20 @@ export class PostgresQueryRunner
                                         this.connection.driver.normalizeType({
                                             type: type,
                                         })
+                                }
+                            }
+
+                            if (
+                                dbColumn["data_type"] === "USER-DEFINED" &&
+                                tableColumn.type === "vector"
+                            ) {
+                                // vector length is from the format_type e.g. `format_type = vector(n)`
+                                const match = /vector\((\d+)\)/.exec(
+                                    dbColumn["format_type"],
+                                )
+
+                                if (match) {
+                                    tableColumn.length = match[1]
                                 }
                             }
 
@@ -4744,7 +4771,7 @@ export class PostgresQueryRunner
 
         newComment = this.escapeComment(newComment)
         const comment = this.escapeComment(table.comment)
-        
+
         if (newComment === comment) {
             return
         }
