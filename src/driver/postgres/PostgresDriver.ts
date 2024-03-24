@@ -190,6 +190,7 @@ export class PostgresDriver implements Driver {
         "geography",
         "cube",
         "ltree",
+        "vector",
     ]
 
     /**
@@ -213,6 +214,7 @@ export class PostgresDriver implements Driver {
         "bit",
         "varbit",
         "bit varying",
+        "vector",
     ]
 
     /**
@@ -421,6 +423,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
         } = extensionsMetadata
 
@@ -500,6 +503,18 @@ export class PostgresDriver implements Driver {
                     "At least one of the entities has a ltree column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
+        if (hasVectorColumns)
+            try {
+                await this.executeQuery(
+                    connection,
+                    `CREATE EXTENSION IF NOT EXISTS "vector"`,
+                )
+            } catch (_) {
+                logger.log(
+                    "warn",
+                    "At least one of the entities has a vector column, but the 'vector' extension cannot be installed automatically. Please install it manually using superuser rights",
+                )
+            }
         if (hasExclusionConstraints)
             try {
                 // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
@@ -568,6 +583,14 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
+        const hasVectorColumns = this.connection.entityMetadatas.some(
+            (metadata) => {
+                return (
+                    metadata.columns.filter((column) => column.type === "vector")
+                        .length > 0
+                )
+            },
+        )
         const hasExclusionConstraints = this.connection.entityMetadatas.some(
             (metadata) => {
                 return metadata.exclusions.length > 0
@@ -581,6 +604,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
             hasExtensions:
                 hasUuidColumns ||
@@ -589,6 +613,7 @@ export class PostgresDriver implements Driver {
                 hasGeometryColumns ||
                 hasCubeColumns ||
                 hasLtreeColumns ||
+                hasVectorColumns ||
                 hasExclusionConstraints,
         }
     }
