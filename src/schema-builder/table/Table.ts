@@ -8,6 +8,7 @@ import { TableUtils } from "../util/TableUtils"
 import { TableUnique } from "./TableUnique"
 import { TableCheck } from "./TableCheck"
 import { TableExclusion } from "./TableExclusion"
+import { TemporalTableOptions } from "../options/TemporalTableOptions"
 
 /**
  * Table in the database represented in this class.
@@ -88,6 +89,12 @@ export class Table {
      */
     comment?: string
 
+    /**
+     * The value 'true' enables system versioning. You can also customize each option like
+     * start row column, history table, etc.
+     */
+    versioning: TemporalTableOptions
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -144,6 +151,18 @@ export class Table {
             this.engine = options.engine
 
             this.comment = options.comment
+
+            if (options.versioning) {
+                if (options.versioning === true) {
+                    // Default values
+                    this.versioning = {
+                        validFrom: "row_start",
+                        validTo: "row_end",
+                    }
+                } else {
+                    this.versioning = options.versioning
+                }
+            }
         }
     }
 
@@ -179,6 +198,7 @@ export class Table {
             withoutRowid: this.withoutRowid,
             engine: this.engine,
             comment: this.comment,
+            versioning: this.versioning,
         })
     }
 
@@ -420,6 +440,7 @@ export class Table {
                 TableExclusion.create(exclusion),
             ),
             comment: entityMetadata.comment,
+            versioning: entityMetadata.versioning,
         }
 
         return new Table(options)

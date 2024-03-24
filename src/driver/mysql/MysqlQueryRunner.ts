@@ -3107,6 +3107,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         sql += `) ENGINE=${table.engine || "InnoDB"}`
 
+        if (table.versioning) {
+            sql += ` WITH SYSTEM VERSIONING`
+        }
+
         if (table.comment) {
             sql += ` COMMENT="${table.comment}"`
         }

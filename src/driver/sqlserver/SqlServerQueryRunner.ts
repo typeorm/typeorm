@@ -2635,7 +2635,7 @@ export class SqlServerQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            let allViewsSql = database
+            const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
             const allViewsResults: ObjectLiteral[] = await this.query(
@@ -2719,6 +2719,20 @@ export class SqlServerQueryRunner
                             )
                         },
                     ),
+                )
+
+                await Promise.all(
+                    allTablesResults.map((tablesResult) => {
+                        if (tablesResult["TABLE_NAME"].startsWith("#")) {
+                            return
+                        }
+
+                        const tablePath = `"${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`
+                        const alterTableSql = `IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2
+                                               ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`
+
+                        return this.query(alterTableSql)
+                    }),
                 )
 
                 await Promise.all(
@@ -2918,9 +2932,13 @@ export class SqlServerQueryRunner
                 const condition = tables
                     .map(
                         ({ TABLE_SCHEMA, TABLE_NAME }) =>
-                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}')`,
+                            // ignore hidden columns which are used for temporal tables
+                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND (
+                                COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') IS NULL OR
+                                COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') = 0
+                            ))`,
                     )
-                    .join("OR")
+                    .join(" OR ")
 
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
@@ -3528,11 +3546,24 @@ export class SqlServerQueryRunner
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
-            .map((column) =>
-                this.buildCreateColumnSql(table, column, false, true),
+        const columns = table.columns.map((column) =>
+            this.buildCreateColumnSql(table, column, false, true),
+        )
+
+        if (table.versioning) {
+            const { validFrom, validTo } = table.versioning
+
+            columns.push(
+                `${validFrom} DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
             )
-            .join(", ")
+            columns.push(
+                `${validTo} DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
+            )
+            columns.push(`PERIOD FOR SYSTEM_TIME (${validFrom}, ${validTo})`)
+        }
+
+        const columnDefinitions = columns.join(", ")
+
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
         table.columns
@@ -3641,6 +3672,24 @@ export class SqlServerQueryRunner
 
         sql += `)`
 
+        if (table.versioning) {
+            const options = []
+            const historyTable = this.getHistoryTableName(table)
+            const { dataConsistencyCheck } = table.versioning
+
+            if (historyTable) {
+                options.push(`HISTORY_TABLE = ${historyTable}`)
+            }
+
+            options.push(
+                `DATA_CONSISTENCY_CHECK = ${
+                    dataConsistencyCheck === false ? "OFF" : "ON"
+                }`,
+            )
+
+            sql += ` WITH (SYSTEM_VERSIONING = ON ${`(${options.join(",")})`})`
+        }
+
         return new Query(sql)
     }
 
@@ -3651,10 +3700,16 @@ export class SqlServerQueryRunner
         tableOrName: Table | string,
         ifExist?: boolean,
     ): Query {
-        const query = ifExist
-            ? `DROP TABLE IF EXISTS ${this.escapePath(tableOrName)}`
-            : `DROP TABLE ${this.escapePath(tableOrName)}`
-        return new Query(query)
+        const query = []
+        const tablePath = this.escapePath(tableOrName)
+
+        query.push(
+            `IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2 ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`,
+        )
+
+        query.push(`DROP TABLE ${ifExist ? "IF EXISTS " : ""}${tablePath}`)
+
+        return new Query(query.join("; "))
     }
 
     protected createViewSql(view: View): Query {
@@ -4048,6 +4103,23 @@ export class SqlServerQueryRunner
             column.enum.map((val) => "'" + val + "'").join(",") +
             ")"
         )
+    }
+
+    /**
+     * History table must be in two-part name format.
+     * E.q. 'dbo.UserHistory'
+     */
+    private getHistoryTableName(table: Table) {
+        const { schema } = this.driver.parseTableName(table)
+        const { historyTable } = table.versioning
+
+        if (historyTable) {
+            return historyTable.indexOf(".") === -1
+                ? `${schema}.${historyTable}`
+                : historyTable
+        }
+
+        return null
     }
 
     protected isEnumCheckConstraint(name: string): boolean {

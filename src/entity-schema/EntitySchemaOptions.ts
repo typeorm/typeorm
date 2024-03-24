@@ -13,6 +13,7 @@ import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
 import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
 import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
+import { TemporalTableOptions } from "../schema-builder/options/TemporalTableOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -129,4 +130,10 @@ export class EntitySchemaOptions<T> {
      * Custom discriminator value for Single Table Inheritance.
      */
     discriminatorValue?: string
+
+    /**
+     * The value 'true' enables system versioning. You can also customize each option like
+     * start row column, history table, etc.
+     */
+    versioning?: TemporalTableOptions
 }
