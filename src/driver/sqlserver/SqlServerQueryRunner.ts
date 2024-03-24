@@ -2635,7 +2635,7 @@ export class SqlServerQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            let allViewsSql = database
+            const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
             const allViewsResults: ObjectLiteral[] = await this.query(
@@ -2933,9 +2933,12 @@ export class SqlServerQueryRunner
                     .map(
                         ({ TABLE_SCHEMA, TABLE_NAME }) =>
                             // ignore hidden columns which are used for temporal tables
-                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') = 0)`,
+                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND (
+                                COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') IS NULL OR
+                                COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') = 0
+                            ))`,
                     )
-                    .join("OR")
+                    .join(" OR ")
 
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
