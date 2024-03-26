@@ -71,20 +71,41 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         const fullPath = args.path.startsWith("/")
             ? args.path
             : path.resolve(process.cwd(), args.path)
-        const filename = timestamp + "-" + path.basename(fullPath) + extension
 
-        let dataSource: DataSource | undefined = undefined
+        const dataSource = await CommandUtils.loadDataSource(
+            path.resolve(process.cwd(), args.dataSource as string),
+        )
+        dataSource.setOptions({
+            synchronize: false,
+            migrationsRun: false,
+            dropSchema: false,
+            logging: false,
+        })
+        await dataSource.initialize()
+        await MigrationGenerateCommand.genMigration(
+            dataSource,
+            args.dryrun,
+            args.check,
+            args.pretty,
+            args.exitProcess !== false,
+            timestamp,
+            extension,
+            fullPath
+        )
+    }
+
+    public static async genMigration(
+        dataSource: DataSource,
+        dryrun: boolean,
+        check: boolean,
+        pretty: boolean,
+        exitProcess: boolean,
+        timestamp: number,
+        extension: string,
+        fullPath: string,
+    ) {
         try {
-            dataSource = await CommandUtils.loadDataSource(
-                path.resolve(process.cwd(), args.dataSource as string),
-            )
-            dataSource.setOptions({
-                synchronize: false,
-                migrationsRun: false,
-                dropSchema: false,
-                logging: false,
-            })
-            await dataSource.initialize()
+            const filename = timestamp + "-" + path.basename(fullPath) + extension
 
             const upSqls: string[] = [],
                 downSqls: string[] = []
@@ -94,7 +115,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     .createSchemaBuilder()
                     .log()
 
-                if (args.pretty) {
+                if (pretty) {
                     sqlInMemory.upQueries.forEach((upQuery) => {
                         upQuery.query = MigrationGenerateCommand.prettifyQuery(
                             upQuery.query,
@@ -111,26 +132,26 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     upSqls.push(
                         "        await queryRunner.query(`" +
-                            upQuery.query.replace(new RegExp("`", "g"), "\\`") +
-                            "`" +
-                            MigrationGenerateCommand.queryParams(
-                                upQuery.parameters,
-                            ) +
-                            ");",
+                        upQuery.query.replace(new RegExp("`", "g"), "\\`") +
+                        "`" +
+                        MigrationGenerateCommand.queryParams(
+                            upQuery.parameters,
+                        ) +
+                        ");",
                     )
                 })
                 sqlInMemory.downQueries.forEach((downQuery) => {
                     downSqls.push(
                         "        await queryRunner.query(`" +
-                            downQuery.query.replace(
-                                new RegExp("`", "g"),
-                                "\\`",
-                            ) +
-                            "`" +
-                            MigrationGenerateCommand.queryParams(
-                                downQuery.parameters,
-                            ) +
-                            ");",
+                        downQuery.query.replace(
+                            new RegExp("`", "g"),
+                            "\\`",
+                        ) +
+                        "`" +
+                        MigrationGenerateCommand.queryParams(
+                            downQuery.parameters,
+                        ) +
+                        ");",
                     )
                 })
             } finally {
@@ -138,7 +159,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             }
 
             if (!upSqls.length) {
-                if (args.check) {
+                if (check) {
                     console.log(
                         chalk.green(`No changes in database schema were found`),
                     )
@@ -151,26 +172,26 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     )
                     process.exit(1)
                 }
-            } else if (!args.path) {
+            } else if (!fullPath) {
                 console.log(chalk.yellow("Please specify a migration path"))
                 process.exit(1)
             }
 
-            const fileContent = args.outputJs
+            const fileContent = extension === ".js"
                 ? MigrationGenerateCommand.getJavascriptTemplate(
-                      path.basename(fullPath),
-                      timestamp,
-                      upSqls,
-                      downSqls.reverse(),
-                  )
+                    path.basename(fullPath),
+                    timestamp,
+                    upSqls,
+                    downSqls.reverse(),
+                )
                 : MigrationGenerateCommand.getTemplate(
-                      path.basename(fullPath),
-                      timestamp,
-                      upSqls,
-                      downSqls.reverse(),
-                  )
+                    path.basename(fullPath),
+                    timestamp,
+                    upSqls,
+                    downSqls.reverse(),
+                )
 
-            if (args.check) {
+            if (check) {
                 console.log(
                     chalk.yellow(
                         `Unexpected changes in database schema were found in check mode:\n\n${chalk.white(
@@ -181,7 +202,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 process.exit(1)
             }
 
-            if (args.dryrun) {
+            if (dryrun) {
                 console.log(
                     chalk.green(
                         `Migration ${chalk.blue(
@@ -201,7 +222,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                         )} has been generated successfully.`,
                     ),
                 )
-                if (args.exitProcess !== false) {
+                if (exitProcess !== false) {
                     process.exit(0)
                 }
             }
