@@ -90,7 +90,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             args.exitProcess !== false,
             timestamp,
             extension,
-            fullPath
+            fullPath,
         )
     }
 
@@ -105,7 +105,8 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         fullPath: string,
     ) {
         try {
-            const filename = timestamp + "-" + path.basename(fullPath) + extension
+            const filename =
+                timestamp + "-" + path.basename(fullPath) + extension
 
             const upSqls: string[] = [],
                 downSqls: string[] = []
@@ -132,26 +133,26 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     upSqls.push(
                         "        await queryRunner.query(`" +
-                        upQuery.query.replace(new RegExp("`", "g"), "\\`") +
-                        "`" +
-                        MigrationGenerateCommand.queryParams(
-                            upQuery.parameters,
-                        ) +
-                        ");",
+                            upQuery.query.replace(new RegExp("`", "g"), "\\`") +
+                            "`" +
+                            MigrationGenerateCommand.queryParams(
+                                upQuery.parameters,
+                            ) +
+                            ");",
                     )
                 })
                 sqlInMemory.downQueries.forEach((downQuery) => {
                     downSqls.push(
                         "        await queryRunner.query(`" +
-                        downQuery.query.replace(
-                            new RegExp("`", "g"),
-                            "\\`",
-                        ) +
-                        "`" +
-                        MigrationGenerateCommand.queryParams(
-                            downQuery.parameters,
-                        ) +
-                        ");",
+                            downQuery.query.replace(
+                                new RegExp("`", "g"),
+                                "\\`",
+                            ) +
+                            "`" +
+                            MigrationGenerateCommand.queryParams(
+                                downQuery.parameters,
+                            ) +
+                            ");",
                     )
                 })
             } finally {
@@ -177,19 +178,20 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 process.exit(1)
             }
 
-            const fileContent = extension === ".js"
-                ? MigrationGenerateCommand.getJavascriptTemplate(
-                    path.basename(fullPath),
-                    timestamp,
-                    upSqls,
-                    downSqls.reverse(),
-                )
-                : MigrationGenerateCommand.getTemplate(
-                    path.basename(fullPath),
-                    timestamp,
-                    upSqls,
-                    downSqls.reverse(),
-                )
+            const fileContent =
+                extension === ".js"
+                    ? MigrationGenerateCommand.getJavascriptTemplate(
+                          path.basename(fullPath),
+                          timestamp,
+                          upSqls,
+                          downSqls.reverse(),
+                      )
+                    : MigrationGenerateCommand.getTemplate(
+                          path.basename(fullPath),
+                          timestamp,
+                          upSqls,
+                          downSqls.reverse(),
+                      )
 
             if (check) {
                 console.log(
