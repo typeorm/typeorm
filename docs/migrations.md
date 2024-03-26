@@ -134,6 +134,26 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 }
 ```
 
+### Generating migration outside of CLI
+
+You can also generate migrations outside of the CLI by using the `MigrationGenerateCommand.genMigration` static method:
+```typescript
+ public static async genMigration(
+    dataSource: DataSource,
+    dryrun: boolean,
+    check: boolean,
+    pretty: boolean,
+    exitProcess: boolean,
+    timestamp: number,
+    extension: string,
+    fullPath: string,
+)
+```
+
+Arguments to these methods match the CLI options.
+
+```typescript
+
 ## Running and reverting migrations
 
 Once you have a migration to run on production, you can run them using a CLI command:
