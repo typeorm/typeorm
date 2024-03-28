@@ -134,6 +134,7 @@ export * from "./driver/types/DatabaseType"
 export * from "./driver/types/GeoJsonTypes"
 export * from "./driver/types/ReplicationMode"
 export * from "./driver/sqlserver/MssqlParameter"
+export * from "./subscriber/event/QueryEvent"
 
 // export * from "./data-source";
 
