@@ -42,6 +42,9 @@ export function Entity(
             synchronize: options.synchronize,
             withoutRowid: options.withoutRowid,
             comment: options.comment ? options.comment : undefined,
+            autoIncrementStartFrom: options.autoIncrementStartFrom
+                ? options.autoIncrementStartFrom
+                : undefined,
         } as TableMetadataArgs)
     }
 }
