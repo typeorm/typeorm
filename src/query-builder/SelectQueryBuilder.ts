@@ -72,6 +72,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         nulls?: "NULLS FIRST" | "NULLS LAST"
     }[] = []
     protected relationMetadatas: RelationMetadata[] = []
+    public context: any | undefined = undefined
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -2831,7 +2832,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 escapedAliasName + "." + this.escape(column.databaseName)
 
             if (column.isVirtualProperty && column.query) {
-                selectionPath = `(${column.query(escapedAliasName)})`
+                selectionPath = `(${column.query(
+                    escapedAliasName,
+                    this.context,
+                )})`
             }
 
             if (
@@ -3872,7 +3876,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         embedPrefix?: string,
     ) {
-        for (let key in select) {
+        for (const key in select) {
             if (select[key] === undefined || select[key] === false) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4117,7 +4121,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         embedPrefix?: string,
     ) {
-        for (let key in order) {
+        for (const key in order) {
             if (order[key] === undefined) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4151,7 +4155,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         ? "NULLS LAST"
                         : undefined
 
-                let aliasPath = `${alias}.${propertyPath}`
+                const aliasPath = `${alias}.${propertyPath}`
                 // const selection = this.expressionMap.selects.find(
                 //     (s) => s.selection === aliasPath,
                 // )
@@ -4240,8 +4244,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .join(" OR ")
             }
         } else {
-            let andConditions: string[] = []
-            for (let key in where) {
+            const andConditions: string[] = []
+            for (const key in where) {
                 if (where[key] === undefined || where[key] === null) continue
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
