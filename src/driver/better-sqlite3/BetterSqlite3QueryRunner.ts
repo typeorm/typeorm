@@ -61,14 +61,16 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      * Called before migrations are run.
      */
     async beforeMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = OFF`)
+        const databaseConnection = await this.connect()
+        databaseConnection.pragma("foreign_keys = OFF")
     }
 
     /**
      * Called after migrations are run.
      */
     async afterMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = ON`)
+        const databaseConnection = await this.connect()
+        databaseConnection.pragma("foreign_keys = ON")
     }
 
     /**
@@ -154,10 +156,9 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     }
     protected async loadPragmaRecords(tablePath: string, pragma: string) {
         const [database, tableName] = this.splitTablePath(tablePath)
-        const res = await this.query(
-            `PRAGMA ${
-                database ? `"${database}".` : ""
-            }${pragma}("${tableName}")`,
+        const databaseConnection = await this.connect()
+        const res = databaseConnection.pragma(
+            `${database ? `"${database}".` : ""}${pragma}("${tableName}")`,
         )
         return res
     }
