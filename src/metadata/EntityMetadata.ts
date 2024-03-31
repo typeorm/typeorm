@@ -644,6 +644,20 @@ export class EntityMetadata {
     }
 
     /**
+     * Gets the flattened version of the primary key of the entity. If the entity has a IdMap
+     * it will access its id property and return that. If the entity has multiple primary keys
+     * it will return a string with the values of the primary keys joined by a dot.
+     */
+    getEntityIdFlat(entity: ObjectLiteral | undefined): string | undefined {
+        if (!entity) return undefined
+        const ids = this.primaryColumns.map<string>((column) => {
+            const id = entity[column.propertyName]
+            return typeof id === "object" ? id?.id : id
+        })
+        return ids.join(ids.length ? "." : "")
+    }
+
+    /**
      * Creates a "mixed id map".
      * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
      * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
@@ -672,13 +686,28 @@ export class EntityMetadata {
         firstEntity: ObjectLiteral,
         secondEntity: ObjectLiteral,
     ): boolean {
+        for (const c of this.primaryColumns) {
+            const path = c.propertyPath.split(".");
+            const hasFirstKey = path.reduce((obj, key) => obj?.[key], firstEntity) !== undefined;
+            const hasSecondKey = !!path.reduce((obj, key) => obj?.[key], secondEntity) !== undefined;
+            if (!hasFirstKey || !hasSecondKey) {
+                    return false
+            }
+        }
+
         const firstEntityIdMap = this.getEntityIdMap(firstEntity)
-        if (!firstEntityIdMap) return false
+        const firstEntityIdFlat = this.getEntityIdFlat(firstEntity)
+        if (!firstEntityIdMap && !firstEntityIdFlat) return false
 
         const secondEntityIdMap = this.getEntityIdMap(secondEntity)
-        if (!secondEntityIdMap) return false
+        const secondEntityIdFlat = this.getEntityIdFlat(secondEntity)
+        if (!secondEntityIdMap && !secondEntityIdFlat) return false
 
-        return OrmUtils.compareIds(firstEntityIdMap, secondEntityIdMap)
+        const isMatch = OrmUtils.compareIds(firstEntityIdMap, secondEntityIdMap)
+        if (!isMatch) {
+            return firstEntityIdFlat === secondEntityIdFlat
+        }
+        return isMatch
     }
 
     /**
