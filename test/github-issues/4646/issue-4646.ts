@@ -25,7 +25,8 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
         it("should drop temporal history table", async () => {
             let dataSources = await createTestingConnections({
                 dropSchema: true,
-                enabledDrivers: ["mssql"],
+                // enabledDrivers: ["mssql"],
+                enabledDrivers: ["mariadb", "mssql"],
                 entities: [UserWithVersioning],
                 schemaCreate: true,
             })
@@ -53,21 +54,24 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             await closeTestingConnections(dataSources)
 
             dataSources = await createTestingConnections({
-                enabledDrivers: ["mssql"],
+                enabledDrivers: ["mariadb", "mssql"],
                 entities: [UserWithoutVersioning],
             })
 
             await Promise.all(
                 dataSources.map(async (dataSource) => {
                     const { manager } = dataSource
-                    const repository = manager.getRepository(UserWithoutVersioning)
+                    const repository = manager.getRepository(
+                        UserWithoutVersioning,
+                    )
                     const queryRunner = dataSource.createQueryRunner()
 
                     let table = await queryRunner.getTable("user")
 
-                    expect(table?.versioning).to.be.eql({
-                        historyTable: "user_temporal_history",
-                    })
+                    expect(table?.versioning).to.be.true
+                    //                  expect(table?.versioning).to.be.eql({
+                    //                     historyTable: "user_temporal_history",
+                    //                 })
 
                     await dataSource.synchronize()
 
@@ -76,7 +80,7 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                         id: 1,
                     })
 
-                    expect(table?.versioning).to.be.undefined
+                    expect(table?.versioning).to.be.false
                     expect(result?.name).to.be.equal("bar")
 
                     await queryRunner.release()
@@ -94,8 +98,10 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
             dataSources = await createTestingConnections({
                 dropSchema: true,
                 enabledDrivers: ["mariadb", "mssql"],
+                // enabledDrivers: [ "mssql"],
+                //   enabledDrivers: ["mariadb"],
                 entities: [Photo, User],
-                schemaCreate: false,
+                //   schemaCreate: true,
             })
         })
 
@@ -109,6 +115,8 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                     const { upQueries } = await dataSource.driver
                         .createSchemaBuilder()
                         .log()
+
+                    //       console.log(upQueries)
 
                     if (dataSource.driver.options.type === "mssql") {
                         // console.log(upQueries)
@@ -247,14 +255,17 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
         it("should ignore internal columns (row_start, row_end) which are used for temporal tables", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    await dataSource.runMigrations()
+                    //         await dataSource.runMigrations()
+                    await dataSource.synchronize()
 
-                    const sqlInMemory = await dataSource.driver
+                    const { upQueries, downQueries } = await dataSource.driver
                         .createSchemaBuilder()
                         .log()
 
-                    expect(sqlInMemory.upQueries).to.have.length(0)
-                    expect(sqlInMemory.downQueries).to.have.length(0)
+                    // console.log(upQueries)
+
+                    expect(upQueries).to.have.length(0)
+                    expect(downQueries).to.have.length(0)
                 }),
             ))
 

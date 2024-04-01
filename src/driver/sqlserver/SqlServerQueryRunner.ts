@@ -3090,11 +3090,15 @@ export class SqlServerQueryRunner
                     db,
                 )
 
-                if (dbTable["HISTORY_TABLE"]) {
-                    table.versioning = {
-                        historyTable: dbTable["HISTORY_TABLE"],
-                    }
-                }
+                table.versioning = Boolean(dbTable["HISTORY_TABLE"])
+
+                /*
+                table.versioning = dbTable["HISTORY_TABLE"]
+                    ? {
+                          historyTable: dbTable["HISTORY_TABLE"],
+                      }
+                    : false
+*/
 
                 const defaultCollation = dbCollations.find(
                     (dbCollation) =>
@@ -4280,7 +4284,7 @@ export class SqlServerQueryRunner
         table: Table,
         metadata: EntityMetadata,
     ): Promise<void> {
-      //  console.log(table.versioning, metadata.versioning)
+        //  console.log(table.versioning, metadata.versioning)
         const tablePath = this.escapePath(table)
 
         if (table.versioning && !metadata.versioning) {
