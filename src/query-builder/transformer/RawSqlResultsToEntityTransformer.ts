@@ -310,7 +310,14 @@ export class RawSqlResultsToEntityTransformer {
 
             // if join was mapped to some property then save result to that property
             if (join.mapToPropertyPropertyName) {
-                entity[join.mapToPropertyPropertyName] = result // todo: fix embeds
+                const keys = join.mapToPropertyPropertyName.split(".")
+                let current = entity
+                for (let i = 0; i < keys.length - 1; i++) {
+                    const key = keys[i]
+                    if (!current[key]) current[key] = {} // Create a nested object if it doesn't exist
+                    current = current[key]
+                }
+                current[keys[keys.length - 1]] = result
             } else {
                 // otherwise set to relation
                 join.relation!.setEntityValue(entity, result)
