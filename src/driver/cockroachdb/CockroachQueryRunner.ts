@@ -27,6 +27,7 @@ import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { VersionUtils } from "../../util/VersionUtils"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -4220,6 +4221,15 @@ export class CockroachQueryRunner
     ): Promise<void> {
         throw new TypeORMError(
             `cockroachdb driver does not support change table comment.`,
+        )
+    }
+
+    changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `${this.driver.options.type} driver does not support change versioning.`,
         )
     }
 }

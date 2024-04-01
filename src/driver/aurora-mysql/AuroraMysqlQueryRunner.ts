@@ -23,6 +23,7 @@ import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -2832,6 +2833,15 @@ export class AuroraMysqlQueryRunner
     ): Promise<void> {
         throw new TypeORMError(
             `aurora-mysql driver does not support change table comment.`,
+        )
+    }
+
+    changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `${this.driver.options.type} driver does not support change versioning.`,
         )
     }
 }
