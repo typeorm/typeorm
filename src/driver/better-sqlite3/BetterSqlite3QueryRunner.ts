@@ -84,7 +84,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
         const connection = this.driver.connection
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        const queryStartTime = +new Date()
+        const queryStartTime = Date.now()
 
         const stmt = await this.getStmt(query)
 
@@ -108,7 +108,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
