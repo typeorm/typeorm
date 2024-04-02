@@ -813,9 +813,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 downQueries.map((sql) => new Query(sql)),
             )
         } else if (!table.versioning && metadata.versioning) {
-            const upQueries = [
-                `ALTER TABLE ${tablePath} ADD SYSTEM VERSIONING`,
-            ]
+            const upQueries = [`ALTER TABLE ${tablePath} ADD SYSTEM VERSIONING`]
 
             const downQueries = [
                 `ALTER TABLE ${tablePath} DROP SYSTEM VERSIONING`,
@@ -2626,9 +2624,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     db,
                 )
 
-                //  if (dbTable["VERSIONING"]) {
-                table.versioning = dbTable["TABLE_TYPE"] === 'SYSTEM VERSIONED'
-                //  }
+                table.versioning = dbTable["TABLE_TYPE"] === "SYSTEM VERSIONED"
 
                 // create columns from the loaded columns
                 table.columns = await Promise.all(

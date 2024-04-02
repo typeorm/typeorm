@@ -2637,7 +2637,7 @@ export class SqlServerQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const allViewsSql = database
+            let allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
             const allViewsResults: ObjectLiteral[] = await this.query(
@@ -3090,15 +3090,11 @@ export class SqlServerQueryRunner
                     db,
                 )
 
-                table.versioning = Boolean(dbTable["HISTORY_TABLE"])
-
-                /*
                 table.versioning = dbTable["HISTORY_TABLE"]
                     ? {
                           historyTable: dbTable["HISTORY_TABLE"],
                       }
                     : false
-*/
 
                 const defaultCollation = dbCollations.find(
                     (dbCollation) =>
@@ -4284,7 +4280,6 @@ export class SqlServerQueryRunner
         table: Table,
         metadata: EntityMetadata,
     ): Promise<void> {
-        //  console.log(table.versioning, metadata.versioning)
         const tablePath = this.escapePath(table)
 
         if (table.versioning && !metadata.versioning) {
