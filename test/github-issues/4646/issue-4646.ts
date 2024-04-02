@@ -21,87 +21,14 @@ const getCurrentTimestamp = async () => {
 }
 
 describe("github issues > #4646 add support for temporal (system-versioned) table", () => {
-    describe("set versioning off", () => {
-        it("should drop temporal history table", async () => {
-            let dataSources = await createTestingConnections({
-                dropSchema: true,
-                // enabledDrivers: ["mssql"],
-                enabledDrivers: ["mariadb", "mssql"],
-                entities: [UserWithVersioning],
-                schemaCreate: true,
-            })
-
-            await Promise.all(
-                dataSources.map(async (dataSource) => {
-                    const { manager } = dataSource
-                    const repository = manager.getRepository(UserWithVersioning)
-
-                    const user = new UserWithVersioning()
-                    user.id = 1
-                    user.name = "foo"
-                    await manager.save(user)
-
-                    user.name = "bar"
-                    await manager.save(user)
-
-                    const result = await repository.findOneBy({
-                        id: 1,
-                    })
-                    expect(result?.name).to.be.equal("bar")
-                }),
-            )
-
-            await closeTestingConnections(dataSources)
-
-            dataSources = await createTestingConnections({
-                enabledDrivers: ["mariadb", "mssql"],
-                entities: [UserWithoutVersioning],
-            })
-
-            await Promise.all(
-                dataSources.map(async (dataSource) => {
-                    const { manager } = dataSource
-                    const repository = manager.getRepository(
-                        UserWithoutVersioning,
-                    )
-                    const queryRunner = dataSource.createQueryRunner()
-
-                    let table = await queryRunner.getTable("user")
-
-                    expect(table?.versioning).to.be.true
-                    //                  expect(table?.versioning).to.be.eql({
-                    //                     historyTable: "user_temporal_history",
-                    //                 })
-
-                    await dataSource.synchronize()
-
-                    table = await queryRunner.getTable("user")
-                    const result = await repository.findOneBy({
-                        id: 1,
-                    })
-
-                    expect(table?.versioning).to.be.false
-                    expect(result?.name).to.be.equal("bar")
-
-                    await queryRunner.release()
-                }),
-            )
-
-            await closeTestingConnections(dataSources)
-        })
-    })
-
-    describe("2", () => {
+    describe("create tables with system versioning", () => {
         let dataSources: DataSource[]
 
         before(async () => {
             dataSources = await createTestingConnections({
                 dropSchema: true,
                 enabledDrivers: ["mariadb", "mssql"],
-                // enabledDrivers: [ "mssql"],
-                //   enabledDrivers: ["mariadb"],
                 entities: [Photo, User],
-                //   schemaCreate: true,
             })
         })
 
@@ -116,17 +43,15 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                         .createSchemaBuilder()
                         .log()
 
-                    //       console.log(upQueries)
+                    if (dataSource.driver.options.type === "mariadb") {
+                        expect(upQueries[0].query).to.include(
+                            "WITH SYSTEM VERSIONING",
+                        )
+                    }
 
                     if (dataSource.driver.options.type === "mssql") {
-                        // console.log(upQueries)
-
                         expect(upQueries[0].query).to.include(
-                            "DATA_CONSISTENCY_CHECK = OFF",
-                        )
-
-                        expect(upQueries[0].query).to.include(
-                            "HISTORY_TABLE = dbo.user_history",
+                            "WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.user_history, DATA_CONSISTENCY_CHECK = OFF))",
                         )
 
                         expect(upQueries[0].query).to.include(
@@ -255,14 +180,11 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
         it("should ignore internal columns (row_start, row_end) which are used for temporal tables", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    //         await dataSource.runMigrations()
                     await dataSource.synchronize()
 
                     const { upQueries, downQueries } = await dataSource.driver
                         .createSchemaBuilder()
                         .log()
-
-                    // console.log(upQueries)
 
                     expect(upQueries).to.have.length(0)
                     expect(downQueries).to.have.length(0)
@@ -309,5 +231,70 @@ describe("github issues > #4646 add support for temporal (system-versioned) tabl
                     })
                 }),
             ))
+    })
+
+    describe("switch versioning off", () => {
+        it("should drop temporal history table", async () => {
+            let dataSources = await createTestingConnections({
+                dropSchema: true,
+                enabledDrivers: ["mariadb", "mssql"],
+                entities: [UserWithVersioning],
+                schemaCreate: true,
+            })
+
+            await Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { manager } = dataSource
+                    const repository = manager.getRepository(UserWithVersioning)
+
+                    const user = new UserWithVersioning()
+                    user.id = 1
+                    user.name = "foo"
+                    await manager.save(user)
+
+                    user.name = "bar"
+                    await manager.save(user)
+
+                    const result = await repository.findOneBy({
+                        id: 1,
+                    })
+                    expect(result?.name).to.be.equal("bar")
+                }),
+            )
+
+            await closeTestingConnections(dataSources)
+
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["mariadb", "mssql"],
+                entities: [UserWithoutVersioning],
+            })
+
+            await Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { manager } = dataSource
+                    const queryRunner = dataSource.createQueryRunner()
+                    const repository = manager.getRepository(
+                        UserWithoutVersioning,
+                    )
+
+                    let table = await queryRunner.getTable("user")
+                    expect(table?.versioning).to.be.not.false
+
+                    await dataSource.synchronize()
+
+                    table = await queryRunner.getTable("user")
+                    const result = await repository.findOneBy({
+                        id: 1,
+                    })
+
+                    expect(table?.versioning).to.be.false
+                    expect(result?.name).to.be.equal("bar")
+
+                    await queryRunner.release()
+                }),
+            )
+
+            await closeTestingConnections(dataSources)
+        })
     })
 })
