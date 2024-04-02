@@ -222,6 +222,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // await this.renameTables();
         await this.renameColumns()
         await this.changeTableComment()
+        await this.changeTableVersioning()
         await this.createNewTables()
         await this.dropRemovedColumns()
         await this.addNewColumns()
@@ -608,6 +609,33 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             ) {
                 const newComment = metadata.comment
                 await this.queryRunner.changeTableComment(table, newComment)
+            }
+        }
+    }
+
+    /**
+     * change table versioning
+     */
+    protected async changeTableVersioning(): Promise<void> {
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.queryRunner.loadedTables.find(
+                (table) =>
+                    this.getTablePath(table) === this.getTablePath(metadata),
+            )
+
+            if (!table) continue
+
+            if (
+                ["mariadb", "mssql"].includes(
+                    this.connection.driver.options.type,
+                )
+            ) {
+                if (table.versioning !== metadata.versioning) {
+                    await this.queryRunner.changeTableVersioning(
+                        table,
+                        metadata,
+                    )
+                }
             }
         }
     }

@@ -25,6 +25,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -3191,6 +3192,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<void> {
         throw new TypeORMError(
             `oracle driver does not support change table comment.`,
+        )
+    }
+
+    changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `${this.driver.options.type} driver does not support change versioning.`,
         )
     }
 }

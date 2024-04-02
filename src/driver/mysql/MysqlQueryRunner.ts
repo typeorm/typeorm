@@ -27,6 +27,7 @@ import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -787,6 +788,42 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // change table comment and replace it in cached tabled;
         table.comment = newTable.comment
         this.replaceCachedTable(table, newTable)
+    }
+
+    /**
+     * Change table versioning.
+     */
+    async changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const tablePath = this.escapePath(table)
+
+        if (table.versioning && !metadata.versioning) {
+            const upQueries = [
+                `ALTER TABLE ${tablePath} DROP SYSTEM VERSIONING`,
+            ]
+
+            const downQueries = [
+                `ALTER TABLE ${tablePath} ADD SYSTEM VERSIONING`,
+            ]
+
+            await this.executeQueries(
+                upQueries.map((sql) => new Query(sql)),
+                downQueries.map((sql) => new Query(sql)),
+            )
+        } else if (!table.versioning && metadata.versioning) {
+            const upQueries = [`ALTER TABLE ${tablePath} ADD SYSTEM VERSIONING`]
+
+            const downQueries = [
+                `ALTER TABLE ${tablePath} DROP SYSTEM VERSIONING`,
+            ]
+
+            await this.executeQueries(
+                upQueries.map((sql) => new Query(sql)),
+                downQueries.map((sql) => new Query(sql)),
+            )
+        }
     }
 
     /**
@@ -2393,11 +2430,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             TABLE_SCHEMA: string
             TABLE_NAME: string
             TABLE_COMMENT: string
+            TABLE_TYPE: string
         }[] = []
 
         if (!tableNames) {
             // Since we don't have any of this data we have to do a scan
-            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
+            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\`, \`TABLE_TYPE\`
+                                FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
 
             dbTables.push(...(await this.query(tablesSql)))
         } else {
@@ -2414,7 +2453,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         database = currentDatabase
                     }
 
-                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
+                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\`, \`TABLE_TYPE\`
+                            FROM \`INFORMATION_SCHEMA\`.\`TABLES\`
+                            WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
                 })
                 .join(" UNION ")
 
@@ -2582,6 +2623,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     undefined,
                     db,
                 )
+
+                table.versioning = dbTable["TABLE_TYPE"] === "SYSTEM VERSIONED"
 
                 // create columns from the loaded columns
                 table.columns = await Promise.all(
@@ -3106,6 +3149,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         sql += `) ENGINE=${table.engine || "InnoDB"}`
+
+        if (table.versioning) {
+            sql += ` WITH SYSTEM VERSIONING`
+        }
 
         if (table.comment) {
             sql += ` COMMENT="${table.comment}"`
