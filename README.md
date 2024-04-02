@@ -158,7 +158,7 @@ const firstUser = await User.findOneBy({
 })
 const timber = await User.findOneBy({
     firstName: "Timber",
-    lastName: "Saw",
+    lastName: "Saw"
 })
 
 await timber.remove()
