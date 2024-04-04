@@ -459,10 +459,8 @@ export class InsertQueryBuilder<
         // add VALUES expression
         if (valuesExpression) {
             if (
-                (
-                    this.connection.driver.options.type === "oracle" ||
-                    this.connection.driver.options.type === "sap"
-                ) &&
+                (this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "sap") &&
                 this.getValueSets().length > 1
             ) {
                 query += ` ${valuesExpression}`
@@ -645,10 +643,7 @@ export class InsertQueryBuilder<
         // add RETURNING expression
         if (
             returningExpression &&
-            (DriverUtils.isPostgresFamily(this.connection.driver) ||
-                this.connection.driver.options.type === "oracle" ||
-                this.connection.driver.options.type === "cockroachdb" ||
-                DriverUtils.isMySQLFamily(this.connection.driver))
+            this.connection.driver.isReturningSqlSupported("insert")
         ) {
             query += ` RETURNING ${returningExpression}`
         }
