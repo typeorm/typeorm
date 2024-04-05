@@ -1235,7 +1235,7 @@ export class PostgresDriver implements Driver {
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
             const isColumnChanged =
-                tableColumn.name !== columnMetadata.databaseName ||
+                tableColumn.name !== this.escapeNullBytes(columnMetadata.databaseName) ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.isArray !== columnMetadata.isArray ||
@@ -1243,14 +1243,14 @@ export class PostgresDriver implements Driver {
                 (columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
                 tableColumn.comment !==
-                    this.escapeComment(columnMetadata.comment) ||
+                this.escapeNullBytes(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
                     !this.defaultEqual(columnMetadata, tableColumn)) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
-                    this.normalizeIsUnique(columnMetadata) ||
-                tableColumn.enumName !== columnMetadata.enumName ||
+                this.normalizeIsUnique(columnMetadata) ||
+                tableColumn.enumName !== this.escapeNullBytes(columnMetadata.enumName) ||
                 (tableColumn.enum &&
                     columnMetadata.enum &&
                     !OrmUtils.isArraysEqual(
@@ -1259,11 +1259,11 @@ export class PostgresDriver implements Driver {
                     )) || // enums in postgres are always strings
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
                 (tableColumn.spatialFeatureType || "").toLowerCase() !==
-                    (columnMetadata.spatialFeatureType || "").toLowerCase() ||
+                (columnMetadata.spatialFeatureType || "").toLowerCase() ||
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim()
+                (columnMetadata.asExpression || "").trim()
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -1608,13 +1608,13 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Escapes a given comment.
+     * Escapes a given string.
      */
-    protected escapeComment(comment?: string) {
-        if (!comment) return comment
+    protected escapeNullBytes(string?: string) {
+        if (!string) return string
 
-        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        string = string.replace(/\u0000/g, "") // Null bytes aren't allowed in strings
 
-        return comment
+        return string
     }
 }
