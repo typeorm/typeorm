@@ -19,6 +19,7 @@ describe("github issues > #3913 Cannnot set embedded entity to null | MongoDB", 
                 cache: {
                     alwaysEnabled: true,
                 },
+                enabledDrivers: ["mongodb"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -53,6 +54,7 @@ describe("github issues > #3913 Cannnot set embedded entity to null", () => {
                 cache: {
                     alwaysEnabled: true,
                 },
+                enabledDrivers: ["mysql", "mariadb", "postgres", "sqlite"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
