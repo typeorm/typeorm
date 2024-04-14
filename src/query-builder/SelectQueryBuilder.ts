@@ -616,15 +616,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(
-        mapToProperty: string,
+    innerJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         subQueryFactory: (
             qb: SelectQueryBuilder<any>,
         ) => SelectQueryBuilder<any>,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -634,13 +634,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(
-        mapToProperty: string,
+    innerJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         property: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -649,13 +649,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(
-        mapToProperty: string,
-        entity: Function | string,
+    innerJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
+        entity: { new (): Joined } | Function | string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -664,13 +664,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(
-        mapToProperty: string,
+    innerJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         tableName: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -679,16 +679,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapMany(
-        mapToProperty: string,
+    innerJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         entityOrProperty:
+            | { new (): Joined }
             | Function
             | string
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this {
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }> {
         this.addSelect(alias)
         this.join(
             "INNER",
@@ -710,8 +711,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(
-        mapToProperty: string,
+    innerJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         subQueryFactory: (
             qb: SelectQueryBuilder<any>,
         ) => SelectQueryBuilder<any>,
@@ -719,7 +720,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         condition?: string,
         parameters?: ObjectLiteral,
         mapAsEntity?: Function | string,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined }>
 
     /**
      * INNER JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -729,13 +730,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(
-        mapToProperty: string,
+    innerJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         property: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined }>
 
     /**
      * INNER JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -744,13 +745,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(
-        mapToProperty: string,
-        entity: Function | string,
+    innerJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
+        entity: { new (): Joined } | Function | string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined }>
 
     /**
      * INNER JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -759,13 +760,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(
-        mapToProperty: string,
+    innerJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         tableName: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined }>
 
     /**
      * INNER JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -774,9 +775,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    innerJoinAndMapOne(
-        mapToProperty: string,
+    innerJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         entityOrProperty:
+            | { new (): Joined }
             | Function
             | string
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
@@ -784,7 +786,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         condition?: string,
         parameters?: ObjectLiteral,
         mapAsEntity?: Function | string,
-    ): this {
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined }> {
         this.addSelect(alias)
         this.join(
             "INNER",
@@ -807,15 +809,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(
-        mapToProperty: string,
+    leftJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         subQueryFactory: (
             qb: SelectQueryBuilder<any>,
         ) => SelectQueryBuilder<any>,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -825,13 +827,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(
-        mapToProperty: string,
+    leftJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         property: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -840,13 +842,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(
-        mapToProperty: string,
-        entity: Function | string,
+    leftJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
+        entity: { new (): Joined } | Function | string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -855,13 +857,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(
-        mapToProperty: string,
+    leftJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         tableName: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }>
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -870,16 +872,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapMany(
-        mapToProperty: string,
+    leftJoinAndMapMany<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         entityOrProperty:
+            | { new (): Joined }
             | Function
             | string
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this {
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined[] }> {
         this.addSelect(alias)
         this.join(
             "LEFT",
@@ -901,8 +904,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(
-        mapToProperty: string,
+    leftJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         subQueryFactory: (
             qb: SelectQueryBuilder<any>,
         ) => SelectQueryBuilder<any>,
@@ -910,7 +913,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         condition?: string,
         parameters?: ObjectLiteral,
         mapAsEntity?: Function | string,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined | undefined }>
 
     /**
      * LEFT JOINs entity's property, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -920,13 +923,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(
-        mapToProperty: string,
+    leftJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         property: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined | undefined }>
 
     /**
      * LEFT JOINs entity's table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -935,13 +938,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(
-        mapToProperty: string,
-        entity: Function | string,
+    leftJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
+        entity: { new (): Joined } | Function | string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined | undefined }>
 
     /**
      * LEFT JOINs table, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -950,13 +953,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(
-        mapToProperty: string,
+    leftJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         tableName: string,
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-    ): this
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined | undefined }>
 
     /**
      * LEFT JOINs, SELECTs the data returned by a join and MAPs all that data to some entity's property.
@@ -965,9 +968,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * You also need to specify an alias of the joined data.
      * Optionally, you can add condition and parameters used in condition.
      */
-    leftJoinAndMapOne(
-        mapToProperty: string,
+    leftJoinAndMapOne<Key extends string, Joined = unknown>(
+        mapToProperty: Key | `${string}.${Key}`,
         entityOrProperty:
+            | { new (): Joined }
             | Function
             | string
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
@@ -975,7 +979,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         condition?: string,
         parameters?: ObjectLiteral,
         mapAsEntity?: Function | string,
-    ): this {
+    ): SelectQueryBuilder<Entity & { [key in Key]: Joined | undefined }> {
         this.addSelect(alias)
         this.join(
             "LEFT",
