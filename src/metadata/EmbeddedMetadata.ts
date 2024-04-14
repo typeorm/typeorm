@@ -99,6 +99,11 @@ export class EmbeddedMetadata {
     isArray: boolean = false
 
     /**
+     * Indicates if this embedded is nullable.
+     */
+    nullable: boolean = false
+
+    /**
      * Prefix of the embedded, used instead of propertyName.
      * If set to empty string or false, then prefix is not set at all.
      */
@@ -185,6 +190,7 @@ export class EmbeddedMetadata {
         this.propertyName = options.args.propertyName
         this.customPrefix = options.args.prefix
         this.isArray = options.args.isArray
+        this.nullable = options.args.nullable
     }
 
     // ---------------------------------------------------------------------

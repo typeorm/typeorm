@@ -107,9 +107,14 @@ export class DocumentToEntityTransformer {
             embeddeds: EmbeddedMetadata[],
         ) => {
             embeddeds.forEach((embedded) => {
-                if (!document[embedded.prefix]) return
+                if (document[embedded.prefix] === undefined) return
+                if (document[embedded.prefix] === null && !embedded.nullable) return
 
-                if (embedded.isArray) {
+                if (embedded.nullable && document[embedded.prefix] === null) {
+                    // We allow this to be set to null in the case it's null in the database response
+                    // It's processed first to ensure other embedded options can still remain nullable, like a nullable array
+                    entity[embedded.prefix] = document[embedded.prefix]
+                } else if (embedded.isArray) {
                     entity[embedded.propertyName] = (
                         document[embedded.prefix] as any[]
                     ).map((subValue: any, index: number) => {

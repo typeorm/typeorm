@@ -24,6 +24,11 @@ export interface EmbeddedMetadataArgs {
     prefix?: string | boolean
 
     /**
+     * Indicates if this embedded is nullable.
+     */
+    nullable: boolean
+
+    /**
      * Type of the class to be embedded.
      */
     type: (type?: any) => Function | string
