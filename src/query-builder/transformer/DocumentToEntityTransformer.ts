@@ -108,7 +108,8 @@ export class DocumentToEntityTransformer {
         ) => {
             embeddeds.forEach((embedded) => {
                 if (document[embedded.prefix] === undefined) return
-                if (document[embedded.prefix] === null && !embedded.nullable) return
+                if (document[embedded.prefix] === null && !embedded.nullable)
+                    return
 
                 if (embedded.nullable && document[embedded.prefix] === null) {
                     // We allow this to be set to null in the case it's null in the database response

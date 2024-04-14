@@ -183,7 +183,9 @@ export function Column(
                 prefix:
                     options.prefix !== undefined ? options.prefix : undefined,
                 nullable:
-                    options.nullable !== undefined ? options.nullable : undefined,
+                    options.nullable !== undefined
+                        ? options.nullable
+                        : undefined,
                 type: typeOrOptions as (type?: any) => Function,
             } as EmbeddedMetadataArgs)
         } else {

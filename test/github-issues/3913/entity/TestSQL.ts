@@ -2,7 +2,7 @@ import {
     BaseEntity,
     Column,
     Entity,
-    PrimaryGeneratedColumn
+    PrimaryGeneratedColumn,
 } from "../../../../src"
 
 export class Embedded {

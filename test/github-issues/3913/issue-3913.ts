@@ -42,23 +42,23 @@ describe("github issues > #3913 Cannnot set embedded entity to null", () => {
                 })
             }),
         ))
-      
-        it("should set the embedded entity to null in the database for non mongodb", () =>
-          Promise.all(
-              connections.map(async (connection) => {
-                  if (connection.driver instanceof MongoDriver) return // Don't run this test for mongodb
-                  const test = new TestSQL()
-                  test.embedded = null
-  
-                  await connection.manager.save(test)
-  
-                  const loadedTest = await connection.manager.findOne(TestSQL, {
-                      where: { id: test.id },
-                  })
-                  expect(loadedTest).to.be.eql({
-                      id: 1,
-                      embedded: null,
-                  })
-              }),
-          ))
+
+    it("should set the embedded entity to null in the database for non mongodb", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver instanceof MongoDriver) return // Don't run this test for mongodb
+                const test = new TestSQL()
+                test.embedded = null
+
+                await connection.manager.save(test)
+
+                const loadedTest = await connection.manager.findOne(TestSQL, {
+                    where: { id: test.id },
+                })
+                expect(loadedTest).to.be.eql({
+                    id: 1,
+                    embedded: null,
+                })
+            }),
+        ))
 })

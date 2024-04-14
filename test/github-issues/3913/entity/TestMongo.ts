@@ -1,10 +1,5 @@
 import { ObjectId } from "mongodb"
-import {
-    BaseEntity,
-    Column,
-    Entity,
-    ObjectIdColumn
-} from "../../../../src"
+import { BaseEntity, Column, Entity, ObjectIdColumn } from "../../../../src"
 
 export class Embedded {
     a: string
