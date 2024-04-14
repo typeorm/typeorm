@@ -348,6 +348,7 @@ export class EntitySchemaTransformer {
                     target: options.target || options.name,
                     propertyName: columnName,
                     isArray: embeddedOptions.array === true,
+                    nullable: embeddedOptions.nullable === true,
                     prefix:
                         embeddedOptions.prefix !== undefined
                             ? embeddedOptions.prefix
