@@ -8,7 +8,6 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { TestMongo } from "./entity/TestMongo"
 import { TestSQL } from "./entity/TestSQL"
-import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
 
 describe("github issues > #3913 Cannnot set embedded entity to null", () => {
     let connections: DataSource[]
