@@ -27,7 +27,7 @@ describe("github issues > #3913 Cannnot set embedded entity to null", () => {
     it("should set the embedded entity to null in the database for mongodb", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver instanceof MongoDriver)) return // Only run this test for mongodb
+                if (connection.options.type !== 'mongodb') return // Only run this test for mongodb
                 const test = new TestMongo()
                 test.embedded = null
 
@@ -46,7 +46,7 @@ describe("github issues > #3913 Cannnot set embedded entity to null", () => {
     it("should set the embedded entity to null in the database for non mongodb", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver instanceof MongoDriver) return // Don't run this test for mongodb
+                if (connection.options.type === 'mongodb') return // Don't run this test for mongodb
                 const test = new TestSQL()
                 test.embedded = null
 
