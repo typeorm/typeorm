@@ -344,13 +344,13 @@ You can also supply an array of values, and have them transformed into a list of
 statement, by using the special expansion syntax:
 
 ```typescript
-.where("user.name IN (:...names)", { names: [ "Timber", "Cristal", "Lina" ] })
+.where("user.name IN (:...names)", { names: [ "Timber", "Crystal", "Lina" ] })
 ```
 
 Which becomes:
 
 ```sql
-WHERE user.name IN ('Timber', 'Cristal', 'Lina')
+WHERE user.name IN ('Timber', 'Crystal', 'Lina')
 ```
 
 ## Adding `WHERE` expression
