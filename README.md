@@ -343,7 +343,7 @@ You can continue to work with this project and integrate other modules you need 
 creating more entities.
 
 > You can generate an ESM project by running
-> `npx typeorm init --name MyProject --database postgres --module esm` command.
+> `npx typeorm init --name MyProject --database postgres --module --esm` command.
 
 > You can generate an even more advanced project with express installed by running
 > `npx typeorm init --name MyProject --database mysql --express` command.
