@@ -81,7 +81,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import { MigrationInterface, QueryRunner } from "typeorm";
+        return `import { MigrationInterface, QueryRunner } from "@hckrnews/typeorm";
 
 export class ${camelCase(
             name,
@@ -108,8 +108,8 @@ export class ${camelCase(
     ): string {
         const exportMethod = esm ? "export" : "module.exports ="
         return `/**
- * @typedef {import('typeorm').QueryRunner} QueryRunner
- * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('@hckrnews/typeorm').QueryRunner} QueryRunner
+ * @typedef {import('@hckrnews/typeorm').MigrationInterface} MigrationInterface
  */
 
 /**

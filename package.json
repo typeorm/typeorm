@@ -248,9 +248,9 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
   },
   "bin": {
-    "typeorm": "./cli.js",
-    "typeorm-ts-node-commonjs": "./cli-ts-node-commonjs.js",
-    "typeorm-ts-node-esm": "./cli-ts-node-esm.js"
+    "@hckrnews/typeorm": "./cli.js",
+    "@hckrnews/typeorm-ts-node-commonjs": "./cli-ts-node-commonjs.js",
+    "@hckrnews/typeorm-ts-node-esm": "./cli-ts-node-esm.js"
   },
   "funding": "https://opencollective.com/typeorm",
   "collective": {
