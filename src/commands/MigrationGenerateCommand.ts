@@ -43,6 +43,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 describe:
                     "Generate a migration file on Javascript instead of Typescript",
             })
+            .option("esm", {
+                type: "boolean",
+                default: false,
+                describe:
+                    "Generate a migration file on ESM instead of CommonJS",
+            })
             .option("dr", {
                 alias: "dryrun",
                 type: "boolean",
@@ -162,6 +168,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                       timestamp,
                       upSqls,
                       downSqls.reverse(),
+                      args.esm,
                   )
                 : MigrationGenerateCommand.getTemplate(
                       path.basename(fullPath),
@@ -264,19 +271,37 @@ ${downSqls.join(`
         timestamp: number,
         upSqls: string[],
         downSqls: string[],
+        esm: boolean,
     ): string {
         const migrationName = `${camelCase(name, true)}${timestamp}`
 
-        return `const { MigrationInterface, QueryRunner } = require("typeorm");
+        const exportMethod = esm ? "export" : "module.exports ="
 
-module.exports = class ${migrationName} {
+        return `/**
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ */
+
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+${exportMethod} class ${migrationName} {
     name = '${migrationName}'
 
+    /**
+     * @param {QueryRunner} queryRunner
+     * @returns {Promise<void>}
+     */
     async up(queryRunner) {
 ${upSqls.join(`
 `)}
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     * @returns {Promise<void>}
+     */
     async down(queryRunner) {
 ${downSqls.join(`
 `)}

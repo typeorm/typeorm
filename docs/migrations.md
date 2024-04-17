@@ -258,15 +258,66 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 Alternatively you can also output your migrations as Javascript files using the `o` (alias for `--outputJs`) flag. This is useful for Javascript only projects in which TypeScript additional packages are not installed. This command, will generate a new migration file `{TIMESTAMP}-PostRefactoring.js` with the following content:
 
 ```javascript
-const { MigrationInterface, QueryRunner } = require("typeorm")
+/**
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ */
 
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
 module.exports = class PostRefactoringTIMESTAMP {
+    /**
+     * @param {QueryRunner} queryRunner
+     * @returns {Promise<void>}
+     */
     async up(queryRunner) {
         await queryRunner.query(
             `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
         )
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     * @returns {Promise<void>}
+     */
+    async down(queryRunner) {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
+        )
+    }
+}
+
+```
+By default, it generates CommonJS JavaScript code with the `o` (alias for `--outputJs`) flag, but you can generate also ESM code with the `esm` flag. This is useful for Javascript projects that use ESM modules:
+
+```javascript
+/**
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ */
+
+
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+export class PostRefactoringTIMESTAMP {
+    /**
+     * @param {QueryRunner} queryRunner
+     * @returns {Promise<void>}
+     */
+    async up(queryRunner) {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
+        )
+    }
+
+    /**
+     * @param {QueryRunner} queryRunner
+     * @returns {Promise<void>}
+     */
     async down(queryRunner) {
         await queryRunner.query(
             `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
