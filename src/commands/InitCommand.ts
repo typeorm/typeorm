@@ -242,7 +242,7 @@ sid: "xe.oracle.docker",`
                 break
         }
         return `import "reflect-metadata"
-import { DataSource } from "typeorm"
+import { DataSource } from "@hckrnews/typeorm"
 import { User } from "./entity/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
@@ -317,7 +317,7 @@ temp/`
             database === "mongodb"
                 ? "ObjectIdColumn, ObjectId"
                 : "PrimaryGeneratedColumn"
-        }, Column } from "typeorm"
+        }, Column } from "@hckrnews/typeorm"
 
 @Entity()
 export class User {

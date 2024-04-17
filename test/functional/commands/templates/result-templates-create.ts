@@ -1,5 +1,5 @@
 export const resultsTemplates: Record<string, any> = {
-    control: `import { MigrationInterface, QueryRunner } from "typeorm";
+    control: `import { MigrationInterface, QueryRunner } from "@hckrnews/typeorm";
 
 export class TestMigration1610975184784 implements MigrationInterface {
 
@@ -12,8 +12,8 @@ export class TestMigration1610975184784 implements MigrationInterface {
 }
 `,
     javascript: `/**
- * @typedef {import('typeorm').QueryRunner} QueryRunner
- * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('@hckrnews/typeorm').QueryRunner} QueryRunner
+ * @typedef {import('@hckrnews/typeorm').MigrationInterface} MigrationInterface
  */
 
 /**
@@ -38,7 +38,7 @@ module.exports = class TestMigration1610975184784 {
 
 }
 `,
-    timestamp: `import { MigrationInterface, QueryRunner } from "typeorm";
+    timestamp: `import { MigrationInterface, QueryRunner } from "@hckrnews/typeorm";
 
 export class TestMigration1641163894670 implements MigrationInterface {
 

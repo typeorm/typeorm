@@ -8,7 +8,7 @@
 // System.config({
 //     ...
 //     packages: {
-//         "typeorm": {
+//         "@hckrnews/typeorm": {
 //             main: "typeorm-class-transformer-shim.js",
 //             defaultExtension: "js"
 //         }

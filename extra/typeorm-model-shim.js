@@ -6,7 +6,7 @@
 // System.config({
 //     ...
 //     packages: {
-//         "typeorm": {
+//         "@hckrnews/typeorm": {
 //             main: "typeorm-model-shim.js",
 //             defaultExtension: "js"
 //         }
