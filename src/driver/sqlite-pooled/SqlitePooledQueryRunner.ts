@@ -137,7 +137,7 @@ export class SqlitePooledQueryRunner extends AbstractSqliteQueryRunner {
             }
         }
 
-        await this.query("BEGIN TRANSACTION")
+        await this.query("BEGIN IMMEDIATE TRANSACTION")
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
