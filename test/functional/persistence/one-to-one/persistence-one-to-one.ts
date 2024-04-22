@@ -45,7 +45,7 @@ describe("persistence > one-to-one", function () {
 
                     const loadedUser = await userRepository.findOne({
                         where: { email: "mwelnick@test.com" },
-                        relations: ["access_token"],
+                        relations: { access_token: true },
                     })
 
                     expect(loadedUser).not.to.be.null

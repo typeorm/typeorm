@@ -4,7 +4,7 @@ import {
     UpdateDateColumn,
 } from "../../../../src"
 
-@Entity({ name: "foo", schema: "SYSTEM" })
+@Entity({ name: "foo", schema: "TYPEORM" })
 export class Foo {
     @PrimaryGeneratedColumn({ name: "id" })
     id: number

@@ -174,7 +174,7 @@ export class SubjectExecutor {
 
         // update all special columns in persisted entities, like inserted id or remove ids from the removed entities
         // console.time(".updateSpecialColumnsInPersistedEntities");
-        await this.updateSpecialColumnsInPersistedEntities()
+        this.updateSpecialColumnsInPersistedEntities()
         // console.timeEnd(".updateSpecialColumnsInPersistedEntities");
 
         // finally broadcast "after" events after we finish insert / update / remove operations
@@ -261,6 +261,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.softRemoveSubjects.length)
@@ -270,6 +271,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.recoverSubjects.length)
@@ -279,6 +281,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         return result
@@ -297,6 +300,7 @@ export class SubjectExecutor {
                     result,
                     subject.metadata,
                     subject.entity!,
+                    subject.identifier,
                 ),
             )
         if (this.updateSubjects.length)
@@ -317,6 +321,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.softRemoveSubjects.length)
@@ -326,6 +331,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         if (this.recoverSubjects.length)
@@ -335,6 +341,7 @@ export class SubjectExecutor {
                     subject.metadata,
                     subject.entity!,
                     subject.databaseEntity,
+                    subject.identifier,
                 ),
             )
         return result
@@ -1071,6 +1078,9 @@ export class SubjectExecutor {
 
                 // entities does not have virtual columns
                 if (column.isVirtual) return
+
+                // if column is deletedAt
+                if (column.isDeleteDate) return
 
                 // update nullable columns
                 if (column.isNullable) {

@@ -73,6 +73,12 @@ export interface IndexMetadataArgs {
     background?: boolean
 
     /**
+     * Builds the index using the concurrently option.
+     * This option is only supported for postgres database.
+     */
+    concurrent?: boolean
+
+    /**
      * Specifies a time to live, in seconds.
      * This option is only supported for mongodb database.
      */

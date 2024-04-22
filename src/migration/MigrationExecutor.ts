@@ -311,6 +311,7 @@ export class MigrationExecutor {
         // start transaction if its not started yet
         let transactionStartedByUs = false
         if (this.transaction === "all" && !queryRunner.isTransactionActive) {
+            await queryRunner.beforeMigration()
             await queryRunner.startTransaction()
             transactionStartedByUs = true
         }
@@ -327,6 +328,7 @@ export class MigrationExecutor {
                 }
 
                 if (migration.transaction && !queryRunner.isTransactionActive) {
+                    await queryRunner.beforeMigration()
                     await queryRunner.startTransaction()
                     transactionStartedByUs = true
                 }
@@ -347,8 +349,10 @@ export class MigrationExecutor {
                             migration,
                         )
                         // commit transaction if we started it
-                        if (migration.transaction && transactionStartedByUs)
+                        if (migration.transaction && transactionStartedByUs) {
                             await queryRunner.commitTransaction()
+                            await queryRunner.afterMigration()
+                        }
                     })
                     .then(() => {
                         // informative log about migration success
@@ -362,8 +366,10 @@ export class MigrationExecutor {
             }
 
             // commit transaction if we started it
-            if (this.transaction === "all" && transactionStartedByUs)
+            if (this.transaction === "all" && transactionStartedByUs) {
                 await queryRunner.commitTransaction()
+                await queryRunner.afterMigration()
+            }
         } catch (err) {
             // rollback transaction if we started it
             if (transactionStartedByUs) {
@@ -409,7 +415,7 @@ export class MigrationExecutor {
         // if no migrations found in the database then nothing to revert
         if (!lastTimeExecutedMigration) {
             this.connection.logger.logSchemaBuild(
-                `No migrations was found in the database. Nothing to revert!`,
+                `No migrations were found in the database. Nothing to revert!`,
             )
             return
         }
@@ -544,10 +550,8 @@ export class MigrationExecutor {
     ): Promise<Migration[]> {
         if (this.connection.driver.options.type === "mongodb") {
             const mongoRunner = queryRunner as MongoQueryRunner
-            return await mongoRunner.databaseConnection
-                .db(this.connection.driver.database!)
-                .collection(this.migrationsTableName)
-                .find<Migration>()
+            return mongoRunner
+                .cursor(this.migrationsTableName, {})
                 .sort({ _id: -1 })
                 .toArray()
         } else {
@@ -729,7 +733,7 @@ export class MigrationExecutor {
             this.queryRunner || this.connection.createQueryRunner()
 
         try {
-            return callback(queryRunner)
+            return await callback(queryRunner)
         } finally {
             if (!this.queryRunner) {
                 await queryRunner.release()

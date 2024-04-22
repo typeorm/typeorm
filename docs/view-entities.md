@@ -191,7 +191,7 @@ name: string
 
 ## Complete example
 
-Let create two entities and a view containing aggregated data from these entities:
+Lets create two entities and a view containing aggregated data from these entities:
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"

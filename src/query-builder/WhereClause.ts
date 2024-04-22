@@ -17,6 +17,8 @@ type PredicateOperator =
     | "arrayContainedBy"
     | "arrayOverlap"
     | "and"
+    | "jsonContains"
+    | "or"
 
 export interface WherePredicateOperator {
     operator: PredicateOperator

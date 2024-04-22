@@ -14,7 +14,7 @@ export default {
             nullable: false,
         },
     },
-    target: function Question() {
+    target: function Question(this: any) {
         this.type = "question"
     },
 }

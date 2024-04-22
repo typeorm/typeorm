@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import { assert, expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -149,8 +149,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         order: { id: "ASC" },
                     })
                     exists.should.be.equal(true)
@@ -169,8 +169,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         where: { categoryName: "odd" },
                         order: { id: "ASC" },
                     })
@@ -191,8 +191,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         where: { categoryName: "odd", isNew: true },
                         order: { id: "ASC" },
                     })
@@ -215,8 +215,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist()
+                    // check exists method
+                    const exists = await postRepository.exists()
                     exists.should.be.equal(true)
                 }),
             ))
@@ -236,8 +236,8 @@ describe("repository > find methods", () => {
                         await postRepository.save(post)
                     }
 
-                    // check exist method
-                    const exists = await postRepository.exist({
+                    // check exists method
+                    const exists = await postRepository.exists({
                         where: { categoryName: "even", isNew: true },
                         skip: 1,
                         take: 2,
@@ -751,14 +751,20 @@ describe("repository > find methods", () => {
                     loadedUser!.firstName.should.be.equal("name #0")
                     loadedUser!.secondName.should.be.equal("Doe")
 
-                    await userRepository
-                        .findOneOrFail({
-                            where: {
-                                id: 1,
-                                secondName: "Dorian",
-                            },
-                        })
-                        .should.eventually.be.rejectedWith(EntityNotFoundError)
+                    const options = {
+                        where: {
+                            id: 1,
+                            secondName: "Dorian",
+                        },
+                    }
+                    try {
+                        await userRepository.findOneOrFail(options)
+                        assert.fail("Should have thrown an error.")
+                    } catch (err) {
+                        expect(err).to.be.an.instanceOf(EntityNotFoundError)
+                        expect(err).to.have.property("entityClass", "User")
+                        expect(err).to.have.property("criteria", options)
+                    }
                 }),
             ))
 

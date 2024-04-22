@@ -16,8 +16,7 @@ import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCom
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-create"
 
-// TODO: broken after 0.3.0 changes, fix later
-describe.skip("commands - migration create", () => {
+describe("commands - migration create", () => {
     let connectionOptions: DataSourceOptions[]
     let createFileStub: sinon.SinonStub
     let timerStub: sinon.SinonFakeTimers
@@ -26,23 +25,22 @@ describe.skip("commands - migration create", () => {
     let connectionOptionsReader: ConnectionOptionsReader
     let baseConnectionOptions: DataSourceOptions
 
-    const enabledDrivers = [
-        "postgres",
+    const enabledDrivers: DatabaseType[] = [
+        "better-sqlite3",
+        "cockroachdb",
+        "mariadb",
         "mssql",
         "mysql",
-        "mariadb",
-        "sqlite",
-        "better-sqlite3",
         "oracle",
-        "cockroachdb",
-    ] as DatabaseType[]
+        "postgres",
+        "sqlite",
+    ]
 
     // simulate args: `npm run typeorm migration:run -- -n test-migration -d test-directory`
     const testHandlerArgs = (options: Record<string, any>) => ({
         $0: "test",
         _: ["test"],
-        name: "test-migration",
-        dir: "test-directory",
+        path: "test-directory/test-migration",
         ...options,
     })
 
@@ -72,7 +70,7 @@ describe.skip("commands - migration create", () => {
     })
 
     afterEach(async () => {
-        getConnectionOptionsStub.restore()
+        getConnectionOptionsStub?.restore()
     })
 
     it("should write regular empty migration file when no option is passed", async () => {

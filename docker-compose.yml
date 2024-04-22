@@ -2,6 +2,7 @@ version: "3"
 services:
   # mysql
   mysql:
+    platform: linux/amd64
     image: "mysql:5.7.37"
     container_name: "typeorm-mysql"
     ports:
@@ -14,7 +15,7 @@ services:
 
   # mariadb
   mariadb:
-    image: "mariadb:10.8.4"
+    image: "mariadb:10.10.3"
     container_name: "typeorm-mariadb"
     ports:
       - "3307:3306"
@@ -38,22 +39,9 @@ services:
       POSTGRES_PASSWORD: "test"
       POSTGRES_DB: "test"
 
-  postgres-12:
-    # mdillon/postgis is postgres + PostGIS (only). if you need additional
-    # extensions, it's probably time to create a purpose-built image with all
-    # necessary extensions. sorry, and thanks for adding support for them!
-    image: "postgis/postgis:12-2.5"
-    container_name: "typeorm-postgres-12"
-    ports:
-      - "5532:5432"
-    environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
-
   # mssql
   mssql:
-    image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
     container_name: "typeorm-mssql"
     ports:
       - "1433:1433"
@@ -63,20 +51,24 @@ services:
 
   # cockroachdb
   cockroachdb:
-    image: "cockroachdb/cockroach:v22.1.6"
+    image: "cockroachdb/cockroach:v23.1.9"
     container_name: "typeorm-cockroachdb"
     command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25
     ports:
       - "26257:26257"
 
+  # oracle
   oracle:
-    image: imnotjames/oracle-xe:18
+    build:
+      context: docker/oracle
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
-    networks:
-      - default
-      - typeorm
+    #volumes:
+     # - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: [ "CMD", "/opt/oracle/checkDBStatus.sh" ]
+      interval: 2s
 
   # google cloud spanner
   spanner:
@@ -130,6 +122,3 @@ services:
 #volumes:
 #  volume-hana-xe:
 #  mysql8_volume:
-
-networks:
-  typeorm:

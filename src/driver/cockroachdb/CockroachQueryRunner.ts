@@ -25,7 +25,8 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
-import { VersionUtils } from "../../util/VersionUtils.js"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { VersionUtils } from "../../util/VersionUtils"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -55,7 +56,7 @@ export class CockroachQueryRunner
     /**
      * Special callback provided by a driver used to release a created connection.
      */
-    protected releaseCallback: Function
+    protected releaseCallback?: (err: any) => void
 
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
@@ -66,6 +67,11 @@ export class CockroachQueryRunner
      * Indicates if running queries must be stored
      */
     protected storeQueries: boolean = false
+
+    /**
+     * Current number of transaction retries in case of 40001 error.
+     */
+    protected transactionRetries: number = 0
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -100,7 +106,18 @@ export class CockroachQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
-                    this.releaseCallback = release
+
+                    const onErrorCallback = (err: Error) =>
+                        this.releaseConnection(err)
+                    this.releaseCallback = (err?: Error) => {
+                        this.databaseConnection.removeListener(
+                            "error",
+                            onErrorCallback,
+                        )
+                        release(err)
+                    }
+                    this.databaseConnection.on("error", onErrorCallback)
+
                     return this.databaseConnection
                 })
         } else {
@@ -110,7 +127,18 @@ export class CockroachQueryRunner
                 .then(([connection, release]: any[]) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
-                    this.releaseCallback = release
+
+                    const onErrorCallback = (err: Error) =>
+                        this.releaseConnection(err)
+                    this.releaseCallback = (err?: Error) => {
+                        this.databaseConnection.removeListener(
+                            "error",
+                            onErrorCallback,
+                        )
+                        release(err)
+                    }
+                    this.databaseConnection.on("error", onErrorCallback)
+
                     return this.databaseConnection
                 })
         }
@@ -119,21 +147,33 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Release a connection back to the pool, optionally specifying an Error to release with.
+     * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
+     */
+    private async releaseConnection(err?: Error) {
+        if (this.isReleased) {
+            return
+        }
+
+        this.isReleased = true
+        if (this.releaseCallback) {
+            this.releaseCallback(err)
+            this.releaseCallback = undefined
+        }
+
+        const index = this.driver.connectedQueryRunners.indexOf(this)
+
+        if (index !== -1) {
+            this.driver.connectedQueryRunners.splice(index, 1)
+        }
+    }
+
+    /**
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
     release(): Promise<void> {
-        if (this.isReleased) {
-            return Promise.resolve()
-        }
-
-        this.isReleased = true
-        if (this.releaseCallback) this.releaseCallback()
-
-        const index = this.driver.connectedQueryRunners.indexOf(this)
-        if (index !== -1) this.driver.connectedQueryRunners.splice(index)
-
-        return Promise.resolve()
+        return this.releaseConnection()
     }
 
     /**
@@ -141,6 +181,7 @@ export class CockroachQueryRunner
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         this.isTransactionActive = true
+        this.transactionRetries = 0
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
@@ -149,6 +190,7 @@ export class CockroachQueryRunner
         }
 
         if (this.transactionDepth === 0) {
+            this.transactionDepth += 1
             await this.query("START TRANSACTION")
             await this.query("SAVEPOINT cockroach_restart")
             if (isolationLevel) {
@@ -157,10 +199,10 @@ export class CockroachQueryRunner
                 )
             }
         } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            this.transactionDepth += 1
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
         }
 
-        this.transactionDepth += 1
         this.storeQueries = true
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -176,27 +218,18 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
             this.transactionDepth -= 1
+            await this.query(
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+            )
         } else {
             this.storeQueries = false
-            try {
-                await this.query("RELEASE SAVEPOINT cockroach_restart")
-                await this.query("COMMIT")
-                this.queries = []
-                this.isTransactionActive = false
-                this.transactionDepth -= 1
-            } catch (e) {
-                if (e.code === "40001") {
-                    await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
-                    for (const q of this.queries) {
-                        await this.query(q.query, q.parameters)
-                    }
-                    await this.commitTransaction()
-                }
-            }
+            this.transactionDepth -= 1
+            await this.query("RELEASE SAVEPOINT cockroach_restart")
+            await this.query("COMMIT")
+            this.queries = []
+            this.isTransactionActive = false
+            this.transactionRetries = 0
         }
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -212,16 +245,18 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
+            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
             )
         } else {
             this.storeQueries = false
+            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
+            this.transactionRetries = 0
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -237,7 +272,15 @@ export class CockroachQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
+        const broadcasterResult = new BroadcasterResult()
+
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
+
         const queryStartTime = +new Date()
 
         if (this.isTransactionActive && this.storeQueries) {
@@ -289,22 +332,71 @@ export class CockroachQueryRunner
                     result.raw = raw.rows
             }
 
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (useStructuredResult) {
                 return result
             } else {
                 return result.raw
             }
         } catch (err) {
-            if (err.code !== "40001") {
+            if (
+                err.code === "40001" &&
+                this.isTransactionActive &&
+                this.transactionRetries <
+                    (this.driver.options.maxTransactionRetries || 5)
+            ) {
+                this.transactionRetries += 1
+                this.storeQueries = false
+                await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
+                const sleepTime =
+                    2 ** this.transactionRetries *
+                    0.1 *
+                    (Math.random() + 0.5) *
+                    1000
+                await new Promise((resolve) => setTimeout(resolve, sleepTime))
+
+                let result = undefined
+                for (const q of this.queries) {
+                    this.driver.connection.logger.logQuery(
+                        `Retrying transaction for query "${q.query}"`,
+                        q.parameters,
+                        this,
+                    )
+                    result = await this.query(q.query, q.parameters)
+                }
+                this.transactionRetries = 0
+                this.storeQueries = true
+
+                return result
+            } else {
                 this.driver.connection.logger.logQueryError(
                     err,
                     query,
                     parameters,
                     this,
                 )
+                this.broadcaster.broadcastAfterQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                    false,
+                    undefined,
+                    undefined,
+                    err,
+                )
+                throw new QueryFailedError(query, parameters, err)
             }
-
-            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
@@ -3256,10 +3348,10 @@ export class CockroachQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/:::[\w\s\[\]\"]+/g, "")
+                                    ].replace(/:::[\w\s[\]"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
-                                            /^(-?[\d\.]+)$/,
+                                            /^(-?[\d.]+)$/,
                                             "($1)",
                                         )
 
@@ -3274,7 +3366,8 @@ export class CockroachQueryRunner
                             }
 
                             if (
-                                dbColumn["is_generated"] === "YES" &&
+                                (dbColumn["is_generated"] === "YES" ||
+                                    dbColumn["is_generated"] === "ALWAYS") &&
                                 dbColumn["generation_expression"]
                             ) {
                                 tableColumn.generatedType =
@@ -3283,7 +3376,7 @@ export class CockroachQueryRunner
                                         : "VIRTUAL"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    await this.selectTypeormMetadataSql({
+                                    this.selectTypeormMetadataSql({
                                         schema: dbTable["table_schema"],
                                         table: dbTable["table_name"],
                                         type: MetadataTableType.GENERATED_COLUMN,
@@ -3651,7 +3744,7 @@ export class CockroachQueryRunner
     protected async getVersion(): Promise<string> {
         const result = await this.query(`SELECT version()`)
         return result[0]["version"].replace(
-            /^CockroachDB CCL v([\d\.]+) .*$/,
+            /^CockroachDB CCL v([\d.]+) .*$/,
             "$1",
         )
     }
@@ -4117,5 +4210,16 @@ export class CockroachQueryRunner
             c += " DEFAULT " + column.default
 
         return c
+    }
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `cockroachdb driver does not support change table comment.`,
+        )
     }
 }

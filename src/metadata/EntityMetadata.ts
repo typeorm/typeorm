@@ -458,7 +458,7 @@ export class EntityMetadata {
     afterLoadListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER INSERT" type.
+     * Listener metadatas with "BEFORE INSERT" type.
      */
     beforeInsertListeners: EntityListenerMetadata[] = []
 
@@ -468,7 +468,7 @@ export class EntityMetadata {
     afterInsertListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER UPDATE" type.
+     * Listener metadatas with "BEFORE UPDATE" type.
      */
     beforeUpdateListeners: EntityListenerMetadata[] = []
 
@@ -478,7 +478,7 @@ export class EntityMetadata {
     afterUpdateListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER REMOVE" type.
+     * Listener metadatas with "BEFORE REMOVE" type.
      */
     beforeRemoveListeners: EntityListenerMetadata[] = []
 
@@ -515,6 +515,11 @@ export class EntityMetadata {
      * { id: "id", counterEmbed: { count: "counterEmbed.count" }, category: "category" }
      */
     propertiesMap: ObjectLiteral
+
+    /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -829,31 +834,67 @@ export class EntityMetadata {
                     relationsAndValues.push([
                         relation,
                         subValue,
-                        this.getInverseEntityMetadata(subValue, relation),
+                        EntityMetadata.getInverseEntityMetadata(
+                            subValue,
+                            relation,
+                        ),
                     ]),
                 )
             } else if (value) {
                 relationsAndValues.push([
                     relation,
                     value,
-                    this.getInverseEntityMetadata(value, relation),
+                    EntityMetadata.getInverseEntityMetadata(value, relation),
                 ])
             }
         })
         return relationsAndValues
     }
 
-    private getInverseEntityMetadata(
+    /**
+     * In the case of SingleTableInheritance, find the correct metadata
+     * for a given value.
+     *
+     * @param value The value to find the metadata for.
+     * @returns The found metadata for the entity or the base metadata if no matching metadata
+     *          was found in the whole inheritance tree.
+     */
+    findInheritanceMetadata(value: any): EntityMetadata {
+        // Check for single table inheritance and find the correct metadata in that case.
+        // Goal is to use the correct discriminator as we could have a repository
+        // for an (abstract) base class and thus the target would not match.
+
+        if (
+            this.inheritancePattern === "STI" &&
+            this.childEntityMetadatas.length > 0
+        ) {
+            // There could be a column on the base class that can manually be set to override the type.
+            let manuallySetDiscriminatorValue: unknown
+            if (this.discriminatorColumn) {
+                manuallySetDiscriminatorValue =
+                    value[this.discriminatorColumn.propertyName]
+            }
+            return (
+                this.childEntityMetadatas.find(
+                    (meta) =>
+                        manuallySetDiscriminatorValue ===
+                            meta.discriminatorValue ||
+                        value.constructor === meta.target,
+                ) || this
+            )
+        }
+        return this
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Static Methods
+    // -------------------------------------------------------------------------
+
+    private static getInverseEntityMetadata(
         value: any,
         relation: RelationMetadata,
     ): EntityMetadata {
-        const childEntityMetadata =
-            relation.inverseEntityMetadata.childEntityMetadatas.find(
-                (metadata) => metadata.target === value.constructor,
-            )
-        return childEntityMetadata
-            ? childEntityMetadata
-            : relation.inverseEntityMetadata
+        return relation.inverseEntityMetadata.findInheritanceMetadata(value)
     }
 
     // -------------------------------------------------------------------------
@@ -1025,6 +1066,8 @@ export class EntityMetadata {
             this.tableMetadataArgs.type === "junction"
         this.isClosureJunction =
             this.tableMetadataArgs.type === "closure-junction"
+
+        this.comment = this.tableMetadataArgs.comment
     }
 
     /**
@@ -1084,6 +1127,7 @@ export class EntityMetadata {
         return this.columns.filter((column) => {
             return (
                 column.default !== undefined ||
+                column.asExpression !== undefined ||
                 column.isGenerated ||
                 column.isCreateDate ||
                 column.isUpdateDate ||

@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 
 /**
@@ -47,6 +48,12 @@ export interface PostgresConnectionOptions
          * List of read-from severs (slaves).
          */
         readonly slaves: PostgresConnectionCredentialsOptions[]
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
 
     /**
@@ -77,12 +84,6 @@ export interface PostgresConnectionOptions
      * Automatically install postgres extensions
      */
     readonly installExtensions?: boolean
-
-    /**
-     * sets the application_name var to help db administrators identify
-     * the service using this connection. Defaults to 'undefined'
-     */
-    readonly applicationName?: string
 
     /**
      * Return 64-bit integers (int8) as JavaScript integers.

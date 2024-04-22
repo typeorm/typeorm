@@ -6,8 +6,8 @@ import {
     sleep,
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/index"
-import { Account } from "./entity/Account.js"
-import { Person } from "./entity/Person.js"
+import { Account } from "./entity/Account"
+import { Person } from "./entity/Person"
 
 describe("query builder > time-travel-query", () => {
     // -------------------------------------------------------------------------

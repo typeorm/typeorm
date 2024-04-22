@@ -121,7 +121,7 @@ describe("github issues > #9323 Add new VirtualColumn decorator feature", () => 
             }),
         ))
 
-    it("should be able to save and find sub-select data in the databse", () =>
+    it("should be able to save and find sub-select data in the database", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const companyName = "My Company 1"
@@ -229,7 +229,7 @@ describe("github issues > #9323 Add new VirtualColumn decorator feature", () => 
             }),
         ))
 
-    it("should be able to save and find sub-select data in the databse (with query builder)", () =>
+    it("should be able to save and find sub-select data in the database (with query builder)", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const companyName = "My Company 2"
@@ -272,9 +272,15 @@ describe("github issues > #9323 Add new VirtualColumn decorator feature", () => 
 
                 const companyQueryData = await connection
                     .createQueryBuilder(Company, "company")
-                    .leftJoinAndSelect("company.employees", "employee")
-                    .leftJoinAndSelect("employee.timesheets", "timesheet")
-                    .leftJoinAndSelect("timesheet.activities", "activity")
+                    .select([
+                        "company.name",
+                        "company.totalEmployeesCount",
+                        "employee.name",
+                        "timesheet.id",
+                        "timesheet.totalActvityHours",
+                    ])
+                    .leftJoin("company.employees", "employee")
+                    .leftJoin("employee.timesheets", "timesheet")
                     .where("company.name = :name", { name: companyName })
                     // we won't be supporting where & order bys with VirtualColumns (you will have to make your subquery a function that gets added to the query builder)
                     //.andWhere("company.totalEmployeesCount > 2")

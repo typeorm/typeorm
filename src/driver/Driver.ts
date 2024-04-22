@@ -14,6 +14,8 @@ import { Table } from "../schema-builder/table/Table"
 import { View } from "../schema-builder/view/View"
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { UpsertType } from "./types/UpsertType"
+import { OnDeleteType } from "../metadata/types/OnDeleteType"
+import { OnUpdateType } from "../metadata/types/OnUpdateType"
 
 export type ReturningType = "insert" | "update" | "delete"
 
@@ -69,6 +71,16 @@ export interface Driver {
     supportedUpsertTypes: UpsertType[]
 
     /**
+     * Returns list of supported onDelete types by driver
+     */
+    supportedOnDeleteTypes?: OnDeleteType[]
+
+    /**
+     * Returns list of supported onUpdate types by driver
+     */
+    supportedOnUpdateTypes?: OnUpdateType[]
+
+    /**
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
@@ -99,6 +111,11 @@ export interface Driver {
      * Column types are driver dependant.
      */
     mappedDataTypes: MappedColumnTypes
+
+    /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix?: string
 
     /**
      * Max length allowed by the DBMS for aliases (execution of queries).

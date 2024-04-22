@@ -98,6 +98,15 @@ describe("database schema > column types > postgres", () => {
                 post.tstzrange =
                     "[2010-01-01 14:30:00+00,2010-01-01 15:30:00+00)"
                 post.daterange = "[2010-01-01,2010-01-05)"
+                post.int4multirange = "{[10,20),[25,30)}"
+                post.int8multirange = "{[200000,500000),[600000,700000)}"
+                post.nummultirange = "{(10.5,20.2),(30.5,40.2)}"
+                post.tsmultirange =
+                    '{["2010-01-01 14:30:00","2010-01-01 15:30:00"),["2010-01-01 16:30:00","2010-01-01 17:30:00")}'
+                post.tstzmultirange =
+                    '{["2010-01-01 14:30:00+00","2010-01-01 15:30:00+00"),["2010-01-01 16:30:00+00","2010-01-01 17:30:00+00")}'
+                post.datemultirange =
+                    "{[2010-01-01,2010-01-05),[2010-01-10,2010-01-15)}"
                 post.xml =
                     "<book><title>Manual</title><chapter>...</chapter></book>"
                 post.array = [1, 2, 3]
@@ -185,6 +194,12 @@ describe("database schema > column types > postgres", () => {
                     `["2010-01-01 14:30:00+00","2010-01-01 15:30:00+00")`,
                 )
                 loadedPost.daterange.should.be.eql(post.daterange)
+                loadedPost.int4multirange.should.be.eql(post.int4multirange)
+                loadedPost.int8multirange.should.be.eql(post.int8multirange)
+                loadedPost.nummultirange.should.be.eql(post.nummultirange)
+                loadedPost.tsmultirange.should.be.eql(post.tsmultirange)
+                loadedPost.tstzmultirange.should.be.eql(post.tstzmultirange)
+                loadedPost.datemultirange.should.be.eql(post.datemultirange)
                 loadedPost.xml.should.be.equal(post.xml)
                 loadedPost.array[0].should.be.equal(post.array[0])
                 loadedPost.array[1].should.be.equal(post.array[1])
@@ -322,6 +337,24 @@ describe("database schema > column types > postgres", () => {
                 table!
                     .findColumnByName("daterange")!
                     .type.should.be.equal("daterange")
+                table!
+                    .findColumnByName("int4multirange")!
+                    .type.should.be.equal("int4multirange")
+                table!
+                    .findColumnByName("int8multirange")!
+                    .type.should.be.equal("int8multirange")
+                table!
+                    .findColumnByName("nummultirange")!
+                    .type.should.be.equal("nummultirange")
+                table!
+                    .findColumnByName("tsmultirange")!
+                    .type.should.be.equal("tsmultirange")
+                table!
+                    .findColumnByName("tstzmultirange")!
+                    .type.should.be.equal("tstzmultirange")
+                table!
+                    .findColumnByName("datemultirange")!
+                    .type.should.be.equal("datemultirange")
                 table!
                     .findColumnByName("array")!
                     .type.should.be.equal("integer")

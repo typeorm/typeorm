@@ -14,11 +14,12 @@ describe("query runner > stream", () => {
         connections = await createTestingConnections({
             entities: [Book],
             enabledDrivers: [
-                "mysql",
                 "cockroachdb",
-                "postgres",
                 "mssql",
+                "mysql",
                 "oracle",
+                "postgres",
+                "sap",
                 "spanner",
             ],
         })

@@ -127,6 +127,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "date",
         "time",
         "datetime",
+        "json",
     ]
 
     /**
@@ -340,10 +341,13 @@ export abstract class AbstractSqliteDriver implements Driver {
             // to string conversation needs because SQLite stores date as integer number, when date came as Object
             // TODO: think about `toUTC` conversion
             return DateUtils.mixedDateToUtcDatetimeString(value)
+        } else if (
+            columnMetadata.type === "json" ||
+            columnMetadata.type === "simple-json"
+        ) {
+            return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value)
-        } else if (columnMetadata.type === "simple-json") {
-            return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value)
         }
@@ -405,10 +409,13 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
+        } else if (
+            columnMetadata.type === "json" ||
+            columnMetadata.type === "simple-json"
+        ) {
+            value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
-        } else if (columnMetadata.type === "simple-json") {
-            value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
         } else if (columnMetadata.type === Number) {
@@ -786,6 +793,12 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    )) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
 
@@ -842,6 +855,15 @@ export abstract class AbstractSqliteDriver implements Driver {
             //         "isUnique:",
             //         tableColumn.isUnique,
             //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log(
+            //         "enum:",
+            //         tableColumn.enum &&
+            //             columnMetadata.enum &&
+            //             !OrmUtils.isArraysEqual(
+            //                 tableColumn.enum,
+            //                 columnMetadata.enum.map((val) => val + ""),
+            //             ),
             //     )
             //     console.log(
             //         "isGenerated:",

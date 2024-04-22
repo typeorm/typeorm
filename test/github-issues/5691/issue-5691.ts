@@ -103,27 +103,29 @@ describe("github issues > #5691 RelationId is too slow", () => {
                 // const test1Start = new Date().getTime();
                 // 54 rows for 1 root
                 await connection.getRepository(Root).find({
-                    relations: [
-                        "allChild1",
-                        "allChild1.allShared",
-                        "allChild2",
-                    ],
+                    relations: {
+                        allChild1: {
+                            allShared: true,
+                        },
+                        allChild2: true,
+                    },
                 })
                 // 21 rows 1 root
                 await connection.getRepository(Root).find({
-                    relations: ["allShared"],
+                    relations: { allShared: true },
                 })
                 // const test1End = new Date().getTime();
 
                 // const test2Start = new Date().getTime();
                 // 1134 rows 1 root
                 await connection.getRepository(Root).find({
-                    relations: [
-                        "allChild1",
-                        "allChild1.allShared",
-                        "allChild2",
-                        "allShared",
-                    ],
+                    relations: {
+                        allChild1: {
+                            allShared: true,
+                        },
+                        allChild2: true,
+                        allShared: true,
+                    },
                 })
                 // const test2End = new Date().getTime();
 

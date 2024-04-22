@@ -159,6 +159,11 @@ export interface TestingOptions {
         | Logger
 
     relationLoadStrategy?: "join" | "query"
+
+    /**
+     * Allows automatic isolation of where clauses
+     */
+    isolateWhereStatements?: boolean
 }
 
 /**
@@ -295,6 +300,9 @@ export function setupTestingConnections(
                 newOptions.metadataTableName = options.metadataTableName
             if (options && options.relationLoadStrategy)
                 newOptions.relationLoadStrategy = options.relationLoadStrategy
+            if (options && options.isolateWhereStatements)
+                newOptions.isolateWhereStatements =
+                    options.isolateWhereStatements
 
             newOptions.baseDirectory = path.dirname(getOrmFilepath())
 
@@ -431,9 +439,6 @@ export async function createTestingConnections(
                     `SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`,
                 )
                 await queryRunner.query(
-                    `SET CLUSTER SETTING kv.raft_log.disable_synchronization_unsafe = 'true'`,
-                )
-                await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
                 )
             }
@@ -482,7 +487,7 @@ export function closeTestingConnections(connections: DataSource[]) {
     return Promise.all(
         connections.map((connection) =>
             connection && connection.isInitialized
-                ? connection.close()
+                ? connection.destroy()
                 : undefined,
         ),
     )

@@ -70,4 +70,9 @@ export interface TableMetadataArgs {
      * an integer primary key column named 'rowid' on table creation.
      */
     withoutRowid?: boolean
+
+    /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
 }

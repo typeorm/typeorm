@@ -74,4 +74,9 @@ export interface TableOptions {
      * Table engine.
      */
     engine?: string
+
+    /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
 }

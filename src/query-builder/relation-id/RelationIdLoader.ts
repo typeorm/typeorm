@@ -50,6 +50,7 @@ export class RelationIdLoader {
                                             rawEntity[
                                                 DriverUtils.buildAlias(
                                                     this.connection.driver,
+                                                    undefined,
                                                     relationIdAttr.parentAlias,
                                                     joinColumn.databaseName,
                                                 )
@@ -76,6 +77,7 @@ export class RelationIdLoader {
                                             rawEntity[
                                                 DriverUtils.buildAlias(
                                                     this.connection.driver,
+                                                    undefined,
                                                     relationIdAttr.parentAlias,
                                                     primaryColumn.databaseName,
                                                 )
@@ -139,6 +141,7 @@ export class RelationIdLoader {
                                         rawEntity[
                                             DriverUtils.buildAlias(
                                                 this.connection.driver,
+                                                undefined,
                                                 relationIdAttr.parentAlias,
                                                 joinColumn.referencedColumn!
                                                     .databaseName,
@@ -270,6 +273,7 @@ export class RelationIdLoader {
                                 rawEntity[
                                     DriverUtils.buildAlias(
                                         this.connection.driver,
+                                        undefined,
                                         relationIdAttr.parentAlias,
                                         joinColumn.referencedColumn!
                                             .databaseName,

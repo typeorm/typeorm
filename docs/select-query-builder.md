@@ -4,6 +4,7 @@
 -   [Important note when using the `QueryBuilder`](#important-note-when-using-the-querybuilder)
 -   [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
 -   [Getting values using QueryBuilder](#getting-values-using-querybuilder)
+-   [Getting a count](#getting-a-count)
 -   [What are aliases for?](#what-are-aliases-for)
 -   [Using parameters to escape data](#using-parameters-to-escape-data)
 -   [Adding `WHERE` expression](#adding-where-expression)
@@ -28,6 +29,9 @@
 -   [Using subqueries](#using-subqueries)
 -   [Hidden Columns](#hidden-columns)
 -   [Querying Deleted rows](#querying-deleted-rows)
+-   [Common table expressions](#common-table-expressions)
+-   [Time Travel Queries](#time-travel-queries)
+-   [Debugging](#debugging)
 
 ## What is `QueryBuilder`
 
@@ -72,6 +76,7 @@ When using the `QueryBuilder`, you need to provide unique parameters in your `WH
 
 ```TypeScript
 const result = await dataSource
+    .getRepository(User)
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')
@@ -83,6 +88,7 @@ const result = await dataSource
 
 ```TypeScript
 const result = await dataSource
+    .getRepository(User)
     .createQueryBuilder('user')
     .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
     .leftJoinAndSelect('user.linkedCow', 'linkedCow')
@@ -252,6 +258,24 @@ const photosSums = await dataSource
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
+## Getting a count
+
+You can get the count on the number of rows a query will return by using `getCount()`. This will return the count as a number rather than an Entity result.
+
+```typescript
+const count = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.name = :name", { name: "Timber" })
+    .getCount()
+```
+
+Which produces the following SQL query:
+
+```sql
+SELECT count(*) FROM users user WHERE user.name = 'Timber'
+```
+
 ## What are aliases for?
 
 We used `createQueryBuilder("user")`. But what is "user"?
@@ -292,7 +316,7 @@ One query builder is not limited to one alias, they can have multiple aliases.
 Each select can have its own alias,
 you can select from multiple tables each with its own alias,
 you can join multiple tables each with its own alias.
-You can use those aliases to access tables are you selecting (or data you are selecting).
+You can use those aliases to access tables you are selecting (or data you are selecting).
 
 ## Using parameters to escape data
 
@@ -1177,7 +1201,7 @@ If the model you are querying has a column with the attribute `@DeleteDateColumn
 Let's say you have the following entity:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn } from "typeorm"
 
 @Entity()
 export class User {
@@ -1273,3 +1297,43 @@ console.log(account)
 By default `timeTravelQuery()` uses `follower_read_timestamp()` function if no arguments passed.
 For another supported timestamp arguments and additional information please refer to
 [CockroachDB](https://www.cockroachlabs.com/docs/stable/as-of-system-time.html) docs.
+
+## Debugging
+
+You can get the generated SQL from the query builder by calling `getQuery()` or `getQueryAndParameters()`.
+
+If you just want the query you can use `getQuery()`
+
+```typescript
+const sql = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .getQuery()
+```
+
+Which results in:
+
+```sql
+SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?
+```
+
+Or if you want the query and the parameters you can get an array back using `getQueryAndParameters()`
+
+```typescript
+const queryAndParams = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: 1 })
+    .getQueryAndParameters()
+```
+
+Which results in:
+
+```typescript
+[
+ "SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?",
+ [ 1 ]
+]
+```
+

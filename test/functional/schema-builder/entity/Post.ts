@@ -23,7 +23,7 @@ export class Post {
     @Column({ nullable: true })
     text: string
 
-    @Column()
+    @Column({ comment: "Tag" })
     tag: string
 
     @Column()
