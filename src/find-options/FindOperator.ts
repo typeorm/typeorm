@@ -138,11 +138,26 @@ export class FindOperator<T> {
         return this._getSql
     }
 
-    transformValue(transformer: ValueTransformer | ValueTransformer[]) {
+    clone() {
+        return new FindOperator(
+            this._type,
+            this._value,
+            this._useParameter,
+            this._multipleParameters,
+            this._getSql,
+            this._objectLiteralParameters,
+        )
+    }
+
+    transformValue(
+        transformer: ValueTransformer | ValueTransformer[],
+    ): T | FindOperator<T> {
+        const cloned = this.clone()
+
         if (this._value instanceof FindOperator) {
-            this._value.transformValue(transformer)
+            cloned._value = this._value.transformValue(transformer)
         } else {
-            this._value =
+            cloned._value =
                 Array.isArray(this._value) && this._multipleParameters
                     ? this._value.map(
                           (v: any) =>
@@ -157,5 +172,7 @@ export class FindOperator<T> {
                           this._value,
                       )
         }
+
+        return cloned
     }
 }
