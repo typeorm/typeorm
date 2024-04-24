@@ -45,4 +45,14 @@ export interface SqlitePooledConnectionOptions
      * usages (i.e. no blocking).
      */
     readonly poolSize?: number
+
+    /**
+     * How many milliseconds to wait for acquiring a connection from a pool.
+     */
+    readonly acquireTimeout: number
+
+    /**
+     * How many milliseconds to wait when closing a connection.
+     */
+    readonly destroyTimeout: number
 }

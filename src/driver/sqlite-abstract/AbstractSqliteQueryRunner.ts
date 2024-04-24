@@ -149,7 +149,8 @@ export abstract class AbstractSqliteQueryRunner
      */
     async rollbackTransaction(): Promise<void> {
         try {
-            if (!this.isTransactionActive) throw new TransactionNotStartedError()
+            if (!this.isTransactionActive)
+                throw new TransactionNotStartedError()
 
             await this.broadcaster.broadcast("BeforeTransactionRollback")
 

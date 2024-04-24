@@ -19,8 +19,8 @@ const getDriver = async (
         case "sqlite":
             return (await import("./sqlite/SqliteDriver")).SqliteDriver
         case "sqlite-pooled":
-            return (await import("./sqlite-pooled/SqlitePooledDriver"))
-                .SqlitePooledDriver
+            return (await import("./sqlite-pooled/SqliteReadWriteDriver"))
+                .SqliteReadWriteDriver
         case "better-sqlite3":
             return (await import("./better-sqlite3/BetterSqlite3Driver"))
                 .BetterSqlite3Driver

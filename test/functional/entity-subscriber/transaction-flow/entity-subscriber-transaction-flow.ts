@@ -10,6 +10,7 @@ import {
 import { Example } from "../query-data/entity/Example"
 import sinon from "sinon"
 import { expect } from "chai"
+import { SqliteReadWriteQueryRunner } from "../../../../src/driver/sqlite-pooled/SqliteReadWriteQueryRunner"
 
 describe("entity subscriber > transaction flow", () => {
     let beforeTransactionStart = sinon.spy()
@@ -103,6 +104,42 @@ describe("entity subscriber > transaction flow", () => {
 
                 startTransactionFn.restore()
                 await queryRunner.commitTransaction()
+            } else if (connection.driver.options.type === "sqlite-pooled") {
+                const startTransactionFn = sinon.spy(
+                    queryRunner as SqliteReadWriteQueryRunner,
+                    "runQueryWithinConnection",
+                )
+
+                const queryCallBeforeTransactionStart = startTransactionFn
+                    .getCalls()
+                    .find((call) => {
+                        return call.args[1] === "BEGIN IMMEDIATE TRANSACTION"
+                    })
+                expect(queryCallBeforeTransactionStart).to.be.undefined
+
+                await queryRunner.startTransaction(isolationLevel)
+
+                const queryCallAfterTransactionStart = startTransactionFn
+                    .getCalls()
+                    .find((call) => {
+                        return call.args[1] === "BEGIN IMMEDIATE TRANSACTION"
+                    })
+                expect(beforeTransactionStart.called).to.be.true
+                expect(afterTransactionStart.called).to.be.true
+                expect(queryCallAfterTransactionStart).to.be.not.undefined
+                expect(
+                    beforeTransactionStart
+                        .getCall(0)
+                        .calledBefore(queryCallAfterTransactionStart!),
+                ).to.be.true
+                expect(
+                    afterTransactionStart
+                        .getCall(0)
+                        .calledAfter(queryCallAfterTransactionStart!),
+                ).to.be.true
+
+                await queryRunner.commitTransaction()
+                startTransactionFn.restore()
             } else {
                 const startTransactionFn = sinon.spy(queryRunner, "query")
 
@@ -111,6 +148,7 @@ describe("entity subscriber > transaction flow", () => {
                     .find((call) => {
                         return (
                             call.args[0] === "BEGIN TRANSACTION" ||
+                            call.args[0] === "BEGIN IMMEDIATE TRANSACTION" ||
                             call.args[0] === "START TRANSACTION" ||
                             call.args[0] ===
                                 "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"
@@ -184,6 +222,41 @@ describe("entity subscriber > transaction flow", () => {
                     .to.be.true
 
                 commitTransactionFn.restore()
+            } else if (connection.driver.options.type === "sqlite-pooled") {
+                const commitTransactionFn = sinon.spy(
+                    queryRunner as SqliteReadWriteQueryRunner,
+                    "runQueryWithinConnection",
+                )
+
+                const queryCallBeforeTransactionCommit = commitTransactionFn
+                    .getCalls()
+                    .find((call) => {
+                        return call.args[1] === "COMMIT"
+                    })
+                expect(queryCallBeforeTransactionCommit).to.be.undefined
+
+                await queryRunner.commitTransaction()
+
+                const queryCallAfterTransactionCommit = commitTransactionFn
+                    .getCalls()
+                    .find((call) => {
+                        return call.args[1] === "COMMIT"
+                    })
+                expect(queryCallAfterTransactionCommit).to.be.not.undefined
+                expect(beforeTransactionCommit.called).to.be.true
+                expect(afterTransactionCommit.called).to.be.true
+                expect(
+                    beforeTransactionCommit
+                        .getCall(0)
+                        .calledBefore(queryCallAfterTransactionCommit!),
+                ).to.be.true
+                expect(
+                    afterTransactionCommit
+                        .getCall(0)
+                        .calledAfter(queryCallAfterTransactionCommit!),
+                ).to.be.true
+
+                commitTransactionFn.restore()
             } else {
                 const commitTransactionFn = sinon.spy(queryRunner, "query")
 
@@ -253,6 +326,41 @@ describe("entity subscriber > transaction flow", () => {
                 ).to.be.true
                 expect(
                     afterTransactionRollback.calledAfter(rollbackTransactionFn),
+                ).to.be.true
+
+                rollbackTransactionFn.restore()
+            } else if (connection.driver.options.type === "sqlite-pooled") {
+                const rollbackTransactionFn = sinon.spy(
+                    queryRunner as SqliteReadWriteQueryRunner,
+                    "runQueryWithinConnection",
+                )
+
+                const queryCallBeforeTransactionRollback = rollbackTransactionFn
+                    .getCalls()
+                    .find((call) => {
+                        return call.args[1] === "ROLLBACK"
+                    })
+                expect(queryCallBeforeTransactionRollback).to.be.undefined
+
+                await queryRunner.rollbackTransaction()
+
+                const queryCallAfterTransactionRollback = rollbackTransactionFn
+                    .getCalls()
+                    .find((call) => {
+                        return call.args[1] === "ROLLBACK"
+                    })
+                expect(queryCallAfterTransactionRollback).to.be.not.undefined
+                expect(beforeTransactionRollback.called).to.be.true
+                expect(afterTransactionRollback.called).to.be.true
+                expect(
+                    beforeTransactionRollback
+                        .getCall(0)
+                        .calledBefore(queryCallAfterTransactionRollback!),
+                ).to.be.true
+                expect(
+                    afterTransactionRollback
+                        .getCall(0)
+                        .calledAfter(queryCallAfterTransactionRollback!),
                 ).to.be.true
 
                 rollbackTransactionFn.restore()
