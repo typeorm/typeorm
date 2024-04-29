@@ -224,6 +224,8 @@ export class JunctionEntityMetadataBuilder {
         const unsupporteDeleteCascadeDrivers = ["spanner"]
         const unsupportedUpdateCascadeDrivers = ["oracle", "spanner"]
 
+        const defaultOnDeleteAndUpdateType = "CASCADE"
+
         entityMetadata.foreignKeys = relation.createForeignKeyConstraints
             ? [
                   new ForeignKeyMetadata({
@@ -236,12 +238,12 @@ export class JunctionEntityMetadataBuilder {
                           this.connection.driver.options.type,
                       )
                           ? "NO ACTION"
-                          : relation.onDelete || "CASCADE",
+                          : relation.onDelete || defaultOnDeleteAndUpdateType,
                       onUpdate: unsupportedUpdateCascadeDrivers.includes(
                           this.connection.driver.options.type,
                       )
                           ? "NO ACTION"
-                          : relation.onUpdate || "CASCADE",
+                          : relation.onUpdate || defaultOnDeleteAndUpdateType,
                   }),
                   new ForeignKeyMetadata({
                       entityMetadata: entityMetadata,
@@ -255,14 +257,14 @@ export class JunctionEntityMetadataBuilder {
                           ? "NO ACTION"
                           : relation.inverseRelation
                           ? relation.inverseRelation.onDelete
-                          : "CASCADE",
+                          : defaultOnDeleteAndUpdateType,
                       onUpdate: unsupportedUpdateCascadeDrivers.includes(
                           this.connection.driver.options.type,
                       )
                           ? "NO ACTION"
                           : relation.inverseRelation
                           ? relation.inverseRelation.onUpdate
-                          : "CASCADE",
+                          : defaultOnDeleteAndUpdateType,
                   }),
               ]
             : []
