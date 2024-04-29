@@ -37,7 +37,6 @@ import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
-import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
@@ -132,8 +131,6 @@ export class DataSource {
      */
     readonly relationLoader: RelationLoader
 
-    readonly relationIdLoader: RelationIdLoader
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -155,7 +152,6 @@ export class DataSource {
             ? new QueryResultCacheFactory(this).create()
             : undefined
         this.relationLoader = new RelationLoader(this)
-        this.relationIdLoader = new RelationIdLoader(this)
         this.isInitialized = false
     }
 
