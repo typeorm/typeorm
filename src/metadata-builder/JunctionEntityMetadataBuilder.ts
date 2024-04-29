@@ -224,7 +224,13 @@ export class JunctionEntityMetadataBuilder {
         const unsupporteDeleteCascadeDrivers = ["spanner"]
         const unsupportedUpdateCascadeDrivers = ["oracle", "spanner"]
 
-        const defaultOnDeleteAndUpdateType = "CASCADE"
+        const noActionByDefaultDrivers = ["postgres"]
+
+        const defaultOnDeleteAndUpdateType = noActionByDefaultDrivers.includes(
+            this.connection.driver.options.type,
+        )
+            ? "NO ACTION"
+            : "CASCADE"
 
         entityMetadata.foreignKeys = relation.createForeignKeyConstraints
             ? [
