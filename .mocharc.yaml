@@ -1,0 +1,13 @@
+# Mocha configuration file for testing individual tests with `npm run test-ts path/to/test.ts` or `npx mocha path/to/test.ts`.
+# This configuration does not include the file spec, and eliminates the need for running `tsc` beforehand, by using `ts-node`.
+bail: true
+exit: true
+extension:
+  - js
+  - ts
+recursive: true
+require:
+  - 'ts-node/register'
+  - 'test/utils/test-setup.ts'
+# No timeout to allow for debugging tests in a debugger.
+#timeout: '90000'

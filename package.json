@@ -239,6 +239,7 @@
   "scripts": {
     "test": "rimraf ./build && tsc && mocha --config=.mocharc-compiled.yaml",
     "test-fast": "mocha --config=.mocharc-compiled.yaml",
+    "test-ts": "mocha",
     "compile": "rimraf ./build && tsc",
     "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
