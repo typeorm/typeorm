@@ -32,5 +32,8 @@
         "node_modules",
         "temp",
         "tmp"
-    ]
+    ],
+    "ts-node": {
+        "transpileOnly": true,
+    }
 }
