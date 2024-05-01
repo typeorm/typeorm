@@ -9,5 +9,6 @@ recursive: true
 require:
   - 'ts-node/register'
   - 'test/utils/test-setup.ts'
-# No timeout to allow for debugging tests in a debugger.
-#timeout: '90000'
+
+# High timeout (in milliseconds) to allow for debugging tests in a debugger.
+timeout: '600000'
