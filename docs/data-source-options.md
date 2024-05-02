@@ -2,8 +2,8 @@
 
 -   [What is `DataSourceOptions`](#what-is-datasourceoptions)
 -   [Common data source options](#common-data-source-options)
--   [`mysql` / `mariadb` data source options](#mysql--mariadb-data-source-options)
--   [`postgres` / `cockroachdb` data source options](#postgres--cockroachdb-data-source-options)
+-   [`mysql` / `mariadb` data source options](#mysql-mariadb-data-source-options)
+-   [`postgres` / `cockroachdb` data source options](#postgres-cockroachdb-data-source-options)
 -   [`sqlite` data source options](#sqlite-data-source-options)
 -   [`better-sqlite3` data source options](#better-sqlite3-data-source-options)
 -   [`capacitor` data source options](#capacitor-data-source-options)
@@ -154,7 +154,7 @@ Different RDBMS-es have their own specific options.
 -   `multipleStatements` - Allow multiple mysql statements per query. Be careful with this, it could increase the scope
     of SQL injection attacks. (Default: `false`)
 
--   `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: true)
+-   `legacySpatialSupport` - Use spatial functions like GeomFromText and AsText which are removed in MySQL 8. (Default: `true`)
 
 -   `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
     For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
