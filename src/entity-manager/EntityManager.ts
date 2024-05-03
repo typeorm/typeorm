@@ -1335,7 +1335,7 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new TypeORMError(`Value "${value}" is not a number.`)
 
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
@@ -1372,7 +1372,7 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new TypeORMError(`Value "${value}" is not a number.`)
 
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
