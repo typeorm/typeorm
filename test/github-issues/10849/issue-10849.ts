@@ -43,4 +43,16 @@ describe("github issues > #10839 Entity instance is not correctly initialized in
                 expect(savedUser).to.be.instanceOf(User)
             }),
         ))
+
+    it("should return an array of entity instances when save is called with array of plain objects", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const savedUsers = await dataSource
+                    .getRepository(User)
+                    .save([{ name: "John Doe" }, { name: "Jane Doe" }])
+                expect(savedUsers).to.be.instanceOf(Array)
+                expect(savedUsers[0]).to.be.instanceOf(User)
+                expect(savedUsers[1]).to.be.instanceOf(User)
+            }),
+        ))
 })

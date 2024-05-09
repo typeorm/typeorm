@@ -428,12 +428,15 @@ export class EntityManager {
 
         if (target) {
             const metadata = this.connection.getMetadata(target)
-            entity = this.plainObjectToEntityTransformer.transform(
-                metadata.create(this.queryRunner),
-                entity,
-                metadata,
-                true,
-            )
+            const objects = Array.isArray(entity) ? entity : [entity]
+            entity = objects.map((object) =>
+                this.plainObjectToEntityTransformer.transform(
+                    metadata.create(this.queryRunner),
+                    object,
+                    metadata,
+                    true,
+                ),
+            ) as T | T[]
         }
 
         // if user passed empty array of entities then we don't need to do anything
