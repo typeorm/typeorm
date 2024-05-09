@@ -407,21 +407,34 @@ export class EntityManager {
         maybeOptions?: SaveOptions,
     ): Promise<T | T[]> {
         // normalize mixed parameters
-        let target =
+        const entityTarget: EntityTarget<Entity> | undefined =
             arguments.length > 1 &&
             (typeof targetOrEntity === "function" ||
                 InstanceChecker.isEntitySchema(targetOrEntity) ||
                 typeof targetOrEntity === "string")
-                ? (targetOrEntity as Function | string)
+                ? (targetOrEntity as EntityTarget<Entity>)
                 : undefined
-        const entity: T | T[] = target
+        const target = (
+            InstanceChecker.isEntitySchema(entityTarget)
+                ? entityTarget.options.name
+                : entityTarget
+        ) as Function | string | undefined
+        let entity: T | T[] = target
             ? (maybeEntityOrOptions as T | T[])
             : (targetOrEntity as T | T[])
         const options = target
             ? maybeOptions
             : (maybeEntityOrOptions as SaveOptions)
 
-        if (InstanceChecker.isEntitySchema(target)) target = target.options.name
+        if (target) {
+            const metadata = this.connection.getMetadata(target)
+            entity = this.plainObjectToEntityTransformer.transform(
+                metadata.create(this.queryRunner),
+                entity,
+                metadata,
+                true,
+            )
+        }
 
         // if user passed empty array of entities then we don't need to do anything
         if (Array.isArray(entity) && entity.length === 0)
