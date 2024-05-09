@@ -426,22 +426,32 @@ export class EntityManager {
             ? maybeOptions
             : (maybeEntityOrOptions as SaveOptions)
 
+        // if user passed empty array of entities then we don't need to do anything
+        if (Array.isArray(entity) && entity.length === 0)
+            return Promise.resolve(entity)
+
         if (target) {
             const metadata = this.connection.getMetadata(target)
-            const objects = Array.isArray(entity) ? entity : [entity]
-            entity = objects.map((object) =>
-                this.plainObjectToEntityTransformer.transform(
+
+            const transformToEntity = (object: T) => {
+                if (
+                    typeof metadata.target === "string" ||
+                    object instanceof metadata.target
+                )
+                    return object
+                return this.plainObjectToEntityTransformer.transform(
                     metadata.create(this.queryRunner),
                     object,
                     metadata,
                     true,
-                ),
-            ) as T | T[]
+                ) as T
+            }
+            if (Array.isArray(entity)) {
+                entity = entity.map(transformToEntity) as T[]
+            } else {
+                entity = transformToEntity(entity)
+            }
         }
-
-        // if user passed empty array of entities then we don't need to do anything
-        if (Array.isArray(entity) && entity.length === 0)
-            return Promise.resolve(entity)
 
         // execute save operation
         return new EntityPersistExecutor(
