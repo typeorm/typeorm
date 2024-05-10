@@ -1142,7 +1142,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Sets WHERE condition in the query builder.
      * If you had previously WHERE expression defined,
-     * calling this function will override previously set WHERE conditions.
+     * calling this function will throw an error.
      * Additionally you can add parameters used in where expression.
      */
     where(
@@ -1154,7 +1154,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             | ObjectLiteral[],
         parameters?: ObjectLiteral,
     ): this {
-        this.expressionMap.wheres = [] // don't move this block below since computeWhereParameter can add where expressions
+        if (this.expressionMap.wheres.length !== 0) {
+            throw new TypeORMError("WHERE condition is already set")
+        }
         const condition = this.getWhereCondition(where)
         if (condition) {
             this.expressionMap.wheres = [
