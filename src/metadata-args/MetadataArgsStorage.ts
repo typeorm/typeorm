@@ -339,21 +339,28 @@ export class MetadataArgsStorage {
     protected filterByTargetAndWithoutDuplicateProperties<
         T extends { target: Function | string; propertyName: string },
     >(array: T[], target: (Function | string) | (Function | string)[]): T[] {
-        const newArray: T[] = []
-        array.forEach((item) => {
-            const sameTarget = Array.isArray(target)
-                ? target.indexOf(item.target) !== -1
-                : item.target === target
-            if (sameTarget) {
-                if (
-                    !newArray.find(
-                        (newItem) => newItem.propertyName === item.propertyName,
-                    )
-                )
-                    newArray.push(item)
+        const uniqueArray: T[] = []
+        const targets = Array.isArray(target) ? [...target].reverse() : [target]
+
+        const filteredArray = array.filter((item) =>
+            targets.includes(item.target),
+        )
+
+        filteredArray.forEach((item) => {
+            const itemIndex = uniqueArray.findIndex(
+                (newItem) => newItem.propertyName === item.propertyName,
+            )
+            const notExistsOrHasNewTarget =
+                itemIndex === -1 ||
+                uniqueArray[itemIndex].target !== item.target
+
+            if (notExistsOrHasNewTarget) {
+                const index = itemIndex === -1 ? uniqueArray.length : itemIndex
+                uniqueArray[index] = item
             }
         })
-        return newArray
+
+        return uniqueArray
     }
 
     /**
