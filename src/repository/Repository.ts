@@ -355,7 +355,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.update(
