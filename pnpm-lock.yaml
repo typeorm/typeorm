@@ -60,8 +60,8 @@ dependencies:
     specifier: ^3.0.0
     version: 3.0.1
   reflect-metadata:
-    specifier: ^0.2.1
-    version: 0.2.1
+    specifier: ^0.2.2
+    version: 0.2.2
   sha.js:
     specifier: ^2.4.11
     version: 2.4.11
@@ -207,7 +207,7 @@ devDependencies:
     version: 3.6.5
   pg:
     specifier: ^8.9.0
-    version: 8.11.3
+    version: 8.11.3(pg-native@3.0.1)
   pg-query-stream:
     specifier: ^4.3.0
     version: 4.5.3(pg@8.11.3)
@@ -5084,7 +5084,6 @@ packages:
     dependencies:
       bindings: 1.5.0
       nan: 2.18.0
-    dev: false
 
   /libsql@0.2.0:
     resolution: {integrity: sha512-ELBRqhpJx5Dap0187zKQnntZyk4EjlDHSrjIVL8t+fQ5e8IxbQTeYgZgigMjB1EvrETdkm0Y0VxBGhzPQ+t0Jg==}
@@ -6353,7 +6352,7 @@ packages:
     peerDependencies:
       pg: ^8
     dependencies:
-      pg: 8.11.3
+      pg: 8.11.3(pg-native@3.0.1)
     dev: true
 
   /pg-int8@1.0.1:
@@ -6366,14 +6365,13 @@ packages:
       libpq: 1.8.12
       pg-types: 1.13.0
       readable-stream: 1.0.31
-    dev: false
 
   /pg-pool@3.6.1(pg@8.11.3):
     resolution: {integrity: sha512-jizsIzhkIitxCGfPRzJn1ZdcosIt3pz9Sh3V01fm1vZnbnCMgmGl5wvGGdNN2EL9Rmb0EcFoCkixH4Pu+sP9Og==}
     peerDependencies:
       pg: '>=8.0'
     dependencies:
-      pg: 8.11.3
+      pg: 8.11.3(pg-native@3.0.1)
     dev: true
 
   /pg-protocol@1.6.0:
@@ -6385,7 +6383,7 @@ packages:
     peerDependencies:
       pg: ^8
     dependencies:
-      pg: 8.11.3
+      pg: 8.11.3(pg-native@3.0.1)
       pg-cursor: 2.10.3(pg@8.11.3)
     dev: true
 
@@ -6397,7 +6395,6 @@ packages:
       postgres-bytea: 1.0.0
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
-    dev: false
 
   /pg-types@2.2.0:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
@@ -6410,7 +6407,7 @@ packages:
       postgres-interval: 1.2.0
     dev: true
 
-  /pg@8.11.3:
+  /pg@8.11.3(pg-native@3.0.1):
     resolution: {integrity: sha512-+9iuvG8QfaaUrrph+kpF24cXkH1YOOUeArRNYIxq1viYHZagBxrTno7cecY1Fa44tJeZvaoG+Djpkc3JwehN5g==}
     engines: {node: '>= 8.0.0'}
     peerDependencies:
@@ -6422,6 +6419,7 @@ packages:
       buffer-writer: 2.0.0
       packet-reader: 1.0.0
       pg-connection-string: 2.6.2
+      pg-native: 3.0.1
       pg-pool: 3.6.1(pg@8.11.3)
       pg-protocol: 1.6.0
       pg-types: 2.2.0
@@ -6504,7 +6502,6 @@ packages:
   /postgres-array@1.0.3:
     resolution: {integrity: sha512-5wClXrAP0+78mcsNX3/ithQ5exKvCyK5lr5NEEEeGwwM6NJdQgzIJBVxLvRW+huFpX92F2QnZ5CcokH0VhK2qQ==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /postgres-array@2.0.0:
     resolution: {integrity: sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA==}
@@ -6774,7 +6771,6 @@ packages:
       inherits: 2.0.4
       isarray: 0.0.1
       string_decoder: 0.10.31
-    dev: false
 
   /readable-stream@2.3.7:
     resolution: {integrity: sha512-Ebho8K4jIbHAxnuxi7o42OrZgF/ZTNcsZj6nRKyUmkhLFq8CHItp/fy6hQZuZmP/n3yZ9VBUbp4zz/mX8hmYPw==}
@@ -6874,8 +6870,8 @@ packages:
       '@redis/time-series': 1.0.5(@redis/client@1.5.13)
     dev: true
 
-  /reflect-metadata@0.2.1:
-    resolution: {integrity: sha512-i5lLI6iw9AU3Uu4szRNPPEkomnkjRTaVt9hy/bn5g/oSzekBSMeLZblcjP74AW0vBabqERLLIrz+gR8QYR54Tw==}
+  /reflect-metadata@0.2.2:
+    resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
     dev: false
 
   /regex-not@1.0.2:
@@ -7575,7 +7571,6 @@ packages:
 
   /string_decoder@0.10.31:
     resolution: {integrity: sha512-ev2QzSzWPYmy9GuqfIVildA4OdcGLeFZQrq5ys6RtiuF+RQQiZWr8TZNyAcuVXyQRYfEO+MsoB/1BuQVhOJuoQ==}
-    dev: false
 
   /string_decoder@1.1.1:
     resolution: {integrity: sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg==}
