@@ -459,10 +459,8 @@ export class InsertQueryBuilder<
         // add VALUES expression
         if (valuesExpression) {
             if (
-                (
-                    this.connection.driver.options.type === "oracle" ||
-                    this.connection.driver.options.type === "sap"
-                ) &&
+                (this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "sap") &&
                 this.getValueSets().length > 1
             ) {
                 query += ` ${valuesExpression}`
@@ -698,12 +696,10 @@ export class InsertQueryBuilder<
                 }
 
                 // if user did not specified such list then return all columns except auto-increment one
-                // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
                     !(this.connection.driver.options.type === "spanner") &&
-                    !(this.connection.driver.options.type === "oracle") &&
                     !DriverUtils.isSQLiteFamily(this.connection.driver) &&
                     !DriverUtils.isMySQLFamily(this.connection.driver) &&
                     !(this.connection.driver.options.type === "aurora-mysql") &&

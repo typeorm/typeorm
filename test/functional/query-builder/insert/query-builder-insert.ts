@@ -67,12 +67,8 @@ describe("query builder > insert", () => {
     it("should perform bulk insertion correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // it is skipped for Oracle and SAP because it does not support bulk insertion
-                if (
-                    connection.driver.options.type === "oracle" ||
-                    connection.driver.options.type === "sap"
-                )
-                    return
+                // it is skipped for SAP because it does not support bulk insertion
+                if (connection.driver.options.type === "sap") return
 
                 await connection
                     .createQueryBuilder()
@@ -128,7 +124,6 @@ describe("query builder > insert", () => {
                 // also it is skipped for Oracle and SAP because it does not support bulk insertion
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "oracle" ||
                     connection.driver.options.type === "sap"
                 )
                     return
@@ -156,6 +151,7 @@ describe("query builder > insert", () => {
                     .getRepository(Photo)
                     .findOneBy({ url: "1.jpg" })
                 expect(loadedPhoto1).to.exist
+
                 loadedPhoto1!.should.be.eql({
                     id: 1,
                     url: "1.jpg",
