@@ -4,6 +4,7 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { OrmUtils } from "../util/OrmUtils"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -117,6 +118,17 @@ export class SubjectChangedColumnsComputer {
 
                         case "geography":
                         case "geometry":
+                            // In "SelectQueryBuilder.buildEscapedEntityColumnSelects" function,
+                            // spatialTypes(geography and geometry) use GeoJson only in Postgres Family
+                            if (
+                                DriverUtils.isPostgresFamily(
+                                    subject.metadata.connection.driver,
+                                ) &&
+                                OrmUtils.deepCompare(entityValue, databaseValue)
+                            ) {
+                                return
+                            }
+                            break
                         case "json":
                         case "jsonb":
                             // JSON.stringify doesn't work because postgresql sorts jsonb before save.
