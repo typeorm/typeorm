@@ -115,6 +115,8 @@ export class SubjectChangedColumnsComputer {
                                 )
                             break
 
+                        case "geography":
+                        case "geometry":
                         case "json":
                         case "jsonb":
                             // JSON.stringify doesn't work because postgresql sorts jsonb before save.
