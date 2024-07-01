@@ -49,6 +49,13 @@ export class Subject {
     parentSubject?: Subject
 
     /**
+     * If subject was created by cascades this property will contain relation metadata
+     * of the relation in the parent subject from which this subject is linked.
+     * Set if and only if parentSubject is set.
+     */
+    parentSubjectRelation?: RelationMetadata
+
+    /**
      * Gets entity sent to the persistence (e.g. changed entity).
      * If entity is not set then this subject is created only for the entity loaded from the database,
      * or this subject is used for the junction operation (junction operations are relying only on identifier).
@@ -140,6 +147,7 @@ export class Subject {
     constructor(options: {
         metadata: EntityMetadata
         parentSubject?: Subject
+        parentSubjectRelation?: RelationMetadata
         entity?: ObjectLiteral
         canBeInserted?: boolean
         canBeUpdated?: boolean
@@ -152,6 +160,7 @@ export class Subject {
         this.metadata = options.metadata
         this.entity = options.entity
         this.parentSubject = options.parentSubject
+        this.parentSubjectRelation = options.parentSubjectRelation
         if (options.canBeInserted !== undefined)
             this.canBeInserted = options.canBeInserted
         if (options.canBeUpdated !== undefined)
@@ -314,7 +323,9 @@ export class Subject {
                     if (
                         primaryColumn.relationMetadata &&
                         primaryColumn.relationMetadata.inverseEntityMetadata ===
-                            this.parentSubject!.metadata
+                            this.parentSubject!.metadata &&
+                        primaryColumn.relationMetadata ===
+                            this.parentSubjectRelation!.inverseRelation
                     ) {
                         const value =
                             primaryColumn.referencedColumn!.getEntityValue(
