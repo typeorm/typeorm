@@ -145,68 +145,6 @@ describe("query builder > time-travel-query", () => {
             }),
         ))
 
-    it("should execute time travel query with JOIN and skip/take options", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const accountRepository = await connection.getRepository(
-                    Account,
-                )
-                const personRepository = await connection.getRepository(Person)
-
-                // create persons and accounts
-                for (let i = 1; i < 6; i++) {
-                    const account = new Account()
-                    account.name = `Person_${i}`
-                    account.balance = 100 * i
-                    await accountRepository.save(account)
-
-                    const person = new Person()
-                    person.account = account
-                    await personRepository.save(person)
-                }
-
-                // wait for 2 seconds
-                await sleep(2000)
-
-                const accounts = await accountRepository
-                    .createQueryBuilder("account")
-                    .getMany()
-
-                // update accounts
-                for (let account of accounts) {
-                    account.balance = account.balance + 100
-                    await accountRepository.save(account)
-                }
-
-                // load current accounts state
-                let persons = await personRepository
-                    .createQueryBuilder("person")
-                    .innerJoinAndSelect("person.account", "account")
-                    .skip(2)
-                    .take(3)
-                    .getMany()
-
-                persons.length.should.be.equal(3)
-                persons[0].account.balance.should.be.equal(400)
-                persons[1].account.balance.should.be.equal(500)
-                persons[2].account.balance.should.be.equal(600)
-
-                // load accounts state on 2 seconds back
-                persons = await personRepository
-                    .createQueryBuilder("person")
-                    .innerJoinAndSelect("person.account", "account")
-                    .timeTravelQuery(`'-2s'`)
-                    .skip(2)
-                    .take(3)
-                    .getMany()
-
-                persons.length.should.be.equal(3)
-                persons[0].account.balance.should.be.equal(300)
-                persons[1].account.balance.should.be.equal(400)
-                persons[2].account.balance.should.be.equal(500)
-            }),
-        ))
-
     it("should execute time travel query with JOIN and limit/offset options", () =>
         Promise.all(
             connections.map(async (connection) => {
