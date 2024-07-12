@@ -1,5 +1,5 @@
-import { sha1 } from '@noble/hashes/sha1'
-import { bytesToHex } from '@noble/hashes/utils'
+import { sha1 } from "@noble/hashes/sha1"
+import { bytesToHex } from "@noble/hashes/utils"
 
 /**
  * Converts string into camelCase.
@@ -118,7 +118,6 @@ interface IHashOptions {
  * @param options.length Optionally, shorten the output to desired length.
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-   
     const hashedInput = bytesToHex(sha1(input))
     if (options.length) {
         return hashedInput.slice(0, options.length)

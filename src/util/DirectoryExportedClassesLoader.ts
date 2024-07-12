@@ -1,4 +1,4 @@
-import { fdir } from 'fdir';
+import { fdir } from "fdir"
 import { PlatformTools } from "../platform/PlatformTools"
 import { Logger } from "../logger/Logger"
 import { importOrRequireFile } from "./ImportUtils"
@@ -34,7 +34,12 @@ export async function importClassesFromDirectories(
     }
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(new fdir().withFullPaths().crawl(PlatformTools.pathNormalize(dir)).sync())
+        return allDirs.concat(
+            new fdir()
+                .withFullPaths()
+                .crawl(PlatformTools.pathNormalize(dir))
+                .sync(),
+        )
     }, [] as string[])
 
     if (directories.length > 0 && allFiles.length === 0) {
@@ -73,7 +78,12 @@ export function importJsonsFromDirectories(
     format = ".json",
 ): any[] {
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(new fdir().withFullPaths().crawl(PlatformTools.pathNormalize(dir)).sync())
+        return allDirs.concat(
+            new fdir()
+                .withFullPaths()
+                .crawl(PlatformTools.pathNormalize(dir))
+                .sync(),
+        )
     }, [] as string[])
 
     return allFiles
