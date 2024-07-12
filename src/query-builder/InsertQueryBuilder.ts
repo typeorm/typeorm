@@ -379,7 +379,7 @@ export class InsertQueryBuilder<
             orUpdateOptions?.overwriteCondition ?? {}
         let wheres: WhereClause[] | undefined
         const condition = this.getWhereCondition(where)
-        if (condition) wheres = [{ type: "simple", condition: condition }]
+        if (Array.isArray(condition) ? condition.length!==0 : condition) wheres = [{ type: "simple", condition: condition }]
         if (parameters) this.setParameters(parameters)
 
         if (!Array.isArray(statementOrOverwrite)) {
@@ -606,6 +606,7 @@ export class InsertQueryBuilder<
                         skipUpdateIfNoValuesChanged &&
                         DriverUtils.isPostgresFamily(this.connection.driver)
                     ) {
+                        this.expressionMap.onUpdate.overwriteCondition ??= []
                         const wheres = overwrite.map<WhereClause>((column) => ({
                             type: "or",
                             condition: `${tableName}.${this.escape(
@@ -614,22 +615,12 @@ export class InsertQueryBuilder<
                                 column,
                             )}`,
                         }))
-                        if (
-                            this.expressionMap.onUpdate.overwriteCondition ==
-                            null
-                        ) {
-                            this.expressionMap.onUpdate.overwriteCondition =
-                                wheres
-                        } else {
-                            this.expressionMap.onUpdate.overwriteCondition.push(
-                                {
-                                    type: "and",
-                                    condition: wheres,
-                                },
-                            )
-                        }
+                        this.expressionMap.onUpdate.overwriteCondition.push({
+                            type: "and",
+                            condition: wheres,
+                        })
+                        query += ` WHERE ${this.createUpsertConditionExpression()}`
                     }
-                    query += ` WHERE ${this.createUpsertConditionExpression()}`
                 }
             } else if (
                 this.connection.driver.supportedUpsertTypes.includes(
@@ -1529,7 +1520,7 @@ export class InsertQueryBuilder<
      * Create upsert search condition expression.
      */
     protected createUpsertConditionExpression() {
-        if (!this.expressionMap.onUpdate.overwriteCondition) return
+        if (!this.expressionMap.onUpdate.overwriteCondition) return ""
         const conditionsArray = []
 
         const whereExpression = this.createWhereClausesExpression(
