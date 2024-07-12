@@ -118,6 +118,7 @@ export class QueryExpressionMap {
         skipUpdateIfNoValuesChanged?: boolean
         indexPredicate?: string
         upsertType?: UpsertType
+        overwriteCondition?: WhereClause[]
     }
 
     /**
