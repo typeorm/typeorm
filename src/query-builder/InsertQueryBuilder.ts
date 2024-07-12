@@ -606,7 +606,6 @@ export class InsertQueryBuilder<
                         skipUpdateIfNoValuesChanged &&
                         DriverUtils.isPostgresFamily(this.connection.driver)
                     ) {
-                        this.expressionMap.onUpdate.overwriteCondition ??= []
                         const wheres = overwrite.map<WhereClause>((column) => ({
                             type: "or",
                             condition: `${tableName}.${this.escape(
@@ -615,12 +614,22 @@ export class InsertQueryBuilder<
                                 column,
                             )}`,
                         }))
-                        this.expressionMap.onUpdate.overwriteCondition.push({
-                            type: "and",
-                            condition: wheres,
-                        })
+                        if (
+                            this.expressionMap.onUpdate.overwriteCondition ==
+                            null
+                        ) {
+                            this.expressionMap.onUpdate.overwriteCondition =
+                                wheres
+                        } else {
+                            this.expressionMap.onUpdate.overwriteCondition.push(
+                                {
+                                    type: "and",
+                                    condition: wheres,
+                                },
+                            )
+                        }
                     }
-                    query += this.createUpsertWhereExpression()
+                    query += ` WHERE ${this.createUpsertConditionExpression()}`
                 }
             } else if (
                 this.connection.driver.supportedUpsertTypes.includes(
@@ -1239,9 +1248,21 @@ export class InsertQueryBuilder<
                     condition: wheres,
                 })
             }
-            if (updateExpression.trim())
-                query += ` WHEN MATCHED THEN UPDATE SET ${updateExpression}`
-            query += this.createUpsertWhereExpression()
+            const mergeCondition = this.createUpsertConditionExpression()
+            if (updateExpression.trim()) {
+                if (
+                    (this.connection.driver.options.type === "mssql" ||
+                        this.connection.driver.options.type === "sap") &&
+                    mergeCondition != ""
+                ) {
+                    query += ` WHEN MATCHED AND ${mergeCondition} THEN UPDATE SET ${updateExpression}`
+                } else {
+                    query += ` WHEN MATCHED THEN UPDATE SET ${updateExpression}`
+                    if (mergeCondition != "") {
+                        query += ` WHERE ${mergeCondition}`
+                    }
+                }
+            }
         }
 
         const valuesExpression =
@@ -1271,7 +1292,7 @@ export class InsertQueryBuilder<
             query += ` OUTPUT ${returningExpression}`
         }
 
-        return query
+        return query + ";"
     }
 
     /**
@@ -1505,9 +1526,9 @@ export class InsertQueryBuilder<
     }
 
     /**
-     * Create upsert "WHERE" expression.
+     * Create upsert search condition expression.
      */
-    protected createUpsertWhereExpression() {
+    protected createUpsertConditionExpression() {
         if (!this.expressionMap.onUpdate.overwriteCondition) return
         const conditionsArray = []
 
@@ -1559,9 +1580,9 @@ export class InsertQueryBuilder<
         if (!conditionsArray.length) {
             condition += ""
         } else if (conditionsArray.length === 1) {
-            condition += ` WHERE ${conditionsArray[0]}`
+            condition += `${conditionsArray[0]}`
         } else {
-            condition += ` WHERE ( ${conditionsArray.join(" ) AND ( ")} )`
+            condition += `( ${conditionsArray.join(" ) AND ( ")} )`
         }
 
         return condition
