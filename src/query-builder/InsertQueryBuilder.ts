@@ -1133,8 +1133,10 @@ export class InsertQueryBuilder<
         // else query += ` USING (${mergeSourceExpression})`
         query += ` USING (${mergeSourceExpression})`
         query += ` AS ${mergeSourceAlias}`
-        if (this.connection.driver.options.type === 'mssql')
-            query+=` (${this.getInsertedColumns().map(c => this.escape(c.databaseName)).join(', ')})`
+        if (this.connection.driver.options.type === "mssql")
+            query += ` (${this.getInsertedColumns()
+                .map((c) => this.escape(c.databaseName))
+                .join(", ")})`
 
         // build on condition
         if (this.expressionMap.onIgnore) {
@@ -1359,9 +1361,7 @@ export class InsertQueryBuilder<
                         ) {
                             // try to use default defined in the column
                             expression +=
-                                this.connection.driver.normalizeDefault(
-                                    column,
-                                )
+                                this.connection.driver.normalizeDefault(column)
                         } else {
                             expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                         }
