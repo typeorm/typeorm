@@ -4,9 +4,9 @@ import { DataSource } from "../../../src"
 import { User } from "./entity/User"
 import { Role } from "./entity/Role"
 import {
+    closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    closeTestingConnections,
 } from "../../utils/test-utils"
 
 describe("github issues > #5174 `selectQueryBuilder.take` messes up the query when using the `ids` parameter", () => {
@@ -40,7 +40,7 @@ describe("github issues > #5174 `selectQueryBuilder.take` messes up the query wh
                     .createQueryBuilder("user")
                     .leftJoinAndSelect("user.role", "role")
                     .where("role.id IN (:...ids)", { ids: ["a", "c"] })
-                    .take(5)
+                    .limit(5)
                     .orderBy("user.id")
                     .getMany()
 
