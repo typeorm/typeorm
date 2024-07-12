@@ -1,5 +1,5 @@
-import mkdirp from "mkdirp"
 import path from "path"
+import fs from "fs/promises"
 import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source"
@@ -187,7 +187,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
-        await mkdirp(dbPath)
+        await fs.mkdir(dbPath, { recursive: true })
     }
 
     /**

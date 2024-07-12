@@ -1,6 +1,5 @@
 import * as fs from "fs"
 import * as path from "path"
-import mkdirp from "mkdirp"
 import { TypeORMError } from "../error"
 import { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -67,7 +66,7 @@ export class CommandUtils {
      * Creates directories recursively.
      */
     static createDirectories(directory: string) {
-        return mkdirp(directory)
+        return fs.mkdirSync(directory, { recursive: true })
     }
 
     /**
