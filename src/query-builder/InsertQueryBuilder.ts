@@ -1133,6 +1133,8 @@ export class InsertQueryBuilder<
         // else query += ` USING (${mergeSourceExpression})`
         query += ` USING (${mergeSourceExpression})`
         query += ` AS ${mergeSourceAlias}`
+        if (this.connection.driver.options.type === 'mssql')
+            query+=` (${this.getInsertedColumns().map(c => this.escape(c.databaseName)).join(', ')})`
 
         // build on condition
         if (this.expressionMap.onIgnore) {
@@ -1351,21 +1353,17 @@ export class InsertQueryBuilder<
 
                         // if value for this column was not provided then insert default value
                     } else if (value === undefined) {
-                        if (this.connection.driver.options.type === "mssql") {
-                            expression += "DEFAULT"
+                        if (
+                            column.default !== undefined &&
+                            column.default !== null
+                        ) {
+                            // try to use default defined in the column
+                            expression +=
+                                this.connection.driver.normalizeDefault(
+                                    column,
+                                )
                         } else {
-                            if (
-                                column.default !== undefined &&
-                                column.default !== null
-                            ) {
-                                // try to use default defined in the column
-                                expression +=
-                                    this.connection.driver.normalizeDefault(
-                                        column,
-                                    )
-                            } else {
-                                expression += "NULL" // otherwise simply use NULL and pray if column is nullable
-                            }
+                            expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                         }
                     } else if (value === null) {
                         expression += "NULL"
@@ -1417,8 +1415,8 @@ export class InsertQueryBuilder<
                             expression += paramName
                         }
                     }
-
-                    expression += ` AS ${this.escape(column.databaseName)}`
+                    if (this.connection.driver.options.type !== "mssql")
+                        expression += ` AS ${this.escape(column.databaseName)}`
 
                     if (columnIndex === columns.length - 1) {
                         if (valueSetIndex === valueSets.length - 1) {
