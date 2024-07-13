@@ -299,7 +299,7 @@ describe("query builder > insertion > on conflict", () => {
                     `INSERT INTO post(id, title, date) ` +
                         `VALUES ($1, $2, $3) ON CONFLICT ( date ) ` +
                         `WHERE ( date > 2020-01-01 ) DO UPDATE SET title = EXCLUDED.title  ` +
-                        `WHERE (post.title IS DISTINCT FROM EXCLUDED.title)`,
+                        `WHERE post.title IS DISTINCT FROM EXCLUDED.title`,
                 )
             }),
         ))
