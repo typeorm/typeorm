@@ -379,7 +379,8 @@ export class InsertQueryBuilder<
             orUpdateOptions?.overwriteCondition ?? {}
         let wheres: WhereClause[] | undefined
         const condition = this.getWhereCondition(where)
-        if (Array.isArray(condition) ? condition.length!==0 : condition) wheres = [{ type: "simple", condition: condition }]
+        if (Array.isArray(condition) ? condition.length !== 0 : condition)
+            wheres = [{ type: "simple", condition: condition }]
         if (parameters) this.setParameters(parameters)
 
         if (!Array.isArray(statementOrOverwrite)) {
@@ -1124,7 +1125,7 @@ export class InsertQueryBuilder<
         const columns = this.getInsertedColumns()
         const columnsExpression = this.createColumnNamesExpression()
 
-        let query = `MERGE INTO ${tableName} AS ${this.escape(this.alias)}`
+        let query = `MERGE INTO ${tableName} ${this.escape(this.alias)}`
 
         const mergeSourceAlias = this.escape("mergeIntoSource")
 
@@ -1132,7 +1133,7 @@ export class InsertQueryBuilder<
         // if (mergeSourceExpression === "()") query += " USING DUAL"
         // else query += ` USING (${mergeSourceExpression})`
         query += ` USING (${mergeSourceExpression})`
-        query += ` AS ${mergeSourceAlias}`
+        query += ` ${mergeSourceAlias}`
         if (this.connection.driver.options.type === "mssql")
             query += ` (${this.getInsertedColumns()
                 .map((c) => this.escape(c.databaseName))
@@ -1282,8 +1283,10 @@ export class InsertQueryBuilder<
         ) {
             query += ` OUTPUT ${returningExpression}`
         }
-
-        return query + ";"
+        if (this.connection.driver.options.type === "mssql") {
+            query += `;`
+        }
+        return query
     }
 
     /**
@@ -1498,7 +1501,13 @@ export class InsertQueryBuilder<
                 if (columnIndex === 0) {
                     expression += "("
                 }
-                if (this.connection.driver.options.type === "mssql" && column.isGenerated){
+
+                if (
+                    (column.isGenerated &&
+                        column.generationStrategy === "uuid" &&
+                        this.connection.driver.isUUIDGenerationSupported()) ||
+                    (column.isGenerated && column.generationStrategy !== "uuid")
+                ) {
                     expression += `DEFAULT`
                 } else {
                     expression += `${mergeSourceAlias}.${this.escape(
