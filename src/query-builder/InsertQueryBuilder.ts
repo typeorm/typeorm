@@ -1296,11 +1296,14 @@ export class InsertQueryBuilder<
         let expression = ""
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
+            if (this.connection.driver.options.type === "mssql") {
+                expression += "VALUES "
+            }
             valueSets.forEach((valueSet, valueSetIndex) => {
                 columns.forEach((column, columnIndex) => {
                     if (columnIndex === 0) {
                         if (this.connection.driver.options.type === "mssql") {
-                            expression += "VALUES ("
+                            expression += "("
                         } else {
                             expression += "SELECT "
                         }
@@ -1495,10 +1498,13 @@ export class InsertQueryBuilder<
                 if (columnIndex === 0) {
                     expression += "("
                 }
-
-                expression += `${mergeSourceAlias}.${this.escape(
-                    column.databaseName,
-                )}`
+                if (this.connection.driver.options.type === "mssql" && column.isGenerated){
+                    expression += `DEFAULT`
+                } else {
+                    expression += `${mergeSourceAlias}.${this.escape(
+                        column.databaseName,
+                    )}`
+                }
 
                 if (columnIndex === columns.length - 1) {
                     expression += ")"
