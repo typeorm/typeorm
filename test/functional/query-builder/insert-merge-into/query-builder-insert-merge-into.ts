@@ -164,13 +164,13 @@ describe("query builder > insertion > merge into", () => {
                     .getSql()
                 if (connection.options.type === "mssql") {
                     expect(sql).to.equal(
-                        `MERGE INTO post AS post USING (VALUES (@0, @1, @2, @3)) AS mergeIntoSource (id, title, published, date) ON (post.date = mergeIntoSource.date) ` +
+                        `MERGE INTO post post USING (VALUES (@0, @1, @2, @3)) mergeIntoSource (id, title, published, date) ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED AND post.date > @4 AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date);`,
                     )
                 } else {
                     expect(sql).to.equal(
-                        `MERGE INTO post AS post USING (SELECT :1 AS id, :2 AS title, :3 AS published, :4 AS date FROM DUAL) AS mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
+                        `MERGE INTO post post USING (SELECT :1 AS id, :2 AS title, :3 AS published, :4 AS date FROM DUAL) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED THEN UPDATE SET post.title = mergeIntoSource.title WHERE post.date > :5 AND post.title != mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
                     )
