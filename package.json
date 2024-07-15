@@ -1,15 +1,15 @@
 {
   "name": "@hckrnews/typeorm",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
-    "name": "Umed Khudoiberdiev",
-    "email": "pleerock.me@gmail.com"
+    "name": "Pieter Wigboldus",
+    "url": "https://trojs.org/"
   },
   "engines": {
-    "node": ">=16.13.0"
+    "node": ">=18.0.0"
   },
   "exports": {
     ".": {
@@ -81,15 +81,8 @@
     "postgresql-orm",
     "mariadb",
     "mariadb-orm",
-    "spanner",
     "sqlite",
-    "sqlite-orm",
-    "sql-server",
-    "sql-server-orm",
-    "oracle",
-    "oracle-orm",
-    "cloud-spanner",
-    "cloud-spanner-orm"
+    "sqlite-orm"
   ],
   "devDependencies": {
     "@tsconfig/node16": "^16.1.1",
@@ -147,15 +140,11 @@
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
-    "@google-cloud/spanner": "^5.18.0",
-    "@sap/hana-client": "^2.12.25",
     "better-sqlite3": "^7.1.2 || ^8.0.0 || ^9.0.0",
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",
     "mongodb": "^5.8.0",
-    "mssql": "^9.1.1 || ^10.0.1",
     "mysql2": "^2.2.5 || ^3.0.1",
-    "oracledb": "^6.3.0",
     "pg": "^8.5.1",
     "pg-native": "^3.0.0",
     "pg-query-stream": "^4.0.0",
@@ -167,12 +156,6 @@
     "typeorm-aurora-data-api-driver": "^2.0.0"
   },
   "peerDependenciesMeta": {
-    "@google-cloud/spanner": {
-      "optional": true
-    },
-    "@sap/hana-client": {
-      "optional": true
-    },
     "better-sqlite3": {
       "optional": true
     },
@@ -185,13 +168,7 @@
     "mongodb": {
       "optional": true
     },
-    "mssql": {
-      "optional": true
-    },
     "mysql2": {
-      "optional": true
-    },
-    "oracledb": {
       "optional": true
     },
     "pg": {

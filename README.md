@@ -195,66 +195,13 @@ await timber.remove()
 
         `npm install sqlite3 --save`
 
-    - for **Microsoft SQL Server**
-
-        `npm install mssql --save`
-
     - for **sql.js**
 
         `npm install sql.js --save`
 
-    - for **Oracle**
-
-        `npm install oracledb --save`
-
-        To make the Oracle driver work, you need to follow the installation instructions from
-        [their](https://github.com/oracle/node-oracledb) site.
-
-    - for **SAP Hana**
-
-        ```
-        npm install @sap/hana-client
-        npm install hdb-pool
-        ```
-
-        _SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/)._
-
-    - for **Google Cloud Spanner**
-
-        ```
-        npm install @google-cloud/spanner --save
-        ```
-
-        Provide authentication credentials to your application code
-        by setting the environment variable `GOOGLE_APPLICATION_CREDENTIALS`:
-
-        ```shell
-        # Linux/macOS
-        export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"
-
-        # Windows
-        set GOOGLE_APPLICATION_CREDENTIALS=KEY_PATH
-
-        # Replace KEY_PATH with the path of the JSON file that contains your service account key.
-        ```
-
-        To use Spanner with the emulator you should set `SPANNER_EMULATOR_HOST` environment variable:
-
-        ```shell
-        # Linux/macOS
-        export SPANNER_EMULATOR_HOST=localhost:9010
-
-        # Windows
-        set SPANNER_EMULATOR_HOST=localhost:9010
-        ```
-
     - for **MongoDB** (experimental)
 
         `npm install mongodb@^5.2.0 --save`
-
-    - for **NativeScript**, **react-native** and **Cordova**
-
-        Check [documentation of supported platforms](./docs/supported-platforms.md)
 
     Install only _one_ of them, depending on which database you use.
 
@@ -283,8 +230,7 @@ npx typeorm init --name MyProject --database postgres
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `sap`, `spanner`, `oracle`, `mongodb`,
-`cordova`, `react-native`, `expo`, `nativescript`.
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `sqlite`, `mongodb`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
 
@@ -581,8 +527,7 @@ AppDataSource.initialize()
 
 We are using Postgres in this example, but you can use any other supported database.
 To use another database, simply change the `type` in the options to the database type you are using:
-`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `sap`, `spanner`, `cordova`, `nativescript`, `react-native`,
-`expo`, or `mongodb`.
+`mysql`, `mariadb`, `postgres`, `sqlite` or `mongodb`.
 Also make sure to use your own host, port, username, password, and database settings.
 
 We added our Photo entity to the list of entities for this data source.
