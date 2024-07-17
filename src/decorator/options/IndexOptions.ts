@@ -8,6 +8,16 @@ export interface IndexOptions {
     unique?: boolean
 
     /**
+     * By default, NULL values are not treated as distinct entries.
+     * Specifying NULLS NOT DISTINCT on unique indexes
+     * will cause NULL values to be treated distinctly.
+     *
+     * Only applicable when unique: true.
+     * Works only in PostgreSQL 15 and above.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL and PostgreSQL.
      */

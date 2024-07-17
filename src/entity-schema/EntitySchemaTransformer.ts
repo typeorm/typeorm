@@ -283,6 +283,8 @@ export class EntitySchemaTransformer {
                     target: options.target || options.name,
                     name: index.name,
                     unique: index.unique === true ? true : false,
+                    nullsNotDistinct:
+                        index.nullsNotDistinct === true ? true : false,
                     spatial: index.spatial === true ? true : false,
                     fulltext: index.fulltext === true ? true : false,
                     nullFiltered: index.nullFiltered === true ? true : false,

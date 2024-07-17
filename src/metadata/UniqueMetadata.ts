@@ -40,6 +40,11 @@ export class UniqueMetadata {
     deferrable?: DeferrableType
 
     /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * User specified unique constraint name.
      */
     givenName?: string
@@ -83,6 +88,7 @@ export class UniqueMetadata {
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns
             this.deferrable = options.args.deferrable
+            this.nullsNotDistinct = options.args.nullsNotDistinct
         }
     }
 

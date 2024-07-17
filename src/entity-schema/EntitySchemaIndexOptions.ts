@@ -27,6 +27,11 @@ export interface EntitySchemaIndexOptions {
     unique?: boolean
 
     /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL and PostgreSQL.
      */

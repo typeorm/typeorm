@@ -22,6 +22,11 @@ export interface TableIndexOptions {
     isUnique?: boolean
 
     /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    isNullsNotDistinct?: boolean
+
+    /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL.
      */

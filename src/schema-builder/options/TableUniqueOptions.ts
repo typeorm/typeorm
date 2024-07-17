@@ -21,4 +21,9 @@ export interface TableUniqueOptions {
      * or at the end of a transaction
      */
     deferrable?: string
+
+    /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    nullsNotDistinct?: boolean
 }

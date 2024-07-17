@@ -52,6 +52,11 @@ export interface TableColumnOptions {
     isUnique?: boolean
 
     /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    isNullsNotDistinct?: boolean
+
+    /**
      * Indicates if column stores array.
      */
     isArray?: boolean

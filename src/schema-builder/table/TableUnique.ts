@@ -27,6 +27,11 @@ export class TableUnique {
      */
     deferrable?: string
 
+    /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    nullsNotDistinct?: boolean
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -35,6 +40,7 @@ export class TableUnique {
         this.name = options.name
         this.columnNames = options.columnNames
         this.deferrable = options.deferrable
+        this.nullsNotDistinct = options.nullsNotDistinct
     }
 
     // -------------------------------------------------------------------------
@@ -66,6 +72,7 @@ export class TableUnique {
                 (column) => column.databaseName,
             ),
             deferrable: uniqueMetadata.deferrable,
+            nullsNotDistinct: uniqueMetadata.nullsNotDistinct,
         })
     }
 }
