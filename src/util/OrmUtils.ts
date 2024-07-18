@@ -479,31 +479,47 @@ export class OrmUtils {
         if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1)
             return false
 
+        let iterableX = x
+        let iterableY = y
+
+        if (x instanceof Map) {
+            iterableX = Object.fromEntries(x)
+            iterableY = Object.fromEntries(y)
+        } else if (x instanceof Set) {
+            iterableX = Array.from(x)
+            iterableY = Array.from(y)
+        }
+
         // Quick checking of one object being a subset of another.
         // todo: cache the structure of arguments[0] for performance
-        for (p in y) {
-            if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        for (p in iterableY) {
+            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
                 return false
-            } else if (typeof y[p] !== typeof x[p]) {
+            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
                 return false
             }
         }
 
-        for (p in x) {
-            if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        for (p in iterableX) {
+            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
                 return false
-            } else if (typeof y[p] !== typeof x[p]) {
+            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
                 return false
             }
 
-            switch (typeof x[p]) {
+            switch (typeof iterableX[p]) {
                 case "object":
                 case "function":
                     leftChain.push(x)
                     rightChain.push(y)
 
                     if (
-                        !this.compare2Objects(leftChain, rightChain, x[p], y[p])
+                        !this.compare2Objects(
+                            leftChain,
+                            rightChain,
+                            iterableX[p],
+                            iterableY[p],
+                        )
                     ) {
                         return false
                     }
@@ -513,7 +529,7 @@ export class OrmUtils {
                     break
 
                 default:
-                    if (x[p] !== y[p]) {
+                    if (iterableX[p] !== iterableY[p]) {
                         return false
                     }
                     break
