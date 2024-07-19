@@ -23,4 +23,9 @@ export interface UniqueMetadataArgs {
      * Indicate if unique constraints can be deferred.
      */
     deferrable?: DeferrableType
+
+    /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    nullsNotDistinct?: boolean
 }

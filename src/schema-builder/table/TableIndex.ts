@@ -27,6 +27,11 @@ export class TableIndex {
     isUnique: boolean
 
     /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    isNullsNotDistinct: boolean
+
+    /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL.
      */
@@ -72,6 +77,7 @@ export class TableIndex {
         this.name = options.name
         this.columnNames = options.columnNames
         this.isUnique = !!options.isUnique
+        this.isNullsNotDistinct = !!options.isNullsNotDistinct
         this.isSpatial = !!options.isSpatial
         this.isConcurrent = !!options.isConcurrent
         this.isFulltext = !!options.isFulltext
@@ -92,6 +98,7 @@ export class TableIndex {
             name: this.name,
             columnNames: [...this.columnNames],
             isUnique: this.isUnique,
+            isNullsNotDistinct: this.isNullsNotDistinct,
             isSpatial: this.isSpatial,
             isConcurrent: this.isConcurrent,
             isFulltext: this.isFulltext,
@@ -115,6 +122,7 @@ export class TableIndex {
                 (column) => column.databaseName,
             ),
             isUnique: indexMetadata.isUnique,
+            isNullsNotDistinct: indexMetadata.isNullsNotDistinct,
             isSpatial: indexMetadata.isSpatial,
             isConcurrent: indexMetadata.isConcurrent,
             isFulltext: indexMetadata.isFulltext,
