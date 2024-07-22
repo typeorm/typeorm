@@ -175,12 +175,14 @@ export class PostgresQueryRunner
 
         if (this.transactionDepth === 0) {
             this.transactionDepth += 1
-            await this.query("START TRANSACTION")
-            if (isolationLevel) {
+            if (!isolationLevel) {
+                await this.query("START TRANSACTION")
+            } else {
                 await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    "START TRANSACTION ISOLATION LEVEL " + isolationLevel,
                 )
             }
+
         } else {
             this.transactionDepth += 1
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
