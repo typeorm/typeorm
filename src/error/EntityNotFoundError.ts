@@ -9,17 +9,17 @@ import { InstanceChecker } from "../util/InstanceChecker"
 export class EntityNotFoundError extends TypeORMError {
     public readonly entityClass: EntityTarget<any>
     public readonly criteria: any
+    public readonly targetName: string
 
     constructor(entityClass: EntityTarget<any>, criteria: any) {
         super()
 
         this.entityClass = entityClass
         this.criteria = criteria
+        this.targetName = String(this.stringifyTarget(entityClass))
 
         this.message =
-            `Could not find any entity of type "${this.stringifyTarget(
-                entityClass,
-            )}" ` + `matching: ${this.stringifyCriteria(criteria)}`
+            `Could not find any entity of type "${this.targetName}" matching: ${this.stringifyCriteria(criteria)}`
     }
 
     private stringifyTarget(target: EntityTarget<any>): string {
