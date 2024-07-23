@@ -7,6 +7,7 @@ import { PlatformTools } from "../platform/PlatformTools"
 import { DataSource } from "../data-source"
 import * as path from "path"
 import process from "process"
+import { GenerateMigrationPathUtils } from "../util/GenerateMigrationPathUtils"
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
@@ -85,6 +86,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 logging: false,
             })
             await dataSource.initialize()
+
+            let migrationsDir =
+                GenerateMigrationPathUtils.getMigrationsDir(dataSource)
+            if (!migrationsDir) {
+                migrationsDir = path.dirname(fullPath)
+            }
 
             const upSqls: string[] = [],
                 downSqls: string[] = []
@@ -190,8 +197,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     ),
                 )
             } else {
-                const migrationFileName =
-                    path.dirname(fullPath) + "/" + filename
+                const migrationFileName = path.resolve(migrationsDir, filename)
                 await CommandUtils.createFile(migrationFileName, fileContent)
 
                 console.log(
