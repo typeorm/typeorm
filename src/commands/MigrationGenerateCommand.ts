@@ -86,6 +86,11 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             })
             await dataSource.initialize()
 
+            let migrationsDir = CommandUtils.getMigrationsDir(dataSource)
+            if (!migrationsDir) {
+                migrationsDir = path.dirname(fullPath)
+            }
+
             const upSqls: string[] = [],
                 downSqls: string[] = []
 
@@ -190,8 +195,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     ),
                 )
             } else {
-                const migrationFileName =
-                    path.dirname(fullPath) + "/" + filename
+                const migrationFileName = path.resolve(migrationsDir, filename)
                 await CommandUtils.createFile(migrationFileName, fileContent)
 
                 console.log(
