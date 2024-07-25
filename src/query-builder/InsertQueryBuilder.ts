@@ -531,18 +531,26 @@ export class InsertQueryBuilder<
 
                     if (Array.isArray(overwrite)) {
                         updatePart.push(
-                            ...overwrite.map(
+                            ...this.expressionMap.mainAlias!.metadata.columns.filter(
+                                (column) => 
+                                    overwrite.includes(column.propertyName)
+                            )
+                            .map(
                                 (column) =>
                                     `${this.escape(
-                                        column,
-                                    )} = EXCLUDED.${this.escape(column)}`,
+                                        column.databaseName,
+                                    )} = EXCLUDED.${this.escape(column.databaseName)}`,
                             ),
                         )
                     } else if (columns) {
                         updatePart.push(
-                            ...columns.map(
+                            ...this.expressionMap.mainAlias!.metadata.columns.filter(
+                                (column) => 
+                                    columns.includes(column.propertyName)
+                            )
+                            .map(
                                 (column) =>
-                                    `${this.escape(column)} = :${column}`,
+                                    `${this.escape(column.databaseName)} = :${column.databaseName}`,
                             ),
                         )
                     }
