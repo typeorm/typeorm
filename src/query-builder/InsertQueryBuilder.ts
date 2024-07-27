@@ -533,7 +533,8 @@ export class InsertQueryBuilder<
                         updatePart.push(
                             ...this.expressionMap.mainAlias!.metadata.columns.filter(
                                 (column) => 
-                                    overwrite.includes(column.propertyName)
+                                    overwrite.includes(column.propertyName) ||
+                                    overwrite.includes(column.databaseName) /**@Deprecated */ 
                             )
                             .map(
                                 (column) =>
@@ -546,7 +547,8 @@ export class InsertQueryBuilder<
                         updatePart.push(
                             ...this.expressionMap.mainAlias!.metadata.columns.filter(
                                 (column) => 
-                                    columns.includes(column.propertyName)
+                                    columns.includes(column.propertyName) ||
+                                    columns.includes(column.databaseName) /**@Deprecated */
                             )
                             .map(
                                 (column) =>
