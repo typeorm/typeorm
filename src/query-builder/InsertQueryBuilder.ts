@@ -545,14 +545,9 @@ export class InsertQueryBuilder<
                         )
                     } else if (columns) {
                         updatePart.push(
-                            ...this.expressionMap.mainAlias!.metadata.columns.filter(
-                                (column) => 
-                                    columns.includes(column.propertyName) ||
-                                    columns.includes(column.databaseName) /**@Deprecated */
-                            )
-                            .map(
+                            ...columns.map(
                                 (column) =>
-                                    `${this.escape(column.databaseName)} = :${column.databaseName}`,
+                                    `${this.escape(column)} = :${column}`,
                             ),
                         )
                     }
