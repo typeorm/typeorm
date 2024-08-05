@@ -7,6 +7,7 @@ import { PlatformTools } from "../platform/PlatformTools"
 import { DataSource } from "../data-source"
 import * as path from "path"
 import process from "process"
+import { isEmpty } from "../common/MixedList"
 
 /**
  * Generates a new migration file with sql needs to be executed to update schema.
@@ -78,6 +79,18 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             dataSource = await CommandUtils.loadDataSource(
                 path.resolve(process.cwd(), args.dataSource as string),
             )
+
+            if (
+                dataSource.options.entities !== undefined &&
+                isEmpty(dataSource.options.entities)
+            ) {
+                console.log(
+                    chalk.yellow(
+                        "No entity classes or directories passed to Typeorm",
+                    ),
+                )
+            }
+
             dataSource.setOptions({
                 synchronize: false,
                 migrationsRun: false,
