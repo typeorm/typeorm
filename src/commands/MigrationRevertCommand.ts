@@ -4,6 +4,7 @@ import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
 import process from "process"
 import { CommandUtils } from "./CommandUtils"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
 /**
  * Reverts last migration command.
@@ -13,25 +14,14 @@ export class MigrationRevertCommand implements yargs.CommandModule {
     describe = "Reverts last executed migration."
 
     builder(args: yargs.Argv) {
-        return args
-            .option("dataSource", {
-                alias: "d",
-                describe:
-                    "Path to the file where your DataSource instance is defined.",
-                demandOption: true,
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .addTransactionOption()
+            .addFakeOption({
+                // Optionally override the default description to be more specific.
+                // describe: "Fakes reverting the migration",
             })
-            .option("transaction", {
-                alias: "t",
-                default: "default",
-                describe:
-                    "Indicates if transaction should be used or not for migration revert. Enabled by default.",
-            })
-            .option("fake", {
-                alias: "f",
-                type: "boolean",
-                default: false,
-                describe: "Fakes reverting the migration",
-            })
+            .builder()
     }
 
     async handler(args: yargs.Arguments) {

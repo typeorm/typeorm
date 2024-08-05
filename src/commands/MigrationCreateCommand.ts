@@ -4,6 +4,7 @@ import * as yargs from "yargs"
 import chalk from "chalk"
 import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
 /**
  * Creates a new migration file.
@@ -13,7 +14,8 @@ export class MigrationCreateCommand implements yargs.CommandModule {
     describe = "Creates a new migration file."
 
     builder(args: yargs.Argv) {
-        return args
+        return new DefaultCliArgumentsBuilder(args)
+            .builder()
             .positional("path", {
                 type: "string",
                 describe: "Path of the migration file",

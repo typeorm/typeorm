@@ -6,6 +6,7 @@ import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
 import process from "process"
 import { CommandUtils } from "./CommandUtils"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
 /**
  * Shows sql to be executed by schema:sync command.
@@ -17,12 +18,9 @@ export class SchemaLogCommand implements yargs.CommandModule {
         "To run update queries on a concrete connection use -c option."
 
     builder(args: yargs.Argv) {
-        return args.option("dataSource", {
-            alias: "d",
-            describe:
-                "Path to the file where your DataSource instance is defined.",
-            demandOption: true,
-        })
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .builder()
     }
 
     async handler(args: yargs.Arguments) {
