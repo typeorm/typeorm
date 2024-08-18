@@ -117,4 +117,26 @@ export class CommandUtils {
             ? new Date(Number(timestampOptionArgument)).getTime()
             : Date.now()
     }
+
+    static getMigrationsDir(dataSource: DataSource): string {
+        const migrations = dataSource.options.migrations
+
+        if (Array.isArray(migrations)) {
+            const migrationPath = migrations.find(
+                (migration) => typeof migration === "string",
+            )
+            if (migrationPath) {
+                if (migrationPath.startsWith("/")) {
+                    return path.dirname(migrationPath as string)
+                } else {
+                    return path.resolve(
+                        process.cwd(),
+                        path.dirname(migrationPath as string),
+                    )
+                }
+            }
+        }
+
+        return ""
+    }
 }
