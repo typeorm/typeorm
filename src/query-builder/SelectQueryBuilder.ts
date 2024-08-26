@@ -4258,81 +4258,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         metadata,
                     )
 
-                if (column) {
-                    let aliasPath = `${alias}.${propertyPath}`
-                    if (column.isVirtualProperty && column.query) {
-                        aliasPath = `(${column.query(alias)})`
-                    }
-                    // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
-
-                    // todo: we need to handle other operators as well?
-                    let parameterValue = where[key]
-                    if (InstanceChecker.isEqualOperator(where[key])) {
-                        parameterValue = where[key].value
-                    }
-                    if (column.transformer) {
-                        parameterValue instanceof FindOperator
-                            ? parameterValue.transformValue(column.transformer)
-                            : (parameterValue =
-                                  ApplyValueTransformers.transformTo(
-                                      column.transformer,
-                                      parameterValue,
-                                  ))
-                    }
-
-                    // if (parameterValue === null) {
-                    //     andConditions.push(`${aliasPath} IS NULL`);
-                    //
-                    // } else if (parameterValue instanceof FindOperator) {
-                    //     // let parameters: any[] = [];
-                    //     // if (parameterValue.useParameter) {
-                    //     //     const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
-                    //     //     realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                    //     //
-                    //     //         // don't create parameters for number to prevent max number of variables issues as much as possible
-                    //     //         if (typeof realParameterValue === "number") {
-                    //     //             parameters.push(realParameterValue);
-                    //     //
-                    //     //         } else {
-                    //     //             this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
-                    //     //             parameterIndex++;
-                    //     //             parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
-                    //     //         }
-                    //     //     });
-                    //     // }
-                    //     andConditions.push(
-                    //         this.createWhereConditionExpression(this.getWherePredicateCondition(aliasPath, parameterValue))
-                    //         // parameterValue.toSql(this.connection, aliasPath, parameters));
-                    //     )
-                    //
-                    // } else {
-                    //     this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                    //     parameterIndex++;
-                    //     const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                    //     andConditions.push(`${aliasPath} = ${parameter}`);
-                    // }
-
-                    andConditions.push(
-                        this.createWhereConditionExpression(
-                            this.getWherePredicateCondition(
-                                aliasPath,
-                                parameterValue,
-                            ),
-                        ),
-                        // parameterValue.toSql(this.connection, aliasPath, parameters));
-                    )
-
-                    // this.conditions.push(`${alias}.${propertyPath} = :${paramName}`);
-                    // this.expressionMap.parameters[paramName] = where[key]; // todo: handle functions and other edge cases
-                } else if (embed) {
-                    const condition = this.buildWhere(
-                        where[key],
-                        metadata,
-                        alias,
-                        propertyPath,
-                    )
-                    if (condition) andConditions.push(condition)
-                } else if (relation) {
+                if (relation) {
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
@@ -4505,6 +4431,80 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             // parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
                         }
                     }
+                } else if (column) {
+                    let aliasPath = `${alias}.${propertyPath}`
+                    if (column.isVirtualProperty && column.query) {
+                        aliasPath = `(${column.query(alias)})`
+                    }
+                    // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
+
+                    // todo: we need to handle other operators as well?
+                    let parameterValue = where[key]
+                    if (InstanceChecker.isEqualOperator(where[key])) {
+                        parameterValue = where[key].value
+                    }
+                    if (column.transformer) {
+                        parameterValue instanceof FindOperator
+                            ? parameterValue.transformValue(column.transformer)
+                            : (parameterValue =
+                                  ApplyValueTransformers.transformTo(
+                                      column.transformer,
+                                      parameterValue,
+                                  ))
+                    }
+
+                    // if (parameterValue === null) {
+                    //     andConditions.push(`${aliasPath} IS NULL`);
+                    //
+                    // } else if (parameterValue instanceof FindOperator) {
+                    //     // let parameters: any[] = [];
+                    //     // if (parameterValue.useParameter) {
+                    //     //     const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
+                    //     //     realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
+                    //     //
+                    //     //         // don't create parameters for number to prevent max number of variables issues as much as possible
+                    //     //         if (typeof realParameterValue === "number") {
+                    //     //             parameters.push(realParameterValue);
+                    //     //
+                    //     //         } else {
+                    //     //             this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
+                    //     //             parameterIndex++;
+                    //     //             parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
+                    //     //         }
+                    //     //     });
+                    //     // }
+                    //     andConditions.push(
+                    //         this.createWhereConditionExpression(this.getWherePredicateCondition(aliasPath, parameterValue))
+                    //         // parameterValue.toSql(this.connection, aliasPath, parameters));
+                    //     )
+                    //
+                    // } else {
+                    //     this.expressionMap.nativeParameters[parameterName] = parameterValue;
+                    //     parameterIndex++;
+                    //     const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
+                    //     andConditions.push(`${aliasPath} = ${parameter}`);
+                    // }
+
+                    andConditions.push(
+                        this.createWhereConditionExpression(
+                            this.getWherePredicateCondition(
+                                aliasPath,
+                                parameterValue,
+                            ),
+                        ),
+                        // parameterValue.toSql(this.connection, aliasPath, parameters));
+                    )
+
+                    // this.conditions.push(`${alias}.${propertyPath} = :${paramName}`);
+                    // this.expressionMap.parameters[paramName] = where[key]; // todo: handle functions and other edge cases
+                } else if (embed) {
+                    const condition = this.buildWhere(
+                        where[key],
+                        metadata,
+                        alias,
+                        propertyPath,
+                    )
+                    if (condition) andConditions.push(condition)
                 }
             }
             condition = andConditions.length
