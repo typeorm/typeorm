@@ -2,7 +2,8 @@ import { UpsertType } from "../driver/types/UpsertType"
 
 export type InsertOrUpdateOptions = {
     /**
-     * If true, postgres will skip the update if no values would be changed (reduces writes)
+     * If true, postgres will skip the update if no values would be changed (reduces writes).
+     * Default is true.
      */
     skipUpdateIfNoValuesChanged?: boolean
     /**

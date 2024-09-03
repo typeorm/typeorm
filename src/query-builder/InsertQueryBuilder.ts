@@ -374,14 +374,22 @@ export class InsertQueryBuilder<
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
     ): this {
+        const defaultOrUpdateOptions: InsertOrUpdateOptions = {
+            skipUpdateIfNoValuesChanged: true,
+        };
+        const finalOrUpdateOptions = {
+            ...defaultOrUpdateOptions,
+            ...orUpdateOptions ?? {},
+        };
+
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
                 conflict: statementOrOverwrite?.conflict_target,
                 columns: statementOrOverwrite?.columns,
                 overwrite: statementOrOverwrite?.overwrite,
                 skipUpdateIfNoValuesChanged:
-                    orUpdateOptions?.skipUpdateIfNoValuesChanged,
-                upsertType: orUpdateOptions?.upsertType,
+                    finalOrUpdateOptions.skipUpdateIfNoValuesChanged,
+                upsertType: finalOrUpdateOptions?.upsertType,
             }
             return this
         }
@@ -390,9 +398,9 @@ export class InsertQueryBuilder<
             overwrite: statementOrOverwrite,
             conflict: conflictTarget,
             skipUpdateIfNoValuesChanged:
-                orUpdateOptions?.skipUpdateIfNoValuesChanged,
-            indexPredicate: orUpdateOptions?.indexPredicate,
-            upsertType: orUpdateOptions?.upsertType,
+                finalOrUpdateOptions.skipUpdateIfNoValuesChanged,
+            indexPredicate: finalOrUpdateOptions?.indexPredicate,
+            upsertType: finalOrUpdateOptions?.upsertType,
         }
         return this
     }
