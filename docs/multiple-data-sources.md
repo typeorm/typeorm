@@ -267,7 +267,7 @@ try {
 }
 ```
 
-**Note**: Manually created`QueryRunner` instances must be explicitly released on their own. If you don't release your query runners, they will keep a connection checked out of the pool, and prevent other queries from using it.
+**Note**: Manually created `QueryRunner` instances must be explicitly released on their own. If you don't release your query runners, they will keep a connection checked out of the pool, and prevent other queries from using it.
 
 ### Adjusting the default destination for reads
 
