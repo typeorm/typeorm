@@ -524,7 +524,6 @@ export class PostgresQueryRunner
             const schema = tableNameWithSchema[0]
 
             const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
@@ -533,7 +532,6 @@ export class PostgresQueryRunner
             })
 
             const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
@@ -621,7 +619,6 @@ export class PostgresQueryRunner
             const schema = tableNameWithSchema[0]
 
             const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
@@ -629,7 +626,6 @@ export class PostgresQueryRunner
             })
 
             const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
@@ -1074,7 +1070,6 @@ export class PostgresQueryRunner
             const schema = tableNameWithSchema[0]
 
             const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
@@ -1083,7 +1078,6 @@ export class PostgresQueryRunner
             })
 
             const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
@@ -2186,7 +2180,6 @@ export class PostgresQueryRunner
                     )
                     upQueries.push(
                         this.deleteTypeormMetadataSql({
-                            database: this.driver.database,
                             schema,
                             table: tableName,
                             type: MetadataTableType.GENERATED_COLUMN,
@@ -2196,7 +2189,6 @@ export class PostgresQueryRunner
                     // However, we can't copy it back on downgrade. It needs to regenerate.
                     downQueries.push(
                         this.insertTypeormMetadataSql({
-                            database: this.driver.database,
                             schema,
                             table: tableName,
                             type: MetadataTableType.GENERATED_COLUMN,
@@ -2221,15 +2213,6 @@ export class PostgresQueryRunner
                             )} DROP COLUMN "${newColumn.name}"`,
                         ),
                     )
-                    // downQueries.push(
-                    //     this.deleteTypeormMetadataSql({
-                    //         database: this.driver.database,
-                    //         schema,
-                    //         table: tableName,
-                    //         type: MetadataTableType.GENERATED_COLUMN,
-                    //         name: newColumn.name,
-                    //     }),
-                    // )
                 }
             }
         }
@@ -2425,14 +2408,12 @@ export class PostgresQueryRunner
             const tableName = tableNameWithSchema[1]
             const schema = tableNameWithSchema[0]
             const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
             const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
