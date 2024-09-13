@@ -77,14 +77,11 @@ export class JunctionEntityMetadataBuilder {
                   })
                 : undefined
 
-            let columnName =
+            let columnName = this.connection.namingStrategy.joinTableColumnName(
+                relation.entityMetadata.tableNameWithoutPrefix,
                 joinColumn && joinColumn.name
                     ? joinColumn.name
-                    : referencedColumn.propertyName
-
-            columnName = this.connection.namingStrategy.joinTableColumnName(
-                relation.entityMetadata.tableNameWithoutPrefix,
-                columnName,
+                    : referencedColumn.propertyName,
                 referencedColumn.databaseName,
             )
 
