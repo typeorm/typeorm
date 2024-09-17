@@ -4517,4 +4517,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
         return condition.length ? "(" + condition + ")" : condition
     }
+
+    public override clone() {
+        const c = super.clone()
+        c.context = this.context
+        return c
+    }
 }
