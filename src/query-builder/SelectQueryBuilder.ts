@@ -4172,7 +4172,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 //     // selection.aliasName = aliasPath
                 // } else {
                 //     if (column.isVirtualProperty && column.query) {
-                //         aliasPath = `(${column.query(alias)})`
+                //         aliasPath = `(${column.query(alias, this.context)})`
                 //     }
                 // }
 
@@ -4265,7 +4265,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
-                        aliasPath = `(${column.query(alias)})`
+                        aliasPath = `(${column.query(alias, this.context)})`
                     }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
