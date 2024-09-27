@@ -12,6 +12,7 @@
   "engines": {
     "node": ">=16.13.0"
   },
+  "packageManager": "pnpm@9.6.0",
   "exports": {
     ".": {
       "types": "./index.d.ts",
