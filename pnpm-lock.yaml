@@ -18,7 +18,7 @@ importers:
         specifier: ^2.12.25
         version: 2.19.21
       '@sentry/node':
-        specifier: ^8.28.0
+        specifier: <=8.x
         version: 8.32.0
       '@sqltools/formatter':
         specifier: ^1.2.5
@@ -5836,7 +5836,7 @@ snapshots:
       '@typescript-eslint/types': 6.17.0
       '@typescript-eslint/typescript-estree': 6.17.0(typescript@5.3.3)
       '@typescript-eslint/visitor-keys': 6.17.0
-      debug: 4.3.4(supports-color@8.1.1)
+      debug: 4.3.7
       eslint: 8.56.0
     optionalDependencies:
       typescript: 5.3.3
