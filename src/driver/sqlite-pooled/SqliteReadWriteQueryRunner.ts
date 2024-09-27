@@ -131,8 +131,8 @@ export class SqliteReadWriteQueryRunner
 
             await this.broadcaster.broadcast("AfterTransactionCommit")
         } catch (commitError) {
-            this.trxDbLease.markAsInvalid()
             captureException(new TransactionCommitFailedError(commitError))
+            this.trxDbLease.markAsInvalid()
             throw commitError
         } finally {
             this.releaseTrxDbLease()
@@ -157,8 +157,8 @@ export class SqliteReadWriteQueryRunner
 
             await this.broadcaster.broadcast("AfterTransactionRollback")
         } catch (rollbackError) {
-            this.trxDbLease.markAsInvalid()
             captureException(new TransactionRollbackFailedError(rollbackError))
+            this.trxDbLease.markAsInvalid()
             throw rollbackError
         } finally {
             this.releaseTrxDbLease()

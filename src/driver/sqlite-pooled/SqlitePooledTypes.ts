@@ -13,7 +13,6 @@ export interface SqliteConnectionPool {
     ): Promise<T>
     leaseConnection(dbLeaseHolder: DbLeaseHolder): Promise<DbLease>
     releaseConnection(leasedDbConnection: DbLease): void
-    invalidateConnection(leasedDbConnection: DbLease): void
     close(): Promise<void>
 }
 
@@ -24,6 +23,7 @@ export interface SqliteConnectionPool {
  */
 export interface DbLease {
     readonly connection: Sqlite3Database
+    readonly isInvalid: boolean
 
     /**
      * Marks the connection as invalid. This will cause the
@@ -42,7 +42,6 @@ export interface DbLease {
 }
 
 export interface DbLeaseOwner {
-    invalidateConnection(leasedDbConnection: DbLease): void
     releaseConnection(leasedDbConnection: DbLease): void
 }
 

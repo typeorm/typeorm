@@ -9,6 +9,11 @@ import { DbLease, DbLeaseHolder, DbLeaseOwner } from "./SqlitePooledTypes"
  */
 export class LeasedDbConnection implements DbLease {
     private isReleased = false
+    private _isInvalid = false
+
+    public get isInvalid() {
+        return this._isInvalid
+    }
 
     public get connection(): Sqlite3Database {
         if (this.isReleased) {
@@ -25,7 +30,7 @@ export class LeasedDbConnection implements DbLease {
     ) {}
 
     public markAsInvalid() {
-        this.leaseOwner.invalidateConnection(this)
+        this._isInvalid = true
     }
 
     async release() {

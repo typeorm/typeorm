@@ -12,6 +12,8 @@ import { DriverAlreadyReleasedError } from "../../error/DriverAlreadyReleasedErr
 import { SqliteLibrary } from "./SqliteLibrary"
 import { LeasedDbConnection } from "./LeasedDbConnection"
 import { TimeoutTimer } from "./Timer"
+import { InvariantViolatedError } from "../../error/InvariantViolatedError"
+import { LockAcquireTimeoutError } from "../../error/LockAcquireTimeoutError"
 
 /**
  * A single write connection to the database.
@@ -20,11 +22,6 @@ export class SqliteWriteConnection
     implements SqliteConnectionPool, DbLeaseOwner
 {
     private writeConnectionPromise: Promise<Sqlite3Database> | null = null
-
-    /**
-     * Should the connection be re-created after it has been released
-     */
-    private isConnectionValid = true
 
     private isReleased = false
 
@@ -36,7 +33,7 @@ export class SqliteWriteConnection
     private dbLease: DbLease | undefined
 
     constructor(
-        private readonly sqliteLibray: SqliteLibrary,
+        private readonly sqliteLibrary: SqliteLibrary,
         private readonly options: {
             acquireTimeout: number
             destroyTimeout: number
@@ -77,7 +74,7 @@ export class SqliteWriteConnection
 
         if (this.writeConnectionPromise) {
             const dbConnection = await this.writeConnectionPromise
-            this.sqliteLibray.destroyDatabaseConnection(dbConnection)
+            this.sqliteLibrary.destroyDatabaseConnection(dbConnection)
         }
     }
 
@@ -91,18 +88,29 @@ export class SqliteWriteConnection
             return await this.writeConnectionMutex.runExclusive(async () => {
                 this.dbLease = await this.createAndGetConnection(dbLeaseHolder)
 
-                const result = await callback(this.dbLease)
+                const result = await callback(this.dbLease).finally(() => {
+                    // runExclusive will make sure the mutex is released. Make
+                    // sure we also mark the lease as released
+                    const dbLease = this.dbLease
+                    this.dbLease = undefined
+
+                    if (dbLease && dbLease.isInvalid) {
+                        this.sqliteLibrary.destroyDatabaseConnection(
+                            dbLease.connection,
+                        )
+                        this.writeConnectionPromise = null
+                    }
+                })
 
                 return result
             })
         } catch (error) {
             if (error === E_TIMEOUT) {
                 captureException(error)
+                this.throwLockTimeoutError(error)
             }
 
             throw error
-        } finally {
-            this.dbLease = undefined
         }
     }
 
@@ -113,6 +121,10 @@ export class SqliteWriteConnection
             await this.writeConnectionMutex.acquire()
         } catch (error) {
             captureException(error)
+
+            if (error === E_TIMEOUT) {
+                this.throwLockTimeoutError(error)
+            }
             throw error
         }
 
@@ -120,22 +132,27 @@ export class SqliteWriteConnection
         return this.dbLease
     }
 
-    public invalidateConnection(leasedDbConnection: DbLease): void {
-        assert(this.dbLease === leasedDbConnection)
-        assert(this.writeConnectionMutex.isLocked())
-        assert(this.writeConnectionPromise)
-        this.isConnectionValid = false
-    }
-
     public async releaseConnection(leasedDbConnection: DbLease) {
-        assert(this.dbLease === leasedDbConnection)
-        assert(this.writeConnectionMutex.isLocked())
-        assert(this.writeConnectionPromise)
+        if (leasedDbConnection !== this.dbLease) {
+            // Someone is trying to release a connection that is no longer be
+            // the active connection. This is most likely a bug somewhere. In
+            // this case we can't release it, since it might have been already
+            // acquired by someone else. The best we can do is capture the
+            // exception and hope for the best.
+            this.captureInvariantViolated({
+                method: "releaseConnection",
+                givenConnectionMatches: this.dbLease === leasedDbConnection,
+                mutexIsLocked: this.writeConnectionMutex.isLocked(),
+                hasWriteConnection: !!this.writeConnectionPromise,
+            })
+            return
+        }
 
         try {
+            assert(this.writeConnectionPromise)
             const connection = await this.writeConnectionPromise
-            if (!this.isConnectionValid) {
-                this.sqliteLibray.destroyDatabaseConnection(connection)
+            if (leasedDbConnection.isInvalid) {
+                this.sqliteLibrary.destroyDatabaseConnection(connection)
                 this.writeConnectionPromise = null
             }
         } finally {
@@ -149,7 +166,7 @@ export class SqliteWriteConnection
     ): Promise<LeasedDbConnection> {
         if (!this.writeConnectionPromise) {
             this.writeConnectionPromise =
-                this.sqliteLibray.createDatabaseConnection()
+                this.sqliteLibrary.createDatabaseConnection()
         }
 
         const dbConnection = await this.writeConnectionPromise
@@ -166,7 +183,7 @@ export class SqliteWriteConnection
         }
 
         this.writeConnectionPromise =
-            this.sqliteLibray.createDatabaseConnection()
+            this.sqliteLibrary.createDatabaseConnection()
         return this.writeConnectionPromise
     }
 
@@ -174,5 +191,23 @@ export class SqliteWriteConnection
         if (this.isReleased) {
             throw new DriverAlreadyReleasedError()
         }
+    }
+
+    private captureInvariantViolated(extra: Record<string, string | boolean>) {
+        const error = new InvariantViolatedError()
+        console.error(
+            "Invariant violated:",
+            Object.keys(extra)
+                .map((key) => `${key}=${extra[key]}`)
+                .join(", "),
+        )
+        console.error(error)
+        captureException(error, { extra })
+    }
+
+    private throwLockTimeoutError(cause: Error) {
+        throw new LockAcquireTimeoutError("SqliteWriteConnectionMutex", {
+            cause,
+        })
     }
 }

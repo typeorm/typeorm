@@ -89,11 +89,10 @@ export class SqliteReadonlyConnectionPool implements SqliteConnectionPool {
         return new LeasedDbConnection(dbConnection, this, dbLeaseHolder)
     }
 
-    public invalidateConnection(leasedDbConnection: DbLease) {
-        this.invalidConnections.add(leasedDbConnection.connection)
-    }
-
     public releaseConnection(leasedDbConnection: DbLease) {
+        if (leasedDbConnection.isInvalid) {
+            this.invalidConnections.add(leasedDbConnection.connection)
+        }
         this.dbLeases.delete(leasedDbConnection)
         this.pool.release(leasedDbConnection.connection)
     }
