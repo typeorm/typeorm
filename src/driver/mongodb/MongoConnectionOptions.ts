@@ -63,40 +63,33 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
     readonly ssl?: boolean
 
     /**
-     * Validate mongod server certificate against ca (needs to have a mongod server with ssl support, 2.4 or higher).
-     * Default: true
+     * Use tls connection (needs to have a mongod server with ssl support). Default: false
      */
-    readonly sslValidate?: boolean
+    readonly tls?: boolean
 
     /**
      * Array of valid certificates either as Buffers or Strings
      * (needs to have a mongod server with ssl support, 2.4 or higher).
      */
-    readonly sslCA?: string | Buffer
+    readonly tlsCAFile?: string | Buffer
 
     /**
-     * String or buffer containing the certificate we wish to present
+     * Specifies the location of a local .pem file that contains either the client's TLS/SSL certificate and key
      * (needs to have a mongod server with ssl support, 2.4 or higher)
      */
-    readonly sslCert?: string | Buffer
+    readonly tlsCertificateKeyFile?: string | Buffer
 
     /**
-     * String or buffer containing the certificate private key we wish to present
+     * Specifies the password to de-crypt the tlsCertificateKeyFile
      * (needs to have a mongod server with ssl support, 2.4 or higher)
      */
-    readonly sslKey?: string
+    readonly tlsCertificateKeyFilePassword?: string
 
     /**
-     * String or buffer containing the certificate password
+     * Specifies the location of a local CRL .pem file that contains the client revokation list
      * (needs to have a mongod server with ssl support, 2.4 or higher)
      */
-    readonly sslPass?: string | Buffer
-
-    /**
-     * SSL Certificate revocation list binary buffer
-     * (needs to have a mongod server with ssl support, 2.4 or higher)
-     */
-    readonly sslCRL?: string | Buffer
+    readonly tlsCRLFile?: string | Buffer
 
     /**
      * Reconnect on error. Default: true
