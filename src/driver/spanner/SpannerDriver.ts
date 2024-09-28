@@ -274,7 +274,7 @@ export class SpannerDriver implements Driver {
                     return full
                 }
 
-                if (isArray) {
+                if (isArray || Array.isArray(value)) {
                     return value
                         .map((v: any) => {
                             escapedParameters.push(v)
