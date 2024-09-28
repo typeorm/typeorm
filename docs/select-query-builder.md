@@ -29,6 +29,8 @@
 -   [Using subqueries](#using-subqueries)
 -   [Hidden Columns](#hidden-columns)
 -   [Querying Deleted rows](#querying-deleted-rows)
+-   [Common table expressions](#common-table-expressions)
+-   [Time Travel Queries](#time-travel-queries)
 -   [Debugging](#debugging)
 
 ## What is `QueryBuilder`

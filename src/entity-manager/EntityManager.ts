@@ -257,34 +257,34 @@ export class EntityManager {
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObject?: DeepPartial<Entity>,
+        plainObject?: EntityLike,
     ): Entity
 
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjects?: DeepPartial<Entity>[],
+        plainObjects?: EntityLike[],
     ): Entity[]
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjectOrObjects?: DeepPartial<Entity> | DeepPartial<Entity>[],
+        plainObjectOrObjects?: EntityLike | EntityLike[],
     ): Entity | Entity[] {
         const metadata = this.connection.getMetadata(entityClass)
 
         if (!plainObjectOrObjects) return metadata.create(this.queryRunner)
 
         if (Array.isArray(plainObjectOrObjects))
-            return (plainObjectOrObjects as DeepPartial<Entity>[]).map(
+            return (plainObjectOrObjects as EntityLike[]).map(
                 (plainEntityLike) => this.create(entityClass, plainEntityLike),
             )
 

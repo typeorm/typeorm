@@ -136,7 +136,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: Parameters<QueryRunner['query']>) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -176,7 +178,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: Parameters<QueryRunner['query']>) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -205,7 +209,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: Parameters<QueryRunner['query']>) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -244,7 +250,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: Parameters<QueryRunner['query']>) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -286,7 +294,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: Parameters<QueryRunner['query']>) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -323,7 +333,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: Parameters<QueryRunner['query']>) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -361,7 +373,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: Parameters<QueryRunner['query']>) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }

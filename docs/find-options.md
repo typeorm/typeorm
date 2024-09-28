@@ -640,3 +640,19 @@ will execute following query:
 ```sql
 SELECT * FROM "post" WHERE "title" = 'About #2' OR "title" ILIKE 'About%'
 ```
+
+-   `And`
+
+```ts
+import { And, Not, Equal, ILike } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    title: And(Not(Equal("About #2")), ILike("%About%")),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE NOT("title" = 'About #2') AND "title" ILIKE '%About%'
+```

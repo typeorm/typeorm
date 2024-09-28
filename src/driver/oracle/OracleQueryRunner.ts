@@ -214,7 +214,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         try {
             const executionOptions = {
                 autoCommit: !this.isTransactionActive,
-                outFormat: this.driver.oracle.OBJECT,
+                outFormat: this.driver.oracle.OUT_FORMAT_OBJECT,
             }
 
             const raw = await databaseConnection.execute(
@@ -323,7 +323,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const executionOptions = {
             autoCommit: !this.isTransactionActive,
-            outFormat: this.driver.oracle.OBJECT,
+            outFormat: this.driver.oracle.OUT_FORMAT_OBJECT,
         }
 
         const databaseConnection = await this.connect()

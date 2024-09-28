@@ -3313,7 +3313,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected escapePath(target: Table | View | string): string {
         const { schema, tableName } = this.driver.parseTableName(target)
 
-        if (schema && schema !== this.driver.schema) {
+        if (schema) {
             return `"${schema}"."${tableName}"`
         }
 

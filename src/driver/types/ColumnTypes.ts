@@ -172,6 +172,14 @@ export type SimpleColumnType =
     | "tstzrange" // postgres
     | "daterange" // postgres
 
+    // multirange types
+    | "int4multirange" // postgres
+    | "int8multirange" // postgres
+    | "nummultirange" // postgres
+    | "tsmultirange" // postgres
+    | "tstzmultirange" // postgres
+    | "datemultirange" // postgres
+
     // other types
     | "enum" // mysql, postgres
     | "set" // mysql

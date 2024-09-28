@@ -180,6 +180,12 @@ export class PostgresDriver implements Driver {
         "tsrange",
         "tstzrange",
         "daterange",
+        "int4multirange",
+        "int8multirange",
+        "nummultirange",
+        "tsmultirange",
+        "tstzmultirange",
+        "datemultirange",
         "geometry",
         "geography",
         "cube",
@@ -393,7 +399,7 @@ export class PostgresDriver implements Driver {
             }[]
         }
         const versionString = results.rows[0].version.replace(
-            /^PostgreSQL ([\d\.]+) .*$/,
+            /^PostgreSQL ([\d.]+) .*$/,
             "$1",
         )
         this.version = versionString
@@ -745,7 +751,7 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[\(\)\s]+/g, "") // remove whitespace
+            value = value.replace(/[()\s]+/g, "") // remove whitespace
             if (columnMetadata.isArray) {
                 /**
                  * Strips these groups from `{"1,2,3","",NULL}`:
@@ -753,7 +759,7 @@ export class PostgresDriver implements Driver {
                  * 2. ["", undefined]         <- cube of arity 0
                  * 3. [undefined, "NULL"]     <- NULL
                  */
-                const regexp = /(?:\"((?:[\d\s\.,])*)\")|(?:(NULL))/g
+                const regexp = /(?:"((?:[\d\s.,])*)")|(?:(NULL))/g
                 const unparsedArrayString = value
 
                 value = []

@@ -521,8 +521,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Creates a completely new query builder.
      * Uses same query runner as current QueryBuilder.
      */
-    createQueryBuilder(): this {
-        return new (this.constructor as any)(this.connection, this.queryRunner)
+    createQueryBuilder(queryRunner?: QueryRunner): this {
+        return new (this.constructor as any)(this.connection, queryRunner ?? this.queryRunner)
     }
 
     /**
@@ -767,15 +767,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             statement = statement.replace(
                 new RegExp(
                     // Avoid a lookbehind here since it's not well supported
-                    `([ =\(]|^.{0})` + // any of ' =(' or start of line
+                    `([ =(]|^.{0})` + // any of ' =(' or start of line
                         // followed by our prefix, e.g. 'tablename.' or ''
                         `${
                             replaceAliasNamePrefixes
                                 ? "(" + replaceAliasNamePrefixes + ")"
                                 : ""
-                        }([^ =\(\)\,]+)` + // a possible property name: sequence of anything but ' =(),'
+                        }([^ =(),]+)` + // a possible property name: sequence of anything but ' =(),'
                         // terminated by ' =),' or end of line
-                        `(?=[ =\)\,]|.{0}$)`,
+                        `(?=[ =),]|.{0}$)`,
                     "gm",
                 ),
                 (...matches) => {
@@ -1130,9 +1130,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     true,
                 )}`
             case "and":
-                return condition.parameters.join(" AND ")
+                return "(" + condition.parameters.join(" AND ") + ")"
             case "or":
-                return condition.parameters.join(" OR ")
+                return "(" + condition.parameters.join(" OR ") + ")"
         }
 
         throw new TypeError(

@@ -128,6 +128,8 @@ export class OracleDriver implements Driver {
         "nclob",
         "rowid",
         "urowid",
+        "simple-json",
+        "json",
     ]
 
     /**
@@ -299,8 +301,8 @@ export class OracleDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        this.oracle.fetchAsString = [this.oracle.CLOB]
-        this.oracle.fetchAsBuffer = [this.oracle.BLOB]
+        this.oracle.fetchAsString = [this.oracle.DB_TYPE_CLOB]
+        this.oracle.fetchAsBuffer = [this.oracle.DB_TYPE_BLOB]
         if (this.options.replication) {
             this.slaves = await Promise.all(
                 this.options.replication.slaves.map((slave) => {
@@ -547,6 +549,8 @@ export class OracleDriver implements Driver {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value)
+        } else if (columnMetadata.type === "json") {
+            return DateUtils.simpleJsonToString(value)
         }
 
         return value
@@ -577,8 +581,6 @@ export class OracleDriver implements Driver {
             columnMetadata.type === "timestamp with local time zone"
         ) {
             value = DateUtils.normalizeHydratedDate(value)
-        } else if (columnMetadata.type === "json") {
-            value = JSON.parse(value)
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
@@ -635,6 +637,8 @@ export class OracleDriver implements Driver {
             return "clob"
         } else if (column.type === "simple-json") {
             return "clob"
+        } else if (column.type === "json") {
+            return "json"
         } else {
             return (column.type as string) || ""
         }
@@ -954,21 +958,24 @@ export class OracleDriver implements Driver {
             case "smallint":
             case "dec":
             case "decimal":
-                return this.oracle.NUMBER
+                return this.oracle.DB_TYPE_NUMBER
             case "char":
             case "nchar":
             case "nvarchar2":
             case "varchar2":
-                return this.oracle.STRING
+                return this.oracle.DB_TYPE_VARCHAR
             case "blob":
-                return this.oracle.BLOB
+                return this.oracle.DB_TYPE_BLOB
+            case "simple-json":
             case "clob":
-                return this.oracle.CLOB
+                return this.oracle.DB_TYPE_CLOB
             case "date":
             case "timestamp":
             case "timestamp with time zone":
             case "timestamp with local time zone":
-                return this.oracle.DATE
+                return this.oracle.DB_TYPE_TIMESTAMP
+            case "json":
+                return this.oracle.DB_TYPE_JSON
         }
     }
 

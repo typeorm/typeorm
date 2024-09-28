@@ -694,19 +694,29 @@ export class ColumnMetadata {
                 entity[this.relationMetadata.propertyName] &&
                 ObjectUtils.isObject(entity[this.relationMetadata.propertyName])
             ) {
-                const map = this.relationMetadata.joinColumns.reduce(
-                    (map, joinColumn) => {
-                        const value =
-                            joinColumn.referencedColumn!.getEntityValueMap(
-                                entity[this.relationMetadata!.propertyName],
-                            )
-                        if (value === undefined) return map
-                        return OrmUtils.mergeDeep(map, value)
-                    },
-                    {},
-                )
-                if (Object.keys(map).length > 0)
-                    return { [this.propertyName]: map }
+                if (this.relationMetadata.joinColumns.length > 1) {
+                    const map = this.relationMetadata.joinColumns.reduce(
+                        (map, joinColumn) => {
+                            const value =
+                                joinColumn.referencedColumn!.getEntityValueMap(
+                                    entity[this.relationMetadata!.propertyName],
+                                )
+                            if (value === undefined) return map
+                            return OrmUtils.mergeDeep(map, value)
+                        },
+                        {},
+                    )
+                    if (Object.keys(map).length > 0)
+                        return { [this.propertyName]: map }
+                } else {
+                    const value =
+                        this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
+                            entity[this.relationMetadata!.propertyName],
+                        )
+                    if (value) {
+                        return { [this.propertyName]: value }
+                    }
+                }
 
                 return undefined
             } else {
@@ -714,8 +724,9 @@ export class ColumnMetadata {
                     entity[this.propertyName] !== undefined &&
                     (returnNulls === false ||
                         entity[this.propertyName] !== null)
-                )
+                ) {
                     return { [this.propertyName]: entity[this.propertyName] }
+                }
 
                 return undefined
             }
@@ -800,9 +811,6 @@ export class ColumnMetadata {
                 } else {
                     value = embeddedObject[this.propertyName]
                 }
-            } else if (embeddedObject === null) {
-                // when embedded object is null, set all its properties to null
-                value = null
             }
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity

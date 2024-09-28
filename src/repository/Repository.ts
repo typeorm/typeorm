@@ -126,7 +126,7 @@ export class Repository<Entity extends ObjectLiteral> {
             | DeepPartial<Entity>
             | DeepPartial<Entity>[],
     ): Entity | Entity[] {
-        return this.manager.create<any>(
+        return this.manager.create(
             this.metadata.target as any,
             plainEntityLikeOrPlainEntityLikes as any,
         )

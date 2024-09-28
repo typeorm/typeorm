@@ -1445,10 +1445,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Set's LIMIT - maximum number of rows to be selected.
+     * Sets LIMIT - maximum number of rows to be selected.
      * NOTE that it may not work as you expect if you are using joins.
      * If you want to implement pagination, and you are having join in your query,
-     * then use instead take method instead.
+     * then use the take method instead.
      */
     limit(limit?: number): this {
         this.expressionMap.limit = this.normalizeNumber(limit)
@@ -1464,10 +1464,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Set's OFFSET - selection offset.
+     * Sets OFFSET - selection offset.
      * NOTE that it may not work as you expect if you are using joins.
      * If you want to implement pagination, and you are having join in your query,
-     * then use instead skip method instead.
+     * then use the skip method instead.
      */
     offset(offset?: number): this {
         this.expressionMap.offset = this.normalizeNumber(offset)
@@ -3603,7 +3603,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                           )
                         : this.findOptions.relations
 
-                    const queryBuilder = this.createQueryBuilder()
+                    const queryBuilder = this.createQueryBuilder(queryRunner)
                         .select(relationAlias)
                         .from(relationTarget, relationAlias)
                         .setFindOptions({
@@ -4226,21 +4226,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // let parameterIndex = Object.keys(this.expressionMap.nativeParameters).length;
         if (Array.isArray(where)) {
             if (where.length) {
-                condition =
-                    "(" +
-                    where
-                        .map((whereItem) => {
-                            return this.buildWhere(
-                                whereItem,
-                                metadata,
-                                alias,
-                                embedPrefix,
-                            )
-                        })
-                        .filter((condition) => !!condition)
-                        .map((condition) => "(" + condition + ")")
-                        .join(" OR ") +
-                    ")"
+                condition = where
+                    .map((whereItem) => {
+                        return this.buildWhere(
+                            whereItem,
+                            metadata,
+                            alias,
+                            embedPrefix,
+                        )
+                    })
+                    .filter((condition) => !!condition)
+                    .map((condition) => "(" + condition + ")")
+                    .join(" OR ")
             }
         } else {
             let andConditions: string[] = []
@@ -4510,8 +4507,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
                 }
             }
-            condition = andConditions.join(" AND ")
+            condition = andConditions.length
+                ? "(" + andConditions.join(") AND (") + ")"
+                : andConditions.join(" AND ")
         }
-        return condition
+        return condition.length ? "(" + condition + ")" : condition
     }
 }
