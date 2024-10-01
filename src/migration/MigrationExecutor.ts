@@ -449,7 +449,7 @@ export class MigrationExecutor {
 
         // start transaction if its not started yet
         let transactionStartedByUs = false
-        if (this.transaction !== "none" && !queryRunner.isTransactionActive) {
+        if (this.transaction !== "none" && !queryRunner.isTransactionActive && migrationToRevert.transaction) {
             await queryRunner.startTransaction()
             transactionStartedByUs = true
         }
