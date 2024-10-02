@@ -593,7 +593,7 @@ export class InsertQueryBuilder<
                         query += overwrite
                             .map(
                                 (column) =>
-                                    `${tableName}.${this.escape(
+                                    `${this.escape(this.alias)}.${this.escape(
                                         column,
                                     )} IS DISTINCT FROM EXCLUDED.${this.escape(
                                         column,
