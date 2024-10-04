@@ -174,6 +174,8 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                 parameters,
             )
 
+            await broadcasterResult.wait()
+
             const queryStartTime = +new Date()
             // All Expo SQL queries are executed in a transaction context
             databaseConnection.transaction(
@@ -223,7 +225,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
                             }
 
                             if (raw?.hasOwnProperty("rows")) {
-                                let resultSet = []
+                                const resultSet = []
                                 for (let i = 0; i < raw.rows.length; i++) {
                                     resultSet.push(raw.rows.item(i))
                                 }
