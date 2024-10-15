@@ -422,10 +422,7 @@ export class Repository<Entity extends ObjectLiteral> {
             | ObjectId[]
             | FindOptionsWhere<Entity>,
     ): Promise<UpdateResult> {
-        return this.manager.softDelete(
-            this.metadata.target,
-            criteria,
-        )
+        return this.manager.softDelete(this.metadata.target, criteria)
     }
 
     /**
@@ -446,10 +443,7 @@ export class Repository<Entity extends ObjectLiteral> {
             | ObjectId[]
             | FindOptionsWhere<Entity>,
     ): Promise<UpdateResult> {
-        return this.manager.restore(
-            this.metadata.target,
-            criteria,
-        )
+        return this.manager.restore(this.metadata.target, criteria)
     }
 
     /**

@@ -37,7 +37,7 @@ import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import {EntityProperty} from "../common/EntityProperty";
+import { EntityProperty } from "../common/EntityProperty"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -1077,7 +1077,10 @@ export class EntityManager {
             )
         }
 
-        const result = await this.createQueryBuilder(entityClass, entityMetadata.name)
+        const result = await this.createQueryBuilder(
+            entityClass,
+            entityMetadata.name,
+        )
             .setFindOptions({ where })
             .select(
                 `${fnName}(${this.connection.driver.escape(
@@ -1114,10 +1117,7 @@ export class EntityManager {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder<Entity>(
-            entityClass,
-            metadata.name,
-        )
+        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({ where: where })
             .getMany()
     }
@@ -1151,10 +1151,7 @@ export class EntityManager {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder<Entity>(
-            entityClass,
-            metadata.name,
-        )
+        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({ where })
             .getManyAndCount()
     }
@@ -1177,10 +1174,7 @@ export class EntityManager {
         if (!ids.length) return Promise.resolve([])
 
         const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder<Entity>(
-            entityClass,
-            metadata.name,
-        )
+        return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .andWhereInIds(ids)
             .getMany()
     }
@@ -1268,16 +1262,14 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
     ): Promise<Entity> {
-        return this.findOne<Entity>(entityClass, options).then(
-            (value) => {
-                if (value === null) {
-                    return Promise.reject(
-                        new EntityNotFoundError(entityClass, options),
-                    )
-                }
-                return Promise.resolve(value)
-            },
-        )
+        return this.findOne<Entity>(entityClass, options).then((value) => {
+            if (value === null) {
+                return Promise.reject(
+                    new EntityNotFoundError(entityClass, options),
+                )
+            }
+            return Promise.resolve(value)
+        })
     }
 
     /**
@@ -1288,16 +1280,14 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity> {
-        return this.findOneBy<Entity>(entityClass, where).then(
-            (value) => {
-                if (value === null) {
-                    return Promise.reject(
-                        new EntityNotFoundError(entityClass, where),
-                    )
-                }
-                return Promise.resolve(value)
-            },
-        )
+        return this.findOneBy<Entity>(entityClass, where).then((value) => {
+            if (value === null) {
+                return Promise.reject(
+                    new EntityNotFoundError(entityClass, where),
+                )
+            }
+            return Promise.resolve(value)
+        })
     }
 
     /**
