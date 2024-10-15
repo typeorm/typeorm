@@ -37,7 +37,7 @@ import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { PickKeysByType } from "../common/PickKeysByType"
+import {EntityProperty} from "../common/EntityProperty";
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -338,7 +338,7 @@ export class EntityManager {
             )
         if (transformedEntity)
             return this.merge(
-                entityClass as any,
+                entityClass,
                 transformedEntity as Entity,
                 entityLike,
             )
@@ -1021,10 +1021,10 @@ export class EntityManager {
      */
     sum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "SUM", columnName, where)
+        return this.callAggregateFun(entityClass, "SUM", property, where)
     }
 
     /**
@@ -1032,10 +1032,10 @@ export class EntityManager {
      */
     average<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "AVG", columnName, where)
+        return this.callAggregateFun(entityClass, "AVG", property, where)
     }
 
     /**
@@ -1043,10 +1043,10 @@ export class EntityManager {
      */
     minimum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "MIN", columnName, where)
+        return this.callAggregateFun(entityClass, "MIN", property, where)
     }
 
     /**
@@ -1054,33 +1054,34 @@ export class EntityManager {
      */
     maximum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "MAX", columnName, where)
+        return this.callAggregateFun(entityClass, "MAX", property, where)
     }
 
     private async callAggregateFun<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         fnName: "SUM" | "AVG" | "MIN" | "MAX",
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
     ): Promise<number | null> {
-        const metadata = this.connection.getMetadata(entityClass)
-        const column = metadata.columns.find(
-            (item) => item.propertyPath === columnName,
+        const entityMetadata = this.connection.getMetadata(entityClass)
+        const columnMetadata = entityMetadata.columns.find(
+            (columnMetadata) => columnMetadata.propertyPath === property,
         )
-        if (!column) {
+
+        if (!columnMetadata) {
             throw new TypeORMError(
-                `Column "${columnName}" was not found in table "${metadata.name}"`,
+                `Property '${property}' is not found in entity "${entityMetadata.name}"`,
             )
         }
 
-        const result = await this.createQueryBuilder(entityClass, metadata.name)
+        const result = await this.createQueryBuilder(entityClass, entityMetadata.name)
             .setFindOptions({ where })
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    column.databaseName,
+                    columnMetadata.databaseName,
                 )})`,
                 fnName,
             )
@@ -1097,7 +1098,7 @@ export class EntityManager {
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
-            entityClass as any,
+            entityClass,
             FindOptionsUtils.extractFindManyOptionsAlias(options) ||
                 metadata.name,
         )
@@ -1114,7 +1115,7 @@ export class EntityManager {
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
-            entityClass as any,
+            entityClass,
             metadata.name,
         )
             .setFindOptions({ where: where })
@@ -1132,7 +1133,7 @@ export class EntityManager {
     ): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
-            entityClass as any,
+            entityClass,
             FindOptionsUtils.extractFindManyOptionsAlias(options) ||
                 metadata.name,
         )
@@ -1151,7 +1152,7 @@ export class EntityManager {
     ): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
-            entityClass as any,
+            entityClass,
             metadata.name,
         )
             .setFindOptions({ where })
@@ -1177,7 +1178,7 @@ export class EntityManager {
 
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
-            entityClass as any,
+            entityClass,
             metadata.name,
         )
             .andWhereInIds(ids)
@@ -1267,7 +1268,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options: FindOneOptions<Entity>,
     ): Promise<Entity> {
-        return this.findOne<Entity>(entityClass as any, options).then(
+        return this.findOne<Entity>(entityClass, options).then(
             (value) => {
                 if (value === null) {
                     return Promise.reject(
@@ -1287,7 +1288,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity> {
-        return this.findOneBy<Entity>(entityClass as any, where).then(
+        return this.findOneBy<Entity>(entityClass, where).then(
             (value) => {
                 if (value === null) {
                     return Promise.reject(

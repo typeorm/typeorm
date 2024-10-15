@@ -15,7 +15,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { UpsertOptions } from "./UpsertOptions"
 import { EntityTarget } from "../common/EntityTarget"
-import { PickKeysByType } from "../common/PickKeysByType"
+import { EntityProperty } from "../common/EntityProperty"
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -434,10 +434,10 @@ export class BaseEntity {
      */
     static sum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        columnName: PickKeysByType<T, number>,
+        property: EntityProperty<T>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().sum(columnName, where)
+        return this.getRepository<T>().sum(property, where)
     }
 
     /**
@@ -445,10 +445,10 @@ export class BaseEntity {
      */
     static average<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        columnName: PickKeysByType<T, number>,
+        property: EntityProperty<T>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().average(columnName, where)
+        return this.getRepository<T>().average(property, where)
     }
 
     /**
@@ -456,10 +456,10 @@ export class BaseEntity {
      */
     static minimum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        columnName: PickKeysByType<T, number>,
+        property: EntityProperty<T>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().minimum(columnName, where)
+        return this.getRepository<T>().minimum(property, where)
     }
 
     /**
@@ -467,10 +467,10 @@ export class BaseEntity {
      */
     static maximum<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        columnName: PickKeysByType<T, number>,
+        property: EntityProperty<T>,
         where: FindOptionsWhere<T>,
     ): Promise<number | null> {
-        return this.getRepository<T>().maximum(columnName, where)
+        return this.getRepository<T>().maximum(property, where)
     }
 
     /**

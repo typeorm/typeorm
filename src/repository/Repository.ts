@@ -15,7 +15,7 @@ import { ObjectId } from "../driver/mongodb/typings"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { UpsertOptions } from "./UpsertOptions"
 import { EntityTarget } from "../common/EntityTarget"
-import { PickKeysByType } from "../common/PickKeysByType"
+import { EntityProperty } from "../common/EntityProperty"
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -79,7 +79,7 @@ export class Repository<Entity extends ObjectLiteral> {
         queryRunner?: QueryRunner,
     ): SelectQueryBuilder<Entity> {
         return this.manager.createQueryBuilder<Entity>(
-            this.metadata.target as any,
+            this.metadata.target,
             alias || this.metadata.targetName,
             queryRunner || this.queryRunner,
         )
@@ -127,8 +127,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | DeepPartial<Entity>[],
     ): Entity | Entity[] {
         return this.manager.create(
-            this.metadata.target as any,
-            plainEntityLikeOrPlainEntityLikes as any,
+            this.metadata.target,
+            plainEntityLikeOrPlainEntityLikes,
         )
     }
 
@@ -140,7 +140,7 @@ export class Repository<Entity extends ObjectLiteral> {
         ...entityLikes: DeepPartial<Entity>[]
     ): Entity {
         return this.manager.merge(
-            this.metadata.target as any,
+            this.metadata.target,
             mergeIntoEntity,
             ...entityLikes,
         )
@@ -156,7 +156,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Returns undefined if entity with given id was not found.
      */
     preload(entityLike: DeepPartial<Entity>): Promise<Entity | undefined> {
-        return this.manager.preload(this.metadata.target as any, entityLike)
+        return this.manager.preload(this.metadata.target, entityLike)
     }
 
     /**
@@ -203,7 +203,7 @@ export class Repository<Entity extends ObjectLiteral> {
         options?: SaveOptions,
     ): Promise<T | T[]> {
         return this.manager.save<Entity, T>(
-            this.metadata.target as any,
+            this.metadata.target,
             entityOrEntities as any,
             options,
         )
@@ -227,8 +227,8 @@ export class Repository<Entity extends ObjectLiteral> {
         options?: RemoveOptions,
     ): Promise<Entity | Entity[]> {
         return this.manager.remove(
-            this.metadata.target as any,
-            entityOrEntities as any,
+            this.metadata.target,
+            entityOrEntities,
             options,
         )
     }
@@ -273,7 +273,7 @@ export class Repository<Entity extends ObjectLiteral> {
         options?: SaveOptions,
     ): Promise<T | T[]> {
         return this.manager.softRemove<Entity, T>(
-            this.metadata.target as any,
+            this.metadata.target,
             entityOrEntities as any,
             options,
         )
@@ -319,7 +319,7 @@ export class Repository<Entity extends ObjectLiteral> {
         options?: SaveOptions,
     ): Promise<T | T[]> {
         return this.manager.recover<Entity, T>(
-            this.metadata.target as any,
+            this.metadata.target,
             entityOrEntities as any,
             options,
         )
@@ -336,7 +336,7 @@ export class Repository<Entity extends ObjectLiteral> {
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
     ): Promise<InsertResult> {
-        return this.manager.insert(this.metadata.target as any, entity)
+        return this.manager.insert(this.metadata.target, entity)
     }
 
     /**
@@ -359,8 +359,8 @@ export class Repository<Entity extends ObjectLiteral> {
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.update(
-            this.metadata.target as any,
-            criteria as any,
+            this.metadata.target,
+            criteria,
             partialEntity,
         )
     }
@@ -377,7 +377,7 @@ export class Repository<Entity extends ObjectLiteral> {
         conflictPathsOrOptions: string[] | UpsertOptions<Entity>,
     ): Promise<InsertResult> {
         return this.manager.upsert(
-            this.metadata.target as any,
+            this.metadata.target,
             entityOrEntities,
             conflictPathsOrOptions,
         )
@@ -401,7 +401,7 @@ export class Repository<Entity extends ObjectLiteral> {
             | ObjectId[]
             | FindOptionsWhere<Entity>,
     ): Promise<DeleteResult> {
-        return this.manager.delete(this.metadata.target as any, criteria as any)
+        return this.manager.delete(this.metadata.target, criteria)
     }
 
     /**
@@ -423,8 +423,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | FindOptionsWhere<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.softDelete(
-            this.metadata.target as any,
-            criteria as any,
+            this.metadata.target,
+            criteria,
         )
     }
 
@@ -447,8 +447,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | FindOptionsWhere<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.restore(
-            this.metadata.target as any,
-            criteria as any,
+            this.metadata.target,
+            criteria,
         )
     }
 
@@ -501,40 +501,40 @@ export class Repository<Entity extends ObjectLiteral> {
      * Return the SUM of a column
      */
     sum(
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.manager.sum(this.metadata.target, columnName, where)
+        return this.manager.sum(this.metadata.target, property, where)
     }
 
     /**
      * Return the AVG of a column
      */
     average(
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.manager.average(this.metadata.target, columnName, where)
+        return this.manager.average(this.metadata.target, property, where)
     }
 
     /**
      * Return the MIN of a column
      */
     minimum(
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.manager.minimum(this.metadata.target, columnName, where)
+        return this.manager.minimum(this.metadata.target, property, where)
     }
 
     /**
      * Return the MAX of a column
      */
     maximum(
-        columnName: PickKeysByType<Entity, number>,
+        property: EntityProperty<Entity>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
-        return this.manager.maximum(this.metadata.target, columnName, where)
+        return this.manager.maximum(this.metadata.target, property, where)
     }
 
     /**
