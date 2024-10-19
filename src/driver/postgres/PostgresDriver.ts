@@ -1554,18 +1554,24 @@ export class PostgresDriver implements Driver {
                 pool.end((err: any) => (err ? fail(err) : ok()))
             })
         } else {
-            const timeout = (promise: Promise<any>, timeMs: number): Promise<void> => {
+            const timeout = (
+                promise: Promise<any>,
+                timeMs: number,
+            ): Promise<void> => {
                 return Promise.race([
                     promise,
                     new Promise((resolve) => setTimeout(resolve, timeMs)),
-                ]);
+                ])
             }
             const poolEndPromise = new Promise<void>((ok, fail) => {
                 pool.end((err: any) => (err ? fail(err) : ok()))
-            });
+            })
 
             try {
-                await timeout(poolEndPromise, this.options.poolGracefulShutdownTimeoutMS);
+                await timeout(
+                    poolEndPromise,
+                    this.options.poolGracefulShutdownTimeoutMS,
+                )
             } finally {
                 while (this.connectedQueryRunners.length) {
                     await this.connectedQueryRunners[0].release()

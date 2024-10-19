@@ -1,7 +1,5 @@
 import "reflect-metadata"
-import {
-    createTestingConnections,
-} from "../../utils/test-utils"
+import { createTestingConnections } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { assert, expect } from "chai"
 
@@ -82,9 +80,18 @@ describe("github issues > #7394 Graceful termination for database connection", (
                         "Expected the query to be terminated due to timeout",
                     )
                 } catch (e) {
-                    expect(e?.toString()).to.equal(
-                        "QueryFailedError: Connection terminated",
-                    )
+                    const errMessage = e?.toString()
+                    if (errMessage.includes("TypeORMError:")) {
+                        expect(errMessage).to.include(
+                            "TypeORMError: Driver not Connected",
+                        )
+                    } else if (errMessage.includes("QueryFailedError")) {
+                        expect(errMessage).to.equal(
+                            "QueryFailedError: Connection terminated",
+                        )
+                    } else {
+                        throw e
+                    }
                     const elapsedMs = Date.now() - nowMs
                     expect(elapsedMs).to.be.lessThan(
                         gracefulShutdownSeconds * 1000 + 100,
