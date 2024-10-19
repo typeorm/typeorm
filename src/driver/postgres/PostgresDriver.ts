@@ -1541,15 +1541,37 @@ export class PostgresDriver implements Driver {
 
     /**
      * Closes connection pool.
+     * If poolGracefulShutdownTimeoutMS is unset, terminate the connections immediately and end the pool.
+     * If poolGracefulShutdownTimeoutMS is set, attempt to end the pool first with a timeout and then release all connections.
      */
     protected async closePool(pool: any): Promise<void> {
-        while (this.connectedQueryRunners.length) {
-            await this.connectedQueryRunners[0].release()
-        }
+        if (!this.options.poolGracefulShutdownTimeoutMS) {
+            while (this.connectedQueryRunners.length) {
+                await this.connectedQueryRunners[0].release()
+            }
 
-        return new Promise<void>((ok, fail) => {
-            pool.end((err: any) => (err ? fail(err) : ok()))
-        })
+            return new Promise<void>((ok, fail) => {
+                pool.end((err: any) => (err ? fail(err) : ok()))
+            })
+        } else {
+            const timeout = (promise: Promise<any>, timeMs: number): Promise<void> => {
+                return Promise.race([
+                    promise,
+                    new Promise((resolve) => setTimeout(resolve, timeMs)),
+                ]);
+            }
+            const poolEndPromise = new Promise<void>((ok, fail) => {
+                pool.end((err: any) => (err ? fail(err) : ok()))
+            });
+
+            try {
+                await timeout(poolEndPromise, this.options.poolGracefulShutdownTimeoutMS);
+            } finally {
+                while (this.connectedQueryRunners.length) {
+                    await this.connectedQueryRunners[0].release()
+                }
+            }
+        }
     }
 
     /**
