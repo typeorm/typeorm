@@ -1,11 +1,11 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ExpoDriver } from "./ExpoDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { QueryRunnerAlreadyReleasedError } from "../../../error/QueryRunnerAlreadyReleasedError"
+import { QueryFailedError } from "../../../error/QueryFailedError"
+import { AbstractSqliteQueryRunner } from "../../sqlite-abstract/AbstractSqliteQueryRunner"
+import { TransactionNotStartedError } from "../../../error/TransactionNotStartedError"
+import { ExpoLegacyDriver } from "./ExpoLegacyDriver"
+import { Broadcaster } from "../../../subscriber/Broadcaster"
+import { QueryResult } from "../../../query-runner/QueryResult"
+import { BroadcasterResult } from "../../../subscriber/BroadcasterResult"
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -29,11 +29,11 @@ interface ITransaction {
 /**
  * Runs queries on a single sqlite database connection.
  */
-export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
+export class ExpoLegacyQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Database driver used by connection.
      */
-    driver: ExpoDriver
+    driver: ExpoLegacyDriver
 
     /**
      * Database transaction object
@@ -44,7 +44,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: ExpoDriver) {
+    constructor(driver: ExpoLegacyDriver) {
         super()
         this.driver = driver
         this.connection = driver.connection
