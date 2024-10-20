@@ -59,7 +59,7 @@ export class DriverFactory {
             case "mongodb":
                 return new MongoDriver(connection)
             case "expo":
-                return new ExpoDriverFactory().create(connection)
+                return new ExpoDriverFactory(connection).create()
             case "aurora-mysql":
                 return new AuroraMysqlDriver(connection)
             case "aurora-postgres":
