@@ -1257,7 +1257,7 @@ By default, the query will exclude rows where the `isDeactivated` is `true`. How
 const users = await dataSource
     .getRepository(User)
     .createQueryBuilder()
-    .withDeleted()
+    .applyFilterConditions(false)
     .getMany()
 ```
 
