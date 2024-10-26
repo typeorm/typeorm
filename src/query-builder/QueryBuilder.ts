@@ -522,7 +522,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Uses same query runner as current QueryBuilder.
      */
     createQueryBuilder(queryRunner?: QueryRunner): this {
-        return new (this.constructor as any)(this.connection, queryRunner ?? this.queryRunner)
+        return new (this.constructor as any)(
+            this.connection,
+            queryRunner ?? this.queryRunner,
+        )
     }
 
     /**
@@ -864,6 +867,25 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                 const condition = `${this.replacePropertyNames(column)} IS NULL`
                 conditionsArray.push(condition)
+            }
+
+            if (
+                this.expressionMap.queryType === "select" &&
+                metadata.filterColumns.length &&
+                this.expressionMap.applyFilterConditions
+            ) {
+                metadata.filterColumns.forEach((filterColumn) => {
+                    const column = this.expressionMap.aliasNamePrefixingEnabled
+                        ? `${this.expressionMap.mainAlias!.name}.${
+                              filterColumn.propertyName
+                          }`
+                        : filterColumn.propertyName
+                    const filterCondition = filterColumn.rawFilterCondition?.(
+                        this.replacePropertyNames(column),
+                    )
+                    if (!filterCondition) return
+                    conditionsArray.push(filterCondition)
+                })
             }
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {

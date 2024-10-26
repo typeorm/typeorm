@@ -1037,6 +1037,9 @@ export class EntityMetadataBuilder {
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(
             (column) => !column.isVirtual,
         )
+        entityMetadata.filterColumns = entityMetadata.columns.filter(
+            (column) => typeof column.rawFilterCondition === "function",
+        )
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(
             (column) => column.closureType === "ancestor",
         )

@@ -285,6 +285,11 @@ export class EntityMetadata {
     deleteDateColumn?: ColumnMetadata
 
     /**
+     * Gets entity columns which contain a custom filter condition.
+     */
+    filterColumns: ColumnMetadata[] = []
+
+    /**
      * Gets entity column which contains an entity version.
      */
     versionColumn?: ColumnMetadata

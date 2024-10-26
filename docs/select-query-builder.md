@@ -1229,6 +1229,40 @@ const users = await dataSource
 
 You will get all the rows, including the ones which are deleted.
 
+## Querying Filtered Rows
+
+If the modal you are querying has a column with a `rawFilterCondition` set, the query builder will automatically only include rows
+which match the condition.
+
+If you have the entity:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({
+        rawFilterCondition: (column) => `${column} = FALSE`,
+    })
+    isDeactivated: boolean
+}
+```
+
+By default, the query will exclude rows where the `isDeactivated` is `true`. However, if you do the following:
+
+```typescript
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder()
+    .withDeleted()
+    .getMany()
+```
+
+You will get all the rows, including the ones which do not match the filter condition.
+
 ## Common table expressions
 
 `QueryBuilder` instances

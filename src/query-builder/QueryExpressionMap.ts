@@ -223,6 +223,11 @@ export class QueryExpressionMap {
     withDeleted: boolean = false
 
     /**
+     * Indicates if filter conditions should be applied to the query.
+     */
+    applyFilterConditions: boolean = true
+
+    /**
      * Parameters used to be escaped in final query.
      */
     parameters: ObjectLiteral = {}
@@ -522,6 +527,7 @@ export class QueryExpressionMap {
         map.lockVersion = this.lockVersion
         map.lockTables = this.lockTables
         map.withDeleted = this.withDeleted
+        map.applyFilterConditions = this.applyFilterConditions
         map.parameters = Object.assign({}, this.parameters)
         map.disableEscaping = this.disableEscaping
         map.enableRelationIdValues = this.enableRelationIdValues

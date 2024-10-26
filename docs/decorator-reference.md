@@ -208,6 +208,7 @@ export class User {
 -   `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
 -   `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL and CockroachDB.
 -   `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL and CockroachDB.
+-   `rawFilterCondition: (columnAlias: string) => string` - A function that returns a raw SQL condition to be used to filter rows. This is useful for creating filter conditions based on the column value.
 
 Learn more about [entity columns](entities.md#entity-columns).
 

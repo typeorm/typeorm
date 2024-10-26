@@ -145,6 +145,14 @@ userRepository.find({
 })
 ```
 
+-   `applyFilterConditions` - whether to apply column `filterCondition`s to the query. Defaults to `true`.
+
+```typescript
+userRepository.find({
+    applyFilterConditions: false,
+})
+```
+
 `find*` methods which return multiple entities (`find`, `findBy`, `findAndCount`, `findAndCountBy`) also accept following options:
 
 -   `skip` - offset (paginated) from where entities should be taken.
