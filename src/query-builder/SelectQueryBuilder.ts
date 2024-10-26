@@ -1599,8 +1599,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Applies filter conditions to the query.
      */
-    withoutFilterConditions(): this {
-        this.expressionMap.applyFilterConditions = false
+    applyFilterConditions(shouldApply: boolean): this {
+        this.expressionMap.applyFilterConditions = shouldApply
         return this
     }
 
@@ -3107,8 +3107,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.withDeleted()
             }
 
-            if (this.findOptions.applyFilterConditions === false) {
-                this.withoutFilterConditions()
+            if (typeof this.findOptions.applyFilterConditions === 'boolean') {
+                this.applyFilterConditions(this.findOptions.applyFilterConditions)
             }
 
             if (this.findOptions.select) {
