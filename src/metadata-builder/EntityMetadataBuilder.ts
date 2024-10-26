@@ -290,6 +290,14 @@ export class EntityMetadataBuilder {
                             )!
                         if (!joinTable) return // no join table set - no need to do anything (it means this is many-to-many inverse side)
 
+                        if (
+                            entityMetadatas.find(
+                                (metadata) =>
+                                    metadata.target === joinTable.name,
+                            )
+                        )
+                            return // if junction table metadata is already created, no need to create it again
+
                         // here we create a junction entity metadata for a new junction table of many-to-many relation
                         const junctionEntityMetadata =
                             this.junctionEntityMetadataBuilder.build(
