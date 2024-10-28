@@ -1231,7 +1231,7 @@ You will get all the rows, including the ones which are deleted.
 
 ## Querying Filtered Rows
 
-If the modal you are querying has a column with a `rawFilterCondition` set, the query builder will automatically only include rows
+If the model you are querying has a column with a `rawFilterCondition` set, the query builder will automatically only include rows
 which match the condition.
 
 If you have the entity:
