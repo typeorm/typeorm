@@ -290,13 +290,46 @@ export class EntityMetadataBuilder {
                             )!
                         if (!joinTable) return // no join table set - no need to do anything (it means this is many-to-many inverse side)
 
-                        if (
-                            entityMetadatas.find(
-                                (metadata) =>
-                                    metadata.target === joinTable.name,
-                            )
+                        const existingMetadata = entityMetadatas.find(
+                            (metadata) => metadata.target === joinTable.name,
                         )
-                            return // if junction table metadata is already created, no need to create it again
+
+                        // if junction table metadata is already created, no need to create it again
+                        if (existingMetadata) {
+                            relation.registerForeignKeys(
+                                ...existingMetadata.foreignKeys,
+                            )
+                            const referencedColumns =
+                                this.junctionEntityMetadataBuilder.collectReferencedColumns(
+                                    relation,
+                                    joinTable,
+                                )
+                            const inverseReferencedColumns =
+                                this.junctionEntityMetadataBuilder.collectInverseReferencedColumns(
+                                    relation,
+                                    joinTable,
+                                )
+                            relation.registerJoinColumns(
+                                existingMetadata.columns.filter((col) =>
+                                    referencedColumns.some(
+                                        (refCol) =>
+                                            refCol.propertyName ===
+                                            col.propertyName,
+                                    ),
+                                ),
+                                existingMetadata.columns.filter((col) =>
+                                    inverseReferencedColumns.some(
+                                        (refCol) =>
+                                            refCol.propertyName ===
+                                            col.propertyName,
+                                    ),
+                                ),
+                            )
+                            relation.registerJunctionEntityMetadata(
+                                existingMetadata,
+                            )
+                            return
+                        }
 
                         // here we create a junction entity metadata for a new junction table of many-to-many relation
                         const junctionEntityMetadata =
