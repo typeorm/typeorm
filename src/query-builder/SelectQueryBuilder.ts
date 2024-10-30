@@ -2046,17 +2046,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
             if (
-                joinAttributeMetadata.deleteDateColumn &&
-                !this.expressionMap.withDeleted
-            ) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
-                joinAttribute.condition = joinAttribute.condition
-                    ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
-                    : `${conditionDeleteColumn}`
-            }
-            if (
                 joinAttributeMetadata.filterColumns?.length &&
-                this.expressionMap.applyFilterConditions
+                this.expressionMap.applyFilterConditions !== false
             ) {
                 const filterConditions = joinAttributeMetadata.filterColumns
                     .map((column) => {
@@ -2068,7 +2059,83 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 joinAttribute.condition = joinAttribute.condition
                     ? `${joinAttribute.condition} AND (${filterConditions})`
                     : `(${filterConditions})`
+
+                const getCascadingFilterConditionRelations = (
+                    metadata: EntityMetadata,
+                ): RelationMetadata[] => {
+                    return metadata.cascadingFilterConditionRelations.flatMap(
+                        (relation) => [
+                            relation,
+                            ...getCascadingFilterConditionRelations(
+                                relation.inverseEntityMetadata,
+                            ),
+                        ],
+                    )
+                }
+                const flattenedCascadingFilterConditionRelations =
+                    getCascadingFilterConditionRelations(
+                        this.expressionMap.mainAlias!.metadata,
+                    )
+                const isCascadingFilterConditionJoin =
+                    flattenedCascadingFilterConditionRelations.some(
+                        (relation) =>
+                            relation.inverseEntityMetadata.name ===
+                            joinAttributeMetadata.name,
+                    )
+
+                if (isCascadingFilterConditionJoin) {
+                    if (
+                        !condition &&
+                        !(
+                            joinAttributeMetadata.deleteDateColumn &&
+                            !this.expressionMap.withDeleted
+                        )
+                    ) {
+                        // In this case, no need to create a separate join attribute for the cascading filter condition relation
+                        // because the conditions are identical, we can share the same join attribute
+                    } else {
+                        // Create a separate join attribute for the cascading filter condition relation
+                        const duplicateJoinAttribute = new JoinAttribute(
+                            this.connection,
+                            this.expressionMap,
+                            joinAttribute,
+                        )
+                        duplicateJoinAttribute.alias =
+                            this.expressionMap.createAlias({
+                                type: "join",
+                                name: aliasName + "_cfc",
+                                metadata: joinAttributeMetadata,
+                            })
+                        const filterConditions =
+                            joinAttributeMetadata.filterColumns
+                                .map((column) => {
+                                    const columnAlias = `${aliasName}_cfc.${column.propertyName}`
+                                    return column.rawFilterCondition?.(
+                                        this.replacePropertyNames(columnAlias),
+                                    )
+                                })
+                                .filter((condition) => !!condition)
+                                .join(" AND ")
+                        duplicateJoinAttribute.condition = condition
+                            ? `${condition} AND (${filterConditions})`
+                            : `(${filterConditions})`
+                        this.expressionMap.joinAttributes.push(
+                            duplicateJoinAttribute,
+                        )
+                    }
+                }
             }
+
+            if (
+                joinAttributeMetadata.deleteDateColumn &&
+                !this.expressionMap.withDeleted
+            ) {
+                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
+                joinAttribute.condition = joinAttribute.condition
+                    ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
+                    : `${conditionDeleteColumn}`
+            }
+
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -2276,6 +2343,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // select from non-owning side
         // qb.select("category")
         //     .leftJoinAndSelect("category.post", "post");
+
+        if (
+            this.expressionMap.mainAlias?.hasMetadata &&
+            this.expressionMap.applyFilterConditions &&
+            this.expressionMap.mainAlias?.metadata
+                .cascadingFilterConditionRelations.length
+        )
+            FindOptionsUtils.joinCascadingFilterConditionRelations(
+                this,
+                this.expressionMap.mainAlias!.name,
+                this.expressionMap.mainAlias!.metadata,
+            )
 
         const joins = this.expressionMap.joinAttributes.map((joinAttr) => {
             const relation = joinAttr.relation
@@ -3107,8 +3186,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.withDeleted()
             }
 
-            if (typeof this.findOptions.applyFilterConditions === 'boolean') {
-                this.applyFilterConditions(this.findOptions.applyFilterConditions)
+            if (typeof this.findOptions.applyFilterConditions === "boolean") {
+                this.applyFilterConditions(
+                    this.findOptions.applyFilterConditions,
+                )
             }
 
             if (this.findOptions.select) {
@@ -3653,6 +3734,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                   )
                                 : undefined,
                             withDeleted: this.findOptions.withDeleted,
+                            applyFilterConditions:
+                                this.findOptions.applyFilterConditions,
                             relationLoadStrategy:
                                 this.findOptions.relationLoadStrategy,
                         })

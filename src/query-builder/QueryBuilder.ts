@@ -25,6 +25,9 @@ import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { JoinAttribute } from "./JoinAttribute"
+import { DriverUtils } from "../driver/DriverUtils"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -872,7 +875,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (
                 this.expressionMap.queryType === "select" &&
                 metadata.filterColumns.length &&
-                this.expressionMap.applyFilterConditions
+                this.expressionMap.applyFilterConditions !== false
             ) {
                 metadata.filterColumns.forEach((filterColumn) => {
                     const column = this.expressionMap.aliasNamePrefixingEnabled
@@ -900,6 +903,18 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 )} IN (:...discriminatorColumnValues)`
                 conditionsArray.push(condition)
             }
+
+            if (
+                this.expressionMap.applyFilterConditions !== false &&
+                this.expressionMap.queryType === "select" &&
+                metadata.cascadingFilterConditionRelations.length
+            ) {
+                const conditions = this.createCascadingFilterConditions(
+                    metadata,
+                    this.expressionMap.mainAlias!.name,
+                )
+                if (conditions.length) conditionsArray.push(conditions)
+            }
         }
 
         if (this.expressionMap.extraAppendedAndWhereCondition) {
@@ -923,6 +938,76 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
 
         return condition
+    }
+
+    protected findCascadingFilterConditionJoinAttribute(
+        relation: RelationMetadata,
+        joinAlias: string,
+    ): JoinAttribute | undefined {
+        const joinRelationAlias = DriverUtils.buildAlias(
+            this.connection.driver,
+            { joiner: "__" },
+            joinAlias,
+            relation.propertyName,
+        )
+        /** Cascading filter conditions get their own, duplicate join attribute free of any conditions
+         * that are related to filterConditions. Duplicate join aliases end with _cfc, look for that first */
+        const duplicateJoinAttr = this.expressionMap.joinAttributes.find(
+            (ja) => ja.alias.name === joinRelationAlias + "_cfc",
+        )
+
+        // If no duplicate join attribute is found, look for the normal join attribute
+
+        return (
+            duplicateJoinAttr ||
+            this.expressionMap.joinAttributes.find(
+                (ja) => ja.alias.name === joinRelationAlias,
+            )
+        )
+    }
+
+    protected createCascadingFilterConditions(
+        metadata: EntityMetadata,
+        alias: string,
+    ): string[] {
+        const conditions: string[] = []
+
+        metadata.cascadingFilterConditionRelations.forEach((relation) => {
+            const joinAttr = this.findCascadingFilterConditionJoinAttribute(
+                relation,
+                alias,
+            )
+
+            if (!joinAttr) return
+
+            const filterColumns =
+                relation.inverseEntityMetadata.filterColumns ?? []
+            filterColumns.forEach((filterColumn) => {
+                const column = `${joinAttr.alias.name}.${filterColumn.propertyName}`
+                const condition = filterColumn.rawFilterCondition?.(
+                    this.replacePropertyNames(column),
+                )
+                if (!condition) return
+
+                // Prepend another condition to `condition` that makes it so the condition
+                // is only applied if the join row exists.
+
+                conditions.push(condition)
+            })
+
+            if (joinAttr.metadata?.cascadingFilterConditionRelations.length) {
+                const moreConditions =
+                    joinAttr.metadata.cascadingFilterConditionRelations.flatMap(
+                        (relation) =>
+                            this.createCascadingFilterConditions(
+                                relation.entityMetadata,
+                                joinAttr.alias.name,
+                            ),
+                    )
+                conditions.push(...moreConditions)
+            }
+        })
+        return conditions
     }
 
     /**

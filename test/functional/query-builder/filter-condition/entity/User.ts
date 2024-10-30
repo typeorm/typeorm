@@ -1,5 +1,6 @@
 import {
     Column,
+    DeleteDateColumn,
     Entity,
     JoinTable,
     ManyToMany,
@@ -13,10 +14,13 @@ export class User {
 
     @Column({
         rawFilterCondition(alias) {
-            return `${alias} = false`
+            return `${alias} != true`
         },
     })
     isDeactivated: boolean
+
+    @DeleteDateColumn()
+    deletedAt: Date
 
     @ManyToMany(() => User)
     @JoinTable()

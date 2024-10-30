@@ -277,6 +277,11 @@ export class RelationMetadata {
      */
     inverseJoinColumns: ColumnMetadata[] = []
 
+    /**
+     * Indicates if filter conditions from the related entity should be applied when loading this relation.
+     */
+    isCascadeFilterCondition: boolean = false
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -322,6 +327,8 @@ export class RelationMetadata {
             args.options.cascade === true ||
             (Array.isArray(args.options.cascade) &&
                 args.options.cascade.indexOf("recover") !== -1)
+        this.isCascadeFilterCondition =
+            args.options.filterConditionCascade || false
         // this.isPrimary = args.options.primary || false;
         this.isNullable =
             args.options.nullable === false || this.isPrimary ? false : true
