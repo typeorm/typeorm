@@ -952,6 +952,10 @@ export class EntityMetadataBuilder {
         entityMetadata.lazyRelations = entityMetadata.relations.filter(
             (relation) => relation.isLazy,
         )
+        entityMetadata.cascadingFilterConditionRelations =
+            entityMetadata.relations.filter(
+                (relation) => relation.isCascadeFilterCondition,
+            )
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(
             (relation) => relation.isOneToOne,
         )

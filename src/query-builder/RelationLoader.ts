@@ -156,6 +156,12 @@ export class RelationLoader {
             qb.expressionMap.mainAlias!.metadata,
         )
 
+        FindOptionsUtils.joinCascadingFilterConditionRelations(
+            qb,
+            qb.alias,
+            qb.expressionMap.mainAlias!.metadata,
+        )
+
         return qb.getMany()
         // return qb.getOne(); todo: fix all usages
     }
@@ -235,6 +241,12 @@ export class RelationLoader {
         }
 
         FindOptionsUtils.joinEagerRelations(
+            qb,
+            qb.alias,
+            qb.expressionMap.mainAlias!.metadata,
+        )
+
+        FindOptionsUtils.joinCascadingFilterConditionRelations(
             qb,
             qb.alias,
             qb.expressionMap.mainAlias!.metadata,

@@ -343,6 +343,11 @@ export class EntityMetadata {
     eagerRelations: RelationMetadata[] = []
 
     /**
+     * List of relations that have cascading filter conditions.
+     */
+    cascadingFilterConditionRelations: RelationMetadata[] = []
+
+    /**
      * List of eager relations this metadata has.
      */
     lazyRelations: RelationMetadata[] = []

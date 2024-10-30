@@ -453,4 +453,58 @@ export class FindOptionsUtils {
             )
         })
     }
+
+    public static joinCascadingFilterConditionRelations(
+        qb: SelectQueryBuilder<any>,
+        alias: string,
+        metadata: EntityMetadata,
+    ) {
+        metadata.cascadingFilterConditionRelations.forEach((relation) => {
+            // generate a relation alias
+            let relationAlias: string = DriverUtils.buildAlias(
+                qb.connection.driver,
+                { joiner: "__" },
+                alias,
+                relation.propertyName
+            )
+
+            // add a join for the relation
+            // Checking whether the relation wasn't joined yet.
+            let addJoin = true
+            // TODO: Review this validation
+            for (const join of qb.expressionMap.joinAttributes) {
+                if (
+                    join.condition !== undefined ||
+                    join.mapToProperty !== undefined ||
+                    join.isMappingMany !== undefined ||
+                    join.direction !== "LEFT" ||
+                    join.entityOrProperty !==
+                        `${alias}.${relation.propertyPath}`
+                ) {
+                    continue
+                }
+                addJoin = false
+                relationAlias = join.alias.name
+                break
+            }
+
+            const joinAlreadyAdded = Boolean(
+                qb.expressionMap.joinAttributes.find(
+                    (joinAttribute) =>
+                        joinAttribute.alias.name === relationAlias,
+                ),
+            )
+
+            if (addJoin && !joinAlreadyAdded) {
+                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
+            }
+
+            // (recursive) join the cascading filter condition relations
+            this.joinCascadingFilterConditionRelations(
+                qb,
+                relationAlias,
+                relation.inverseEntityMetadata,
+            )
+        })
+    }
 }
