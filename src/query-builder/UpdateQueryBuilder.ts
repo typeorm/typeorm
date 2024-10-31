@@ -169,7 +169,11 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 await queryRunner.broadcaster.broadcast(
                     "AfterUpdate",
                     this.expressionMap.mainAlias!.metadata,
-                    this.expressionMap.valuesSet,
+                    this.expressionMap.valuesSet, // entity
+                    undefined, // databaseEntity
+                    undefined, // updatedColumns
+                    undefined, // updatedRelations,
+                    [updateSql, parameters], // queryAndParameters
                 )
             }
 
