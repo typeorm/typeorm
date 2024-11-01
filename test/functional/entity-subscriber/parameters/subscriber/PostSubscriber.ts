@@ -1,19 +1,24 @@
 import { Post } from "../entity/Post"
 import {
     EntitySubscriberInterface,
-    EventSubscriber,
+    EventSubscriber, SoftRemoveEvent,
     UpdateEvent,
 } from "../../../../../src"
 
 @EventSubscriber()
 export class PostSubscriber implements EntitySubscriberInterface<Post> {
-    static receivedEvents: UpdateEvent<Post>[] = []
+    static receivedAfterUpdateEvents: UpdateEvent<Post>[] = []
+    static receivedAfterSoftRemoveEvents: SoftRemoveEvent<Post>[] = []
 
     listenTo() {
         return Post
     }
 
     afterUpdate(event: UpdateEvent<Post>) {
-        PostSubscriber.receivedEvents.push(event)
+        PostSubscriber.receivedAfterUpdateEvents.push(event)
+    }
+
+    afterSoftRemove(event: SoftRemoveEvent<Post>): Promise<any> | void {
+        PostSubscriber.receivedAfterSoftRemoveEvents.push(event)
     }
 }

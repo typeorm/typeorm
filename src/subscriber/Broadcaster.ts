@@ -63,6 +63,8 @@ interface BroadcasterEvents {
         metadata: EntityMetadata,
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
+        identifier?: ObjectLiteral,
+        queryAndParameters?: [string, any[]],
     ) => void
 
     BeforeRecover: (
@@ -706,6 +708,7 @@ export class Broadcaster {
         entity?: ObjectLiteral,
         databaseEntity?: ObjectLiteral,
         identifier?: ObjectLiteral,
+        queryAndParameters?: [string, any[]],
     ): void {
         if (entity && metadata.afterSoftRemoveListeners.length) {
             metadata.afterSoftRemoveListeners.forEach((listener) => {
@@ -728,12 +731,13 @@ export class Broadcaster {
                         connection: this.queryRunner.connection,
                         queryRunner: this.queryRunner,
                         manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
+                        entity,
+                        metadata,
+                        databaseEntity,
                         entityId: metadata.getEntityIdMixedMap(
                             databaseEntity ?? identifier,
                         ),
+                        queryAndParameters,
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)

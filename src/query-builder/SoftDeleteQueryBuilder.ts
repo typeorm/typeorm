@@ -128,6 +128,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                     await queryRunner.broadcaster.broadcast(
                         "AfterSoftRemove",
                         this.expressionMap.mainAlias!.metadata,
+                        undefined, // entity
+                        undefined, // databaseEntity
+                        undefined, // identifier,
+                        [sql, parameters], // queryAndParameters
                     )
                 else if (this.expressionMap.queryType === "restore")
                     await queryRunner.broadcaster.broadcast(
