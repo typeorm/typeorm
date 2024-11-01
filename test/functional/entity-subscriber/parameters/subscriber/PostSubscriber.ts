@@ -1,7 +1,8 @@
 import { Post } from "../entity/Post"
 import {
     EntitySubscriberInterface,
-    EventSubscriber, SoftRemoveEvent,
+    EventSubscriber,
+    SoftRemoveEvent,
     UpdateEvent,
 } from "../../../../../src"
 
