@@ -983,7 +983,7 @@ const users = await dataSource
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
 
-### setOnLock
+### setOnLocked
 Allows you to control what happens when a row is locked. By default, the database will wait for the lock.
 You can control that behavior by using `setOnLocked`
 
