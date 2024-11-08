@@ -12,7 +12,7 @@ only for [Vendure](https://vendure.io/), our flagship open-source project, but a
 With our reliance on TypeORM and the growing needs of its vibrant community, we saw an
 opportunity to contribute back and ensure the project remains active, maintained, and secure.
 
-After discussions with TypeORM’s original maintainers, Umed and Dmitry, we’ve reached an agreement to take on the project’s maintenance, inspired by successful, community-centric open-source projects. One standout model is the Tauri project, a self-governing open-source initiative co-founded by Daniel, who we already collaborate with through Michael and Vendure. Our discussions with Tauri have set the foundation for the organizational structure we envision.
+After discussions with TypeORM’s original maintainers, Umed and Dmitry, we’ve reached an agreement to take on the project’s maintenance, inspired by successful, community-centric open-source projects. One standout model is [the Tauri project](https://github.com/tauri-apps/tauri), a self-governing open-source initiative co-founded by [Daniel](https://github.com/denjell-crabnebula), who we already collaborate with through Michael and Vendure. Our discussions with Tauri have set the foundation for the organizational structure we envision.
 
 ## Our Vision for TypeORM’s Future
 
