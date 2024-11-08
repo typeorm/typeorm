@@ -76,6 +76,21 @@ export interface PostgresConnectionOptions
     readonly poolErrorHandler?: (err: any) => any
 
     /**
+     * Specifies the duration, in milliseconds, for graceful termination of pool connections during pool closure.
+     *
+     * This property is utilized when invoking the {@link DataSource#destroy|DataSource.destroy()} method.
+     * It facilitates the graceful closure of pool connections and allows for the completion of ongoing queries.
+     *
+     * @remarks
+     * If this property is undefined or set to 0, no timeout will be applied,
+     * resulting in immediate, forceful termination of connections.
+     *
+     * @type {number|undefined}
+     * @readonly
+     */
+    readonly poolGracefulShutdownTimeoutMS?: number
+
+    /**
      * Include notification messages from Postgres server in client logs
      */
     readonly logNotifications?: boolean
