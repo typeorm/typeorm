@@ -3590,7 +3590,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.relationMetadatas.map(async (relation) => {
                     const relationTarget = relation.inverseEntityMetadata.target
                     const relationAlias =
-                        relation.inverseEntityMetadata.targetName
+                        this.connection.namingStrategy.joinTableName(
+                            relation.propertyName,
+                            relation.inverseEntityMetadata.name,
+                            relation.propertyName,
+                            relation.inverseSidePropertyPath,
+                        )
 
                     const select = Array.isArray(this.findOptions.select)
                         ? OrmUtils.propertyPathsToTruthyObject(
