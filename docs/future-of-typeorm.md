@@ -32,8 +32,6 @@ To drive TypeORM forward, we’ll introduce three core domains:
 - **Operations**: Handling day-to-day needs, from documentation to sponsorship accounting, this team will keep the project running smoothly.
 - **Community**: Dedicated to engaging, moderating, and supporting our growing community, this team will foster collaboration through platforms like Discord.
 
-TODO: Add mockup of the new structure
-
 ## Scaling Sponsorships and Full-Time Development
 
 A significant part of our strategy is to increase sponsorships, reaching out to
