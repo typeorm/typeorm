@@ -601,7 +601,7 @@ export class PostgresQueryRunner
                 downQueries.push(this.dropIndexSql(table, index))
             })
         }
-        
+
         if (table.comment) {
             upQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS '" + table.comment + "'"));
             downQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS NULL"));
@@ -1547,6 +1547,19 @@ export class PostgresQueryRunner
             ) {
                 const arraySuffix = newColumn.isArray ? "[]" : ""
 
+                const { extraItems, missingItems } = OrmUtils.getArraysDiff(
+                    newColumn.enum!,
+                    oldColumn.enum!,
+                )
+
+                const version = await this.getVersion()
+
+                // when the only change is new enum value(s) we can use ADD VALUE syntax
+                const useAddValueForUp =
+                    VersionUtils.isGreaterOrEqual(version, "12.0") &&
+                    missingItems.length === 0 &&
+                    extraItems.length > 0
+
                 // "public"."new_enum"
                 const newEnumName = this.buildEnumName(table, newColumn)
 
@@ -1578,12 +1591,28 @@ export class PostgresQueryRunner
                     true,
                 )
 
+                // when only adding enum value(s), we can use alternative syntax
+                if (useAddValueForUp) {
+                    for (const item of extraItems) {
+                        const escapedValue = item.replace("'", "''")
+
+                        upQueries.push(
+                            new Query(
+                                `ALTER TYPE ${oldEnumName} ADD VALUE '${escapedValue}'`,
+                            ),
+                        )
+                    }
+                }
+
                 // rename old ENUM
-                upQueries.push(
-                    new Query(
-                        `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
-                    ),
-                )
+                if (!useAddValueForUp) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
+                        ),
+                    )
+                }
+
                 downQueries.push(
                     new Query(
                         `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
@@ -1591,9 +1620,12 @@ export class PostgresQueryRunner
                 )
 
                 // create new ENUM
-                upQueries.push(
-                    this.createEnumTypeSql(table, newColumn, newEnumName),
-                )
+                if (!useAddValueForUp) {
+                    upQueries.push(
+                        this.createEnumTypeSql(table, newColumn, newEnumName),
+                    )
+                }
+
                 downQueries.push(
                     this.dropEnumTypeSql(table, newColumn, newEnumName),
                 )
@@ -1605,13 +1637,19 @@ export class PostgresQueryRunner
                 ) {
                     // mark default as changed to prevent double update
                     defaultValueChanged = true
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
-                        ),
-                    )
+
+                    if (!useAddValueForUp) {
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    oldColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                    }
+
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1628,13 +1666,16 @@ export class PostgresQueryRunner
                 const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
 
                 // update column to use new type
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${upType}`,
-                    ),
-                )
+                if (!useAddValueForUp) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`,
+                        ),
+                    )
+                }
+
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -1648,15 +1689,18 @@ export class PostgresQueryRunner
                     newColumn.default !== null &&
                     newColumn.default !== undefined
                 ) {
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${
-                                newColumn.default
-                            }`,
-                        ),
-                    )
+                    if (!useAddValueForUp) {
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" SET DEFAULT ${newColumn.default}`,
+                            ),
+                        )
+                    }
+
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1667,13 +1711,16 @@ export class PostgresQueryRunner
                 }
 
                 // remove old ENUM
-                upQueries.push(
-                    this.dropEnumTypeSql(
-                        table,
-                        oldColumn,
-                        oldEnumNameWithSchema_old,
-                    ),
-                )
+                if (!useAddValueForUp) {
+                    upQueries.push(
+                        this.dropEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
+                        ),
+                    )
+                }
+
                 downQueries.push(
                     this.createEnumTypeSql(
                         table,
@@ -4744,7 +4791,7 @@ export class PostgresQueryRunner
 
         newComment = this.escapeComment(newComment)
         const comment = this.escapeComment(table.comment)
-        
+
         if (newComment === comment) {
             return
         }
