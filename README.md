@@ -36,6 +36,13 @@ maintainable applications in the most productive way.
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
+> **📣 Announcement: The Future of TypeORM**
+>
+> We’re excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we’re structuring maintenance
+> and bringing together dedicated resources to ensure TypeORM thrives for years to come.
+>
+> [Read the full announcement](/future-of-typeorm)
+
 ## Features
 
 -   Supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice).
