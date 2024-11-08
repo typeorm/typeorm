@@ -43,6 +43,7 @@ export class FindOptionsUtils {
                 typeof possibleOptions.loadRelationIds === "boolean" ||
                 typeof possibleOptions.loadEagerRelations === "boolean" ||
                 typeof possibleOptions.withDeleted === "boolean" ||
+                typeof possibleOptions.applyFilterConditions === "boolean" ||
                 typeof possibleOptions.relationLoadStrategy === "string" ||
                 typeof possibleOptions.transaction === "boolean")
         )

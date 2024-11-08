@@ -1597,6 +1597,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
+     * Applies filter conditions to the query.
+     */
+    applyFilterConditions(shouldApply: boolean): this {
+        this.expressionMap.applyFilterConditions = shouldApply
+        return this
+    }
+
+    /**
      * Gets first raw result returned by execution of generated query builder sql.
      */
     async getRawOne<T = any>(): Promise<T | undefined> {
@@ -2045,6 +2053,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 joinAttribute.condition = joinAttribute.condition
                     ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
                     : `${conditionDeleteColumn}`
+            }
+            if (
+                joinAttributeMetadata.filterColumns?.length &&
+                this.expressionMap.applyFilterConditions
+            ) {
+                const filterConditions = joinAttributeMetadata.filterColumns
+                    .map((column) => {
+                        const columnAlias = `${aliasName}.${column.propertyName}`
+                        return column.rawFilterCondition?.(columnAlias)
+                    })
+                    .filter((condition) => !!condition)
+                    .join(" AND ")
+                joinAttribute.condition = joinAttribute.condition
+                    ? `${joinAttribute.condition} AND (${filterConditions})`
+                    : `(${filterConditions})`
             }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
@@ -3082,6 +3105,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             if (this.findOptions.withDeleted) {
                 this.withDeleted()
+            }
+
+            if (typeof this.findOptions.applyFilterConditions === 'boolean') {
+                this.applyFilterConditions(this.findOptions.applyFilterConditions)
             }
 
             if (this.findOptions.select) {
