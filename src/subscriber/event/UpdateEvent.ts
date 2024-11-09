@@ -51,4 +51,7 @@ export interface UpdateEvent<Entity> {
      * List of updated relations. In query builder has no affected
      */
     updatedRelations: RelationMetadata[]
+
+    /** The query that was executed and any parameters bound to it */
+    queryAndParameters?: [string, any[]]
 }
