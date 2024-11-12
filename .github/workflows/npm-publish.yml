@@ -8,24 +8,22 @@ on:
     types: [created]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - run: npm ci
-      - run: npm test
+  lint:
+    name: 'Lint'
+    uses: ./.github/workflows/lint.yml
+
+  test:
+    name: 'Test'
+    uses: ./.github/workflows/test.yml
 
   publish-npm:
-    needs: build
+    needs: [test, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 16
           registry-url: https://registry.npmjs.org/
       - run: npm ci
       - run: npm run compile
