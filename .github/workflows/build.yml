@@ -1,0 +1,27 @@
+name: Build
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+
+      - name: Install packages
+        run: npm install
+
+      - name: Compile code
+        run: npm run compile
+
+      - name: Persist build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build/

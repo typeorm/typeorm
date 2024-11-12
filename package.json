@@ -1,13 +1,13 @@
 {
-  "name": "typeorm",
+  "name": "@global121/typeorm",
   "private": true,
-  "version": "0.3.20",
-  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
+  "version": "1.0.0",
+  "description":  "A fork of the TypeORM library with custom modifications",
   "license": "MIT",
   "readmeFilename": "README.md",
   "author": {
-    "name": "Umed Khudoiberdiev",
-    "email": "pleerock.me@gmail.com"
+    "name": "121devops",
+    "email": "121devops@redcross.nl"
   },
   "engines": {
     "node": ">=16.13.0"

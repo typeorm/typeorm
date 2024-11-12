@@ -1,0 +1,56 @@
+name: Test
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        database: [postgres]
+        node-version: ["16.20.0"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set up database configuration
+        run: |
+          cp ormconfig.circleci-common.json ./ormconfig.json
+          if [ "${{ matrix.database }}" != "" ]; then
+            cat ormconfig.circleci-common.json | jq 'map(.skip = if (.name | IN(["${{ matrix.database }}"])) then false else true end)' > ormconfig.json
+          fi
+        shell: bash
+
+      - name: Start services
+        run: |
+            docker compose up -d postgres
+
+
+      - name: Wait for services to be available
+        run: |
+          sleep 60
+        shell: bash
+
+      - name: Build the project
+        run: npm run compile
+
+      - name: Run tests
+        run: npm run test-fast
+
+      - name: Stop services
+        run: docker compose down
+
+      - name: Store coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
