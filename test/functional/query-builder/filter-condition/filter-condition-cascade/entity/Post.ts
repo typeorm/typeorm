@@ -1,10 +1,12 @@
 import {
     Column,
     Entity,
+    ManyToMany,
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "../../../../../../src"
+import { Category } from "./Category"
 import { Comment } from "./Comment"
 import { User } from "./User"
 
@@ -23,4 +25,7 @@ export class Post {
 
     @OneToMany(() => Comment, (comment) => comment.post)
     comments: Comment[]
+
+    @ManyToMany(() => Category, (category) => category.posts)
+    categories: Category[]
 }

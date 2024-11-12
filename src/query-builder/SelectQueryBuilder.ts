@@ -1599,8 +1599,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Applies filter conditions to the query.
      */
-    applyFilterConditions(shouldApply: boolean): this {
-        this.expressionMap.applyFilterConditions = shouldApply
+    applyFilterConditions(
+        applyFilterConditions: boolean | FindOptionsRelations<any>,
+    ): this {
+        this.expressionMap.applyFilterConditions = applyFilterConditions
         return this
     }
 
@@ -2045,42 +2047,50 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
+            const shouldSkipFilterConditions =
+                this.expressionMap.applyFilterConditions === false ||
+                this.expressionMap.skippedFilterConditions.some(
+                    (skippedFilterCondition) =>
+                        skippedFilterCondition.propertyAliasName === aliasName,
+                )
             if (
                 joinAttributeMetadata.filterColumns?.length &&
-                this.expressionMap.applyFilterConditions !== false
+                !shouldSkipFilterConditions
             ) {
                 const filterConditions = joinAttributeMetadata.filterColumns
                     .map((column) => {
+                        if (
+                            this.expressionMap.skippedFilterConditions.some(
+                                (skippedFilterCondition) =>
+                                    skippedFilterCondition.aliasName ===
+                                        aliasName &&
+                                    skippedFilterCondition.propertyPath ===
+                                        column.propertyPath,
+                            )
+                        ) {
+                            return undefined
+                        }
+
                         const columnAlias = `${aliasName}.${column.propertyName}`
                         return column.rawFilterCondition?.(columnAlias)
                     })
                     .filter((condition) => !!condition)
                     .join(" AND ")
-                joinAttribute.condition = joinAttribute.condition
-                    ? `${joinAttribute.condition} AND (${filterConditions})`
-                    : `(${filterConditions})`
 
-                const getCascadingFilterConditionRelations = (
-                    metadata: EntityMetadata,
-                ): RelationMetadata[] => {
-                    return metadata.cascadingFilterConditionRelations.flatMap(
-                        (relation) => [
-                            relation,
-                            ...getCascadingFilterConditionRelations(
-                                relation.inverseEntityMetadata,
-                            ),
-                        ],
-                    )
-                }
-                const flattenedCascadingFilterConditionRelations =
-                    getCascadingFilterConditionRelations(
-                        this.expressionMap.mainAlias!.metadata,
-                    )
+                if (filterConditions.length)
+                    joinAttribute.condition = joinAttribute.condition
+                        ? `${joinAttribute.condition} AND (${filterConditions})`
+                        : `(${filterConditions})`
+
+                const cascadingFilterConditionRelations =
+                    this.expressionMap.mainAlias!.metadata.recursivelyFindAllCascadingFilterConditionRelations()
                 const isCascadingFilterConditionJoin =
-                    flattenedCascadingFilterConditionRelations.some(
+                    cascadingFilterConditionRelations.some(
                         (relation) =>
                             relation.inverseEntityMetadata.name ===
-                            joinAttributeMetadata.name,
+                                joinAttributeMetadata.name &&
+                            relation.propertyPath ===
+                                joinAttribute.relationPropertyPath,
                     )
 
                 if (isCascadingFilterConditionJoin) {
@@ -2109,6 +2119,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         const filterConditions =
                             joinAttributeMetadata.filterColumns
                                 .map((column) => {
+                                    if (
+                                        this.expressionMap.skippedFilterConditions.some(
+                                            (skippedFilterCondition) =>
+                                                skippedFilterCondition.propertyPath ===
+                                                    column.propertyPath &&
+                                                skippedFilterCondition.aliasName ===
+                                                    aliasName,
+                                        )
+                                    ) {
+                                        return undefined
+                                    }
                                     const columnAlias = `${aliasName}_cfc.${column.propertyName}`
                                     return column.rawFilterCondition?.(
                                         this.replacePropertyNames(columnAlias),
@@ -2116,12 +2137,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 })
                                 .filter((condition) => !!condition)
                                 .join(" AND ")
-                        duplicateJoinAttribute.condition = condition
-                            ? `${condition} AND (${filterConditions})`
-                            : `(${filterConditions})`
-                        this.expressionMap.joinAttributes.push(
-                            duplicateJoinAttribute,
-                        )
+
+                        if (filterConditions.length) {
+                            duplicateJoinAttribute.condition = condition
+                                ? `${condition} AND (${filterConditions})`
+                                : `(${filterConditions})`
+                            this.expressionMap.joinAttributes.push(
+                                duplicateJoinAttribute,
+                            )
+                        }
                     }
                 }
             }
@@ -2346,15 +2370,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (
             this.expressionMap.mainAlias?.hasMetadata &&
-            this.expressionMap.applyFilterConditions &&
-            this.expressionMap.mainAlias?.metadata
-                .cascadingFilterConditionRelations.length
-        )
+            this.expressionMap.applyFilterConditions !== false &&
+            this.expressionMap.mainAlias?.metadata.findAllCascadingFilterConditionRelations()
+                .length
+        ) {
             FindOptionsUtils.joinCascadingFilterConditionRelations(
                 this,
                 this.expressionMap.mainAlias!.name,
                 this.expressionMap.mainAlias!.metadata,
+                this.expressionMap.applyFilterConditions,
             )
+        }
 
         const joins = this.expressionMap.joinAttributes.map((joinAttr) => {
             const relation = joinAttr.relation
@@ -3186,7 +3212,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.withDeleted()
             }
 
-            if (typeof this.findOptions.applyFilterConditions === "boolean") {
+            if (
+                typeof this.findOptions.applyFilterConditions === "boolean" ||
+                typeof this.findOptions.applyFilterConditions === "object"
+            ) {
                 this.applyFilterConditions(
                     this.findOptions.applyFilterConditions,
                 )
@@ -3236,6 +3265,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             ? (this.findOptions
                                   .select as FindOptionsSelect<any>)
                             : undefined,
+                        this.expressionMap.mainAlias!.metadata,
+                        this.expressionMap.mainAlias!.name,
+                    )
+                }
+                if (
+                    this.findOptions.applyFilterConditions !== false &&
+                    this.expressionMap.relationLoadStrategy === "join"
+                ) {
+                    this.buildCascadingFilterConditionRelations(
+                        relations,
                         this.expressionMap.mainAlias!.metadata,
                         this.expressionMap.mainAlias!.name,
                     )
@@ -3446,6 +3485,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this,
                     this.expressionMap.mainAlias!.name,
                     this.expressionMap.mainAlias!.metadata,
+                )
+            }
+
+            if (this.findOptions.applyFilterConditions !== false) {
+                FindOptionsUtils.joinCascadingFilterConditionRelations(
+                    this,
+                    this.expressionMap.mainAlias!.name,
+                    this.expressionMap.mainAlias!.metadata,
+                    this.findOptions.applyFilterConditions ?? true,
                 )
             }
 
@@ -4052,12 +4100,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     propertyPath,
                 )
             } else if (relation) {
-                let joinAlias = alias + "_" + propertyPath.replace(".", "_")
-                joinAlias = DriverUtils.buildAlias(
-                    this.connection.driver,
-                    { joiner: "__" },
+                const joinAlias = this.expressionMap.buildRelationAlias(
                     alias,
-                    joinAlias,
+                    propertyPath,
                 )
                 if (
                     relationValue === true ||
@@ -4148,12 +4193,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     propertyPath,
                 )
             } else if (relation) {
-                let joinAlias = alias + "_" + propertyPath.replace(".", "_")
-                joinAlias = DriverUtils.buildAlias(
-                    this.connection.driver,
-                    { joiner: "__" },
+                const joinAlias = this.expressionMap.buildRelationAlias(
                     alias,
-                    joinAlias,
+                    propertyPath,
                 )
 
                 if (
@@ -4162,16 +4204,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 ) {
                     relation.inverseEntityMetadata.eagerRelations.forEach(
                         (eagerRelation) => {
-                            let eagerRelationJoinAlias =
-                                joinAlias +
-                                "_" +
-                                eagerRelation.propertyPath.replace(".", "_")
-                            eagerRelationJoinAlias = DriverUtils.buildAlias(
-                                this.connection.driver,
-                                { joiner: "__" },
-                                joinAlias,
-                                eagerRelationJoinAlias,
-                            )
+                            const eagerRelationJoinAlias =
+                                this.expressionMap.buildRelationAlias(
+                                    joinAlias,
+                                    eagerRelation.propertyPath,
+                                )
 
                             const existJoin = this.joins.find(
                                 (join) => join.alias === eagerRelationJoinAlias,
@@ -4212,6 +4249,87 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                   relation.propertyPath,
                               )
                             : undefined,
+                        relation.inverseEntityMetadata,
+                        joinAlias,
+                        undefined,
+                    )
+                }
+            }
+        })
+    }
+
+    protected buildCascadingFilterConditionRelations(
+        relations: FindOptionsRelations<Entity>,
+        metadata: EntityMetadata,
+        alias: string,
+        embedPrefix?: string,
+    ) {
+        if (!relations) return
+
+        Object.keys(relations).forEach((relationName) => {
+            const relationValue = (relations as any)[relationName]
+            const propertyPath = embedPrefix
+                ? embedPrefix + "." + relationName
+                : relationName
+            const embed = metadata.findEmbeddedWithPropertyPath(propertyPath)
+            const relation = metadata.findRelationWithPropertyPath(propertyPath)
+            if (!embed && !relation)
+                throw new EntityPropertyNotFoundError(propertyPath, metadata)
+
+            if (embed) {
+                this.buildCascadingFilterConditionRelations(
+                    relationValue,
+                    metadata,
+                    alias,
+                    propertyPath,
+                )
+            } else if (relation) {
+                const joinAlias = this.expressionMap.buildRelationAlias(
+                    alias,
+                    propertyPath,
+                )
+
+                if (
+                    relationValue === true ||
+                    typeof relationValue === "object"
+                ) {
+                    relation.inverseEntityMetadata.cascadingFilterConditionRelations.forEach(
+                        (cascadingFilterConditionRelation) => {
+                            if (
+                                cascadingFilterConditionRelation.inverseEntityMetadata ===
+                                this.expressionMap.mainAlias!.metadata
+                            )
+                                return
+
+                            const cascadingFilterConditionRelationJoinAlias =
+                                this.expressionMap.buildRelationAlias(
+                                    joinAlias,
+                                    cascadingFilterConditionRelation.propertyPath,
+                                )
+
+                            const existJoin = this.joins.find(
+                                (join) =>
+                                    join.alias ===
+                                    cascadingFilterConditionRelationJoinAlias,
+                            )
+                            if (!existJoin) {
+                                this.joins.push({
+                                    type: "left",
+                                    select: false,
+                                    alias: cascadingFilterConditionRelationJoinAlias,
+                                    parentAlias: joinAlias,
+                                    selection: undefined,
+                                    relationMetadata:
+                                        cascadingFilterConditionRelation,
+                                })
+                            }
+                        },
+                    )
+                }
+
+                if (typeof relationValue === "object") {
+                    this.buildCascadingFilterConditionRelations(
+                        relationValue,
                         relation.inverseEntityMetadata,
                         joinAlias,
                         undefined,
@@ -4293,12 +4411,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     propertyPath,
                 )
             } else if (relation) {
-                let joinAlias = alias + "_" + propertyPath.replace(".", "_")
-                joinAlias = DriverUtils.buildAlias(
-                    this.connection.driver,
-                    { joiner: "__" },
+                const joinAlias = this.expressionMap.buildRelationAlias(
                     alias,
-                    joinAlias,
+                    propertyPath,
                 )
                 // console.log("joinAlias", joinAlias, joinAlias.length, this.connection.driver.maxAliasLength)
                 // todo: use expressionMap.joinAttributes, and create a new one using
@@ -4579,16 +4694,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     } else {
-                        // const joinAlias = alias + "_" + relation.propertyName;
-                        let joinAlias =
-                            alias +
-                            "_" +
-                            relation.propertyPath.replace(".", "_")
-                        joinAlias = DriverUtils.buildAlias(
-                            this.connection.driver,
-                            { joiner: "__" },
+                        const joinAlias = this.expressionMap.buildRelationAlias(
                             alias,
-                            joinAlias,
+                            propertyPath,
                         )
 
                         const existJoin = this.joins.find(

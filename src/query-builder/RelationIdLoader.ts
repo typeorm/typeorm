@@ -5,6 +5,7 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { DriverUtils } from "../driver/DriverUtils"
 import { QueryRunner } from "../query-runner/QueryRunner"
+import { FindOneOptions } from "../find-options/FindOneOptions"
 
 /**
  * Loads relation ids for the given entities.
@@ -30,6 +31,10 @@ export class RelationIdLoader {
         relation: RelationMetadata,
         entityOrEntities: ObjectLiteral | ObjectLiteral[],
         relatedEntityOrRelatedEntities?: ObjectLiteral | ObjectLiteral[],
+        findOptions?: Pick<
+            FindOneOptions,
+            "applyFilterConditions" | "withDeleted"
+        >,
     ): Promise<any[]> {
         const entities = Array.isArray(entityOrEntities)
             ? entityOrEntities
@@ -42,12 +47,18 @@ export class RelationIdLoader {
 
         // load relation ids depend of relation type
         if (relation.isManyToMany) {
-            return this.loadForManyToMany(relation, entities, relatedEntities)
+            return this.loadForManyToMany(
+                relation,
+                entities,
+                relatedEntities,
+                findOptions,
+            )
         } else if (relation.isManyToOne || relation.isOneToOneOwner) {
             return this.loadForManyToOneAndOneToOneOwner(
                 relation,
                 entities,
                 relatedEntities,
+                findOptions,
             )
         } else {
             // if (relation.isOneToMany || relation.isOneToOneNotOwner) {
@@ -55,6 +66,7 @@ export class RelationIdLoader {
                 relation,
                 entities,
                 relatedEntities,
+                findOptions,
             )
         }
     }
@@ -98,6 +110,11 @@ export class RelationIdLoader {
             relation,
             entitiesOrEntities,
             relatedEntityOrEntities,
+            {
+                applyFilterConditions:
+                    queryBuilder?.expressionMap.applyFilterConditions,
+                withDeleted: queryBuilder?.expressionMap.withDeleted,
+            },
         )
         // console.log("entities", entities);
         // console.log("relatedEntityOrEntities", relatedEntityOrEntities);
@@ -237,6 +254,10 @@ export class RelationIdLoader {
         relation: RelationMetadata,
         entities: ObjectLiteral[],
         relatedEntities?: ObjectLiteral[],
+        findOptions?: Pick<
+            FindOneOptions,
+            "applyFilterConditions" | "withDeleted"
+        >,
     ) {
         const junctionMetadata = relation.junctionEntityMetadata!
         const mainAlias = junctionMetadata.name
@@ -408,6 +429,10 @@ export class RelationIdLoader {
             .join(" AND ")
         return qb
             .from(junctionMetadata.target, mainAlias)
+            .setFindOptions({
+                applyFilterConditions: findOptions?.applyFilterConditions,
+                withDeleted: findOptions?.withDeleted,
+            })
             .where(condition)
             .getRawMany()
     }
@@ -419,6 +444,10 @@ export class RelationIdLoader {
         relation: RelationMetadata,
         entities: ObjectLiteral[],
         relatedEntities?: ObjectLiteral[],
+        findOptions?: Pick<
+            FindOneOptions,
+            "applyFilterConditions" | "withDeleted"
+        >,
     ) {
         const mainAlias = relation.entityMetadata.targetName
 
@@ -569,6 +598,10 @@ export class RelationIdLoader {
         // execute query
         return qb
             .from(relation.entityMetadata.target, mainAlias)
+            .setFindOptions({
+                applyFilterConditions: findOptions?.applyFilterConditions,
+                withDeleted: findOptions?.withDeleted,
+            })
             .where(condition)
             .getRawMany()
     }
@@ -580,6 +613,10 @@ export class RelationIdLoader {
         relation: RelationMetadata,
         entities: ObjectLiteral[],
         relatedEntities?: ObjectLiteral[],
+        findOptions?: Pick<
+            FindOneOptions,
+            "applyFilterConditions" | "withDeleted"
+        >,
     ) {
         relation = relation.inverseRelation!
 
@@ -710,6 +747,10 @@ export class RelationIdLoader {
         // execute query
         return qb
             .from(relation.entityMetadata.target, mainAlias)
+            .setFindOptions({
+                applyFilterConditions: findOptions?.applyFilterConditions,
+                withDeleted: findOptions?.withDeleted,
+            })
             .where(condition)
             .getRawMany()
     }

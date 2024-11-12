@@ -4,8 +4,10 @@ import {
     Entity,
     JoinTable,
     ManyToMany,
+    OneToMany,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "../../../../../../src"
+import { TeamMember } from "./TeamMember"
 
 @Entity()
 export class User {
@@ -19,10 +21,21 @@ export class User {
     })
     isDeactivated: boolean
 
+    @Column({
+        default: false,
+        rawFilterCondition(alias) {
+            return `${alias} != true`
+        },
+    })
+    isUnlisted: boolean
+
     @DeleteDateColumn()
     deletedAt: Date
 
     @ManyToMany(() => User)
     @JoinTable()
     friends: User[]
+
+    @OneToMany(() => TeamMember, (member) => member.user)
+    teamMemberships: TeamMember[]
 }

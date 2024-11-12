@@ -12,6 +12,7 @@ import { PropertyTypeFactory } from "./types/PropertyTypeInFunction"
 import { TypeORMError } from "../error"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { FindOptionsApplyFilterConditions } from "../find-options/FindOptionsApplyFilterConditions"
 
 /**
  * Contains all information about some entity's relation.
@@ -621,6 +622,82 @@ export class RelationMetadata {
             this.inverseRelation.junctionEntityMetadata = junctionEntityMetadata
             this.joinTableName = junctionEntityMetadata.tableName
         }
+    }
+
+    isCascadingFilterConditionSkipped(
+        applyFilterConditionsObject: FindOptionsApplyFilterConditions<any>,
+    ): boolean {
+        let shouldSkip = true
+        const visitedEntities2 = new Set<EntityMetadata>()
+
+        const getApplyFilterConditionsObjectForRelation = (
+            relation: RelationMetadata,
+            applyFilterConditionsObject:
+                | FindOptionsApplyFilterConditions<any>
+                | undefined,
+        ) => {
+            return typeof applyFilterConditionsObject?.[
+                relation.propertyPath
+            ] === "object" &&
+                applyFilterConditionsObject?.[relation.propertyPath] !== null
+                ? (applyFilterConditionsObject[
+                      relation.propertyPath
+                  ] as FindOptionsApplyFilterConditions<any>)
+                : undefined
+        }
+
+        const recursivelyCheckAllRelationsForSkips = (
+            metadata: EntityMetadata,
+            applyFilterConditionsObject: FindOptionsApplyFilterConditions<any>,
+        ) => {
+            if (visitedEntities2.has(metadata)) return
+            visitedEntities2.add(metadata)
+
+            metadata.filterColumns.forEach((fc) => {
+                if (applyFilterConditionsObject[fc.propertyPath] === false) {
+                    return
+                }
+                shouldSkip = false
+            })
+
+            metadata.cascadingFilterConditionRelations.forEach((relation) => {
+                if (
+                    applyFilterConditionsObject[relation.propertyPath] === false
+                ) {
+                    return
+                }
+
+                const applyFilterConditionsObjectForRelation =
+                    getApplyFilterConditionsObjectForRelation(
+                        relation,
+                        applyFilterConditionsObject,
+                    )
+
+                if (applyFilterConditionsObjectForRelation) {
+                    recursivelyCheckAllRelationsForSkips(
+                        relation.inverseEntityMetadata,
+                        applyFilterConditionsObjectForRelation,
+                    )
+                } else {
+                    shouldSkip = false
+                    return
+                }
+            })
+        }
+
+        const applyFilterConditionsObjectForRelation =
+            getApplyFilterConditionsObjectForRelation(
+                this,
+                applyFilterConditionsObject,
+            )
+
+        if (applyFilterConditionsObjectForRelation)
+            recursivelyCheckAllRelationsForSkips(
+                this.inverseEntityMetadata,
+                applyFilterConditionsObjectForRelation,
+            )
+
+        return shouldSkip
     }
 
     /**
