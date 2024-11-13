@@ -46,6 +46,11 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 
+interface JoinAttributeTree {
+    children: Array<JoinAttributeTree>
+    joinAttribute: JoinAttribute
+}
+
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
@@ -2254,215 +2259,259 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // qb.select("category")
         //     .leftJoinAndSelect("category.post", "post");
 
-        const joins = this.expressionMap.joinAttributes.map((joinAttr) => {
-            const relation = joinAttr.relation
-            const destinationTableName = joinAttr.tablePath
-            const destinationTableAlias = joinAttr.alias.name
-            let appendedCondition = joinAttr.condition
-                ? " AND (" + joinAttr.condition + ")"
-                : ""
-            const parentAlias = joinAttr.parentAlias
+        // preprocess join attributes by nesting them when necessary
+        const joinAttributeTrees = this.expressionMap.joinAttributes.reduce<{
+            trees: Array<JoinAttributeTree> // recursive join attribute trees
+            mappedTrees: Record<string, JoinAttributeTree> // flattened lookup join attribute table
+        }>(
+            ({ trees, mappedTrees }, joinAttribute) => {
+                const parentAlias = joinAttribute.parentAlias || "parentless"
+                const destinationTableAlias = joinAttribute.alias.name
 
-            // if join was build without relation (e.g. without "post.category") then it means that we have direct
-            // table to join, without junction table involved. This means we simply join direct table.
-            if (!parentAlias || !relation) {
-                const destinationJoin = joinAttr.alias.subQuery
-                    ? joinAttr.alias.subQuery
-                    : this.getTableName(destinationTableName)
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    destinationJoin +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    (joinAttr.condition
-                        ? " ON " + this.replacePropertyNames(joinAttr.condition)
-                        : "")
-                )
-            }
-
-            // if real entity relation is involved
-            if (relation.isManyToOne || relation.isOneToOneOwner) {
-                // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
-                const condition = relation.joinColumns
-                    .map((joinColumn) => {
-                        return (
-                            destinationTableAlias +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath +
-                            "=" +
-                            parentAlias +
-                            "." +
-                            relation.propertyPath +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath
-                        )
-                    })
-                    .join(" AND ")
-
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(destinationTableName) +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
-                )
-            } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = relation
-                    .inverseRelation!.joinColumns.map((joinColumn) => {
-                        if (
-                            relation.inverseEntityMetadata.tableType ===
-                                "entity-child" &&
-                            relation.inverseEntityMetadata.discriminatorColumn
-                        ) {
-                            appendedCondition +=
-                                " AND " +
-                                destinationTableAlias +
-                                "." +
-                                relation.inverseEntityMetadata
-                                    .discriminatorColumn.databaseName +
-                                "='" +
-                                relation.inverseEntityMetadata
-                                    .discriminatorValue +
-                                "'"
-                        }
-
-                        return (
-                            destinationTableAlias +
-                            "." +
-                            relation.inverseRelation!.propertyPath +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath +
-                            "=" +
-                            parentAlias +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath
-                        )
-                    })
-                    .join(" AND ")
-
-                if (!condition)
-                    throw new TypeORMError(
-                        `Relation ${relation.entityMetadata.name}.${relation.propertyName} does not have join columns.`,
-                    )
-
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(destinationTableName) +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
-                )
-            } else {
-                // means many-to-many
-                const junctionTableName =
-                    relation.junctionEntityMetadata!.tablePath
-
-                const junctionAlias = joinAttr.junctionAlias
-                let junctionCondition = "",
-                    destinationCondition = ""
-
-                if (relation.isOwning) {
-                    junctionCondition = relation.joinColumns
-                        .map((joinColumn) => {
-                            // `post_category`.`postId` = `post`.`id`
-                            return (
-                                junctionAlias +
-                                "." +
-                                joinColumn.propertyPath +
-                                "=" +
-                                parentAlias +
-                                "." +
-                                joinColumn.referencedColumn!.propertyPath
-                            )
-                        })
-                        .join(" AND ")
-
-                    destinationCondition = relation.inverseJoinColumns
-                        .map((joinColumn) => {
-                            // `category`.`id` = `post_category`.`categoryId`
-                            return (
-                                destinationTableAlias +
-                                "." +
-                                joinColumn.referencedColumn!.propertyPath +
-                                "=" +
-                                junctionAlias +
-                                "." +
-                                joinColumn.propertyPath
-                            )
-                        })
-                        .join(" AND ")
+                const existingTree = mappedTrees[parentAlias]
+                const joinAttributeTree: JoinAttributeTree = {
+                    children: [],
+                    joinAttribute,
+                }
+                if (existingTree) {
+                    existingTree.children.push(joinAttributeTree)
                 } else {
-                    junctionCondition = relation
-                        .inverseRelation!.inverseJoinColumns.map(
-                            (joinColumn) => {
-                                // `post_category`.`categoryId` = `category`.`id`
-                                return (
-                                    junctionAlias +
-                                    "." +
-                                    joinColumn.propertyPath +
-                                    "=" +
-                                    parentAlias +
-                                    "." +
-                                    joinColumn.referencedColumn!.propertyPath
-                                )
-                            },
-                        )
-                        .join(" AND ")
-
-                    destinationCondition = relation
-                        .inverseRelation!.joinColumns.map((joinColumn) => {
-                            // `post`.`id` = `post_category`.`postId`
-                            return (
-                                destinationTableAlias +
-                                "." +
-                                joinColumn.referencedColumn!.propertyPath +
-                                "=" +
-                                junctionAlias +
-                                "." +
-                                joinColumn.propertyPath
-                            )
-                        })
-                        .join(" AND ")
+                    trees.push(joinAttributeTree)
                 }
 
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(junctionTableName) +
-                    " " +
-                    this.escape(junctionAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    this.replacePropertyNames(junctionCondition) +
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(destinationTableName) +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    this.replacePropertyNames(
-                        destinationCondition + appendedCondition,
-                    )
-                )
-            }
+                mappedTrees[destinationTableAlias] = joinAttributeTree
+
+                return { trees, mappedTrees }
+            },
+            { trees: [], mappedTrees: {} },
+        )
+
+        const joinStatements = joinAttributeTrees.trees.map((joinTree) => {
+            return this.createJoinTreeRecursivly(joinTree)
         })
 
-        return joins.join(" ")
+        return joinStatements.join(" ")
+    }
+
+    protected createJoinTreeRecursivly({
+        children,
+        joinAttribute: joinAttr,
+    }: JoinAttributeTree): string {
+        const relation = joinAttr.relation
+        const destinationTableName = joinAttr.tablePath
+        const destinationTableAlias = joinAttr.alias.name
+        let appendedCondition = joinAttr.condition
+            ? " AND (" + joinAttr.condition + ")"
+            : ""
+        const parentAlias = joinAttr.parentAlias
+
+        const resolvedChildJoinAttributes = (children || [])
+            .map((joinTreeChild) => {
+                return this.createJoinTreeRecursivly(joinTreeChild)
+            })
+            .join(" ")
+
+        // if join was build without relation (e.g. without "post.category") then it means that we have direct
+        // table to join, without junction table involved. This means we simply join direct table.
+        if (!parentAlias || !relation) {
+            const destinationJoin = joinAttr.alias.subQuery
+                ? joinAttr.alias.subQuery
+                : this.getTableName(destinationTableName)
+            return (
+                " " +
+                joinAttr.direction +
+                " JOIN " +
+                destinationJoin +
+                " " +
+                this.escape(destinationTableAlias) +
+                resolvedChildJoinAttributes +
+                " " +
+                this.createTableLockExpression() +
+                (joinAttr.condition
+                    ? " ON " + this.replacePropertyNames(joinAttr.condition)
+                    : "")
+            )
+        }
+
+        // if real entity relation is involved
+        if (relation.isManyToOne || relation.isOneToOneOwner) {
+            // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
+            const condition = relation.joinColumns
+                .map((joinColumn) => {
+                    return (
+                        destinationTableAlias +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath +
+                        "=" +
+                        parentAlias +
+                        "." +
+                        relation.propertyPath +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath
+                    )
+                })
+                .join(" AND ")
+
+            return (
+                " " +
+                joinAttr.direction +
+                " JOIN " +
+                this.getTableName(destinationTableName) +
+                " " +
+                this.escape(destinationTableAlias) +
+                resolvedChildJoinAttributes +
+                " " +
+                this.createTableLockExpression() +
+                " ON " +
+                this.replacePropertyNames(condition + appendedCondition)
+            )
+        } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+            // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
+            const condition = relation
+                .inverseRelation!.joinColumns.map((joinColumn) => {
+                    if (
+                        relation.inverseEntityMetadata.tableType ===
+                            "entity-child" &&
+                        relation.inverseEntityMetadata.discriminatorColumn
+                    ) {
+                        appendedCondition +=
+                            " AND " +
+                            destinationTableAlias +
+                            "." +
+                            relation.inverseEntityMetadata.discriminatorColumn
+                                .databaseName +
+                            "='" +
+                            relation.inverseEntityMetadata.discriminatorValue +
+                            "'"
+                    }
+
+                    return (
+                        destinationTableAlias +
+                        "." +
+                        relation.inverseRelation!.propertyPath +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath +
+                        "=" +
+                        parentAlias +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath
+                    )
+                })
+                .join(" AND ")
+
+            if (!condition)
+                throw new TypeORMError(
+                    `Relation ${relation.entityMetadata.name}.${relation.propertyName} does not have join columns.`,
+                )
+
+            return (
+                " " +
+                joinAttr.direction +
+                " JOIN " +
+                this.getTableName(destinationTableName) +
+                " " +
+                this.escape(destinationTableAlias) +
+                resolvedChildJoinAttributes +
+                " " +
+                this.createTableLockExpression() +
+                " ON " +
+                this.replacePropertyNames(condition + appendedCondition)
+            )
+        } else {
+            // means many-to-many
+            const junctionTableName = relation.junctionEntityMetadata!.tablePath
+
+            const junctionAlias = joinAttr.junctionAlias
+            let junctionCondition = "",
+                destinationCondition = ""
+
+            if (relation.isOwning) {
+                junctionCondition = relation.joinColumns
+                    .map((joinColumn) => {
+                        // `post_category`.`postId` = `post`.`id`
+                        return (
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath +
+                            "=" +
+                            parentAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+
+                destinationCondition = relation.inverseJoinColumns
+                    .map((joinColumn) => {
+                        // `category`.`id` = `post_category`.`categoryId`
+                        return (
+                            destinationTableAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath +
+                            "=" +
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+            } else {
+                junctionCondition = relation
+                    .inverseRelation!.inverseJoinColumns.map((joinColumn) => {
+                        // `post_category`.`categoryId` = `category`.`id`
+                        return (
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath +
+                            "=" +
+                            parentAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+
+                destinationCondition = relation
+                    .inverseRelation!.joinColumns.map((joinColumn) => {
+                        // `post`.`id` = `post_category`.`postId`
+                        return (
+                            destinationTableAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath +
+                            "=" +
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+            }
+
+            return (
+                " " +
+                joinAttr.direction +
+                " JOIN " +
+                this.getTableName(junctionTableName) +
+                " " +
+                this.escape(junctionAlias) +
+                this.createTableLockExpression() +
+                " ON " +
+                this.replacePropertyNames(junctionCondition) +
+                " " +
+                joinAttr.direction +
+                " JOIN " +
+                this.getTableName(destinationTableName) +
+                " " +
+                this.escape(destinationTableAlias) +
+                resolvedChildJoinAttributes +
+                " " +
+                this.createTableLockExpression() +
+                " ON " +
+                this.replacePropertyNames(
+                    destinationCondition + appendedCondition,
+                )
+            )
+        }
     }
 
     /**
