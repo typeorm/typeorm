@@ -6,7 +6,7 @@ import {
     PrimaryGeneratedColumn,
 } from "../../../../src"
 import { Author } from "./Author"
-import { Post } from "./Post"
+import { Book } from "./Book"
 
 @Entity()
 export class Comment {
@@ -24,9 +24,9 @@ export class Comment {
     author: Author
 
     @Column()
-    postId: number
+    bookId: number
 
-    @JoinColumn({ name: "postId" })
-    @ManyToOne(() => Post)
-    post: Post
+    @JoinColumn({ name: "bookId" })
+    @ManyToOne(() => Book)
+    book: Book
 }

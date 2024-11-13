@@ -6,21 +6,24 @@ import {
     OneToMany,
     PrimaryGeneratedColumn,
 } from "../../../../src"
-import { Book } from "./Book"
+import { Author } from "./Author"
 import { Comment } from "./Comment"
 
 @Entity()
-export class Author {
+export class Book {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
-    name: string
+    title: string
+
+    @Column()
+    text: string
 
     @JoinTable()
-    @ManyToMany(() => Book, (book) => book.author, { eager: true })
-    books: Book
+    @ManyToMany(() => Author)
+    author?: Author[]
 
-    @OneToMany(() => Comment, (comment) => comment.author)
-    comments: Comment[]
+    @OneToMany(() => Comment, (comment) => comment.book, { eager: true })
+    comments?: Comment[]
 }

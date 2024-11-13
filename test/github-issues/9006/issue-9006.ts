@@ -6,26 +6,24 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/index"
 import { Author } from "./entity/Author"
-import { Post } from "./entity/Post"
+import { Book } from "./entity/Book"
 import { Comment } from "./entity/Comment"
-import { SelectQueryBuilder } from "../../../src"
+import { ObjectLiteral, SelectQueryBuilder } from "../../../src"
 import { expect } from "chai"
+import sinon from "sinon"
 
 describe("github issues > #9006 Eager relations do not respect relationLoadStrategy", () => {
     let dataSources: DataSource[]
-    let originalGetMany: () => Promise<any[]>
-    let originalGetOne: () => Promise<any[]>
+    let getManySpy: sinon.SinonSpy
+    let getOneSpy: sinon.SinonSpy
+    let getRawManySpy: sinon.SinonSpy
+
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            relationLoadStrategy: "query",
-            logging: true,
         })
-
-        originalGetMany = SelectQueryBuilder.prototype.getMany
-        originalGetOne = SelectQueryBuilder.prototype.getOne
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
@@ -34,70 +32,82 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const authorRepository = dataSource.getRepository(Author)
-                const postRepository = dataSource.getRepository(Post)
+                const bookRepository = dataSource.getRepository(Book)
                 const commentRepository = dataSource.getRepository(Comment)
 
                 const author = authorRepository.create({ name: "author" })
                 await authorRepository.save(author)
 
-                const post = postRepository.create({
-                    title: "post",
+                const book = bookRepository.create({
+                    title: "book",
                     text: "text",
-                    authorId: author.id,
+                    author: [author],
                 })
-                await postRepository.save(post)
+                await bookRepository.save(book)
 
                 const comment = commentRepository.create({
                     text: "comment",
                     author,
-                    postId: post.id,
+                    bookId: book.id,
                 })
                 await commentRepository.save(comment)
 
-                let getManyCalled = 0
-                SelectQueryBuilder.prototype.getMany = async function () {
-                    expect((this as any).joins).to.be.an("array")
-                    expect((this as any).joins).to.have.length(0)
-                    getManyCalled++
-                    return originalGetMany.call(this)
-                }
-
-                let getOneCalled = 0
-                SelectQueryBuilder.prototype.getOne = async function () {
-                    expect((this as any).joins).to.be.an("array")
-                    expect((this as any).joins).to.have.length(0)
-                    getOneCalled++
-                    return originalGetOne.call(this)
-                }
+                getManySpy = sinon.spy(SelectQueryBuilder.prototype, "getMany")
+                getOneSpy = sinon.spy(SelectQueryBuilder.prototype, "getOne")
+                getRawManySpy = sinon.spy(
+                    SelectQueryBuilder.prototype,
+                    "getRawMany",
+                )
 
                 const eageredAuthor = await authorRepository.findOne({
                     where: { id: author.id },
+                    relationLoadStrategy: "query",
                 })
 
-                expect(getManyCalled).to.be.equal(3)
-                expect(getOneCalled).to.be.equal(1)
+                getManySpy.getCalls().forEach((call) => {
+                    const self = call.thisValue as ObjectLiteral
+                    expect(self.joins).to.be.an("array")
+                    expect(self.joins).to.have.length(0)
+                })
+
+                getOneSpy.getCalls().forEach((call) => {
+                    const self = call.thisValue as ObjectLiteral
+                    expect(self.joins).to.be.an("array")
+                    expect(self.joins).to.have.length(0)
+                })
+
+                getRawManySpy.getCalls().forEach((call) => {
+                    const self = call.thisValue as ObjectLiteral
+                    expect(self.joins).to.be.an("array")
+                    expect(self.joins).to.have.length(0)
+                })
+
+                expect(getManySpy.callCount).to.be.equal(2)
+                expect(getOneSpy.callCount).to.be.equal(1)
 
                 expect(eageredAuthor).to.deep.equal({
                     id: 1,
                     name: "author",
-                    posts: [
+                    books: [
                         {
                             id: 1,
-                            title: "post",
+                            title: "book",
                             text: "text",
-                            authorId: 1,
                             comments: [
                                 {
                                     id: 1,
                                     text: "comment",
+                                    bookId: 1,
                                     authorId: 1,
-                                    postId: 1,
                                 },
                             ],
-                            likeAuthors: [],
                         },
                     ],
                 })
+
+                getManySpy.restore()
+                getOneSpy.restore()
+                getRawManySpy.restore()
             }),
         ))
 })
