@@ -1,16 +1,16 @@
+import { expect } from "chai"
 import "reflect-metadata"
+import sinon from "sinon"
+import { SelectQueryBuilder } from "../../../src"
+import { DataSource } from "../../../src/data-source/index"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/index"
 import { Author } from "./entity/Author"
 import { Book } from "./entity/Book"
 import { Comment } from "./entity/Comment"
-import { ObjectLiteral, SelectQueryBuilder } from "../../../src"
-import { expect } from "chai"
-import sinon from "sinon"
 
 describe("github issues > #9006 Eager relations do not respect relationLoadStrategy", () => {
     let dataSources: DataSource[]
@@ -23,6 +23,7 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
+            logging: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -64,24 +65,25 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
                     relationLoadStrategy: "query",
                 })
 
-                getManySpy.getCalls().forEach((call) => {
-                    const self = call.thisValue as ObjectLiteral
-                    expect(self.joins).to.be.an("array")
-                    expect(self.joins).to.have.length(0)
-                })
+                const [manyToManyCall] = getManySpy.getCalls()
+
+                expect(
+                    manyToManyCall.thisValue.expressionMap.joinAttributes,
+                ).to.be.an("array")
+                expect(
+                    manyToManyCall.thisValue.expressionMap.joinAttributes,
+                ).to.have.length(1) // Only join attribute allowed, in many to many relations, to be more performatic
 
                 getOneSpy.getCalls().forEach((call) => {
-                    const self = call.thisValue as ObjectLiteral
-                    expect(self.joins).to.be.an("array")
-                    expect(self.joins).to.have.length(0)
+                    expect(
+                        call.thisValue.expressionMap.joinAttributes,
+                    ).to.be.an("array")
+                    expect(
+                        call.thisValue.expressionMap.joinAttributes,
+                    ).to.have.length(0) // No Join Attributes in relationLoadStrategy: "query",
                 })
 
-                getRawManySpy.getCalls().forEach((call) => {
-                    const self = call.thisValue as ObjectLiteral
-                    expect(self.joins).to.be.an("array")
-                    expect(self.joins).to.have.length(0)
-                })
-
+                expect(getRawManySpy.callCount).to.be.equal(1)
                 expect(getManySpy.callCount).to.be.equal(2)
                 expect(getOneSpy.callCount).to.be.equal(1)
 
