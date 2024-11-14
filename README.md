@@ -1,3 +1,7 @@
+# About this Fork
+
+This repository is a fork of the official TypeORM repository. It is customized and maintained for use in the [121 platform](https://github.com/global-121/121-platform).
+
 <div align="center">
   <a href="http://typeorm.io/">
     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
