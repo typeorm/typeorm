@@ -23,7 +23,6 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
-            logging: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -36,26 +35,50 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
                 const bookRepository = dataSource.getRepository(Book)
                 const commentRepository = dataSource.getRepository(Comment)
 
-                const author = authorRepository.create({ name: "author" })
-                await authorRepository.save(author)
-
-                const book = bookRepository.create({
-                    title: "book",
-                    text: "text",
-                    author: [author],
+                const authorModel = await authorRepository.create({
+                    name: "author",
                 })
-                await bookRepository.save(book)
+                const author = await authorRepository.save(authorModel)
 
-                const comment = commentRepository.create({
-                    text: "comment",
-                    author,
-                    bookId: book.id,
-                })
-                await commentRepository.save(comment)
+                const bookModels = await bookRepository.create([
+                    {
+                        title: "book1",
+                        text: "text1",
+                        author: [author],
+                    },
+                    {
+                        title: "book2",
+                        text: "text2",
+                        author: [author],
+                    },
+                    {
+                        title: "book3",
+                        text: "text3",
+                        author: [author],
+                    },
+                ])
+                const books = await bookRepository.save(bookModels)
 
-                getManySpy = sinon.spy(SelectQueryBuilder.prototype, "getMany")
-                getOneSpy = sinon.spy(SelectQueryBuilder.prototype, "getOne")
-                getRawManySpy = sinon.spy(
+                for (const book of books) {
+                    for (let index = 0; index < 3; index++) {
+                        const comment = await commentRepository.create({
+                            text: `${book.title}: comment${index}`,
+                            bookId: book.id,
+                            authorId: author.id,
+                        })
+                        await commentRepository.save(comment)
+                    }
+                }
+
+                getManySpy = await sinon.spy(
+                    SelectQueryBuilder.prototype,
+                    "getMany",
+                )
+                getOneSpy = await sinon.spy(
+                    SelectQueryBuilder.prototype,
+                    "getOne",
+                )
+                getRawManySpy = await sinon.spy(
                     SelectQueryBuilder.prototype,
                     "getRawMany",
                 )
@@ -93,13 +116,75 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
                     books: [
                         {
                             id: 1,
-                            title: "book",
-                            text: "text",
+                            title: "book1",
+                            text: "text1",
                             comments: [
                                 {
                                     id: 1,
-                                    text: "comment",
+                                    text: "book1: comment0",
                                     bookId: 1,
+                                    authorId: 1,
+                                },
+                                {
+                                    id: 2,
+                                    text: "book1: comment1",
+                                    bookId: 1,
+                                    authorId: 1,
+                                },
+                                {
+                                    id: 3,
+                                    text: "book1: comment2",
+                                    bookId: 1,
+                                    authorId: 1,
+                                },
+                            ],
+                        },
+                        {
+                            id: 2,
+                            title: "book2",
+                            text: "text2",
+                            comments: [
+                                {
+                                    id: 4,
+                                    text: "book2: comment0",
+                                    bookId: 2,
+                                    authorId: 1,
+                                },
+                                {
+                                    id: 5,
+                                    text: "book2: comment1",
+                                    bookId: 2,
+                                    authorId: 1,
+                                },
+                                {
+                                    id: 6,
+                                    text: "book2: comment2",
+                                    bookId: 2,
+                                    authorId: 1,
+                                },
+                            ],
+                        },
+                        {
+                            id: 3,
+                            title: "book3",
+                            text: "text3",
+                            comments: [
+                                {
+                                    id: 7,
+                                    text: "book3: comment0",
+                                    bookId: 3,
+                                    authorId: 1,
+                                },
+                                {
+                                    id: 8,
+                                    text: "book3: comment1",
+                                    bookId: 3,
+                                    authorId: 1,
+                                },
+                                {
+                                    id: 9,
+                                    text: "book3: comment2",
+                                    bookId: 3,
                                     authorId: 1,
                                 },
                             ],

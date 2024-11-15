@@ -604,6 +604,7 @@ export class RelationIdLoader {
                                 joinColumn.referencedColumn!.getEntityValue(
                                     entity,
                                 )
+                            const joinValue = joinColumn.getEntityValue(entity)
                             const joinColumnName =
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
@@ -624,7 +625,7 @@ export class RelationIdLoader {
                                     ".",
                                     "_",
                                 )
-                            result[joinColumnName] = value
+                            result[joinColumnName] = joinValue
                             result[primaryColumnName] = value
                         })
                         return result

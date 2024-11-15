@@ -1,7 +1,6 @@
 import {
     Column,
     Entity,
-    JoinTable,
     ManyToMany,
     OneToMany,
     PrimaryGeneratedColumn,
@@ -20,7 +19,6 @@ export class Book {
     @Column()
     text: string
 
-    @JoinTable()
     @ManyToMany(() => Author)
     author?: Author[]
 

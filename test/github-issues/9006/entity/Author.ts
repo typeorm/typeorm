@@ -17,7 +17,9 @@ export class Author {
     @Column()
     name: string
 
-    @JoinTable()
+    @JoinTable({
+        name: "AuthorBooks",
+    })
     @ManyToMany(() => Book, (book) => book.author, { eager: true })
     books: Book
 

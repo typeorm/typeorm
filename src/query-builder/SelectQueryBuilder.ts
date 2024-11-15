@@ -3644,8 +3644,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             withDeleted: this.findOptions.withDeleted,
                             relationLoadStrategy:
                                 this.findOptions.relationLoadStrategy,
-                            loadEagerRelations:
-                                this.findOptions.loadEagerRelations,
                         })
                     if (entities.length > 0) {
                         const relatedEntityGroups: any[] =
