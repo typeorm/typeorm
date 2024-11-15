@@ -2311,6 +2311,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             })
             .join(" ")
 
+        const resolvedChildJoinAttributesPrefix = resolvedChildJoinAttributes
+            ? "( "
+            : ""
+        const resolvedChildJoinAttributesPostfix = resolvedChildJoinAttributes
+            ? " )"
+            : ""
+
         // if join was build without relation (e.g. without "post.category") then it means that we have direct
         // table to join, without junction table involved. This means we simply join direct table.
         if (!parentAlias || !relation) {
@@ -2321,10 +2328,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 " " +
                 joinAttr.direction +
                 " JOIN " +
+                resolvedChildJoinAttributesPrefix +
                 destinationJoin +
                 " " +
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
+                resolvedChildJoinAttributesPostfix +
                 " " +
                 this.createTableLockExpression() +
                 (joinAttr.condition
@@ -2356,10 +2365,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 " " +
                 joinAttr.direction +
                 " JOIN " +
+                resolvedChildJoinAttributesPrefix +
                 this.getTableName(destinationTableName) +
                 " " +
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
+                resolvedChildJoinAttributesPostfix +
                 " " +
                 this.createTableLockExpression() +
                 " ON " +
@@ -2408,10 +2419,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 " " +
                 joinAttr.direction +
                 " JOIN " +
+                resolvedChildJoinAttributesPrefix +
                 this.getTableName(destinationTableName) +
                 " " +
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
+                resolvedChildJoinAttributesPostfix +
                 " " +
                 this.createTableLockExpression() +
                 " ON " +
@@ -2500,10 +2513,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 " " +
                 joinAttr.direction +
                 " JOIN " +
+                resolvedChildJoinAttributesPrefix +
                 this.getTableName(destinationTableName) +
                 " " +
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
+                resolvedChildJoinAttributesPostfix +
                 " " +
                 this.createTableLockExpression() +
                 " ON " +
