@@ -599,34 +599,40 @@ export class RelationIdLoader {
                 return Promise.resolve(
                     relatedEntities.map((entity) => {
                         const result: ObjectLiteral = {}
-                        relation.joinColumns.forEach(function (joinColumn) {
+                        relation.joinColumns.forEach((joinColumn) => {
                             const value =
                                 joinColumn.referencedColumn!.getEntityValue(
                                     entity,
                                 )
                             const joinValue = joinColumn.getEntityValue(entity)
-                            const joinColumnName =
+                            const joinColumnName = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
-                                "_" +
-                                joinColumn.referencedColumn!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                )
-                            const primaryColumnName =
+                                    "_" +
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
+                            )
+                            const primaryColumnName = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.entityMetadata.name +
-                                "_" +
-                                relation.inverseRelation!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                ) +
-                                "_" +
-                                joinColumn.referencedColumn!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                )
-                            result[joinColumnName] = joinValue
+                                    "_" +
+                                    relation.inverseRelation!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ) +
+                                    "_" +
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
+                            )
                             result[primaryColumnName] = value
+                            result[joinColumnName] = joinValue
                         })
                         return result
                     }),
