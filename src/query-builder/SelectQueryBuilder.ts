@@ -2334,7 +2334,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
                 resolvedChildJoinAttributesPostfix +
-                " " +
                 this.createTableLockExpression() +
                 (joinAttr.condition
                     ? " ON " + this.replacePropertyNames(joinAttr.condition)
@@ -2371,7 +2370,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
                 resolvedChildJoinAttributesPostfix +
-                " " +
                 this.createTableLockExpression() +
                 " ON " +
                 this.replacePropertyNames(condition + appendedCondition)
@@ -2425,7 +2423,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
                 resolvedChildJoinAttributesPostfix +
-                " " +
                 this.createTableLockExpression() +
                 " ON " +
                 this.replacePropertyNames(condition + appendedCondition)
@@ -2519,7 +2516,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.escape(destinationTableAlias) +
                 resolvedChildJoinAttributes +
                 resolvedChildJoinAttributesPostfix +
-                " " +
                 this.createTableLockExpression() +
                 " ON " +
                 this.replacePropertyNames(
