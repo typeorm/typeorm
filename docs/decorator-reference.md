@@ -41,6 +41,7 @@
         -   [`@Unique`](#unique)
         -   [`@Check`](#check)
         -   [`@Exclusion`](#exclusion)
+        -   [`@ForeignKey`](#foreignkey)
 
 ## Entity decorators
 
@@ -963,3 +964,67 @@ export class RoomBooking {
 ```
 
 > Note: Only PostgreSQL supports exclusion constraints.
+
+#### `@ForeignKey`
+
+This decorator allows you to create a database foreign key for a specific column or columns.
+This decorator can be applied to columns or an entity itself.
+Use it on a column when an foreign key on a single column is needed
+and use it on the entity when a single foreign key on multiple columns is required.
+Examples:
+
+```typescript
+@Entity("orders")
+@ForeignKey(() => City, ["cityId", "countryCode"], ["id", "countryCode"])
+export class Order {
+    @PrimaryColumn()
+    id: number
+
+    @Column("uuid", { name: "user_uuid" })
+    @ForeignKey<User>("User", "uuid", { name: "FK_user_uuid" })
+    userUuid: string
+
+    @Column()
+    @ForeignKey(() => Country, "code")
+    countryCode: string
+
+    @Column()
+    @ForeignKey("cities")
+    cityId: number
+}
+```
+
+```typescript
+@Entity("cities")
+@Unique(["id", "countryCode"])
+export class City {
+    @PrimaryColumn()
+    id: number
+
+    @Column()
+    @ForeignKey("countries", { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    countryCode: string
+}
+```
+
+```typescript
+@Entity("countries")
+export class Country {
+    @PrimaryColumn({ length: 2 })
+    code: string
+
+    @Column()
+    name: string
+}
+```
+
+```typescript
+@Entity("users")
+export class User {
+    @PrimaryColumn({ name: "ref" })
+    id: number
+
+    @Column("uuid", { unique: true })
+    uuid: string
+}
+```
