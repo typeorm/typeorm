@@ -6,15 +6,14 @@ import { User } from "./entity/user"
 
 const options: DataSourceOptions = {
     type: "postgres",
-    host: "10.10.10.16",
+    host: "localhost",
     port: 5432,
-    username: "postgres",
-    password: "postgres_pass",
-    database: "typeorm",
+    username: "test",
+    password: "test",
+    database: "test",
     logging: false,
     synchronize: true,
     entities: [City, Country, Order, User],
-    schema: "foreign-key-decorator-sample",
 }
 
 const dataSource = new DataSource(options)

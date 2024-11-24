@@ -15,9 +15,6 @@ describe("decorators > foreign-key", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            schema: "foreign-key-decorator-test",
-            // schemaCreate: true,
-            dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))

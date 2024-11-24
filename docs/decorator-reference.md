@@ -984,7 +984,7 @@ export class Order {
     @ForeignKey<User>("User", "uuid", { name: "FK_user_uuid" })
     userUuid: string
 
-    @Column()
+    @Column({ length: 2 })
     @ForeignKey(() => Country, "code")
     countryCode: string
 
@@ -1001,7 +1001,7 @@ export class City {
     @PrimaryColumn()
     id: number
 
-    @Column()
+    @Column({ length: 2 })
     @ForeignKey("countries", { onDelete: "CASCADE", onUpdate: "CASCADE" })
     countryCode: string
 }

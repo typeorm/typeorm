@@ -12,7 +12,7 @@ export class City {
     @PrimaryColumn()
     id: number
 
-    @Column()
+    @Column({ length: 2 })
     @ForeignKey("countries", { onDelete: "CASCADE", onUpdate: "CASCADE" })
     countryCode: string
 }
