@@ -1055,9 +1055,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 const moreConditions =
                     inverseCascadingFilterConditionRelations.flatMap(
                         (relation) => {
+                            let nextAlias = joinAttr.alias.name
+                            // Drop the _cfc suffix if it exists
+                            if (nextAlias.endsWith("_cfc")) {
+                                nextAlias = nextAlias.slice(0, -4)
+                            }
                             return this.createCascadingFilterConditions(
                                 relation.entityMetadata,
-                                joinAttr.alias.name,
+                                nextAlias,
                                 applyFilterConditionsObjectForRelation,
                                 visitedEntities,
                             )

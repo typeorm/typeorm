@@ -1,7 +1,7 @@
 {
   "name": "@keyconservation/typeorm",
   "private": false,
-  "version": "0.3.20-9",
+  "version": "0.3.20-10",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",

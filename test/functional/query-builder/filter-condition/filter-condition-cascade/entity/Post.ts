@@ -1,5 +1,6 @@
 import {
     Column,
+    DeleteDateColumn,
     Entity,
     ManyToMany,
     ManyToOne,
@@ -22,6 +23,15 @@ export class Post {
         filterConditionCascade: true,
     })
     author: User
+
+    @Column({
+        default: false,
+        rawFilterCondition: (column) => `${column} = FALSE`,
+    })
+    draft: boolean
+
+    @DeleteDateColumn({ type: "timestamp with time zone" })
+    deletedAt?: Date
 
     @OneToMany(() => Comment, (comment) => comment.post)
     comments: Comment[]

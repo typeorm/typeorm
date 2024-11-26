@@ -2093,7 +2093,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 joinAttribute.relationPropertyPath,
                     )
 
-                if (isCascadingFilterConditionJoin) {
+                if (
+                    isCascadingFilterConditionJoin &&
+                    // exclude junction tables (because they cant have filter conditions)
+                    !joinAttribute.relation?.junctionEntityMetadata
+                ) {
                     if (
                         !condition &&
                         !(
