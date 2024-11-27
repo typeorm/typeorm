@@ -2,7 +2,7 @@
 
 ## What is a Filter Condition?
 
-Filter conditions allow you to specify global conditions that automatically filter entity rows from query results. This is useful for implementing features like row-level security, multi-tenancy, etc. without having to explicitly add where clauses to every query.
+Filter conditions allow you to specify global conditions that automatically filter entity rows from query results. This is useful for implementing row-level security or other features that require static, global conditions without having to explicitly add where clauses to every query.
 
 This feature aims to ensure that filtered entities can never show up in any query builder results, whether you're loading them directly or through a relation.
 
@@ -41,11 +41,6 @@ The `rawFilterCondition` property accepts a function that receives the column na
     rawFilterCondition: (column) => `${column} IS NULL`,
 })
 deletedAt: Date
-
-@Column({
-    rawFilterCondition: (column) => `${column} = :tenantId`,
-})
-tenantId: number
 ```
 
 ## Disabling Filter Conditions
