@@ -1,0 +1,24 @@
+[
+  {
+    "skip": true,
+    "name": "mysql",
+    "type": "mysql",
+    "host": "typeorm-mysql",
+    "port": 3306,
+    "username": "root",
+    "password": "admin",
+    "database": "test",
+    "logging": false
+  },
+  {
+    "skip": true,
+    "name": "mariadb",
+    "type": "mariadb",
+    "host": "typeorm-mariadb",
+    "port": 3306,
+    "username": "root",
+    "password": "admin",
+    "database": "test",
+    "logging": false
+  }
+]

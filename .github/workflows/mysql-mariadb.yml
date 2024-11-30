@@ -3,7 +3,7 @@
 # https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs
 # https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers
 
-name: tests - PostgreSQL
+name: tests - MySQL, MariaDB
 
 on:
   push:
@@ -22,25 +22,26 @@ jobs:
 
     container: ${{ matrix.node-container }}
     services:
-      # Label used to access the service container
-      postgres:
-        # Docker Hub image
-        image: postgis/postgis:14-3.3
-        # Provide the password for postgres
+      mysql:
+        image: mysql:5.7.37
         env:
-          POSTGRES_USERNAME: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: "test"
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+      mariadb:
+        image: mariadb:10.10.3
+        ports:
+          - "3307:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
 
     steps:
     - uses: actions/checkout@v4
     - run: npm ci
-    - run: cp .github/workflows/postgres.ormconfig.json ormconfig.json
+    - run: cp .github/workflows/mysql-mariadb.ormconfig.json ormconfig.json
     - run: cat ormconfig.json
     - run: npm test
