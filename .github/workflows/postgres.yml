@@ -44,10 +44,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - name: Add ormconfig
-      run: >
-        cat ormconfig.circleci-common.json \
-          | jq 'map(.skip = if (.name | IN($ARGS.positional[])) then false else true end)' --args postgres \
-          > ormconfig.json
+    - run: cp ./github/workflows/postgres.ormconfig.json  ./ormconfig.json
     - run: cat ormconfig.json
-    - run: npm test -- postgres
+    - run: npm test
