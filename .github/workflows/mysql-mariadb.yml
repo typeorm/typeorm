@@ -41,7 +41,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - run: npm ci
+    - run: npm i
     - run: cp .github/workflows/mysql-mariadb.ormconfig.json ormconfig.json
     - run: cat ormconfig.json
     - run: npm test
