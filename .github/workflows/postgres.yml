@@ -44,6 +44,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: cp ./github/workflows/postgres.ormconfig.json  ./ormconfig.json
+    - run: cp ./.github/workflows/postgres.ormconfig.json  ./ormconfig.json
     - run: cat ormconfig.json
     - run: npm test
