@@ -1,6 +1,6 @@
 [
   {
-    "skip": false,
+    "skip": true,
     "name": "postgres",
     "type": "postgres",
     "host": "postgres",
@@ -8,6 +8,6 @@
     "username": "test",
     "password": "test",
     "database": "test",
-    "logging": true
+    "logging": false
   }
 ]

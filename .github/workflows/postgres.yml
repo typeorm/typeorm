@@ -14,7 +14,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
+    container: node:20-bookworm-slim
     services:
       # Label used to access the service container
       postgres:
@@ -50,8 +51,3 @@ jobs:
           > ormconfig.json
     - run: cat ormconfig.json
     - run: npm test
-      env:
-        # The hostname used to communicate with the PostgreSQL service container
-        POSTGRES_HOST: postgres
-        # The default PostgreSQL port
-        POSTGRES_PORT: 5432
