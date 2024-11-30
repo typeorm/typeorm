@@ -14,8 +14,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    container: node:20-bookworm-slim
+    strategy:
+      matrix:
+        node-version: [20] #[16.x, 18.x, 20.x, 22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    container: node:${{ matrix.node-version }}
     services:
       # Label used to access the service container
       postgres:
@@ -32,22 +36,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    strategy:
-      matrix:
-        node-version: [20.x] #[16.x, 18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
     - run: npm ci
-    - run: >
-        cat ormconfig.gha-common.json \
-          | jq 'map(.skip = if (.name | IN($ARGS.positional[])) then false else true end)' --args postgres \
-          > ormconfig.json
+    - run: cp .github/workflows/postgres.ormconfig.json ormconfig.json
     - run: cat ormconfig.json
     - run: npm test
