@@ -49,4 +49,5 @@ jobs:
         cat ormconfig.circleci-common.json \
           | jq 'map(.skip = if (.name | IN($ARGS.positional[])) then false else true end)' --args postgres \
           > ormconfig.json
+    - run: cat ormconfig.json
     - run: npm test -- postgres
