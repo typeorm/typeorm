@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20] #[16.x, 18.x, 20.x, 22.x]
+        node-version: [16, 18, 20, 22]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: node:${{ matrix.node-version }}
