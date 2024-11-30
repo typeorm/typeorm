@@ -4155,7 +4155,8 @@ export class SqlServerQueryRunner
                 return ISOLATION_LEVEL.REPEATABLE_READ
             case "SERIALIZABLE":
                 return ISOLATION_LEVEL.SERIALIZABLE
-
+            case "SNAPSHOT": 
+                return ISOLATION_LEVEL.SNAPSHOT
             case "READ COMMITTED":
             default:
                 return ISOLATION_LEVEL.READ_COMMITTED
