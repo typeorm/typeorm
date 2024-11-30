@@ -8,6 +8,6 @@
     "username": "test",
     "password": "test",
     "database": "test",
-    "logging": false
+    "logging": true
   }
 ]
