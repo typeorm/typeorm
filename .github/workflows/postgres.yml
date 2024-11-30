@@ -45,7 +45,7 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: >
-        cat ormconfig.circleci-common.json \
+        cat ormconfig.gha-common.json \
           | jq 'map(.skip = if (.name | IN($ARGS.positional[])) then false else true end)' --args postgres \
           > ormconfig.json
     - run: cat ormconfig.json
