@@ -38,6 +38,20 @@ jobs:
           MYSQL_USER: "test"
           MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
+      postgres:
+        # Docker Hub image
+        image: postgis/postgis:14-3.3
+        # Provide the password for postgres
+        env:
+          POSTGRES_USERNAME: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: "test"
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - uses: actions/checkout@v4
