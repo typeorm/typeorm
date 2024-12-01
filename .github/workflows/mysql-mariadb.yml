@@ -43,9 +43,9 @@ jobs:
         image: postgis/postgis:14-3.3
         # Provide the password for postgres
         env:
-          POSTGRES_USERNAME: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: "test"
+          POSTGRES_USERNAME: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
