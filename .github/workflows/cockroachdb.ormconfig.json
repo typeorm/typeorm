@@ -1,6 +1,6 @@
 [
   {
-    "skip": true,
+    "skip": false,
     "name": "cockroachdb",
     "type": "cockroachdb",
     "host": "cockroachdb",
@@ -11,7 +11,7 @@
   },
 
   {
-    "skip": true,
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "postgres",

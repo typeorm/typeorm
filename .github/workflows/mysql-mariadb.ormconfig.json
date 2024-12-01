@@ -1,6 +1,6 @@
 [
   {
-    "skip": true,
+    "skip": false,
     "name": "mysql",
     "type": "mysql",
     "host": "mysql",
@@ -11,7 +11,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mariadb",
     "type": "mariadb",
     "host": "mariadb",
@@ -23,7 +23,7 @@
   },
 
   {
-    "skip": true,
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "postgres",
