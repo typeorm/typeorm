@@ -23,8 +23,10 @@ jobs:
     container: ${{ matrix.node-container }}
     services:
       cockroachdb:
-        image: cockroachdb/cockroach:v23.1.9
-        options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.25
+        # Don't use unofficial images
+        image: timveil/cockroachdb-single-node:latest
+        # image: cockroachdb/cockroach:v23.1.9
+        # options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.25
       postgres:
         image: postgis/postgis:14-3.3
         env:
