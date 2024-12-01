@@ -26,7 +26,7 @@ jobs:
         # Don't use unofficial images
         image: timveil/cockroachdb-single-node:latest
         # image: cockroachdb/cockroach:v23.1.9
-        options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.2
+        # options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.2
 
     steps:
     - uses: actions/checkout@v4
