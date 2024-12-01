@@ -21,14 +21,17 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
-    services:
-      cockroachdb:
+    # services:
+      # cockroachdb:
         # Don't use unofficial images
-        image: timveil/cockroachdb-single-node:latest
+        # image: timveil/cockroachdb-single-node:latest
         # image: cockroachdb/cockroach:v23.1.9
         # options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.2
 
     steps:
+    - uses: hoverkraft-tech/compose-action@v2
+      with:
+        compose-file: ".github/workflows/cockroackdb.docker-compose"
     - uses: actions/checkout@v4
     - run: npm i
     - run: cp .github/workflows/cockroachdb.ormconfig.json ormconfig.json
