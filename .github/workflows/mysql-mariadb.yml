@@ -29,20 +29,21 @@ jobs:
           MYSQL_USER: "test"
           MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
-      mariadb:
-        image: mariadb:10.10.3
-        ports:
-          - "3307:3306"
-        env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
-        options: >-
-          --health-cmd "healthcheck.sh --connect --innodb_initialized"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+      # It doesn't start this way
+      # mariadb:
+      #   image: mariadb:10.10.3
+      #   ports:
+      #     - "3307:3306"
+      #   env:
+      #     MYSQL_ROOT_PASSWORD: "admin"
+      #     MYSQL_USER: "test"
+      #     MYSQL_PASSWORD: "test"
+      #     MYSQL_DATABASE: "test"
+      #   options: >-
+      #     --health-cmd "healthcheck.sh --connect --innodb_initialized"
+      #     --health-interval 10s
+      #     --health-timeout 5s
+      #     --health-retries 5
 
     steps:
     - uses: actions/checkout@v4
