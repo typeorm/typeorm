@@ -1,0 +1,33 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs
+# https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers
+
+name: postgres
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    container: ${{ matrix.node-container }}
+    services:
+      mongodb:
+        image: mongo:5.0.12
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: npm i
+    - run: cp .github/workflows/mongodb.ormconfig.json ormconfig.json
+    - run: cat ormconfig.json
+    - run: npm test
