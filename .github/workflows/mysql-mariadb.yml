@@ -3,7 +3,7 @@
 # https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs
 # https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers
 
-name: tests - MySQL, MariaDB
+name: mysql mariadb
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
