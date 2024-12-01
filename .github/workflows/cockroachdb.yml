@@ -17,19 +17,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-version: [18.x] #["node:16", "node:18", "node:20", "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
-    container: ${{ matrix.node-container }}
-    services:
-      cockroachdb:
-        # Don't use unofficial images
-        image: timveil/cockroachdb-single-node:latest
-        # image: cockroachdb/cockroach:v23.1.9
-        # options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.2
+    container: docker:27.3.1-dind
+    # services:
+    #   cockroachdb:
+    #     # Don't use unofficial images
+    #     image: timveil/cockroachdb-single-node:latest
+    #     # image: cockroachdb/cockroach:v23.1.9
+    #     # options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.2
 
     steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{matrix.node-version}}
     - uses: actions/checkout@v4
+    - run: docker compose up -f .github/workflows/cockroackdb.docker-compose -d
     - run: npm i
     - run: cp .github/workflows/cockroachdb.ormconfig.json ormconfig.json
     - run: cat ormconfig.json
