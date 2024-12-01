@@ -1,0 +1,12 @@
+[
+  {
+    "skip": true,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "cockroachdb",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb"
+  }
+]
