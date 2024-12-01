@@ -39,7 +39,7 @@ jobs:
           MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
         options: >-
-          --health-cmd healthcheck.sh --connect --innodb_initialized
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
