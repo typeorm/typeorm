@@ -1,0 +1,43 @@
+[
+  {
+    "skip": false,
+    "name": "sqljs",
+    "type": "sqljs",
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "sqlite",
+    "type": "sqlite",
+    "database": "./temp/sqlitedb-1.db",
+    "logging": false,
+    "relationLoadStrategy": "join"
+  },
+  {
+    "skip": false,
+    "name": "sqlite-2",
+    "type": "sqlite",
+    "database": "./temp/sqlitedb-2.db",
+    "logging": false,
+    "relationLoadStrategy": "query"
+  },
+  {
+    "skip": false,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "temp/better-sqlite3db.db",
+    "logging": false
+  },
+
+  {
+    "skip": true,
+    "name": "postgres",
+    "type": "postgres",
+    "host": "postgres",
+    "port": 5432,
+    "username": "postgres",
+    "password": "postgres",
+    "database": "postgres",
+    "logging": false
+  }
+]
