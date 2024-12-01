@@ -10,7 +10,7 @@
     "password": "oracle",
     "logging": false,
     "extra": {
-      "connectString": "typeorm-oracle:1521/XEPDB1"
+      "connectString": "oracle:1521/XEPDB1"
     }
   },
 
