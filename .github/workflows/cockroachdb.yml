@@ -20,14 +20,6 @@ jobs:
         node-version: [18.x] #["node:16", "node:18", "node:20", "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
-    # container: docker:27.3.1-dind
-    # services:
-    #   cockroachdb:
-    #     # Don't use unofficial images
-    #     image: timveil/cockroachdb-single-node:latest
-    #     # image: cockroachdb/cockroach:v23.1.9
-    #     # options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.2
-
     steps:
     - uses: actions/setup-node@v4
       with:
