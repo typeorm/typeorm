@@ -25,6 +25,17 @@ jobs:
       cockroachdb:
         image: cockroachdb/cockroach:v23.1.9
         options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.25
+      postgres:
+        image: postgis/postgis:14-3.3
+        env:
+          POSTGRES_USERNAME: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: "test"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - uses: actions/checkout@v4
