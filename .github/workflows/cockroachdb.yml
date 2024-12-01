@@ -29,7 +29,7 @@ jobs:
         # options: cockroachdb/cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.2
 
     steps:
-    - uses: hoverkraft-tech/compose-action@v2
+    - uses: hoverkraft-tech/compose-action@v2.0.2
       with:
         compose-file: ".github/workflows/cockroackdb.docker-compose"
     - uses: actions/checkout@v4
