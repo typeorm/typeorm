@@ -3,14 +3,14 @@
     "skip": false,
     "name": "oracle",
     "type": "oracle",
-    "host": "oracle",
+    "host": "localhost",
     "port": 1521,
     "serviceName": "XEPDB1",
     "username": "typeorm",
     "password": "oracle",
     "logging": false,
     "extra": {
-      "connectString": "oracle:1521/XEPDB1"
+      "connectString": "localhost:1521/XEPDB1"
     }
   },
 
