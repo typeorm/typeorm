@@ -24,7 +24,7 @@ jobs:
     services:
       cockroachdb:
         image: cockroachdb/cockroach:v23.1.9
-        options: --entrypoint "start-single-node --insecure --cache=.25 --store=type=mem,size=.25"
+        options: cockroach start-single-node --insecure --cache=.25 --store=type=mem,size=.25
 
     steps:
     - uses: actions/checkout@v4
