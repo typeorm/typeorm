@@ -21,9 +21,6 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
-    services:
-      mongodb:
-        image: mongo:5.0.12
 
     steps:
     - uses: actions/checkout@v4
