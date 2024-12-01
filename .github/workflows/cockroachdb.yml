@@ -30,9 +30,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: hoverkraft-tech/compose-action@v0.0.0
-      with:
-        compose-file: ".github/workflows/cockroackdb.docker-compose"
+    - run: docker compose up -f ".github/workflows/cockroackdb.docker-compose" -d
     - run: npm i
     - run: cp .github/workflows/cockroachdb.ormconfig.json ormconfig.json
     - run: cat ormconfig.json
