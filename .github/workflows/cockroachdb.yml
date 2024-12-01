@@ -20,7 +20,7 @@ jobs:
         node-version: [18.x] #["node:16", "node:18", "node:20", "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
-    container: docker:27.3.1-dind
+    # container: docker:27.3.1-dind
     # services:
     #   cockroachdb:
     #     # Don't use unofficial images
