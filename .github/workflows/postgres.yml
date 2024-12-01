@@ -22,16 +22,12 @@ jobs:
 
     container: ${{ matrix.node-container }}
     services:
-      # Label used to access the service container
       postgres:
-        # Docker Hub image
         image: postgis/postgis:14-3.3
-        # Provide the password for postgres
         env:
           POSTGRES_USERNAME: test
           POSTGRES_PASSWORD: test
           POSTGRES_DB: "test"
-        # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
