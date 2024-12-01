@@ -3,7 +3,7 @@
 # https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs
 # https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers
 
-name: postgres
+name: mongodb
 
 on:
   push:
