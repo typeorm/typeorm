@@ -31,8 +31,6 @@ jobs:
           MYSQL_DATABASE: "test"
       mariadb:
         image: mariadb:10.10.3
-        ports:
-          - "3306:3306"
         env:
           MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_USER: "test"
