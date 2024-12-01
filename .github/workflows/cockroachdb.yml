@@ -33,7 +33,7 @@ jobs:
       with:
         node-version: ${{matrix.node-version}}
     - uses: actions/checkout@v4
-    - run: docker compose up -f .github/workflows/cockroackdb.docker-compose -d
+    - run: docker compose -f .github/workflows/cockroackdb.docker-compose up -d
     - run: npm i
     - run: cp .github/workflows/cockroachdb.ormconfig.json ormconfig.json
     - run: cat ormconfig.json
