@@ -928,25 +928,6 @@ export class EntityMetadata {
         ]
     }
 
-    recursivelyFindAllCascadingFilterConditionRelations(): RelationMetadata[] {
-        const visited = new Set<EntityMetadata>()
-        const relations: RelationMetadata[] = []
-        const recursivelyFindRelations = (meta: EntityMetadata) => {
-            if (visited.has(meta)) return
-            visited.add(meta)
-
-            meta.findAllCascadingFilterConditionRelations().forEach(
-                (relation) => {
-                    if (relations.includes(relation)) return
-                    relations.push(relation)
-                    recursivelyFindRelations(relation.inverseEntityMetadata)
-                },
-            )
-        }
-        recursivelyFindRelations(this)
-        return relations
-    }
-
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------

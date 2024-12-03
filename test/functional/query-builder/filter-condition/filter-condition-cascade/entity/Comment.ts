@@ -1,4 +1,11 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "../../../../../../src"
+import {
+    Column,
+    Entity,
+    ManyToOne,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../../../src"
+import { CommentLike } from "./CommentLike"
 import { Post } from "./Post"
 
 @Entity()
@@ -13,4 +20,7 @@ export class Comment {
         filterConditionCascade: true,
     })
     post: Post
+
+    @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
+    commentLikes: CommentLike[]
 }

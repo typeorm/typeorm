@@ -443,99 +443,47 @@ export class FindOptionsUtils {
     public static joinCascadingFilterConditionRelations(
         qb: SelectQueryBuilder<any>,
         alias: string,
-        _metadata: EntityMetadata,
+        metadata: EntityMetadata,
         applyFilterConditions: boolean | FindOptionsApplyFilterConditions<any>,
     ) {
-        const visitedEntities = new Set<EntityMetadata>()
-        function recursivelyJoin(
-            qb: SelectQueryBuilder<any>,
-            alias: string,
-            metadata: EntityMetadata,
-            applyFilterConditionsObject:
-                | FindOptionsApplyFilterConditions<any>
-                | undefined,
-        ) {
-            if (visitedEntities.has(metadata)) return
-            visitedEntities.add(metadata)
+        metadata.cascadingFilterConditionRelations.forEach((relation) => {
+            /** Don't join the FROM table to itself */
+            if (relation.inverseEntityMetadata === metadata) return
 
-            const cascadingFilterConditionRelations =
-                metadata.cascadingFilterConditionRelations
-            cascadingFilterConditionRelations.forEach((relation) => {
-                /** Don't join the FROM table to itself */
-                if (relation.inverseEntityMetadata === _metadata) return
-
-                if (
-                    applyFilterConditionsObject?.[relation.propertyPath] ===
-                    false
-                )
-                    return
-
-                if (
-                    applyFilterConditionsObject &&
+            if (
+                typeof applyFilterConditions === "object" &&
+                (applyFilterConditions?.[relation.propertyPath] === false ||
                     relation.isCascadingFilterConditionSkipped(
-                        applyFilterConditionsObject,
-                    )
-                )
-                    return
+                        applyFilterConditions,
+                    ))
+            )
+                return
 
-                // generate a relation alias
-                let relationAlias = qb.expressionMap.buildRelationAlias(
-                    alias,
-                    relation.propertyName,
-                )
+            // generate a relation alias
+            let relationAlias = qb.expressionMap.buildRelationAlias(
+                alias,
+                relation.propertyName,
+            )
 
-                // add a join for the relation
-                // Checking whether the relation wasn't joined yet.
-                const existingAlias =
-                    qb.expressionMap.getExistingJoinRelationAlias(
-                        alias,
-                        relation,
-                    )
-                relationAlias = existingAlias || relationAlias
-                const addJoin = !existingAlias
+            // add a join for the relation
+            // Checking whether the relation wasn't joined yet.
+            const existingAlias = qb.expressionMap.getExistingJoinRelationAlias(
+                alias,
+                relation,
+            )
+            relationAlias = existingAlias || relationAlias
+            const addJoin = !existingAlias
 
-                const joinAlreadyAdded = Boolean(
-                    qb.expressionMap.joinAttributes.find(
-                        (joinAttribute) =>
-                            joinAttribute.alias.name === relationAlias,
-                    ),
-                )
+            const joinAlreadyAdded = Boolean(
+                qb.expressionMap.joinAttributes.find(
+                    (joinAttribute) =>
+                        joinAttribute.alias.name === relationAlias,
+                ),
+            )
 
-                if (addJoin && !joinAlreadyAdded) {
-                    qb.leftJoin(
-                        alias + "." + relation.propertyPath,
-                        relationAlias,
-                    )
-                }
-
-                const relationApplyFilterConditionsObj =
-                    typeof applyFilterConditionsObject?.[
-                        relation.propertyPath
-                    ] === "object" &&
-                    applyFilterConditionsObject?.[relation.propertyPath] !==
-                        null
-                        ? (applyFilterConditionsObject[
-                              relation.propertyPath
-                          ] as FindOptionsApplyFilterConditions<any>)
-                        : undefined
-
-                // (recursive) join the cascading filter condition relations
-                recursivelyJoin(
-                    qb,
-                    relationAlias,
-                    relation.inverseEntityMetadata,
-                    relationApplyFilterConditionsObj,
-                )
-            })
-        }
-
-        recursivelyJoin(
-            qb,
-            alias,
-            _metadata,
-            typeof applyFilterConditions === "object"
-                ? applyFilterConditions
-                : undefined,
-        )
+            if (addJoin && !joinAlreadyAdded) {
+                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
+            }
+        })
     }
 }

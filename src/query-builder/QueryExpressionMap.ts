@@ -261,6 +261,11 @@ export class QueryExpressionMap {
     subQuery: boolean = false
 
     /**
+     * Indicates if query builder is a cascading filter condition relation subquery.
+     */
+    isCascadingFilterConditionRelationSubquery: boolean = false
+
+    /**
      * Indicates if property names are prefixed with alias names during property replacement.
      * By default this is enabled, however we need this because aliases are not supported in UPDATE and DELETE queries,
      * but user can use them in WHERE expressions.
@@ -397,11 +402,7 @@ export class QueryExpressionMap {
         return this.orderBys
     }
 
-    get skippedFilterConditions(): {
-        propertyPath: string
-        aliasName: string
-        propertyAliasName: string
-    }[] {
+    get skippedFilterConditions(): (ColumnMetadata | RelationMetadata)[] {
         if (typeof this.applyFilterConditions === "object") {
             /** Recursively flatten the applyFilterConditions object.
              * Example input:
@@ -420,48 +421,43 @@ export class QueryExpressionMap {
              */
             const flattenObject = (
                 obj: FindOptionsApplyFilterConditions<any>,
-                aliasName = this.mainAlias!.metadata.name,
-            ): {
-                propertyPath: string
-                aliasName: string
-                propertyAliasName: string
-            }[] => {
+                entity = this.mainAlias!.metadata,
+            ): (ColumnMetadata | RelationMetadata)[] => {
                 return Object.keys(obj).reduce(
                     (
-                        acc: {
-                            propertyPath: string
-                            aliasName: string
-                            propertyAliasName: string
-                        }[],
+                        acc: (ColumnMetadata | RelationMetadata)[],
                         propertyPath: string,
                     ) => {
                         const value = obj[propertyPath]
-
                         if (typeof value === "object" && value !== null) {
-                            const relationAlias = this.buildRelationAlias(
-                                aliasName,
-                                propertyPath,
-                            )
+                            const relationMetadata =
+                                entity.findRelationWithPropertyPath(
+                                    propertyPath,
+                                )
 
-                            return [
-                                ...acc,
-                                ...flattenObject(value, relationAlias),
-                            ]
+                            if (relationMetadata?.inverseEntityMetadata)
+                                return [
+                                    ...acc,
+                                    ...flattenObject(
+                                        value,
+                                        relationMetadata?.inverseEntityMetadata,
+                                    ),
+                                ]
+
+                            return acc
                         }
 
                         if (value === true) return acc
 
-                        return [
-                            ...acc,
-                            {
-                                propertyPath,
-                                aliasName: aliasName,
-                                propertyAliasName: this.buildRelationAlias(
-                                    aliasName,
-                                    propertyPath,
-                                ),
-                            },
-                        ]
+                        const relationMetadata =
+                            entity.findRelationWithPropertyPath(propertyPath)
+                        const columnMetadata =
+                            entity.findColumnWithPropertyName(propertyPath)
+
+                        const metadataObj = relationMetadata || columnMetadata
+                        if (metadataObj) return [...acc, metadataObj]
+
+                        return acc
                     },
                     [],
                 )
