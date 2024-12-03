@@ -1,4 +1,5 @@
 import { Driver } from "../driver/Driver"
+import { registerQueryBuilders } from "../query-builder"
 import { Repository } from "../repository/Repository"
 import { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
 import { EntityTarget } from "../common/EntityTarget"
@@ -40,6 +41,8 @@ import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+
+registerQueryBuilders()
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -136,6 +139,7 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     constructor(options: DataSourceOptions) {
+        registerQueryBuilders()
         this.name = options.name || "default"
         this.options = options
         this.logger = new LoggerFactory().create(
@@ -390,7 +394,9 @@ export class DataSource {
 
         const migrationExecutor = new MigrationExecutor(this)
         migrationExecutor.transaction =
-            (options && options.transaction) || "all"
+            options?.transaction ||
+            this.options?.migrationsTransactionMode ||
+            "all"
         migrationExecutor.fake = (options && options.fake) || false
 
         const successMigrations =
@@ -736,5 +742,22 @@ export class DataSource {
                 entityMetadata.target.useDataSource(this)
             }
         }
+    }
+
+    /**
+     * Get the replication mode SELECT queries should use for this datasource by default
+     */
+    defaultReplicationModeForReads(): ReplicationMode {
+        if ("replication" in this.driver.options) {
+            const value = (
+                this.driver.options.replication as {
+                    defaultMode?: ReplicationMode
+                }
+            ).defaultMode
+            if (value) {
+                return value
+            }
+        }
+        return "slave"
     }
 }

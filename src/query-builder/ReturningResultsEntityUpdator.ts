@@ -274,7 +274,11 @@ export class ReturningResultsEntityUpdator {
     getUpdationReturningColumns(): ColumnMetadata[] {
         return this.expressionMap.mainAlias!.metadata.columns.filter(
             (column) => {
-                return column.isUpdateDate || column.isVersion
+                return (
+                    column.asExpression !== undefined ||
+                    column.isUpdateDate ||
+                    column.isVersion
+                )
             },
         )
     }
@@ -286,6 +290,7 @@ export class ReturningResultsEntityUpdator {
         return this.expressionMap.mainAlias!.metadata.columns.filter(
             (column) => {
                 return (
+                    column.asExpression !== undefined ||
                     column.isUpdateDate ||
                     column.isVersion ||
                     column.isDeleteDate

@@ -221,6 +221,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropCompositeUniqueConstraints()
         // await this.renameTables();
         await this.renameColumns()
+        await this.changeTableComment()
         await this.createNewTables()
         await this.dropRemovedColumns()
         await this.addNewColumns()
@@ -587,6 +588,27 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 table,
                 oldExclusions,
             )
+        }
+    }
+
+    /**
+     * change table comment
+     */
+    protected async changeTableComment(): Promise<void> {
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.queryRunner.loadedTables.find(
+                (table) =>
+                    this.getTablePath(table) === this.getTablePath(metadata),
+            )
+            if (!table) continue
+
+            if (
+                DriverUtils.isMySQLFamily(this.connection.driver) ||
+                this.connection.driver.options.type === 'postgres'
+            ) {
+                const newComment = metadata.comment
+                await this.queryRunner.changeTableComment(table, newComment)
+            }
         }
     }
 

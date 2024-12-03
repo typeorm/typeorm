@@ -1,5 +1,5 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { parseISO } from "date-fns"
+import dayjs from "dayjs"
 
 /**
  * Provides utilities to transform hydrated and persisted data.
@@ -62,7 +62,9 @@ export class DateUtils {
          * https://stackoverflow.com/a/2587398
          */
         let date =
-            typeof mixedDate === "string" ? parseISO(mixedDate) : mixedDate
+            typeof mixedDate === "string"
+                ? dayjs(mixedDate).toDate()
+                : mixedDate
 
         if (toUtc)
             date = new Date(

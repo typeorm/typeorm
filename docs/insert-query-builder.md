@@ -41,7 +41,7 @@ This syntax doesn't escape your values, you need to handle escape on your own.
 If the values you are trying to insert conflict due to existing data the `orUpdate` function can be used to update specific values on the conflicted target.
 
 ```typescript
-await datasource
+await dataSource
     .createQueryBuilder()
     .insert()
     .into(User)
@@ -57,10 +57,28 @@ await datasource
     .execute()
 ```
 
+### IGNORE error (MySQL) or DO NOTHING (Postgres) during insert
+
+If the values you are trying to insert conflict due to existing data or containing invalid data, the `orIgnore` function can be used to suppress errors and insert only rows that contain valid data.
+
+```typescript
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(User)
+    .values({
+        firstName: "Timber",
+        lastName: "Saw",
+        externalId: "abc123",
+    })
+    .orIgnore()
+    .execute()
+```
+
 ### Skip data update if values have not changed (Postgres)
 
 ```typescript
-await datasource
+await dataSource
     .createQueryBuilder()
     .insert()
     .into(User)
@@ -82,7 +100,7 @@ await datasource
 ### Use partial index (Postgres)
 
 ```typescript
-await datasource
+await dataSource
     .createQueryBuilder()
     .insert()
     .into(User)

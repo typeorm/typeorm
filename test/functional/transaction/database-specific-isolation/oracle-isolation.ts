@@ -69,6 +69,15 @@ describe("transaction > transaction with oracle connection partial isolation sup
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
+                // Initial inserts are required to prevent ORA-08177 errors in Oracle 21c when using a serializable connection
+                // immediately after DDL statements. This ensures proper synchronization and helps avoid conflicts.
+                await connection.manager
+                    .getRepository(Post)
+                    .save({ title: "Post #0" })
+                await connection.manager
+                    .getRepository(Category)
+                    .save({ name: "Category #0" })
+
                 await connection.manager.transaction(
                     "SERIALIZABLE",
                     async (entityManager) => {

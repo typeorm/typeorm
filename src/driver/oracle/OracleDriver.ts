@@ -128,6 +128,8 @@ export class OracleDriver implements Driver {
         "nclob",
         "rowid",
         "urowid",
+        "simple-json",
+        "json",
     ]
 
     /**
@@ -216,6 +218,11 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = ":"
+
+    /**
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
@@ -247,7 +254,7 @@ export class OracleDriver implements Driver {
     maxAliasLength = 29
 
     cteCapabilities: CteCapabilities = {
-        enabled: false, // TODO: enable
+        enabled: true,
     }
 
     dummyTableName = "DUAL"
@@ -294,8 +301,8 @@ export class OracleDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        this.oracle.fetchAsString = [this.oracle.CLOB]
-        this.oracle.fetchAsBuffer = [this.oracle.BLOB]
+        this.oracle.fetchAsString = [this.oracle.DB_TYPE_CLOB]
+        this.oracle.fetchAsBuffer = [this.oracle.DB_TYPE_BLOB]
         if (this.options.replication) {
             this.slaves = await Promise.all(
                 this.options.replication.slaves.map((slave) => {
@@ -378,11 +385,16 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
                     return full
+                }
+
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
                 let value: any = parameters[key]
@@ -408,6 +420,7 @@ export class OracleDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -536,6 +549,8 @@ export class OracleDriver implements Driver {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === "simple-json") {
             return DateUtils.simpleJsonToString(value)
+        } else if (columnMetadata.type === "json") {
+            return DateUtils.simpleJsonToString(value)
         }
 
         return value
@@ -566,8 +581,6 @@ export class OracleDriver implements Driver {
             columnMetadata.type === "timestamp with local time zone"
         ) {
             value = DateUtils.normalizeHydratedDate(value)
-        } else if (columnMetadata.type === "json") {
-            value = JSON.parse(value)
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
@@ -624,6 +637,8 @@ export class OracleDriver implements Driver {
             return "clob"
         } else if (column.type === "simple-json") {
             return "clob"
+        } else if (column.type === "json") {
+            return "json"
         } else {
             return (column.type as string) || ""
         }
@@ -928,7 +943,7 @@ export class OracleDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return ":" + (index + 1)
+        return this.parametersPrefix + (index + 1)
     }
 
     /**
@@ -943,21 +958,24 @@ export class OracleDriver implements Driver {
             case "smallint":
             case "dec":
             case "decimal":
-                return this.oracle.NUMBER
+                return this.oracle.DB_TYPE_NUMBER
             case "char":
             case "nchar":
             case "nvarchar2":
             case "varchar2":
-                return this.oracle.STRING
+                return this.oracle.DB_TYPE_VARCHAR
             case "blob":
-                return this.oracle.BLOB
+                return this.oracle.DB_TYPE_BLOB
+            case "simple-json":
             case "clob":
-                return this.oracle.CLOB
+                return this.oracle.DB_TYPE_CLOB
             case "date":
             case "timestamp":
             case "timestamp with time zone":
             case "timestamp with local time zone":
-                return this.oracle.DATE
+                return this.oracle.DB_TYPE_TIMESTAMP
+            case "json":
+                return this.oracle.DB_TYPE_JSON
         }
     }
 
@@ -974,6 +992,12 @@ export class OracleDriver implements Driver {
             this.oracle = oracle
         } catch (e) {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
+        }
+        const thickMode = this.options.thickMode
+        if (thickMode) {
+            typeof thickMode === "object"
+                ? this.oracle.initOracleClient(thickMode)
+                : this.oracle.initOracleClient()
         }
     }
 

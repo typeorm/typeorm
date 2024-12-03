@@ -320,6 +320,7 @@ export abstract class BaseQueryRunner {
             foundTable.checks = changedTable.checks
             foundTable.justCreated = changedTable.justCreated
             foundTable.engine = changedTable.engine
+            foundTable.comment = changedTable.comment
         }
     }
 

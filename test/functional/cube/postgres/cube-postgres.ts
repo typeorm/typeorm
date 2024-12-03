@@ -111,7 +111,7 @@ describe("cube-postgres", () => {
                 // to be working on Postgres version >=10.6.
                 const [{ version }] = await connection.query("SELECT version()")
                 const semverArray = version
-                    .replace(/^PostgreSQL ([\d\.]+) .*$/, "$1")
+                    .replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
                     .split(".")
                     .map(Number)
                 if (!(semverArray[0] >= 10 && semverArray[1] >= 6)) {

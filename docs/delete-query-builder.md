@@ -12,7 +12,7 @@ Examples:
 
 ```typescript
 await myDataSource
-    .createQueryBuilder('users')
+    .createQueryBuilder()
     .delete()
     .from(User)
     .where("id = :id", { id: 1 })
@@ -33,7 +33,8 @@ Examples:
 
 ```typescript
 await myDataSource
-  .createQueryBuilder('users')
+  .getRepository(User)
+  .createQueryBuilder()
   .softDelete()
   .where("id = :id", { id: 1 })
   .execute();
@@ -51,7 +52,8 @@ Examples:
 
 ```typescript
 await myDataSource
-  .createQueryBuilder('users')
+  .getRepository(User)
+  .createQueryBuilder()
   .restore()
   .where("id = :id", { id: 1 })
   .execute();

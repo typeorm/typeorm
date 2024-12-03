@@ -180,6 +180,12 @@ export class PostgresDriver implements Driver {
         "tsrange",
         "tstzrange",
         "daterange",
+        "int4multirange",
+        "int8multirange",
+        "nummultirange",
+        "tsmultirange",
+        "tstzmultirange",
+        "datemultirange",
         "geometry",
         "geography",
         "cube",
@@ -258,6 +264,11 @@ export class PostgresDriver implements Driver {
         metadataName: "varchar",
         metadataValue: "text",
     }
+
+    /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "$"
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -390,7 +401,7 @@ export class PostgresDriver implements Driver {
             }[]
         }
         const versionString = results.rows[0].version.replace(
-            /^PostgreSQL ([\d\.]+) .*$/,
+            /^PostgreSQL ([\d.]+) .*$/,
             "$1",
         )
         this.version = versionString
@@ -742,7 +753,7 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[\(\)\s]+/g, "") // remove whitespace
+            value = value.replace(/[()\s]+/g, "") // remove whitespace
             if (columnMetadata.isArray) {
                 /**
                  * Strips these groups from `{"1,2,3","",NULL}`:
@@ -750,7 +761,7 @@ export class PostgresDriver implements Driver {
                  * 2. ["", undefined]         <- cube of arity 0
                  * 3. [undefined, "NULL"]     <- NULL
                  */
-                const regexp = /(?:\"((?:[\d\s\.,])*)\")|(?:(NULL))/g
+                const regexp = /(?:"((?:[\d\s.,])*)")|(?:(NULL))/g
                 const unparsedArrayString = value
 
                 value = []
@@ -832,11 +843,16 @@ export class PostgresDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
                     return full
+                }
+
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
                 let value: any = parameters[key]
@@ -858,6 +874,7 @@ export class PostgresDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -996,7 +1013,7 @@ export class PostgresDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
-        if (defaultValue === null) {
+        if (defaultValue === null || defaultValue === undefined) {
             return undefined
         }
 
@@ -1028,10 +1045,6 @@ export class PostgresDriver implements Driver {
 
         if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`
-        }
-
-        if (defaultValue === undefined) {
-            return undefined
         }
 
         return `${defaultValue}`
@@ -1401,7 +1414,7 @@ export class PostgresDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "$" + (index + 1)
+        return this.parametersPrefix + (index + 1)
     }
 
     // -------------------------------------------------------------------------
@@ -1468,7 +1481,8 @@ export class PostgresDriver implements Driver {
                 port: credentials.port,
                 ssl: credentials.ssl,
                 connectionTimeoutMillis: options.connectTimeoutMS,
-                application_name: options.applicationName,
+                application_name:
+                    options.applicationName ?? credentials.applicationName,
                 max: options.poolSize,
             },
             options.extra || {},

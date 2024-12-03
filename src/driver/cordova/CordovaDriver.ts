@@ -74,8 +74,12 @@ export class CordovaDriver extends AbstractSqliteDriver {
             this.options.extra || {},
         )
 
-        const connection = await new Promise<any>((resolve) => {
-            this.sqlite.openDatabase(options, (db: any) => resolve(db))
+        const connection = await new Promise<any>((resolve, fail) => {
+            this.sqlite.openDatabase(
+                options,
+                (db: any) => resolve(db),
+                (err: any) => fail(err),
+            )
         })
 
         await new Promise<void>((ok, fail) => {

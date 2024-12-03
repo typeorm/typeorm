@@ -458,7 +458,7 @@ export class EntityMetadata {
     afterLoadListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER INSERT" type.
+     * Listener metadatas with "BEFORE INSERT" type.
      */
     beforeInsertListeners: EntityListenerMetadata[] = []
 
@@ -468,7 +468,7 @@ export class EntityMetadata {
     afterInsertListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER UPDATE" type.
+     * Listener metadatas with "BEFORE UPDATE" type.
      */
     beforeUpdateListeners: EntityListenerMetadata[] = []
 
@@ -478,7 +478,7 @@ export class EntityMetadata {
     afterUpdateListeners: EntityListenerMetadata[] = []
 
     /**
-     * Listener metadatas with "AFTER REMOVE" type.
+     * Listener metadatas with "BEFORE REMOVE" type.
      */
     beforeRemoveListeners: EntityListenerMetadata[] = []
 
@@ -515,6 +515,11 @@ export class EntityMetadata {
      * { id: "id", counterEmbed: { count: "counterEmbed.count" }, category: "category" }
      */
     propertiesMap: ObjectLiteral
+
+    /**
+     * Table comment. Not supported by all database types.
+     */
+    comment?: string
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -1061,6 +1066,8 @@ export class EntityMetadata {
             this.tableMetadataArgs.type === "junction"
         this.isClosureJunction =
             this.tableMetadataArgs.type === "closure-junction"
+
+        this.comment = this.tableMetadataArgs.comment
     }
 
     /**
@@ -1120,6 +1127,7 @@ export class EntityMetadata {
         return this.columns.filter((column) => {
             return (
                 column.default !== undefined ||
+                column.asExpression !== undefined ||
                 column.isGenerated ||
                 column.isCreateDate ||
                 column.isUpdateDate ||

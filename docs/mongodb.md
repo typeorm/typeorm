@@ -25,7 +25,7 @@ import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
 @Entity()
 export class User {
     @ObjectIdColumn()
-    id: ObjectId
+    _id: ObjectId
 
     @Column()
     firstName: string
@@ -281,6 +281,10 @@ Execute an aggregation framework pipeline against the collection.
 Perform a bulkWrite operation without a fluent API.
 
 #### `count`
+
+Count number of matching documents in the db to a query.
+
+### `countDocuments`
 
 Count number of matching documents in the db to a query.
 

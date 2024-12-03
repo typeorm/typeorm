@@ -257,34 +257,34 @@ export class EntityManager {
      * Creates a new entity instance and copies all entity properties from this object into a new entity.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObject?: DeepPartial<Entity>,
+        plainObject?: EntityLike,
     ): Entity
 
     /**
      * Creates a new entities and copies all entity properties from given objects into their new entities.
      * Note that it copies only properties that present in entity schema.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjects?: DeepPartial<Entity>[],
+        plainObjects?: EntityLike[],
     ): Entity[]
 
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
      */
-    create<Entity>(
+    create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
-        plainObjectOrObjects?: DeepPartial<Entity> | DeepPartial<Entity>[],
+        plainObjectOrObjects?: EntityLike | EntityLike[],
     ): Entity | Entity[] {
         const metadata = this.connection.getMetadata(entityClass)
 
         if (!plainObjectOrObjects) return metadata.create(this.queryRunner)
 
         if (Array.isArray(plainObjectOrObjects))
-            return (plainObjectOrObjects as DeepPartial<Entity>[]).map(
+            return (plainObjectOrObjects as EntityLike[]).map(
                 (plainEntityLike) => this.create(entityClass, plainEntityLike),
             )
 
@@ -955,7 +955,7 @@ export class EntityManager {
     }
 
     /**
-     * Checks whether any entity exists with the given condition
+     * Checks whether any entity exists with the given options.
      */
     exists<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -968,6 +968,19 @@ export class EntityManager {
                 metadata.name,
         )
             .setFindOptions(options || {})
+            .getExists()
+    }
+
+    /**
+     * Checks whether any entity exists with the given conditions.
+     */
+    async existsBy<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<boolean> {
+        const metadata = this.connection.getMetadata(entityClass)
+        return this.createQueryBuilder(entityClass, metadata.name)
+            .setFindOptions({ where })
             .getExists()
     }
 
@@ -1054,11 +1067,20 @@ export class EntityManager {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
     ): Promise<number | null> {
         const metadata = this.connection.getMetadata(entityClass)
+        const column = metadata.columns.find(
+            (item) => item.propertyPath === columnName,
+        )
+        if (!column) {
+            throw new TypeORMError(
+                `Column "${columnName}" was not found in table "${metadata.name}"`,
+            )
+        }
+
         const result = await this.createQueryBuilder(entityClass, metadata.name)
             .setFindOptions({ where })
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    String(columnName),
+                    column.databaseName,
                 )})`,
                 fnName,
             )

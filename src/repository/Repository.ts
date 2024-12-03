@@ -126,7 +126,7 @@ export class Repository<Entity extends ObjectLiteral> {
             | DeepPartial<Entity>
             | DeepPartial<Entity>[],
     ): Entity | Entity[] {
-        return this.manager.create<any>(
+        return this.manager.create(
             this.metadata.target as any,
             plainEntityLikeOrPlainEntityLikes as any,
         )
@@ -453,10 +453,30 @@ export class Repository<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Checks whether any entity exists that match given options.
+     * Checks whether any entity exists that matches the given options.
+     *
+     * @deprecated use `exists` method instead, for example:
+     *
+     * .exists()
      */
     exist(options?: FindManyOptions<Entity>): Promise<boolean> {
         return this.manager.exists(this.metadata.target, options)
+    }
+
+    /**
+     * Checks whether any entity exists that matches the given options.
+     */
+    exists(options?: FindManyOptions<Entity>): Promise<boolean> {
+        return this.manager.exists(this.metadata.target, options)
+    }
+
+    /**
+     * Checks whether any entity exists that matches the given conditions.
+     */
+    existsBy(
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): Promise<boolean> {
+        return this.manager.existsBy(this.metadata.target, where)
     }
 
     /**
@@ -675,20 +695,25 @@ export class Repository<Entity extends ObjectLiteral> {
      * Extends repository with provided functions.
      */
     extend<CustomRepository>(
-        custom: CustomRepository & ThisType<this & CustomRepository>,
+        customs: CustomRepository & ThisType<this & CustomRepository>,
     ): this & CustomRepository {
         // return {
         //     ...this,
         //     ...custom
         // };
-        const thisRepo = this.constructor as new (...args: any[]) => typeof this
+        const thisRepo: any = this.constructor
         const { target, manager, queryRunner } = this
-        const cls = new (class extends thisRepo {})(
-            target,
-            manager,
-            queryRunner,
-        )
-        Object.assign(cls, custom)
-        return cls as any
+        const ChildClass = class extends thisRepo {
+            constructor(
+                target: EntityTarget<Entity>,
+                manager: EntityManager,
+                queryRunner?: QueryRunner,
+            ) {
+                super(target, manager, queryRunner)
+            }
+        }
+        for (const custom in customs)
+            ChildClass.prototype[custom] = customs[custom]
+        return new ChildClass(target, manager, queryRunner) as any
     }
 }

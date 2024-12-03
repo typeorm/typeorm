@@ -31,7 +31,7 @@ describe("github issues > #9318 Change version query from SHOW server_version to
                     connection.driver as PostgresDriver
                 const result = await connection.query("SELECT VERSION()")
                 const dbVersion = result[0]["version"].replace(
-                    /^PostgreSQL ([\d\.]+) .*$/,
+                    /^PostgreSQL ([\d.]+) .*$/,
                     "$1",
                 )
                 const versionGreaterOfEqualTo12 = VersionUtils.isGreaterOrEqual(
