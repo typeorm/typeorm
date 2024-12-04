@@ -598,6 +598,19 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
                                 }
                             } else if (
+                                DriverUtils.isGaussDBFamily(
+                                    this.connection.driver,
+                                ) &&
+                                this.connection.driver.spatialTypes.indexOf(
+                                    column.type,
+                                ) !== -1
+                            ) {
+                                if (column.srid != null) {
+                                    expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                                } else {
+                                    expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                                }
+                            } else if (
                                 this.connection.driver.options.type ===
                                     "mssql" &&
                                 this.connection.driver.spatialTypes.indexOf(

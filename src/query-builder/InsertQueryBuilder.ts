@@ -435,6 +435,13 @@ export class InsertQueryBuilder<
             query += ` AS "${this.alias}"`
         }
 
+        if (
+            this.alias !== this.getMainTableName() &&
+            DriverUtils.isGaussDBFamily(this.connection.driver)
+        ) {
+            query += ` AS "${this.alias}"`
+        }
+
         // add columns expression
         if (columnsExpression) {
             query += `(${columnsExpression})`
@@ -459,10 +466,8 @@ export class InsertQueryBuilder<
         // add VALUES expression
         if (valuesExpression) {
             if (
-                (
-                    this.connection.driver.options.type === "oracle" ||
-                    this.connection.driver.options.type === "sap"
-                ) &&
+                (this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "sap") &&
                 this.getValueSets().length > 1
             ) {
                 query += ` ${valuesExpression}`
@@ -517,7 +522,21 @@ export class InsertQueryBuilder<
                         }
                         if (
                             indexPredicate &&
+                            !DriverUtils.isGaussDBFamily(this.connection.driver)
+                        ) {
+                            throw new TypeORMError(
+                                `indexPredicate option is not supported by the current database driver`,
+                            )
+                        }
+                        if (
+                            indexPredicate &&
                             DriverUtils.isPostgresFamily(this.connection.driver)
+                        ) {
+                            conflictTarget += ` WHERE ( ${indexPredicate} )`
+                        }
+                        if (
+                            indexPredicate &&
+                            DriverUtils.isGaussDBFamily(this.connection.driver)
                         ) {
                             conflictTarget += ` WHERE ( ${indexPredicate} )`
                         }
@@ -602,6 +621,24 @@ export class InsertQueryBuilder<
                             .join(" OR ")
                         query += ") "
                     }
+                    if (
+                        Array.isArray(overwrite) &&
+                        skipUpdateIfNoValuesChanged &&
+                        DriverUtils.isGaussDBFamily(this.connection.driver)
+                    ) {
+                        query += ` WHERE (`
+                        query += overwrite
+                            .map(
+                                (column) =>
+                                    `${tableName}.${this.escape(
+                                        column,
+                                    )} IS DISTINCT FROM EXCLUDED.${this.escape(
+                                        column,
+                                    )}`,
+                            )
+                            .join(" OR ")
+                        query += ") "
+                    }
                 }
             } else if (
                 this.connection.driver.supportedUpsertTypes.includes(
@@ -648,7 +685,8 @@ export class InsertQueryBuilder<
             (DriverUtils.isPostgresFamily(this.connection.driver) ||
                 this.connection.driver.options.type === "oracle" ||
                 this.connection.driver.options.type === "cockroachdb" ||
-                DriverUtils.isMySQLFamily(this.connection.driver))
+                DriverUtils.isMySQLFamily(this.connection.driver) ||
+                DriverUtils.isGaussDBFamily(this.connection.driver))
         ) {
             query += ` RETURNING ${returningExpression}`
         }
@@ -922,6 +960,19 @@ export class InsertQueryBuilder<
                             }
                         } else if (
                             DriverUtils.isPostgresFamily(
+                                this.connection.driver,
+                            ) &&
+                            this.connection.driver.spatialTypes.indexOf(
+                                column.type,
+                            ) !== -1
+                        ) {
+                            if (column.srid != null) {
+                                expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                            } else {
+                                expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                            }
+                        } else if (
+                            DriverUtils.isGaussDBFamily(
                                 this.connection.driver,
                             ) &&
                             this.connection.driver.spatialTypes.indexOf(

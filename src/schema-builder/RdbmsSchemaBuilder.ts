@@ -604,7 +604,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (
                 DriverUtils.isMySQLFamily(this.connection.driver) ||
-                this.connection.driver.options.type === 'postgres'
+                this.connection.driver.options.type === "postgres" ||
+                this.connection.driver.options.type === "gaussdb"
             ) {
                 const newComment = metadata.comment
                 await this.queryRunner.changeTableComment(table, newComment)
@@ -1006,10 +1007,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates indices for materialized views.
      */
     protected async createNewViewIndices(): Promise<void> {
-        // Only PostgreSQL supports indices for materialized views.
+        // Only PostgreSQL、GaussDB supports indices for materialized views.
         if (
-            this.connection.options.type !== "postgres" ||
-            !DriverUtils.isPostgresFamily(this.connection.driver)
+            !["postgres", "gaussdb"].includes(
+                this.connection.driver.options.type,
+            ) ||
+            !DriverUtils.isPostgresFamily(this.connection.driver) ||
+            !DriverUtils.isGaussDBFamily(this.connection.driver)
         ) {
             return
         }

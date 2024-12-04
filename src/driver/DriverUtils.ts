@@ -46,6 +46,9 @@ export class DriverUtils {
         )
     }
 
+    static isGaussDBFamily(driver: Driver): boolean {
+        return ["gaussdb"].includes(driver.options.type)
+    }
     /**
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.

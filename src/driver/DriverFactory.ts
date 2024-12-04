@@ -19,6 +19,7 @@ import { SapDriver } from "./sap/SapDriver"
 import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
 import { SpannerDriver } from "./spanner/SpannerDriver"
+import { GaussDBDriver } from "./gaussdb/GaussDBDriver"
 
 /**
  * Helps to create drivers.
@@ -68,6 +69,8 @@ export class DriverFactory {
                 return new CapacitorDriver(connection)
             case "spanner":
                 return new SpannerDriver(connection)
+            case "gaussdb":
+                return new GaussDBDriver(connection)
             default:
                 throw new MissingDriverError(type, [
                     "aurora-mysql",
@@ -89,6 +92,7 @@ export class DriverFactory {
                     "sqlite",
                     "sqljs",
                     "spanner",
+                    "gaussdb",
                 ])
         }
     }

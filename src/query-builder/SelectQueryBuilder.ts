@@ -2235,6 +2235,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 .join(", ")
 
             select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `
+        }
+        if (
+            DriverUtils.isGaussDBFamily(driver) &&
+            selectDistinctOn.length > 0
+        ) {
+            const selectDistinctOnMap = selectDistinctOn
+                .map((on) => this.replacePropertyNames(on))
+                .join(", ")
+
+            select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `
         } else if (selectDistinct) {
             select = "SELECT DISTINCT "
         }
@@ -2648,7 +2658,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (
                 !(
                     DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
+                    driver.options.type === "cockroachdb" ||
+                    DriverUtils.isGaussDBFamily(driver)
                 )
             ) {
                 throw new TypeORMError(
@@ -2686,6 +2697,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return " LOCK IN SHARE MODE"
                 } else if (DriverUtils.isPostgresFamily(driver)) {
                     return " FOR SHARE" + lockTablesClause + onLockExpression
+                } else if (DriverUtils.isGaussDBFamily(driver)) {
+                    return " FOR SHARE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "oracle") {
                     return " FOR UPDATE"
                 } else if (driver.options.type === "mssql") {
@@ -2712,6 +2725,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 }
             case "pessimistic_partial_write":
                 if (DriverUtils.isPostgresFamily(driver)) {
+                    return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
+                }
+                if (DriverUtils.isGaussDBFamily(driver)) {
                     return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
                 } else if (DriverUtils.isMySQLFamily(driver)) {
                     return " FOR UPDATE SKIP LOCKED"
@@ -2744,6 +2760,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 }
             case "for_key_share":
                 if (DriverUtils.isPostgresFamily(driver)) {
+                    return (
+                        " FOR KEY SHARE" + lockTablesClause + onLockExpression
+                    )
+                } else if (DriverUtils.isGaussDBFamily(driver)) {
                     return (
                         " FOR KEY SHARE" + lockTablesClause + onLockExpression
                     )
@@ -2857,6 +2877,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     } else {
                         selectionPath = `ST_AsGeoJSON(${selectionPath})::json`
                     }
+                if (DriverUtils.isGaussDBFamily(this.connection.driver))
+                    if (column.precision) {
+                        // cast to JSON to trigger parsing in the driver
+                        selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
+                    } else {
+                        selectionPath = `ST_AsGeoJSON(${selectionPath})::json`
+                    }
                 if (this.connection.driver.options.type === "mssql")
                     selectionPath = `${selectionPath}.ToString()`
             }
@@ -2941,7 +2968,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (
             this.connection.driver.options.type === "cockroachdb" ||
-            DriverUtils.isPostgresFamily(this.connection.driver)
+            DriverUtils.isPostgresFamily(this.connection.driver) ||
+            DriverUtils.isGaussDBFamily(this.connection.driver)
         ) {
             // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
             // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
