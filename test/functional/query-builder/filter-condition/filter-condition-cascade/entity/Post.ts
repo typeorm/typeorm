@@ -20,7 +20,8 @@ export class Post {
     title: string
 
     @ManyToOne(() => User, {
-        filterConditionCascade: true,
+        filterConditionCascade: true, // TODO: Fix: This is singhandedly quadrupling the joins
+        // eager: true
     })
     author: User
 

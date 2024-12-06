@@ -317,6 +317,67 @@ describe("query builder > filter condition > filter condition cascade", () => {
             }),
         ))
 
+    it.only("filterConditionsCascade should work properly with left join and select with conditions", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository(User)
+                const postRepository = dataSource.getRepository(Post)
+
+                const user = new User()
+                user.isDeactivated = false
+                await userRepository.save(user)
+
+                const post = new Post()
+                post.title = "test"
+                post.author = user
+                await postRepository.save(post)
+
+                const posts = await postRepository
+                    .createQueryBuilder("post")
+                    .leftJoinAndSelect(
+                        "post.author",
+                        "author",
+                        "author.name ILIKE :name",
+                        {
+                            name: "%John%",
+                        },
+                    )
+                    .getMany()
+                expect(posts.length).to.equal(1)
+                expect(posts[0].author).to.exist
+
+                const posts2 = await postRepository
+                    .createQueryBuilder("post")
+                    .leftJoinAndSelect(
+                        "post.author",
+                        "author",
+                        "author.name ILIKE :name",
+                        {
+                            name: "%Jane%",
+                        },
+                    )
+                    .getMany()
+                expect(posts2.length).to.equal(1)
+                expect(posts2[0].author).to.not.exist
+
+                user.isDeactivated = true
+                await userRepository.save(user)
+
+                const posts3 = await postRepository
+                    .createQueryBuilder("post")
+                    .leftJoinAndSelect(
+                        "post.author",
+                        "author",
+                        "author.name ILIKE :name",
+                        {
+                            name: "%John%",
+                        },
+                    )
+                    .getMany()
+                expect(posts3.length).to.equal(0)
+            }),
+        ))
+
     it("filterConditionsCascade should not be affected by the exclusion of soft-deleted relations", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

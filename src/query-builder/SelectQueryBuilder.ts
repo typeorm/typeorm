@@ -2169,13 +2169,24 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         }
                         // In this case, no need to create a separate join attribute for the cascading filter condition relation
                         // because the conditions are identical, we can share the same join attribute
-                    } else {
+                    } else if (
+                        // For cascading filter condition relations, we only want to create a duplicate, "filter-condition only" join
+                        // once per relation.
+                        this.expressionMap.joinAttributes.every(
+                            (attr) =>
+                                attr.relation !== joinAttribute.relation ||
+                                !attr.alias?.name.endsWith("_cfc"),
+                        )
+                    ) {
                         // Create a separate join attribute for the cascading filter condition relation
                         const duplicateJoinAttribute = new JoinAttribute(
                             this.connection,
                             this.expressionMap,
                             joinAttribute,
                         )
+                        // Duplicate join attribute will only have filter conditions applied to it
+                        duplicateJoinAttribute.condition = undefined
+
                         this.expressionMap.joinAttributes.push(
                             duplicateJoinAttribute,
                         )
@@ -2196,6 +2207,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 }
 
                 if (joinAttributeMetadata.filterColumns?.length) {
+                    // If we have a duplicate join attribute, this means the condition is cascading,
+                    // so we need to apply the condition to one of the join attributes
                     const targetJoinAttribute =
                         duplicateJoinAttr || joinAttribute
 

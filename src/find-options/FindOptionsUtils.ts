@@ -477,7 +477,9 @@ export class FindOptionsUtils {
             const joinAlreadyAdded = Boolean(
                 qb.expressionMap.joinAttributes.find(
                     (joinAttribute) =>
-                        joinAttribute.alias.name === relationAlias,
+                        joinAttribute.alias.name === relationAlias ||
+                        joinAttribute.relation?.propertyPath ===
+                            relation.propertyPath,
                 ),
             )
 

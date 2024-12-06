@@ -14,6 +14,9 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number
 
+    @Column({ default: "John Doe" })
+    name: string
+
     @Column({
         rawFilterCondition(alias) {
             return `${alias} != true`
