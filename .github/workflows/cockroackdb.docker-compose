@@ -3,6 +3,6 @@ services:
   cockroachdb:
     image: "cockroachdb/cockroach:v23.1.9"
     container_name: "typeorm-cockroachdb"
-    command: start-single-node --insecure --cache=1 --store=type=mem,size=1
+    command: start-single-node --insecure --cache=0.75 --store=type=mem,size=0.75
     ports:
       - "26257:26257"
