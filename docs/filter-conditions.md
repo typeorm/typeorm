@@ -106,9 +106,10 @@ FROM
 
 Cascading filter conditions are robust, and will work through all kinds of relations and at any depth in an intuitive manner. It uses a combination of INNER JOINs and subqueries to achieve this.
 
-For example, if you want to fetch a Category of Posts, and Posts should be filtered out if their `author` (User) is deactivated.
+For example, if you want to fetch a Category of Posts (many-to-many), and Posts should be filtered out if their `author` (User) is deactivated:
 
 ```typescript
+// The Category entity
 @Entity()
 export class Category {
     @OneToMany(() => Post, (post) => post.category)
@@ -116,7 +117,18 @@ export class Category {
 }
 ```
 
-Now if you fetch category with the `posts` relation, the posts will be filtered out if their `author` is deactivated, with SQL that looks something like this:
+When you fetch category with the `posts` relation, the posts will be filtered out if their `author` is deactivated:
+
+```typescript
+// Fetch Categories with their posts
+const categories = await categoryRepository.find({
+    relations: {
+        posts: true,
+    },
+})
+```
+
+Which generates the following SQL:
 
 ```sql
 SELECT
