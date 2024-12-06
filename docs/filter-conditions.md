@@ -104,9 +104,9 @@ FROM
     AND ("User"."isDeactivated" = FALSE)
 ```
 
-Cascading filter conditions are robust, and will work through all kinds of relations and at any depth in an intuitive manner. It uses a combination of INNER JOINs and subqueries to achieve this.
+Cascading filter conditions are robust, and will work through all kinds of relations and at any depth in an intuitive manner. It requires no modification to existing queries. It uses a combination of INNER JOINs and subqueries to achieve this.
 
-For example, if you want to fetch a Category of Posts (many-to-many), and Posts should be filtered out if their `author` (User) is deactivated:
+For example, say you have a Category entity with a many-to-many relation to Post, and Posts should be filtered out if their `author` (User) is deactivated:
 
 ```typescript
 // The Category entity
@@ -115,12 +115,33 @@ export class Category {
     @OneToMany(() => Post, (post) => post.category)
     posts: Post[]
 }
+
+// The Post entity
+@Entity()
+export class Post {
+    @ManyToOne(() => User, {
+        // Posts will be filtered out if one of User's filter
+        // conditions is not met.
+        filterConditionCascade: true,
+    })
+    author: User
+}
+
+// The User entity
+@Entity()
+export class User {
+    @Column({
+        rawFilterCondition: (column) => `${column} = FALSE`,
+    })
+    isDeactivated: boolean
+}
 ```
 
 When you fetch category with the `posts` relation, the posts will be filtered out if their `author` is deactivated:
 
 ```typescript
-// Fetch Categories with their posts
+// Fetch Categories with their posts. Posts will be filtered out
+// if their `author` is deactivated.
 const categories = await categoryRepository.find({
     relations: {
         posts: true,
@@ -128,7 +149,7 @@ const categories = await categoryRepository.find({
 })
 ```
 
-Which generates the following SQL:
+And it generates the following SQL to do so:
 
 ```sql
 SELECT
@@ -144,6 +165,8 @@ LEFT JOIN (
     AND ("User"."isDeactivated" = FALSE)
 ) "Post" ON "Post"."categoryId" = "Category"."id"
 ```
+
+## Duplicate Joins
 
 Sometimes you have your own conditions set on a join when you use QueryBuilder. In that case, a duplicate join is created in order to avoid conflicts between the filter condition and your own conditions.
 
@@ -168,12 +191,12 @@ export class Post {
 }
 ```
 
-Now, if we want to fetch comments with their `user`, but we have some additional condition we want to apply on the `user` join, we might have to do something like this:
+Now, if we want to fetch posts with their `user`, but we have some additional condition we want to apply on the `user` join, we might do something like this:
 
 ```typescript
-const comments = await commentRepository
-    .createQueryBuilder("comment")
-    .leftJoinAndSelect("comment.user", "user", "user.name ILIKE :name", {
+const posts = await postRepository
+    .createQueryBuilder("post")
+    .leftJoinAndSelect("post.user", "user", "user.name ILIKE :name", {
         name: "%John%",
     })
     .getMany()
@@ -211,6 +234,16 @@ const posts = await postRepository.find({
         author: {
             isDeactivated: false,
         },
+    },
+})
+```
+
+Or you can disable all conditions on `author` at once:
+
+```typescript
+const posts = await postRepository.find({
+    applyFilterConditions: {
+        author: false,
     },
 })
 ```
