@@ -4,7 +4,7 @@ import {
     JoinTable,
     ManyToMany,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "../../../../../../src"
 
 @Entity()
 export class User {
@@ -13,7 +13,7 @@ export class User {
 
     @Column({
         rawFilterCondition(alias) {
-            return `${alias} = false`
+            return `${alias} != true`
         },
     })
     isDeactivated: boolean

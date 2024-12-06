@@ -1,3 +1,14 @@
+## About This Fork
+
+This fork introduces the ability to specify global filter conditions declaratively on entity columns through a `rawFilterCondition` property on the `@Column` decorator. It also adds `filterConditionCascade` for use with one-to-one and many-to-one relations, which allows filter conditions on the related entity to cascade and cause the current entity to be filtered from query results. Works with both query builder and repository find methods by default. To disable filter conditions, you can set `applyFilterConditions` to false on the `FindOptions` object. You can also pass an entity-like object to `applyFilterConditions` to disable specific filter conditions without affecting others.
+
+This was developed to add reliable row-level security to our application until TypeORM adds their own implementation.
+
+The documentation has been updated to reflect these changes.
+See [docs/filter-conditions.md](./docs/filter-conditions.md) for more details.
+
+## Original README
+
 <div align="center">
   <a href="http://typeorm.io/">
     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">

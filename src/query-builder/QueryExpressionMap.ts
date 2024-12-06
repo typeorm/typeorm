@@ -16,6 +16,8 @@ import { TypeORMError } from "../error"
 import { WhereClause } from "./WhereClause"
 import { UpsertType } from "../driver/types/UpsertType"
 import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
+import { FindOptionsApplyFilterConditions } from "../find-options/FindOptionsApplyFilterConditions"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -225,7 +227,8 @@ export class QueryExpressionMap {
     /**
      * Indicates if filter conditions should be applied to the query.
      */
-    applyFilterConditions: boolean = true
+    applyFilterConditions: boolean | FindOptionsApplyFilterConditions<any> =
+        true
 
     /**
      * Parameters used to be escaped in final query.
@@ -256,6 +259,11 @@ export class QueryExpressionMap {
      * Indicates if query builder creates a subquery.
      */
     subQuery: boolean = false
+
+    /**
+     * Indicates if query builder is a cascading filter condition relation subquery.
+     */
+    isCascadingFilterConditionRelationSubquery: boolean = false
 
     /**
      * Indicates if property names are prefixed with alias names during property replacement.
@@ -394,6 +402,72 @@ export class QueryExpressionMap {
         return this.orderBys
     }
 
+    get skippedFilterConditions(): (ColumnMetadata | RelationMetadata)[] {
+        if (typeof this.applyFilterConditions === "object") {
+            /** Recursively flatten the applyFilterConditions object.
+             * Example input:
+             * {
+             *    isHidden: false,
+             *    author: {
+             *      isDeactivated: false
+             *    }
+             * }
+             *
+             * Example output:
+             * [
+             *    {propertyPath: 'isHidden', aliasName: `isHidden`},
+             *    {propertyPath: 'author.isDeactivated', aliasName: `author__isDeactivated`}
+             * ]
+             */
+            const flattenObject = (
+                obj: FindOptionsApplyFilterConditions<any>,
+                entity = this.mainAlias!.metadata,
+            ): (ColumnMetadata | RelationMetadata)[] => {
+                return Object.keys(obj).reduce(
+                    (
+                        acc: (ColumnMetadata | RelationMetadata)[],
+                        propertyPath: string,
+                    ) => {
+                        const value = obj[propertyPath]
+                        if (typeof value === "object" && value !== null) {
+                            const relationMetadata =
+                                entity.findRelationWithPropertyPath(
+                                    propertyPath,
+                                )
+
+                            if (relationMetadata?.inverseEntityMetadata)
+                                return [
+                                    ...acc,
+                                    ...flattenObject(
+                                        value,
+                                        relationMetadata?.inverseEntityMetadata,
+                                    ),
+                                ]
+
+                            return acc
+                        }
+
+                        if (value === true) return acc
+
+                        const relationMetadata =
+                            entity.findRelationWithPropertyPath(propertyPath)
+                        const columnMetadata =
+                            entity.findColumnWithPropertyName(propertyPath)
+
+                        const metadataObj = relationMetadata || columnMetadata
+                        if (metadataObj) return [...acc, metadataObj]
+
+                        return acc
+                    },
+                    [],
+                )
+            }
+
+            return flattenObject(this.applyFilterConditions)
+        }
+        return []
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -463,6 +537,43 @@ export class QueryExpressionMap {
         const [aliasName, propertyPath] = aliasExpression.split(".")
         const alias = this.findAliasByName(aliasName)
         return alias.metadata.findColumnWithPropertyName(propertyPath)
+    }
+
+    /**
+     * Finds an existing join relation alias for a given alias and relation.
+     */
+    getExistingJoinRelationAlias(alias: string, relation: RelationMetadata) {
+        let existingAlias: string | undefined = undefined
+
+        // TODO: Review this validation
+        for (const join of this.joinAttributes) {
+            if (
+                join.condition !== undefined ||
+                join.mapToProperty !== undefined ||
+                join.isMappingMany !== undefined ||
+                join.direction !== "LEFT" ||
+                join.entityOrProperty !== `${alias}.${relation.propertyPath}`
+            ) {
+                continue
+            }
+            existingAlias = join.alias.name
+            break
+        }
+
+        return existingAlias
+    }
+
+    buildRelationAlias(
+        parentAlias: string,
+        relationPropertyPath: string,
+        joiner: string = "__",
+    ): string {
+        return DriverUtils.buildAlias(
+            this.connection.driver,
+            { joiner },
+            parentAlias,
+            relationPropertyPath.replace(".", "_"),
+        )
     }
 
     /**

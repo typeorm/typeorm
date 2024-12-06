@@ -95,6 +95,7 @@ export class SubjectDatabaseEntityLoader {
 
                 const findOptions: FindManyOptions<any> = {
                     loadEagerRelations: false,
+                    applyFilterConditions: false,
                     loadRelationIds: {
                         relations: loadRelationPropertyPaths,
                         disableMixedMap: true,

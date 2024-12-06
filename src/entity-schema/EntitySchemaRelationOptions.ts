@@ -34,6 +34,12 @@ export interface EntitySchemaRelationOptions {
     eager?: boolean
 
     /**
+     * If set, relation rows that are filtered by `rawFilterCondition` will cause rows of this entity to be excluded from results.
+     * Can be used only for many-to-one and one-to-one relations.
+     */
+    filterConditionCascade?: boolean;
+
+    /**
      * Indicates if persistence is enabled for the relation.
      * By default its enabled, but if you want to avoid any changes in the relation to be reflected in the database you can disable it.
      * If its disabled you can only change a relation from inverse side of a relation or using relation query builder functionality.

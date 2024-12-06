@@ -857,7 +857,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (
                 this.expressionMap.queryType === "select" &&
                 !this.expressionMap.withDeleted &&
-                metadata.deleteDateColumn
+                metadata.deleteDateColumn &&
+                !this.expressionMap.isCascadingFilterConditionRelationSubquery
             ) {
                 const column = this.expressionMap.aliasNamePrefixingEnabled
                     ? this.expressionMap.mainAlias!.name +
@@ -872,9 +873,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (
                 this.expressionMap.queryType === "select" &&
                 metadata.filterColumns.length &&
-                this.expressionMap.applyFilterConditions
+                this.expressionMap.applyFilterConditions !== false
             ) {
                 metadata.filterColumns.forEach((filterColumn) => {
+                    if (
+                        typeof this.expressionMap.applyFilterConditions ===
+                            "object" &&
+                        this.expressionMap.applyFilterConditions !== null
+                    ) {
+                        if (
+                            this.expressionMap.skippedFilterConditions.some(
+                                (skipped) => skipped === filterColumn,
+                            )
+                        )
+                            return
+                    }
                     const column = this.expressionMap.aliasNamePrefixingEnabled
                         ? `${this.expressionMap.mainAlias!.name}.${
                               filterColumn.propertyName

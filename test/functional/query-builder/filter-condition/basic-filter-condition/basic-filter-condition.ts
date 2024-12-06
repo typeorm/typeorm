@@ -1,14 +1,15 @@
-import "reflect-metadata"
-import {
-    createTestingConnections,
-    closeTestingConnections,
-    reloadTestingDatabases,
-} from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
+import { DataSource } from "../../../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
 import { User } from "./entity/User"
+import { Post } from "./entity/Post"
+import { Project } from "./entity/Project"
 
-describe("query builder > filter condition", () => {
+describe("query builder > filter condition > basic filter condition", () => {
     let dataSources: DataSource[]
     before(
         async () =>
@@ -117,6 +118,34 @@ describe("query builder > filter condition", () => {
 
                 expect(userWithFriends?.friends.length).to.equal(1)
                 expect(userWithFriends?.friends[0].id).to.equal(friend1.id)
+            }),
+        ))
+
+    it("should apply column filter to relations without affecting main entity", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository(User)
+                const postRepository = dataSource.getRepository(Post)
+                const projectRepository = dataSource.getRepository(Project)
+
+                const user = new User()
+                user.isDeactivated = false
+                await userRepository.save(user)
+
+                const post = new Post()
+                post.isHidden = true
+                post.author = user
+                await postRepository.save(post)
+
+                const project = new Project()
+                project.posts = [post]
+                await projectRepository.save(project)
+
+                const { posts } = await projectRepository.findOneOrFail({
+                    where: { id: project.id },
+                    relations: { posts: true },
+                })
+                expect(posts.length).to.equal(0)
             }),
         ))
 })

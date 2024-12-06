@@ -3,11 +3,11 @@ import { FindOneOptions } from "./FindOneOptions"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { FindRelationsNotFoundError } from "../error"
 import { EntityMetadata } from "../metadata/EntityMetadata"
-import { DriverUtils } from "../driver/DriverUtils"
 import { FindTreeOptions } from "./FindTreeOptions"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { RelationMetadata } from "../metadata/RelationMetadata"
 import { EntityPropertyNotFoundError } from "../error"
+import { FindOptionsApplyFilterConditions } from "./FindOptionsApplyFilterConditions"
 
 /**
  * Utilities to work with FindOptions.
@@ -44,6 +44,7 @@ export class FindOptionsUtils {
                 typeof possibleOptions.loadEagerRelations === "boolean" ||
                 typeof possibleOptions.withDeleted === "boolean" ||
                 typeof possibleOptions.applyFilterConditions === "boolean" ||
+                typeof possibleOptions.applyFilterConditions === "object" ||
                 typeof possibleOptions.relationLoadStrategy === "string" ||
                 typeof possibleOptions.transaction === "boolean")
         )
@@ -306,9 +307,7 @@ export class FindOptionsUtils {
         // go through all matched relations and add join for them
         matchedBaseRelations.forEach((relation) => {
             // generate a relation alias
-            let relationAlias: string = DriverUtils.buildAlias(
-                qb.connection.driver,
-                { joiner: "__" },
+            const relationAlias = qb.expressionMap.buildRelationAlias(
                 alias,
                 relation.propertyPath,
             )
@@ -388,32 +387,19 @@ export class FindOptionsUtils {
     ) {
         metadata.eagerRelations.forEach((relation) => {
             // generate a relation alias
-            let relationAlias: string = DriverUtils.buildAlias(
-                qb.connection.driver,
-                { joiner: "__" },
+            let relationAlias = qb.expressionMap.buildRelationAlias(
                 alias,
                 relation.propertyName,
             )
 
             // add a join for the relation
             // Checking whether the relation wasn't joined yet.
-            let addJoin = true
-            // TODO: Review this validation
-            for (const join of qb.expressionMap.joinAttributes) {
-                if (
-                    join.condition !== undefined ||
-                    join.mapToProperty !== undefined ||
-                    join.isMappingMany !== undefined ||
-                    join.direction !== "LEFT" ||
-                    join.entityOrProperty !==
-                        `${alias}.${relation.propertyPath}`
-                ) {
-                    continue
-                }
-                addJoin = false
-                relationAlias = join.alias.name
-                break
-            }
+            const existingAlias = qb.expressionMap.getExistingJoinRelationAlias(
+                alias,
+                relation,
+            )
+            relationAlias = existingAlias || relationAlias
+            const addJoin = !existingAlias
 
             const joinAlreadyAdded = Boolean(
                 qb.expressionMap.joinAttributes.find(
@@ -451,6 +437,55 @@ export class FindOptionsUtils {
                 relationAlias,
                 relation.inverseEntityMetadata,
             )
+        })
+    }
+
+    public static joinCascadingFilterConditionRelations(
+        qb: SelectQueryBuilder<any>,
+        alias: string,
+        metadata: EntityMetadata,
+        applyFilterConditions: boolean | FindOptionsApplyFilterConditions<any>,
+    ) {
+        metadata.cascadingFilterConditionRelations.forEach((relation) => {
+            /** Don't join the FROM table to itself */
+            if (relation.inverseEntityMetadata === metadata) return
+
+            if (
+                typeof applyFilterConditions === "object" &&
+                (applyFilterConditions?.[relation.propertyPath] === false ||
+                    relation.isCascadingFilterConditionSkipped(
+                        applyFilterConditions,
+                    ))
+            )
+                return
+
+            // generate a relation alias
+            let relationAlias = qb.expressionMap.buildRelationAlias(
+                alias,
+                relation.propertyName,
+            )
+
+            // add a join for the relation
+            // Checking whether the relation wasn't joined yet.
+            const existingAlias = qb.expressionMap.getExistingJoinRelationAlias(
+                alias,
+                relation,
+            )
+            relationAlias = existingAlias || relationAlias
+            const addJoin = !existingAlias
+
+            const joinAlreadyAdded = Boolean(
+                qb.expressionMap.joinAttributes.find(
+                    (joinAttribute) =>
+                        joinAttribute.alias.name === relationAlias ||
+                        joinAttribute.relation?.propertyPath ===
+                            relation.propertyPath,
+                ),
+            )
+
+            if (addJoin && !joinAlreadyAdded) {
+                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
+            }
         })
     }
 }

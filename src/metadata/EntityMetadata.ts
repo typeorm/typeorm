@@ -343,6 +343,11 @@ export class EntityMetadata {
     eagerRelations: RelationMetadata[] = []
 
     /**
+     * List of relations that have cascading filter conditions.
+     */
+    cascadingFilterConditionRelations: RelationMetadata[] = []
+
+    /**
      * List of eager relations this metadata has.
      */
     lazyRelations: RelationMetadata[] = []
@@ -889,6 +894,38 @@ export class EntityMetadata {
             )
         }
         return this
+    }
+
+    /**
+     * Find relations that are many-to-many or one-to-many and have cascading
+     * filter conditions on the inverse side. For these relations, filter
+     * conditions should be applied to the inverse side.
+     * @returns RelationMetadata[]
+     */
+    findImplicitlyCascadingFilterConditionRelations(): RelationMetadata[] {
+        /**
+         *  If relation is many-to-many or one-to-many, then we want
+         * to implicitly apply cascading filter conditions to exclude
+         * inverse entity rows that don't meet their filter condition.
+         */
+        return this.relations.filter((relation) => {
+            const isInverseSideMany =
+                relation.isManyToMany || relation.isOneToMany
+            const inverseHasCascadingFilterConditionRelations =
+                !!relation.inverseEntityMetadata
+                    .cascadingFilterConditionRelations.length
+
+            return (
+                isInverseSideMany && inverseHasCascadingFilterConditionRelations
+            )
+        })
+    }
+
+    findAllCascadingFilterConditionRelations(): RelationMetadata[] {
+        return [
+            ...this.cascadingFilterConditionRelations,
+            ...this.findImplicitlyCascadingFilterConditionRelations(),
+        ]
     }
 
     // -------------------------------------------------------------------------
