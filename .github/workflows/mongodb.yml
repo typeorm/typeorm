@@ -27,11 +27,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
     - run: npm i
-    
     - run: cp .github/workflows/mongodb.ormconfig.json ormconfig.json
-    
     - run: cat ormconfig.json
-    
     - run: npm test
