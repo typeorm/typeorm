@@ -2,7 +2,7 @@ version: "3"
 services:
   oracle:
     build:
-      context: ../../docker/oracle
+      context: ../../../docker/oracle
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
