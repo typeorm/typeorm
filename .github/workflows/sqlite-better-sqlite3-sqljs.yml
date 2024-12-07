@@ -24,7 +24,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    
     - run: npm i
+
     - run: cp .github/workflows/sqlite-better-sqlite3-sqljs.ormconfig.json ormconfig.json
+    
     - run: cat ormconfig.json
+    
     - run: npm test
