@@ -7,15 +7,15 @@ import {
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
+import { expect } from "chai"
 
 // todo: fix later
-describe.skip("persistence > cascades > remove", () => {
+describe("persistence > cascades > remove", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
-                enabledDrivers: ["mysql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -25,14 +25,12 @@ describe.skip("persistence > cascades > remove", () => {
         Promise.all(
             connections.map(async (connection) => {
                 await connection.manager.save(new Photo("Photo #1"))
+                const photoOneToMany1 = new Photo("one-to-many #1")
 
                 const user = new User()
                 user.id = 1
                 user.name = "Mr. Cascade Danger"
-                user.manyPhotos = [
-                    new Photo("one-to-many #1"),
-                    new Photo("one-to-many #2"),
-                ]
+                user.manyPhotos = [photoOneToMany1, new Photo("one-to-many #2")]
                 user.manyToManyPhotos = [
                     new Photo("many-to-many #1"),
                     new Photo("many-to-many #2"),
@@ -49,29 +47,33 @@ describe.skip("persistence > cascades > remove", () => {
                     )
                     .getOne()
 
-                loadedUser!.id.should.be.equal(1)
-                loadedUser!.name.should.be.equal("Mr. Cascade Danger")
+                expect(loadedUser!.id).to.be.eql(1)
+                expect(loadedUser!.name).to.be.eql("Mr. Cascade Danger")
 
                 const manyPhotoNames = loadedUser!.manyPhotos.map(
                     (photo) => photo.name,
                 )
-                manyPhotoNames.length.should.be.equal(2)
-                manyPhotoNames.should.deep.include("one-to-many #1")
-                manyPhotoNames.should.deep.include("one-to-many #2")
+
+                expect(manyPhotoNames.length).to.be.eql(2)
+                expect(manyPhotoNames).to.include("one-to-many #1")
+                expect(manyPhotoNames).to.include("one-to-many #2")
 
                 const manyToManyPhotoNames = loadedUser!.manyToManyPhotos.map(
                     (photo) => photo.name,
                 )
-                manyToManyPhotoNames.length.should.be.equal(3)
-                manyToManyPhotoNames.should.deep.include("many-to-many #1")
-                manyToManyPhotoNames.should.deep.include("many-to-many #2")
-                manyToManyPhotoNames.should.deep.include("many-to-many #3")
+
+                expect(manyToManyPhotoNames.length).to.be.eql(3)
+                expect(manyToManyPhotoNames).to.include("many-to-many #1")
+                expect(manyToManyPhotoNames).to.include("many-to-many #2")
+                expect(manyToManyPhotoNames).to.include("many-to-many #3")
 
                 await connection.manager.remove(user)
 
                 const allPhotos = await connection.manager.find(Photo)
-                allPhotos.length.should.be.equal(1)
-                allPhotos[0].name.should.be.equal("Photo #1")
+
+                expect(allPhotos.length).to.be.eql(1)
+                expect(allPhotos[0].name).to.be.eql("Photo #1")
+                expect(photoOneToMany1.isRemoved).to.be.true
             }),
         ))
 })
