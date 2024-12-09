@@ -172,7 +172,7 @@ const users = await dataSource
     .getMany()
 ```
 
-This feature is supported only in postgres and mssql databases.
+This feature is supported only in postgres, mssql and gaussdb databases.
 In mssql you can also combine schemas and databases, for example:
 
 ```typescript
@@ -306,7 +306,7 @@ If you're adding replication options to an existing app for the first time, this
 
 ### Supported drivers
 
-Replication is supported by the MySQL, PostgreSQL, SQL Server, Cockroach, Oracle, and Spanner connection drivers.
+Replication is supported by the MySQL, PostgreSQL, SQL Server, Cockroach, Oracle, GaussDB and Spanner connection drivers.
 
 MySQL replication supports extra configuration options:
 

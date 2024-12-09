@@ -14,6 +14,7 @@
     - [Column types for `mssql`](#column-types-for-mssql)
     - [Column types for `oracle`](#column-types-for-oracle)
     - [Column types for `spanner`](#column-types-for-spanner)
+    - [Column types for `gaussdb`](#column-types-for-gaussdb)
     - [`enum` column type](#enum-column-type)
     - [`set` column type](#set-column-type)
     - [`simple-array` column type](#simple-array-column-type)
@@ -207,7 +208,7 @@ There are several special column types with additional functionality available:
 
 ### Spatial columns
 
-MS SQL, MySQL, MariaDB, PostgreSQL and CockroachDB all support spatial columns. TypeORM's
+MS SQL, MySQL, MariaDB, PostgreSQL, CockroachDB and GaussDB all support spatial columns. TypeORM's
 support for each varies slightly between databases, particularly as the column
 names vary between databases.
 
@@ -238,7 +239,7 @@ thing.point = "POINT(1 1)"
 thing.linestring = "LINESTRING(0 0,1 1,2 2)"
 ```
 
-TypeORM's PostgreSQL and CockroachDB support uses [GeoJSON](http://geojson.org/) as an
+TypeORM's PostgreSQL, CockroachDB and GaussDB support uses [GeoJSON](http://geojson.org/) as an
 interchange format, so geometry columns should be tagged either as `object` or
 `Geometry` (or subclasses, e.g. `Point`) after importing [`geojson`
 types](https://www.npmjs.com/package/@types/geojson) or using TypeORM built in [GeoJSON types](../src/driver/types/GeoJsonTypes.ts).
@@ -429,9 +430,21 @@ or
 
 `bool`, `int64`, `float64`, `numeric`, `string`, `json`, `bytes`, `date`, `timestamp`, `array`
 
+### Column types for `gaussdb`
+
+`int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`,
+`float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`,
+`character`, `char`, `text`, `citext`, `hstore`, `bytea`, `bit`, `varbit`, `bit varying`,
+`timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
+`date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
+`enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`,
+`tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
+`tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
+`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`
+
 ### `enum` column type
 
-`enum` column type is supported by `postgres` and `mysql`. There are various possible column definitions:
+`enum` column type is supported by `postgres`, `mysql` and `gaussdb`. There are various possible column definitions:
 
 Using typescript enums:
 

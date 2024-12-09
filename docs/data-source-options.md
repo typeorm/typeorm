@@ -3,7 +3,7 @@
 -   [What is `DataSourceOptions`](#what-is-datasourceoptions)
 -   [Common data source options](#common-data-source-options)
 -   [`mysql` / `mariadb` data source options](#mysql--mariadb-data-source-options)
--   [`postgres` / `cockroachdb` data source options](#postgres--cockroachdb-data-source-options)
+-   [`postgres` / `cockroachdb` / `gaussdb` data source options](#postgres--cockroachdb--gaussdb-data-source-options)
 -   [`sqlite` data source options](#sqlite-data-source-options)
 -   [`better-sqlite3` data source options](#better-sqlite3-data-source-options)
 -   [`capacitor` data source options](#capacitor-data-source-options)
@@ -26,7 +26,7 @@ Different RDBMS-es have their own specific options.
 
 -   `type` - RDBMS type. You must specify what database engine you use.
     Possible values are:
-    "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "sqlite", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor".
+    "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "sqlite", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor", "gaussdb".
     This option is **required**.
 
 -   `extra` - Extra options to be passed to the underlying driver.
@@ -162,13 +162,13 @@ Different RDBMS-es have their own specific options.
 -   `ssl` - object with ssl parameters or a string containing the name of ssl profile.
     See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
-## `postgres` / `cockroachdb` data source options
+## `postgres` / `cockroachdb` / `gaussdb` data source options
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
--   `port` - Database host port. Default postgres port is `5432`.
+-   `port` - Database host port. Default postgres port is `5432`. Default gaussdb port is `8000`.
 
 -   `username` - Database username.
 
@@ -242,6 +242,7 @@ Different RDBMS-es have their own specific options.
 -   `database` - Database name
 
 ## `mssql` data source options
+
 Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
 
 -   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
@@ -547,9 +548,9 @@ The following TNS connection string will be used in the next explanations:
      (SERVER=shared)))
 )
 ```
+
 -   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
 -   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
-
 
 ## Data Source Options example
 
