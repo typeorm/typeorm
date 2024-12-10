@@ -24,7 +24,7 @@ jobs:
       with:
         node-version: ${{matrix.node-version}}
     - uses: actions/checkout@v4
-    - run: docker compose -f .github/workflows/test/cockroackdb.docker-compose up -d
+    - run: docker compose -f .github/workflows/test/cockroachdb.docker-compose up -d
     - run: npm i
     - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
     - run: npm test
