@@ -1,4 +1,5 @@
 import { ValueTransformer } from "../decorator/options/ValueTransformer"
+import { FindOperator } from "../find-options/FindOperator"
 
 export class ApplyValueTransformers {
     static transformFrom(
@@ -20,6 +21,11 @@ export class ApplyValueTransformers {
         transformer: ValueTransformer | ValueTransformer[],
         entityValue: any,
     ) {
+        if (entityValue instanceof FindOperator) {
+            entityValue.transformValue(transformer)
+            return entityValue
+        }
+
         if (Array.isArray(transformer)) {
             return transformer.reduce((transformedValue, _transformer) => {
                 return _transformer.to(transformedValue)
