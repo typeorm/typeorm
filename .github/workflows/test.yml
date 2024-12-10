@@ -124,7 +124,7 @@ jobs:
     - run: npm test
 
 
-  sqlite_better-sqlite3_sqljs:
+  better-sqlite3:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -137,7 +137,41 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: cp .github/workflows/test/sqlite-better-sqlite3-sqljs.ormconfig.json ormconfig.json
+    - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
+    - run: npm test
+  
+
+  sqlite:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    container: ${{ matrix.node-container }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: npm i
+    - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
+    - run: npm test
+
+
+  sqljs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    container: ${{ matrix.node-container }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: npm i
+    - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
     - run: npm test
 
 
