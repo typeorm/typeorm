@@ -415,28 +415,40 @@ export async function createTestingConnections(
 
             if (connection.driver.options.type === "cockroachdb") {
                 await queryRunner.query(
-                    `ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                    `ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 600;`,
                 )
                 await queryRunner.query(
-                    `ALTER DATABASE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                    `ALTER DATABASE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 600;`,
                 )
                 await queryRunner.query(
-                    `ALTER TABLE system.public.jobs CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                    `ALTER TABLE system.public.jobs CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 600;`,
                 )
                 await queryRunner.query(
-                    `ALTER RANGE meta CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                    `ALTER RANGE meta CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 600;`,
                 )
                 await queryRunner.query(
-                    `ALTER RANGE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                    `ALTER RANGE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 600;`,
                 )
                 await queryRunner.query(
-                    `ALTER RANGE liveness CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                    `ALTER RANGE liveness CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 600;`,
                 )
                 await queryRunner.query(
-                    `SET CLUSTER SETTING jobs.retention_time = '180s';`,
+                    `SET CLUSTER SETTING kv.range_merge.queue_interval = '50ms'`,
                 )
                 await queryRunner.query(
-                    `SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`,
+                    `SET CLUSTER SETTING kv.range_split.by_load_merge_delay = '5s';`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING jobs.retention_time = '15s';`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING jobs.registry.interval.gc = '30s';`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING jobs.registry.interval.cancel = '180s';`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING sql.stats.automatic_collection.enabled = false;`,
                 )
                 await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
