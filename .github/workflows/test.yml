@@ -11,6 +11,22 @@ on:
     branches: [ "master" ]
 
 jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18.x] #["node:16", "node:18", "node:20", "node:22"]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.node-version}}
+      - uses: actions/checkout@v4
+      - run: npm run lint
+
+
   cockroachdb:
     runs-on: ubuntu-latest
     strategy:
