@@ -26,7 +26,6 @@ jobs:
     - uses: actions/checkout@v4
     - run: docker compose -f .github/workflows/test/cockroachdb.docker-compose up -d
     - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
     - run: npm test
 
