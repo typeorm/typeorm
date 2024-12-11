@@ -1,0 +1,21 @@
+[
+  {
+    "skip": false,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "temp/better-sqlite3db.db",
+    "logging": false
+  },
+
+  {
+    "skip": true,
+    "name": "postgres",
+    "type": "postgres",
+    "host": "postgres",
+    "port": 5432,
+    "username": "postgres",
+    "password": "postgres",
+    "database": "postgres",
+    "logging": false
+  }
+]

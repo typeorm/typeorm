@@ -13,9 +13,6 @@
     <a href="https://codecov.io/gh/typeorm/typeorm">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
     </a>
-	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-uu12ljeb-OH_0086I379fUDApYJHNuw">
-		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
-	</a>
   <br>
   <br>
 </div>
@@ -35,6 +32,13 @@ maintainable applications in the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
+
+> **📣 Announcement: The Future of TypeORM**
+>
+> We’re excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we’re structuring maintenance
+> and bringing together dedicated resources to ensure TypeORM thrives for years to come.
+>
+> [Read the full announcement](./docs/future-of-typeorm.md)
 
 ## Features
 
