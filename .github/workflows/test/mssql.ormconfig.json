@@ -1,0 +1,28 @@
+[
+  {
+    "skip": false,
+    "name": "mssql",
+    "type": "mssql",
+    "host": "mssql",
+    "port": 1433,
+    "username": "sa",
+    "password": "Admin12345",
+    "database": "tempdb",
+    "logging": false,
+    "extra": {
+      "trustServerCertificate": true
+    }
+  },
+
+  {
+    "skip": true,
+    "name": "postgres",
+    "type": "postgres",
+    "host": "postgres",
+    "port": 5432,
+    "username": "postgres",
+    "password": "postgres",
+    "database": "postgres",
+    "logging": false
+  }
+]

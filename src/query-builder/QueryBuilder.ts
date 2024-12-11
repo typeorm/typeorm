@@ -522,7 +522,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Uses same query runner as current QueryBuilder.
      */
     createQueryBuilder(queryRunner?: QueryRunner): this {
-        return new (this.constructor as any)(this.connection, queryRunner ?? this.queryRunner)
+        return new (this.constructor as any)(
+            this.connection,
+            queryRunner ?? this.queryRunner,
+        )
     }
 
     /**
