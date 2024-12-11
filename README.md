@@ -1323,3 +1323,5 @@ Open source is hard and time-consuming. If you want to invest in TypeORM's futur
 Become a gold sponsor and get premium technical support from our core contributors. [Become a gold sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/gold-sponsor.svg?width=890"></a>
+
+:)
