@@ -160,7 +160,7 @@ Following document will be saved in the database:
 
 ## Using `MongoEntityManager` and `MongoRepository`
 
-You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query` and `transaction`).
+You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query`).
 For example:
 
 ```typescript
