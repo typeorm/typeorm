@@ -36,14 +36,14 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/setup-node@v4
-      with:
-        node-version: ${{matrix.node-version}}
-    - uses: actions/checkout@v4
-    - run: docker compose -f .github/workflows/test/cockroachdb.docker-compose up -d
-    - run: npm i
-    - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.node-version}}
+      - uses: actions/checkout@v4
+      - run: docker compose -f .github/workflows/test/cockroachdb.docker-compose up -d
+      - run: npm i
+      - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
+      - run: npm test
 
 
   mongodb:
@@ -60,10 +60,10 @@ jobs:
         image: mongo:5.0.12
 
     steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
+      - run: npm test
 
 
   mssql:
@@ -83,10 +83,10 @@ jobs:
           ACCEPT_EULA: "Y"
 
     steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
+      - run: npm test
 
 
   mysql_mariadb:
@@ -115,10 +115,10 @@ jobs:
           MYSQL_DATABASE: "test"
 
     steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
+      - run: npm test
 
 
   oracle:
@@ -130,14 +130,14 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/setup-node@v4
-      with:
-        node-version: ${{matrix.node-version}}
-    - uses: actions/checkout@v4
-    - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
-    - run: npm i
-    - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.node-version}}
+      - uses: actions/checkout@v4
+      - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
+      - run: npm i
+      - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
+      - run: npm test
 
 
   better-sqlite3:
@@ -151,11 +151,11 @@ jobs:
     container: ${{ matrix.node-container }}
 
     steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-    - run: npm test
-  
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
+      - run: npm test
+
 
   sqlite:
     runs-on: ubuntu-latest
@@ -168,10 +168,10 @@ jobs:
     container: ${{ matrix.node-container }}
 
     steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
+      - run: npm test
 
 
   sqljs:
@@ -185,13 +185,13 @@ jobs:
     container: ${{ matrix.node-container }}
 
     steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
+      - run: npm test
 
 
-  posgres:
+  postgres:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -214,7 +214,7 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
-    - run: npm test
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
+      - run: npm test
