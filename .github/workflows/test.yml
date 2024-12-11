@@ -26,7 +26,7 @@ jobs:
     - uses: actions/checkout@v4
     - run: docker compose -f .github/workflows/test/cockroachdb.docker-compose up -d
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -47,7 +47,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -71,7 +71,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -104,7 +104,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -124,7 +124,7 @@ jobs:
     - uses: actions/checkout@v4
     - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -142,7 +142,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
     - run: npm test
   
@@ -160,7 +160,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -178,7 +178,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -208,6 +208,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
-    - run: chown -R $(whoami) ~/.npm
+    - run: chown -R 1001:127 /github/home/.npm
     - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
     - run: npm test
