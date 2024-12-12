@@ -1,0 +1,40 @@
+name: database-tests
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: string
+
+jobs:
+  cockroachdb:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{inputs.node-version}}
+      - uses: actions/checkout@v4
+      - run: docker compose -f .github/workflows/test/cockroachdb.docker-compose up -d
+      - run: npm i
+      - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
+      - run: npm test
+
+
+  oracle:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{inputs.node-version}}
+      - uses: actions/checkout@v4
+      - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
+      - run: npm i
+      - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
+      - run: npm test
