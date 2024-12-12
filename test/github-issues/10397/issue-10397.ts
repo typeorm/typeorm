@@ -1,7 +1,8 @@
-import { DataSource, Not } from "../../../src"
+import { DataSource, Equal, FindOperator, Not } from "../../../src"
 import { closeTestingConnections, createTestingConnections } from "../../utils/test-utils"
-import { TestEntity } from "./entity/test.entity"
+import { Pair, PairTransformer, TestEntity } from "./entity/test.entity"
 import { expect } from "chai"
+import { ApplyValueTransformers } from "../../../src/util/ApplyValueTransformers"
 
 describe('github issues > #10397 ValueTransformer gets FindOperator as value instead of transforming its value', () => {
     let connections: DataSource[]
@@ -27,4 +28,15 @@ describe('github issues > #10397 ValueTransformer gets FindOperator as value ins
             })
         )
     )
+
+    it('should transform the FindOperator value', async () => {
+        const testTransformer = new PairTransformer()
+        const testFindOperator = Equal<Pair[]>([{key: 'key', value: 'value'}])
+
+        const result: FindOperator<string[]> = ApplyValueTransformers.transformTo(testTransformer, testFindOperator)
+
+        expect(result).to.be.instanceof(FindOperator)
+        expect(result).to.eql(testFindOperator)
+        expect(result.value).to.eql(['key:value'])
+    })
 })
