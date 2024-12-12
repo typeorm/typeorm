@@ -10,7 +10,7 @@ If you have a question, you can ask it on [StackOverflow](https://stackoverflow.
 
 ### Want community support?
 
-If you want community support, or simply want to chat with friendly TypeORM enthusiasts and users, you can do it on [Slack](https://join.slack.com/t/typeorm/shared_invite/zt-uu12ljeb-OH_0086I379fUDApYJHNuw).
+If you want community support, or simply want to chat with friendly TypeORM enthusiasts and users, you can do it on [Discord](https://discord.gg/cC9hkmUgNa).
 
 ### Want professional commercial support?
 
