@@ -413,35 +413,35 @@ export async function createTestingConnections(
                 await queryRunner.createDatabase(database, true)
             }
 
-            // if (connection.driver.options.type === "cockroachdb") {
-            //     await queryRunner.query(
-            //         `ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
-            //     )
-            //     await queryRunner.query(
-            //         `ALTER DATABASE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
-            //     )
-            //     await queryRunner.query(
-            //         `ALTER TABLE system.public.jobs CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
-            //     )
-            //     await queryRunner.query(
-            //         `ALTER RANGE meta CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
-            //     )
-            //     await queryRunner.query(
-            //         `ALTER RANGE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
-            //     )
-            //     await queryRunner.query(
-            //         `ALTER RANGE liveness CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
-            //     )
-            //     await queryRunner.query(
-            //         `SET CLUSTER SETTING jobs.retention_time = '180s';`,
-            //     )
-            //     await queryRunner.query(
-            //         `SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`,
-            //     )
-            //     await queryRunner.query(
-            //         `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
-            //     )
-            // }
+            if (connection.driver.options.type === "cockroachdb") {
+                await queryRunner.query(
+                    `ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                )
+                await queryRunner.query(
+                    `ALTER DATABASE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                )
+                await queryRunner.query(
+                    `ALTER TABLE system.public.jobs CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                )
+                await queryRunner.query(
+                    `ALTER RANGE meta CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                )
+                await queryRunner.query(
+                    `ALTER RANGE system CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                )
+                await queryRunner.query(
+                    `ALTER RANGE liveness CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING jobs.retention_time = '180s';`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`,
+                )
+                await queryRunner.query(
+                    `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
+                )
+            }
 
             // create new schemas
             const schemaPaths: Set<string> = new Set()
