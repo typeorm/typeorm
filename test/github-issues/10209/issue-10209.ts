@@ -26,12 +26,12 @@ describe("github issues > #10209", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should not fail to run multiple nested transactions in parallel", function() {
-        this.retries(2);
+    it("should not fail to run multiple nested transactions in parallel", function () {
+        this.retries(2)
         return Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.createEntityManager()
-                
+
                 await manager.transaction(async (txManager) => {
                     const location = txManager.create(LocationEntity)
                     location.name = "location-0"
@@ -49,42 +49,42 @@ describe("github issues > #10209", () => {
                         }
                         location.configurations.push(config)
                     }
-                    
+
                     await txManager.save(location)
                 })
-                
+
                 const location =
-                (await manager.findOne(LocationEntity, {
+                    (await manager.findOne(LocationEntity, {
                         where: {
                             name: "location-0",
                         },
                         relations: ["configurations", "configurations.assets"],
                     })) || ({} as LocationEntity)
-                    
-                    await manager.transaction(async (txManager) => {
-                        return Promise.all(
-                            location.configurations.map(async (config) => {
-                                await txManager.transaction(async (txManager2) => {
-                                    await Promise.all(
-                                        config.assets.map(async (asset) => {
-                                            asset.status = AssetStatus.deleted
-                                            await txManager2.save(asset)
-                                            await txManager2.softDelete(
-                                                AssetEntity,
-                                                asset,
-                                            )
-                                        }),
-                                    )
-                                })
-                                
-                                config.status = ConfigurationStatus.deleted
-                                return await txManager.save(config)
-                            }),
-                        )
-                    })
-                    // We only care that the transaction above didn't fail
-                    expect(true).to.be.true
-                }),
-        )}
-    )
+
+                await manager.transaction(async (txManager) => {
+                    return Promise.all(
+                        location.configurations.map(async (config) => {
+                            await txManager.transaction(async (txManager2) => {
+                                await Promise.all(
+                                    config.assets.map(async (asset) => {
+                                        asset.status = AssetStatus.deleted
+                                        await txManager2.save(asset)
+                                        await txManager2.softDelete(
+                                            AssetEntity,
+                                            asset,
+                                        )
+                                    }),
+                                )
+                            })
+
+                            config.status = ConfigurationStatus.deleted
+                            return await txManager.save(config)
+                        }),
+                    )
+                })
+                // We only care that the transaction above didn't fail
+                expect(true).to.be.true
+            }),
+        )
+    })
 })
