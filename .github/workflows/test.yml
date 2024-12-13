@@ -24,7 +24,7 @@ jobs:
       cockroachdb:
         image: cockroachdb/cockroach:v23.2.4
         env:
-          COCKROACH_ARGS: 'start-single-node --insecure'
+          COCKROACH_ARGS: 'start --insecure'
 
     steps:
     - uses: actions/checkout@v4
