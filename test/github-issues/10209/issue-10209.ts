@@ -84,5 +84,5 @@ describe("github issues > #10209", () => {
                 // We only care that the transaction above didn't fail
                 expect(true).to.be.true
             }),
-        ))
+        ), 2)
 })
