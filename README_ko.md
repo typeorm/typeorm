@@ -177,7 +177,6 @@ await timber.remove();
 
         ```
         npm i @sap/hana-client
-        npm i hdb-pool
         ```
 
         *[Neptune Software](https://www.neptune-software.com/)의 후원으로 SAP Hana 지원이 가능해졌다.*
