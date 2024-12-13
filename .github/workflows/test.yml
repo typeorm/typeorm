@@ -16,15 +16,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [16.x, 18.x, 20.x] #, 22.x]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        
+    container: ${{ matrix.node-container }}
+    services:
+      cockroachdb:
+        image: cockroachdb/cockroach:v23.2.4
+        env:
+          COCKROACH_ARGS: 'start-single-node --insecure --cache=1GB --store=type=mem,size=4GB'
 
     steps:
-    - uses: actions/setup-node@v4
-      with:
-        node-version: ${{matrix.node-version}}
     - uses: actions/checkout@v4
-    - run: docker compose -f .github/workflows/test/cockroachdb.docker-compose up -d
     - run: npm i
     - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
     - run: npm test
