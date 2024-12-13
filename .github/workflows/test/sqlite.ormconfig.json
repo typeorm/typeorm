@@ -3,7 +3,7 @@
     "skip": false,
     "name": "sqlite",
     "type": "sqlite",
-    "database": "./sqlitedb-1.db",
+    "database": "./temp/sqlitedb-1.db",
     "logging": false,
     "relationLoadStrategy": "join"
   },
