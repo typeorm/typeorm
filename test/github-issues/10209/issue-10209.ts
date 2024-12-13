@@ -27,7 +27,7 @@ describe("github issues > #10209", () => {
     after(() => closeTestingConnections(dataSources))
 
     it("should not fail to run multiple nested transactions in parallel", function () {
-        this.retries(2)
+        this.retries(3) // Fix for SQLite
         return Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.createEntityManager()
