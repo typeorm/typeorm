@@ -3,7 +3,7 @@
     "skip": false,
     "name": "cockroachdb",
     "type": "cockroachdb",
-    "host": "cockroachdb",
+    "host": "postgres",
     "port": 26257,
     "username": "root",
     "password": "",
