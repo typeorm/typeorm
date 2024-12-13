@@ -21,7 +21,7 @@ jobs:
         
     container: ${{ matrix.node-container }}
     services:
-      postgres:
+      thedatabase:
         image: cockroachdb/cockroach
         env:
           COCKROACH_ARGS: 'start-single-node --insecure --cache=1GB --store=type=mem,size=4GB'
