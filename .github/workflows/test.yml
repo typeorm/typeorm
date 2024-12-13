@@ -37,12 +37,12 @@ jobs:
 
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
-  database-tests-oracle-cockroachdb:
+  database-compose-tests:
     strategy:
       fail-fast: false
       matrix:
         node-version: [18.x] #["16.x", "18.x", "20.x", "22.x"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    uses: ./.github/workflows/database-tests-oracle-cockroachdb.yml
+    uses: ./.github/workflows/database-compose-tests.yml
     with:
       node-version: ${{matrix.node-version}}
