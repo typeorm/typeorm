@@ -141,6 +141,7 @@ jobs:
     - uses: actions/checkout@v4
     - run: npm i
     - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+    - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
     - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
     - run: npm test
   
@@ -159,6 +160,7 @@ jobs:
     - uses: actions/checkout@v4
     - run: npm i
     - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+    - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
     - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
     - run: npm test
 
