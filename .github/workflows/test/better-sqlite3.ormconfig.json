@@ -3,7 +3,7 @@
     "skip": false,
     "name": "better-sqlite3",
     "type": "better-sqlite3",
-    "database": "temp/better-sqlite3db.db",
+    "database": "./better-sqlite3db.db",
     "logging": false
   },
 
