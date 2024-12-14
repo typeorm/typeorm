@@ -5,7 +5,6 @@
 -   [How to do validation?](#how-to-do-validation)
 -   [What does "owner side" in relations mean or why we need to put `@JoinColumn` and `@JoinTable` decorators?](#what-does-owner-side-in-a-relations-mean-or-why-we-need-to-use-joincolumn-and-jointable)
 -   [How do I add extra columns into many-to-many (junction) table?](#how-do-i-add-extra-columns-into-many-to-many-junction-table)
--   [How to use TypeORM with dependency injection tool?](#how-to-use-typeorm-with-a-dependency-injection-tool)
 -   [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
 -   [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
 -   [How to use Webpack for the backend](#how-to-use-webpack-for-the-backend)
