@@ -74,6 +74,9 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
         return new Promise(async (ok, fail) => {
             try {
                 const databaseConnection = await this.connect()
+
+                await broadcasterResult.wait()
+
                 this.driver.connection.logger.logQuery(query, parameters, this)
                 const queryStartTime = +new Date()
                 const isInsertQuery = query.startsWith("INSERT ")
