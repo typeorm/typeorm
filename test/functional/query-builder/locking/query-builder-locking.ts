@@ -978,7 +978,6 @@ describe("query builder > locking", () => {
                                 .should.be.rejectedWith(
                                     "FOR UPDATE cannot be applied to the nullable side of an outer join",
                                 );
-                        await entityManager.query("ROLLBACK");
                     })
                 }
 
