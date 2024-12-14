@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x] #["node:16", "node:18", "node:20", "node:22"]
+        node-version: [16.x, 18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
@@ -46,6 +46,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
     - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -55,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
@@ -69,6 +70,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
     - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -78,7 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
@@ -101,6 +103,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
     - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -110,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x] #["node:16", "node:18", "node:20", "node:22"]
+        node-version: [16.x, 18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -129,7 +132,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
@@ -137,6 +140,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+    - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
     - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
     - run: npm test
   
@@ -146,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
@@ -154,6 +159,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+    - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
     - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -163,7 +170,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
@@ -171,6 +178,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
     - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
     - run: npm test
 
@@ -180,7 +188,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     container: ${{ matrix.node-container }}
@@ -200,5 +208,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
     - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
     - run: npm test
