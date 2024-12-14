@@ -499,7 +499,12 @@ export function closeTestingConnections(connections: DataSource[]) {
 export function reloadTestingDatabases(connections: DataSource[]) {
     GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
     return Promise.all(
-        connections.map((connection) => connection.synchronize(true)),
+        connections.map(async (connection) => {
+            if (connection.driver.options.type === "cockroachdb") {
+                await connection.query("ROLLBACK;");
+            }
+            return connection.synchronize(true)
+        }),
     )
 }
 
