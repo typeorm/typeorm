@@ -8,7 +8,7 @@
     "username": "root",
     "password": "",
     "database": "defaultdb",
-    "logging": true
+    "logging": false
   },
 
   {
