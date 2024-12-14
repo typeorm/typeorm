@@ -54,7 +54,7 @@ export interface OracleConnectionOptions
         readonly master: OracleConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: OracleConnectionCredentialsOptions[]
     }
