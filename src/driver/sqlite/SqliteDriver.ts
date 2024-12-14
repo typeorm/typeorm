@@ -10,6 +10,7 @@ import { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
+import { VersionUtils } from "../../util/VersionUtils"
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -28,6 +29,8 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * SQLite underlying library.
      */
     sqlite: any
+
+    version: string
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -232,5 +235,10 @@ export class SqliteDriver extends AbstractSqliteDriver {
                 ? optionsDb
                 : path.join(process.cwd(), optionsDb),
         )
+    }
+
+    isReturningSqlSupported() {
+        const version = this.version || this.sqlite.VERSION
+        return VersionUtils.isGreaterOrEqual(version, "3.35.0")
     }
 }
