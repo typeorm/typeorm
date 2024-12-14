@@ -638,14 +638,17 @@ describe("repository > find options > locking", () => {
                                     tables: ["post"],
                                 },
                             }),
-                            entityManager.getRepository(Post).findOne({
-                                where: { id: 1 },
-                                relations: { author: true },
-                                lock: { mode: "pessimistic_write" },
-                            })
-                            .should.be.rejectedWith(
-                                "FOR UPDATE cannot be applied to the nullable side of an outer join",
-                            ),,
+                            entityManager
+                                .getRepository(Post)
+                                .findOne({
+                                    where: { id: 1 },
+                                    relations: { author: true },
+                                    lock: { mode: "pessimistic_write" },
+                                })
+                                .should.be.rejectedWith(
+                                    "FOR UPDATE cannot be applied to the nullable side of an outer join",
+                                ),
+                            ,
                         ])
                     })
                 }
