@@ -962,22 +962,24 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (connection.driver.options.type === "cockroachdb") {
-                    return connection.manager.transaction(async (entityManager) => {
-                        await entityManager
+                    return connection.manager.transaction((entityManager) => {
+                        return Promise.all([
+                            entityManager
                                 .createQueryBuilder(Post, "post")
                                 .leftJoin("post.author", "user")
                                 .setLock("pessimistic_write", undefined, [
                                     "post",
                                 ])
-                                .getOne();
-                        await entityManager
+                                .getOne(),
+                            entityManager
                                 .createQueryBuilder(Post, "post")
                                 .leftJoin("post.author", "user")
                                 .setLock("pessimistic_write")
                                 .getOne()
                                 .should.be.rejectedWith(
                                     "FOR UPDATE cannot be applied to the nullable side of an outer join",
-                                );
+                                ),
+                        ])
                     })
                 }
 
