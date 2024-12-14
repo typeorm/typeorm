@@ -225,7 +225,7 @@ export class CockroachQueryRunner
         } else {
             this.storeQueries = false
             this.transactionDepth -= 1
-            await this.query("RELEASE SAVEPOINT cockroach_restart")
+            // await this.query("RELEASE SAVEPOINT cockroach_restart")
             await this.query("COMMIT")
             this.queries = []
             this.isTransactionActive = false
