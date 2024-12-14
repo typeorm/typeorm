@@ -29,6 +29,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: npm i
+    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
     - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
     - run: npm test
 
