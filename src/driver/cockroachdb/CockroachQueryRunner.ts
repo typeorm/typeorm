@@ -225,8 +225,9 @@ export class CockroachQueryRunner
         } else {
             this.storeQueries = false
             this.transactionDepth -= 1
-            // await this.query("RELEASE SAVEPOINT cockroach_restart")
             await this.query("COMMIT")
+            // In case of an error it's important to call COMMIT first before executing any other
+            await this.query("RELEASE SAVEPOINT cockroach_restart")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
@@ -1019,7 +1020,7 @@ export class CockroachQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -3903,7 +3904,7 @@ export class CockroachQueryRunner
         table: Table,
         indexOrName: TableIndex | TableUnique | string,
     ): Query {
-        let indexName =
+        const indexName =
             InstanceChecker.isTableIndex(indexOrName) ||
             InstanceChecker.isTableUnique(indexOrName)
                 ? indexOrName.name
