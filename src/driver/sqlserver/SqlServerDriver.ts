@@ -299,6 +299,13 @@ export class SqlServerDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
+        if (this.options.options?.isolation) {
+            const defaultIsolation = this.options.options.isolation.toUpperCase();
+            if (!["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE", "SNAPSHOT"].includes(defaultIsolation)) {
+                throw new Error(`Unsupported isolation level: ${defaultIsolation}`);
+            }
+        }
+        
         if (!this.database || !this.searchSchema) {
             const queryRunner = await this.createQueryRunner("master")
 
