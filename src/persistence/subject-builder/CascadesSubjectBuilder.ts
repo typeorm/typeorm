@@ -83,6 +83,13 @@ export class CascadesSubjectBuilder {
                         alreadyExistRelationEntitySubject.canBeRecovered =
                             relation.isCascadeRecover === true &&
                             operationType === "recover"
+                    if (
+                        alreadyExistRelationEntitySubject.mustBeRemoved ===
+                        false
+                    )
+                        alreadyExistRelationEntitySubject.mustBeRemoved =
+                            relation.isCascadeRemove === true &&
+                            operationType === "remove"
                     return
                 }
 
@@ -104,6 +111,9 @@ export class CascadesSubjectBuilder {
                     canBeRecovered:
                         relation.isCascadeRecover === true &&
                         operationType === "recover",
+                    mustBeRemoved:
+                        relation.isCascadeRemove === true &&
+                        operationType === "remove",
                 })
                 this.allSubjects.push(relationEntitySubject)
 
