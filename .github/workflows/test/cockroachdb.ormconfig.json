@@ -3,11 +3,12 @@
     "skip": false,
     "name": "cockroachdb",
     "type": "cockroachdb",
-    "host": "localhost",
+    "host": "crdb",
     "port": 26257,
     "username": "root",
     "password": "",
-    "database": "defaultdb"
+    "database": "defaultdb",
+    "logging": false
   },
 
   {

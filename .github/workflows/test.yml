@@ -24,12 +24,13 @@ jobs:
       - run: npm i
       - run: npm run lint
 
+
   # These tests run in standard node containers with their db attached as a service
   database-tests:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:18"] #["node:16", "node:18", "node:20", "node:22"]
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     uses: ./.github/workflows/database-tests.yml
     with:
@@ -41,8 +42,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x] #["16.x", "18.x", "20.x", "22.x"]
+        node-version: [16.x, 18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     uses: ./.github/workflows/database-compose-tests.yml
-    with:
-      node-version: ${{matrix.node-version}}
