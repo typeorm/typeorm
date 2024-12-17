@@ -45,3 +45,5 @@ jobs:
         node-version: [16.x, 18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     uses: ./.github/workflows/database-compose-tests.yml
+    with:
+      node-version: ${{matrix.node-version}}
