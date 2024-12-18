@@ -9,7 +9,7 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 /**
  * Loads relation ids for the given entities.
  */
-export class RelationIdLoader {
+export class QueryStrategyRelationIdLoader {
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
