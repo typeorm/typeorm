@@ -1216,7 +1216,7 @@ export class User {
 }
 ```
 
-Using a standard `find` or query, you will not receive the rows which have a value in that row. However, if you do the following:
+Using a standard `find` or query, you will not receive the rows which have a value in that column. However, if you do the following:
 
 ```typescript
 const users = await dataSource
