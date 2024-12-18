@@ -146,27 +146,23 @@ export class EntityManager {
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
-        // if query runner is already defined in this class, it means this entity manager was already created for a single connection
-        // if its not defined we create a new query runner - single connection where we'll execute all our operations
-        const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
-
-        try {
-            await queryRunner.startTransaction(isolation)
-            const result = await runInTransaction(queryRunner.manager)
-            await queryRunner.commitTransaction()
-            return result
-        } catch (err) {
-            try {
-                // we throw original error even if rollback thrown an error
-                await queryRunner.rollbackTransaction()
-            } catch (rollbackError) {}
-            throw err
-        } finally {
-            if (!this.queryRunner)
-                // if we used a new query runner provider then release it
-                await queryRunner.release()
-        }
+        return this.connection.runWithQueryRunner(
+            this.queryRunner,
+            async (queryRunner) => {
+                try {
+                    await queryRunner.startTransaction(isolation)
+                    const result = await runInTransaction(queryRunner.manager)
+                    await queryRunner.commitTransaction()
+                    return result
+                } catch (err) {
+                    try {
+                        // we throw original error even if rollback thrown an error
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                    throw err
+                }
+            },
+        )
     }
 
     /**
@@ -1325,13 +1321,10 @@ export class EntityManager {
      */
     async clear<Entity>(entityClass: EntityTarget<Entity>): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass)
-        const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
-        try {
-            return await queryRunner.clearTable(metadata.tablePath) // await is needed here because we are using finally
-        } finally {
-            if (!this.queryRunner) await queryRunner.release()
-        }
+        return this.connection.runWithQueryRunner(
+            this.queryRunner,
+            (queryRunner) => queryRunner.clearTable(metadata.tablePath),
+        )
     }
 
     /**
@@ -1431,7 +1424,7 @@ export class EntityManager {
             this.repositories.set(target, newRepository)
             return newRepository
         } else {
-            const newRepository = new Repository<any>(
+            const newRepository = new Repository<Entity>(
                 target,
                 this,
                 this.queryRunner,

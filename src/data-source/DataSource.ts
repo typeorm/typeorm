@@ -535,13 +535,9 @@ export class DataSource {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner()
-
-        try {
-            return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
-        } finally {
-            if (!queryRunner) await usedQueryRunner.release()
-        }
+        return this.runWithQueryRunner(queryRunner, (queryRunner) =>
+            queryRunner.query(query, parameters),
+        )
     }
 
     /**
