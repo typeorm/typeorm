@@ -1155,7 +1155,6 @@ clone하여 시작할 수 있는 몇 가지 리포지토리가 있다:
 
 TypeORM 작업을 단순화하고 다른 모듈과 통합하는 몇 가지 확장 방법이 있다:
 
-- [TypeORM + GraphQL 프레임워크](http://vesper-framework.com)
 - [TypeORM](https://github.com/typeorm/typeorm-typedi-extensions)과 [TypeDI](https://github.com/pleerock/typedi) 통합
 - [라우팅 컨트롤러](https://github.com/typeorm/typeorm-routing-controllers-extensions)와 [TypeORM 통합](https://github.com/pleerock/routing-controllers)
 - 기존 데이터베이스에서 모델 생성 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
