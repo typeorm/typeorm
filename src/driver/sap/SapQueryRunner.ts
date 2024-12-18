@@ -28,6 +28,7 @@ import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { promisify } from "util"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -3364,6 +3365,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<void> {
         throw new TypeORMError(
             `spa driver does not support change table comment.`,
+        )
+    }
+
+    changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `${this.driver.options.type} driver does not support change versioning.`,
         )
     }
 }

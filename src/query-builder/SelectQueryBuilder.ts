@@ -45,6 +45,7 @@ import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { DateUtils } from "../util/DateUtils"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -2184,7 +2185,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 return (
                     this.getTableName(alias.tablePath!) +
-                    " " +
+                    (alias.versioning && this.findOptions.validAt
+                        ? ` FOR SYSTEM_TIME AS OF :temporalTableValidAt `
+                        : " ") +
                     this.escape(alias.name)
                 )
             })
@@ -2307,7 +2310,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     joinAttr.direction +
                     " JOIN " +
                     this.getTableName(destinationTableName) +
-                    " " +
+                    `${
+                        joinAttr.metadata?.versioning &&
+                        this.findOptions.validAt
+                            ? " FOR SYSTEM_TIME AS OF :temporalTableValidAt "
+                            : " "
+                    }` +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
@@ -3752,6 +3760,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Loads raw results from the database.
      */
     protected async loadRawResults(queryRunner: QueryRunner) {
+        this.setParameter(
+            "temporalTableValidAt",
+            DateUtils.mixedDateToUtcDatetimeString(this.findOptions.validAt),
+        )
+
         const [sql, parameters] = this.getQueryAndParameters()
         const queryId =
             sql +
