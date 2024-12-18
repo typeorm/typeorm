@@ -393,6 +393,8 @@ or
 `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
 `tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`
 
+> Note: `vector` is also available when the [pgvector](https://github.com/pgvector/pgvector) extension is installed.
+
 ### Column types for `cockroachdb`
 
 `array`, `bool`, `boolean`, `bytes`, `bytea`, `blob`, `date`, `numeric`, `decimal`, `dec`, `float`,
