@@ -191,7 +191,7 @@ await timber.remove();
 
    - **MongoDB** (试验性)
 
-     `npm install mongodb --save`
+     `npm install mongodb@^6.0.0 --save`
 
    - **NativeScript**, **react-native** 和 **Cordova**
 
