@@ -29,6 +29,15 @@ export class PlatformTools {
     }
 
     /**
+     * Create an AsyncLocalStorage instance, only supported on platform === node.
+     */
+    static createAsyncLocalStorage() {
+        if (this.type === "browser")
+            throw new Error(`This option/function is not supported in the browser environment. Failed operation: createAsyncLocalStorage().`);
+        return undefined;
+    }
+
+    /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */
