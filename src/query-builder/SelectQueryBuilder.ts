@@ -4261,7 +4261,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
-                        aliasPath = `(${column.query(alias)})`
+                        const escapedAliasName = this.escape(alias)
+                        aliasPath = `(${column.query(escapedAliasName)})`
                     }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
