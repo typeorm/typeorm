@@ -134,7 +134,6 @@ export class RelationIdLoader {
             inverseColumns = relation.inverseRelation!.joinColumns.map(
                 (column) => column.referencedColumn!,
             )
-        } else {
         }
 
         return entities.map((entity) => {
@@ -581,44 +580,59 @@ export class RelationIdLoader {
         entities: ObjectLiteral[],
         relatedEntities?: ObjectLiteral[],
     ) {
-        relation = relation.inverseRelation!
+        ;[relation, relation.inverseRelation!] = [
+            relation.inverseRelation!,
+            relation,
+        ]
 
         if (
             relation.entityMetadata.primaryColumns.length ===
             relation.joinColumns.length
         ) {
-            const sameReferencedColumns =
-                relation.entityMetadata.primaryColumns.every((column) => {
-                    return relation.joinColumns.indexOf(column) !== -1
-                })
-            if (sameReferencedColumns) {
+            const sameReferencedColumns = relation.joinColumns.every(
+                (column) =>
+                    relation.entityMetadata.nonVirtualColumns.indexOf(
+                        column,
+                    ) !== -1,
+            )
+            if (sameReferencedColumns && relatedEntities) {
                 return Promise.resolve(
-                    entities.map((entity) => {
+                    relatedEntities.map((entity) => {
                         const result: ObjectLiteral = {}
-                        relation.joinColumns.forEach(function (joinColumn) {
+                        relation.joinColumns.forEach((joinColumn) => {
                             const value =
                                 joinColumn.referencedColumn!.getEntityValue(
                                     entity,
                                 )
-                            const joinColumnName =
+                            const joinValue = joinColumn.getEntityValue(entity)
+                            const joinColumnName = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
-                                "_" +
-                                joinColumn.referencedColumn!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                )
-                            const primaryColumnName =
+                                    "_" +
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
+                            )
+                            const primaryColumnName = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.entityMetadata.name +
-                                "_" +
-                                relation.inverseRelation!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                ) +
-                                "_" +
-                                joinColumn.propertyPath.replace(".", "_")
-                            result[joinColumnName] = value
+                                    "_" +
+                                    relation.inverseRelation!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ) +
+                                    "_" +
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
+                            )
                             result[primaryColumnName] = value
+                            result[joinColumnName] = joinValue
                         })
                         return result
                     }),
