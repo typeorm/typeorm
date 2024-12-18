@@ -11,10 +11,18 @@ For databases not supporting connection pools, it uses the same connection acros
 
 ## Creating a new `QueryRunner` instance
 
-Use `createQueryRunner` method to create a new `QueryRunner`:
+Use `createQueryRunner` or `runWithQueryRunner` methods to create a new `QueryRunner`:
 
 ```typescript
 const queryRunner = dataSource.createQueryRunner()
+```
+or
+
+```typescript
+const value = await dataSource.runWithQueryRunner(async (queryRunner) => {
+    // queryRunner is new instance available until function resolves/rejects
+    return something;
+})
 ```
 
 ## Using `QueryRunner`
@@ -31,6 +39,8 @@ await queryRunner.connect()
 ```typescript
 await queryRunner.release()
 ```
+
+When using `runWithQueryRunner`, the QueryRunner instance is automatically released.
 
 After connection is released it is not possible to use the query runner methods.
 
