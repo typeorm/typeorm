@@ -250,6 +250,19 @@ export class RawSqlResultsToEntityTransformer {
             if (value !== null)
                 // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
                 hasData = true
+
+            // Set embedded column values to null if they are both null and nullable
+            if (entity) {
+                metadata.embeddeds.forEach((embedded) => {
+                    if (entity[embedded.propertyName] === undefined) return
+                    if (
+                        entity[embedded.propertyName] === null &&
+                        !embedded.nullable
+                    )
+                        return
+                    entity[embedded.propertyName] = null
+                })
+            }
         })
         return hasData
     }
