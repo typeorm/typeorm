@@ -11,13 +11,10 @@ As a contributor, here are the guidelines we would like you to follow:
 
 ## <a name="question"></a> Got a Question or Problem?
 
-There are several ways how you can ask your question:
+If you have a question or want community support:
 
 * You can create a question on [StackOverflow](https://stackoverflow.com/questions/tagged/typeorm) where the questions should be tagged with tag `typeorm`.
 * You can ask on [Discord](https://discord.gg/cC9hkmUgNa)
-* You can create issue on [github](https://github.com/typeorm/typeorm/issues)
-
-Preferred way if you create your question on StackOverflow, or create a github issue.
 
 ## <a name="issue"></a> Found a security vulnerability?
 
