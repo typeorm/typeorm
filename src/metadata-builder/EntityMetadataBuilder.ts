@@ -952,6 +952,10 @@ export class EntityMetadataBuilder {
         entityMetadata.lazyRelations = entityMetadata.relations.filter(
             (relation) => relation.isLazy,
         )
+        entityMetadata.cascadingFilterConditionRelations =
+            entityMetadata.relations.filter(
+                (relation) => relation.isCascadeFilterCondition,
+            )
         entityMetadata.oneToOneRelations = entityMetadata.relations.filter(
             (relation) => relation.isOneToOne,
         )
@@ -1036,6 +1040,9 @@ export class EntityMetadataBuilder {
         )
         entityMetadata.nonVirtualColumns = entityMetadata.columns.filter(
             (column) => !column.isVirtual,
+        )
+        entityMetadata.filterColumns = entityMetadata.columns.filter(
+            (column) => typeof column.rawFilterCondition === "function",
         )
         entityMetadata.ancestorColumns = entityMetadata.columns.filter(
             (column) => column.closureType === "ancestor",

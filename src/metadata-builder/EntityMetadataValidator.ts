@@ -44,6 +44,7 @@ export class EntityMetadataValidator {
         )
         this.validateDependencies(entityMetadatas)
         this.validateEagerRelations(entityMetadatas)
+        this.validateFilterConditionCascadeColumns(entityMetadatas)
     }
 
     /**
@@ -364,6 +365,23 @@ export class EntityMetadataValidator {
                             ` Remove "eager: true" from one side of the relation.`,
                     )
             })
+        })
+    }
+
+    /** Validates filter condition cascade columns by ensuring they are one-to-many or one-to-one */
+    protected validateFilterConditionCascadeColumns(
+        entityMetadatas: EntityMetadata[],
+    ) {
+        entityMetadatas.forEach((entityMetadata) => {
+            entityMetadata.cascadingFilterConditionRelations.forEach(
+                (relation) => {
+                    if (!relation.isOneToOne && !relation.isManyToOne) {
+                        throw new TypeORMError(
+                            `Filter condition cascade can only be set on one-to-one or many-to-one relations. Check options of ${entityMetadata.targetName}#${relation.propertyPath}`,
+                        )
+                    }
+                },
+            )
         })
     }
 }

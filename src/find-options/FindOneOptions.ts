@@ -9,6 +9,7 @@ import {
     FindOptionsRelations,
 } from "./FindOptionsRelations"
 import { FindOptionsOrder } from "./FindOptionsOrder"
+import { FindOptionsApplyFilterConditions } from "./FindOptionsApplyFilterConditions"
 
 /**
  * Defines a special criteria to find specific entity.
@@ -92,6 +93,11 @@ export interface FindOneOptions<Entity = any> {
      * Indicates if soft-deleted rows should be included in entity result.
      */
     withDeleted?: boolean
+
+    /**
+     * Indicates if column `rawFilterCondition`s should be applied. Default is `true`.
+     */
+    applyFilterConditions?: boolean | FindOptionsApplyFilterConditions<Entity>
 
     /**
      * If sets to true then loads all relation ids of the entity and maps them into relation values (not relation objects).

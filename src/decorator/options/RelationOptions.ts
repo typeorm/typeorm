@@ -73,4 +73,10 @@ export interface RelationOptions {
      * disable will keep the relation intact. Removal of related item is only possible through its own repo.
      */
     orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
+
+    /**
+     * If set, relation rows that are filtered by `rawFilterCondition` will cause rows of this entity to be excluded from results.
+     * Can be used only for many-to-one and one-to-one relations.
+     */
+    filterConditionCascade?: boolean;
 }

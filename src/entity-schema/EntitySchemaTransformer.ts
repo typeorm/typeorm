@@ -172,6 +172,7 @@ export class EntitySchemaTransformer {
                     isTreeChildren: relationSchema.treeChildren,
                     options: {
                         eager: relationSchema.eager || false,
+                        filterConditionCascade: relationSchema.filterConditionCascade,
                         cascade: relationSchema.cascade,
                         nullable: relationSchema.nullable,
                         onDelete: relationSchema.onDelete,

@@ -857,7 +857,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (
                 this.expressionMap.queryType === "select" &&
                 !this.expressionMap.withDeleted &&
-                metadata.deleteDateColumn
+                metadata.deleteDateColumn &&
+                !this.expressionMap.isCascadingFilterConditionRelationSubquery
             ) {
                 const column = this.expressionMap.aliasNamePrefixingEnabled
                     ? this.expressionMap.mainAlias!.name +
@@ -867,6 +868,37 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                 const condition = `${this.replacePropertyNames(column)} IS NULL`
                 conditionsArray.push(condition)
+            }
+
+            if (
+                this.expressionMap.queryType === "select" &&
+                metadata.filterColumns.length &&
+                this.expressionMap.applyFilterConditions !== false
+            ) {
+                metadata.filterColumns.forEach((filterColumn) => {
+                    if (
+                        typeof this.expressionMap.applyFilterConditions ===
+                            "object" &&
+                        this.expressionMap.applyFilterConditions !== null
+                    ) {
+                        if (
+                            this.expressionMap.skippedFilterConditions.some(
+                                (skipped) => skipped === filterColumn,
+                            )
+                        )
+                            return
+                    }
+                    const column = this.expressionMap.aliasNamePrefixingEnabled
+                        ? `${this.expressionMap.mainAlias!.name}.${
+                              filterColumn.propertyName
+                          }`
+                        : filterColumn.propertyName
+                    const filterCondition = filterColumn.rawFilterCondition?.(
+                        this.replacePropertyNames(column),
+                    )
+                    if (!filterCondition) return
+                    conditionsArray.push(filterCondition)
+                })
             }
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
