@@ -9,10 +9,19 @@ The full QueryRunner API is documented in the [migrations section](./migrations/
 
 ## Creating a new `QueryRunner` instance
 
-Use the `createQueryRunner` method to create a new `QueryRunner`:
+Use the `createQueryRunner` or `runWithQueryRunner` method to create a new `QueryRunner`:
 
 ```typescript
 const queryRunner = dataSource.createQueryRunner()
+```
+
+or
+
+```typescript
+const value = await dataSource.runWithQueryRunner(async (queryRunner) => {
+    // queryRunner is new instance available until function resolves/rejects
+    return something;
+})
 ```
 
 ## Using `QueryRunner`
@@ -38,6 +47,8 @@ await queryRunner.release()
 ```typescript
 await queryRunner.release()
 ```
+
+When using `runWithQueryRunner`, the `QueryRunner` instance is released when the workload callback promise settles.
 
 After the `QueryRunner` is released, it is no longer possible to use the query runner methods.
 

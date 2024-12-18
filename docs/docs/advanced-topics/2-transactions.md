@@ -97,6 +97,30 @@ try {
 }
 ```
 
+Alternatively you can use the `runWithQueryRunner` method to create a temporary QueryRunner:
+
+```typescript
+dataSource.runWithQueryRunner(async (queryRunner: QueryRunner) => {
+    // queryRunner will behave the same as manually created one
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+    try {
+        await queryRunner.query(`INSERT INTO user SELECT * FROM other`)
+        const result = queryRunner.query('SELECT * FROM user')
+        await queryRunner.commitTransaction()
+        // return value from function is returned from runWithQueryRunner
+        return result
+    } catch (e) {
+        await queryRunner.rollbackTransaction()
+        // We can re-throw error if we want it to propagate to where runWithQueryRunner
+        // was called, runWithQueryRunner handles QueryRunner cleanup
+        throw e
+    }
+    // queryRunner will automatically be released when function ends, regardless if an exception
+    // is thrown
+})
+```
+
 There are 3 methods to control transactions in `QueryRunner`:
 
 -   `startTransaction` - starts a new transaction inside the query runner instance.
