@@ -1,7 +1,7 @@
 import "../../utils/test-setup"
 import {
     createDataSource,
-    setupTestingConnections,
+    setupTestingConnectionOptions,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { expect } from "chai"
@@ -9,7 +9,7 @@ import { DataSource } from "../../../src"
 
 describe("base entity", () => {
     it("test if DataSource calls `useDataSource` of the provided entities", async () => {
-        const dataSourceOptions = setupTestingConnections({
+        const dataSourceOptions = setupTestingConnectionOptions({
             entities: [User],
             enabledDrivers: ["sqlite"],
         })
@@ -31,7 +31,7 @@ describe("base entity", () => {
     })
 
     it("test if DataSource calls `useDataSource` of the provided entities in the entities directory", async () => {
-        const dataSourceOptions = setupTestingConnections({
+        const dataSourceOptions = setupTestingConnectionOptions({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite"],
         })

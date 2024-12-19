@@ -169,7 +169,7 @@ export interface QueryRunner {
     getViews(viewPaths?: string[]): Promise<View[]>
 
     /**
-     * Returns replication mode (ex: `master` or `slave`).
+     * Returns replication mode (ie: `master` or `slave`).
      */
     getReplicationMode(): ReplicationMode
 

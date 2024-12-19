@@ -4,6 +4,8 @@ import dotenv from "dotenv"
 import chalk from "chalk"
 import { highlight, Theme } from "cli-highlight"
 
+import { AsyncLocalStorage } from "async_hooks"
+
 export { ReadStream } from "fs"
 export { EventEmitter } from "events"
 export { Readable, Writable } from "stream"
@@ -22,6 +24,13 @@ export class PlatformTools {
      */
     static getGlobalVariable(): any {
         return global
+    }
+
+    /**
+     * Create an AsyncLocalStorage instance, only supported on platform === node.
+     */
+    static createAsyncLocalStorage<T>() {
+        return new AsyncLocalStorage<T>()
     }
 
     /**
