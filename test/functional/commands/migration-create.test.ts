@@ -9,7 +9,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    setupTestingConnections,
+    setupTestingConnectionOptions,
 } from "../../utils/test-utils"
 import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCommand"
@@ -53,7 +53,7 @@ describe("commands - migration create", () => {
         await reloadTestingDatabases(connections)
         await closeTestingConnections(connections)
 
-        connectionOptions = setupTestingConnections({
+        connectionOptions = setupTestingConnectionOptions({
             entities: [Post],
             enabledDrivers,
         })

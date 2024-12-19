@@ -175,7 +175,7 @@ export function setupSingleTestingConnection(
     driverType: DatabaseType,
     options: TestingOptions,
 ): DataSourceOptions | undefined {
-    const testingConnections = setupTestingConnections({
+    const testingConnections = setupTestingConnectionOptions({
         name: options.name ? options.name : undefined,
         entities: options.entities ? options.entities : [],
         subscribers: options.subscribers ? options.subscribers : [],
@@ -223,7 +223,7 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
  * Creates a testing connections options based on the configuration in the ormconfig.json
  * and given options that can override some of its configuration for the test-specific use case.
  */
-export function setupTestingConnections(
+export function setupTestingConnectionOptions(
     options?: TestingOptions,
 ): DataSourceOptions[] {
     const ormConfigConnectionOptionsArray = getTypeOrmConfig()
@@ -388,7 +388,7 @@ export function createDataSource(options: DataSourceOptions): DataSource {
 export async function createTestingConnections(
     options?: TestingOptions,
 ): Promise<DataSource[]> {
-    const dataSourceOptions = setupTestingConnections(options)
+    const dataSourceOptions = setupTestingConnectionOptions(options)
     const dataSources: DataSource[] = []
     for (const options of dataSourceOptions) {
         const dataSource = createDataSource(options)
