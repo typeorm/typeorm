@@ -529,11 +529,16 @@ export class InsertQueryBuilder<
 
                     if (Array.isArray(overwrite)) {
                         updatePart.push(
-                            ...overwrite.map(
+                            ...this.expressionMap.mainAlias!.metadata.columns.filter(
+                                (column) => 
+                                    overwrite.includes(column.propertyName) ||
+                                    overwrite.includes(column.databaseName) /**@Deprecated */ 
+                            )
+                            .map(
                                 (column) =>
                                     `${this.escape(
-                                        column,
-                                    )} = EXCLUDED.${this.escape(column)}`,
+                                        column.databaseName,
+                                    )} = EXCLUDED.${this.escape(column.databaseName)}`,
                             ),
                         )
                     } else if (columns) {
