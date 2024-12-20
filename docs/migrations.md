@@ -401,6 +401,32 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
 }
 ```
 
+## Executing .sql files
+
+If your .sql file contains multiple statements per file, which is common with most standard sql tooling, you will first need to enable the `multipleStatements` option in the applicable `DataSource`.
+
+Then, in your migrations, you can just import the file as a string and execute it!
+
+```ts
+import { MigrationInterface, QueryRunner } from "typeorm"
+import fs from 'node:fs/promises'
+
+export class ExampleMigrationFromFile implements MigrationInterface {
+   public async up(queryRunner: QueryRunner): Promise<void> {
+      // be sure to specify some form of encoding on readFile/readFileSync/etc
+      // as queryRunner.query() expects a string, and by default readFile returns a Buffer
+      let queries = await fs.readFile('./data/example_table_dump.sql', { encoding: 'utf-8' })
+      await queryRunner.query(queries);
+  }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+     await queryRunner.dropTable("example_table_dump")
+  }
+}
+
+```
+
+This approach can be used by `QueryRunner` at runtime as well, however - depending on your usage of typeorm, there may be security implications for leaving `multipleStatements` enabled in production.
+
 ---
 
 ```ts
