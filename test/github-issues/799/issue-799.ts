@@ -26,7 +26,7 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         )
         if (isEnabled === false) return
 
-        const dataSource = new DataSource({
+        dataSource = new DataSource({
             name: "sqlite",
             type: "sqlite",
             database: path,
@@ -43,7 +43,7 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         )
         if (isEnabled === false) return
 
-        const dataSource = new DataSource({
+        dataSource = new DataSource({
             name: "better-sqlite3",
             type: "better-sqlite3",
             database: path,
