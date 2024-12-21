@@ -1,6 +1,6 @@
 import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
 
-import fs from "fs";
+import fs from "fs/promises";
 import gulp from "gulp";
 import del from "del";
 import shell from "gulp-shell";
@@ -174,7 +174,7 @@ export class Gulpfile {
             `export {\n    ${cjsKeys.join(",\n    ")}\n};\n` +
             'export default TypeORM;\n';
 
-        fs.writeFileSync(`${buildDir}/index.mjs`, indexMjsContent, "utf8");
+        await fs.writeFile(`${buildDir}/index.mjs`, indexMjsContent, "utf8");
     }
 
     /**

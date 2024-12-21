@@ -13,7 +13,7 @@ import { User } from "./entity/User"
 import { filepathToName } from "../../../../src/util/PathUtils"
 import rimraf from "rimraf"
 import path from "path"
-import fs from "fs"
+import fs from "fs/promises"
 import appRoot from "app-root-path"
 
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
@@ -104,9 +104,13 @@ describe("multi-database > basic-functionality", () => {
                         )!.groups!["filename"],
                     )
 
-                    expect(fs.existsSync(expectedMainPath)).to.be.true
-                    expect(fs.existsSync(attachAnswerPath)).to.be.true
-                    expect(fs.existsSync(attachCategoryPath)).to.be.true
+                    await expect(fs.access(expectedMainPath, fs.constants.F_OK))
+                        .to.not.be.rejected
+                    await expect(fs.access(attachAnswerPath, fs.constants.F_OK))
+                        .to.not.be.rejected
+                    await expect(
+                        fs.access(attachCategoryPath, fs.constants.F_OK),
+                    ).to.not.be.rejected
                 }),
             ))
 

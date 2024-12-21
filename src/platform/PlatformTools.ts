@@ -1,5 +1,5 @@
-import * as path from "path"
-import * as fs from "fs"
+import path from "path"
+import fs from "fs"
 import dotenv from "dotenv"
 import chalk from "chalk"
 import { highlight, Theme } from "cli-highlight"
@@ -182,12 +182,7 @@ export class PlatformTools {
     }
 
     static async writeFile(path: string, data: any): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            fs.writeFile(path, data, (err) => {
-                if (err) fail(err)
-                ok()
-            })
-        })
+        return fs.promises.writeFile(path, data)
     }
 
     /**
