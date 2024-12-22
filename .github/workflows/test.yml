@@ -11,207 +11,39 @@ on:
     branches: [ "master" ]
 
 jobs:
-  cockroachdb:
+  formatting:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: npm run lint
+
+
+  # These tests run in standard node containers with their db attached as a service
+  database-tests:
     strategy:
       fail-fast: false
       matrix:
         node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-        
-    container: ${{ matrix.node-container }}
-    services:
-      crdb:
-        image: cockroachdb/cockroach
-        env:
-          COCKROACH_ARGS: 'start-single-node --insecure --cache=1GB --store=type=mem,size=4GB'
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
-    - run: npm test
+    uses: ./.github/workflows/database-tests.yml
+    with:
+      node-container: ${{matrix.node-container}}
 
 
-  mongodb:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    container: ${{ matrix.node-container }}
-    services:
-      mongodb:
-        image: mongo:5.0.12
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
-    - run: npm test
-
-
-  mssql:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    container: ${{ matrix.node-container }}
-    services:
-      mssql:
-        image: "mcr.microsoft.com/mssql/server:2022-latest"
-        env:
-          SA_PASSWORD: "Admin12345"
-          ACCEPT_EULA: "Y"
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
-    - run: npm test
-
-
-  mysql_mariadb:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    container: ${{ matrix.node-container }}
-    services:
-      mysql:
-        image: mysql:5.7.37
-        env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
-      mariadb:
-        image: mariadb:10.10.3
-        env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
-    - run: npm test
-
-
-  oracle:
-    runs-on: ubuntu-latest
+  # These tests run with custom docker image attributes that can't be specified in a GHA service
+  database-compose-tests:
     strategy:
       fail-fast: false
       matrix:
         node-version: [16.x, 18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    steps:
-    - uses: actions/setup-node@v4
-      with:
-        node-version: ${{matrix.node-version}}
-    - uses: actions/checkout@v4
-    - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
-    - run: npm i
-    - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
-    - run: npm test
-
-
-  better-sqlite3:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    container: ${{ matrix.node-container }}
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
-    - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-    - run: npm test
-  
-
-  sqlite:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    container: ${{ matrix.node-container }}
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
-    - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-    - run: npm test
-
-
-  sqljs:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    container: ${{ matrix.node-container }}
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-    - run: npm test
-
-
-  posgres:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    container: ${{ matrix.node-container }}
-    services:
-      postgres:
-        image: postgis/postgis:14-3.3
-        env:
-          POSTGRES_USERNAME: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-    - uses: actions/checkout@v4
-    - run: npm i
-    - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-    - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
-    - run: npm test
+    uses: ./.github/workflows/database-compose-tests.yml
+    with:
+      node-version: ${{matrix.node-version}}

@@ -1292,7 +1292,6 @@ There are a few repositories that you can clone and start with:
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
--   [TypeORM + GraphQL framework](https://github.com/vesper-framework/vesper)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 -   Models generation from the existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
