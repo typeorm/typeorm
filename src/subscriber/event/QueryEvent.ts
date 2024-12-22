@@ -43,7 +43,7 @@ export interface AfterQueryEvent<Entity> extends QueryEvent<Entity> {
     success: boolean
 
     /**
-     * The duration of the query execution.
+     * The duration of the query execution, in milliseconds.
      */
     executionTime?: number
 
