@@ -1,8 +1,7 @@
 import { expect } from "chai"
 import { exec } from "child_process"
-import { readFile, writeFile, chmod } from "fs/promises"
+import { readFile, writeFile, chmod, unlink, rmdir } from "fs/promises"
 import { dirname } from "path"
-import rimraf from "rimraf"
 
 describe("cli init command", () => {
     const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
@@ -43,11 +42,11 @@ describe("cli init command", () => {
     })
 
     after(async () => {
-        await rimraf(`./${builtSrcDirectory}/package.json`)
+        await unlink(`./${builtSrcDirectory}/package.json`)
     })
 
     afterEach(async () => {
-        await rimraf(`./${testProjectName}`)
+        await rmdir(`./${testProjectName}`, { recursive: true })
     })
 
     for (const databaseOption of databaseOptions) {

@@ -1,9 +1,8 @@
-import "reflect-metadata"
-import * as assert from "assert"
-import rimraf from "rimraf"
+import { expect } from "chai"
 import { dirname } from "path"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { getTypeOrmConfig } from "../../utils/test-utils"
+import { rimraf } from "rimraf"
 
 describe("github issues > #799 sqlite: 'database' path should be created", () => {
     let dataSource: DataSource
@@ -33,7 +32,7 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         })
         await dataSource.initialize()
 
-        assert.strictEqual(dataSource.isInitialized, true)
+        expect(dataSource.isInitialized).to.equal(true)
     })
 
     it("should create the whole path to database file for better-sqlite3", async function () {
@@ -50,6 +49,6 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         })
         await dataSource.initialize()
 
-        assert.strictEqual(dataSource.isInitialized, true)
+        expect(dataSource.isInitialized).to.equal(true)
     })
 })

@@ -2,12 +2,12 @@ import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
 
 import fs from "fs/promises";
 import gulp from "gulp";
-import del from "del";
 import shell from "gulp-shell";
 import replace from "gulp-replace";
 import rename from "gulp-rename";
 import sourcemaps from "gulp-sourcemaps";
 import ts from "gulp-typescript";
+import { rimraf } from "rimraf";
 
 @Gulpclass()
 export class Gulpfile {
@@ -21,7 +21,7 @@ export class Gulpfile {
      */
     @Task()
     async clean() {
-        return del(["./build/**"]);
+        return rimraf(["./build/**"]);
     }
 
     /**
@@ -86,7 +86,7 @@ export class Gulpfile {
 
     @Task()
     async browserClearPackageDirectory() {
-        return del([
+        return rimraf([
             "./build/browser/**"
         ]);
     }
@@ -193,7 +193,7 @@ export class Gulpfile {
      */
     @Task()
     async packageClearPackageDirectory() {
-        return del([
+        return rimraf([
             "build/package/src/**"
         ]);
     }
