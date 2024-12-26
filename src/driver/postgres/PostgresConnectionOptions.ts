@@ -45,7 +45,7 @@ export interface PostgresConnectionOptions
         readonly master: PostgresConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: PostgresConnectionCredentialsOptions[]
 

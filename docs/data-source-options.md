@@ -103,7 +103,7 @@ Different RDBMS-es have their own specific options.
 
 ## `mysql` / `mariadb` data source options
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
@@ -164,7 +164,7 @@ Different RDBMS-es have their own specific options.
 
 ## `postgres` / `cockroachdb` data source options
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
@@ -244,7 +244,7 @@ Different RDBMS-es have their own specific options.
 ## `mssql` data source options
 Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
@@ -398,7 +398,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 
 ## `mongodb` data source options
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
