@@ -131,7 +131,7 @@ describe("commands - migration create", () => {
                 }),
             )
 
-            // compare against control test strings in results-templates.ts
+            // compare against javascript test strings in results-templates.ts
             sinon.assert.calledWith(
                 createFileStub,
                 sinon.match(/test-directory.*test-migration.js/),
@@ -163,7 +163,7 @@ describe("commands - migration create", () => {
                 }),
             )
 
-            // compare against control test strings in results-templates.ts
+            // compare against timestamp test strings in results-templates.ts
             sinon.assert.calledWith(
                 createFileStub,
                 sinon.match("test-directory/1641163894670-test-migration.ts"),
