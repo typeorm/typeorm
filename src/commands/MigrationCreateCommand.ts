@@ -32,6 +32,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 default: false,
                 describe: "Custom timestamp for the migration name",
             })
+            .option("tmp", {
+                alias: "template",
+                type: "string",
+                default: false,
+                describe: "Template for the migration file",
+            })
     }
 
     async handler(args: yargs.Arguments<any & { path: string }>) {
@@ -44,7 +50,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             const fullPath =
                 path.dirname(inputPath) + "/" + timestamp + "-" + filename
 
-            const fileContent = args.outputJs
+            const fileContent = args.template
+                ? (await CommandUtils.readFile(args.template)).replace(
+                      /\$ClassName/g,
+                      `${camelCase(filename, true)}${timestamp}`,
+                  )
+                : args.outputJs
                 ? MigrationCreateCommand.getJavascriptTemplate(
                       filename,
                       timestamp,

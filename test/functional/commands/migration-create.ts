@@ -15,10 +15,12 @@ import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCommand"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-create"
+import { createTemplate } from "./templates/template-create"
 
 describe("commands - migration create", () => {
     let connectionOptions: DataSourceOptions[]
     let createFileStub: sinon.SinonStub
+    let readFileStub: sinon.SinonStub
     let timerStub: sinon.SinonFakeTimers
     let getConnectionOptionsStub: sinon.SinonStub
     let migrationCreateCommand: MigrationCreateCommand
@@ -60,6 +62,9 @@ describe("commands - migration create", () => {
         connectionOptionsReader = new ConnectionOptionsReader()
         migrationCreateCommand = new MigrationCreateCommand()
         createFileStub = sinon.stub(CommandUtils, "createFile")
+        readFileStub = sinon
+            .stub(CommandUtils, "readFile")
+            .resolves(createTemplate)
 
         timerStub = sinon.useFakeTimers(1610975184784)
     })
@@ -67,6 +72,7 @@ describe("commands - migration create", () => {
     after(async () => {
         timerStub.restore()
         createFileStub.restore()
+        readFileStub.restore()
     })
 
     afterEach(async () => {
@@ -163,6 +169,40 @@ describe("commands - migration create", () => {
                 sinon.match("test-directory/1641163894670-test-migration.ts"),
                 sinon.match(resultsTemplates.timestamp),
             )
+
+            getConnectionOptionsStub.restore()
+        }
+    })
+
+    it("should crate migration file with custom template when option is passed", async () => {
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory()
+
+            baseConnectionOptions = await connectionOptionsReader.get(
+                connectionOption.name as string,
+            )
+            getConnectionOptionsStub = sinon
+                .stub(ConnectionOptionsReader.prototype, "get")
+                .resolves({
+                    ...baseConnectionOptions,
+                    entities: [Post],
+                })
+
+            await migrationCreateCommand.handler(
+                testHandlerArgs({
+                    connection: connectionOption.name,
+                    template: "mock-template",
+                    timestamp: "1610975184784",
+                }),
+            )
+
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match("test-directory/1610975184784-test-migration.ts"),
+                sinon.match(resultsTemplates.template),
+            )
+
+            sinon.assert.calledWith(readFileStub, sinon.match("mock-template"))
 
             getConnectionOptionsStub.restore()
         }
