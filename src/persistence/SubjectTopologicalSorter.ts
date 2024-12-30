@@ -6,7 +6,7 @@ import { TypeORMError } from "../error"
  * Orders insert or remove subjects in proper order (using topological sorting)
  * to make sure insert or remove operations are executed in a proper order.
  */
-export class SubjectTopoligicalSorter {
+export class SubjectTopologicalSorter {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
