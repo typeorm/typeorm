@@ -190,6 +190,7 @@ export class PostgresDriver implements Driver {
         "geography",
         "cube",
         "ltree",
+        "vector",
     ]
 
     /**
@@ -213,6 +214,7 @@ export class PostgresDriver implements Driver {
         "bit",
         "varbit",
         "bit varying",
+        "vector",
     ]
 
     /**
