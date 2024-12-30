@@ -247,7 +247,7 @@ export class RawSqlResultsToEntityTransformer {
                 entity,
                 this.driver.prepareHydratedValue(value, column),
             )
-            if (value !== null)
+            if (value !== null && !column.isVirtualProperty)
                 // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
                 hasData = true
         })
