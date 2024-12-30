@@ -5,7 +5,7 @@ import {
     DatabaseType,
 } from "../../../src"
 import {
-    setupTestingConnections,
+    setupTestingConnectionOptions,
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
@@ -54,7 +54,7 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
         await reloadTestingDatabases(connections)
         await closeTestingConnections(connections)
 
-        connectionOptions = setupTestingConnections({
+        connectionOptions = setupTestingConnectionOptions({
             entities: [Username, Post],
             enabledDrivers,
         })
