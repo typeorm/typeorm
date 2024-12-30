@@ -2882,11 +2882,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                 })
             } else {
-                if (column.isVirtualProperty) {
-                    // Do not add unselected virtual properties to final select
-                    return
-                }
-
                 finalSelects.push({
                     selection: selectionPath,
                     aliasName: DriverUtils.buildAlias(
