@@ -239,7 +239,7 @@ export class RawSqlResultsToEntityTransformer {
 
             if (value === undefined) continue
             // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-            else if (value !== null) hasData = true
+            else if (value !== null && !column.isVirtualProperty) hasData = true
 
             column.setEntityValue(
                 entity,
