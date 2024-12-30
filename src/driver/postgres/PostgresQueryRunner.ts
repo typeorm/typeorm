@@ -255,6 +255,8 @@ export class PostgresQueryRunner
             parameters,
         )
 
+        await broadcasterResult.wait()
+
         try {
             const queryStartTime = +new Date()
             const raw = await databaseConnection.query(query, parameters)
@@ -952,7 +954,7 @@ export class PostgresQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
