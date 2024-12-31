@@ -2,24 +2,38 @@ import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyR
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ExpoDriver } from "./ExpoDriver"
+import { ExpoLegacyDriver } from "./ExpoLegacyDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
+// Needed to satisfy the Typescript compiler
+interface IResultSet {
+    insertId: number | undefined
+    rowsAffected: number
+    rows: {
+        length: number
+        item: (idx: number) => any
+        _array: any[]
+    }
+}
 interface ITransaction {
-    runAsync: (source: string, ...params: any[]) => Promise<any>
-    getAllAsync: (source: string, ...params: any[]) => Promise<any>
+    executeSql: (
+        sql: string,
+        args: any[] | undefined,
+        ok: (tsx: ITransaction, resultSet: IResultSet) => void,
+        fail: (tsx: ITransaction, err: any) => void,
+    ) => void
 }
 
 /**
  * Runs queries on a single sqlite database connection.
  */
-export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
+export class ExpoLegacyQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Database driver used by connection.
      */
-    driver: ExpoDriver
+    driver: ExpoLegacyDriver
 
     /**
      * Database transaction object
@@ -30,7 +44,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: ExpoDriver) {
+    constructor(driver: ExpoLegacyDriver) {
         super()
         this.driver = driver
         this.connection = driver.connection
@@ -38,7 +52,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     }
 
     /**
-     * Starts transaction. Within Expo, all database operations happen in a
+     * Starts transaction. Within ExpoLegacy, all database operations happen in a
      * transaction context, so issuing a `BEGIN TRANSACTION` command is
      * redundant and will result in the following error:
      *
@@ -65,7 +79,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Commits transaction.
      * Error will be thrown if transaction was not started.
-     * Since Expo will automatically commit the transaction once all the
+     * Since ExpoLegacy will automatically commit the transaction once all the
      * callbacks of the transaction object have been completed, "committing" a
      * transaction in this driver's context means that we delete the transaction
      * object and set the stage for the next transaction.
@@ -91,7 +105,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
      * Rollbacks transaction.
      * Error will be thrown if transaction was not started.
      * This method's functionality is identical to `commitTransaction()` because
-     * the transaction lifecycle is handled within the Expo transaction object.
+     * the transaction lifecycle is handled within the ExpoLegacy transaction object.
      * Issuing separate statements for `COMMIT` or `ROLLBACK` aren't necessary.
      */
     async rollbackTransaction(): Promise<void> {
@@ -117,12 +131,11 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     async beforeMigration(): Promise<void> {
         const databaseConnection = await this.connect()
         return new Promise((ok, fail) => {
-            try {
-                databaseConnection.execSync("PRAGMA foreign_keys = OFF");
-                ok();
-            } catch (error) {
-                fail(error);
-            }
+            databaseConnection.exec(
+                [{ sql: "PRAGMA foreign_keys = OFF", args: [] }],
+                false,
+                (err: any) => (err ? fail(err) : ok()),
+            )
         })
     }
 
@@ -132,12 +145,11 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     async afterMigration(): Promise<void> {
         const databaseConnection = await this.connect()
         return new Promise((ok, fail) => {
-            try {
-                databaseConnection.execSync("PRAGMA foreign_keys = ON");
-                ok();
-            } catch (error) {
-                fail(error);
-            }
+            databaseConnection.exec(
+                [{ sql: "PRAGMA foreign_keys = ON", args: [] }],
+                false,
+                (err: any) => (err ? fail(err) : ok()),
+            )
         })
     }
 
@@ -163,104 +175,95 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             )
 
             const queryStartTime = +new Date()
-            // All Expo SQL queries are executed in a transaction context
-            databaseConnection.withExclusiveTransactionAsync(
+            // All ExpoLegacy SQL queries are executed in a transaction context
+            databaseConnection.transaction(
                 async (transaction: ITransaction) => {
                     if (typeof this.transaction === "undefined") {
                         await this.startTransaction()
                         this.transaction = transaction
                     }
-                    try {
-                        let t
-                        let rows
-                        try {
-                            t = await transaction.runAsync(
+                    this.transaction.executeSql(
+                        query,
+                        parameters,
+                        async (t: ITransaction, raw: IResultSet) => {
+                            // log slow queries if maxQueryExecution time is set
+                            const maxQueryExecutionTime =
+                                this.driver.options.maxQueryExecutionTime
+                            const queryEndTime = +new Date()
+                            const queryExecutionTime =
+                                queryEndTime - queryStartTime
+
+                            this.broadcaster.broadcastAfterQueryEvent(
+                                broadcasterResult,
                                 query,
-                                parameters || [],
-                            )
-                            rows = await t.getAllAsync(query, parameters || [])
-                        } catch (error) {
-                            rows = await transaction.getAllAsync(
-                                query,
-                                parameters || [],
-                            )
-                        }
-
-                        // log slow queries if maxQueryExecution time is set
-                        const maxQueryExecutionTime =
-                            this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = +new Date()
-                        const queryExecutionTime = queryEndTime - queryStartTime
-
-                        this.broadcaster.broadcastAfterQueryEvent(
-                            broadcasterResult,
-                            query,
-                            parameters,
-                            true,
-                            queryExecutionTime,
-                            rows,
-                            undefined,
-                        )
-                        await broadcasterResult.wait()
-
-                        if (
-                            maxQueryExecutionTime &&
-                            queryExecutionTime > maxQueryExecutionTime
-                        ) {
-                            this.driver.connection.logger.logQuerySlow(
+                                parameters,
+                                true,
                                 queryExecutionTime,
+                                raw,
+                                undefined,
+                            )
+                            await broadcasterResult.wait()
+
+                            if (
+                                maxQueryExecutionTime &&
+                                queryExecutionTime > maxQueryExecutionTime
+                            ) {
+                                this.driver.connection.logger.logQuerySlow(
+                                    queryExecutionTime,
+                                    query,
+                                    parameters,
+                                    this,
+                                )
+                            }
+
+                            const result = new QueryResult()
+
+                            if (raw?.hasOwnProperty("rowsAffected")) {
+                                result.affected = raw.rowsAffected
+                            }
+
+                            if (raw?.hasOwnProperty("rows")) {
+                                let resultSet = []
+                                for (let i = 0; i < raw.rows.length; i++) {
+                                    resultSet.push(raw.rows.item(i))
+                                }
+
+                                result.raw = resultSet
+                                result.records = resultSet
+                            }
+
+                            // return id of inserted row, if query was insert statement.
+                            if (query.startsWith("INSERT INTO")) {
+                                result.raw = raw.insertId
+                            }
+
+                            if (useStructuredResult) {
+                                ok(result)
+                            } else {
+                                ok(result.raw)
+                            }
+                        },
+                        async (t: ITransaction, err: any) => {
+                            this.driver.connection.logger.logQueryError(
+                                err,
                                 query,
                                 parameters,
                                 this,
                             )
-                        }
+                            this.broadcaster.broadcastAfterQueryEvent(
+                                broadcasterResult,
+                                query,
+                                parameters,
+                                false,
+                                undefined,
+                                undefined,
+                                err,
+                            )
+                            await broadcasterResult.wait()
 
-                        const result = new QueryResult()
-
-                        if (t?.hasOwnProperty("changes")) {
-                            result.affected = t.changes
-                        }
-
-                        if (rows?.length) {
-                            let resultSet = []
-                            for (let i = 0; i < rows.length; i++) {
-                                resultSet.push(rows[i])
-                            }
-
-                            result.raw = resultSet
-                            result.records = resultSet
-                        }
-
-                        // return id of inserted row, if query was insert statement.
-                        if (query.startsWith("INSERT INTO")) {
-                            result.raw = t?.lastInsertRowId
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result)
-                        } else {
-                            ok(result?.raw || [])
-                        }
-                    } catch (err) {
-                        this.driver.connection.logger.logQueryError(
-                            err,
-                            query,
-                            parameters,
-                            this,
-                        )
-                        this.broadcaster.broadcastAfterQueryEvent(
-                            broadcasterResult,
-                            query,
-                            parameters,
-                            false,
-                            undefined,
-                            undefined,
-                            err,
-                        )
-                        await broadcasterResult.wait()
-
-                        fail(new QueryFailedError(query, parameters, err))
-                    }
+                            fail(new QueryFailedError(query, parameters, err))
+                        },
+                    )
                 },
                 async (err: any) => {
                     await this.rollbackTransaction()

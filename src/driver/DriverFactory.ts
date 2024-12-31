@@ -11,6 +11,7 @@ import { SqljsDriver } from "./sqljs/SqljsDriver"
 import { MysqlDriver } from "./mysql/MysqlDriver"
 import { PostgresDriver } from "./postgres/PostgresDriver"
 import { ExpoDriver } from "./expo/ExpoDriver"
+import { ExpoLegacyDriver } from "./expo-legacy/ExpoLegacyDriver"
 import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
 import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
 import { Driver } from "./Driver"
@@ -60,6 +61,8 @@ export class DriverFactory {
                 return new MongoDriver(connection)
             case "expo":
                 return new ExpoDriver(connection)
+            case "expo-legacy":
+                return new ExpoLegacyDriver(connection)
             case "aurora-mysql":
                 return new AuroraMysqlDriver(connection)
             case "aurora-postgres":
@@ -77,6 +80,7 @@ export class DriverFactory {
                     "cockroachdb",
                     "cordova",
                     "expo",
+                    "expo-legacy",
                     "mariadb",
                     "mongodb",
                     "mssql",

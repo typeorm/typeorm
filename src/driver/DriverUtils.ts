@@ -21,6 +21,7 @@ export class DriverUtils {
             "nativescript",
             "sqljs",
             "expo",
+            "expo-legacy",
             "better-sqlite3",
             "capacitor",
         ].includes(driver.options.type)
