@@ -4271,13 +4271,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         parameterValue = where[key].value
                     }
                     if (column.transformer) {
-                        parameterValue instanceof FindOperator
-                            ? parameterValue.transformValue(column.transformer)
-                            : (parameterValue =
-                                  ApplyValueTransformers.transformTo(
-                                      column.transformer,
-                                      parameterValue,
-                                  ))
+                        if (parameterValue instanceof FindOperator) {
+                            parameterValue = parameterValue.transformValue(
+                                column.transformer,
+                            )
+                        } else {
+                            parameterValue = ApplyValueTransformers.transformTo(
+                                column.transformer,
+                                parameterValue,
+                            )
+                        }
                     }
 
                     // if (parameterValue === null) {
