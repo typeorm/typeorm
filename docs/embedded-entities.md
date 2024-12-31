@@ -165,3 +165,40 @@ All columns defined in the `Name` entity will be merged into `user`, `employee` 
 This way code duplication in the entity classes is reduced.
 You can use as many columns (or relations) in embedded classes as you need.
 You even can have nested embedded columns inside embedded classes.
+
+## Nullable embedded entities
+
+When an embedded entity is stored as `null`, and the column is `nullable`, it will be returned as `null` when read from the database.
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Name } from "./Name"
+
+export class Name {
+    @Column()
+    first: string
+
+    @Column()
+    last: string
+}
+
+@Entity()
+export class Student {
+    @PrimaryGeneratedColumn()
+    id: string
+
+    @Column(() => Name, { nullable: true })
+    name: Name | null
+
+    @Column()
+    faculty: string
+}
+
+const student = new Student()
+student.faculty = 'Faculty'
+student.name = null
+await dataSource.manager.save(student)
+
+// this will return the student name as `null`
+await dataSource.getRepository(Student).findOne()
+```
