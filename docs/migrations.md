@@ -156,10 +156,6 @@ Example with `ts-node` in ESM projects:
 npx typeorm-ts-node-esm migration:run -- -d path-to-datasource-config
 ```
 
-```
-npx typeorm-ts-node-esm migration:generate ./src/migrations/update-post-table -d ./src/data-source.ts
-```
-
 This command will execute all pending migrations and run them in a sequence ordered by their timestamps.
 This means all sql queries written in the `up` methods of your created migrations will be executed.
 That's all! Now you have your database schema up-to-date.
