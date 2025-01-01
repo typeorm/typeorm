@@ -202,10 +202,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     query,
                     parameters,
                 )
-
+                const enableQueryTimeout =
+                    this.driver.options.enableQueryTimeout
+                const maxQueryExecutionTime =
+                    this.driver.options.maxQueryExecutionTime
+                const queryPayload =
+                    enableQueryTimeout && maxQueryExecutionTime
+                        ? { sql: query, timeout: maxQueryExecutionTime }
+                        : query
                 const queryStartTime = +new Date()
                 databaseConnection.query(
-                    query,
+                    queryPayload,
                     parameters,
                     async (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
