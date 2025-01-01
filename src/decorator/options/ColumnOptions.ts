@@ -187,4 +187,11 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number
+
+    /**
+     * Custom SQL filter expression on this column.
+     * If condition is not met, the row will be filtered out from
+     * .find() and .getMany() results.
+     */
+    rawFilterCondition?: (columnAlias: string) => string
 }

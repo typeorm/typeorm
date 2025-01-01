@@ -279,6 +279,11 @@ export class ColumnMetadata {
     isDeleteDate: boolean = false
 
     /**
+     * SQL condition to filter on this column.
+     */
+    rawFilterCondition?: (alias: string) => string
+
+    /**
      * Indicates if this column contains an entity version.
      */
     isVersion: boolean = false
@@ -484,6 +489,8 @@ export class ColumnMetadata {
             this.srid = options.args.options.srid
         if ((options.args.options as VirtualColumnOptions).query)
             this.query = (options.args.options as VirtualColumnOptions).query
+        if (options.args.options.rawFilterCondition)
+            this.rawFilterCondition = options.args.options.rawFilterCondition
         if (this.isTreeLevel)
             this.type = options.connection.driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {

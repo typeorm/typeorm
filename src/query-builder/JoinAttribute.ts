@@ -37,6 +37,11 @@ export class JoinAttribute {
     condition?: string
 
     /**
+     * Indicates if this join is a cascading filter condition join.
+     */
+    isCascadingFilterConditionJoin?: boolean
+
+    /**
      * Property + alias of the object where to joined data should be mapped.
      */
     mapToProperty?: string
