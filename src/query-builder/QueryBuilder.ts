@@ -1623,6 +1623,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 this.expressionMap.parameters
             whereQueryBuilder.expressionMap.nativeParameters =
                 this.expressionMap.nativeParameters
+            whereQueryBuilder.expressionMap.joinAttributes =
+                this.expressionMap.joinAttributes
 
             whereQueryBuilder.expressionMap.wheres = []
 
