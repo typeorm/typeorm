@@ -211,6 +211,13 @@ export class RedisQueryResultCache implements QueryResultCache {
     ): Promise<void> {
         await Promise.all(
             identifiers.map((identifier) => {
+                if (identifier.endsWith(":*")) {
+                    return this.client
+                        .keys(identifier)
+                        .then((keys: string[]) => {
+                            return this.remove(keys)
+                        })
+                }
                 return this.deleteKey(identifier)
             }),
         )
