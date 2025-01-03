@@ -4487,7 +4487,7 @@ export declare class MongoClient extends TypedEventEmitter<MongoClientEvents> {
      *
      * @see docs.mongodb.org/manual/reference/connection-string/
      */
-    connect(): Promise<this>
+    connect(url: string, options: any): Promise<this>
     /* Excluded from this release type: _connect */
     /**
      * Close the client and its underlying connections
