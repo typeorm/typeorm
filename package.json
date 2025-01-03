@@ -224,12 +224,12 @@
     "app-root-path": "^3.1.0",
     "buffer": "^6.0.3",
     "chalk": "^4.1.2",
-    "cli-highlight": "^2.1.11",
     "dayjs": "^1.11.9",
     "debug": "^4.3.4",
     "dotenv": "^16.0.3",
     "glob": "^10.4.5",
     "sha.js": "^2.4.11",
+    "sql-highlight": "^6.0.0",
     "tslib": "^2.5.0",
     "uuid": "^9.0.0",
     "yargs": "^17.6.2"
