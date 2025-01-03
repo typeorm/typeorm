@@ -61,11 +61,11 @@ export class QueryCommand implements yargs.CommandModule {
                 )
             } else {
                 console.log(chalk.green("Query has been executed. Result: "))
-                console.log(
-                    PlatformTools.highlightJson(
-                        JSON.stringify(queryResult, undefined, 2),
-                    ),
-                )
+                console.dir(queryResult, {
+                    breakLength: Infinity,
+                    compact: false,
+                    depth: null,
+                })
             }
 
             await queryRunner.release()
