@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mssql-version: ['^9.1.1', '^10.0.1', '^11.0.0']
+        mssql-version: ['^9.1.1', '^10.0.1', '^11.0.1']
 
     container: ${{inputs.node-container}}
     services:
