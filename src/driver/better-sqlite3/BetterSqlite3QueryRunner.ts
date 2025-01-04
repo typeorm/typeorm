@@ -47,7 +47,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 while (this.stmtCache.size > this.cacheSize) {
                     // since es6 map keeps the insertion order,
                     // it comes to be FIFO cache
-                    const key = this.stmtCache.keys().next().value
+                    const key = this.stmtCache.keys().next().value!
                     this.stmtCache.delete(key)
                 }
             }
