@@ -52,4 +52,4 @@ jobs:
   coverage:
     uses: ./.github/workflows/coverage.yml
     with:
-      node-version: "18.x"
+      node-container: "node:18"
