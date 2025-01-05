@@ -27,12 +27,12 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-crdb-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
 
   mongodb:
     runs-on: ubuntu-latest
@@ -51,12 +51,12 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-mongodb-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
 
 
   mssql:
@@ -80,12 +80,12 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
       - run: npm test
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-mssql-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
 
 
   mysql_mariadb:
@@ -117,12 +117,12 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-mysql_mariadb-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
 
 
   better-sqlite3:
@@ -140,12 +140,12 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-better-sqlite3-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
 
 
   sqlite:
@@ -163,12 +163,12 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-sqlite-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
 
 
   sqljs:
@@ -185,12 +185,12 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-sqljs-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
 
 
   postgres:
@@ -219,9 +219,9 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
+      - run: npx nyc -t ./nyc_output npm run test
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
           name: nyc_output-postgres-${{inputs.node-container}}
-          path: ./.nyc_output
+          path: ./nyc_output
