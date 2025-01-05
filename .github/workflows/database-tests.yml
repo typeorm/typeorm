@@ -31,7 +31,7 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-crdb-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-crdb
           path: ./nyc_output
 
   mongodb:
@@ -55,7 +55,7 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-mongodb-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-mongodb
           path: ./nyc_output
 
 
@@ -84,7 +84,7 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-mssql-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-mssql
           path: ./nyc_output
 
 
@@ -121,7 +121,7 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-mysql_mariadb-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-mysql_mariadb
           path: ./nyc_output
 
 
@@ -144,7 +144,7 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-better-sqlite3-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-better-sqlite3
           path: ./nyc_output
 
 
@@ -167,7 +167,7 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-sqlite-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-sqlite
           path: ./nyc_output
 
 
@@ -189,7 +189,7 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-sqljs-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-sqljs
           path: ./nyc_output
 
 
@@ -223,5 +223,5 @@ jobs:
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-postgres-${{inputs.node-container[5]}}${{inputs.node-container[6]}}
+          name: nyc_output-postgres
           path: ./nyc_output
