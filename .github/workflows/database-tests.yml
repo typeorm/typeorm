@@ -29,9 +29,11 @@ jobs:
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-crdb-${{inputs.node-container}}
+          name: nyc_output-crdb-${NODE_VERSION}
           path: ./nyc_output
 
   mongodb:
@@ -53,9 +55,11 @@ jobs:
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-mongodb-${{inputs.node-container}}
+          name: nyc_output-mongodb-${NODE_VERSION}
           path: ./nyc_output
 
 
@@ -82,9 +86,11 @@ jobs:
       - run: npm test
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-mssql-${{inputs.node-container}}
+          name: nyc_output-mssql-${NODE_VERSION}
           path: ./nyc_output
 
 
@@ -119,9 +125,11 @@ jobs:
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-mysql_mariadb-${{inputs.node-container}}
+          name: nyc_output-mysql_mariadb-${NODE_VERSION}
           path: ./nyc_output
 
 
@@ -142,9 +150,11 @@ jobs:
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-better-sqlite3-${{inputs.node-container}}
+          name: nyc_output-better-sqlite3-${NODE_VERSION}
           path: ./nyc_output
 
 
@@ -165,9 +175,11 @@ jobs:
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-sqlite-${{inputs.node-container}}
+          name: nyc_output-sqlite-${NODE_VERSION}
           path: ./nyc_output
 
 
@@ -187,9 +199,11 @@ jobs:
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-sqljs-${{inputs.node-container}}
+          name: nyc_output-sqljs-${NODE_VERSION}
           path: ./nyc_output
 
 
@@ -221,7 +235,9 @@ jobs:
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
       - run: npx nyc -t ./nyc_output npm run test
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - run: NODE_VERSION=${{inputs.node-container}}
+      - run: echo "NODE_VERSION=${NODE_VERSION//:/}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with:
-          name: nyc_output-postgres-${{inputs.node-container}}
+          name: nyc_output-postgres-${NODE_VERSION}
           path: ./nyc_output
