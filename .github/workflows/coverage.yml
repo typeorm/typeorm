@@ -7,5 +7,17 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
 
+    env:
+      npm_config_yes: 'true'
+    container: node:18
     steps:
-      - run: echo "Hello world"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nyc_output-*
+          merge-multiple: true
+      - run: npx nyc merge nyc_output coverage/coverage.json
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ./nyc_output
