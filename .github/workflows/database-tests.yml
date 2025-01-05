@@ -33,6 +33,7 @@ jobs:
         with:
           name: nyc_output-crdb
           path: ./nyc_output
+          overwrite: true
 
   mongodb:
     runs-on: ubuntu-latest
@@ -57,6 +58,7 @@ jobs:
         with:
           name: nyc_output-mongodb
           path: ./nyc_output
+          overwrite: true
 
 
   mssql:
@@ -86,6 +88,7 @@ jobs:
         with:
           name: nyc_output-mssql
           path: ./nyc_output
+          overwrite: true
 
 
   mysql_mariadb:
@@ -123,6 +126,7 @@ jobs:
         with:
           name: nyc_output-mysql_mariadb
           path: ./nyc_output
+          overwrite: true
 
 
   better-sqlite3:
@@ -146,6 +150,7 @@ jobs:
         with:
           name: nyc_output-better-sqlite3
           path: ./nyc_output
+          overwrite: true
 
 
   sqlite:
@@ -169,6 +174,7 @@ jobs:
         with:
           name: nyc_output-sqlite
           path: ./nyc_output
+          overwrite: true
 
 
   sqljs:
@@ -191,6 +197,7 @@ jobs:
         with:
           name: nyc_output-sqljs
           path: ./nyc_output
+          overwrite: true
 
 
   postgres:
@@ -225,3 +232,4 @@ jobs:
         with:
           name: nyc_output-postgres
           path: ./nyc_output
+          overwrite: true
