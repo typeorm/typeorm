@@ -1,6 +1,50 @@
 [
   {
     "skip": false,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "./temp/better-sqlite3db.db",
+    "logging": true
+  },
+  {
+    "skip": false,
+    "name": "cockroachdb",
+    "type": "cockroachdb",
+    "host": "crdb",
+    "port": 26257,
+    "username": "root",
+    "password": "",
+    "database": "defaultdb",
+    "logging": true
+  },
+  {
+    "skip": false,
+    "disabledIfNotEnabledImplicitly": true,
+    "name": "mongodb",
+    "type": "mongodb",
+    "host": "mongodb",
+    "port": 27017,
+    "database": "test",
+    "logging": true,
+    "useNewUrlParser": true,
+    "useUnifiedTopology": true
+  },
+  {
+    "skip": false,
+    "name": "mssql",
+    "type": "mssql",
+    "host": "mssql",
+    "port": 1433,
+    "username": "sa",
+    "password": "Admin12345",
+    "database": "tempdb",
+    "logging": true,
+    "extra": {
+      "trustServerCertificate": true
+    }
+  },
+  {
+    "skip": false,
     "name": "mysql",
     "type": "mysql",
     "host": "mysql",
@@ -8,7 +52,7 @@
     "username": "root",
     "password": "admin",
     "database": "test",
-    "logging": false
+    "logging": true
   },
   {
     "skip": false,
@@ -19,7 +63,7 @@
     "username": "root",
     "password": "admin",
     "database": "test",
-    "logging": false
+    "logging": true
   },
   {
     "skip": false,
@@ -30,6 +74,20 @@
     "username": "postgres",
     "password": "postgres",
     "database": "postgres",
-    "logging": false
+    "logging": true
+  },
+  {
+    "skip": false,
+    "name": "sqlite",
+    "type": "sqlite",
+    "database": "./temp/sqlitedb-1.db",
+    "logging": true,
+    "relationLoadStrategy": "join"
+  },
+  {
+    "skip": false,
+    "name": "sqljs",
+    "type": "sqljs",
+    "logging": true
   }
 ]
