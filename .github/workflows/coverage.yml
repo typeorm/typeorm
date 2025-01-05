@@ -13,6 +13,8 @@ jobs:
     strategy:
       fail-fast: false
 
+    env:
+      npm_config_yes: 'true'
     container: ${{inputs.node-container}}
     services:
       crdb:
@@ -58,4 +60,9 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/coverage.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npm run compile
+      - run: npx nyc npm run test-fast
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ./coverage
