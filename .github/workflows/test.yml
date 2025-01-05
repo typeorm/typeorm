@@ -47,3 +47,9 @@ jobs:
     uses: ./.github/workflows/database-compose-tests.yml
     with:
       node-version: ${{matrix.node-version}}
+
+  # Run with most databases possible to provide the coverage of the tests
+  coverage:
+    uses: ./.github/workflows/coverage.yml
+    with:
+      node-version: "18.x"
