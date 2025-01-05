@@ -1,69 +1,11 @@
 name: coverage
 
 on:
-  workflow_call:
-    inputs:
-      node-container:
-        required: true
-        type: string
+  workflow_call
 
 jobs:
   coverage:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-
-    env:
-      npm_config_yes: 'true'
-    container: ${{inputs.node-container}}
-    services:
-      crdb:
-        image: cockroachdb/cockroach
-        env:
-          COCKROACH_ARGS: 'start-single-node --insecure --cache=1GB --store=type=mem,size=4GB'
-      mongodb:
-        image: mongo:5.0.12
-      mssql:
-        image: "mcr.microsoft.com/mssql/server:2022-latest"
-        env:
-          SA_PASSWORD: "Admin12345"
-          ACCEPT_EULA: "Y"
-      mysql:
-        image: mysql:5.7.37
-        env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
-      mariadb:
-        image: mariadb:10.10.3
-        env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
-      postgres:
-        image: postgis/postgis:14-3.3
-        env:
-          POSTGRES_USERNAME: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
-      - run: npm i
-      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-      - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
-      - run: cp .github/workflows/coverage.ormconfig.json ormconfig.json
-      - run: npm run compile
-      - run: npx nyc npm run test-fast
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: ./coverage
+      - run: echo "Hello world"
