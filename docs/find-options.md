@@ -588,7 +588,7 @@ If you need to provide user input that is an array, you can bind them as a list 
 ```ts
 import { Raw } from "typeorm"
 
-const loadedPosts = await dataSource.getRepository(Post).findby({
+const loadedPosts = await dataSource.getRepository(Post).findBy({
     title: Raw((alias) => `${alias} IN (:...titles)`, {
         titles: [
             "Go To Statement Considered Harmful",
@@ -601,7 +601,7 @@ const loadedPosts = await dataSource.getRepository(Post).findby({
 will execute following query:
 
 ```sql
-SELECT * FROM "post" WHERE "titles" IN ('Go To Statement Considered Harmful', 'Structured Programming')
+SELECT * FROM "post" WHERE "title" IN ('Go To Statement Considered Harmful', 'Structured Programming')
 ```
 
 ## Combining Advanced Options

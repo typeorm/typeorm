@@ -391,6 +391,41 @@ const timber = await repository.findOneByOrFail({ firstName: "Timber" })
 
 ```typescript
 const rawData = await repository.query(`SELECT * FROM USERS`)
+
+// You can also use parameters to avoid SQL injection
+// The syntax differs between the drivers
+
+// aurora-mysql, better-sqlite3, capacitor, cordova, 
+// expo, mariadb, mysql, nativescript, react-native, 
+// sap, sqlite, sqljs
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = ? and age = ?',
+    [ 'John', 24 ]
+)
+
+// aurora-postgres, cockroachdb, postgres
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = $1 and age = $2',
+    ['John', 24]
+)
+
+// oracle
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = :1 and age = :2',
+    ['John', 24]
+)
+
+// spanner
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = @param0 and age = @param1',
+    [ 'John', 24 ]
+)
+
+// mssql
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = @0 and age = @1',
+    [ 'John', 24 ]
+)
 ```
 
 -   `clear` - Clears all the data from the given table (truncates/drops it).

@@ -983,7 +983,21 @@ const users = await dataSource
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
 
-### setOnLock
+#### Lock tables
+You can also lock tables using the following method:
+
+```typescript
+const users = await dataSource
+    .getRepository(Post)
+    .createQueryBuilder("post")
+    .leftJoin("post.author", "user")
+    .setLock("pessimistic_write", undefined, ["post"])
+    .getMany()
+```
+
+If the Lock Tables argument is provided, only the table that is locked in the FOR UPDATE OF clause is specified.
+
+### setOnLocked
 Allows you to control what happens when a row is locked. By default, the database will wait for the lock.
 You can control that behavior by using `setOnLocked`
 
@@ -1216,7 +1230,7 @@ export class User {
 }
 ```
 
-Using a standard `find` or query, you will not receive the rows which have a value in that row. However, if you do the following:
+Using a standard `find` or query, you will not receive the rows which have a value in that column. However, if you do the following:
 
 ```typescript
 const users = await dataSource
