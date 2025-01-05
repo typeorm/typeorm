@@ -13,9 +13,6 @@
     <a href="https://codecov.io/gh/typeorm/typeorm">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
     </a>
-	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-uu12ljeb-OH_0086I379fUDApYJHNuw">
-		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg">
-	</a>
   <br>
   <br>
 </div>
@@ -35,6 +32,13 @@ maintainable applications in the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
+
+> **📣 Announcement: The Future of TypeORM**
+>
+> We’re excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we’re structuring maintenance
+> and bringing together dedicated resources to ensure TypeORM thrives for years to come.
+>
+> [Read the full announcement](./docs/future-of-typeorm.md)
 
 ## Features
 
@@ -1288,7 +1292,6 @@ There are a few repositories that you can clone and start with:
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:
 
--   [TypeORM + GraphQL framework](https://github.com/vesper-framework/vesper)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 -   Models generation from the existing database - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)

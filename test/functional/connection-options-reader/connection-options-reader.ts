@@ -1,4 +1,4 @@
-import { promises as fs } from "fs"
+import fs from "fs/promises"
 import { expect } from "chai"
 import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"

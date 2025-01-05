@@ -1,0 +1,49 @@
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs
+# https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers
+
+name: test
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: npm run lint
+
+
+  # These tests run in standard node containers with their db attached as a service
+  database-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    uses: ./.github/workflows/database-tests.yml
+    with:
+      node-container: ${{matrix.node-container}}
+
+
+  # These tests run with custom docker image attributes that can't be specified in a GHA service
+  database-compose-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [16.x, 18.x, 20.x] #, 22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    uses: ./.github/workflows/database-compose-tests.yml
+    with:
+      node-version: ${{matrix.node-version}}
