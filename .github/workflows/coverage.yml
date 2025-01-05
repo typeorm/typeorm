@@ -62,6 +62,7 @@ jobs:
       - run: cp .github/workflows/coverage.ormconfig.json ormconfig.json
       - run: npm run compile
       - run: npx nyc npm run test-fast
+      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html
       - uses: actions/upload-artifact@v4
         with:
           name: coverage
