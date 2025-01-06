@@ -25,7 +25,7 @@ jobs:
       - run: npm i
       - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | coveralls
+      - run: npx nyc report --reporter=text-lcov | npx coveralls
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
