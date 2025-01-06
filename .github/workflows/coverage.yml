@@ -15,6 +15,8 @@ jobs:
         with:
           pattern: nyc_output-*
           merge-multiple: true
+      - run: pwd
+      - run: ls
       - run: npx nyc merge nyc_output coverage/coverage.json
       - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
       - uses: actions/upload-artifact@v4
