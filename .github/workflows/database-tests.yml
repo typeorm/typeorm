@@ -26,7 +26,7 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -49,7 +49,7 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -77,7 +77,7 @@ jobs:
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
       - run: npm test
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -113,7 +113,7 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -135,7 +135,7 @@ jobs:
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -157,7 +157,7 @@ jobs:
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -178,7 +178,7 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -211,7 +211,7 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
-      - run: npx nyc report --reporter=text-lcov | npx coveralls
+      - run: npx nyc report --reporter=lcov
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
