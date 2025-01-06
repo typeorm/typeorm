@@ -6,19 +6,8 @@ on:
 jobs:
   coverage:
     runs-on: ubuntu-latest
-
-    env:
-      npm_config_yes: 'true'
-    container: node:18
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@v2
         with:
-          pattern: nyc_output-*
-          merge-multiple: true
-          path: nyc_output
-      - run: npx nyc merge nyc_output coverage/coverage.json
-      - run: npx nyc report --reporter html --reporter text --report-dir coverage/html -t ./nyc_output
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: ./coverage
+          parallel-finished: true
