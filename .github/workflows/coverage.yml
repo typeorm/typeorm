@@ -15,6 +15,7 @@ jobs:
         with:
           pattern: nyc_output-*
           merge-multiple: true
+          path: nyc_output
       - run: pwd
       - run: ls
       - run: npx nyc merge nyc_output coverage/coverage.json
