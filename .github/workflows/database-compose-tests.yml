@@ -9,6 +9,9 @@ on:
 
 jobs:
   oracle:
+    # For some reason nyc is stuck at the end of the test execution even if all tests pass
+    # Probably that's why the job failed on CircleCI
+    if: ${{inputs.node-version != '16.x'}}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
