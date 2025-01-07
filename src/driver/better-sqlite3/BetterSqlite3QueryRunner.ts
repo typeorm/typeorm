@@ -4,6 +4,7 @@ import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQuer
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BetterSqlite3Driver } from "./BetterSqlite3Driver"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -46,7 +47,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 while (this.stmtCache.size > this.cacheSize) {
                     // since es6 map keeps the insertion order,
                     // it comes to be FIFO cache
-                    const key = this.stmtCache.keys().next().value
+                    const key = this.stmtCache.keys().next().value!
                     this.stmtCache.delete(key)
                 }
             }
@@ -83,7 +84,14 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection
 
+        const broadcasterResult = new BroadcasterResult()
+
         this.driver.connection.logger.logQuery(query, parameters, this)
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+        )
         const queryStartTime = Date.now()
 
         const stmt = await this.getStmt(query)
@@ -120,6 +128,16 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                     parameters,
                     this,
                 )
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                result.raw,
+                undefined,
+            )
 
             if (!useStructuredResult) {
                 return result.raw

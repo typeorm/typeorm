@@ -302,7 +302,7 @@ export interface SqlServerConnectionOptions
         readonly master: SqlServerConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: SqlServerConnectionCredentialsOptions[]
 

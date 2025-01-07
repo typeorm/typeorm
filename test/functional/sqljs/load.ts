@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import * as fs from "fs"
+import fs from "fs/promises"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -41,7 +41,7 @@ describe("sqljs driver > load", () => {
                 const exportedDatabase =
                     dataSource.sqljsManager.exportDatabase()
                 expect(exportedDatabase).not.to.be.undefined
-                const originalFileContent = fs.readFileSync(
+                const originalFileContent = await fs.readFile(
                     "test/functional/sqljs/sqlite/test.sqlite",
                 )
                 expect(exportedDatabase.length).to.equal(
