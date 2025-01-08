@@ -256,20 +256,5 @@
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
-  },
-  "nyc": {
-    "all": true,
-    "cache": false,
-    "exclude": [
-      "**/*.d.ts"
-    ],
-    "extension": [
-      ".ts"
-    ],
-    "include": [
-      "build/compiled/src/**",
-      "src/**"
-    ],
-    "reporter": "json"
   }
 }
