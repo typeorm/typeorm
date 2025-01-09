@@ -919,7 +919,7 @@ export class ColumnMetadata {
         if (ObjectUtils.isObject(columnValue)) {
             return columnValue.equals(valueToCompareWith)
         }
-        return columnValue.toString() === valueToCompareWith.toString()
+        return columnValue === valueToCompareWith
     }
 
     // ---------------------------------------------------------------------
