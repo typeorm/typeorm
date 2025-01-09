@@ -14,4 +14,9 @@ export interface ColumnEmbeddedOptions {
      * This option works only in mongodb.
      */
     array?: boolean
+
+    /**
+     * Indicates if this embedded is nullable.
+     */
+    nullable?: boolean
 }
