@@ -245,6 +245,7 @@ export class RelationIdLoader {
         const inverseColumns = relation.isOwning
             ? junctionMetadata.inverseColumns
             : junctionMetadata.ownerColumns
+        const fieldsToMetadata = new Map<string, ColumnMetadata>()
         const qb = this.connection.createQueryBuilder(this.queryRunner)
 
         // select all columns from junction table
@@ -256,6 +257,7 @@ export class RelationIdLoader {
                     "_" +
                     column.referencedColumn!.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, column.referencedColumn!)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
         inverseColumns.forEach((column) => {
@@ -268,6 +270,7 @@ export class RelationIdLoader {
                     "_" +
                     column.referencedColumn!.propertyPath.replace(".", "_"),
             )
+            fieldsToMetadata.set(columnName, column.referencedColumn!)
             qb.addSelect(mainAlias + "." + column.propertyPath, columnName)
         })
 
@@ -409,6 +412,21 @@ export class RelationIdLoader {
             .from(junctionMetadata.target, mainAlias)
             .where(condition)
             .getRawMany()
+            .then((result) => {
+                result.forEach((data) => {
+                    Object.keys(data).forEach((key) => {
+                        const column = fieldsToMetadata.get(key)
+                        if (column) {
+                            data[key] =
+                                this.connection.driver.prepareHydratedValue(
+                                    data[key],
+                                    column,
+                                )
+                        }
+                    })
+                })
+                return result
+            })
     }
 
     /**
