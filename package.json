@@ -130,6 +130,7 @@
     "mssql": "^10.0.1",
     "mysql": "^2.18.1",
     "mysql2": "^3.9.7",
+    "nyc": "^17.1.0",
     "pg": "^8.9.0",
     "pg-query-stream": "^4.3.0",
     "prettier": "^2.8.8",
@@ -255,20 +256,5 @@
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
-  },
-  "nyc": {
-    "all": true,
-    "cache": false,
-    "exclude": [
-      "**/*.d.ts"
-    ],
-    "extension": [
-      ".ts"
-    ],
-    "include": [
-      "build/compiled/src/**",
-      "src/**"
-    ],
-    "reporter": "json"
   }
 }
