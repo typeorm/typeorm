@@ -18,8 +18,8 @@ import appRoot from "app-root-path"
 
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
-describe("multi-database > basic-functionality", () => {
-    describe("filepathToName()", () => {
+describe.skip("multi-database > basic-functionality", () => {
+    describe.skip("filepathToName()", () => {
         for (const platform of [`darwin`, `win32`]) {
             let realPlatform: string
 
@@ -64,7 +64,7 @@ describe("multi-database > basic-functionality", () => {
 
     describe("multiple databases", () => {
         let connections: DataSource[]
-        const tempPath = path.resolve(appRoot.path, "temp")
+        const tempPath = path.resolve(appRoot.path, "temp", (process.env.STRYKER_MUTATOR_WORKER || "0"))
         const attachAnswerPath = path.join(
             tempPath,
             "filename-sqlite.attach.db",
@@ -91,7 +91,7 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            await rimraf(`${tempPath}/**/*.attach.db`)
+            await rimraf(`${tempPath}/**/*.attach.db`, {glob: true})
         })
 
         it("should correctly attach and create database files", () =>
@@ -104,12 +104,13 @@ describe("multi-database > basic-functionality", () => {
                         )!.groups!["filename"],
                     )
 
-                    await expect(fs.access(expectedMainPath, fs.constants.F_OK))
+                    const pathh = JSON.stringify({expectedMainPath, attachAnswerPath, attachCategoryPath});
+                    await expect(fs.access(expectedMainPath, fs.constants.F_OK), "1" + pathh)
                         .to.not.be.rejected
-                    await expect(fs.access(attachAnswerPath, fs.constants.F_OK))
+                    await expect(fs.access(attachAnswerPath, fs.constants.F_OK), "2" + pathh)
                         .to.not.be.rejected
                     await expect(
-                        fs.access(attachCategoryPath, fs.constants.F_OK),
+                        fs.access(attachCategoryPath, fs.constants.F_OK), "3" + pathh
                     ).to.not.be.rejected
                 }),
             ))

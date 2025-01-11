@@ -18,3 +18,4 @@ npm-debug.log
 
 # stryker temp files
 .stryker-tmp
+/reports

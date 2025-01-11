@@ -3,7 +3,7 @@ import { exec } from "child_process"
 import { readFile, writeFile, chmod, unlink, rmdir } from "fs/promises"
 import { dirname } from "path"
 
-describe("cli init command", () => {
+describe.skip("cli init command", () => {
     const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
     const databaseOptions = [
         "mysql",

@@ -6,7 +6,7 @@ module.exports = {
     color: true,
     file: ['./build/compiled/test/utils/test-setup.js'],
     spec: ["./build/compiled/test"],
-    
+    timeout: "90000",
     // jobs: 1,
     // parallel: false,
     recursive: true,

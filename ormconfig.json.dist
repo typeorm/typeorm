@@ -25,7 +25,7 @@
     "skip": false,
     "name": "sqlite",
     "type": "sqlite",
-    "database": "./temp/sqlitedb-1.db",
+    "database": "./temp/sqlitedb-number.db",
     "logging": false,
     "relationLoadStrategy": "join"
   },
