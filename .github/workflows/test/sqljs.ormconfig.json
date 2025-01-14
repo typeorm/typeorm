@@ -1,13 +1,8 @@
 [
   {
     "skip": false,
-    "name": "cockroachdb",
-    "type": "cockroachdb",
-    "host": "crdb",
-    "port": 26257,
-    "username": "root",
-    "password": "",
-    "database": "defaultdb",
+    "name": "sqljs",
+    "type": "sqljs",
     "logging": false
   },
 

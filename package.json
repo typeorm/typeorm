@@ -93,14 +93,13 @@
     "cloud-spanner-orm"
   ],
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@tsconfig/node16": "^16.1.1",
-    "@types/app-root-path": "^1.2.4",
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/debug": "^4.1.7",
     "@types/gulp-rename": "^2.0.6",
     "@types/gulp-sourcemaps": "^0.0.38",
-    "@types/mkdirp": "^1.0.2",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.13.0",
     "@types/sha.js": "^2.4.0",
@@ -108,15 +107,14 @@
     "@types/source-map-support": "^0.5.6",
     "@types/uuid": "^9.0.0",
     "@types/yargs": "^17.0.22",
-    "@typescript-eslint/eslint-plugin": "^6.17.0",
     "better-sqlite3": "^8.1.0",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "class-transformer": "^0.5.1",
     "conventional-changelog-angular": "^5.0.13",
     "conventional-changelog-cli": "^2.2.2",
-    "del": "6.1.1",
-    "eslint": "^8.44.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
     "gulp": "^4.0.2",
     "gulp-istanbul": "^1.1.3",
     "gulp-mocha": "^10.0.0",
@@ -127,17 +125,18 @@
     "gulp-typescript": "^6.0.0-alpha.1",
     "gulpclass": "^0.2.0",
     "husky": "^8.0.3",
-    "mocha": "^10.2.0",
+    "mocha": "^10.8.2",
     "mongodb": "^6.3.0",
     "mssql": "^10.0.1",
     "mysql": "^2.18.1",
-    "mysql2": "^3.1.1",
+    "mysql2": "^3.9.7",
+    "nyc": "^17.1.0",
     "pg": "^8.9.0",
     "pg-query-stream": "^4.3.0",
-    "prettier": "^2.8.3",
+    "prettier": "^2.8.8",
     "redis": "^4.6.4",
     "remap-istanbul": "^0.13.0",
-    "rimraf": "^4.1.2",
+    "rimraf": "^5.0.10",
     "sinon": "^15.0.1",
     "sinon-chai": "^3.7.0",
     "source-map-support": "^0.5.21",
@@ -145,12 +144,13 @@
     "sqlite3": "^5.1.4",
     "ts-node": "^10.9.2",
     "typeorm-aurora-data-api-driver": "^2.4.4",
-    "typescript": "^5.3.3"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0",
     "@sap/hana-client": "^2.12.25",
-    "better-sqlite3": "^7.1.2 || ^8.0.0 || ^9.0.0",
+    "better-sqlite3": "^8.0.0 || ^9.0.0",
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",
     "mongodb": "^5.8.0",
@@ -229,8 +229,7 @@
     "dayjs": "^1.11.9",
     "debug": "^4.3.4",
     "dotenv": "^16.0.3",
-    "glob": "^10.3.10",
-    "mkdirp": "^2.1.3",
+    "glob": "^10.4.5",
     "sha.js": "^2.4.11",
     "tslib": "^2.5.0",
     "uuid": "^9.0.0",
@@ -243,7 +242,7 @@
     "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
     "pack": "gulp pack",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "format": "prettier --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
   },
@@ -257,20 +256,5 @@
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
-  },
-  "nyc": {
-    "all": true,
-    "cache": false,
-    "exclude": [
-      "**/*.d.ts"
-    ],
-    "extension": [
-      ".ts"
-    ],
-    "include": [
-      "build/compiled/src/**",
-      "src/**"
-    ],
-    "reporter": "json"
   }
 }
