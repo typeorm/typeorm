@@ -1,52 +1,71 @@
 # Docs Table Of Contents
 
-## Introduction|/
+## Getting Started|/
 
-- [How Does It Work?](/how-does-partytown-work)
-- [FAQs](/faq)
-- [Trade-Offs](/trade-offs)
-- [Browser Support](/browser-support)
+-   [DataSource](/data-source)
+-   [Working with Data Source](/data-source)
+-   [Data Source Options](/data-source-options)
+-   [Multiple Data Sources](/multiple-data-sources)
+-   [DataSource API](/data-source-api)
 
-## Getting Started|/getting-started
+## Entity|/entities
 
-- [Overview](/getting-started)
-- [Partytown Scripts](/partytown-scripts)
-- [Copy Library Files](/copy-library-files)
-- [Atomics](/atomics)
-- [Distribution](/distribution)
+-   [What is Entity?](/entities)
+-   [Embedded Entities](/embedded-entities)
+-   [Entity Inheritance](/entity-inheritance)
+-   [Tree Entities](/tree-entities)
+-   [View Entities](/view-entities)
+-   [Separating Entity Definition](/separating-entity-definition)
 
-## Integrations|/integrations
+## Relations|/relations
 
-- [Angular](/angular)
-- [Astro](/astro)
-- [Gatsby](/gatsby)
-- [HTML](/html)
-- [Magento 2](/magento2)
-- [Next.js](/nextjs)
-- [Nuxt](/nuxt)
-- [Qwik](https://qwik.dev/docs/integrations/partytown/)
-- [React](/react)
-- [Remix](/remix)
-- [Shopify Hydrogen](/shopify-hydrogen)
-- [Shopify OS 2.0](/shopify-os2)
-- [Solid](/solid)
-- [SvelteKit](/sveltekit)
+-   [What are Relations?](/relations)
+-   [One-to-One](/one-to-one-relations)
+-   [Many-to-One and One-to-Many](/many-to-one-one-to-many-relations)
+-   [Many-to-Many](/many-to-many-relations)
+-   [Eager and Lazy Relations](/eager-and-lazy-relations)
+-   [Relations FAQ](/relations-faq)
 
-## Configuration|/configuration
+## Entity Manager and Repository|/working-with-entity-manager
 
-- [Overview](/configuration)
-- [Proxying Requests](/proxying-requests)
-- [Forwarding Events](/forwarding-events)
-- [Sandboxing](/sandboxing)
-- [Debugging](/debugging)
+-   [Working with Entity Manager](/working-with-entity-manager)
+-   [Working with Repository](/working-with-repository)
+-   [Find Options](/find-options)
+-   [Custom Repository](/custom-repository)
+-   [Entity Manager API](/entity-manager-api)
+-   [Repository API](/repository-api)
 
-## Third-Party Services|/common-services
+## Query Builder|/select-query-builder
 
-- [Common Services](/common-services)
-- [Facebook Pixel](/facebook-pixel)
-- [Google Tag Manager](/google-tag-manager)
+-   [Select using Query Builder](/select-query-builder)
+-   [Insert using Query Builder](/insert-query-builder)
+-   [Update using Query Builder](/update-query-builder)
+-   [Delete using Query Builder](/delete-query-builder)
+-   [Working with Relations](/relational-query-builder)
+-   [Caching Results](/caching)
 
-## Community
+## Advanced Topics|/migrations
 
-- [Discord](https://discord.gg/aHKdpdWv7a)
-- [@QwikDev](https://twitter.com/QwikDev)
+-   [Migrations](/migrations)
+-   [Transactions](/transactions)
+-   [Indices](/indices)
+-   [Listeners and Subscribers](/listeners-and-subscribers)
+-   [Logging](/logging)
+-   [Using CLI](/using-cli)
+
+## Guides|/active-record-data-mapper
+
+-   [Active Record vs Data Mapper](/active-record-data-mapper)
+-   [Working with MongoDB](/mongodb)
+-   [Using Validation](/validation)
+-   [Example with Express](/example-with-express)
+-   [Usage with JavaScript](/usage-with-javascript)
+-   [Migration from Sequelize](/sequelize-migration)
+
+## Help|/faq
+
+-   [FAQ](/faq)
+-   [Supported Platforms](/supported-platforms)
+-   [Decorator Reference](/decorator-reference)
+-   [Changelog](/changelog)
+-   [Support](/support)
