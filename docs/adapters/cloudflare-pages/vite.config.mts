@@ -14,7 +14,7 @@ export default extendConfig(baseConfig, () => {
       cloudflarePagesAdapter({
         ssg: {
           include: ["/*"],
-          origin: "https://partytown.qwik.dev",
+          origin: "https://typeorm.io/",
         },
       }),
     ],

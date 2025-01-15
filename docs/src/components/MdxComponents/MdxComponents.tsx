@@ -7,7 +7,7 @@ export const components: Record<string, any> = {
     () => {
       return (
         <div class="relative">
-          <pre class="mb-4 mt-6 max-h-[650px] overflow-x-auto rounded-lg bg-zinc-950 p-6 text-white dark:bg-zinc-950">
+          <pre class="mb-4 mt-6 max-h-[650px] max-w-[700px] overflow-x-auto rounded-lg bg-zinc-950 p-6 text-white dark:bg-zinc-950">
             <Slot />
           </pre>
         </div>

@@ -8,12 +8,12 @@ export const RouterHead = component$(() => {
   const head = useDocumentHead();
   const loc = useLocation();
 
-  const imageSrc = "https://partytown.qwik.dev/partytown-media.png";
+  const imageSrc = "https://raw.githubusercontent.com/typeorm/typeorm/master/resources/logo_big.png";
 
   return (
     <>
       <title>{head.title}</title>
-      <meta name="description" content="Partytown is a lazy-loaded library to help relocate resource intensive scripts into a web worker" />
+      <meta name="description" content="TypeORM Description" />
             
       <link rel="canonical" href={loc.url.href} />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -41,7 +41,7 @@ export const RouterHead = component$(() => {
         content={head.frontmatter.description || head.frontmatter.title}
       />
       <meta name="twitter:image" content={imageSrc} />
-      <meta name="twitter:image:alt" content="Partytown Logo" />
+      <meta name="twitter:image:alt" content="TypeORM Logo" />
 
       {head.meta.map((m) => (
         <meta key={m.key} {...m} />

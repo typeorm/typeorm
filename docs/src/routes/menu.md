@@ -26,7 +26,7 @@
 -   [Eager and Lazy Relations](/eager-and-lazy-relations)
 -   [Relations FAQ](/relations-faq)
 
-## Entity Manager and Repository|/working-with-entity-manager
+## Entity Manager|/working-with-entity-manager
 
 -   [Working with Entity Manager](/working-with-entity-manager)
 -   [Working with Repository](/working-with-repository)

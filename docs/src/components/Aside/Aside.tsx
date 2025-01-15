@@ -6,7 +6,7 @@ export const Aside = component$(() => {
 
   return (
     <div
-      class={`fixed top-20 mt-8 flex h-full flex-col overflow-hidden overflow-y-auto px-6 text-black dark:text-white`}
+      class={`fixed top-20 mt-8 flex h-full flex-col overflow-hidden overflow-y-auto pl-6 pr-2 text-black dark:text-white`}
     >
       {(menu?.items || []).map(({ text, items }, idx) => {
         const [title, href] = text.split("|");
