@@ -293,7 +293,7 @@ Additionally you will have to add a relationship like the following to `Question
 ```typescript
 // category.ts
 ...
-@OneToMany(() => questionToCategory, questionToCategory => questionToCategory.category)
+@OneToMany(() => QuestionToCategory, questionToCategory => questionToCategory.category)
 public questionToCategories: QuestionToCategory[];
 
 // question.ts
