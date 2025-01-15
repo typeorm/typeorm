@@ -1,4 +1,4 @@
-<div align="center">   <a href="http://typeorm.io/">     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">   </a>   <br>   <br> 	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm"> 		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield"> 	</a> 	<a href="https://badge.fury.io/js/typeorm"> 		<img src="https://badge.fury.io/js/typeorm.svg"> 	</a>     <a href="https://codecov.io/gh/typeorm/typeorm">         <img src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg" alt="Codecov">     </a> 	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-uu12ljeb-OH_0086I379fUDApYJHNuw"> 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg"> 	</a>   <br>   <br>
+<div align="center">   <a href="http://typeorm.io/">     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">   </a>   <br>   <br> 	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm"> 		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield"> 	</a> 	<a href="https://badge.fury.io/js/typeorm"> 		<img src="https://badge.fury.io/js/typeorm.svg"> 	</a>     <a href="https://codecov.io/gh/typeorm/typeorm">         <img src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg" alt="Codecov">     </a> 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg"> 	</a>   <br>   <br>
 </div>
 
 TypeORM은 NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo 및 Electron 플랫폼에서 실행할 수 있는 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)이며 TypeScript 및 JavaScript(ES2021)와 함께 사용할 수 있다. TypeORM의 목표는 항상 최신 JavaScript 기능을 지원하고 몇 개의 테이블이 있는 작은 응용 프로그램에서 여러 데이터베이스가 있는 대규모 엔터프라이즈 응용 프로그램에 이르기까지 데이터베이스를 사용하는 모든 종류의 응용 프로그램을 개발하는 데 도움이 되는 추가 기능을 제공하는 것이다.
@@ -1154,7 +1154,6 @@ clone하여 시작할 수 있는 몇 가지 리포지토리가 있다:
 
 TypeORM 작업을 단순화하고 다른 모듈과 통합하는 몇 가지 확장 방법이 있다:
 
-- [TypeORM + GraphQL 프레임워크](http://vesper-framework.com)
 - [TypeORM](https://github.com/typeorm/typeorm-typedi-extensions)과 [TypeDI](https://github.com/pleerock/typedi) 통합
 - [라우팅 컨트롤러](https://github.com/typeorm/typeorm-routing-controllers-extensions)와 [TypeORM 통합](https://github.com/pleerock/routing-controllers)
 - 기존 데이터베이스에서 모델 생성 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)

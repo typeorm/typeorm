@@ -1,6 +1,6 @@
 import "reflect-metadata"
-import * as fs from "fs"
-import * as path from "path"
+import fs from "fs/promises"
+import path from "path"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -28,18 +28,19 @@ describe("sqljs driver > save", () => {
     it("should save to file", () =>
         Promise.all(
             connections.map(async (dataSource) => {
-                if (fs.existsSync(pathToSqlite)) {
-                    fs.unlinkSync(pathToSqlite)
-                }
+                try {
+                    await fs.unlink(pathToSqlite)
+                } catch {}
 
-                let post = new Post()
+                const post = new Post()
                 post.title = "The second title"
 
                 const repository = dataSource.getRepository(Post)
                 await repository.save(post)
 
                 await dataSource.sqljsManager.saveDatabase(pathToSqlite)
-                expect(fs.existsSync(pathToSqlite)).to.be.true
+                await expect(fs.access(pathToSqlite, fs.constants.F_OK)).not.to
+                    .be.rejected
             }),
         ))
 
