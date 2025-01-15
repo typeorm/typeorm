@@ -31,7 +31,7 @@ export const Header = component$<Props>(({ links = [], showMenu = true }) => {
                         <span class="text-2xl font-bold text-[#E83524]">
                             Type
                         </span>
-                        <span class="text-2xl font-bold text-black">ORM</span>
+                        <span class="text-2xl font-bold text-black dark:text-white">ORM</span>
                     </a>
                 </div>
                 <div class="col-span-3 flex items-center justify-center sm:col-span-4">
@@ -39,7 +39,7 @@ export const Header = component$<Props>(({ links = [], showMenu = true }) => {
                         <span class="text-2xl font-bold text-[#E83524]">
                             Type
                         </span>
-                        <span class="text-2xl font-bold text-black">ORM</span>
+                        <span class="text-2xl font-bold text-black dark:text-white">ORM</span>
                     </a>
                     <div class="hidden text-black dark:text-white lg:flex">
                         {links.map(({ name, href }, key) => (
