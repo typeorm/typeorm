@@ -96,7 +96,7 @@ Different RDBMS-es have their own specific options.
     By default, this table is called "typeorm_metadata".
 
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
-    Read more about caching [here](caching).
+    [Read more about caching here](caching).
 
 -   `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
     eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
