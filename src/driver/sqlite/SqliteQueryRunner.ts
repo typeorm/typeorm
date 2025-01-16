@@ -1,8 +1,11 @@
+import type { Database } from "sqlite3"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
 import { SqliteDriver } from "./SqliteDriver"
+import { SqliteQueryStream } from "./SqliteQueryStream"
+import { ReadStream } from "../../platform/PlatformTools"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -172,6 +175,51 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                 fail(err)
             } finally {
                 await broadcasterResult.wait()
+            }
+        })
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(
+        query: string,
+        parameters?: any[],
+        onEnd?: () => void,
+        onError?: (error: Error) => void,
+    ): Promise<ReadStream> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+
+        const logQueryError = (error: Error) => {
+            this.driver.connection.logger.logQueryError(
+                error,
+                query,
+                parameters,
+                this,
+            )
+        }
+
+        return new Promise(async (ok, fail) => {
+            try {
+                const databaseConnection: Database = await this.connect()
+                this.driver.connection.logger.logQuery(query, parameters, this)
+                const statement = databaseConnection.prepare(query, parameters)
+                try {
+                    const stream = new SqliteQueryStream(statement)
+                    stream.on("error", logQueryError)
+                    if (onEnd) stream.on("end", onEnd)
+                    if (onError) stream.on("error", onError)
+                    ok(stream as any)
+                } catch (error) {
+                    // SQLite locks the database while a statement is running.
+                    // If creating the stream fails for any reason, we must
+                    // finalize the statement to unlock the database.
+                    statement.finalize()
+                    throw error
+                }
+            } catch (error) {
+                logQueryError(error)
+                fail(new QueryFailedError(query, parameters, error))
             }
         })
     }
