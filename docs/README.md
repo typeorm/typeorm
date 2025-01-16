@@ -40,10 +40,14 @@ pnpm qwik add # or `pnpm qwik add`
 
 ## Development
 
+```shell
+pnpm install
+```
+
 Development mode uses [Vite's development server](https://vitejs.dev/). The `dev` command will server-side render (SSR) the output during development.
 
 ```shell
-npm start # or `pnpm start`
+pnpm dev
 ```
 
 > Note: during dev mode, Vite may request a significant number of `.js` files. This does not represent a Qwik production build.
