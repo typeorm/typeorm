@@ -1,0 +1,56 @@
+{
+  "name": "my-qwik-empty-starter",
+  "description": "Blank project with routing included",
+  "engines": {
+    "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
+  },
+  "engines-annotation": "Mostly required by sharp which needs a Node-API v9 compatible runtime",
+  "private": true,
+  "trustedDependencies": [
+    "sharp"
+  ],
+  "trustedDependencies-annotation": "Needed for bun to allow running install scripts",
+  "type": "module",
+  "scripts": {
+    "build": "qwik build",
+    "build.client": "vite build",
+    "build.preview": "vite build --ssr src/entry.preview.tsx",
+    "build.server": "vite build -c adapters/cloudflare-pages/vite.config.mts",
+    "build.types": "tsc --incremental --noEmit",
+    "deploy": "wrangler pages deploy ./dist",
+    "dev": "vite --mode ssr",
+    "dev.debug": "node --inspect-brk ./node_modules/vite/bin/vite.js --mode ssr --force",
+    "fmt": "prettier --write .",
+    "fmt.check": "prettier --check .",
+    "lint": "echo 'lint'",
+    "preview": "qwik build preview && vite preview --open",
+    "serve": "wrangler pages dev ./dist --compatibility-flags=nodejs_als",
+    "start": "vite --open --mode ssr",
+    "qwik": "qwik"
+  },
+  "devDependencies": {
+    "@qwik.dev/core": "2.0.0-alpha.5",
+    "@qwik.dev/router": "2.0.0-alpha.5",
+    "@types/eslint": "8.56.10",
+    "@types/node": "20.14.11",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "autoprefixer": "^10.4.19",
+    "clsx": "^2.1.1",
+    "eslint": "8.57.1",
+    "eslint-plugin-qwik": "2.0.0-alpha.5",
+    "postcss": "8.4.39",
+    "prettier": "3.3.3",
+    "prettier-plugin-tailwindcss": "0.5.4",
+    "rehype-pretty-code": "0.14.0",
+    "sass": "1.83.0",
+    "shiki": "1.24.3",
+    "tailwind-merge": "2.5.5",
+    "tailwindcss": "3.4.6",
+    "typescript": "5.4.5",
+    "unist-util-visit": "5.0.0",
+    "vite": "6.0.7",
+    "vite-tsconfig-paths": "^4.2.1",
+    "wrangler": "3.0.0"
+  }
+}

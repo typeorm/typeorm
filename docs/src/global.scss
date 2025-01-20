@@ -1,0 +1,215 @@
+/**
+ * Tailwind CSS imports
+ * View the full documentation at https://tailwindcss.com
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-background: 0 0% 100%;
+    --color-foreground: 263 84% 5%;
+
+    --color-primary: 263 56% 52%;
+    --color-primary-foreground: 0 0% 100%;
+
+    --color-secondary: 202 91% 52%;
+    --color-secondary-foreground: 0 0% 100%;
+
+    --color-muted: 210 40% 96%;
+    --color-muted-foreground: 263 16% 47%;
+
+    --color-accent: 0 0% 89%;
+    --color-accent-foreground: 263 47% 11%;
+
+    --color-destructive: 0 84% 60%;
+    --color-destructive-foreground: 263 0% 100%;
+
+    --color-card: 0 0% 100%;
+    --color-card-foreground: 263 84% 5%;
+
+    --color-popover: 0 0% 100%;
+    --color-popover-foreground: 263 84% 5%;
+
+    --color-border: 263 32% 91%;
+
+    --color-input: 263 32% 91%;
+
+    --color-ring: 263 18% 61%;
+
+    --border-radius: 0.375rem;
+  }
+
+  .dark {
+    /* previous 263 84% 5%  */
+    --color-background: 222 47% 11%;
+    --color-foreground: 263 40% 98%;
+
+    --color-primary: 263 70% 58%;
+    --color-primary-foreground: 190 40% 98%;
+
+    --color-secondary: 202 97% 55%;
+    --color-secondary-foreground: 190 40% 98%;
+
+    --color-muted: 218 32.6% 17.5%;
+    --color-muted-foreground: 263 20.2% 65.1%;
+
+    --color-accent: 0 0% 23%;
+    --color-accent-foreground: 263 40% 98%;
+
+    --color-destructive: 0 70% 40%;
+    --color-destructive-foreground: 263 40% 98%;
+
+    --color-card: 263 84% 4.9%;
+    --color-card-foreground: 263 40% 98%;
+
+    --color-popover: 263 84% 4.9%;
+    --color-popover-foreground: 263 40% 98%;
+
+    --color-border: 263 32.6% 17.5%;
+
+    --color-input: 263 32.6% 17.5%;
+
+    --color-ring: 263 26.8% 83.9%;
+  }
+}
+
+/**
+ * WHAT IS THIS FILE?
+ *
+ * Globally applied styles. No matter which components are in the page or matching route,
+ * the styles in here will be applied to the Document, without any sort of CSS scoping.
+ *
+ */
+
+html {
+  @apply bg-[#F8F8FF];
+}
+
+.dark {
+  @apply bg-[#0D0F12]
+}
+
+body {
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  margin: auto;
+}
+
+.light-element {
+  display: none;
+}
+.dark-element {
+  display: none;
+}
+.light {
+  .light-element {
+    display: block;
+  }
+}
+.dark {
+  .dark-element {
+    display: block;
+  }
+}
+
+.docs {
+  @apply w-full px-8 text-black dark:text-white lg:px-16;
+
+  * {
+    @apply scroll-m-[160px];
+  }
+  h1 {
+    @apply mt-2  text-4xl font-bold;
+  }
+
+  h2 {
+    @apply mt-12 border-b pb-2 text-2xl font-semibold tracking-tight first:mt-0;
+  }
+
+  h3 {
+    @apply mt-8 text-xl font-semibold tracking-tight;
+  }
+
+  h4 {
+    @apply mt-8 text-lg font-semibold tracking-tight;
+  }
+
+  h5 {
+    @apply mt-8 text-lg font-semibold tracking-tight;
+  }
+
+  h6 {
+    @apply mt-8 text-base font-semibold tracking-tight;
+  }
+
+  a {
+    @apply font-medium underline underline-offset-4;
+  }
+
+  p {
+    @apply leading-7;
+  }
+
+  p:not(:first-child) {
+    @apply mt-6;
+  }
+
+  ul {
+    @apply my-6 ml-6 list-disc;
+  }
+
+  ol {
+    @apply my-6 ml-6 list-decimal;
+  }
+
+  li {
+    @apply mt-2;
+  }
+
+  blockquote {
+    @apply mt-6 border-l-2 pl-6 italic;
+  }
+
+  img {
+    @apply rounded-md;
+  }
+
+  hr {
+    @apply my-4 md:my-8;
+  }
+
+  table {
+    @apply my-6 w-full overflow-y-auto;
+  }
+
+  tr {
+    @apply m-0 border-t p-0;
+  }
+
+  th {
+    @apply border px-4 py-2 text-left font-bold;
+  }
+
+  th[align="center"] {
+    @apply text-center;
+  }
+
+  th[align="right"] {
+    @apply text-right;
+  }
+
+  td {
+    @apply border px-4 py-2 text-left;
+  }
+
+  td[align="center"] {
+    @apply text-center;
+  }
+
+  td[align="right"] {
+    @apply text-right;
+  }
+}
