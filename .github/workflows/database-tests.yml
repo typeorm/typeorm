@@ -1,0 +1,211 @@
+name: database-tests
+
+on:
+  workflow_call:
+    inputs:
+      node-container:
+        required: true
+        type: string
+
+jobs:
+  cockroachdb:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+    services:
+      crdb:
+        image: cockroachdb/cockroach
+        env:
+          COCKROACH_ARGS: 'start-single-node --insecure --cache=1GB --store=type=mem,size=4GB'
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: crdb-${{ inputs.node-container }}
+          parallel: true
+
+  mongodb:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+    services:
+      mongodb:
+        image: mongo:5.0.12
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mongodb-${{ inputs.node-container }}
+          parallel: true
+
+
+  mssql:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+    services:
+      mssql:
+        image: "mcr.microsoft.com/mssql/server:2022-latest"
+        env:
+          SA_PASSWORD: "Admin12345"
+          ACCEPT_EULA: "Y"
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
+      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mssql-${{ inputs.node-container }}
+          parallel: true
+
+
+  mysql_mariadb:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+    services:
+      mysql:
+        image: mysql:5.7.37
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+      mariadb:
+        image: mariadb:10.10.3
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mysql+mariadb-${{ inputs.node-container }}
+          parallel: true
+
+
+  better-sqlite3:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
+      - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: better-sqlite3-${{ inputs.node-container }}
+          parallel: true
+
+
+  sqlite:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
+      - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqlite-${{ inputs.node-container }}
+          parallel: true
+
+
+  sqljs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqljs-${{ inputs.node-container }}
+          parallel: true
+
+
+  postgres:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    container: ${{inputs.node-container}}
+    services:
+      postgres:
+        image: postgis/postgis:14-3.3
+        env:
+          POSTGRES_USERNAME: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: postgres-${{ inputs.node-container }}
+          parallel: true
