@@ -718,14 +718,17 @@ export class EntityManager {
                 ),
         )
 
+        const upsertColumns = [...conflictColumns, ...overwriteColumns]
+
         return this.createQueryBuilder()
             .insert()
-            .into(target)
+            .into(
+                target,
+                upsertColumns.map((col) => col.propertyName),
+            )
             .values(entities)
             .orUpdate(
-                [...conflictColumns, ...overwriteColumns].map(
-                    (col) => col.databaseName,
-                ),
+                upsertColumns.map((col) => col.databaseName),
                 conflictColumns.map((col) => col.databaseName),
                 {
                     skipUpdateIfNoValuesChanged:
