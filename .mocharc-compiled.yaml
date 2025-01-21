@@ -1,0 +1,9 @@
+# Mocha configuration file for `npm test` / `npm run test` and `npm run test-fast`; includes the file spec.
+bail: true
+exit: true
+recursive: true
+require:
+  - 'build/compiled/test/utils/test-setup.js'
+spec:
+  - 'build/compiled/test'
+timeout: '90000'
