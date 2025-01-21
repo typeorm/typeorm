@@ -4235,8 +4235,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .join(" OR ")
             }
         } else {
-            let andConditions: string[] = []
-            for (let key in where) {
+            const andConditions: string[] = []
+            for (const key in where) {
                 if (where[key] === undefined || where[key] === null) continue
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4256,7 +4256,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
-                        aliasPath = `(${column.query(alias)})`
+                        aliasPath = `(${column.query(this.escape(alias))})`
                     }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
@@ -4266,13 +4266,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         parameterValue = where[key].value
                     }
                     if (column.transformer) {
-                        parameterValue instanceof FindOperator
-                            ? parameterValue.transformValue(column.transformer)
-                            : (parameterValue =
-                                  ApplyValueTransformers.transformTo(
-                                      column.transformer,
-                                      parameterValue,
-                                  ))
+                        if (parameterValue instanceof FindOperator) {
+                            parameterValue.transformValue(column.transformer)
+                        } else {
+                            parameterValue = ApplyValueTransformers.transformTo(
+                                column.transformer,
+                                parameterValue,
+                            )
+                        }
                     }
 
                     // if (parameterValue === null) {
