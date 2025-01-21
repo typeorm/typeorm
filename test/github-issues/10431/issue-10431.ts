@@ -1,14 +1,13 @@
-import "reflect-metadata"
-import {
-    createTestingConnections,
-    closeTestingConnections,
-    reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src"
 import { expect } from "chai"
+import "reflect-metadata"
+import { DataSource } from "../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
 
-import { Category, Product } from "./entity"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Category, Product } from "./entity"
 
 describe("github issues > #10431 When requesting nested relations on foreign key primary entities, relation becomes empty entity rather than null", () => {
     let connections: DataSource[]
@@ -19,27 +18,28 @@ describe("github issues > #10431 When requesting nested relations on foreign key
             schemaCreate: true,
             dropSchema: true,
         })
+
+        for (const connection of connections) {
+            // By default, MySQL uses backticks instead of quotes for identifiers
+            if (DriverUtils.isMySQLFamily(connection.driver)) {
+                const randomVirtualColumnMetadata = connection
+                    .getMetadata(Category)
+                    .columns.find(
+                        (columnMetadata) =>
+                            columnMetadata.propertyName ===
+                            "randomVirtualColumn",
+                    )!
+
+                randomVirtualColumnMetadata.query = (alias) =>
+                    `SELECT COUNT(*) FROM \`category\` WHERE \`id\` = ${alias}.\`id\``
+            }
+        }
     })
-    beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
     it("should return [] when requested nested relations are empty on ManyToMany relation with @VirtualColumn definitions", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // By default, MySQL uses backticks instead of quotes for identifiers
-                if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    const randomVirtualColumnMetadata = connection
-                        .getMetadata(Category)
-                        .columns.find(
-                            (columnMetadata) =>
-                                columnMetadata.propertyName ===
-                                "randomVirtualColumn",
-                        )!
-
-                    randomVirtualColumnMetadata.query = (alias) =>
-                        `SELECT COUNT(*) FROM \`category\` WHERE \`id\` = ${alias}.\`id\``
-                }
-
                 const productRepo = connection.getRepository(Product)
                 const testProduct = new Product()
                 testProduct.name = "foo"
