@@ -24,7 +24,7 @@ describe(`path-utils`, () => {
         })
     })
 
-    describe.skip("toPortablePath", () => {
+    describe("toPortablePath", () => {
         for (const platform of [`darwin`, `win32`]) {
             let realPlatform: string
 

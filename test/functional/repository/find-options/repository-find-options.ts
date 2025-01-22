@@ -238,7 +238,7 @@ describe("repository > find options", () => {
         ))
 })
 
-describe.skip("repository > find options > comment", () => {
+describe("repository > find options > comment", () => {
     let connections: DataSource[]
     const logPath = "find_comment_test.log"
 

@@ -18,8 +18,8 @@ import appRoot from "app-root-path"
 
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
-describe.skip("multi-database > basic-functionality", () => {
-    describe.skip("filepathToName()", () => {
+describe("multi-database > basic-functionality", () => {
+    describe("filepathToName()", () => {
         for (const platform of [`darwin`, `win32`]) {
             let realPlatform: string
 
@@ -64,7 +64,7 @@ describe.skip("multi-database > basic-functionality", () => {
 
     describe("multiple databases", () => {
         let connections: DataSource[]
-        const tempPath = path.resolve(appRoot.path, "temp", (process.env.STRYKER_MUTATOR_WORKER || "0"))
+        const tempPath = path.resolve(appRoot.path, "temp")
         const attachAnswerPath = path.join(
             tempPath,
             "filename-sqlite.attach.db",
@@ -104,13 +104,12 @@ describe.skip("multi-database > basic-functionality", () => {
                         )!.groups!["filename"],
                     )
 
-                    const pathh = JSON.stringify({expectedMainPath, attachAnswerPath, attachCategoryPath});
-                    await expect(fs.access(expectedMainPath, fs.constants.F_OK), "1" + pathh)
+                    await expect(fs.access(expectedMainPath, fs.constants.F_OK))
                         .to.not.be.rejected
-                    await expect(fs.access(attachAnswerPath, fs.constants.F_OK), "2" + pathh)
+                    await expect(fs.access(attachAnswerPath, fs.constants.F_OK))
                         .to.not.be.rejected
                     await expect(
-                        fs.access(attachCategoryPath, fs.constants.F_OK), "3" + pathh
+                        fs.access(attachCategoryPath, fs.constants.F_OK)
                     ).to.not.be.rejected
                 }),
             ))
