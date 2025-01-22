@@ -14,7 +14,7 @@ export default class Company extends BaseEntity {
 
     @VirtualColumn({
         query: (alias, context) =>
-            `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name AND age > ${context.minimumAge}`,
+            `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}."name" AND "age" > ${context.minimumAge}`,
     })
     totalEmployeesCount: number
 

@@ -417,7 +417,7 @@ queryBuilder.getMany()
 This could then be used to modify the above query function to exclude employees under 30
 
 ```typescript
-@VirtualColumn({ query: (alias, context) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name AND age > ${context.minimumAge}` })
+@VirtualColumn({ query: (alias, context) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}."name" AND "age" > ${context.minimumAge}` })
 totalEmployeesCount: number;
 ```
 
