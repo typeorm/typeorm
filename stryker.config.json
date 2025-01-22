@@ -12,6 +12,7 @@
   "mochaOptions": {
     "spec": [ "./build/compiled/test/**/*.js" ]
   },
+  "inPlace": true,
   "testRunner_comment": "Take a look at https://stryker-mutator.io/docs/stryker-js/mocha-runner for information about the mocha plugin.",
   "coverageAnalysis": "perTest",
   "buildCommand": "npm run compile"
