@@ -975,7 +975,10 @@ describe("query builder > locking", () => {
                                 .createQueryBuilder(Post, "post")
                                 .leftJoin("post.author", "user")
                                 .setLock("pessimistic_write")
-                                .getOne(),
+                                .getOne()
+                                .should.be.rejectedWith(
+                                    "FOR UPDATE cannot be applied to the nullable side of an outer join",
+                                ),
                         ])
                     })
                 }
