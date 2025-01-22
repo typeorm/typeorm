@@ -174,6 +174,7 @@ export class PostgresDriver implements Driver {
         "xml",
         "json",
         "jsonb",
+        "jsonpath",
         "int4range",
         "int8range",
         "numrange",
