@@ -4,7 +4,7 @@ import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/Pri
 import { ManyToOne } from "../../../../../src/decorator/relations/ManyToOne"
 import { Post } from "./Post"
 
-@Entity({ database: "/subdir/relative-subdir-sqlite.attach.db" })
+@Entity({ database: "./subdir/relative-subdir-sqlite.attach.db" })
 export class Category {
     @PrimaryGeneratedColumn()
     id: number

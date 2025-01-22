@@ -91,7 +91,7 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            await rimraf(`${tempPath}/**/*.attach.db`, {glob: true})
+            await rimraf(`${tempPath}/**/*.attach.db`)
         })
 
         it("should correctly attach and create database files", () =>
@@ -109,7 +109,7 @@ describe("multi-database > basic-functionality", () => {
                     await expect(fs.access(attachAnswerPath, fs.constants.F_OK))
                         .to.not.be.rejected
                     await expect(
-                        fs.access(attachCategoryPath, fs.constants.F_OK)
+                        fs.access(attachCategoryPath, fs.constants.F_OK),
                     ).to.not.be.rejected
                 }),
             ))
