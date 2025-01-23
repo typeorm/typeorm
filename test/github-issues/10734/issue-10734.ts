@@ -45,7 +45,7 @@ describe("github issues > #10734 Pass context into @VirtualColumn query", () => 
                 const query1 = queryBuilder.getSql()
 
                 expect(query1).to.eq(
-                    `SELECT "Company"."name" AS "Company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company".name AND age > 30) AS "Company_totalEmployeesCount" FROM "companies" "Company"`,
+                    `SELECT "Company"."name" AS "Company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name" AND "age" > 30) AS "Company_totalEmployeesCount" FROM "companies" "Company"`,
                 )
             }),
         ))
