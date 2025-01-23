@@ -164,7 +164,7 @@ For example:
 
 ```typescript
 @ManyToOne(type => Category)
-@JoinColumn() // this decorator is optional for @ManyToOne, but required for @OneToOne
+@JoinColumn() // this decorator is optional for @ManyToOne, but required for @ManyToMany
 category: Category;
 ```
 
