@@ -19,47 +19,29 @@ import appRoot from "app-root-path"
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
 describe("multi-database > basic-functionality", () => {
-    describe.skip("filepathToName()", () => {
-        for (const platform of [`darwin`, `win32`]) {
-            let realPlatform: string
-
-            beforeEach(() => {
-                realPlatform = process.platform
-                Object.defineProperty(process, `platform`, {
-                    configurable: true,
-                    value: platform,
-                })
-            })
-
-            afterEach(() => {
-                Object.defineProperty(process, `platform`, {
-                    configurable: true,
-                    value: realPlatform,
-                })
-            })
-
-            it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged (${platform})`, () => {
-                const testMap = [
-                    ["FILENAME.db", "filename.db"],
-                    ["..\\FILENAME.db", "../filename.db"],
-                    [
-                        "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
-                        "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db",
-                    ],
-                    ["C:\\dirFILENAME.db", "C:\\dirFILENAME.db"],
-                    ["/dir/filename.db", "/dir/filename.db"],
-                ]
-                for (const [winOs, otherOs] of testMap) {
-                    const winOsRes = filepathToName(winOs)
-                    const otherOsRes = filepathToName(otherOs)
-                    expect(winOsRes).to.equal(otherOsRes)
-                    expect(winOsRes).to.match(
-                        VALID_NAME_REGEX,
-                        `'${winOs}' is invalid table name`,
-                    )
-                }
-            })
-        }
+    describe("filepathToName()", () => {
+        it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
+            const testMap = [
+                ["FILENAME.db", "filename.db"],
+                ["..\\FILENAME.db", "../filename.db"],
+                [".\\FILENAME.db", "./filename.db"],
+                [
+                    "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
+                    "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db",
+                ],
+                ["C:\\dirFILENAME.db", "C:\\dirFILENAME.db"],
+                ["/dir/filename.db", "/dir/filename.db"],
+            ]
+            for (const [winOs, otherOs] of testMap) {
+                const winOsRes = filepathToName(winOs)
+                const otherOsRes = filepathToName(otherOs)
+                expect(winOsRes).to.equal(otherOsRes)
+                expect(winOsRes).to.match(
+                    VALID_NAME_REGEX,
+                    `'${winOs}' is invalid table name`,
+                )
+            }
+        })
     })
 
     describe("multiple databases", () => {
