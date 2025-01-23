@@ -90,6 +90,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 undefined,
             )
 
+            await broadcasterResult.wait()
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -107,7 +109,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
             if (query.substr(0, 11) === "INSERT INTO") {
                 result.raw = raw.insertId
             } else {
-                let resultSet = []
+                const resultSet = []
                 for (let i = 0; i < raw.rows.length; i++) {
                     resultSet.push(raw.rows.item(i))
                 }
