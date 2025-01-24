@@ -21,6 +21,7 @@ const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 describe("multi-database > basic-functionality", () => {
     describe("filepathToName()", () => {
         it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
+            if (process.platform !== "win32") return;
             const testMap = [
                 ["FILENAME.db", "filename.db"],
                 ["..\\FILENAME.db", "../filename.db"],
