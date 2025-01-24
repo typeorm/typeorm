@@ -20,29 +20,30 @@ const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
 describe("multi-database > basic-functionality", () => {
     describe("filepathToName()", () => {
-        it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
-            if (process.platform !== "win32") return;
-            const testMap = [
-                ["FILENAME.db", "filename.db"],
-                ["..\\FILENAME.db", "../filename.db"],
-                [".\\FILENAME.db", "./filename.db"],
-                [
-                    "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
-                    "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db",
-                ],
-                ["C:\\dirFILENAME.db", "C:\\dirFILENAME.db"],
-                ["/dir/filename.db", "/dir/filename.db"],
-            ]
-            for (const [winOs, otherOs] of testMap) {
-                const winOsRes = filepathToName(winOs)
-                const otherOsRes = filepathToName(otherOs)
-                expect(winOsRes).to.equal(otherOsRes)
-                expect(winOsRes).to.match(
-                    VALID_NAME_REGEX,
-                    `'${winOs}' is invalid table name`,
-                )
-            }
-        })
+        if (process.platform === "win32") {
+            it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
+                const testMap = [
+                    ["FILENAME.db", "filename.db"],
+                    ["..\\FILENAME.db", "../filename.db"],
+                    [".\\FILENAME.db", "./filename.db"],
+                    [
+                        "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
+                        "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db",
+                    ],
+                    ["C:\\dirFILENAME.db", "C:\\dirFILENAME.db"],
+                    ["/dir/filename.db", "/dir/filename.db"],
+                ]
+                for (const [winOs, otherOs] of testMap) {
+                    const winOsRes = filepathToName(winOs)
+                    const otherOsRes = filepathToName(otherOs)
+                    expect(winOsRes).to.equal(otherOsRes)
+                    expect(winOsRes).to.match(
+                        VALID_NAME_REGEX,
+                        `'${winOs}' is invalid table name`,
+                    )
+                }
+            })
+        }
     })
 
     describe("multiple databases", () => {
