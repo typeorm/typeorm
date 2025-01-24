@@ -16,9 +16,9 @@ describe("mysql driver > enableQueryTimeout connection option", () => {
         dropSchema: true,
         enabledDrivers: ["mysql"],
     }
-    const timeoutMs = 4000
-    const longQueryTime = timeoutMs / 1000 + 1
-    const shortQueryTime = timeoutMs / 2000
+    const timeoutMs = 10
+    const longQueryTimeSec = 0.02
+    const shortQueryTimeSec = 0.005
 
     describe("when enableQueryTimeout is true", () => {
         before(async () => {
@@ -40,7 +40,7 @@ describe("mysql driver > enableQueryTimeout connection option", () => {
                     let errorThrown = false
                     try {
                         await dataSource.manager.query(
-                            `SELECT SLEEP(${longQueryTime})`,
+                            `SELECT SLEEP(${longQueryTimeSec})`,
                         )
                     } catch (err) {
                         errorThrown = true
@@ -64,7 +64,7 @@ describe("mysql driver > enableQueryTimeout connection option", () => {
                     let errorThrown = false
                     try {
                         await dataSource.manager.query(
-                            `SELECT SLEEP(${shortQueryTime})`,
+                            `SELECT SLEEP(${shortQueryTimeSec})`,
                         )
                     } catch (err) {
                         errorThrown = true
@@ -93,7 +93,7 @@ describe("mysql driver > enableQueryTimeout connection option", () => {
                     let errorThrown = false
                     try {
                         await dataSource.manager.query(
-                            `SELECT SLEEP(${longQueryTime})`,
+                            `SELECT SLEEP(${longQueryTimeSec})`,
                         )
                     } catch (err) {
                         errorThrown = true
