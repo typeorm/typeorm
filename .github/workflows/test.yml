@@ -54,6 +54,6 @@ jobs:
 
   # Run with most databases possible to provide the coverage of the tests
   coverage:
-    if: ${{ always() }}
+    if: ${{ always() && !cancelled() }}
     needs: [database-tests, database-compose-tests]
     uses: ./.github/workflows/coverage.yml
