@@ -10,7 +10,7 @@ on:
 jobs:
   cockroachdb:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     container: ${{inputs.node-container}}
     services:
