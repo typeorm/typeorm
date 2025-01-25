@@ -39,3 +39,5 @@ jobs:
         
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}

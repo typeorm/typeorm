@@ -40,6 +40,8 @@ jobs:
       
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
   mongodb:
     runs-on: ubuntu-latest
@@ -68,6 +70,8 @@ jobs:
 
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
 
   mssql:
@@ -102,6 +106,8 @@ jobs:
 
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
 
   mysql_mariadb:
@@ -143,6 +149,8 @@ jobs:
 
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
 
   better-sqlite3:
@@ -170,6 +178,8 @@ jobs:
 
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
 
   sqlite:
@@ -197,6 +207,8 @@ jobs:
 
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
 
   sqljs:
@@ -223,6 +235,8 @@ jobs:
 
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
 
   postgres:
@@ -261,3 +275,5 @@ jobs:
       
       - run: npx stryker run
         if: inputs.run-type == 'mutation'
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
