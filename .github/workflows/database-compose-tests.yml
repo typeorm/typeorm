@@ -6,6 +6,9 @@ on:
       node-version:
         required: true
         type: string
+      run-type:
+        required: true
+        type: string
 
 jobs:
   oracle:
@@ -24,9 +27,15 @@ jobs:
       - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
       - run: npm i
       - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: oracle-${{ inputs.node-version }}
           parallel: true
+        
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
