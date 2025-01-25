@@ -74,6 +74,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        mssql-version: ['^9.1.1', '^10.0.1', '^11.0.1']
 
     container: ${{inputs.node-container}}
     services:
@@ -86,6 +88,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm i
+      - run: npm install mssql@${{ matrix.mssql-version }}
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
       - run: npx nyc npm run test
