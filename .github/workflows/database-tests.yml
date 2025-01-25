@@ -11,8 +11,6 @@ jobs:
   cockroachdb:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
 
     container: ${{inputs.node-container}}
     services:
@@ -36,8 +34,6 @@ jobs:
   mongodb:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
 
     container: ${{inputs.node-container}}
     services:
@@ -91,8 +87,6 @@ jobs:
   mysql_mariadb:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
 
     container: ${{inputs.node-container}}
     services:
@@ -127,8 +121,6 @@ jobs:
   better-sqlite3:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
 
     container: ${{inputs.node-container}}
 
@@ -149,8 +141,6 @@ jobs:
   sqlite:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
 
     container: ${{inputs.node-container}}
 
@@ -171,8 +161,6 @@ jobs:
   sqljs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
 
     container: ${{inputs.node-container}}
 
@@ -192,8 +180,6 @@ jobs:
   postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
 
     container: ${{inputs.node-container}}
     services:
