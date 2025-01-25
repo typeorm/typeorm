@@ -13,7 +13,7 @@ jobs:
     # Probably that's why the job failed on CircleCI
     if: ${{inputs.node-version != '16.x'}}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 15
 
     steps:
       - uses: actions/setup-node@v4
