@@ -1,17 +1,17 @@
 import "reflect-metadata"
+import { expect } from "chai"
+import { DataSource } from "../../../src/data-source/DataSource"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
-import { LocationEntity } from "./entity/location"
+import { AssetEntity, AssetStatus } from "./entity/asset"
 import {
     ConfigurationEntity,
     ConfigurationStatus,
 } from "./entity/configuration"
-import { AssetEntity, AssetStatus } from "./entity/asset"
+import { LocationEntity } from "./entity/location"
 
 describe("github issues > #10209", () => {
     let dataSources: DataSource[]
@@ -26,8 +26,7 @@ describe("github issues > #10209", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should not fail to run multiple nested transactions in parallel", function () {
-        this.retries(3) // Fix for SQLite
+    it("should not fail to run multiple nested transactions", function () {
         return Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.createEntityManager()
@@ -58,32 +57,43 @@ describe("github issues > #10209", () => {
                         where: {
                             name: "location-0",
                         },
-                        relations: ["configurations", "configurations.assets"],
+                        relations: {
+                            configurations: {
+                                assets: true,
+                            },
+                        },
                     })) || ({} as LocationEntity)
 
                 await manager.transaction(async (txManager) => {
-                    return Promise.all(
-                        location.configurations.map(async (config) => {
-                            await txManager.transaction(async (txManager2) => {
-                                await Promise.all(
-                                    config.assets.map(async (asset) => {
+                    expect(txManager).not.to.equal(manager)
+                    expect(txManager.queryRunner?.isTransactionActive).to.equal(
+                        true,
+                    )
+
+                    for (const config of location.configurations) {
+                        await txManager.transaction(async (txManager2) => {
+                            expect(txManager2).to.equal(txManager)
+
+                            for (const asset of config.assets) {
+                                await txManager2.transaction(
+                                    async (txManager3) => {
+                                        expect(txManager3).to.equal(txManager2)
+
                                         asset.status = AssetStatus.deleted
-                                        await txManager2.save(asset)
-                                        await txManager2.softDelete(
+                                        await txManager3.save(asset)
+                                        await txManager3.softDelete(
                                             AssetEntity,
                                             asset,
                                         )
-                                    }),
+                                    },
                                 )
-                            })
+                            }
 
                             config.status = ConfigurationStatus.deleted
-                            return await txManager.save(config)
-                        }),
-                    )
+                            await txManager2.save(config)
+                        })
+                    }
                 })
-                // We only care that the transaction above didn't fail
-                expect(true).to.be.true
             }),
         )
     })
