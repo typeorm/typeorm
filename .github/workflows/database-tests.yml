@@ -6,6 +6,9 @@ on:
       node-container:
         required: true
         type: string
+      run-type:
+        required: true
+        type: string
 
 jobs:
   cockroachdb:
@@ -25,12 +28,18 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: crdb-${{ inputs.node-container }}
           parallel: true
+      
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
 
   mongodb:
     runs-on: ubuntu-latest
@@ -47,12 +56,18 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: mongodb-${{ inputs.node-container }}
           parallel: true
+
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
 
 
   mssql:
@@ -76,13 +91,17 @@ jobs:
       - run: npm install mssql@${{ matrix.mssql-version }}
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
-      - run: npm test
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
+        if: inputs.run-type == 'coverage'
         uses: coverallsapp/github-action@v2
         with:
           flag-name: mssql-${{ inputs.node-container }}
           parallel: true
+
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
 
 
   mysql_mariadb:
@@ -112,12 +131,18 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: mysql+mariadb-${{ inputs.node-container }}
           parallel: true
+
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
 
 
   better-sqlite3:
@@ -133,12 +158,18 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: better-sqlite3-${{ inputs.node-container }}
           parallel: true
+
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
 
 
   sqlite:
@@ -154,12 +185,18 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: sqlite-${{ inputs.node-container }}
           parallel: true
+
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
 
 
   sqljs:
@@ -174,12 +211,18 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: sqljs-${{ inputs.node-container }}
           parallel: true
+
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
 
 
   postgres:
@@ -206,9 +249,15 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
+
       - run: npx nyc npm run test
+        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        if: inputs.run-type == 'coverage'
         with:
           flag-name: postgres-${{ inputs.node-container }}
           parallel: true
+      
+      - run: npx stryker run
+        if: inputs.run-type == 'mutation'
