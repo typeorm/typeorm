@@ -11,6 +11,8 @@
   "mochaOptions": {
     "spec": [ "./build/compiled/test/**/*.js" ]
   },
+  "timeoutMS_comment": "This is to make cockroachdb and oracle pass the initial test run",
+  "timeoutMS": 180000,
   "concurrency": 8,
   "inPlace": true,
   "testRunner_comment": "Take a look at https://stryker-mutator.io/docs/stryker-js/mocha-runner for information about the mocha plugin.",
