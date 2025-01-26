@@ -1,9 +1,9 @@
-import { DataSource } from "../data-source/DataSource"
-import * as yargs from "yargs"
-import chalk from "chalk"
-import { PlatformTools } from "../platform/PlatformTools"
+import ansi from "ansis"
 import path from "path"
 import process from "process"
+import yargs from "yargs"
+import { DataSource } from "../data-source/DataSource"
+import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
 /**
@@ -44,7 +44,7 @@ export class SchemaLogCommand implements yargs.CommandModule {
 
             if (sqlInMemory.upQueries.length === 0) {
                 console.log(
-                    chalk.yellow(
+                    ansi.yellow(
                         "Your schema is up to date - there are no queries to be executed by schema synchronization.",
                     ),
                 )
@@ -54,20 +54,20 @@ export class SchemaLogCommand implements yargs.CommandModule {
                     .map((char) => "-")
                     .join("")
                 console.log(
-                    chalk.yellow(
+                    ansi.yellow(
                         "---------------------------------------------------------------" +
                             lengthSeparators,
                     ),
                 )
                 console.log(
-                    chalk.yellow.bold(
-                        `-- Schema synchronization will execute following sql queries (${chalk.white(
+                    ansi.yellow.bold(
+                        `-- Schema synchronization will execute following sql queries (${ansi.white(
                             sqlInMemory.upQueries.length.toString(),
                         )}):`,
                     ),
                 )
                 console.log(
-                    chalk.yellow(
+                    ansi.yellow(
                         "---------------------------------------------------------------" +
                             lengthSeparators,
                     ),
