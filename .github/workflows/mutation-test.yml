@@ -21,6 +21,8 @@ jobs:
     with:
       node-container: ${{matrix.node-container}}
       run-type: 'mutation'
+    secrets:
+      STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
@@ -34,3 +36,5 @@ jobs:
     with:
       node-version: ${{matrix.node-version}}
       run-type: 'mutation'
+    secrets:
+      STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
