@@ -40,7 +40,7 @@ jobs:
           flag-name: oracle-${{ inputs.node-version }}
           parallel: true
         
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module oracle
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}

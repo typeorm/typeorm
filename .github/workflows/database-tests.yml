@@ -41,7 +41,7 @@ jobs:
           flag-name: crdb-${{ inputs.node-container }}
           parallel: true
       
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module cockroachdb
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
@@ -71,7 +71,7 @@ jobs:
           flag-name: mongodb-${{ inputs.node-container }}
           parallel: true
 
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module mongodb
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
@@ -107,7 +107,7 @@ jobs:
           flag-name: mssql-${{ inputs.node-container }}
           parallel: true
 
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module mssql
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
@@ -150,7 +150,7 @@ jobs:
           flag-name: mysql+mariadb-${{ inputs.node-container }}
           parallel: true
 
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module mysql_mariadb
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
@@ -179,7 +179,7 @@ jobs:
           flag-name: better-sqlite3-${{ inputs.node-container }}
           parallel: true
 
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.better-sqlite3
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
@@ -208,7 +208,7 @@ jobs:
           flag-name: sqlite-${{ inputs.node-container }}
           parallel: true
 
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module sqlite
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
@@ -236,7 +236,7 @@ jobs:
           flag-name: sqljs-${{ inputs.node-container }}
           parallel: true
 
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module sqljs
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
@@ -276,7 +276,7 @@ jobs:
           flag-name: postgres-${{ inputs.node-container }}
           parallel: true
       
-      - run: npx stryker run
+      - run: npx stryker run --dashboard.module postgres
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
