@@ -179,7 +179,7 @@ jobs:
           flag-name: better-sqlite3-${{ inputs.node-container }}
           parallel: true
 
-      - run: npx stryker run --dashboard.better-sqlite3
+      - run: npx stryker run --dashboard.module better-sqlite3
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
