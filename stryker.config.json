@@ -11,9 +11,6 @@
   "mochaOptions": {
     "spec": [ "./build/compiled/test/**/*.js" ]
   },
-  "mutate": [
-    "{src,lib}/**/PathUtils.{ts,js}"
-  ],
   "concurrency": 8,
   "inPlace": true,
   "testRunner_comment": "Take a look at https://stryker-mutator.io/docs/stryker-js/mocha-runner for information about the mocha plugin.",
