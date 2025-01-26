@@ -9,6 +9,9 @@ on:
       run-type:
         required: true
         type: string
+    secrets:
+      STRYKER_DASHBOARD_API_KEY:
+        required: false
 
 jobs:
   cockroachdb:
