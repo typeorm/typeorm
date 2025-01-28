@@ -1,3 +1,4 @@
+import "./test-setup"
 import { assert, AssertionError } from "chai"
 import { AsyncFunc, Context, Func, Test, TestFunction } from "mocha"
 
@@ -21,7 +22,7 @@ const wrap = (
 
         return new Promise<void>((ok, fail) => {
             if (fn.length > 1) {
-                ;(fn as Func).call(context as unknown as Context, (err: any) =>
+                (fn as Func).call(context as unknown as Context, (err: any) =>
                     err ? fail(err) : ok(),
                 )
             } else {

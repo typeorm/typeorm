@@ -150,7 +150,7 @@
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0",
     "@sap/hana-client": "^2.12.25",
-    "better-sqlite3": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0" ,
+    "better-sqlite3": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0",
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",
     "mongodb": "^5.8.0",
@@ -236,8 +236,8 @@
     "yargs": "^17.6.2"
   },
   "scripts": {
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
-    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
+    "test": "rimraf ./build && tsc && mocha --bail --recursive --timeout 90000 ./build/compiled/test",
+    "test-fast": "mocha --bail --recursive --timeout 90000 ./build/compiled/test",
     "compile": "rimraf ./build && tsc",
     "watch": "./node_modules/.bin/tsc -w",
     "package": "gulp package",
