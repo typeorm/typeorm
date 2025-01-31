@@ -95,7 +95,7 @@ export class EntityListenerMetadata {
                 )
 
             // Return the Entity Method
-            return entityMethod()
+            return entityMethod.call(entity)
         }
 
         // Call the Embedded Method
