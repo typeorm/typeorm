@@ -83,6 +83,12 @@ export class SubjectChangedColumnsComputer {
                 let normalizedValue = entityValue
                 // normalize special values to make proper comparision
                 if (entityValue !== null) {
+                    // If the column is an array, we don't care about column.type and instead compare the arrays directly
+                    if (column.isArray) {
+                        if (OrmUtils.deepCompare(entityValue, databaseValue))
+                            return
+                    }
+
                     switch (column.type) {
                         case "date":
                             normalizedValue =
