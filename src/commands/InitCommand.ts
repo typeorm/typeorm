@@ -47,6 +47,9 @@ export class InitCommand implements yargs.CommandModule {
                 describe:
                     "Module system to use for project, expected values are commonjs or esm.",
             })
+            .option("no-install", {
+                describe: "Skip install packages.",
+            })
     }
 
     async handler(args: yargs.Arguments) {
@@ -54,6 +57,8 @@ export class InitCommand implements yargs.CommandModule {
             const database: string = (args.database as any) || "postgres"
             const isExpress = args.express !== undefined ? true : false
             const isDocker = args.docker !== undefined ? true : false
+            const canSkipInstall = args.noInstall !== undefined ? true : false
+            const canInstall = canSkipInstall === true ? false : true
             const basePath = process.cwd() + (args.name ? "/" + args.name : "")
             const projectName = args.name
                 ? path.basename(args.name as any)
@@ -137,14 +142,24 @@ export class InitCommand implements yargs.CommandModule {
                 )
             }
 
-            console.log(chalk.green(`Please wait, installing dependencies...`))
-            if (args.pm && installNpm) {
-                await InitCommand.executeCommand("npm install", basePath)
+            if (canInstall) {
+                console.log(
+                    chalk.green(`Please wait, installing dependencies...`),
+                )
+                if (args.pm && installNpm) {
+                    await InitCommand.executeCommand("npm install", basePath)
+                } else {
+                    await InitCommand.executeCommand("yarn install", basePath)
+                }
+                console.log(
+                    chalk.green(`Done! Start playing with a new project!`),
+                )
             } else {
-                await InitCommand.executeCommand("yarn install", basePath)
+                console.log(chalk.green(`Done! You can install dependencies,`))
+                console.log(
+                    chalk.green(`Then start playing with a new project!`),
+                )
             }
-
-            console.log(chalk.green(`Done! Start playing with a new project!`))
         } catch (err) {
             PlatformTools.logCmdErr("Error during project initialization:", err)
             process.exit(1)
