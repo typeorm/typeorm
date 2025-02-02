@@ -295,6 +295,51 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should load results from a left join with a child inner join both of which have zero results", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const post = new Post()
+                    post.title = "about BMW"
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost!).to.not.be.null
+                    expect(loadedPost!.categories).to.be.eql([])
+                    expect(loadedPost!.categories.length).to.be.equal(0)
+                }),
+            ))
+
+        it("should load results from a left join with a child inner join that has zero results", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const category = new Category()
+                    category.name = "germany"
+                    await connection.manager.save(category)
+
+                    const post = new Post()
+                    post.title = "about BMW"
+                    post.categories = [category]
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost!).to.not.be.null
+                    expect(loadedPost!.categories).to.be.eql([])
+                    expect(loadedPost!.categories.length).to.be.equal(0)
+                }),
+            ))
+
         it("should load data when additional condition used", () =>
             Promise.all(
                 connections.map(async (connection) => {
