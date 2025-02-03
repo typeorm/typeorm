@@ -574,7 +574,7 @@ export class MongoDriver implements Driver {
 
         mongoOptions.driverInfo = {
             name: "TypeORM",
-            version: "X.Y.Z" // FIXME: import actual library version
+            version: require("../../../package.json").version
         }
 
         return mongoOptions
