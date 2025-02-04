@@ -1,10 +1,11 @@
 import { expect } from "chai"
 import { exec } from "child_process"
-import { readFile, writeFile, chmod, unlink, rmdir } from "fs/promises"
+import { readFile, writeFile, unlink, rm } from "fs/promises"
 import { dirname } from "path"
 
 describe("cli init command", () => {
-    const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
+    let cliPath = `node ${dirname(dirname(dirname(__dirname)))}/src/cli.js`
+
     const databaseOptions = [
         "mysql",
         "mariadb",
@@ -20,10 +21,6 @@ describe("cli init command", () => {
     const builtSrcDirectory = "build/compiled/src"
 
     before(async () => {
-        const chmodCli = async () => {
-            await expect(chmod(cliPath, 0o755)).to.not.be.rejected
-        }
-
         const copyPackageJson = async () => {
             // load package.json from the root of the project
             const packageJson = JSON.parse(
@@ -38,7 +35,7 @@ describe("cli init command", () => {
             )
         }
 
-        await Promise.all([chmodCli(), copyPackageJson()])
+        await Promise.all([copyPackageJson()])
     })
 
     after(async () => {
@@ -46,7 +43,7 @@ describe("cli init command", () => {
     })
 
     afterEach(async () => {
-        await rmdir(`./${testProjectName}`, { recursive: true })
+        await rm(`./${testProjectName}`, { recursive: true })
     })
 
     for (const databaseOption of databaseOptions) {
