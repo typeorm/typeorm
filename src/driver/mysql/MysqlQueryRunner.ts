@@ -190,20 +190,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        return new Promise(async (ok, fail) => {
-            const broadcasterResult = new BroadcasterResult()
+        const broadcasterResult = new BroadcasterResult()
 
-            try {
-                const databaseConnection = await this.connect()
+        try {
+            const databaseConnection = await this.connect()
 
-                this.driver.connection.logger.logQuery(query, parameters, this)
-                this.broadcaster.broadcastBeforeQueryEvent(
-                    broadcasterResult,
-                    query,
-                    parameters,
-                )
+            this.driver.connection.logger.logQuery(query, parameters, this)
+            this.broadcaster.broadcastBeforeQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+            )
 
-                const queryStartTime = +new Date()
+            const queryStartTime = +new Date()
+            return await new Promise<any>((ok, fail) => {
                 databaseConnection.query(
                     query,
                     parameters,
@@ -226,25 +226,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             )
 
                         if (err) {
-                            this.driver.connection.logger.logQueryError(
-                                err,
-                                query,
-                                parameters,
-                                this,
-                            )
-                            this.broadcaster.broadcastAfterQueryEvent(
-                                broadcasterResult,
-                                query,
-                                parameters,
-                                false,
-                                undefined,
-                                undefined,
-                                err,
-                            )
-
-                            return fail(
-                                new QueryFailedError(query, parameters, err),
-                            )
+                            return fail(err)
                         }
 
                         this.broadcaster.broadcastAfterQueryEvent(
@@ -278,12 +260,28 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }
                     },
                 )
-            } catch (err) {
-                fail(err)
-            } finally {
-                await broadcasterResult.wait()
-            }
-        })
+            })
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(
+                err,
+                query,
+                parameters,
+                this,
+            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
+        }
     }
 
     /**
