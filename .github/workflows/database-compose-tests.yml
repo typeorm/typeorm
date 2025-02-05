@@ -48,4 +48,4 @@ jobs:
         if: inputs.run-type == 'mutation'
         with:
           name: mitation-oracle
-          path: ./reports/mutation/mutation.json
+          path: ./reports/mutation/mutation.html
