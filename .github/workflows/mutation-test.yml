@@ -7,7 +7,7 @@ name: mutation-test
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 */14 * *"
+    - cron: "0 0 1,15 * *"
   
 jobs:
   # These tests run in standard node containers with their db attached as a service
