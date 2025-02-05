@@ -5,7 +5,7 @@
   "reporters": [
     "html",
     "progress",
-    "dashboard"
+    "json"
   ],
   "testRunner": "mocha",
   "mochaOptions": {
