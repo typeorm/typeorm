@@ -6,6 +6,7 @@ import { ColumnMetadata } from "../ColumnMetadata"
 
 export interface ClosureTreeOptions {
     closureTableName?: string
+    closureTableSchema?: string
     ancestorColumnName?: (column: ColumnMetadata) => string
     descendantColumnName?: (column: ColumnMetadata) => string
 }
