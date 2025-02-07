@@ -32,24 +32,19 @@ describe("github issues > #11271 Stack trace is truncated in MySQL query runner"
             dataSources.map(async (dataSource) => {
                 async function my_named_function_123() {
                     const queryRunner = dataSource.createQueryRunner()
-                    let confirmedStackError = false
                     try {
                         await queryRunner.query(
                             "SELECT invalid_name FROM non_existent_table",
                         )
-                    } catch (err) {
-                        //console.log("observed stack:", err.stack)
-                        expect(err.stack).to.include("my_named_function_123")
-                        confirmedStackError = true
                     } finally {
-                        // Confirm that we actually checked an error.
-                        expect(confirmedStackError).to.equal(true)
                         await queryRunner.release()
                     }
                 }
 
-                // Our logic is wrapped in here to check in the stack trace.
-                await my_named_function_123()
+                // Confirm that the error contains the named function (in the stack trace).
+                await expect(my_named_function_123())
+                    .to.be.rejected.and.eventually.have.property("stack")
+                    .that.include("my_named_function_123")
             }),
         ))
 
@@ -60,31 +55,23 @@ describe("github issues > #11271 Stack trace is truncated in MySQL query runner"
         Promise.all(
             dataSources.map(async (dataSource) => {
                 async function my_named_function_1234() {
-                    let confirmedStackError = false
                     const repository: Repository<Hygge> =
                         dataSource.getRepository(Hygge)
 
-                    try {
-                        const hygge = repository.create()
-                        hygge.description =
-                            "Soft blankets and candlelight on a snowy evening."
-                        await repository.save(hygge)
+                    const hygge = repository.create()
+                    hygge.description =
+                        "Soft blankets and candlelight on a snowy evening."
+                    await repository.save(hygge)
 
-                        const hygge2 = repository.create()
-                        hygge2.id = hygge.id // Id collision.
-                        hygge2.description =
-                            "Eating homemade simply wonderfuls."
-                        await repository.insert(hygge2)
-                    } catch (err) {
-                        //console.log("observed stack:", err.stack)
-                        expect(err.stack).to.include("my_named_function_1234")
-                        confirmedStackError = true
-                    } finally {
-                        // Confirm that we actually checked an error.
-                        expect(confirmedStackError).to.equal(true)
-                    }
+                    const hygge2 = repository.create()
+                    hygge2.id = hygge.id // Id collision.
+                    hygge2.description = "Eating homemade simply wonderfuls."
+                    await repository.insert(hygge2)
                 }
-                await my_named_function_1234()
+
+                await expect(my_named_function_1234())
+                    .to.be.rejected.and.eventually.have.property("stack")
+                    .that.include("my_named_function_1234")
             }),
         ))
 })
