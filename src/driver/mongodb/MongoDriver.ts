@@ -572,6 +572,11 @@ export class MongoDriver implements Driver {
             }
         }
 
+        mongoOptions.driverInfo = {
+            name: "TypeORM",
+            version: require("../../../package.json").version
+        }
+
         return mongoOptions
     }
 }
