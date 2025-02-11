@@ -1,0 +1,26 @@
+[
+  {
+    "skip": false,
+    "disabledIfNotEnabledImplicitly": true,
+    "name": "mongodb",
+    "type": "mongodb",
+    "host": "mongodb",
+    "port": 27017,
+    "database": "test",
+    "logging": false,
+    "useNewUrlParser": true,
+    "useUnifiedTopology": true
+  },
+
+  {
+    "skip": true,
+    "name": "postgres",
+    "type": "postgres",
+    "host": "postgres",
+    "port": 5432,
+    "username": "postgres",
+    "password": "postgres",
+    "database": "postgres",
+    "logging": false
+  }
+]

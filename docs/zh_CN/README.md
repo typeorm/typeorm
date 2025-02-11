@@ -1180,7 +1180,6 @@ let photos = await connection
 
 这几个扩展可以简化 TypeORM 的使用，并将其与其他模块集成：
 
--   [TypeORM + GraphQL framework](http://vesper-framework.com)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-typedi-extensions) with [TypeDI](https://github.com/pleerock/typedi)
 -   [TypeORM integration](https://github.com/typeorm/typeorm-routing-controllers-extensions) with [routing-controllers](https://github.com/pleerock/routing-controllers)
 -   从现有数据库生成模型 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
