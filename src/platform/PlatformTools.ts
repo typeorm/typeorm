@@ -1,8 +1,8 @@
-import * as path from "path"
-import * as fs from "fs"
+import path from "path"
+import fs from "fs"
 import dotenv from "dotenv"
 import chalk from "chalk"
-import { highlight, Theme } from "cli-highlight"
+import { highlight } from "sql-highlight"
 
 export { ReadStream } from "fs"
 export { EventEmitter } from "events"
@@ -182,12 +182,7 @@ export class PlatformTools {
     }
 
     static async writeFile(path: string, data: any): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            fs.writeFile(path, data, (err) => {
-                if (err) fail(err)
-                ok()
-            })
-        })
+        return fs.promises.writeFile(path, data)
     }
 
     /**
@@ -207,25 +202,10 @@ export class PlatformTools {
     }
 
     /**
-     * Highlights sql string to be print in the console.
+     * Highlights sql string to be printed in the console.
      */
     static highlightSql(sql: string) {
-        const theme: Theme = {
-            keyword: chalk.blueBright,
-            literal: chalk.blueBright,
-            string: chalk.white,
-            type: chalk.magentaBright,
-            built_in: chalk.magentaBright,
-            comment: chalk.gray,
-        }
-        return highlight(sql, { theme: theme, language: "sql" })
-    }
-
-    /**
-     * Highlights json string to be print in the console.
-     */
-    static highlightJson(json: string) {
-        return highlight(json, { language: "json" })
+        return highlight(sql)
     }
 
     /**

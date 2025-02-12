@@ -1,5 +1,7 @@
 import "reflect-metadata"
+import fs from "fs/promises"
 import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,11 +13,7 @@ import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
-import sinon from "sinon"
 import { FileLogger } from "../../../../src"
-import { promisify } from "util"
-import fs from "fs"
-import { readFile, unlink } from "fs"
 
 describe("repository > find options", () => {
     let connections: DataSource[]
@@ -256,9 +254,9 @@ describe("repository > find options > comment", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(async () => {
         await closeTestingConnections(connections)
-        if (fs.existsSync(logPath)) {
-            await promisify(unlink)(logPath)
-        }
+        try {
+            await fs.unlink(logPath)
+        } catch {}
     })
 
     it("repository should insert comment", () =>
@@ -268,7 +266,7 @@ describe("repository > find options > comment", () => {
                     .getRepository(User)
                     .find({ comment: "This is a query comment." })
 
-                const logs = await promisify(readFile)(logPath)
+                const logs = await fs.readFile(logPath)
                 const lines = logs.toString().split("\n")
                 const lastLine = lines[lines.length - 2] // last line is blank after newline
                 // remove timestamp and prefix
