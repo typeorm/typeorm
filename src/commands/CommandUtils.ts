@@ -14,7 +14,7 @@ export class CommandUtils {
     ): Promise<DataSource> {
         let dataSourceFileExports
         try {
-            [dataSourceFileExports] = await importOrRequireFile(
+            ;[dataSourceFileExports] = await importOrRequireFile(
                 dataSourceFilePath,
             )
         } catch (err) {

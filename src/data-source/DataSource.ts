@@ -520,7 +520,7 @@ export class DataSource {
 
     /**
      * Executes raw SQL query and returns raw database results.
-     * 
+     *
      * @see [Official docs](https://typeorm.io/data-source-api) for examples.
      */
     async query<T = any>(

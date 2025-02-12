@@ -1439,13 +1439,13 @@ export class InsertQueryBuilder<
                     if (columnIndex === columns.length - 1) {
                         if (valueSetIndex === valueSets.length - 1) {
                             if (
-                                this.connection.driver.options.type === "oracle"
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                )
                             ) {
-                                expression += " FROM DUAL"
-                            } else if (
-                                this.connection.driver.options.type === "sap"
-                            ) {
-                                expression += " FROM dummy"
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName
                             } else if (
                                 this.connection.driver.options.type === "mssql"
                             ) {
@@ -1453,16 +1453,15 @@ export class InsertQueryBuilder<
                             }
                         } else {
                             if (
-                                this.connection.driver.options.type ===
-                                    "oracle" &&
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                ) &&
                                 valueSets.length > 1
                             ) {
-                                expression += " FROM DUAL UNION ALL "
-                            } else if (
-                                this.connection.driver.options.type === "sap" &&
-                                valueSets.length > 1
-                            ) {
-                                expression += " FROM dummy UNION ALL "
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName +
+                                    " UNION ALL "
                             } else if (
                                 this.connection.driver.options.type === "mssql"
                             ) {
