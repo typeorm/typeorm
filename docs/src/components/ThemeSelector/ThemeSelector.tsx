@@ -7,7 +7,7 @@ export const ThemeSelector = component$(() => {
   const store = useContext(StoreContext);
   return (
     <div
-      class="cursor-pointer px-4 xsm:block"
+      class="cursor-pointer px-4 xsm:block hover:opacity-80"
       onClick$={() => {
         store.theme = store.theme === "light" ? "dark" : "light";
         const newTheme = store.theme === "light" ? "light" : "dark";

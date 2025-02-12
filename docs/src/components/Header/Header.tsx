@@ -6,6 +6,7 @@ import { Aside } from "../Aside/Aside";
 import { CloseIcon } from "../Icons/CloseIcon";
 import { GitHubIcon } from "../Icons/GitHubIcon";
 import { MenuIcon } from "../Icons/MenuIcon";
+import { SearchBar } from "../SearchBar/SearchBar";
 
 type Props = {
     links?: { name: string; href: string }[];
@@ -50,6 +51,7 @@ export const Header = component$<Props>(({ links = [], showMenu = true }) => {
                     </div>
                 </div>
                 <div class="col-span-6 flex items-center justify-end sm:col-span-4">
+                    <SearchBar />
                     <ThemeSelector />
                     <a
                         target="_blank"
