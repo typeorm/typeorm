@@ -89,6 +89,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                         "No entity classes or directories passed to Typeorm",
                     ),
                 )
+
+                if (args.exitProcess !== false) {
+                    process.exit(1)
+                } else {
+                    return;
+                }
             }
 
             dataSource.setOptions({
@@ -155,18 +161,33 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                     console.log(
                         chalk.green(`No changes in database schema were found`),
                     )
-                    process.exit(0)
+
+                    if (args.exitProcess !== false) {
+                        process.exit(0)
+                    } else {
+                        return;
+                    }
                 } else {
                     console.log(
                         chalk.yellow(
                             `No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`,
                         ),
                     )
-                    process.exit(1)
+
+                    if (args.exitProcess !== false) {
+                        process.exit(1)
+                    } else {
+                        return;
+                    }
                 }
             } else if (!args.path) {
                 console.log(chalk.yellow("Please specify a migration path"))
-                process.exit(1)
+                
+                if (args.exitProcess !== false) {
+                    process.exit(1)
+                } else {
+                    return;
+                }
             }
 
             const fileContent = args.outputJs
@@ -191,7 +212,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                         )}`,
                     ),
                 )
-                process.exit(1)
+
+                if (args.exitProcess !== false) {
+                    process.exit(1)
+                } else {
+                    return;
+                }
             }
 
             if (args.dryrun) {
@@ -220,7 +246,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             }
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration generation:", err)
-            process.exit(1)
+            
+            if (args.exitProcess !== false) {
+                process.exit(1)
+            } else {
+                return;
+            }
         }
     }
 
