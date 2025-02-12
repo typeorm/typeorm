@@ -26,6 +26,7 @@ import { DriverUtils } from "../DriverUtils"
 import { View } from "../../schema-builder/view/View"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { SapPoolOptions } from "./SapPoolOptions"
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -253,11 +254,12 @@ export class SapDriver implements Driver {
         // HANA connection info
         const dbParams = {
             serverNode: `${this.options.host}:${this.options.port}`,
-            uid: this.options.username,
-            pwd: this.options.password,
+            user: this.options.username,
+            password: this.options.password,
             ...this.options.extra,
         }
 
+        if (this.options.database) dbParams.databaseName = this.options.database
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt
         if (this.options.sslValidateCertificate)
             dbParams.sslValidateCertificate =
@@ -266,7 +268,14 @@ export class SapDriver implements Driver {
         if (this.options.cert) dbParams.cert = this.options.cert
         if (this.options.ca) dbParams.ca = this.options.ca
 
-        this.master = this.hanaClient.createPool(dbParams, this.options)
+        const options: SapPoolOptions = {
+            pooling: this.options.pooling ?? false,
+            maxPoolSize: this.options.maxPoolSize ?? 1,
+            connectionLifetime: this.options.connectionLifetime ?? 0,
+            poolingCheck: this.options.poolingCheck ?? false,
+            poolKey: this.options.poolKey,
+        };
+        this.master = this.hanaClient.createPool(dbParams, options)
         if (!this.database || !this.schema) {
             const queryRunner = this.createQueryRunner("master")
 
