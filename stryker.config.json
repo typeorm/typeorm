@@ -4,6 +4,7 @@
   "packageManager": "npm",
   "reporters": [
     "html",
+    "dashboard",
     "progress",
     "json"
   ],
