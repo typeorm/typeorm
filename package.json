@@ -17,55 +17,55 @@
   },
   "exports": {
     ".": {
-      "types": "./index.d.ts",
+      "types": "./build/package/index.d.ts",
       "node": {
-        "import": "./index.mjs",
-        "require": "./index.js",
-        "types": "./index.d.ts"
+        "import": "./build/package/index.mjs",
+        "require": "./build/package/index.js",
+        "types": "./build/package/index.d.ts"
       },
       "browser": {
-        "require": "./index.js",
-        "import": "./browser/index.js",
-        "default": "./index.js"
+        "require": "./build/package/index.js",
+        "import": "./build/package/browser/index.js",
+        "default": "./build/package/index.js"
       }
     },
     "./browser": {
-      "types": "./index.d.ts",
-      "default": "./browser/index.js"
+      "types": "./build/package/index.d.ts",
+      "default": "./build/package/browser/index.js"
     },
-    "./*.js": "./*.js",
+    "./*.js": "./build/package/*.js",
     "./*": {
-      "require": "./*.js",
-      "import": "./*"
+      "require": "./build/package/*.js",
+      "import": "./build/package/*"
     }
   },
-  "main": "./index.js",
-  "module": "./index.mjs",
-  "types": "./index.d.ts",
+  "main": "./build/package/index.js",
+  "module": "./build/package/index.mjs",
+  "types": "./build/package/index.d.ts",
   "browser": {
-    "./browser/connection/ConnectionOptionsReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
-    "./browser/connection/options-reader/ConnectionOptionsXmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
-    "./browser/connection/options-reader/ConnectionOptionsYmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
-    "./browser/driver/aurora-data-api/AuroraDataApiDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/better-sqlite3/BetterSqlite3Driver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/cockroachdb/CockroachDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/MongoDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/MongoQueryRunner.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/bson.typings.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/typings.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mysql/MysqlDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/oracle/OracleDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sap/SapDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sqlite/SqliteDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sqlserver/SqlServerDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/logger/FileLogger.js": "./browser/platform/BrowserFileLoggerDummy.js",
-    "./browser/platform/PlatformTools.js": "./browser/platform/BrowserPlatformTools.js",
-    "./browser/repository/MongoRepository.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/util/DirectoryExportedClassesLoader.js": "./browser/platform/BrowserDirectoryExportedClassesLoader.js",
-    "./index.js": "./browser/index.js",
-    "./index.mjs": "./browser/index.js"
+    "./build/package/browser/connection/ConnectionOptionsReader.js": "./build/package/browser/platform/BrowserConnectionOptionsReaderDummy.js",
+    "./build/package/browser/connection/options-reader/ConnectionOptionsXmlReader.js": "./build/package/browser/platform/BrowserConnectionOptionsReaderDummy.js",
+    "./build/package/browser/connection/options-reader/ConnectionOptionsYmlReader.js": "./build/package/browser/platform/BrowserConnectionOptionsReaderDummy.js",
+    "./build/package/browser/driver/aurora-data-api/AuroraDataApiDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/better-sqlite3/BetterSqlite3Driver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/cockroachdb/CockroachDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/mongodb/MongoDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/mongodb/MongoQueryRunner.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/mongodb/bson.typings.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/mongodb/typings.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/mysql/MysqlDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/oracle/OracleDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/postgres/PostgresDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/sap/SapDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/sqlite/SqliteDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/driver/sqlserver/SqlServerDriver.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/entity-manager/MongoEntityManager.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/logger/FileLogger.js": "./build/package/browser/platform/BrowserFileLoggerDummy.js",
+    "./build/package/browser/platform/PlatformTools.js": "./build/package/browser/platform/BrowserPlatformTools.js",
+    "./build/package/browser/repository/MongoRepository.js": "./build/package/browser/platform/BrowserDisabledDriversDummy.js",
+    "./build/package/browser/util/DirectoryExportedClassesLoader.js": "./build/package/browser/platform/BrowserDirectoryExportedClassesLoader.js",
+    "./build/package/index.js": "./build/package/browser/index.js",
+    "./build/package/index.mjs": "./build/package/browser/index.js"
   },
   "repository": {
     "type": "git",
