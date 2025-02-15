@@ -846,7 +846,9 @@ export class InsertQueryBuilder<
                         )
 
                         // if value for this column was not provided then insert default value
-                    } else if (value === undefined) {
+                    } else if (value === undefined
+                        || (value === null && column.isPrimary)
+                    ) {
                         if (
                             (this.connection.driver.options.type === "oracle" &&
                                 valueSets.length > 1) ||
