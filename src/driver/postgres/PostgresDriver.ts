@@ -1078,17 +1078,31 @@ export class PostgresDriver implements Driver {
 
         const columnDefault = this.lowerDefaultValueIfNecessary(
             this.normalizeDefault(columnMetadata),
-        );
-        const oldColumnDefault = this.lowerDefaultValueIfNecessary(tableColumn.default)
+        )
+        const oldColumnDefault = this.lowerDefaultValueIfNecessary(
+            tableColumn.default,
+        )
         if (columnMetadata.isArray && columnDefault && oldColumnDefault) {
-            if (columnDefault.startsWith("array[]::") 
-                && columnDefault.endsWith("[]") 
-                && oldColumnDefault.startsWith("array[]::")
-                && oldColumnDefault.endsWith("[]"))
-            {
-                const columnDefaultBaseType = columnDefault.substring("array[]::".length, columnDefault.length - "[]".length);
-                const oldColumnDefaultBaseType = oldColumnDefault.substring("array[]::".length, oldColumnDefault.length - "[]".length);
-                if (oldColumnDefaultBaseType === "character varying" && columnDefaultBaseType === "varchar") return true;
+            if (
+                columnDefault.startsWith("array[]::") &&
+                columnDefault.endsWith("[]") &&
+                oldColumnDefault.startsWith("array[]::") &&
+                oldColumnDefault.endsWith("[]")
+            ) {
+                const columnDefaultBaseType = columnDefault.substring(
+                    "array[]::".length,
+                    columnDefault.length - "[]".length,
+                )
+                const oldColumnDefaultBaseType = oldColumnDefault.substring(
+                    "array[]::".length,
+                    oldColumnDefault.length - "[]".length,
+                )
+                // Postgres changes stored array of type "ARRAY::varchar[]" to "ARRAY::character varying[]", so here's the comparison
+                if (
+                    oldColumnDefaultBaseType === "character varying" &&
+                    columnDefaultBaseType === "varchar"
+                )
+                    return true
             }
         }
         return columnDefault === tableColumn.default
