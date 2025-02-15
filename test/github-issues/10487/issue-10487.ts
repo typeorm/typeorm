@@ -9,7 +9,7 @@ import { expect } from "chai"
 import { User } from "./entity/User"
 import { Post } from "./entity/Post"
 
-describe.only("github issues > #10487 null in place of primary column", () => {
+describe("github issues > #10487 null in place of primary column", () => {
     let dataSources: DataSource[]
 
     before(
