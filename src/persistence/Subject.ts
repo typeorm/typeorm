@@ -309,6 +309,17 @@ export class Subject {
     recompute(): void {
         if (this.entity) {
             this.entityWithFulfilledIds = Object.assign({}, this.entity)
+            
+            this.metadata.primaryColumns.forEach((primaryColumn) => {
+                if (primaryColumn.getEntityValue(this.entity!) === null) {
+                    // You can't have a null in a privary column, maybe user wants to insert the default value from DB
+                    primaryColumn.setEntityValue(
+                        this.entityWithFulfilledIds!,
+                        undefined,
+                    )
+                }
+            })
+
             if (this.parentSubject) {
                 this.metadata.primaryColumns.forEach((primaryColumn) => {
                     if (
