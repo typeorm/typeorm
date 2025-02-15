@@ -1097,7 +1097,7 @@ export class PostgresDriver implements Driver {
                     "array[]::".length,
                     oldColumnDefault.length - "[]".length,
                 )
-                // Postgres changes stored array of type "ARRAY::varchar[]" to "ARRAY::character varying[]", so here's the comparison
+                // Postgres changes stored array's default value "ARRAY::varchar[]" to "ARRAY::character varying[]", so here's the comparison
                 if (
                     oldColumnDefaultBaseType === "character varying" &&
                     columnDefaultBaseType === "varchar"
