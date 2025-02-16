@@ -210,13 +210,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     update(): UpdateQueryBuilder<Entity>
 
     /**
-     * Creates UPDATE query and applies given update values.
-     */
-    update<Entity extends ObjectLiteral>(
-        updateSet: QueryDeepPartialEntity<Entity>,
-    ): UpdateQueryBuilder<Entity>
-
-    /**
      * Creates UPDATE query for the given entity and applies given update values.
      */
     update<Entity extends ObjectLiteral>(
