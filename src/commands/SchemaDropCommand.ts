@@ -5,6 +5,7 @@ import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
 import process from "process"
 import { CommandUtils } from "./CommandUtils"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
 /**
  * Drops all tables of the database from the given dataSource.
@@ -16,12 +17,9 @@ export class SchemaDropCommand implements yargs.CommandModule {
         "To drop table of a concrete connection's database use -c option."
 
     builder(args: yargs.Argv) {
-        return args.option("dataSource", {
-            alias: "d",
-            describe:
-                "Path to the file where your DataSource instance is defined.",
-            demandOption: true,
-        })
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .builder()
     }
 
     async handler(args: yargs.Arguments) {
