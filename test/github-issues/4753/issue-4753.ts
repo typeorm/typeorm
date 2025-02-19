@@ -33,6 +33,7 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
                     username: connectionOptions.username,
                     password: connectionOptions.password,
                     database: connectionOptions.database,
+                    port: connectionOptions.port,
                 },
                 slaves: [
                     {
@@ -40,6 +41,7 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
                         username: connectionOptions.username,
                         password: connectionOptions.password,
                         database: connectionOptions.database,
+                        port: connectionOptions.port,
                     },
                 ],
             },

@@ -19,8 +19,8 @@ import appRoot from "app-root-path"
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
 describe("multi-database > basic-functionality", () => {
-    describe("filepathToName()", () => {
-        for (const platform of [`darwin`, `win32`]) {
+    for (const platform of [`darwin`, `win32`]) {
+        describe(`filepathToName() (${platform})`, () => {
             let realPlatform: string
 
             beforeEach(() => {
@@ -38,7 +38,7 @@ describe("multi-database > basic-functionality", () => {
                 })
             })
 
-            it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged (${platform})`, () => {
+            it("produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged", () => {
                 const testMap = [
                     ["FILENAME.db", "filename.db"],
                     ["..\\FILENAME.db", "../filename.db"],
@@ -51,16 +51,18 @@ describe("multi-database > basic-functionality", () => {
                 ]
                 for (const [winOs, otherOs] of testMap) {
                     const winOsRes = filepathToName(winOs)
-                    const otherOsRes = filepathToName(otherOs)
-                    expect(winOsRes).to.equal(otherOsRes)
+                    if (process.platform == "win32") {
+                        const otherOsRes = filepathToName(otherOs)
+                        expect(winOsRes).to.equal(otherOsRes)
+                    }
                     expect(winOsRes).to.match(
                         VALID_NAME_REGEX,
                         `'${winOs}' is invalid table name`,
                     )
                 }
             })
-        }
-    })
+        })
+    }
 
     describe("multiple databases", () => {
         let connections: DataSource[]
@@ -91,7 +93,7 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            await rimraf(`${tempPath}/**/*.attach.db`)
+            await rimraf(`${tempPath}/**/*.attach.db`, { glob: true })
         })
 
         it("should correctly attach and create database files", () =>

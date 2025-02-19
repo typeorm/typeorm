@@ -21,7 +21,7 @@ export class Gulpfile {
      */
     @Task()
     async clean() {
-        return rimraf(["./build/**"]);
+        return rimraf(["./build/**"], {glob: true});
     }
 
     /**
@@ -88,7 +88,7 @@ export class Gulpfile {
     async browserClearPackageDirectory() {
         return rimraf([
             "./build/browser/**"
-        ]);
+        ], {glob: true});
     }
 
     // -------------------------------------------------------------------------
@@ -195,7 +195,7 @@ export class Gulpfile {
     async packageClearPackageDirectory() {
         return rimraf([
             "build/package/src/**"
-        ]);
+        ], {glob: true});
     }
 
     /**
