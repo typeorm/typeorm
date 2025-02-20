@@ -28,18 +28,16 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
             const fileContent = SubscriberCreateCommand.getTemplate(filename)
             const fileExists = await CommandUtils.fileExists(fullPath + ".ts")
             if (fileExists) {
-                throw `File ${ansi.blue(fullPath + ".ts")} already exists`
+                throw new Error(`File "${fullPath}.ts" already exists`)
             }
             await CommandUtils.createFile(fullPath + ".ts", fileContent)
             console.log(
                 ansi.green(
-                    `Subscriber ${ansi.blue(
-                        fullPath,
-                    )} has been created successfully.`,
+                    `Subscriber ${ansi.blue`${fullPath}.ts`} has been created successfully.`,
                 ),
             )
-        } catch (err) {
-            PlatformTools.logCmdErr("Error during subscriber creation:")
+        } catch (error) {
+            PlatformTools.logCmdErr("Error during subscriber creation:", error)
             process.exit(1)
         }
     }

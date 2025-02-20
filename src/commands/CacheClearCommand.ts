@@ -1,7 +1,7 @@
 import ansi from "ansis"
 import path from "path"
 import process from "process"
-import * as yargs from "yargs"
+import yargs from "yargs"
 import { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
@@ -45,7 +45,7 @@ export class CacheClearCommand implements yargs.CommandModule {
             }
 
             await dataSource.queryResultCache.clear()
-            console.log(ansi.green("Cache was successfully cleared"))
+            console.log(ansi.green`Cache was successfully cleared`)
 
             await dataSource.destroy()
         } catch (err) {

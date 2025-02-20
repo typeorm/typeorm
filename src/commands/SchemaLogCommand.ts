@@ -44,42 +44,28 @@ export class SchemaLogCommand implements yargs.CommandModule {
 
             if (sqlInMemory.upQueries.length === 0) {
                 console.log(
-                    ansi.yellow(
-                        "Your schema is up to date - there are no queries to be executed by schema synchronization.",
-                    ),
+                    ansi.yellow`Your schema is up to date - there are no queries to be executed by schema synchronization.`,
                 )
             } else {
-                const lengthSeparators = String(sqlInMemory.upQueries.length)
-                    .split("")
-                    .map((char) => "-")
-                    .join("")
-                console.log(
-                    ansi.yellow(
-                        "---------------------------------------------------------------" +
-                            lengthSeparators,
-                    ),
+                const lineSeparator = "".padStart(
+                    63 + String(sqlInMemory.upQueries.length).length,
+                    "-",
                 )
+                console.log(ansi.yellow(lineSeparator))
                 console.log(
-                    ansi.yellow.bold(
-                        `-- Schema synchronization will execute following sql queries (${ansi.white(
-                            sqlInMemory.upQueries.length.toString(),
-                        )}):`,
-                    ),
+                    ansi.yellow
+                        .bold`-- Schema synchronization will execute following sql queries (${ansi.white(
+                        sqlInMemory.upQueries.length.toString(),
+                    )}):`,
                 )
-                console.log(
-                    ansi.yellow(
-                        "---------------------------------------------------------------" +
-                            lengthSeparators,
-                    ),
-                )
+                console.log(ansi.yellow(lineSeparator))
 
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     let sqlString = upQuery.query
                     sqlString = sqlString.trim()
-                    sqlString =
-                        sqlString.substr(-1) === ";"
-                            ? sqlString
-                            : sqlString + ";"
+                    sqlString = sqlString.endsWith(";")
+                        ? sqlString
+                        : sqlString + ";"
                     console.log(PlatformTools.highlightSql(sqlString))
                 })
             }

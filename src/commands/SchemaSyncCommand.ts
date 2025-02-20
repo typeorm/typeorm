@@ -41,7 +41,7 @@ export class SchemaSyncCommand implements yargs.CommandModule {
             await dataSource.destroy()
 
             console.log(
-                ansi.green("Schema synchronization finished successfully."),
+                ansi.green`Schema synchronization finished successfully.`,
             )
         } catch (err) {
             PlatformTools.logCmdErr("Error during schema synchronization:", err)

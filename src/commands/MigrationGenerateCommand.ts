@@ -1,6 +1,6 @@
 import { format } from "@sqltools/formatter/lib/sqlFormatter"
 import ansi from "ansis"
-import * as path from "path"
+import path from "path"
 import process from "process"
 import yargs from "yargs"
 import { DataSource } from "../data-source"
@@ -140,19 +140,17 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             if (!upSqls.length) {
                 if (args.check) {
                     console.log(
-                        ansi.green(`No changes in database schema were found`),
+                        ansi.green`No changes in database schema were found`,
                     )
                     process.exit(0)
                 } else {
                     console.log(
-                        ansi.yellow(
-                            `No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`,
-                        ),
+                        ansi.yellow`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`,
                     )
                     process.exit(1)
                 }
             } else if (!args.path) {
-                console.log(ansi.yellow("Please specify a migration path"))
+                console.log(ansi.yellow`Please specify a migration path`)
                 process.exit(1)
             }
 
@@ -172,11 +170,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
             if (args.check) {
                 console.log(
-                    ansi.yellow(
-                        `Unexpected changes in database schema were found in check mode:\n\n${ansi.white(
-                            fileContent,
-                        )}`,
-                    ),
+                    ansi.yellow`Unexpected changes in database schema were found in check mode:\n\n${ansi.white(
+                        fileContent,
+                    )}`,
                 )
                 process.exit(1)
             }
@@ -195,11 +191,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 await CommandUtils.createFile(migrationFileName, fileContent)
 
                 console.log(
-                    ansi.green(
-                        `Migration ${ansi.blue(
-                            migrationFileName,
-                        )} has been generated successfully.`,
-                    ),
+                    ansi.green`Migration ${ansi.blue(
+                        migrationFileName,
+                    )} has been generated successfully.`,
                 )
                 if (args.exitProcess !== false) {
                     process.exit(0)

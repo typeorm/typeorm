@@ -125,26 +125,24 @@ export class InitCommand implements yargs.CommandModule {
 
             if (args.name) {
                 console.log(
-                    ansi.green(
-                        `Project created inside ${ansi.blue(
-                            basePath,
-                        )} directory.`,
-                    ),
+                    ansi.green`Project created inside ${ansi.blue(
+                        basePath,
+                    )} directory.`,
                 )
             } else {
                 console.log(
-                    ansi.green(`Project created inside current directory.`),
+                    ansi.green`Project created inside current directory.`,
                 )
             }
 
-            console.log(ansi.green(`Please wait, installing dependencies...`))
+            console.log(ansi.green`Please wait, installing dependencies...`)
             if (args.pm && installNpm) {
                 await InitCommand.executeCommand("npm install", basePath)
             } else {
                 await InitCommand.executeCommand("yarn install", basePath)
             }
 
-            console.log(ansi.green(`Done! Start playing with a new project!`))
+            console.log(ansi.green`Done! Start playing with a new project!`)
         } catch (err) {
             PlatformTools.logCmdErr("Error during project initialization:", err)
             process.exit(1)
