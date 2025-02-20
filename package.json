@@ -222,9 +222,9 @@
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
+    "ansis": "^3.9.0",
     "app-root-path": "^3.1.0",
     "buffer": "^6.0.3",
-    "chalk": "^4.1.2",
     "dayjs": "^1.11.9",
     "debug": "^4.3.4",
     "dotenv": "^16.0.3",
@@ -232,7 +232,7 @@
     "sha.js": "^2.4.11",
     "sql-highlight": "^6.0.0",
     "tslib": "^2.5.0",
-    "uuid": "^9.0.0",
+    "uuid": "^11.0.5",
     "yargs": "^17.6.2"
   },
   "scripts": {
