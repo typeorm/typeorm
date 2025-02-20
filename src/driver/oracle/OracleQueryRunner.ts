@@ -209,7 +209,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             parameters,
         )
 
-        const queryStartTime = +new Date()
+        const queryStartTime = Date.now()
 
         try {
             const executionOptions = {
@@ -226,7 +226,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
