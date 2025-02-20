@@ -136,7 +136,7 @@
     "prettier": "^2.8.8",
     "redis": "^4.6.4",
     "remap-istanbul": "^0.13.0",
-    "rimraf": "^5.0.10",
+    "rimraf": "^6.0.1",
     "sinon": "^15.0.1",
     "sinon-chai": "^3.7.0",
     "source-map-support": "^0.5.21",
