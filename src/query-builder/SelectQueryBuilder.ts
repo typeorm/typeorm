@@ -2005,6 +2005,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     // Protected Methods
     // -------------------------------------------------------------------------
 
+    public concatRelationMetadata(relationMetadata: RelationMetadata) {
+        this.relationMetadatas.push(relationMetadata)
+    }
+
     protected join(
         direction: "INNER" | "LEFT",
         entityOrProperty:
@@ -2614,29 +2618,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Creates "LOCK" part of SELECT Query after table Clause
-     * ex.
-     *  SELECT 1
-     *  FROM USER U WITH (NOLOCK)
-     *  JOIN ORDER O WITH (NOLOCK)
-     *      ON U.ID=O.OrderID
-     */
-    private createTableLockExpression(): string {
-        if (this.connection.driver.options.type === "mssql") {
-            switch (this.expressionMap.lockMode) {
-                case "pessimistic_read":
-                    return " WITH (HOLDLOCK, ROWLOCK)"
-                case "pessimistic_write":
-                    return " WITH (UPDLOCK, ROWLOCK)"
-                case "dirty_read":
-                    return " WITH (NOLOCK)"
-            }
-        }
-
-        return ""
-    }
-
-    /**
      * Creates "LOCK" part of SQL query.
      */
     protected createLockExpression(): string {
@@ -2918,117 +2899,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     select.selection === aliasName + "." + column.propertyPath,
             )
         })
-    }
-
-    private computeCountExpression() {
-        const mainAlias = this.expressionMap.mainAlias!.name // todo: will this work with "fromTableName"?
-        const metadata = this.expressionMap.mainAlias!.metadata
-
-        const primaryColumns = metadata.primaryColumns
-        const distinctAlias = this.escape(mainAlias)
-
-        // If we aren't doing anything that will create a join, we can use a simpler `COUNT` instead
-        // so we prevent poor query patterns in the most likely cases
-        if (
-            this.expressionMap.joinAttributes.length === 0 &&
-            this.expressionMap.relationIdAttributes.length === 0 &&
-            this.expressionMap.relationCountAttributes.length === 0
-        ) {
-            return "COUNT(1)"
-        }
-
-        // For everything else, we'll need to do some hackery to get the correct count values.
-
-        if (
-            this.connection.driver.options.type === "cockroachdb" ||
-            DriverUtils.isPostgresFamily(this.connection.driver)
-        ) {
-            // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
-            // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
-            return (
-                "COUNT(DISTINCT(" +
-                primaryColumns
-                    .map(
-                        (c) =>
-                            `${distinctAlias}.${this.escape(c.databaseName)}`,
-                    )
-                    .join(", ") +
-                "))"
-            )
-        }
-
-        if (DriverUtils.isMySQLFamily(this.connection.driver)) {
-            // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
-            // https://mariadb.com/kb/en/count-distinct/
-            return (
-                "COUNT(DISTINCT " +
-                primaryColumns
-                    .map(
-                        (c) =>
-                            `${distinctAlias}.${this.escape(c.databaseName)}`,
-                    )
-                    .join(", ") +
-                ")"
-            )
-        }
-
-        if (this.connection.driver.options.type === "mssql") {
-            // SQL Server has gotta be different from everyone else.  They don't support
-            // distinct counting multiple columns & they don't have the same operator
-            // characteristic for concatenating, so we gotta use the `CONCAT` function.
-            // However, If it's exactly 1 column we can omit the `CONCAT` for better performance.
-
-            const columnsExpression = primaryColumns
-                .map(
-                    (primaryColumn) =>
-                        `${distinctAlias}.${this.escape(
-                            primaryColumn.databaseName,
-                        )}`,
-                )
-                .join(", '|;|', ")
-
-            if (primaryColumns.length === 1) {
-                return `COUNT(DISTINCT(${columnsExpression}))`
-            }
-
-            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
-        }
-
-        if (this.connection.driver.options.type === "spanner") {
-            // spanner also has gotta be different from everyone else.
-            // they do not support concatenation of different column types without casting them to string
-
-            if (primaryColumns.length === 1) {
-                return `COUNT(DISTINCT(${distinctAlias}.${this.escape(
-                    primaryColumns[0].databaseName,
-                )}))`
-            }
-
-            const columnsExpression = primaryColumns
-                .map(
-                    (primaryColumn) =>
-                        `CAST(${distinctAlias}.${this.escape(
-                            primaryColumn.databaseName,
-                        )} AS STRING)`,
-                )
-                .join(", '|;|', ")
-            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
-        }
-
-        // If all else fails, fall back to a `COUNT` and `DISTINCT` across all the primary columns concatenated.
-        // Per the SQL spec, this is the canonical string concatenation mechanism which is most
-        // likely to work across servers implementing the SQL standard.
-
-        // Please note, if there is only one primary column that the concatenation does not occur in this
-        // query and the query is a standard `COUNT DISTINCT` in that case.
-
-        return (
-            `COUNT(DISTINCT(` +
-            primaryColumns
-                .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
-                .join(" || '|;|' || ") +
-            "))"
-        )
     }
 
     protected async executeCountQuery(
@@ -3363,10 +3233,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
-    public concatRelationMetadata(relationMetadata: RelationMetadata) {
-        this.relationMetadatas.push(relationMetadata)
-    }
-
     /**
      * Executes sql generated by query builder and returns object with raw results and entities created from them.
      */
@@ -3421,7 +3287,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // and second query loads the actual data in given ids range
         if (
             (this.expressionMap.skip || this.expressionMap.take) &&
-            this.expressionMap.joinAttributes.length > 0
+            this.expressionMap.joinAttributes.length > 0 &&
+            this.expressionMap.joinAttributes.every(
+                (join) =>
+                    join.relation?.relationType === "one-to-many" ||
+                    join.relation?.relationType === "many-to-many",
+            )
         ) {
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
@@ -4512,5 +4383,139 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : andConditions.join(" AND ")
         }
         return condition.length ? "(" + condition + ")" : condition
+    }
+
+    /**
+     * Creates "LOCK" part of SELECT Query after table Clause
+     * ex.
+     *  SELECT 1
+     *  FROM USER U WITH (NOLOCK)
+     *  JOIN ORDER O WITH (NOLOCK)
+     *      ON U.ID=O.OrderID
+     */
+    private createTableLockExpression(): string {
+        if (this.connection.driver.options.type === "mssql") {
+            switch (this.expressionMap.lockMode) {
+                case "pessimistic_read":
+                    return " WITH (HOLDLOCK, ROWLOCK)"
+                case "pessimistic_write":
+                    return " WITH (UPDLOCK, ROWLOCK)"
+                case "dirty_read":
+                    return " WITH (NOLOCK)"
+            }
+        }
+
+        return ""
+    }
+
+    private computeCountExpression() {
+        const mainAlias = this.expressionMap.mainAlias!.name // todo: will this work with "fromTableName"?
+        const metadata = this.expressionMap.mainAlias!.metadata
+
+        const primaryColumns = metadata.primaryColumns
+        const distinctAlias = this.escape(mainAlias)
+
+        // If we aren't doing anything that will create a join, we can use a simpler `COUNT` instead
+        // so we prevent poor query patterns in the most likely cases
+        if (
+            this.expressionMap.joinAttributes.length === 0 &&
+            this.expressionMap.relationIdAttributes.length === 0 &&
+            this.expressionMap.relationCountAttributes.length === 0
+        ) {
+            return "COUNT(1)"
+        }
+
+        // For everything else, we'll need to do some hackery to get the correct count values.
+
+        if (
+            this.connection.driver.options.type === "cockroachdb" ||
+            DriverUtils.isPostgresFamily(this.connection.driver)
+        ) {
+            // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
+            // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
+            return (
+                "COUNT(DISTINCT(" +
+                primaryColumns
+                    .map(
+                        (c) =>
+                            `${distinctAlias}.${this.escape(c.databaseName)}`,
+                    )
+                    .join(", ") +
+                "))"
+            )
+        }
+
+        if (DriverUtils.isMySQLFamily(this.connection.driver)) {
+            // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
+            // https://mariadb.com/kb/en/count-distinct/
+            return (
+                "COUNT(DISTINCT " +
+                primaryColumns
+                    .map(
+                        (c) =>
+                            `${distinctAlias}.${this.escape(c.databaseName)}`,
+                    )
+                    .join(", ") +
+                ")"
+            )
+        }
+
+        if (this.connection.driver.options.type === "mssql") {
+            // SQL Server has gotta be different from everyone else.  They don't support
+            // distinct counting multiple columns & they don't have the same operator
+            // characteristic for concatenating, so we gotta use the `CONCAT` function.
+            // However, If it's exactly 1 column we can omit the `CONCAT` for better performance.
+
+            const columnsExpression = primaryColumns
+                .map(
+                    (primaryColumn) =>
+                        `${distinctAlias}.${this.escape(
+                            primaryColumn.databaseName,
+                        )}`,
+                )
+                .join(", '|;|', ")
+
+            if (primaryColumns.length === 1) {
+                return `COUNT(DISTINCT(${columnsExpression}))`
+            }
+
+            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
+        }
+
+        if (this.connection.driver.options.type === "spanner") {
+            // spanner also has gotta be different from everyone else.
+            // they do not support concatenation of different column types without casting them to string
+
+            if (primaryColumns.length === 1) {
+                return `COUNT(DISTINCT(${distinctAlias}.${this.escape(
+                    primaryColumns[0].databaseName,
+                )}))`
+            }
+
+            const columnsExpression = primaryColumns
+                .map(
+                    (primaryColumn) =>
+                        `CAST(${distinctAlias}.${this.escape(
+                            primaryColumn.databaseName,
+                        )} AS STRING)`,
+                )
+                .join(", '|;|', ")
+            return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
+        }
+
+        // If all else fails, fall back to a `COUNT` and `DISTINCT` across all the primary columns concatenated.
+        // Per the SQL spec, this is the canonical string concatenation mechanism which is most
+        // likely to work across servers implementing the SQL standard.
+
+        // Please note, if there is only one primary column that the concatenation does not occur in this
+        // query and the query is a standard `COUNT DISTINCT` in that case.
+
+        return (
+            `COUNT(DISTINCT(` +
+            primaryColumns
+                .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
+                .join(" || '|;|' || ") +
+            "))"
+        )
     }
 }
