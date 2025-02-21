@@ -15,6 +15,7 @@ import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-generate"
+import chalk from "chalk"
 
 describe("commands - migration generate", () => {
     let connectionOptions: DataSourceOptions[]
@@ -172,6 +173,41 @@ describe("commands - migration generate", () => {
                 sinon.match(resultsTemplates[connectionOption.type]?.timestamp),
             )
 
+            getConnectionOptionsStub.restore()
+        }
+    })
+
+    it("prints error if no Datasource is defined", async () => {
+        connectionOptions = setupTestingConnections({
+            entities: [],
+            enabledDrivers,
+        })
+        let consoleLogStub = sinon.spy(console, "log");
+
+        for (const connectionOption of connectionOptions) {
+            baseConnectionOptions = await connectionOptionsReader.get(
+                connectionOption.name as string,
+            )
+            getConnectionOptionsStub = sinon
+                .stub(ConnectionOptionsReader.prototype, "get")
+                .resolves({
+                    ...baseConnectionOptions,
+                    entities: [],
+                })
+
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+            
+            await migrationGenerateCommand.handler(
+                testHandlerArgs({
+                    dataSource: "dummy-path",
+                    timestamp: "1610975184784",
+                    exitProcess: false,
+                }),
+            )
+
+            sinon.assert.calledWith(consoleLogStub, chalk.yellow("No entity classes or directories passed to Typeorm"));
+
+            consoleLogStub.restore()
             getConnectionOptionsStub.restore()
         }
     })
