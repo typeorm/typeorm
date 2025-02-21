@@ -332,7 +332,7 @@ describe("custom cache provider", () => {
             }),
         ))
 
-    it("should cache results with custom id and duration supplied", () =>
+    it("should cache results with `true` provided", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {
