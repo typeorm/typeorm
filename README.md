@@ -69,6 +69,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Schema declaration in models or separate configuration files.
 -   Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
 -   Supports MongoDB NoSQL database.
+-   Supports [temporal tables](./docs/how-to-use-versioning.md) (system-versioned)
 -   Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
 -   TypeScript and JavaScript support.
 -   ESM and CommonJS support.
