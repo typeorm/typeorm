@@ -1,3 +1,22 @@
+## [0.3.21](https://github.com/typeorm/typeorm/compare/v0.3.20...v0.3.21) (2025-02-24)
+
+
+### Bug Fixes
+
+* Add support for better-sqlite3 v10 and 11 ([#11096](https://github.com/typeorm/typeorm/issues/11096)) ([6c0c2ba](https://github.com/typeorm/typeorm/commit/6c0c2bab63b0b88086cfc14d090c33a05aa66ac7))
+* composite key save issue ([#10672](https://github.com/typeorm/typeorm/issues/10672)) ([83567f5](https://github.com/typeorm/typeorm/commit/83567f533482d0170c35e2f99e627962b8f99a08))
+* moved `reflect-metadata` to `peerDependencies` and set version to `"^0.1.14 || ^0.2.0"` ([#10779](https://github.com/typeorm/typeorm/issues/10779)) ([e7649d2](https://github.com/typeorm/typeorm/commit/e7649d2746f907ff36b1efb600402dedd5f5a499))
+* **npm-readme:** resolve missing image file ([#11290](https://github.com/typeorm/typeorm/issues/11290)) ([c554f58](https://github.com/typeorm/typeorm/commit/c554f58835430fa8e02a54f0c0ee978d272336b3))
+* **npm-readme:** resolve missing image file pt. 2 ([#11291](https://github.com/typeorm/typeorm/issues/11291)) ([981cf82](https://github.com/typeorm/typeorm/commit/981cf820ab9740ef1bef8853394750df674b5f78))
+* Update mssql allowed version to fix vulnerability. ([#10933](https://github.com/typeorm/typeorm/issues/10933)) ([3a51160](https://github.com/typeorm/typeorm/commit/3a51160818c7a2d2ff86da542f915230a6e34f6f))
+
+
+### Performance Improvements
+
+* improve results transformer performance ([#10349](https://github.com/typeorm/typeorm/issues/10349)) ([7bea198](https://github.com/typeorm/typeorm/commit/7bea198b9bc5688647d089eed03e1639116766b6))
+
+
+
 ## [0.3.20](https://github.com/typeorm/typeorm/compare/0.3.19...0.3.20) (2024-01-26)
 
 ### Bug Fixes
