@@ -4,6 +4,7 @@ import * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import { DataSource } from "../data-source"
 import { CommandUtils } from "./CommandUtils"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
 /**
  * Runs migration command.
@@ -13,27 +14,11 @@ export class MigrationRunCommand implements yargs.CommandModule {
     describe = "Runs all pending migrations."
 
     builder(args: yargs.Argv) {
-        return args
-            .option("dataSource", {
-                alias: "d",
-                describe:
-                    "Path to the file where your DataSource instance is defined.",
-                demandOption: true,
-            })
-            .option("transaction", {
-                alias: "t",
-                default: "default",
-                describe:
-                    "Indicates if transaction should be used or not for migration run. Enabled by default.",
-            })
-            .option("fake", {
-                alias: "f",
-                type: "boolean",
-                default: false,
-                describe:
-                    "Fakes running the migrations if table schema has already been changed manually or externally " +
-                    "(e.g. through another project)",
-            })
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .addTransactionOption()
+            .addFakeOption()
+            .builder()
     }
 
     async handler(args: yargs.Arguments) {
