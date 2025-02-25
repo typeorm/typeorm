@@ -396,7 +396,7 @@ Excluding `listenTo`, all `EntitySubscriberInterface` methods are passed an even
 
 See each [Event's interface](https://github.com/typeorm/typeorm/tree/master/src/subscriber/event) for additional properties.
 
-Note that `event.entity` may not necessarily contain primary key(s) when `.update` is used. Only the values provided as the entity partial will be available. In order to make primary keys available in the subscribers, you can explicitly pass primary key value(s) in the partial entity object literal or use `.save()`, which performs re-fetching.
+Note that `event.entity` may not necessarily contain primary key(s) when `Repository.update()` is used. Only the values provided as the entity partial will be available. In order to make primary keys available in the subscribers, you can explicitly pass primary key value(s) in the partial entity object literal or use `Repository.save()`, which performs re-fetching.
 
 ```typescript
 await postRepository.update(post.id, { description: "Bacon ipsum dolor amet cow" })
