@@ -154,10 +154,10 @@ export class RawSqlResultsToEntityTransformer {
             const discriminatorValues = rawResults.map(
                 (result) =>
                     result[
-                        this.buildAlias(
-                            alias.name,
-                            alias.metadata.discriminatorColumn!.databaseName,
-                        )
+                    this.buildAlias(
+                        alias.name,
+                        alias.metadata.discriminatorColumn!.databaseName,
+                    )
                     ],
             )
             const discriminatorMetadata = metadata.childEntityMetadatas.find(
@@ -173,7 +173,7 @@ export class RawSqlResultsToEntityTransformer {
             )
             if (discriminatorMetadata) metadata = discriminatorMetadata
         }
-        let entity: any = metadata.create(this.queryRunner, {
+        const entity: any = metadata.create(this.queryRunner, {
             fromDeserializer: true,
             pojo: this.pojo,
         })
@@ -238,13 +238,16 @@ export class RawSqlResultsToEntityTransformer {
             const value = result[key]
 
             if (value === undefined) continue
-            // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-            else if (value !== null) hasData = true
+
+            if (value !== null && !column.isVirtualProperty)
+                // we don't mark it as has data if we will have only nulls or virtual properties in our object- we don't need such object
+                hasData = true
 
             column.setEntityValue(
                 entity,
                 this.driver.prepareHydratedValue(value, column),
             )
+
         }
         return hasData
     }
@@ -408,12 +411,12 @@ export class RawSqlResultsToEntityTransformer {
                 referenceColumnName = relation.isOwning
                     ? relation.joinColumns[0].referencedColumn!.databaseName
                     : relation.inverseRelation!.joinColumns[0].referencedColumn!
-                          .databaseName
+                        .databaseName
             }
 
             const referenceColumnValue =
                 rawSqlResults[0][
-                    this.buildAlias(alias.name, referenceColumnName)
+                this.buildAlias(alias.name, referenceColumnName)
                 ] // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
             if (
                 referenceColumnValue !== undefined &&
@@ -497,10 +500,10 @@ export class RawSqlResultsToEntityTransformer {
                     valueMap[column.databaseName] =
                         this.driver.prepareHydratedValue(
                             rawSqlResult[
-                                this.buildAlias(
-                                    parentAlias,
-                                    column.databaseName,
-                                )
+                            this.buildAlias(
+                                parentAlias,
+                                column.databaseName,
+                            )
                             ],
                             column,
                         )
@@ -508,10 +511,10 @@ export class RawSqlResultsToEntityTransformer {
                     valueMap[column.databaseName] =
                         this.driver.prepareHydratedValue(
                             rawSqlResult[
-                                this.buildAlias(
-                                    parentAlias,
-                                    column.referencedColumn!.databaseName,
-                                )
+                            this.buildAlias(
+                                parentAlias,
+                                column.referencedColumn!.databaseName,
+                            )
                             ],
                             column.referencedColumn!,
                         )
@@ -600,7 +603,7 @@ export class RawSqlResultsToEntityTransformer {
                                 column.isVirtual &&
                                 column.referencedColumn &&
                                 column.referencedColumn.propertyName !==
-                                    column.propertyName
+                                column.propertyName
                             ) {
                                 // if column is a relation
                                 value =
