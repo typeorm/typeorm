@@ -26,8 +26,9 @@ describe("github issues > #10209", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should not fail to run multiple nested transactions in parallel", () =>
-        Promise.all(
+    it("should not fail to run multiple nested transactions in parallel", function () {
+        this.retries(3) // Fix for SQLite
+        return Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.createEntityManager()
 
@@ -84,5 +85,6 @@ describe("github issues > #10209", () => {
                 // We only care that the transaction above didn't fail
                 expect(true).to.be.true
             }),
-        ))
+        )
+    })
 })

@@ -1,4 +1,4 @@
-import mkdirp from "mkdirp"
+import fs from "fs/promises"
 import path from "path"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SqliteQueryRunner } from "./SqliteQueryRunner"
@@ -206,7 +206,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected async createDatabaseDirectory(fullPath: string): Promise<void> {
-        await mkdirp(path.dirname(fullPath))
+        await fs.mkdir(path.dirname(fullPath), { recursive: true })
     }
 
     /**

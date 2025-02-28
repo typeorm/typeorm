@@ -61,7 +61,9 @@ This place is called "migrations".
 Before creating a new migration you need to setup your data source options properly:
 
 ```ts
-{
+import { DataSource } from "typeorm";
+
+export default new DataSource({
     type: "mysql",
     host: "localhost",
     port: 3306,
@@ -71,7 +73,7 @@ Before creating a new migration you need to setup your data source options prope
     entities: [/*...*/],
     migrations: [/*...*/],
     migrationsTableName: "custom_migration_table",
-}
+})
 ```
 
 Here we setup two options:
