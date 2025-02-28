@@ -1,4 +1,5 @@
 import { OrderByCondition } from "../../find-options/OrderByCondition"
+import { TemporalTableOptions } from "../../schema-builder/options/TemporalTableOptions"
 
 /**
  * Describes all entity's options.
@@ -51,4 +52,10 @@ export interface EntityOptions {
      * Table comment. Not supported by all database types.
      */
     comment?: string
+
+    /**
+     * The value 'true' enables system versioning. You can also customize each option like
+     * start row column, history table, etc.
+     */
+    versioning?: TemporalTableOptions | boolean
 }

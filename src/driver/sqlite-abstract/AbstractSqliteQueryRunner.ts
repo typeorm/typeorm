@@ -19,6 +19,7 @@ import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -2251,5 +2252,14 @@ export abstract class AbstractSqliteQueryRunner
         comment?: string,
     ): Promise<void> {
         throw new TypeORMError(`sqlit driver does not support change comment.`)
+    }
+
+    changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `${this.driver.options.type} driver does not support change versioning.`,
+        )
     }
 }
