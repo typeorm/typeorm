@@ -1,9 +1,9 @@
-import { CommandUtils } from "./CommandUtils"
-import { camelCase } from "../util/StringUtils"
-import * as yargs from "yargs"
-import chalk from "chalk"
-import { PlatformTools } from "../platform/PlatformTools"
+import ansi from "ansis"
 import path from "path"
+import yargs from "yargs"
+import { PlatformTools } from "../platform/PlatformTools"
+import { camelCase } from "../util/StringUtils"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Creates a new migration file.
@@ -56,7 +56,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 fileContent,
             )
             console.log(
-                `Migration ${chalk.blue(
+                `Migration ${ansi.blue(
                     fullPath + (args.outputJs ? ".js" : ".ts"),
                 )} has been generated successfully.`,
             )
