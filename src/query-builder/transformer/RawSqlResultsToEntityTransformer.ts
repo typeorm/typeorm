@@ -452,6 +452,8 @@ export class RawSqlResultsToEntityTransformer {
                         (this.selections.has(aliasName) ||
                             this.selections.has(
                                 `${aliasName}.${column.propertyPath}`,
+                            ) || this.selections.has(
+                                `${aliasName}.${column.databasePath}`
                             )) &&
                         // if table inheritance is used make sure this column is not child's column
                         !metadata.childEntityMetadatas.some(
