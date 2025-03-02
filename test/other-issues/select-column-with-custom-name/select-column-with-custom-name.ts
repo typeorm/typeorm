@@ -8,7 +8,7 @@ import { DataSource } from "../../../src"
 import {Post} from "./entity/Post"
 import { expect } from "chai"
 
-describe("other issues > redundant cascade schema queries in many-to-many relation", () => {
+describe("other issues > select column with custom name via query builder", () => {
     let dataSources: DataSource[]
     before(
         async () =>
@@ -19,7 +19,7 @@ describe("other issues > redundant cascade schema queries in many-to-many relati
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should return objects without selected primary keys", () =>
+    it("should work", () =>
         Promise.all(dataSources.map(async (dataSource) => {
             const repository = dataSource.getRepository(Post);
             await repository.save([{title: "test", numberOfLikes: 42}, {title: "post title", numberOfLikes: 34}, {title: "third post", numberOfLikes: 87 }]);
