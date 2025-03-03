@@ -408,9 +408,10 @@ export class DataSource {
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
      */
-    async undoLastMigration(options?: {
+    async revertMigration(options?: {
         transaction?: "all" | "none" | "each"
         fake?: boolean
+        nameUntil?: string
     }): Promise<void> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -420,7 +421,7 @@ export class DataSource {
             (options && options.transaction) || "all"
         migrationExecutor.fake = (options && options.fake) || false
 
-        await migrationExecutor.undoLastMigration()
+        await migrationExecutor.revertMigration(options?.nameUntil)
     }
 
     /**
@@ -520,7 +521,7 @@ export class DataSource {
 
     /**
      * Executes raw SQL query and returns raw database results.
-     * 
+     *
      * @see [Official docs](https://typeorm.io/data-source-api) for examples.
      */
     async query<T = any>(

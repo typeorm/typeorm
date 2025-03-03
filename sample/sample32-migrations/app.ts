@@ -57,8 +57,8 @@ dataSource
         await dataSource.runMigrations()
 
         // and undo migrations two times (because we have two migrations)
-        await dataSource.undoLastMigration()
-        await dataSource.undoLastMigration()
+        await dataSource.revertMigration()
+        await dataSource.revertMigration()
 
         console.log("Done. We run two migrations then reverted them.")
     })

@@ -26,7 +26,7 @@ describe("github issues > #4697 Revert migrations running in reverse order.", ()
             connections.map(async (connection) => {
                 await connection.runMigrations()
 
-                await connection.undoLastMigration()
+                await connection.revertMigration()
 
                 const [lastMigration] = await connection.runMigrations()
 

@@ -20,6 +20,12 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                     "Path to the file where your DataSource instance is defined.",
                 demandOption: true,
             })
+            .option("until", {
+                alias: "u",
+                default: undefined,
+                describe:
+                    "Revert all migrations run after migration with given name.",
+            })
             .option("transaction", {
                 alias: "t",
                 default: "default",
@@ -54,6 +60,7 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                     dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
                 fake: !!args.f,
+                nameUntil: args?.until ? String(args.until) : undefined,
             }
 
             switch (args.t) {
@@ -71,7 +78,7 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 // noop
             }
 
-            await dataSource.undoLastMigration(options)
+            await dataSource.revertMigration(options)
             await dataSource.destroy()
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration revert:", err)

@@ -95,7 +95,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
             for (const dataSource of dataSources) {
                 if (dataSource.options.type === "mongodb") return
                 await expect(
-                    dataSource.undoLastMigration({ transaction: "all" }),
+                    dataSource.revertMigration({ transaction: "all" }),
                 ).to.be.rejectedWith(Error)
             }
         })
@@ -104,7 +104,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
             for (const dataSource of dataSources) {
                 if (dataSource.options.type === "mongodb") return
                 await expect(
-                    dataSource.undoLastMigration({
+                    dataSource.revertMigration({
                         transaction: "all",
                         fake: true,
                     }),
