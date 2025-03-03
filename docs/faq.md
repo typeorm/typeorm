@@ -297,7 +297,7 @@ export default defineConfig({
 
 ### Option 1: Disable minify
 
-This is the most crude option and will result in significant larger files. Add `build.minify = false` to your config.
+This is the most crude option and will result in significantly larger files. Add `build.minify = false` to your config.
 
 ```diff
 --- basic vite.config.ts
@@ -314,8 +314,8 @@ This is the most crude option and will result in significant larger files. Add `
 
 ### Option 2: Disable esbuild minify identifiers
 
-Vite uses esbuild as default minifier. You can disable mangling of identifiers by adding `esbuild.minifyIdentifiers = false` to your config.
-This will result in smaller file sizes, depending on your code base you will get diminishing returns as all identifiers will be kept at full lengt.
+Vite uses esbuild as the default minifier. You can disable mangling of identifiers by adding `esbuild.minifyIdentifiers = false` to your config.
+This will result in smaller file sizes, but depending on your code base you will get diminishing returns as all identifiers will be kept at full length.
 
 ```diff
 --- basic vite.config.ts
