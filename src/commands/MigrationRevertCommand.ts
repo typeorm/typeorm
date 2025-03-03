@@ -60,7 +60,10 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                     dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
                 fake: !!args.f,
-                nameUntil: args?.until ? String(args.until) : undefined,
+                until:
+                    args?.until || args?.until == 0
+                        ? String(args.until)
+                        : undefined,
             }
 
             switch (args.t) {

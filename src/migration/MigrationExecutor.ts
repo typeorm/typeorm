@@ -388,10 +388,11 @@ export class MigrationExecutor {
     }
 
     /**
-     * If nameUntil is not passed, reverts only the last executed migration.
-     * Otherwise, reverts all migrations executed after the migration with the specified name.
+     * If until is undefined, it reverts only the last executed migration.
+     * If until is "0", it reverts all migrations.
+     * Otherwise, it reverts all migrations executed after the migration with the specified name.
      */
-    async revertMigration(nameUntil?: string): Promise<Migration[] | void> {
+    async revertMigration(until?: string): Promise<void> {
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
 
@@ -411,11 +412,14 @@ export class MigrationExecutor {
 
         let toRevert: Migration[] = []
 
-        // if nameUntil is provided, fetch all migrations that were executed after it
-        if (nameUntil) {
+        if (until === "0") {
+            // if 0 is provided, revert all migrations
+            toRevert = executedMigrations
+        } else if (until) {
+            // if nameUntil is provided, fetch all migrations that were executed after it
             toRevert = this.getMigrationsExecutedAfter(
                 executedMigrations,
-                nameUntil,
+                until,
             )
         } else {
             // otherwise, fetch only the latest migration executed
@@ -647,7 +651,7 @@ export class MigrationExecutor {
     /**
      * Loads all migrations that were executed and saved into the database (sorts by id).
      */
-    protected async loadExecutedMigrations(
+    async loadExecutedMigrations(
         queryRunner: QueryRunner,
     ): Promise<Migration[]> {
         if (this.connection.driver.options.type === "mongodb") {

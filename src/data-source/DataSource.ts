@@ -411,7 +411,7 @@ export class DataSource {
     async revertMigration(options?: {
         transaction?: "all" | "none" | "each"
         fake?: boolean
-        nameUntil?: string
+        until?: string
     }): Promise<void> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -421,7 +421,7 @@ export class DataSource {
             (options && options.transaction) || "all"
         migrationExecutor.fake = (options && options.fake) || false
 
-        await migrationExecutor.revertMigration(options?.nameUntil)
+        await migrationExecutor.revertMigration(options?.until)
     }
 
     /**
@@ -434,6 +434,20 @@ export class DataSource {
         }
         const migrationExecutor = new MigrationExecutor(this)
         return await migrationExecutor.showMigrations()
+    }
+
+    /**
+     * Returns all executed migrations.
+     */
+    async getExecutedMigrations(): Promise<any> {
+        if (!this.isInitialized) {
+            throw new CannotExecuteNotConnectedError(this.name)
+        }
+
+        const migrationExecutor = new MigrationExecutor(this)
+        const queryRunner = this.createQueryRunner()
+
+        return await migrationExecutor.loadExecutedMigrations(queryRunner)
     }
 
     /**
