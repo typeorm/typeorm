@@ -359,8 +359,8 @@ export class MigrationExecutor {
                         successMigrations.push(migration)
                         this.connection.logger.logSchemaBuild(
                             `Migration ${migration.name} has been ${
-                                this.fake ? "(fake)" : ""
-                            } executed successfully.`,
+                                this.fake ? "(fake) " : ""
+                            }executed successfully.`,
                         )
                     })
             }
@@ -388,9 +388,11 @@ export class MigrationExecutor {
     }
 
     /**
-     * Reverts last migration that were run.
+     * If until is undefined, it reverts only the last executed migration.
+     * If until is "0", it reverts all migrations.
+     * Otherwise, it reverts all migrations executed after the migration with the specified name.
      */
-    async undoLastMigration(): Promise<void> {
+    async revertMigration(until?: string): Promise<void> {
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
 
@@ -408,14 +410,31 @@ export class MigrationExecutor {
             queryRunner,
         )
 
-        // get the time when last migration was executed
-        let lastTimeExecutedMigration =
-            this.getLatestExecutedMigration(executedMigrations)
+        let toRevert: Migration[] = []
+
+        if (until === "0") {
+            // if "0" is provided, revert all migrations
+            toRevert = executedMigrations
+        } else if (until) {
+            // if migration name is provided, fetch all migrations that were executed after it
+            toRevert = this.getMigrationsExecutedAfter(
+                executedMigrations,
+                until,
+            )
+        } else {
+            // otherwise, fetch only the latest migration executed
+            const lastTimeExecutedMigration =
+                this.getLatestExecutedMigration(executedMigrations)
+
+            toRevert = lastTimeExecutedMigration
+                ? [lastTimeExecutedMigration]
+                : []
+        }
 
         // if no migrations found in the database then nothing to revert
-        if (!lastTimeExecutedMigration) {
+        if (!toRevert.length) {
             this.connection.logger.logSchemaBuild(
-                `No migrations were found in the database. Nothing to revert!`,
+                `No migrations were found. Nothing to revert!`,
             )
             return
         }
@@ -424,15 +443,22 @@ export class MigrationExecutor {
         const allMigrations = this.getMigrations()
 
         // find the instance of the migration we need to remove
-        const migrationToRevert = allMigrations.find(
-            (migration) => migration.name === lastTimeExecutedMigration!.name,
-        )
-
-        // if no migrations found in the database then nothing to revert
-        if (!migrationToRevert)
-            throw new TypeORMError(
-                `No migration ${lastTimeExecutedMigration.name} was found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`,
+        const migrationsToRevert = toRevert.map((m) => {
+            const match = allMigrations.find(
+                (migration) => migration.name === m.name,
             )
+
+            if (!match) {
+                // if any of the migrations is found in the database, but not in the source code, throw error to prevent inconsistencies
+                throw new TypeORMError(
+                    `Migration ${
+                        m.name ?? ""
+                    } was not found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`,
+                )
+            }
+
+            return match
+        })
 
         // log information about migration execution
         this.connection.logger.logSchemaBuild(
@@ -440,36 +466,116 @@ export class MigrationExecutor {
         )
         this.connection.logger.logSchemaBuild(
             `${
-                lastTimeExecutedMigration.name
+                migrationsToRevert[0].name
             } is the last executed migration. It was executed on ${new Date(
-                lastTimeExecutedMigration.timestamp,
+                migrationsToRevert[0].timestamp,
             ).toString()}.`,
         )
-        this.connection.logger.logSchemaBuild(`Now reverting it...`)
+        this.connection.logger.logSchemaBuild(
+            `Reverting following migrations: ${migrationsToRevert
+                .map((m) => m.name)
+                .join(", ")}`,
+        )
+
+        if (this.transaction === "all") {
+            // If we desire to revert all migrations in a single transaction
+            // but there is a migration that explicitly overrides the transaction mode
+            // then we have to fail since we cannot properly resolve that intent
+            // In theory we could support overrides that are set to `true`,
+            // however to keep the interface more rigid, we fail those too
+            const migrationsOverridingTransactionMode =
+                migrationsToRevert.filter(
+                    (migration) =>
+                        !(migration.instance?.transaction === undefined),
+                )
+
+            if (migrationsOverridingTransactionMode.length > 0) {
+                const error = new ForbiddenTransactionModeOverrideError(
+                    migrationsOverridingTransactionMode,
+                )
+                this.connection.logger.logMigration(
+                    `Migrations failed, error: ${error.message}`,
+                )
+                throw error
+            }
+        }
+
+        // Set the per-migration defaults for the transaction mode
+        // so that we have one centralized place that controls this behavior
+
+        // When transaction mode is `each` the default is to run in a transaction
+        // When transaction mode is `none` the default is to not run in a transaction
+        // When transaction mode is `all` the default is to not run in a transaction
+        // since all the migrations are already running in one single transaction
+
+        const txModeDefault = {
+            each: true,
+            none: false,
+            all: false,
+        }[this.transaction]
+
+        for (const migration of migrationsToRevert) {
+            if (migration.instance) {
+                const instanceTx = migration.instance.transaction
+
+                if (instanceTx === undefined) {
+                    migration.transaction = txModeDefault
+                } else {
+                    migration.transaction = instanceTx
+                }
+            }
+        }
 
         // start transaction if its not started yet
         let transactionStartedByUs = false
-        if (this.transaction !== "none" && !queryRunner.isTransactionActive) {
+        if (this.transaction === "all" && !queryRunner.isTransactionActive) {
+            await queryRunner.beforeMigration()
             await queryRunner.startTransaction()
             transactionStartedByUs = true
         }
 
+        // revert the migrations sequentially
         try {
-            if (!this.fake) {
-                await queryRunner.beforeMigration()
-                await migrationToRevert.instance!.down(queryRunner)
-                await queryRunner.afterMigration()
+            for (const migration of migrationsToRevert) {
+                if (this.fake) {
+                    await this.deleteExecutedMigration(queryRunner, migration)
+
+                    continue
+                }
+
+                if (migration.transaction && !queryRunner.isTransactionActive) {
+                    await queryRunner.beforeMigration()
+                    await queryRunner.startTransaction()
+                    transactionStartedByUs = true
+                }
+
+                await migration.instance!.down(queryRunner).catch((error) => {
+                    this.connection.logger.logMigration(
+                        `Reverting of "${migration.name}" failed, error: ${error?.message}`,
+                    )
+                    throw error
+                })
+
+                await this.deleteExecutedMigration(queryRunner, migration)
+
+                // commit transaction if we started it
+                if (migration.transaction && transactionStartedByUs) {
+                    await queryRunner.commitTransaction()
+                    await queryRunner.afterMigration()
+                }
+
+                this.connection.logger.logSchemaBuild(
+                    `Migration ${migration.name} has been ${
+                        this.fake ? "(fake) " : ""
+                    }reverted successfully.`,
+                )
             }
 
-            await this.deleteExecutedMigration(queryRunner, migrationToRevert)
-            this.connection.logger.logSchemaBuild(
-                `Migration ${migrationToRevert.name} has been ${
-                    this.fake ? "(fake)" : ""
-                } reverted successfully.`,
-            )
-
             // commit transaction if we started it
-            if (transactionStartedByUs) await queryRunner.commitTransaction()
+            if (this.transaction === "all" && transactionStartedByUs) {
+                await queryRunner.commitTransaction()
+                await queryRunner.afterMigration()
+            }
         } catch (err) {
             // rollback transaction if we started it
             if (transactionStartedByUs) {
@@ -545,7 +651,7 @@ export class MigrationExecutor {
     /**
      * Loads all migrations that were executed and saved into the database (sorts by id).
      */
-    protected async loadExecutedMigrations(
+    async loadExecutedMigrations(
         queryRunner: QueryRunner,
     ): Promise<Migration[]> {
         if (this.connection.driver.options.type === "mongodb") {
@@ -637,6 +743,21 @@ export class MigrationExecutor {
         sortedMigrations: Migration[],
     ): Migration | undefined {
         return sortedMigrations.length > 0 ? sortedMigrations[0] : undefined
+    }
+
+    protected getMigrationsExecutedAfter(
+        migrations: Migration[],
+        name: string,
+    ) {
+        const index = migrations.findIndex(
+            (migration) => migration.name === name,
+        )
+
+        if (index === -1 || index === 0) {
+            return []
+        }
+
+        return migrations.slice(0, index)
     }
 
     /**

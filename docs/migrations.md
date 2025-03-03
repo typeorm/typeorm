@@ -173,7 +173,7 @@ typeorm migration:revert -- -d path-to-datasource-config
 ```
 
 This command will execute `down` in the latest executed migration.
-If you need to revert multiple migrations you must call this command multiple times.
+If you want to revert multiple migrations, you can pass `--until <migration_name>` (or `-u`), which will revert all migrations executed after the specified one. To revert all migrations, pass "0".
 
 ### Faking Migrations and Rollbacks
 
