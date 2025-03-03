@@ -434,7 +434,7 @@ export class MigrationExecutor {
         // if no migrations found in the database then nothing to revert
         if (!toRevert.length) {
             this.connection.logger.logSchemaBuild(
-                `No migrations were found. Nothing to revert!`,
+                `No migrations were found in the database. Nothing to revert!`,
             )
             return
         }
@@ -451,9 +451,7 @@ export class MigrationExecutor {
             if (!match) {
                 // if any of the migrations is found in the database, but not in the source code, throw error to prevent inconsistencies
                 throw new TypeORMError(
-                    `Migration ${
-                        m.name ?? ""
-                    } was not found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`,
+                    `Migration ${m.name} was not found in the source code. Make sure you have this migration in your codebase and its included in the connection options.`,
                 )
             }
 

@@ -407,6 +407,20 @@ export class DataSource {
     /**
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
+     *
+     * @deprecated use `revertMigration` instead
+     */
+    async undoLastMigration(options?: {
+        transaction?: "all" | "none" | "each"
+        fake?: boolean
+        until?: string
+    }): Promise<void> {
+        await this.revertMigration(options)
+    }
+
+    /**
+     * Reverts last executed migration.
+     * Can be used only after connection to the database is established.
      */
     async revertMigration(options?: {
         transaction?: "all" | "none" | "each"
