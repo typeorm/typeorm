@@ -359,8 +359,8 @@ export class MigrationExecutor {
                         successMigrations.push(migration)
                         this.connection.logger.logSchemaBuild(
                             `Migration ${migration.name} has been ${
-                                this.fake ? "(fake)" : ""
-                            } executed successfully.`,
+                                this.fake ? "(fake) " : ""
+                            }executed successfully.`,
                         )
                     })
             }
@@ -473,36 +473,105 @@ export class MigrationExecutor {
                 .join(", ")}`,
         )
 
+        if (this.transaction === "all") {
+            // If we desire to revert all migrations in a single transaction
+            // but there is a migration that explicitly overrides the transaction mode
+            // then we have to fail since we cannot properly resolve that intent
+            // In theory we could support overrides that are set to `true`,
+            // however to keep the interface more rigid, we fail those too
+            const migrationsOverridingTransactionMode =
+                migrationsToRevert.filter(
+                    (migration) =>
+                        !(migration.instance?.transaction === undefined),
+                )
+
+            if (migrationsOverridingTransactionMode.length > 0) {
+                const error = new ForbiddenTransactionModeOverrideError(
+                    migrationsOverridingTransactionMode,
+                )
+                this.connection.logger.logMigration(
+                    `Migrations failed, error: ${error.message}`,
+                )
+                throw error
+            }
+        }
+
+        // Set the per-migration defaults for the transaction mode
+        // so that we have one centralized place that controls this behavior
+
+        // When transaction mode is `each` the default is to run in a transaction
+        // When transaction mode is `none` the default is to not run in a transaction
+        // When transaction mode is `all` the default is to not run in a transaction
+        // since all the migrations are already running in one single transaction
+
+        const txModeDefault = {
+            each: true,
+            none: false,
+            all: false,
+        }[this.transaction]
+
+        for (const migration of migrationsToRevert) {
+            if (migration.instance) {
+                const instanceTx = migration.instance.transaction
+
+                if (instanceTx === undefined) {
+                    migration.transaction = txModeDefault
+                } else {
+                    migration.transaction = instanceTx
+                }
+            }
+        }
+
         // start transaction if its not started yet
         let transactionStartedByUs = false
-        if (this.transaction !== "none" && !queryRunner.isTransactionActive) {
+        if (this.transaction === "all" && !queryRunner.isTransactionActive) {
+            await queryRunner.beforeMigration()
             await queryRunner.startTransaction()
             transactionStartedByUs = true
         }
 
+        // revert the migrations sequentially
         try {
-            if (!this.fake) {
-                await queryRunner.beforeMigration()
+            for (const migration of migrationsToRevert) {
+                if (this.fake) {
+                    await this.deleteExecutedMigration(queryRunner, migration)
 
-                for (const migration of migrationsToRevert) {
-                    await migration.instance!.down(queryRunner)
+                    continue
                 }
 
-                await queryRunner.afterMigration()
-            }
+                if (migration.transaction && !queryRunner.isTransactionActive) {
+                    await queryRunner.beforeMigration()
+                    await queryRunner.startTransaction()
+                    transactionStartedByUs = true
+                }
 
-            for (const migration of migrationsToRevert) {
+                await migration.instance!.down(queryRunner).catch((error) => {
+                    this.connection.logger.logMigration(
+                        `Reverting of "${migration.name}" failed, error: ${error?.message}`,
+                    )
+                    throw error
+                })
+
                 await this.deleteExecutedMigration(queryRunner, migration)
+
+                // commit transaction if we started it
+                if (migration.transaction && transactionStartedByUs) {
+                    await queryRunner.commitTransaction()
+                    await queryRunner.afterMigration()
+                }
 
                 this.connection.logger.logSchemaBuild(
                     `Migration ${migration.name} has been ${
-                        this.fake ? "(fake)" : ""
-                    } reverted successfully.`,
+                        this.fake ? "(fake) " : ""
+                    }reverted successfully.`,
                 )
             }
 
             // commit transaction if we started it
-            if (transactionStartedByUs) await queryRunner.commitTransaction()
+            if (this.transaction === "all" && transactionStartedByUs) {
+                await queryRunner.commitTransaction()
+                await queryRunner.afterMigration()
+            }
         } catch (err) {
             // rollback transaction if we started it
             if (transactionStartedByUs) {
