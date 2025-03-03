@@ -225,7 +225,9 @@ export class CockroachQueryRunner
         } else {
             this.storeQueries = false
             this.transactionDepth -= 1
-            await this.query("RELEASE SAVEPOINT cockroach_restart")
+            // This was disabled because it failed tests after update to CRDB 24.2
+            // https://github.com/typeorm/typeorm/pull/11190
+            // await this.query("RELEASE SAVEPOINT cockroach_restart")
             await this.query("COMMIT")
             this.queries = []
             this.isTransactionActive = false

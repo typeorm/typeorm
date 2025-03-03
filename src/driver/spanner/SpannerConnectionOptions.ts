@@ -116,7 +116,7 @@ export interface SpannerConnectionOptions
         readonly master: SpannerConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: SpannerConnectionCredentialsOptions[]
 
