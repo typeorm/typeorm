@@ -15,6 +15,7 @@ import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { TableExclusion } from "../schema-builder/table/TableExclusion"
 import { QueryResult } from "./QueryResult"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
+import { EntityMetadata } from "../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single database connection.
@@ -278,6 +279,8 @@ export interface QueryRunner {
         tableOrName: Table | string,
         comment?: string,
     ): Promise<void>
+
+    changeTableVersioning(table: Table, metadata: EntityMetadata): Promise<void>
 
     /**
      * Adds a new column.
