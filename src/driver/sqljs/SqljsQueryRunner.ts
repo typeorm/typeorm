@@ -94,6 +94,8 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             parameters,
         )
 
+        await broadcasterResult.wait()
+
         const queryStartTime = +new Date()
         let statement: any
         try {
