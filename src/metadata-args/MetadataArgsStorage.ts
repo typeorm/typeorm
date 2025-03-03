@@ -21,6 +21,7 @@ import { TreeMetadataArgs } from "./TreeMetadataArgs"
 import { UniqueMetadataArgs } from "./UniqueMetadataArgs"
 import { CheckMetadataArgs } from "./CheckMetadataArgs"
 import { ExclusionMetadataArgs } from "./ExclusionMetadataArgs"
+import { ForeignKeyMetadataArgs } from "./ForeignKeyMetadataArgs"
 
 /**
  * Storage all metadatas args of all available types: tables, columns, subscribers, relations, etc.
@@ -40,6 +41,7 @@ export class MetadataArgsStorage {
     readonly namingStrategies: NamingStrategyMetadataArgs[] = []
     readonly entitySubscribers: EntitySubscriberMetadataArgs[] = []
     readonly indices: IndexMetadataArgs[] = []
+    readonly foreignKeys: ForeignKeyMetadataArgs[] = []
     readonly uniques: UniqueMetadataArgs[] = []
     readonly checks: CheckMetadataArgs[] = []
     readonly exclusions: ExclusionMetadataArgs[] = []
@@ -155,6 +157,18 @@ export class MetadataArgsStorage {
             return Array.isArray(target)
                 ? target.indexOf(index.target) !== -1
                 : index.target === target
+        })
+    }
+
+    filterForeignKeys(target: Function | string): ForeignKeyMetadataArgs[]
+    filterForeignKeys(target: (Function | string)[]): ForeignKeyMetadataArgs[]
+    filterForeignKeys(
+        target: (Function | string) | (Function | string)[],
+    ): ForeignKeyMetadataArgs[] {
+        return this.foreignKeys.filter((foreignKey) => {
+            return Array.isArray(target)
+                ? target.indexOf(foreignKey.target) !== -1
+                : foreignKey.target === target
         })
     }
 
