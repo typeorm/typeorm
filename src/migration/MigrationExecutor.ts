@@ -413,10 +413,10 @@ export class MigrationExecutor {
         let toRevert: Migration[] = []
 
         if (until === "0") {
-            // if 0 is provided, revert all migrations
+            // if "0" is provided, revert all migrations
             toRevert = executedMigrations
         } else if (until) {
-            // if nameUntil is provided, fetch all migrations that were executed after it
+            // if migration name is provided, fetch all migrations that were executed after it
             toRevert = this.getMigrationsExecutedAfter(
                 executedMigrations,
                 until,
