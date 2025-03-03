@@ -271,7 +271,7 @@ module.exports = {
 
 Using TypeORM in a Vite project is pretty straight forward. However, when you use migrations, you will run into "...migration name is wrong. Migration class name should have a
 JavaScript timestamp appended." errors when running the production build.
-On production builds, files are optimized by default which includes mangling your code in order to minimize file sizes.
+On production builds, files are [optimized by default](https://vite.dev/config/build-options#build-minify) which includes mangling your code in order to minimize file sizes.
 
 You have 3 options to mitigate this. The 3 options are shown belown as diff to this basic "vite.config.ts"
 
