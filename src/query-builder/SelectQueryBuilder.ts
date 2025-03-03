@@ -2802,10 +2802,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
         columns.push(
             ...metadata.columns.filter((column) => {
-                return this.expressionMap.selects.some(
-                    (select) =>
-                        select.selection ===
+                return this.expressionMap.selects.some((select) =>
+                    [
                         aliasName + "." + column.propertyPath,
+                        aliasName + "." + column.databasePath,
+                    ].includes(select.selection),
                 )
             }),
         )
