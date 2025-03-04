@@ -279,7 +279,7 @@ export class CockroachQueryRunner
             parameters,
         )
 
-        const queryStartTime = +new Date()
+        const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
             this.queries.push({ query, parameters })
@@ -297,7 +297,7 @@ export class CockroachQueryRunner
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
