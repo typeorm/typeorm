@@ -3,21 +3,20 @@ import {
     OneToMany,
     PrimaryColumn,
     VirtualColumn,
-    BaseEntity,
-} from "../../../../src"
-import Employee from "./Employee"
+} from "../../../../../src"
+import { Employee } from "./Employee"
 
 @Entity({ name: "companies" })
-export default class Company extends BaseEntity {
+export class Company {
     @PrimaryColumn("varchar", { length: 50 })
     name: string
 
     @VirtualColumn({
         query: (alias) =>
-            `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name`,
+            `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}."name"`,
     })
     totalEmployeesCount: number
 
-    @OneToMany((type) => Employee, (employee) => employee.company)
+    @OneToMany(() => Employee, (employee) => employee.company)
     employees: Employee[]
 }
