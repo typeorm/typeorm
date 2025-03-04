@@ -1002,6 +1002,13 @@ export class AuroraMysqlDriver implements Driver {
         return "?"
     }
 
+    /**
+     * Returns true if driver supports type indices
+     */
+    isIndicesTypeSupported(): boolean {
+        return false
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

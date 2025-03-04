@@ -896,6 +896,13 @@ export class ReactNativeDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports type indices
+     */
+    isIndicesTypeSupported(): boolean {
+        return false
+    }
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {

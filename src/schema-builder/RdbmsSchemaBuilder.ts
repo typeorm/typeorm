@@ -399,6 +399,17 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                             return true
 
                         if (
+                            this.connection.driver.isIndicesTypeSupported() &&
+                            typeof this.connection.driver
+                                .compareTableIndexTypes === "function" &&
+                            !this.connection.driver.compareTableIndexTypes(
+                                indexMetadata.type,
+                                tableIndex.type,
+                            )
+                        )
+                            return true
+
+                        if (
                             this.connection.driver.isFullTextColumnTypeSupported() &&
                             indexMetadata.isFulltext !== tableIndex.isFulltext
                         )

@@ -947,6 +947,13 @@ export class OracleDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports type indices
+     */
+    isIndicesTypeSupported(): boolean {
+        return false
+    }
+
+    /**
      * Converts column type in to native oracle type.
      */
     columnTypeToNativeParameter(type: ColumnType): any {

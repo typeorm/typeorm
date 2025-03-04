@@ -4,6 +4,7 @@ import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterf
 import { ColumnMetadata } from "./ColumnMetadata"
 import { EmbeddedMetadata } from "./EmbeddedMetadata"
 import { TypeORMError } from "../error"
+import { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
 
 /**
  * Index metadata contains all information about table's index.
@@ -120,6 +121,13 @@ export class IndexMetadata {
     where?: string
 
     /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
+
+    /**
      * Map of column names with order set.
      * Used only by MongoDB driver.
      */
@@ -158,6 +166,7 @@ export class IndexMetadata {
             this.expireAfterSeconds = options.args.expireAfterSeconds
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns
+            this.type = options.args.type
         }
     }
 

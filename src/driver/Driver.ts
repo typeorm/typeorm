@@ -282,4 +282,17 @@ export interface Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string
+
+    /**
+     * Returns true if driver supports type indices
+     */
+    isIndicesTypeSupported(): boolean
+
+    /**
+     * Returns true if both indexes types are equivalent
+     */
+    compareTableIndexTypes?: (
+        indexA: string | undefined,
+        indexB: string | undefined,
+    ) => boolean
 }
