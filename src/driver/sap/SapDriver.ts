@@ -26,6 +26,7 @@ import { DriverUtils } from "../DriverUtils"
 import { View } from "../../schema-builder/view/View"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { SapPoolOptions } from "./SapPoolOptions"
 
 /**
  * Organizes communication with SAP Hana DBMS.
@@ -48,9 +49,15 @@ export class SapDriver implements Driver {
     client: any
 
     /**
+     * Hana Client instance.
+     */
+    hanaClient: any
+
+    /**
      * Hana Client streaming extension.
      */
     streamClient: any
+
     /**
      * Pool for master database.
      */
@@ -246,9 +253,8 @@ export class SapDriver implements Driver {
     async connect(): Promise<void> {
         // HANA connection info
         const dbParams = {
-            hostName: this.options.host,
-            port: this.options.port,
-            userName: this.options.username,
+            serverNode: `${this.options.host}:${this.options.port}`,
+            user: this.options.username,
             password: this.options.password,
             ...this.options.extra,
         }
@@ -256,45 +262,36 @@ export class SapDriver implements Driver {
         if (this.options.database) dbParams.databaseName = this.options.database
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt
         if (this.options.sslValidateCertificate)
-            dbParams.validateCertificate = this.options.sslValidateCertificate
+            dbParams.sslValidateCertificate =
+                this.options.sslValidateCertificate
         if (this.options.key) dbParams.key = this.options.key
         if (this.options.cert) dbParams.cert = this.options.cert
         if (this.options.ca) dbParams.ca = this.options.ca
 
-        // pool options
-        const options: any = {
-            min:
-                this.options.pool && this.options.pool.min
-                    ? this.options.pool.min
-                    : 1,
-            max:
-                this.options.pool && this.options.pool.max
-                    ? this.options.pool.max
-                    : 10,
+        const options: SapPoolOptions = {
+            pooling: this.options.pooling ?? false,
+            maxPoolSize: this.options.maxPoolSize ?? 1,
+            connectionLifetime: this.options.connectionLifetime ?? 0,
+            poolingCheck: this.options.poolingCheck ?? false,
+            poolKey: this.options.poolKey,
+        };
+        this.master = this.hanaClient.createPool(dbParams, options)
+        if (!this.database || !this.schema) {
+            const queryRunner = this.createQueryRunner("master")
+
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase()
+            }
+
+            if (!this.schema) {
+                this.schema = await queryRunner.getCurrentSchema()
+            }
+
+            await queryRunner.release()
         }
 
-        if (this.options.pool && this.options.pool.checkInterval)
-            options.checkInterval = this.options.pool.checkInterval
-        if (this.options.pool && this.options.pool.maxWaitingRequests)
-            options.maxWaitingRequests = this.options.pool.maxWaitingRequests
-        if (this.options.pool && this.options.pool.requestTimeout)
-            options.requestTimeout = this.options.pool.requestTimeout
-        if (this.options.pool && this.options.pool.idleTimeout)
-            options.idleTimeout = this.options.pool.idleTimeout
-
-        const { logger } = this.connection
-
-        const poolErrorHandler =
-            options.poolErrorHandler ||
-            ((error: any) =>
-                logger.log("warn", `SAP Hana pool raised an error. ${error}`))
-        this.client.eventEmitter.on("poolError", poolErrorHandler)
-
-        // create the pool
-        this.master = this.client.createPool(dbParams, options)
-
         if (!this.database || !this.schema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -712,9 +709,6 @@ export class SapDriver implements Driver {
                     insertResult
                 ) {
                     value = insertResult
-                    // } else if (generatedColumn.generationStrategy === "uuid") {
-                    //     console.log("getting db value:", generatedColumn.databaseName);
-                    //     value = generatedColumn.getEntityValue(uuidMap);
                 }
 
                 return OrmUtils.mergeDeep(
@@ -729,14 +723,14 @@ export class SapDriver implements Driver {
     }
 
     /**
-     * Differentiate columns of this table and columns from the given column metadatas columns
+     * Differentiate columns of this table and columns from the given column metadata columns
      * and returns only changed.
      */
     findChangedColumns(
         tableColumns: TableColumn[],
-        columnMetadatas: ColumnMetadata[],
+        columnMetadata: ColumnMetadata[],
     ): ColumnMetadata[] {
-        return columnMetadatas.filter((columnMetadata) => {
+        return columnMetadata.filter((columnMetadata) => {
             const tableColumn = tableColumns.find(
                 (c) => c.name === columnMetadata.databaseName,
             )
@@ -758,7 +752,7 @@ export class SapDriver implements Driver {
             // console.log("==========================================");
 
             const normalizeDefault = this.normalizeDefault(columnMetadata)
-            const hanaNullComapatibleDefault =
+            const hanaNullCompatibleDefault =
                 normalizeDefault == null ? undefined : normalizeDefault
 
             return (
@@ -772,7 +766,7 @@ export class SapDriver implements Driver {
                 tableColumn.comment !==
                     this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
-                    hanaNullComapatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
+                    hanaNullCompatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
@@ -820,20 +814,10 @@ export class SapDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const client = this.options.driver || PlatformTools.load("hdb-pool")
-            this.client = client
-        } catch (e) {
-            // todo: better error for browser env
-            throw new DriverPackageNotInstalledError("SAP Hana", "hdb-pool")
-        }
-
-        try {
-            if (!this.options.hanaClientDriver) {
-                PlatformTools.load("@sap/hana-client")
-                this.streamClient = PlatformTools.load(
-                    "@sap/hana-client/extension/Stream",
-                )
-            }
+            this.hanaClient = PlatformTools.load("@sap/hana-client")
+            this.streamClient = PlatformTools.load(
+                "@sap/hana-client/extension/Stream",
+            )
         } catch (e) {
             // todo: better error for browser env
             throw new DriverPackageNotInstalledError(
