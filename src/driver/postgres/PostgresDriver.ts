@@ -1402,6 +1402,13 @@ export class PostgresDriver implements Driver {
         return false
     }
 
+    /**
+     * Returns true if driver supports type indices
+     */
+    isIndicesTypeSupported(): boolean {
+        return true
+    }
+
     get uuidGenerator(): string {
         return this.options.uuidExtension === "pgcrypto"
             ? "gen_random_uuid()"
@@ -1413,6 +1420,16 @@ export class PostgresDriver implements Driver {
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + (index + 1)
+    }
+
+    compareTableIndexTypes = (
+        indexA: string | undefined,
+        indexB: string | undefined,
+    ) => {
+        const normalizedA = indexA ?? "btree"
+        const normalizedB = indexB ?? "btree"
+
+        return normalizedA.toLowerCase() === normalizedB.toLowerCase()
     }
 
     // -------------------------------------------------------------------------
