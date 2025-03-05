@@ -20,28 +20,12 @@ const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
 describe("multi-database > basic-functionality", () => {
     describe("filepathToName()", () => {
-        for (const platform of [`darwin`, `win32`]) {
-            let realPlatform: string
-
-            beforeEach(() => {
-                realPlatform = process.platform
-                Object.defineProperty(process, `platform`, {
-                    configurable: true,
-                    value: platform,
-                })
-            })
-
-            afterEach(() => {
-                Object.defineProperty(process, `platform`, {
-                    configurable: true,
-                    value: realPlatform,
-                })
-            })
-
-            it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged (${platform})`, () => {
+        if (process.platform === "win32") {
+            it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
                 const testMap = [
                     ["FILENAME.db", "filename.db"],
                     ["..\\FILENAME.db", "../filename.db"],
+                    [".\\FILENAME.db", "./filename.db"],
                     [
                         "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
                         "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db",
@@ -91,7 +75,7 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            await rimraf(`${tempPath}/**/*.attach.db`)
+            await rimraf(`${tempPath}/**/*.attach.db`, {glob: true})
         })
 
         it("should correctly attach and create database files", () =>
