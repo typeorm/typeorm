@@ -35,4 +35,25 @@ export class TestMigration1641163894670 implements MigrationInterface {
 
 }
 `,
+    template: `import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
+
+const tableName = 'test';
+
+export class TestMigration1610975184784 implements MigrationInterface {
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    return queryRunner.addColumn(
+      tableName,
+      new TableColumn({
+        name: 'count',
+        type: 'int',
+        default: 0,
+      }),
+    );
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    return queryRunner.dropColumn(tableName, 'count');
+  }
+}
+`,
 }
