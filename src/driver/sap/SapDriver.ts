@@ -254,6 +254,7 @@ export class SapDriver implements Driver {
         }
 
         if (this.options.database) dbParams.databaseName = this.options.database
+        if (this.options.schema) dbParams.currentSchema = this.options.schema
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt
         if (this.options.sslValidateCertificate)
             dbParams.validateCertificate = this.options.sslValidateCertificate
