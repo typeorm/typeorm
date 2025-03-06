@@ -18,6 +18,7 @@ export type DatabaseType =
     | "aurora-mysql"
     | "aurora-postgres"
     | "expo"
+    | "expo-legacy"
     | "better-sqlite3"
     | "capacitor"
     | "spanner"
