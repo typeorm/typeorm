@@ -1,0 +1,12 @@
+services:
+  oracle:
+    build:
+      context: ../../../docker/oracle
+    container_name: "typeorm-oracle"
+    ports:
+      - "1521:1521"
+    #volumes:
+     # - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: [ "CMD", "/opt/oracle/checkDBStatus.sh" ]
+      interval: 2s
