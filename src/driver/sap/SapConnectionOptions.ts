@@ -18,54 +18,21 @@ export interface SapConnectionOptions
     readonly schema?: string
 
     /**
-     * The driver objects
-     * This defaults to require("hdb-pool")
+     * Aborts communication attempts to the server
+     * after the specified timeout.
      */
-    readonly driver?: any
+    readonly communicationTimeout?: number
 
     /**
-     * The driver objects
-     * This defaults to require("@sap/hana-client")
+     * Sap Pool Options
      */
-    readonly hanaClientDriver?: any
+    readonly pooling?: boolean
 
-    /**
-     * Pool options.
-     */
-    readonly pool?: {
-        /**
-         * Max number of connections.
-         */
-        readonly max?: number
+    readonly maxPoolSize?: number
 
-        /**
-         * Minimum number of connections.
-         */
-        readonly min?: number
+    readonly poolingCheck?: boolean
 
-        /**
-         * Maximum number of waiting requests allowed. (default=0, no limit).
-         */
-        readonly maxWaitingRequests?: number
-        /**
-         * Max milliseconds a request will wait for a resource before timing out. (default=5000)
-         */
-        readonly requestTimeout?: number
-        /**
-         * How often to run resource timeout checks. (default=0, disabled)
-         */
-        readonly checkInterval?: number
-        /**
-         * Idle timeout
-         */
-        readonly idleTimeout?: number
+    readonly connectionLifetime?: number
 
-        /**
-         * Function handling errors thrown by drivers pool.
-         * Defaults to logging error with `warn` level.
-         */
-        readonly poolErrorHandler?: (err: any) => any
-    }
-
-    readonly poolSize?: never
+    readonly poolKey?: string
 }
