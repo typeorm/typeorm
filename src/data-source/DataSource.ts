@@ -407,10 +407,25 @@ export class DataSource {
     /**
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
+     *
+     * @deprecated use `revertMigration` instead
      */
     async undoLastMigration(options?: {
         transaction?: "all" | "none" | "each"
         fake?: boolean
+        until?: string
+    }): Promise<void> {
+        await this.revertMigration(options)
+    }
+
+    /**
+     * Reverts last executed migration.
+     * Can be used only after connection to the database is established.
+     */
+    async revertMigration(options?: {
+        transaction?: "all" | "none" | "each"
+        fake?: boolean
+        until?: string
     }): Promise<void> {
         if (!this.isInitialized)
             throw new CannotExecuteNotConnectedError(this.name)
@@ -420,7 +435,7 @@ export class DataSource {
             (options && options.transaction) || "all"
         migrationExecutor.fake = (options && options.fake) || false
 
-        await migrationExecutor.undoLastMigration()
+        await migrationExecutor.revertMigration(options?.until)
     }
 
     /**
@@ -433,6 +448,20 @@ export class DataSource {
         }
         const migrationExecutor = new MigrationExecutor(this)
         return await migrationExecutor.showMigrations()
+    }
+
+    /**
+     * Returns all executed migrations.
+     */
+    async getExecutedMigrations(): Promise<any> {
+        if (!this.isInitialized) {
+            throw new CannotExecuteNotConnectedError(this.name)
+        }
+
+        const migrationExecutor = new MigrationExecutor(this)
+        const queryRunner = this.createQueryRunner()
+
+        return await migrationExecutor.loadExecutedMigrations(queryRunner)
     }
 
     /**
@@ -520,7 +549,7 @@ export class DataSource {
 
     /**
      * Executes raw SQL query and returns raw database results.
-     * 
+     *
      * @see [Official docs](https://typeorm.io/data-source-api) for examples.
      */
     async query<T = any>(
