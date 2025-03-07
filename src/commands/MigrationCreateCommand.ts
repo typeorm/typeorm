@@ -98,9 +98,7 @@ export class ${camelCase(
         name: string,
         timestamp: number,
     ): string {
-        return `const { MigrationInterface, QueryRunner } = require("typeorm");
-
-module.exports = class ${camelCase(name, true)}${timestamp} {
+        return `module.exports = class ${camelCase(name, true)}${timestamp} {
 
     async up(queryRunner) {
     }
